@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reality Bar &amp; Cafe</title>
+  <!-- Google Fonts: Montserrat for headers, Space Grotesk for body -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,900|Space+Grotesk:400,700&display=swap" rel="stylesheet">
+  <!-- Integrated Stylesheets from your file structure -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/parallax-gallery.css">
+  <!-- Override CSS Variables for a Black &amp; White Theme with a Single Accent -->
+  <style>
+    :root {
+
+    }
+    /* Ensure hero area has a transparent background and sufficient top padding */
+    .hero {
+      background: transparent;
+      padding-top: 120px; /* Adjust this value as needed to prevent cut-off text */
+    }
+    /* Override buttons & accents to use black/white and the accent color */
+    .cta-button {
+      background: var(--accent-color-1);
+      color: #ffffff;
+      border: none;
+    }
+    .cta-button:hover {
+      background: #000000;
+      color: #ffffff;
+    }
+    /* Update nav links hover state */
+    .nav-links a:hover:after {
+      background: var(--accent-color-1);
+    }
+    /* Sticky nav styling overrides */
+    nav.sticky {
+      background-color: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+    /* Canvas for calendar events */
+    #calendarCanvas {
+      width: 100%;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0,0,0,0.1);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="mainNav">
+    <div class="logo">Reality</div>
+    <div class="nav-links">
+      <a href="#hero" class="translatable" data-en="Home" data-vn="Trang Chủ">Home</a>
+      <a href="#events" class="translatable" data-en="Events" data-vn="Sự Kiện">Events</a>
+      <a href="#gallery" class="translatable" data-en="Gallery" data-vn="Hình Ảnh">Gallery</a>
+      <a href="#menu" class="translatable" data-en="Menu" data-vn="Thực Đơn">Menu</a>
+      <a href="#faq" class="translatable" data-en="FAQ" data-vn="Hỏi Đáp">FAQ</a>
+      <a href="#contact" class="translatable" data-en="Contact" data-vn="Liên Hệ">Contact</a>
+    </div>
+    <div class="language-toggle">
+      <button class="language-btn active" data-lang="en">EN</button>
+      <button class="language-btn" data-lang="vn">VN</button>
+    </div>
+    <div class="hamburger-menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero section-animate" id="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <h1 class="translatable" data-en="THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG" data-vn="NƠI GẶP GỠ DỄ DÀNG NHẤT TẠI ĐÀ NẴNG">
+          THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG
+        </h1>
+        <p class="translatable" data-en="86 Mai Thuc Lan, Da Nang | Mon-Sun: 8am - 10pm" data-vn="86 Mai Thuc Lan, Đà Nẵng | Thứ 2 - CN: 8h - 22h">
+          86 Mai Thuc Lan, Da Nang | Mon-Sun: 8am - 10pm
+        </p>
+        <a href="#events" class="cta-button translatable" data-en="View Events" data-vn="Xem Sự Kiện">
+          View Events
+        </a>
+      </div>
+      <div class="hero-meta"></div>
+    </div>
+  </section>
+
+  <!-- Event Calendar Section -->
+  <section id="events" class="events section-animate">
+    <div class="container grid">
+      <div class="events-header grid-7">
+        <h2 class="translatable" data-en="Upcoming Events" data-vn="Sự Kiện Sắp Diễn Ra">
+          Upcoming Events
+        </h2>
+      </div>
+      <div class="events-calendar grid-7" id="event-calendar">
+        <!-- Google Calendar embed; replace with your calendar details -->
+        <iframe src="https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Asia%2FHo_Chi_Minh&showPrint=0&mode=WEEK&showTitle=0&showTabs=0&showCalendars=0&title=EVENTS%20&src=cmVhbGl0eWRuQGdtYWlsLmNvbQ&color=%23039BE5" style="border-width:0" frameborder="0" scrolling="no"></iframe>      </div>
+      <!-- New canvas for drawing today's calendar events -->
+      <canvas id="calendarCanvas"></canvas>
+    </div>
+  </section>
+
+  <!-- Parallax Gallery Section -->
+  <section class="gallery section-animate" id="gallery">
+    <div class="container">
+      <h2 class="translatable" data-en="Our Space in Pictures" data-vn="Hình Ảnh Không Gian">
+        Our Space in Pictures
+      </h2>
+      <div id="parallax-gallery" class="parallax-container">
+        <!-- parallax-gallery.js will populate images here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu Section -->
+  <section class="menu section-animate" id="menu">
+    <div class="container grid">
+      <h2 class="translatable" data-en="Our Menu" data-vn="Thực Đơn">
+        Our Menu
+      </h2>
+      <div class="menu-viewer grid-7">
+        <!-- Integrated PDF viewer for the menu (update the path if necessary) -->
+        <iframe src="menu.pdf" width="100%" height="800px" style="border: none;"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq section-animate" id="faq">
+    <div class="container grid">
+      <h2 class="translatable" data-en="Frequently Asked Questions" data-vn="Câu Hỏi Thường Gặp">
+        Frequently Asked Questions
+      </h2>
+      <div class="faq-list grid-7">
+        <div class="faq-item">
+          <div class="faq-question">
+            <h3 class="translatable" data-en="What are your opening hours?" data-vn="Giờ mở cửa của bạn là gì?">
+              What are your opening hours?
+            </h3>
+            <div class="faq-toggle"></div>
+          </div>
+          <div class="faq-answer">
+            <p class="translatable" data-en="We are open daily from 8am to 10pm." data-vn="Chúng tôi mở cửa hàng ngày từ 8h đến 22h.">
+              We are open daily from 8am to 10pm.
+            </p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">
+            <h3 class="translatable" data-en="Do you host private events?" data-vn="Bạn có tổ chức sự kiện riêng không?">
+              Do you host private events?
+            </h3>
+            <div class="faq-toggle"></div>
+          </div>
+          <div class="faq-answer">
+            <p class="translatable" data-en="Yes, we offer private event hosting. Contact us for details." data-vn="Có, chúng tôi cung cấp dịch vụ tổ chức sự kiện riêng. Liên hệ để biết thêm chi tiết.">
+              Yes, we offer private event hosting. Contact us for details.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="contact section-animate" id="contact">
+    <div class="container grid">
+      <h2 class="translatable" data-en="Contact Us" data-vn="Liên Hệ">
+        Contact Us
+      </h2>
+      <div class="contact-wrapper grid-7">
+        <div class="contact-info">
+          <div class="contact-info-item">
+            <h3 class="translatable" data-en="Location" data-vn="Địa Chỉ">Location</h3>
+            <p>86 Mai Thuc Lan, Da Nang</p>
+            <p class="address-note translatable" data-en="Find us on the map below" data-vn="Tìm chúng tôi trên bản đồ bên dưới">
+              Find us on the map below
+            </p>
+          </div>
+          <div class="contact-info-item">
+            <h3 class="translatable" data-en="Phone" data-vn="Điện Thoại">Phone</h3>
+            <p><a href="tel:+1234567890">+1 234 567 890</a></p>
+          </div>
+          <div class="contact-info-item">
+            <h3 class="translatable" data-en="Follow Us" data-vn="Theo Dõi Chúng Tôi">Follow Us</h3>
+            <div class="social-links">
+              <a href="#" class="social-icon">Facebook</a>
+              <a href="#" class="social-icon">Instagram</a>
+              <a href="#" class="social-icon">Twitter</a>
+            </div>
+          </div>
+        </div>
+        <div class="map">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.302259561011!2d108.21919731533003!3d16.04707958877415!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142195c3a8d3f4f%3A0x9a4b14a5ad0f5d4a!2s86%20Mai%20Th%E1%BB%A7c%20Lan%2C%20Da%20N%C4%83ng%2C%20Vietnam!5e0!3m2!1sen!2sus!4v1616176748162" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-grid">
+      <div class="footer-left">
+        <div class="logo">Reality</div>
+        <p class="tagline translatable" data-en="Where friends meet over great food &amp; drinks" data-vn="Nơi gặp gỡ của bạn bè bên những món ăn &amp; thức uống tuyệt vời">
+          Where friends meet over great food &amp; drinks
+        </p>
+      </div>
+      <div class="footer-center">
+        <div class="social-links">
+          <a href="#" class="social-icon">Facebook</a>
+          <a href="#" class="social-icon">Instagram</a>
+          <a href="#" class="social-icon">Twitter</a>
+        </div>
+      </div>
+      <div class="footer-right">
+        <p class="footer-text translatable" data-en="Join us for unforgettable moments." data-vn="Tham gia cùng chúng tôi để tạo ra những khoảnh khắc không thể quên.">
+          Join us for unforgettable moments.
+        </p>
+      </div>
+      <div class="footer-bottom">
+        &copy; 2025 Reality Bar &amp; Cafe. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Integrated JavaScript Files from js/ folder -->
+  <script src="js/language.js" defer></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/color-waves.js" defer></script>
+  <script src="js/parallax-gallery.js" defer></script>
+  <script src="js/faq.js" defer></script>
+
+  <!-- New JavaScript: Sticky nav and Calendar Event Mining with Canvas -->
+  <script>
+    // Sticky Navigation: Toggle 'sticky' class based on scroll position
+    window.addEventListener('scroll', function() {
+      const nav = document.getElementById('mainNav');
+      if (window.scrollY > 50) {
+        nav.classList.add('sticky');
+      } else {
+        nav.classList.remove('sticky');
+      }
+    });
+
+    // Function to fetch today's events from Google Calendar via API
+    async function mineCalendarEvents() {
+      const calendarId = 'realitydn@gmail.com'; // Replace with your calendar ID
+      const apiKey = 'YOUR_API_KEY';         // Replace with your API key
+      const today = new Date();
+      const timeMin = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+      const timeMax = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
+      
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        return data.items || [];
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+        return [];
+      }
+    }
+
+    // Draw event information on the canvas
+    function drawEventsOnCanvas(events) {
+      const canvas = document.getElementById('calendarCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '16px "Space Grotesk", sans-serif';
+      ctx.fillStyle = '#000';
+      ctx.textBaseline = 'top';
+      const lineHeight = 24;
+      let y = 10;
+      if (events.length === 0) {
+        ctx.fillText("No events for today.", 10, y);
+      } else {
+        events.forEach(event => {
+          const startTime = new Date(event.start.dateTime || event.start.date);
+          const hours = startTime.getHours().toString().padStart(2, '0');
+          const minutes = startTime.getMinutes().toString().padStart(2, '0');
+          const timeStr = `${hours}:${minutes}`;
+          const text = `${timeStr} - ${event.summary}`;
+          ctx.fillText(text, 10, y);
+          y += lineHeight;
+        });
+      }
+    }
+
+    async function updateCalendarCanvas() {
+      const events = await mineCalendarEvents();
+      drawEventsOnCanvas(events);
+    }
+
+    // Resize canvas to match its container width and update events
+    function resizeCanvas() {
+      const canvas = document.getElementById('calendarCanvas');
+      canvas.width = canvas.clientWidth;
+      updateCalendarCanvas();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      updateCalendarCanvas();
+    });
+    setInterval(updateCalendarCanvas, 300000); // Update every 5 minutes
+  </script>
+</body>
+</html>

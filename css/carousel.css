@@ -1,0 +1,200 @@
+/* 
+ * Reality Website - Modern Image Carousel Styles
+ * Minimalist design that complements the typography-forward aesthetic
+ */
+
+/* Main carousel container */
+.reality-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.03);
+    margin-bottom: 2rem;
+}
+
+/* Track holding the slides */
+.carousel-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Individual slide */
+.carousel-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.3s ease;
+}
+
+.carousel-slide.active {
+    opacity: 1;
+}
+
+/* Slide images */
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Navigation buttons */
+.carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+    z-index: 2;
+}
+
+.carousel-nav:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.carousel-prev {
+    left: 20px;
+}
+
+.carousel-next {
+    right: 20px;
+}
+
+/* Navigation visibility for hover option */
+.reality-carousel.nav-on-hover .carousel-nav {
+    opacity: 0;
+}
+
+.reality-carousel.nav-on-hover:hover .carousel-nav {
+    opacity: 0.7;
+}
+
+.reality-carousel.nav-on-hover:hover .carousel-nav:hover {
+    opacity: 1;
+}
+
+/* Fullscreen viewer */
+.reality-fullscreen-viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.reality-fullscreen-viewer.visible {
+    opacity: 1;
+}
+
+.fullscreen-image-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.fullscreen-image {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.fullscreen-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.fullscreen-close:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .carousel-nav {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .carousel-prev {
+        left: 10px;
+    }
+    
+    .carousel-next {
+        right: 10px;
+    }
+    
+    .fullscreen-close {
+        top: 10px;
+        right: 10px;
+        width: 35px;
+        height: 35px;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .carousel-nav {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+}
+
+/* Custom flyers carousel styles */
+#flyers-carousel {
+    margin-bottom: 1.5rem;
+}
+
+#flyers-carousel .carousel-slide img {
+    object-fit: contain;
+    background-color: #f5f5f5;
+}
+
+/* Custom spaces carousel styles */
+#spaces-carousel .carousel-slide img {
+    object-fit: cover;
+}

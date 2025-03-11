@@ -17,42 +17,94 @@
   <meta property="og:url" content="https://realitydn.com">
   <meta property="og:type" content="website">
   
-  <!-- Google Fonts: Montserrat for headers, Space Grotesk for body -->
-  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,900|Space+Grotesk:400,700&display=swap" rel="stylesheet">
-  <!-- Integrated Stylesheets from your file structure -->
+  <!-- Resource hints for faster connections -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="dns-prefetch" href="https://calendar.google.com">
+  <link rel="dns-prefetch" href="https://maps.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="images/RealityWordform-black2048tr.png" as="image">
+  
+  <!-- Google Fonts with font-display:swap for better performance -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,900|Space+Grotesk:400,700&display=swap&font-display=swap" rel="stylesheet">
+  
+  <!-- Integrated Stylesheets -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/mobile.css">
   <link rel="stylesheet" href="css/multi-carousel.css">
-  <!-- Override CSS Variables for a Black &amp; White Theme with a Single Accent -->
+  
+  <!-- Browser/device detection for adaptive loading -->
+  <script>
+    // Simple browser capability detection
+    document.documentElement.classList.add(
+      'ontouchstart' in document.documentElement ? 'touch' : 'no-touch',
+      window.innerWidth < 768 ? 'mobile' : 'desktop',
+      'js-enabled'
+    );
+    
+    // Check for performance constraints
+    const isLowPerformance = (
+      window.innerWidth < 768 || 
+      ('ontouchstart' in window) || 
+      (navigator.hardwareConcurrency <= 4)
+    );
+    
+    if (isLowPerformance) {
+      document.documentElement.classList.add('low-performance');
+    }
+  </script>
+  
+  <!-- Critical CSS for above-the-fold content -->
   <style>
     :root {
-
+      --primary-bg: #f5f5f786;
+      --text-color: #111111;
+      --text-light: #555555;
+      --accent-color-1: #000000;
+      --accent-color-2: #00000000;
+      --heading-font: 'Montserrat', sans-serif;
+      --body-font: 'Space Grotesk', sans-serif;
+      --border-radius: 0px;
+      --grid-gap: 2rem;
+      --transition-speed: 0.3s;
     }
+    
     /* Ensure hero area has a transparent background and sufficient top padding */
     .hero {
       background: transparent;
-      padding-top: 120px; /* Adjust this value as needed to prevent cut-off text */
+      padding-top: 120px;
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
     }
+    
     /* Override buttons & accents to use black/white and the accent color */
     .cta-button {
       background: var(--accent-color-1);
       color: #ffffff;
       border: none;
     }
+    
     .cta-button:hover {
       background: #000000;
       color: #ffffff;
     }
+    
     /* Update nav links hover state */
     .nav-links a:hover:after {
       background: var(--accent-color-1);
     }
+    
     /* Sticky nav styling overrides */
     nav.sticky {
       background-color: rgba(255, 255, 255, 0.98);
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
       transition: background-color 0.3s, box-shadow 0.3s;
     }
+    
     /* Canvas for calendar events */
     #calendarCanvas {
       width: 100%;
@@ -61,22 +113,27 @@
       border: 1px solid rgba(0,0,0,0.1);
       margin-top: 2rem;
     }
+    
     /* Logo styling */
     .logo-wordform {
       max-width: 100%;
       height: auto;
     }
+    
     nav .logo-wordform {
       height: 30px;
       width: auto;
     }
+    
     nav.sticky .logo-wordform {
       height: 24px;
     }
+    
     .contact .logo-wordform {
       height: 60px;
       margin-bottom: 1.5rem;
     }
+    
     @media (max-width: 768px) {
       nav .logo-wordform {
         height: 24px;
@@ -85,13 +142,59 @@
         height: 40px;
       }
     }
+    
+    /* Optimize FAQ animations */
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+      padding-right: 3rem;
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: var(--content-height, 1000px);
+    }
+    
+    /* PDF viewer styles */
+    .pdf-placeholder {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .pdf-loading {
+      margin-top: 1rem;
+      color: #666;
+    }
+
+    .mobile-pdf-viewer {
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    .mobile-pdf-controls {
+      text-align: center;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
   </style>
 </head>
 <body>
   <!-- Navigation -->
   <nav id="mainNav">
     <div class="logo">
-      <img src="images/RealityWordform-black2048tr.png" alt="Reality Bar & Cafe Da Nang" class="logo-wordform">
+      <img 
+        src="images/RealityWordform-black2048tr.png" 
+        srcset="images/RealityWordform-black1024tr.png 1024w, 
+                images/RealityWordform-black2048tr.png 2048w"
+        sizes="(max-width: 768px) 80vw, 300px"
+        alt="Reality Bar & Cafe Da Nang" 
+        class="logo-wordform"
+        loading="eager"
+        decoding="async"
+        width="300" 
+        height="60">
     </div>
     <div class="nav-links">
       <a href="#hero" class="translatable" data-en="Home" data-vn="Trang Chủ">Home</a>
@@ -148,13 +251,14 @@
         </p>
       </div>
       <div class="events-calendar grid-7" id="event-calendar">
-        <!-- Google Calendar embed; replace with your calendar details -->
+        <!-- Google Calendar embed with lazy loading -->
         <iframe 
-        src="https://calendar.google.com/calendar/embed?height=600&wkst=1&bgcolor=%23FFFFFF&ctz=Asia%2FHo_Chi_Minh&showPrint=0&showNav=1&showTitle=0&showTabs=0&showCalendars=0&showTz=0&mode=WEEK&src=realitydn%40gmail.com&color=%23000000" 
-        style="border: none; width: 100%; height: 100%;" 
-        frameborder="0" 
-        scrolling="no">
-      </iframe></div>
+          src="https://calendar.google.com/calendar/embed?height=600&wkst=1&bgcolor=%23FFFFFF&ctz=Asia%2FHo_Chi_Minh&showPrint=0&showNav=1&showTitle=0&showTabs=0&showCalendars=0&showTz=0&mode=WEEK&src=realitydn%40gmail.com&color=%23000000" 
+          style="border: none; width: 100%; height: 100%;" 
+          loading="lazy"
+          title="Reality Event Calendar">
+        </iframe>
+      </div>
     </div>
   </section>
 
@@ -176,8 +280,7 @@
         Our Menu
       </h2>
       <div class="menu-viewer grid-7">
-        <!-- Integrated PDF viewer for the menu (update the path if necessary) -->
-        <iframe src="menu.pdf" width="100%" height="800px" style="border: none;"></iframe>
+        <!-- PDF viewer will be initialized by the pdf-viewer.js script -->
       </div>
     </div>
   </section>
@@ -290,7 +393,16 @@
           </div>
         </div>
         <div class="map">
-          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.302259561011!2d108.21919731533003!3d16.04707958877415!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142195c3a8d3f4f%3A0x9a4b14a5ad0f5d4a!2s86%20Mai%20Th%E1%BB%A7c%20Lan%2C%20Da%20N%C4%83ng%2C%20Vietnam!5e0!3m2!1sen!2sus!4v1616176748162" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.302259561011!2d108.21919731533003!3d16.04707958877415!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142195c3a8d3f4f%3A0x9a4b14a5ad0f5d4a!2s86%20Mai%20Th%E1%BB%A7c%20Lan%2C%20Da%20N%C4%83ng%2C%20Vietnam!5e0!3m2!1sen!2sus!4v1616176748162" 
+            width="100%" 
+            height="400" 
+            style="border:0;" 
+            loading="lazy" 
+            title="Location Map"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen="">
+          </iframe>
         </div>
       </div>
     </div>
@@ -301,7 +413,12 @@
     <div class="container footer-grid">
       <div class="footer-left">
         <div class="logo">
-          <img src="images/RealityWordform-white2048tr.png" alt="Reality Bar & Cafe Da Nang" class="logo-wordform" style="height: 40px; width: auto;">
+          <img 
+            src="images/RealityWordform-white2048tr.png" 
+            alt="Reality Bar & Cafe Da Nang" 
+            class="logo-wordform" 
+            loading="lazy"
+            style="height: 40px; width: auto;">
         </div>
         <p class="tagline translatable" data-en="The easiest place to make friends in Da Nang" data-vn="Nơi dễ dàng kết bạn nhất Đà Nẵng">
           The easiest place to make friends in Da Nang
@@ -325,195 +442,66 @@
     </div>
   </footer>
 
-  <!-- Integrated JavaScript Files -->
-  <script src="js/language.js" defer></script>
+  <!-- Optimized script loading -->
   <script src="js/main.js" defer></script>
+  <script src="js/language.js" defer></script>
   <script src="js/color-waves.js" defer></script>
-  <script src="js/faq.js" defer></script>
-  <script src="js/multi-carousel.js" defer></script>
+  <script src="js/faq.js" defer loading="lazy"></script>
+  <script src="js/multi-carousel.js" defer loading="lazy"></script>
+  <script src="js/pdf-viewer.js" defer loading="lazy"></script>
 
-  <!-- Carousel Initialization -->
+  <!-- Carousel Initialization Script -->
   <script>
- document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing carousels...');
-    
-    // Initialize the event flyers carousel
-    RealityCarousel.init({
+    document.addEventListener('DOMContentLoaded', function() {
+      // Adaptive initialization based on device capabilities
+      const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+      const isLowPerformance = isMobile || navigator.hardwareConcurrency <= 4;
+      
+      console.log('Initializing carousels...');
+      
+      // Initialize the event flyers carousel with adaptive settings
+      RealityCarousel.init({
         containerId: 'flyers-carousel',
         imageFolder: 'images/flyers/',
-        height: '400px',
+        height: isLowPerformance ? '300px' : '400px',
         aspectRatio: '3/4',  // Portrait orientation for event flyers
-        rotationSpeed: 3300,  // 8 seconds per rotation
-        visibleImages: 3,     // Show 3 flyers at once
-        gap: 0,              // Small gap between flyers
-        transitionSpeed: 1000, // Slightly slower transitions
+        rotationSpeed: isLowPerformance ? 5000 : 3300,  // Slower on mobile
+        visibleImages: isMobile ? (window.innerWidth < 576 ? 1 : 2) : 3, // Adaptive count
+        gap: 0,
+        transitionSpeed: isLowPerformance ? 800 : 1000,
+        lazyLoad: true,
         fallbackImages: [
-            'https://picsum.photos/seed/flyer1/600/800',
-            'https://picsum.photos/seed/flyer2/600/800',
-            'https://picsum.photos/seed/flyer3/600/800',
-            'https://picsum.photos/seed/flyer4/600/800',
-            'https://picsum.photos/seed/flyer5/600/800',
-            'https://picsum.photos/seed/flyer6/600/800',
-            'https://picsum.photos/seed/flyer7/600/800'
+          'https://picsum.photos/seed/flyer1/600/800',
+          'https://picsum.photos/seed/flyer2/600/800',
+          'https://picsum.photos/seed/flyer3/600/800',
+          'https://picsum.photos/seed/flyer4/600/800'
         ]
-    });
-    
-    // Initialize the space photos carousel
-    RealityCarousel.init({
+      });
+      
+      // Initialize the space photos carousel with adaptive settings
+      RealityCarousel.init({
         containerId: 'spaces-carousel',
         imageFolder: 'images/spaces/',
-        height: '350px',
+        height: isLowPerformance ? '250px' : '350px',
         aspectRatio: '16/9',  // Landscape orientation for space photos
-        rotationSpeed: 2500,  // 9.5 seconds per rotation (different from flyers for visual interest)
-        visibleImages: 4,     // Show 4 space photos at once
-        gap: 0,              // Small gap between photos
-        transitionSpeed: 2000, // Slightly slower transitions
+        rotationSpeed: isLowPerformance ? 4000 : 2500,
+        visibleImages: isMobile ? (window.innerWidth < 576 ? 1 : 2) : 4,
+        gap: 0,
+        transitionSpeed: isLowPerformance ? 800 : 2000,
+        lazyLoad: true,
         fallbackImages: [
-            'https://picsum.photos/seed/space1/800/450',
-            'https://picsum.photos/seed/space2/800/450',
-            'https://picsum.photos/seed/space3/800/450',
-            'https://picsum.photos/seed/space4/800/450',
-            'https://picsum.photos/seed/space5/800/450',
-            'https://picsum.photos/seed/space6/800/450',
-            'https://picsum.photos/seed/space7/800/450',
-            'https://picsum.photos/seed/space8/800/450',
-            'https://picsum.photos/seed/space9/800/450'
+          'https://picsum.photos/seed/space1/800/450',
+          'https://picsum.photos/seed/space2/800/450',
+          'https://picsum.photos/seed/space3/800/450',
+          'https://picsum.photos/seed/space4/800/450'
         ]
-    });
-    
-    // Helper function to list all image files in the directory (for debugging)
-    function logImageFilesInFolder(folderPath) {
-        console.log(`Checking image files in folder: ${folderPath}`);
-        
-        // Common image extensions
-        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        
-        // Common naming patterns to check
-        const patterns = [
-            { name: 'Numbered sequence with "image" prefix', pattern: 'image{num}.{ext}' },
-            { name: 'Simple numbered', pattern: '{num}.{ext}' },
-            { name: 'With "flyer" prefix', pattern: 'flyer{num}.{ext}' },
-            { name: 'With "space" prefix', pattern: 'space{num}.{ext}' },
-            { name: 'With "photo" prefix', pattern: 'photo{num}.{ext}' }
-        ];
-        
-        console.log('Looking for these file patterns:');
-        patterns.forEach(p => console.log(`- ${p.name}: ${p.pattern}`));
-        
-        // Test for existence of common image filenames
-        for (let i = 1; i <= 10; i++) {
-            extensions.forEach(ext => {
-                // Try loading image1.jpg, 1.jpg, etc.
-                const testPatterns = [
-                    `image${i}.${ext}`,
-                    `${i}.${ext}`,
-                    `flyer${i}.${ext}`,
-                    `space${i}.${ext}`,
-                    `photo${i}.${ext}`
-                ];
-                
-                testPatterns.forEach(filename => {
-                    const img = new Image();
-                    img.onload = function() {
-                        console.log(`✓ Found image: ${folderPath}${filename}`);
-                    };
-                    img.onerror = function() {
-                        // Silently fail for non-existent files
-                    };
-                    img.src = `${folderPath}${filename}`;
-                });
-            });
-        }
-    }
-    
-    // Debug image loading
-    logImageFilesInFolder('images/flyers/');
-    logImageFilesInFolder('images/spaces/');
-});
-  </script>
-
-  <!-- Sticky Navigation Script -->
-  <script>
-    // Sticky Navigation: Toggle 'sticky' class based on scroll position
-    window.addEventListener('scroll', function() {
-      const nav = document.getElementById('mainNav');
-      if (window.scrollY > 50) {
-        nav.classList.add('sticky');
-      } else {
-        nav.classList.remove('sticky');
-      }
-    });
-
-    // Function to fetch today's events from Google Calendar via API
-    async function mineCalendarEvents() {
-      const calendarId = 'realitydn@gmail.com'; // Replace with your calendar ID
-      const apiKey = 'YOUR_API_KEY';         // Replace with your API key
-      const today = new Date();
-      const timeMin = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-      const timeMax = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
-      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
+      });
       
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        return data.items || [];
-      } catch (error) {
-        console.error('Error fetching calendar events:', error);
-        return [];
-      }
-    }
-
-    // Draw event information on the canvas
-    function drawEventsOnCanvas(events) {
-      const canvas = document.getElementById('calendarCanvas');
-      if (!canvas) return;
-      
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = '16px "Space Grotesk", sans-serif';
-      ctx.fillStyle = '#000';
-      ctx.textBaseline = 'top';
-      const lineHeight = 24;
-      let y = 10;
-      if (events.length === 0) {
-        ctx.fillText("No events for today.", 10, y);
-      } else {
-        events.forEach(event => {
-          const startTime = new Date(event.start.dateTime || event.start.date);
-          const hours = startTime.getHours().toString().padStart(2, '0');
-          const minutes = startTime.getMinutes().toString().padStart(2, '0');
-          const timeStr = `${hours}:${minutes}`;
-          const text = `${timeStr} - ${event.summary}`;
-          ctx.fillText(text, 10, y);
-          y += lineHeight;
-        });
-      }
-    }
-
-    async function updateCalendarCanvas() {
-      const canvas = document.getElementById('calendarCanvas');
-      if (!canvas) return;
-      
-      const events = await mineCalendarEvents();
-      drawEventsOnCanvas(events);
-    }
-
-    // Resize canvas to match its container width and update events
-    function resizeCanvas() {
-      const canvas = document.getElementById('calendarCanvas');
-      if (!canvas) return;
-      
-      canvas.width = canvas.clientWidth;
-      updateCalendarCanvas();
-    }
-    
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('load', () => {
-      if (document.getElementById('calendarCanvas')) {
-        resizeCanvas();
-        updateCalendarCanvas();
-        setInterval(updateCalendarCanvas, 300000); // Update every 5 minutes
+      // Add performance monitoring when debug parameter is in URL
+      if (window.location.search.includes('debug=1')) {
+        const script = document.createElement('script');
+        script.src = 'js/performance-monitor.js';
+        document.body.appendChild(script);
       }
     });
   </script>

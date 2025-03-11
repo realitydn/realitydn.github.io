@@ -1,49 +1,157 @@
 /**
  * Reality Website - Floating Color Rectangles Background
- * Revised Version: Includes a blur-in effect that transitions from 1000px blur to the computed blur value,
- * with slower oscillation/rotation and an increased rectangle count.
+ * Enhanced version for mobile with:
+ * - Color harmonies for more cohesive visuals
+ * - Slightly increased rectangle count on capable devices
+ * - Subtle depth layering effect
+ * - Hardware-accelerated rendering
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // ===== Configuration =====
+    // Performance detection - carefully assess device capabilities
+    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+    const isLowEnd = isMobile && (
+        navigator.hardwareConcurrency <= 2 || 
+        /(android 4|android 5\.[01])/i.test(navigator.userAgent)
+    );
+    const isMidRange = isMobile && !isLowEnd;
+    const isHighEnd = !isMobile || (
+        navigator.hardwareConcurrency >= 6 && 
+        !/(android 5|android 6)/i.test(navigator.userAgent)
+    );
     
-    // Color palette for rectangles (with alpha transparency)
-    const colors = [
-        'rgba(255, 64, 129, 0.2)',  // Pink
-        'rgba(64, 196, 255, 0.2)',  // Blue
-        'rgba(255, 171, 64, 0.2)',  // Gold/Amber
-        'rgba(94, 53, 177, 0.2)',   // Purple
-        'rgba(100, 255, 218, 0.2)'   // Teal
-    ];
-    
-    // Rectangle configuration settings
+    // Adaptive configuration based on device capability
     const rectConfig = {
-        count: 80,              // Increase to 80 rectangles
+        // Rectangle count based on device capability
+        // Very conservative baseline for low-end devices
+        count: isLowEnd ? 10 : (isMidRange ? 20 : (isHighEnd ? 40 : 25)),
+        
+        // Size range
         minWidth: 100,
-        maxWidth: 800,
+        maxWidth: isLowEnd ? 300 : (isMobile ? 400 : 800),
         minHeight: 100,
-        maxHeight: 800,
-        // Speed in pixels per millisecond
-        minSpeed: 0.01,
-        maxSpeed: 0.11,
+        maxHeight: isLowEnd ? 300 : (isMobile ? 400 : 800),
+        
+        // Speed - slower on mobile for better performance and aesthetics
+        minSpeed: isLowEnd ? 0.004 : 0.008,
+        maxSpeed: isLowEnd ? 0.03 : 0.08,
+        
+        // Visual effects
         blendMode: 'multiply',
-        // New blur values: oscillate between 10 and 200 pixels
-        minBlur: 10,
-        maxBlur: 100,
-        blurCycleDuration: { min: 5000, max: 15000 },
-        opacityCycleDuration: { min: 7000, max: 20000 },
-        minOpacity: 0.3,
-        maxOpacity: 0.8
+        
+        // Reduced blur on mobile (significant performance impact)
+        minBlur: isLowEnd ? 3 : (isMobile ? 5 : 10),
+        maxBlur: isLowEnd ? 15 : (isMobile ? 30 : 100),
+        
+        // Animation cycles
+        blurCycleDuration: { min: 8000, max: 24000 },
+        opacityCycleDuration: { min: 10000, max: 28000 },
+        minOpacity: 0.2,
+        maxOpacity: 0.75,
+        
+        // Use canvas rendering on mobile for better performance
+        useCanvas: isMobile,
+        
+        // New: Depth layers for added dimension
+        // Each rectangle will be assigned to a layer that affects speed and blur
+        layers: 3
     };
     
-    // Create the animation container covering the entire document
-    createAnimationContainer();
+    // Choose color scheme method
+    initAnimation();
+    
+    function initAnimation() {
+        // Select a color scheme on page load
+        const colorScheme = getColorScheme();
+        
+        if (rectConfig.useCanvas) {
+            initCanvasAnimation(colorScheme);
+        } else {
+            initDomAnimation(colorScheme);
+        }
+    }
     
     /**
-     * Creates an absolutely positioned container that spans the full document height.
-     * This container is inserted as the first child of the body.
+     * Generate a harmonious color scheme
+     * Returns an array of rgba color strings
      */
-    function createAnimationContainer() {
+    function getColorScheme() {
+        // Possible color scheme types
+        const schemeTypes = [
+            'complementary',
+            'analogous',
+            'monochromatic',
+            'triadic'
+        ];
+        
+        // Randomly select a scheme type
+        const schemeType = schemeTypes[Math.floor(Math.random() * schemeTypes.length)];
+        
+        // Base hue (0-360)
+        const baseHue = Math.floor(Math.random() * 360);
+        
+        // Create colors based on scheme type
+        switch (schemeType) {
+            case 'complementary':
+                return [
+                    generateHslaColor(baseHue, 70, 70, 0.15),
+                    generateHslaColor(baseHue, 50, 80, 0.15),
+                    generateHslaColor(baseHue, 80, 60, 0.15),
+                    generateHslaColor((baseHue + 180) % 360, 70, 70, 0.15),
+                    generateHslaColor((baseHue + 180) % 360, 50, 80, 0.15)
+                ];
+                
+            case 'analogous':
+                return [
+                    generateHslaColor(baseHue, 70, 70, 0.15),
+                    generateHslaColor((baseHue + 30) % 360, 65, 75, 0.15),
+                    generateHslaColor((baseHue + 60) % 360, 60, 80, 0.15),
+                    generateHslaColor((baseHue - 30 + 360) % 360, 65, 75, 0.15),
+                    generateHslaColor((baseHue - 60 + 360) % 360, 60, 80, 0.15)
+                ];
+                
+            case 'monochromatic':
+                return [
+                    generateHslaColor(baseHue, 80, 60, 0.15),
+                    generateHslaColor(baseHue, 70, 70, 0.15),
+                    generateHslaColor(baseHue, 60, 80, 0.15),
+                    generateHslaColor(baseHue, 50, 90, 0.15),
+                    generateHslaColor(baseHue, 90, 50, 0.15)
+                ];
+                
+            case 'triadic':
+                return [
+                    generateHslaColor(baseHue, 70, 70, 0.15),
+                    generateHslaColor(baseHue, 50, 80, 0.15),
+                    generateHslaColor((baseHue + 120) % 360, 70, 70, 0.15),
+                    generateHslaColor((baseHue + 120) % 360, 50, 80, 0.15),
+                    generateHslaColor((baseHue + 240) % 360, 70, 70, 0.15)
+                ];
+                
+            default:
+                // Fallback to a simple color scheme
+                return [
+                    'rgba(255, 64, 129, 0.15)',
+                    'rgba(64, 196, 255, 0.15)',
+                    'rgba(255, 171, 64, 0.15)',
+                    'rgba(94, 53, 177, 0.15)',
+                    'rgba(100, 255, 218, 0.15)'
+                ];
+        }
+    }
+    
+    /**
+     * Generate an HSLA color string
+     */
+    function generateHslaColor(hue, saturation, lightness, alpha) {
+        return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    }
+    
+    /**
+     * Canvas-based animation for mobile devices
+     * Much better performance than DOM-based animation with filters
+     */
+    function initCanvasAnimation(colorScheme) {
         const container = document.createElement('div');
         container.id = 'floating-rectangles-container';
         
@@ -58,271 +166,372 @@ document.addEventListener('DOMContentLoaded', function() {
             zIndex: '-1'
         });
         
-        // Insert container so it sits behind all other content
+        const canvas = document.createElement('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = document.documentElement.scrollHeight;
+        
+        Object.assign(canvas.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%'
+        });
+        
+        container.appendChild(canvas);
         document.body.insertBefore(container, document.body.firstChild);
         
-        populateViewport(container);
+        const ctx = canvas.getContext('2d');
         
-        // Add new rectangles when scrolling if needed
-        window.addEventListener('scroll', function() {
-            ensureRectanglesVisible(container);
-        });
-        
-        // Update container height and re-populate on window resize
-        window.addEventListener('resize', function() {
-            container.style.height = document.documentElement.scrollHeight + 'px';
-            populateViewport(container);
-        });
-    }
-    
-    /**
-     * Populates the container with rectangles.
-     * Rectangles are initially distributed in a vertical band that covers
-     * from just above the viewport to well below it.
-     * @param {HTMLElement} container 
-     */
-    function populateViewport(container) {
-        // Clear existing rectangles
-        container.innerHTML = '';
-        
+        // Create rectangle objects with layer assignment
+        const rectangles = [];
         for (let i = 0; i < rectConfig.count; i++) {
             const viewportHeight = window.innerHeight;
             const viewportWidth = window.innerWidth;
             
-            // Place rectangles from above the viewport to below it
+            // Assign each rectangle to a layer (0 to layers-1)
+            // Layer 0 is the closest (faster, more blur)
+            // Higher layers are farther away (slower, less blur)
+            const layer = Math.floor(Math.random() * rectConfig.layers);
+            const layerFactor = 1 - (layer / (rectConfig.layers - 1 || 1)) * 0.7; // 0.3 to 1
+            
+            // Adjust speed and blur based on layer
+            const speedFactor = layer === 0 ? 1 : layerFactor;
+            const blurFactor = layer === 0 ? 1 : layerFactor * 0.8;
+            
+            // Select color from the color scheme
+            const color = colorScheme[Math.floor(Math.random() * colorScheme.length)];
+            
+            const width = Math.random() * (rectConfig.maxWidth - rectConfig.minWidth) + rectConfig.minWidth;
+            const height = Math.random() * (rectConfig.maxHeight - rectConfig.minHeight) + rectConfig.minHeight;
+            const startX = Math.random() * (viewportWidth * 1.5) - (viewportWidth * 0.25);
+            const startY = Math.random() * (viewportHeight * 3) - viewportHeight;
+            
+            rectangles.push({
+                x: startX,
+                y: startY,
+                width: width,
+                height: height,
+                color: color,
+                layer: layer,
+                speed: (Math.random() * (rectConfig.maxSpeed - rectConfig.minSpeed) + rectConfig.minSpeed) * speedFactor,
+                rotation: Math.random() * 20 - 10,
+                oscAmplitude: Math.random() * 30 + 20,
+                oscFrequency: Math.random() * 0.0002 + 0.0001,
+                oscPhase: Math.random() * Math.PI * 2,
+                blur: rectConfig.minBlur * blurFactor,
+                opacity: rectConfig.minOpacity,
+                blurCycleDuration: Math.random() * (rectConfig.blurCycleDuration.max - rectConfig.blurCycleDuration.min) + rectConfig.blurCycleDuration.min,
+                opacityCycleDuration: Math.random() * (rectConfig.opacityCycleDuration.max - rectConfig.opacityCycleDuration.min) + rectConfig.opacityCycleDuration.min,
+                blurStartTime: performance.now() - Math.random() * 10000,
+                opacityStartTime: performance.now() - Math.random() * 10000,
+                initialBlur: 200,
+                initialBlurDuration: Math.random() * 2000 + 1000,
+                initialBlurStartTime: performance.now(),
+                borderRadius: Math.random() * 40
+            });
+        }
+        
+        // Sort rectangles by layer to render back-to-front
+        rectangles.sort((a, b) => b.layer - a.layer);
+        
+        // Single animation loop for all rectangles
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+        
+        function animate(now) {
+            if (!container.isConnected) return;
+            
+            const deltaTime = now - lastTime;
+            lastTime = now;
+            
+            // Measure FPS
+            frameCount++;
+            if (now - lastFpsTime > 1000) {
+                lastFpsTime = now;
+                frameCount = 0;
+            }
+            
+            // Clear canvas with transparent color
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate visible range based on scroll position
+            const scrollY = window.scrollY;
+            const visibleTop = scrollY - 200;
+            const visibleBottom = scrollY + window.innerHeight + 200;
+            
+            // Update and draw each rectangle, back to front (highest layer to lowest)
+            for (let i = 0; i < rectangles.length; i++) {
+                const rect = rectangles[i];
+                
+                // Update position
+                rect.y += rect.speed * deltaTime;
+                
+                // Skip rendering if far outside visible area
+                if (rect.y < visibleTop - rect.height || rect.y > visibleBottom) {
+                    // Reset if too far down
+                    if (rect.y > document.documentElement.scrollHeight) {
+                        rect.y = -rect.height;
+                        rect.x = Math.random() * (window.innerWidth * 1.5) - (window.innerWidth * 0.25);
+                    }
+                    continue;
+                }
+                
+                // Calculate horizontal oscillation
+                const offsetX = rect.oscAmplitude * Math.sin(rect.oscFrequency * now + rect.oscPhase);
+                const posX = rect.x + offsetX;
+                
+                // Calculate blur based on layer and animation cycle
+                const blurElapsed = now - rect.blurStartTime;
+                const blurCycleProgress = (blurElapsed % rect.blurCycleDuration) / rect.blurCycleDuration;
+                const layerAdjustedMaxBlur = rectConfig.maxBlur * (1 - (rect.layer / rectConfig.layers) * 0.7);
+                const blurValue = rectConfig.minBlur + ((Math.sin(blurCycleProgress * Math.PI * 2) + 1) / 2) * (layerAdjustedMaxBlur - rectConfig.minBlur);
+                
+                // Calculate opacity
+                const opacityElapsed = now - rect.opacityStartTime;
+                const opacityCycleProgress = (opacityElapsed % rect.opacityCycleDuration) / rect.opacityCycleDuration;
+                const opacityValue = rectConfig.minOpacity + ((Math.sin(opacityCycleProgress * Math.PI * 2) + 1) / 2) * (rectConfig.maxOpacity - rectConfig.minOpacity);
+                
+                // Handle initial blur-in
+                const initialElapsed = now - rect.initialBlurStartTime;
+                const t = Math.min(1, initialElapsed / rect.initialBlurDuration);
+                const currentBlur = rect.initialBlur * (1 - t) + blurValue * t;
+                
+                // Save context state
+                ctx.save();
+                
+                // Move to rectangle center for rotation
+                ctx.translate(posX + rect.width/2, rect.y + rect.height/2);
+                ctx.rotate(rect.rotation * Math.PI / 180);
+                
+                // Apply blur (simulated with shadow for canvas)
+                ctx.shadowColor = rect.color;
+                ctx.shadowBlur = currentBlur * 0.5; // Scale down for performance
+                
+                // Draw rounded rectangle
+                const radius = rect.borderRadius;
+                ctx.beginPath();
+                ctx.moveTo(-rect.width/2 + radius, -rect.height/2);
+                ctx.lineTo(rect.width/2 - radius, -rect.height/2);
+                ctx.quadraticCurveTo(rect.width/2, -rect.height/2, rect.width/2, -rect.height/2 + radius);
+                ctx.lineTo(rect.width/2, rect.height/2 - radius);
+                ctx.quadraticCurveTo(rect.width/2, rect.height/2, rect.width/2 - radius, rect.height/2);
+                ctx.lineTo(-rect.width/2 + radius, rect.height/2);
+                ctx.quadraticCurveTo(-rect.width/2, rect.height/2, -rect.width/2, rect.height/2 - radius);
+                ctx.lineTo(-rect.width/2, -rect.height/2 + radius);
+                ctx.quadraticCurveTo(-rect.width/2, -rect.height/2, -rect.width/2 + radius, -rect.height/2);
+                ctx.closePath();
+                
+                // Extract color components for opacity adjustment
+                let color = rect.color;
+                let opacity = opacityValue;
+                
+                // Handle RGBA color format
+                if (color.startsWith('rgba')) {
+                    const parts = color.substring(5, color.length - 1).split(',');
+                    const r = parts[0].trim();
+                    const g = parts[1].trim();
+                    const b = parts[2].trim();
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                } 
+                // Handle HSLA color format
+                else if (color.startsWith('hsla')) {
+                    const parts = color.substring(5, color.length - 1).split(',');
+                    const h = parts[0].trim();
+                    const s = parts[1].trim();
+                    const l = parts[2].trim();
+                    ctx.fillStyle = `hsla(${h}, ${s}, ${l}, ${opacity})`;
+                }
+                
+                // Fill rectangle
+                ctx.fill();
+                
+                // Restore context
+                ctx.restore();
+            }
+            
+            // Continue animation loop
+            requestAnimationFrame(animate);
+        }
+        
+        requestAnimationFrame(animate);
+        
+        // Update canvas size and repopulate on window resize
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = document.documentElement.scrollHeight;
+            container.style.height = document.documentElement.scrollHeight + 'px';
+        });
+    }
+    
+    /**
+     * DOM-based animation for desktop
+     * Uses optimized approach with a single animation frame for all rectangles
+     */
+    function initDomAnimation(colorScheme) {
+        const container = document.createElement('div');
+        container.id = 'floating-rectangles-container';
+        
+        Object.assign(container.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: document.documentElement.scrollHeight + 'px',
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            zIndex: '-1'
+        });
+        
+        document.body.insertBefore(container, document.body.firstChild);
+        
+        const rectangles = [];
+        
+        // Create rectangles with layer assignments
+        for (let i = 0; i < rectConfig.count; i++) {
+            const rect = document.createElement('div');
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            // Assign layer (0 is closest)
+            const layer = Math.floor(Math.random() * rectConfig.layers);
+            const layerFactor = 1 - (layer / (rectConfig.layers - 1 || 1)) * 0.7; // 0.3 to 1
+            
+            // Adjust properties based on layer
+            const speedFactor = layer === 0 ? 1 : layerFactor;
+            const blurFactor = layer === 0 ? 1 : layerFactor * 0.8;
+            
+            // Select color from the harmonious scheme
+            const color = colorScheme[Math.floor(Math.random() * colorScheme.length)];
+            
+            // Initial placement
             const startY = Math.random() * (viewportHeight * 3) - viewportHeight;
             const startX = Math.random() * (viewportWidth * 1.5) - (viewportWidth * 0.25);
             
-            createRectangle(container, startX, startY);
+            const width = Math.random() * (rectConfig.maxWidth - rectConfig.minWidth) + rectConfig.minWidth;
+            const height = Math.random() * (rectConfig.maxHeight - rectConfig.minHeight) + rectConfig.minHeight;
+            
+            // Setup initial style with hardware acceleration
+            Object.assign(rect.style, {
+                position: 'absolute',
+                width: `${width}px`,
+                height: `${height}px`,
+                backgroundColor: color,
+                mixBlendMode: rectConfig.blendMode,
+                borderRadius: `${Math.random() * 40}px`,
+                transform: `translate3d(${startX}px, ${startY}px, 0) rotate(0deg)`,
+                filter: `blur(${rectConfig.minBlur * 3}px)`,
+                opacity: 0.2,
+                willChange: 'transform, filter, opacity',
+                zIndex: 10 - layer // Layer 0 (closest) has highest z-index
+            });
+            
+            // Animation parameters
+            const params = {
+                el: rect,
+                x: startX,
+                y: startY,
+                width: width,
+                height: height,
+                layer: layer,
+                speed: (Math.random() * (rectConfig.maxSpeed - rectConfig.minSpeed) + rectConfig.minSpeed) * speedFactor,
+                rotation: Math.random() * 20 - 10,
+                oscAmplitude: Math.random() * 30 + 20,
+                oscFrequency: Math.random() * 0.0002 + 0.0001,
+                oscPhase: Math.random() * Math.PI * 2,
+                minBlur: rectConfig.minBlur,
+                maxBlur: rectConfig.maxBlur * blurFactor, // Reduce max blur for farther layers
+                blurCycleDuration: Math.random() * (rectConfig.blurCycleDuration.max - rectConfig.blurCycleDuration.min) + rectConfig.blurCycleDuration.min,
+                blurStartTime: performance.now() - Math.random() * 10000,
+                minOpacity: rectConfig.minOpacity,
+                maxOpacity: rectConfig.maxOpacity,
+                opacityCycleDuration: Math.random() * (rectConfig.opacityCycleDuration.max - rectConfig.opacityCycleDuration.min) + rectConfig.opacityCycleDuration.min,
+                opacityStartTime: performance.now() - Math.random() * 10000,
+                initialBlur: rectConfig.minBlur * 3,
+                initialBlurDuration: Math.random() * 2000 + 1000,
+                initialBlurStartTime: performance.now()
+            };
+            
+            rectangles.push(params);
+            container.appendChild(rect);
         }
-    }
-    
-    /**
-     * Ensures that at least five rectangles are visible in the viewport.
-     * Also removes rectangles that have drifted too far away for performance.
-     * @param {HTMLElement} container 
-     */
-    function ensureRectanglesVisible(container) {
-        const visibleRects = Array.from(container.children).filter(rect => {
-            const posY = parseFloat(rect.dataset.currentY);
-            const rectHeight = parseFloat(rect.dataset.height);
-            const scrollY = window.scrollY;
-            const viewportHeight = window.innerHeight;
-            return (posY + rectHeight > scrollY && posY < scrollY + viewportHeight);
-        });
         
-        if (visibleRects.length < 5) {
-            for (let i = 0; i < 3; i++) {
-                const viewportHeight = window.innerHeight;
-                const viewportWidth = window.innerWidth;
-                const scrollY = window.scrollY;
-                
-                const startY = scrollY + Math.random() * viewportHeight;
-                const startX = Math.random() * (viewportWidth * 1.5) - (viewportWidth * 0.25);
-                createRectangle(container, startX, startY);
-            }
-        }
-        
-        // Remove rectangles that are far outside the viewport
-        const scrollY = window.scrollY;
-        const viewportHeight = window.innerHeight;
-        const bufferZone = viewportHeight * 3;
-        
-        Array.from(container.children).forEach(rect => {
-            const posY = parseFloat(rect.dataset.currentY);
-            if (posY < scrollY - bufferZone || posY > scrollY + viewportHeight + bufferZone) {
-                container.removeChild(rect);
-                // Replace with a new rectangle near the current viewport
-                const newY = Math.random() < 0.5 ?
-                    scrollY - Math.random() * 100 :
-                    scrollY + viewportHeight + Math.random() * 100;
-                const newX = Math.random() * (window.innerWidth * 1.5) - (window.innerWidth * 0.25);
-                createRectangle(container, newX, newY);
-            }
-        });
-    }
-    
-    /**
-     * Creates a single animated rectangle with organic movement.
-     * Includes an initial blur-in effect.
-     * @param {HTMLElement} container 
-     * @param {number} startX 
-     * @param {number} startY 
-     */
-    function createRectangle(container, startX, startY) {
-        const rect = document.createElement('div');
-        
-        const width = Math.random() * (rectConfig.maxWidth - rectConfig.minWidth) + rectConfig.minWidth;
-        const height = Math.random() * (rectConfig.maxHeight - rectConfig.minHeight) + rectConfig.minHeight;
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        const speed = Math.random() * (rectConfig.maxSpeed - rectConfig.minSpeed) + rectConfig.minSpeed;
-        
-        // Horizontal oscillation parameters (1/10th of original rate)
-        const oscAmplitude = Math.random() * 30 + 20; // 20 to 50 px remains the same
-        const oscFrequency = (Math.random() * 0.0002 + 0.0001); // Reduced frequency
-        const oscPhase = Math.random() * Math.PI * 2;
-        
-        // Base rotation (oscillation rate reduced to 1/10th)
-        const rotation = Math.random() * 20 - 10;
-        
-        // Blur and opacity cycle parameters
-        const minBlur = rectConfig.minBlur;
-        const maxBlur = rectConfig.maxBlur;
-        const blurCycleDuration = Math.random() * (rectConfig.blurCycleDuration.max - rectConfig.blurCycleDuration.min) + rectConfig.blurCycleDuration.min;
-        
-        const minOpacity = rectConfig.minOpacity;
-        const maxOpacity = rectConfig.maxOpacity;
-        const opacityCycleDuration = Math.random() * (rectConfig.opacityCycleDuration.max - rectConfig.opacityCycleDuration.min) + rectConfig.opacityCycleDuration.min;
-        
-        // Hue rotation cycle for organic color shifting (range: -20deg to +20deg)
-        const hueCycleDuration = Math.random() * 20000 + 10000; // 10s to 30s
-        
-        const now = performance.now();
-        const blurAnimationStartTime = now - Math.random() * blurCycleDuration;
-        const opacityAnimationStartTime = now - Math.random() * opacityCycleDuration;
-        const hueAnimationStartTime = now - Math.random() * hueCycleDuration;
-        
-        // New: initial blur-in effect properties
-        const initialBlur = 500;
-        // Random transition duration between 1 and 3 seconds (in ms)
-        const initialBlurDuration = Math.random() * 2000 + 200;
-        const initialBlurStartTime = now;
-        
-        // Set initial style using transform for optimal performance.
-        // Start with a blur of 1000px.
-        Object.assign(rect.style, {
-            position: 'absolute',
-            width: `${width}px`,
-            height: `${height}px`,
-            backgroundColor: color,
-            mixBlendMode: rectConfig.blendMode,
-            borderRadius: `${Math.random() * 40}px`,
-            transform: `translate(${startX}px, ${startY}px) rotate(${rotation}deg)`,
-            filter: `blur(${initialBlur}px)`,
-            opacity: minOpacity,
-            willChange: 'transform, filter, opacity'
-        });
-        
-        // Store properties in the dataset for animation use
-        rect.dataset.baseX = startX;
-        rect.dataset.baseY = startY;
-        rect.dataset.currentY = startY; // Vertical position that will update over time
-        rect.dataset.height = height;    // For visibility checking
-        
-        rect.dataset.speed = speed;
-        rect.dataset.rotation = rotation;
-        
-        rect.dataset.oscillationAmplitude = oscAmplitude;
-        rect.dataset.oscillationFrequency = oscFrequency;
-        rect.dataset.oscillationPhase = oscPhase;
-        
-        rect.dataset.minBlur = minBlur;
-        rect.dataset.maxBlur = maxBlur;
-        rect.dataset.blurCycleDuration = blurCycleDuration;
-        rect.dataset.blurAnimationStartTime = blurAnimationStartTime;
-        
-        rect.dataset.minOpacity = minOpacity;
-        rect.dataset.maxOpacity = maxOpacity;
-        rect.dataset.opacityCycleDuration = opacityCycleDuration;
-        rect.dataset.opacityAnimationStartTime = opacityAnimationStartTime;
-        
-        rect.dataset.hueCycleDuration = hueCycleDuration;
-        rect.dataset.hueAnimationStartTime = hueAnimationStartTime;
-        
-        // Store initial blur transition details
-        rect.dataset.initialBlur = initialBlur;
-        rect.dataset.initialBlurDuration = initialBlurDuration;
-        rect.dataset.initialBlurStartTime = initialBlurStartTime;
-        
-        container.appendChild(rect);
-        
-        // Start the organic animation for this rectangle
-        animateRectangle(rect);
-    }
-    
-    /**
-     * Animates a rectangle: vertical falling movement, horizontal oscillation,
-     * subtle rotation adjustments, and smooth updates to blur, opacity, and hue.
-     * Includes an initial blur-in effect that transitions from 1000px to the computed blur.
-     * @param {HTMLElement} rect 
-     */
-    function animateRectangle(rect) {
-        if (!rect || !rect.isConnected) return;
-        
+        // Use a single animation loop for all rectangles
         let lastTime = performance.now();
         
-        function update(currentTime) {
-            if (!rect || !rect.isConnected) return;
-            const deltaTime = currentTime - lastTime;
-            lastTime = currentTime;
+        function updateAll(now) {
+            if (!container.isConnected) return;
             
-            // Vertical movement update
-            const speed = parseFloat(rect.dataset.speed);
-            let currentY = parseFloat(rect.dataset.currentY);
-            currentY += speed * deltaTime;
-            rect.dataset.currentY = currentY;
+            const deltaTime = now - lastTime;
+            lastTime = now;
             
-            // Horizontal oscillation for organic drift
-            const oscAmplitude = parseFloat(rect.dataset.oscillationAmplitude);
-            const oscFrequency = parseFloat(rect.dataset.oscillationFrequency);
-            const oscPhase = parseFloat(rect.dataset.oscillationPhase);
-            const offsetX = oscAmplitude * Math.sin(oscFrequency * currentTime + oscPhase);
+            // Calculate visible range based on scroll position
+            const scrollY = window.scrollY;
+            const visibleTop = scrollY - 200;
+            const visibleBottom = scrollY + window.innerHeight + 200;
             
-            const baseX = parseFloat(rect.dataset.baseX);
-            const posX = baseX + offsetX;
+            // Update each rectangle
+            for (let i = 0; i < rectangles.length; i++) {
+                const rect = rectangles[i];
+                
+                // Update vertical position
+                rect.y += rect.speed * deltaTime;
+                
+                // Skip updating DOM if far outside visible area
+                if (rect.y < visibleTop - rect.height || rect.y > visibleBottom) {
+                    // Reset if too far down
+                    if (rect.y > document.documentElement.scrollHeight) {
+                        rect.y = -rect.height;
+                        rect.x = Math.random() * window.innerWidth;
+                    }
+                    continue;
+                }
+                
+                // Calculate horizontal oscillation
+                const offsetX = rect.oscAmplitude * Math.sin(rect.oscFrequency * now + rect.oscPhase);
+                const posX = rect.x + offsetX;
+                
+                // Calculate rotation
+                const baseRotation = rect.rotation;
+                const rotationOsc = (2 * Math.sin(rect.oscFrequency * now + rect.oscPhase)) / 10;
+                const totalRotation = baseRotation + rotationOsc;
+                
+                // Update transform with hardware acceleration
+                rect.el.style.transform = `translate3d(${posX}px, ${rect.y}px, 0) rotate(${totalRotation}deg)`;
+                
+                // Calculate blur
+                const blurElapsed = now - rect.blurStartTime;
+                const blurCycleProgress = (blurElapsed % rect.blurCycleDuration) / rect.blurCycleDuration;
+                const blurNormalizedSine = (Math.sin(blurCycleProgress * Math.PI * 2) + 1) / 2;
+                const computedBlur = rect.minBlur + blurNormalizedSine * (rect.maxBlur - rect.minBlur);
+                
+                // Handle initial blur-in
+                const initialElapsed = now - rect.initialBlurStartTime;
+                const t = Math.min(1, initialElapsed / rect.initialBlurDuration);
+                const finalBlur = rect.initialBlur * (1 - t) + computedBlur * t;
+                
+                // Calculate opacity
+                const opacityElapsed = now - rect.opacityStartTime;
+                const opacityCycleProgress = (opacityElapsed % rect.opacityCycleDuration) / rect.opacityCycleDuration;
+                const opacityNormalizedSine = (Math.sin(opacityCycleProgress * Math.PI * 2) + 1) / 2;
+                const currentOpacity = rect.minOpacity + opacityNormalizedSine * (rect.maxOpacity - rect.minOpacity);
+                
+                // Apply updates in a batch
+                rect.el.style.filter = `blur(${finalBlur}px)`;
+                rect.el.style.opacity = currentOpacity;
+            }
             
-            // Subtle rotation oscillation (reduced rate)
-            const baseRotation = parseFloat(rect.dataset.rotation);
-            const rotationOsc = (2 * Math.sin(oscFrequency * currentTime + oscPhase)) / 10;
-            const totalRotation = baseRotation + rotationOsc;
-            
-            // Update transform using translate and rotate
-            rect.style.transform = `translate(${posX}px, ${currentY}px) rotate(${totalRotation}deg)`;
-            
-            // Compute the regular blur effect using a sinusoidal cycle
-            const minBlur = parseFloat(rect.dataset.minBlur);
-            const maxBlur = parseFloat(rect.dataset.maxBlur);
-            const blurCycleDuration = parseFloat(rect.dataset.blurCycleDuration);
-            const blurAnimationStartTime = parseFloat(rect.dataset.blurAnimationStartTime);
-            const blurElapsed = currentTime - blurAnimationStartTime;
-            const blurCycleProgress = (blurElapsed % blurCycleDuration) / blurCycleDuration;
-            const blurNormalizedSine = (Math.sin(blurCycleProgress * Math.PI * 2) + 1) / 2;
-            const computedBlur = minBlur + blurNormalizedSine * (maxBlur - minBlur);
-            
-            // Handle the initial blur transition by clamping the interpolation
-            const initialBlur = parseFloat(rect.dataset.initialBlur);
-            const initialBlurDuration = parseFloat(rect.dataset.initialBlurDuration);
-            const initialBlurStartTime = parseFloat(rect.dataset.initialBlurStartTime);
-            const initialElapsed = currentTime - initialBlurStartTime;
-            const t = Math.min(1, initialElapsed / initialBlurDuration);
-            const finalBlur = initialBlur * (1 - t) + computedBlur * t;
-            
-            // Update opacity with its own sinusoidal cycle
-            const minOpacity = parseFloat(rect.dataset.minOpacity);
-            const maxOpacity = parseFloat(rect.dataset.maxOpacity);
-            const opacityCycleDuration = parseFloat(rect.dataset.opacityCycleDuration);
-            const opacityAnimationStartTime = parseFloat(rect.dataset.opacityAnimationStartTime);
-            const opacityElapsed = currentTime - opacityAnimationStartTime;
-            const opacityCycleProgress = (opacityElapsed % opacityCycleDuration) / opacityCycleDuration;
-            const opacityNormalizedSine = (Math.sin(opacityCycleProgress * Math.PI * 2) + 1) / 2;
-            const currentOpacity = minOpacity + opacityNormalizedSine * (maxOpacity - minOpacity);
-            
-            // Update hue rotation for organic color shifting
-            const hueCycleDuration = parseFloat(rect.dataset.hueCycleDuration);
-            const hueAnimationStartTime = parseFloat(rect.dataset.hueAnimationStartTime);
-            const hueElapsed = currentTime - hueAnimationStartTime;
-            const hueCycleProgress = (hueElapsed % hueCycleDuration) / hueCycleDuration;
-            const hueNormalizedSine = (Math.sin(hueCycleProgress * Math.PI * 2) + 1) / 2;
-            const hueRotation = -20 + hueNormalizedSine * 40; // from -20deg to +20deg
-            
-            // Apply the computed filter (blur and hue-rotate)
-            rect.style.filter = `blur(${finalBlur}px) hue-rotate(${hueRotation}deg)`;
-            // Apply opacity
-            rect.style.opacity = currentOpacity;
-            
-            requestAnimationFrame(update);
+            // Continue animation
+            requestAnimationFrame(updateAll);
         }
         
-        requestAnimationFrame(update);
+        // Start animation
+        requestAnimationFrame(updateAll);
+        
+        // Update container size on window resize
+        window.addEventListener('resize', function() {
+            container.style.height = document.documentElement.scrollHeight + 'px';
+        });
     }
 });

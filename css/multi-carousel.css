@@ -1,6 +1,6 @@
 /* 
- * Reality Website - Multi-Image Carousel Styles
- * Clean, minimalist design with smooth animations
+ * Reality Website - Optimized Multi-Image Carousel Styles
+ * Improved for compatibility with new carousel implementation
  */
 
 /* Main carousel container */
@@ -10,16 +10,33 @@
     overflow: hidden;
     touch-action: pan-y;
     user-select: none;
-    margin-bottom: 0; /* Remove bottom margin to make carousels flush */
+    margin-bottom: 30px;
+    will-change: transform; /* Hardware acceleration hint */
+    -webkit-backface-visibility: hidden; /* GPU acceleration for smoother animations */
+    backface-visibility: hidden;
+}
+
+/* Loading indicator */
+.carousel-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    color: #666;
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 20px;
 }
 
 /* Track that holds all slides */
 .carousel-track {
     display: flex;
     height: 100%;
-    will-change: transform;
     position: relative;
     left: 0;
+    will-change: transform;
+    transform: translateZ(0); /* Force GPU acceleration */
 }
 
 /* Individual slides */
@@ -29,7 +46,7 @@
     position: relative;
     cursor: pointer;
     overflow: hidden;
-    /* Gap is handled directly in JS now */
+    transform: translateZ(0); /* Force GPU acceleration */
 }
 
 /* Slide images */
@@ -39,14 +56,17 @@
     object-fit: cover;
     pointer-events: none;
     transition: transform 0.3s ease;
+    transform: translateZ(0); /* Force GPU acceleration */
 }
 
-/* Subtle zoom effect on hover */
-.carousel-slide:hover img {
-    transform: scale(1.03);
+/* Subtle zoom effect on hover - disabled on mobile for performance */
+@media (hover: hover) {
+    .carousel-slide:hover img {
+        transform: scale(1.03);
+    }
 }
 
-/* Navigation buttons */
+/* Navigation buttons - simplified for performance */
 .carousel-nav {
     position: absolute;
     top: 50%;
@@ -62,9 +82,9 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.3s ease, background-color 0.3s ease;
     z-index: 2;
+    /* Always visible on mobile for better UX */
+    opacity: 0.7;
 }
 
 .carousel-prev {
@@ -75,14 +95,20 @@
     right: 15px;
 }
 
-/* Show navigation on hover */
-.reality-multi-carousel:hover .carousel-nav {
-    opacity: 0.7;
-}
-
-.carousel-nav:hover {
-    background-color: rgba(0, 0, 0, 0.7);
-    opacity: 1;
+/* Show navigation on hover only for devices that support hover */
+@media (hover: hover) {
+    .carousel-nav {
+        opacity: 0;
+    }
+    
+    .reality-multi-carousel:hover .carousel-nav {
+        opacity: 0.7;
+    }
+    
+    .carousel-nav:hover {
+        background-color: rgba(0, 0, 0, 0.7);
+        opacity: 1;
+    }
 }
 
 /* Fullscreen viewer */
@@ -100,10 +126,23 @@
     align-items: center;
     opacity: 0;
     transition: opacity 0.3s ease;
+    -webkit-backdrop-filter: blur(5px); /* Add blur effect for iOS */
+    backdrop-filter: blur(5px);
 }
 
 .reality-fullscreen-viewer.visible {
     opacity: 1;
+}
+
+.reality-fullscreen-viewer.loading::after {
+    content: "Loading image...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1rem;
+    opacity: 0.7;
 }
 
 .fullscreen-image-container {
@@ -121,6 +160,7 @@
     object-fit: contain;
     user-select: none;
     transition: transform 0.3s ease;
+    transform: translateZ(0); /* Force GPU acceleration */
 }
 
 .fullscreen-close {
@@ -151,11 +191,7 @@
     margin-bottom: 20px; /* Space between carousels */
 }
 
-#flyers-carousel .carousel-slide img {
-    object-fit: cover; /* Changed from contain for consistency */
-}
-
-/* Responsive adjustments */
+/* Responsive adjustments with optimizations for mobile */
 @media (max-width: 768px) {
     .carousel-nav {
         width: 35px;
@@ -179,9 +215,21 @@
         right: 15px;
     }
     
-    /* Adjust visible images for smaller screens */
-    .reality-multi-carousel {
-        --visible-images: 2; /* Show fewer images on mobile */
+    /* Remove hover effects on mobile for performance */
+    .carousel-slide:hover img {
+        transform: none;
+    }
+    
+    /* Optimize transitions for mobile */
+    .carousel-track {
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    }
+    
+    /* Mobile-friendly fullscreen */
+    .fullscreen-image {
+        max-width: 95%;
+        max-height: 95%;
     }
 }
 
@@ -192,8 +240,8 @@
         font-size: 0.9rem;
     }
     
-    /* Adjust visible images for very small screens */
-    .reality-multi-carousel {
-        --visible-images: 1; /* Show only one full image on very small screens */
+    /* Simplify transitions even further for very small screens */
+    .carousel-slide img {
+        transition: none;
     }
 }

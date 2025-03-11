@@ -1,27 +1,27 @@
 /**
  * Reality Website - Multi-Image Carousel
- * 
- * Features:
- * - Displays multiple images simultaneously
- * - Smooth sliding transitions
- * - Automatic rotation at configurable speeds
- * - Continuous infinite scroll with no snap-back
- * - Click-to-fullscreen and swipe navigation
+ * Performance-optimized version with:
+ * - Reliable directory scanning
+ * - Proper infinite scrolling that prevents showing empty spaces
+ * - Efficient image loading with preloading
  */
 
 const RealityCarousel = (function() {
-    // Tracks all carousel instances
+    // Track all carousels
     const carousels = [];
     
     // Shared fullscreen viewer
     let fullscreenViewer = null;
     
-    // Default configuration
+    // Device detection for adaptive features
+    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+    
+    // Default configuration with device-specific defaults
     const defaultConfig = {
         containerId: '',           // Container element ID (required)
         imageFolder: '',           // Path to image folder
         images: [],                // Array of image objects or paths
-        visibleImages: 3,          // Number of images visible at once
+        visibleImages: isMobile ? 1 : 3, // Fewer images on mobile
         autoRotate: true,          // Enable automatic rotation
         rotationSpeed: 5000,       // Milliseconds between rotations
         transitionSpeed: 600,      // Transition duration in ms
@@ -29,9 +29,11 @@ const RealityCarousel = (function() {
         gap: 20,                   // Gap between slides in pixels
         allowFullscreen: true,     // Enable fullscreen on click
         startIndex: 0,             // Starting index
-        momentumFactor: 0.92,      // Momentum slowdown factor (lower = faster stop)
         fallbackImages: [],        // Fallback images
-        aspectRatio: 'auto'        // Image aspect ratio
+        aspectRatio: 'auto',       // Image aspect ratio
+        lazyLoad: true,            // Enable lazy loading for better performance
+        infiniteScroll: true,      // Enable true infinite scrolling
+        returnToStart: true        // When reaching the end, return to start (used if infiniteScroll is false)
     };
     
     /**
@@ -39,6 +41,13 @@ const RealityCarousel = (function() {
      */
     function initCarousel(customConfig) {
         const config = {...defaultConfig, ...customConfig};
+        
+        // Adaptive configuration based on screen size
+        if (window.innerWidth < 576) {
+            config.visibleImages = 1; // Single image on very small screens
+        } else if (window.innerWidth < 768) {
+            config.visibleImages = 2; // Two images on small screens
+        }
         
         // Validate required configuration
         if (!config.containerId) {
@@ -53,33 +62,10 @@ const RealityCarousel = (function() {
             return null;
         }
         
-        // Create fullscreen viewer if needed
-        if (!fullscreenViewer && config.allowFullscreen) {
-            createFullscreenViewer();
-        }
-        
-        // Initialize carousel state
-        const state = {
-            originalImages: [],    // Original image array
-            images: [],            // Complete image array including clones
-            currentIndex: config.startIndex,
-            isDragging: false,
-            dragStartX: 0,
-            dragCurrentX: 0,
-            lastDragPosition: 0,
-            dragVelocity: 0,
-            isAnimating: false,
-            autoRotateTimer: null,
-            preloadedImages: new Set(),
-            trackPosition: 0,
-            itemWidth: 0,
-            cloneCount: 0          // Number of clones at each end
-        };
-        
-        // Set up DOM elements
+        // Show loading indicator
         container.classList.add('reality-multi-carousel');
         container.style.height = config.height;
-        container.innerHTML = '';
+        container.innerHTML = '<div class="carousel-loading">Loading images...</div>';
         
         // Create track element
         const track = document.createElement('div');
@@ -100,6 +86,24 @@ const RealityCarousel = (function() {
         container.appendChild(prevBtn);
         container.appendChild(nextBtn);
         
+        // Carousel state object
+        const state = {
+            originalImages: [],    // Original array of images (without clones)
+            images: [],            // Current array including clones for infinite scroll
+            currentIndex: config.startIndex,
+            isDragging: false,
+            startX: 0,
+            currentX: 0,
+            position: 0,
+            itemWidth: 0,
+            autoRotateTimer: null,
+            isAnimating: false,
+            hasClones: false,      // Whether we've added clone slides for infinite scrolling
+            itemCount: 0,          // Count of original items
+            cloneCount: 0,         // Number of clones added at start and end
+            jumpDisabled: false    // Temp flag to prevent multiple jumps
+        };
+        
         // Carousel object
         const carousel = {
             container,
@@ -110,89 +114,157 @@ const RealityCarousel = (function() {
             nextBtn
         };
         
-        // Add to our collection
+        // Add to collection
         carousels.push(carousel);
         
         // Add event listeners
-        prevBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            goToPrevSlide(carousel);
-        });
-        
-        nextBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            goToNextSlide(carousel);
-        });
-        
-        // Setup other event listeners
         setupEventListeners(carousel);
         
-        // Load images and initialize
+        // Load images
         loadImages(carousel).then(() => {
-            // Clone images for infinite scroll
-            setupInfiniteScroll(carousel);
+            // Remove loading indicator
+            const loadingIndicator = container.querySelector('.carousel-loading');
+            if (loadingIndicator) {
+                container.removeChild(loadingIndicator);
+            }
             
-            // Set initial position
-            updateCarouselLayout(carousel);
+            // Calculate layout
+            updateLayout(carousel);
+            
+            // Make sure we have enough images
+            ensureSufficientImages(carousel);
+            
+            // Create clone slides for infinite scrolling if needed
+            if (config.infiniteScroll && state.originalImages.length > config.visibleImages) {
+                createCloneSlides(carousel);
+            }
+            
+            // Render slides
             renderSlides(carousel);
             
             // Initialize position
             initializePosition(carousel);
             
             // Start auto-rotation if enabled
-            if (config.autoRotate) {
+            if (config.autoRotate && state.originalImages.length > config.visibleImages) {
                 startAutoRotate(carousel);
             }
             
             // Handle window resize
-            window.addEventListener('resize', function() {
-                updateCarouselLayout(carousel);
+            window.addEventListener('resize', debounce(function() {
+                // Update responsive configuration
+                if (window.innerWidth < 576) {
+                    carousel.config.visibleImages = 1;
+                } else if (window.innerWidth < 768) {
+                    carousel.config.visibleImages = 2;
+                } else if (window.innerWidth < 992) {
+                    carousel.config.visibleImages = Math.min(3, customConfig.visibleImages || 3);
+                } else {
+                    carousel.config.visibleImages = customConfig.visibleImages || 3;
+                }
+                
+                updateLayout(carousel);
+                
+                // Check if we need to update clone setup
+                if (config.infiniteScroll && state.originalImages.length > config.visibleImages) {
+                    // Remove existing clones and recreate them
+                    state.images = [...state.originalImages];
+                    createCloneSlides(carousel);
+                }
+                
                 renderSlides(carousel);
                 initializePosition(carousel);
-            });
+            }, 250));
         });
         
         return carousel;
     }
     
     /**
-     * Set up infinite scroll by duplicating items
+     * Make sure we have enough images to create a proper carousel
+     * If not enough original images, duplicate them to ensure proper functioning
      */
-    function setupInfiniteScroll(carousel) {
+    function ensureSufficientImages(carousel) {
         const { state, config } = carousel;
         
-        // Store original images
-        state.originalImages = [...state.images];
+        // We need at least visibleImages + 1 for scrolling to work well
+        const minImageCount = config.visibleImages + 1;
         
-        // Set clone count based on visible images
-        state.cloneCount = config.visibleImages + 1;
-        
-        // Only proceed if we have images
-        if (state.originalImages.length === 0) {
-            return;
+        // If we don't have enough images but have at least one
+        if (state.images.length > 0 && state.images.length < minImageCount) {
+            const originalImages = [...state.images];
+            state.originalImages = originalImages;
+            
+            // Duplicate existing images until we have enough
+            while (state.images.length < minImageCount) {
+                state.images = [...state.images, ...originalImages];
+            }
+            
+            console.log(`[${config.containerId}] Duplicated ${originalImages.length} images to ensure proper carousel function`);
         }
         
+        // Store original images if not already done
+        if (state.originalImages.length === 0) {
+            state.originalImages = [...state.images];
+        }
+        
+        state.itemCount = state.originalImages.length;
+    }
+    
+    /**
+     * Create clone slides for infinite scrolling
+     */
+    function createCloneSlides(carousel) {
+        const { state, config } = carousel;
+        
+        // Store original images if not already done
+        if (state.originalImages.length === 0) {
+            state.originalImages = [...state.images];
+        }
+        
+        state.itemCount = state.originalImages.length;
+        
+        // Calculate clone count based on visible images (minimum 2)
+        state.cloneCount = Math.max(2, Math.ceil(config.visibleImages));
+        
         // Create expanded array with clones at both ends
-        const originalLength = state.originalImages.length;
         let expanded = [];
         
         // Add clones at the beginning (from end of original array)
         for (let i = 0; i < state.cloneCount; i++) {
-            const sourceIndex = (originalLength - 1) - (i % originalLength);
-            expanded.push(state.originalImages[sourceIndex]);
+            const sourceIndex = state.itemCount - 1 - (i % state.itemCount);
+            expanded.push({
+                src: state.originalImages[sourceIndex].src || state.originalImages[sourceIndex],
+                isClone: true,
+                originalIndex: sourceIndex
+            });
         }
         
-        // Add original images
-        expanded = [...expanded.reverse(), ...state.originalImages];
+        // Reverse the beginning clones to maintain the correct order
+        expanded = expanded.reverse();
+        
+        // Add original images with metadata
+        for (let i = 0; i < state.itemCount; i++) {
+            expanded.push({
+                src: state.originalImages[i].src || state.originalImages[i],
+                isClone: false,
+                originalIndex: i
+            });
+        }
         
         // Add clones at the end (from beginning of original array)
         for (let i = 0; i < state.cloneCount; i++) {
-            const sourceIndex = i % originalLength;
-            expanded.push(state.originalImages[sourceIndex]);
+            const sourceIndex = i % state.itemCount;
+            expanded.push({
+                src: state.originalImages[sourceIndex].src || state.originalImages[sourceIndex],
+                isClone: true,
+                originalIndex: sourceIndex
+            });
         }
         
         // Update state
         state.images = expanded;
+        state.hasClones = true;
     }
     
     /**
@@ -201,312 +273,241 @@ const RealityCarousel = (function() {
     function initializePosition(carousel) {
         const { state, track, config } = carousel;
         
-        // Set the initial current index to point to the first non-clone item
-        state.currentIndex = state.cloneCount;
+        // If using infinite scroll with clones, set initial index to after the clones
+        if (config.infiniteScroll && state.hasClones) {
+            state.currentIndex = state.cloneCount;
+        } else {
+            state.currentIndex = config.startIndex;
+        }
         
-        // Position the track
+        // Position the track without animation
         track.style.transition = 'none';
         updateTrackPosition(carousel);
         
-        // Force reflow
+        // Force reflow to ensure the position is applied immediately
         track.offsetHeight;
+        
+        // Restore transition for future movements
+        setTimeout(() => {
+            track.style.transition = `transform ${config.transitionSpeed}ms ease`;
+        }, 50);
     }
     
     /**
-     * Update the track position based on current index
+     * Update the track position based on the current index
      */
     function updateTrackPosition(carousel) {
-        const { state, track, config } = carousel;
-        
-        // Calculate position
-        const position = -state.currentIndex * (state.itemWidth + config.gap);
-        track.style.transform = `translateX(${position}px)`;
-        state.trackPosition = position;
-    }
-    
-    /**
-     * Go to the previous slide
-     */
-    function goToPrevSlide(carousel) {
-        const { state, track, config } = carousel;
-        
-        // Don't proceed if animating
-        if (state.isAnimating) return;
-        
-        state.isAnimating = true;
-        state.currentIndex--;
-        
-        // Enable transition
-        track.style.transition = `transform ${config.transitionSpeed}ms ease`;
-        
-        // Update position
-        updateTrackPosition(carousel);
-        
-        // Check if we need to reposition after animation ends
-        checkRepositionNeeded(carousel);
-        
-        // Clear animation state after transition
-        setTimeout(() => {
-            state.isAnimating = false;
-        }, config.transitionSpeed);
-        
-        // Reset auto-rotation
-        if (config.autoRotate) {
-            stopAutoRotate(carousel);
-            startAutoRotate(carousel);
-        }
-    }
-    
-    /**
-     * Go to the next slide
-     */
-    function goToNextSlide(carousel) {
-        const { state, track, config } = carousel;
-        
-        // Don't proceed if animating
-        if (state.isAnimating) return;
-        
-        state.isAnimating = true;
-        state.currentIndex++;
-        
-        // Enable transition
-        track.style.transition = `transform ${config.transitionSpeed}ms ease`;
-        
-        // Update position
-        updateTrackPosition(carousel);
-        
-        // Check if we need to reposition after animation ends
-        checkRepositionNeeded(carousel);
-        
-        // Clear animation state after transition
-        setTimeout(() => {
-            state.isAnimating = false;
-        }, config.transitionSpeed);
-        
-        // Reset auto-rotation
-        if (config.autoRotate) {
-            stopAutoRotate(carousel);
-            startAutoRotate(carousel);
-        }
-    }
-    
-    /**
-     * Start automatic rotation
-     */
-    function startAutoRotate(carousel) {
-        const { state, config } = carousel;
-        
-        // Clear any existing timer
-        if (state.autoRotateTimer) {
-            clearInterval(state.autoRotateTimer);
-        }
-        
-        // Set new timer
-        state.autoRotateTimer = setInterval(() => {
-            goToNextSlide(carousel);
-        }, config.rotationSpeed);
-    }
-    
-    /**
-     * Stop automatic rotation
-     */
-    function stopAutoRotate(carousel) {
-        const { state } = carousel;
-        
-        if (state.autoRotateTimer) {
-            clearInterval(state.autoRotateTimer);
-            state.autoRotateTimer = null;
-        }
-    }
-    
-    /**
-     * Check if the carousel needs to reposition for infinite scrolling
-     */
-    function checkRepositionNeeded(carousel) {
         const { state, track } = carousel;
         
-        // Only needed if we have clones
-        if (state.cloneCount === 0 || state.originalImages.length === 0) {
-            return;
-        }
+        // Calculate position based on current index, item width, and gap
+        const position = -state.currentIndex * (state.itemWidth + carousel.config.gap);
+        state.position = position;
         
-        // Set up the transitionend handler for this specific transition
-        const handleTransitionEnd = function() {
-            // Remove the event listener
-            track.removeEventListener('transitionend', handleTransitionEnd);
-            
-            // Disable transition
-            track.style.transition = 'none';
-            
-            const originalLength = state.originalImages.length;
-            
-            // If we've scrolled into the beginning clones, jump to the real items at the end
-            if (state.currentIndex < state.cloneCount) {
-                state.currentIndex += originalLength;
-                updateTrackPosition(carousel);
-            }
-            // If we've scrolled into the end clones, jump to the real items at the beginning
-            else if (state.currentIndex >= state.cloneCount + originalLength) {
-                state.currentIndex -= originalLength;
-                updateTrackPosition(carousel);
-            }
-            
-            // Force reflow
-            track.offsetHeight;
-        };
-        
-        // Add the transition end handler
-        track.addEventListener('transitionend', handleTransitionEnd, { once: true });
+        // Apply position using hardware-accelerated transform
+        track.style.transform = `translate3d(${position}px, 0, 0)`;
     }
     
     /**
-     * Setup event listeners for drag and swipe
+     * Load images for the carousel
      */
-    function setupEventListeners(carousel) {
-        const { container, track, config, state } = carousel;
+    function loadImages(carousel) {
+        const { config, state } = carousel;
         
-        // Drag start
-        function handleDragStart(e) {
-            if (state.isAnimating) return;
-            
-            state.isDragging = true;
-            state.dragStartX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            state.lastDragPosition = state.dragStartX;
-            
-            // Disable transition during drag
-            track.style.transition = 'none';
-            
-            // Stop auto rotation during drag
-            if (config.autoRotate) {
-                stopAutoRotate(carousel);
+        return new Promise(resolve => {
+            // Use provided images if available
+            if (config.images && config.images.length > 0) {
+                state.images = [...config.images];
+                return resolve();
             }
             
-            if (e.type === 'mousedown') {
-                e.preventDefault();
-            }
-        }
-        
-        // Drag move
-        function handleDragMove(e) {
-            if (!state.isDragging) return;
-            
-            state.dragCurrentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const dragDelta = state.dragCurrentX - state.dragStartX;
-            
-            // Update track position
-            const newPosition = state.trackPosition + dragDelta;
-            track.style.transform = `translateX(${newPosition}px)`;
-        }
-        
-        // Drag end
-        function handleDragEnd(e) {
-            if (!state.isDragging) return;
-            
-            state.isDragging = false;
-            
-            // Calculate final position
-            const dragDelta = state.dragCurrentX - state.dragStartX;
-            state.trackPosition += dragDelta;
-            
-            // Determine which slide to snap to
-            const slideWidth = state.itemWidth + config.gap;
-            const dragThreshold = slideWidth * 0.2; // 20% of slide width
-            
-            if (Math.abs(dragDelta) > dragThreshold) {
-                // Significant drag, move to next/prev slide
-                if (dragDelta > 0) {
-                    state.currentIndex--;
+            // Try to load images from folder first
+            if (config.imageFolder) {
+                fetchImagesFromFolder(config.imageFolder)
+                    .then(images => {
+                        if (images && images.length > 0) {
+                            console.log(`[${config.containerId}] Loaded ${images.length} images from folder ${config.imageFolder}`);
+                            state.images = images;
+                            return resolve();
+                        } else {
+                            // Fallback to supplied fallback images
+                            if (config.fallbackImages && config.fallbackImages.length > 0) {
+                                console.log(`[${config.containerId}] Using ${config.fallbackImages.length} fallback images`);
+                                state.images = [...config.fallbackImages];
+                                return resolve();
+                            } else {
+                                // Last resort default images
+                                console.log(`[${config.containerId}] Using default fallback images`);
+                                state.images = [
+                                    'https://picsum.photos/seed/img1/800/600',
+                                    'https://picsum.photos/seed/img2/800/600',
+                                    'https://picsum.photos/seed/img3/800/600',
+                                    'https://picsum.photos/seed/img4/800/600'
+                                ];
+                                return resolve();
+                            }
+                        }
+                    });
+            } else {
+                // No folder specified, use fallbacks
+                if (config.fallbackImages && config.fallbackImages.length > 0) {
+                    state.images = [...config.fallbackImages];
                 } else {
-                    state.currentIndex++;
+                    state.images = [
+                        'https://picsum.photos/seed/img1/800/600',
+                        'https://picsum.photos/seed/img2/800/600',
+                        'https://picsum.photos/seed/img3/800/600',
+                        'https://picsum.photos/seed/img4/800/600'
+                    ];
                 }
+                resolve();
+            }
+        });
+    }
+    
+    /**
+     * Improved function to fetch all images from a folder
+     */
+    function fetchImagesFromFolder(folderPath) {
+        return new Promise(resolve => {
+            // Make sure folder path ends with a slash
+            if (!folderPath.endsWith('/')) {
+                folderPath += '/';
             }
             
-            // Re-enable transition
-            track.style.transition = `transform ${config.transitionSpeed}ms ease`;
+            console.log(`Attempting to fetch images from: ${folderPath}`);
             
-            // Update position
-            updateTrackPosition(carousel);
-            
-            // Check if repositioning is needed
-            checkRepositionNeeded(carousel);
-            
-            // Restart auto-rotation
-            if (config.autoRotate) {
-                startAutoRotate(carousel);
-            }
-        }
-        
-        // Fullscreen view on click
-        if (config.allowFullscreen) {
-            container.addEventListener('click', function(e) {
-                // Don't trigger if we're dragging
-                if (state.isDragging || Math.abs(state.dragCurrentX - state.dragStartX) > 10) {
-                    return;
-                }
-                
-                // Get the clicked slide
-                const slideEl = e.target.closest('.carousel-slide');
-                if (slideEl && slideEl.dataset.index) {
-                    const index = parseInt(slideEl.dataset.index, 10);
+            // Try to use the directory index API if available (server must support it)
+            fetch(folderPath)
+                .then(response => response.text())
+                .then(html => {
+                    // Try to parse the directory listing
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const links = Array.from(doc.querySelectorAll('a'));
                     
-                    // Convert to original index
-                    const originalIndex = getRealIndex(carousel, index);
+                    // Filter for image files
+                    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+                    const imageLinks = links.filter(link => {
+                        const href = link.getAttribute('href');
+                        if (!href) return false;
+                        return imageExtensions.some(ext => href.toLowerCase().endsWith(ext));
+                    });
                     
-                    // Get the image source
-                    if (originalIndex >= 0 && originalIndex < state.originalImages.length) {
-                        const image = state.originalImages[originalIndex];
-                        const imgSrc = image.src || image;
-                        openFullscreen(imgSrc);
+                    if (imageLinks.length > 0) {
+                        // Extract full URLs for images
+                        const imageUrls = imageLinks.map(link => {
+                            const href = link.getAttribute('href');
+                            
+                            // Handle relative URLs
+                            if (href.startsWith('http')) {
+                                return href;
+                            } else if (href.startsWith('/')) {
+                                // Absolute path from domain root
+                                const domain = window.location.origin;
+                                return `${domain}${href}`;
+                            } else {
+                                // Relative path
+                                return `${folderPath}${href}`;
+                            }
+                        });
+                        
+                        console.log(`Found ${imageUrls.length} images via directory listing`, imageUrls);
+                        return resolve(imageUrls);
+                    } else {
+                        // Directory listing didn't work or no images found, try common patterns
+                        console.log(`No images found via directory listing, trying pattern search`);
+                        fallbackToPatternSearch(folderPath).then(resolve);
                     }
+                })
+                .catch((error) => {
+                    // If fetching the directory fails, try pattern-based searching
+                    console.log(`Error fetching directory: ${error}, trying pattern search`);
+                    fallbackToPatternSearch(folderPath).then(resolve);
+                });
+        });
+    }
+    
+    /**
+     * Fallback to pattern-based image search when directory listing is not available
+     */
+    function fallbackToPatternSearch(folderPath) {
+        return new Promise(resolve => {
+            console.log(`Starting pattern-based image search in: ${folderPath}`);
+            
+            // Common image extensions
+            const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            
+            // Naming patterns to check
+            const patterns = [
+                { prefix: 'image', start: 1, count: 20 },
+                { prefix: '', start: 1, count: 20 },
+                { prefix: 'flyer', start: 1, count: 20 },
+                { prefix: 'space', start: 1, count: 20 },
+                { prefix: 'photo', start: 1, count: 20 },
+                { prefix: 'img', start: 1, count: 20 },
+                // Try some specific names that might exist
+                { prefix: 'banner', start: 1, count: 5 },
+                { prefix: 'gallery', start: 1, count: 5 },
+                { prefix: 'slide', start: 1, count: 10 }
+            ];
+            
+            let checkedCount = 0;
+            const foundImages = [];
+            
+            // Try to load images by checking common patterns
+            patterns.forEach(pattern => {
+                for (let i = pattern.start; i < pattern.start + pattern.count; i++) {
+                    extensions.forEach(ext => {
+                        const filename = `${pattern.prefix}${i}.${ext}`;
+                        const url = `${folderPath}${filename}`;
+                        
+                        checkedCount++;
+                        
+                        const img = new Image();
+                        
+                        img.onload = function() {
+                            console.log(`Found image: ${url}`);
+                            foundImages.push(url);
+                            checkedCount--;
+                            if (checkedCount === 0) {
+                                console.log(`Pattern search complete, found ${foundImages.length} images`);
+                                resolve(foundImages);
+                            }
+                        };
+                        
+                        img.onerror = function() {
+                            checkedCount--;
+                            if (checkedCount === 0) {
+                                console.log(`Pattern search complete, found ${foundImages.length} images`);
+                                resolve(foundImages);
+                            }
+                        };
+                        
+                        img.src = url;
+                    });
                 }
             });
-        }
-        
-        // Mouse events
-        container.addEventListener('mousedown', handleDragStart);
-        window.addEventListener('mousemove', handleDragMove);
-        window.addEventListener('mouseup', handleDragEnd);
-        
-        // Touch events
-        container.addEventListener('touchstart', handleDragStart, { passive: true });
-        window.addEventListener('touchmove', handleDragMove, { passive: true });
-        window.addEventListener('touchend', handleDragEnd);
-        
-        // Prevent drag start on buttons
-        carousel.prevBtn.addEventListener('mousedown', e => e.stopPropagation());
-        carousel.nextBtn.addEventListener('mousedown', e => e.stopPropagation());
-        carousel.prevBtn.addEventListener('touchstart', e => e.stopPropagation());
-        carousel.nextBtn.addEventListener('touchstart', e => e.stopPropagation());
-    }
-    
-    /**
-     * Convert display index to original image index
-     */
-    function getRealIndex(carousel, index) {
-        const { state } = carousel;
-        
-        if (state.originalImages.length === 0) {
-            return 0;
-        }
-        
-        // Adjust for clones
-        const adjustedIndex = index - state.cloneCount;
-        
-        // Use modulo to handle wrap-around
-        return ((adjustedIndex % state.originalImages.length) + state.originalImages.length) 
-               % state.originalImages.length;
+            
+            // Safety check in case all images failed to load
+            setTimeout(() => {
+                if (foundImages.length === 0) {
+                    console.log('No images found via pattern search after timeout');
+                    resolve([]);
+                }
+            }, 5000);
+        });
     }
     
     /**
      * Update carousel layout based on container size
      */
-    function updateCarouselLayout(carousel) {
+    function updateLayout(carousel) {
         const { container, config, state } = carousel;
         
         // Calculate item width based on container width and visible images
         const containerWidth = container.clientWidth;
         const totalGapWidth = (config.visibleImages - 1) * config.gap;
-        const itemWidth = (containerWidth - totalGapWidth) / config.visibleImages;
+        const itemWidth = Math.floor((containerWidth - totalGapWidth) / config.visibleImages);
         
         // Update state
         state.itemWidth = itemWidth;
@@ -518,8 +519,14 @@ const RealityCarousel = (function() {
     function renderSlides(carousel) {
         const { track, config, state } = carousel;
         
-        // Clear existing slides
+        // Clear track
         track.innerHTML = '';
+        
+        // Make sure images array isn't empty
+        if (state.images.length === 0) {
+            console.warn(`No images to render for carousel: ${config.containerId}`);
+            return;
+        }
         
         // Create slides for each image
         state.images.forEach((image, index) => {
@@ -527,17 +534,41 @@ const RealityCarousel = (function() {
             slide.className = 'carousel-slide';
             slide.dataset.index = index;
             
-            // Apply width and gap
+            // For infinite scroll, add special classes to clones
+            if (state.hasClones) {
+                if (index < state.cloneCount) {
+                    slide.classList.add('clone', 'clone-end');
+                    slide.dataset.originalIndex = image.originalIndex !== undefined ? 
+                        image.originalIndex : state.itemCount - (state.cloneCount - index);
+                } else if (index >= state.cloneCount + state.itemCount) {
+                    slide.classList.add('clone', 'clone-start');
+                    slide.dataset.originalIndex = image.originalIndex !== undefined ? 
+                        image.originalIndex : index - (state.cloneCount + state.itemCount);
+                } else {
+                    slide.dataset.originalIndex = image.originalIndex !== undefined ? 
+                        image.originalIndex : index - state.cloneCount;
+                }
+            }
+            
+            // Set width and margin
             slide.style.width = `${state.itemWidth}px`;
             slide.style.marginRight = `${config.gap}px`;
             
             // Create image element
             const img = document.createElement('img');
-            img.src = image.src || image;
             
-            // Find original index for alt text
-            const originalIndex = getRealIndex(carousel, index);
-            img.alt = image.alt || `Image ${originalIndex + 1}`;
+            // Get the image source
+            const imgSrc = image.src || image;
+            
+            // Lazy load images that are not initially visible
+            if (config.lazyLoad && !isInitiallyVisible(carousel, index)) {
+                img.dataset.src = imgSrc;
+                img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='; // Transparent placeholder
+            } else {
+                img.src = imgSrc;
+            }
+            
+            img.alt = `Image ${(image.originalIndex !== undefined ? image.originalIndex : index) + 1}`;
             
             // Apply aspect ratio if specified
             if (config.aspectRatio !== 'auto') {
@@ -550,125 +581,378 @@ const RealityCarousel = (function() {
     }
     
     /**
-     * Load images for the carousel
+     * Check if a slide is initially visible
      */
-    async function loadImages(carousel) {
-        const { config, state } = carousel;
+    function isInitiallyVisible(carousel, index) {
+        const { state, config } = carousel;
+        const startIndex = config.infiniteScroll && state.hasClones ? state.cloneCount : 0;
+        return index >= startIndex && index < startIndex + config.visibleImages + 1; // +1 for buffer
+    }
+    
+    /**
+     * Setup all event listeners for the carousel
+     */
+    function setupEventListeners(carousel) {
+        const { container, track, prevBtn, nextBtn, config, state } = carousel;
         
-        // Use provided images array if available
-        if (config.images && config.images.length > 0) {
-            state.images = [...config.images];
-            return Promise.resolve();
-        }
+        // Navigation buttons
+        prevBtn.addEventListener('click', () => {
+            goToPrevSlide(carousel);
+        });
         
-        // Try to load images from the specified folder
-        if (config.imageFolder) {
-            console.log(`Attempting to load images from folder: ${config.imageFolder}`);
+        nextBtn.addEventListener('click', () => {
+            goToNextSlide(carousel);
+        });
+        
+        // Touch/mouse events for dragging
+        const dragStart = e => {
+            if (state.isAnimating) return;
             
-            try {
-                // Try to load files from directory
-                const folderImages = await tryLoadImagesFromFolder(config.imageFolder);
-                
-                if (folderImages && folderImages.length > 0) {
-                    console.log(`Successfully loaded ${folderImages.length} images from ${config.imageFolder}`);
-                    state.images = folderImages;
-                    return Promise.resolve();
+            state.isDragging = true;
+            state.startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            state.currentX = state.startX;
+            
+            track.style.transition = 'none';
+            
+            if (config.autoRotate) {
+                stopAutoRotate(carousel);
+            }
+            
+            e.type === 'mousedown' && e.preventDefault();
+        };
+        
+        const dragMove = e => {
+            if (!state.isDragging) return;
+            
+            state.currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const diff = state.currentX - state.startX;
+            
+            // Move track with drag
+            const newPosition = state.position + diff;
+            track.style.transform = `translate3d(${newPosition}px, 0, 0)`;
+        };
+        
+        const dragEnd = e => {
+            if (!state.isDragging) return;
+            
+            state.isDragging = false;
+            
+            // Calculate how far the drag moved
+            const diff = state.currentX - state.startX;
+            const threshold = state.itemWidth * 0.2;
+            
+            if (Math.abs(diff) > threshold) {
+                if (diff > 0) {
+                    // Dragged right - go to previous slide
+                    goToPrevSlide(carousel);
                 } else {
-                    console.log(`No images found in ${config.imageFolder}, using fallbacks`);
+                    // Dragged left - go to next slide
+                    goToNextSlide(carousel);
                 }
-            } catch (error) {
-                console.warn(`Error loading images from folder: ${error.message}`);
+            } else {
+                // Return to current slide
+                track.style.transition = `transform ${config.transitionSpeed}ms ease`;
+                updateTrackPosition(carousel);
             }
-        }
-        
-        // Use fallback images if provided and folder loading failed
-        if (config.fallbackImages && config.fallbackImages.length > 0) {
-            console.log(`Using ${config.fallbackImages.length} fallback images`);
-            state.images = [...config.fallbackImages];
-            return Promise.resolve();
-        }
-        
-        // Default fallback
-        console.log('Using default fallback images');
-        state.images = [
-            'https://picsum.photos/seed/img1/800/600',
-            'https://picsum.photos/seed/img2/800/600',
-            'https://picsum.photos/seed/img3/800/600',
-            'https://picsum.photos/seed/img4/800/600'
-        ];
-        
-        return Promise.resolve();
-    }
-    
-    /**
-     * Try to load images from a folder by checking for common image files
-     */
-    async function tryLoadImagesFromFolder(folderPath) {
-        // Make sure folder path ends with a slash
-        if (!folderPath.endsWith('/')) {
-            folderPath += '/';
-        }
-        
-        // Common image extensions to check
-        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        
-        // Common naming patterns
-        const namingPatterns = [
-            // Numbered sequence: image1.jpg, image2.jpg, etc.
-            { prefix: 'image', start: 1, count: 20 },
             
-            // Simple numbered: 1.jpg, 2.jpg, etc.
-            { prefix: '', start: 1, count: 20 },
+            if (config.autoRotate) {
+                startAutoRotate(carousel);
+            }
+        };
+        
+        // Add listeners with passive option for better performance on touch
+        container.addEventListener('mousedown', dragStart);
+        container.addEventListener('touchstart', dragStart, { passive: true });
+        
+        window.addEventListener('mousemove', dragMove);
+        window.addEventListener('touchmove', dragMove, { passive: true });
+        
+        window.addEventListener('mouseup', dragEnd);
+        window.addEventListener('touchend', dragEnd);
+        
+        // Fullscreen view
+        if (config.allowFullscreen) {
+            // Create fullscreen viewer if needed
+            if (!fullscreenViewer) {
+                createFullscreenViewer();
+            }
             
-            // Specific to your project
-            { prefix: 'flyer', start: 1, count: 10 },
-            { prefix: 'space', start: 1, count: 10 },
-            { prefix: 'photo', start: 1, count: 10 }
-        ];
-        
-        // Array to collect found image paths
-        const foundImages = [];
-        const loadPromises = [];
-        
-        // Try each naming pattern
-        for (const pattern of namingPatterns) {
-            for (let i = pattern.start; i < pattern.start + pattern.count; i++) {
-                for (const ext of extensions) {
-                    const filename = `${pattern.prefix}${i}.${ext}`;
-                    const imagePath = `${folderPath}${filename}`;
+            container.addEventListener('click', e => {
+                // Don't trigger if dragging
+                if (state.isDragging || Math.abs(state.currentX - state.startX) > 10) {
+                    return;
+                }
+                
+                // Find clicked slide
+                const slide = e.target.closest('.carousel-slide');
+                if (slide) {
+                    // Get the original index of the image (unwrapping clones)
+                    let originalIndex;
                     
-                    // Create a promise that resolves with the image path if it loads successfully
-                    const loadPromise = new Promise(resolve => {
-                        const img = new Image();
-                        img.onload = function() {
-                            resolve(imagePath);
-                        };
-                        img.onerror = function() {
-                            resolve(null); // Resolve with null if image doesn't load
-                        };
-                        img.src = imagePath;
+                    if (slide.dataset.originalIndex !== undefined) {
+                        originalIndex = parseInt(slide.dataset.originalIndex, 10);
+                    } else {
+                        const index = parseInt(slide.dataset.index, 10);
+                        originalIndex = state.hasClones ? 
+                            ((index - state.cloneCount) % state.itemCount + state.itemCount) % state.itemCount : 
+                            index;
+                    }
+                    
+                    // Get the correct image source
+                    const image = state.originalImages[originalIndex] || state.images[slide.dataset.index];
+                    const imgSrc = image.src || image;
+                    
+                    openFullscreen(imgSrc);
+                }
+            });
+        }
+        
+        // Track transition end for infinite scrolling reset
+        track.addEventListener('transitionend', () => {
+            state.isAnimating = false;
+            
+            if (!config.infiniteScroll || !state.hasClones || state.jumpDisabled) return;
+            
+            const totalItems = state.images.length;
+            const lastRealIndex = state.cloneCount + state.itemCount - 1;
+            const firstRealIndex = state.cloneCount;
+            
+            // Handle edge cases
+            if (state.currentIndex <= (state.cloneCount - 1)) {
+                // We're at the beginning clones, jump to the real slides at the end
+                state.jumpDisabled = true; // Prevent multiple jumps
+                track.style.transition = 'none';
+                state.currentIndex = lastRealIndex - (state.cloneCount - 1 - state.currentIndex);
+                updateTrackPosition(carousel);
+                
+                // Force reflow
+                track.offsetHeight;
+                
+                // Re-enable transitions after a short delay
+                setTimeout(() => {
+                    track.style.transition = `transform ${config.transitionSpeed}ms ease`;
+                    state.jumpDisabled = false;
+                }, 50);
+            } else if (state.currentIndex >= (lastRealIndex + 1)) {
+                // We're at the end clones, jump to the real slides at the beginning
+                state.jumpDisabled = true; // Prevent multiple jumps
+                track.style.transition = 'none';
+                state.currentIndex = firstRealIndex + (state.currentIndex - lastRealIndex - 1);
+                updateTrackPosition(carousel);
+                
+                // Force reflow
+                track.offsetHeight;
+                
+                // Re-enable transitions after a short delay
+                setTimeout(() => {
+                    track.style.transition = `transform ${config.transitionSpeed}ms ease`;
+                    state.jumpDisabled = false;
+                }, 50);
+            }
+            
+            // Load lazy images that are now visible
+            lazyLoadVisibleImages(carousel);
+        });
+        
+        // Lazy load initially visible images
+        if (config.lazyLoad) {
+            // Use intersection observer if available
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target.querySelector('img');
+                            if (img && img.dataset.src) {
+                                img.src = img.dataset.src;
+                                delete img.dataset.src;
+                            }
+                            observer.unobserve(entry.target);
+                        }
                     });
-                    
-                    loadPromises.push(loadPromise);
-                }
+                }, { 
+                    root: null,
+                    rootMargin: '100px',
+                    threshold: 0.1
+                });
+                
+                // Observe all slides after rendering
+                setTimeout(() => {
+                    track.querySelectorAll('.carousel-slide').forEach(slide => {
+                        observer.observe(slide);
+                    });
+                }, 100);
+            } else {
+                // Fallback approach for browsers without IntersectionObserver
+                lazyLoadVisibleImages(carousel);
+                
+                // Add scroll listener for lazy loading
+                window.addEventListener('scroll', debounce(() => {
+                    lazyLoadVisibleImages(carousel);
+                }, 200));
             }
         }
-        
-        // Wait for all image load attempts to complete
-        const results = await Promise.all(loadPromises);
-        
-        // Filter out null results (images that didn't load)
-        const validImages = results.filter(path => path !== null);
-        
-        console.log(`Found ${validImages.length} valid images in ${folderPath}`);
-        return validImages;
     }
     
     /**
-     * Create a fullscreen viewer for displaying expanded images
+     * Lazy load images that are currently visible
+     */
+    function lazyLoadVisibleImages(carousel) {
+        const { track, state, config } = carousel;
+        
+        if (!config.lazyLoad) return;
+        
+        const visibleRange = config.visibleImages + 2; // Add buffer
+        const startIdx = Math.max(0, state.currentIndex - 1);
+        const endIdx = Math.min(state.images.length - 1, startIdx + visibleRange);
+        
+        for (let i = startIdx; i <= endIdx; i++) {
+            const slide = track.children[i];
+            if (slide) {
+                const img = slide.querySelector('img');
+                if (img && img.dataset.src) {
+                    img.src = img.dataset.src;
+                    delete img.dataset.src;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Go to a specific slide by index
+     */
+    function goToSlide(carousel, index, immediate = false) {
+        const { track, config, state } = carousel;
+        
+        if (state.isAnimating) return;
+        state.isAnimating = true;
+        
+        // Handle the case when we reach the end with returnToStart option
+        if (!config.infiniteScroll && config.returnToStart) {
+            const maxIndex = state.images.length - config.visibleImages;
+            
+            // If going beyond the last slide, return to first slide
+            if (index > maxIndex) {
+                index = 0;
+            }
+            
+            // If going before the first slide, go to the last possible position
+            if (index < 0) {
+                index = maxIndex;
+            }
+        } else if (!config.infiniteScroll) {
+            // Limit index to valid range without looping
+            const maxIndex = Math.max(0, state.images.length - config.visibleImages);
+            index = Math.max(0, Math.min(index, maxIndex));
+        }
+        
+        // Update index
+        state.currentIndex = index;
+        
+        // Apply transition unless immediate is true
+        track.style.transition = immediate ? 'none' : `transform ${config.transitionSpeed}ms ease`;
+        
+        // Update position
+        updateTrackPosition(carousel);
+        
+        // Reset animation flag after transition if immediate
+        if (immediate) {
+            setTimeout(() => {
+                state.isAnimating = false;
+            }, 50);
+        }
+        
+        // Lazy load newly visible images
+        lazyLoadVisibleImages(carousel);
+    }
+    
+    /**
+     * Go to the previous slide
+     */
+    function goToPrevSlide(carousel) {
+        const { state, config } = carousel;
+        
+        if (state.isAnimating) return;
+        
+        let prevIndex = state.currentIndex - 1;
+        
+        // Handle non-infinite scroll case
+        if (!config.infiniteScroll) {
+            if (prevIndex < 0) {
+                // Either loop to the end or stay at the beginning
+                prevIndex = config.returnToStart ? 
+                    Math.max(0, state.images.length - config.visibleImages) : 0;
+            }
+        }
+        
+        goToSlide(carousel, prevIndex);
+        
+        // Reset auto-rotation
+        if (config.autoRotate) {
+            stopAutoRotate(carousel);
+            startAutoRotate(carousel);
+        }
+    }
+    
+    /**
+     * Go to the next slide
+     */
+    function goToNextSlide(carousel) {
+        const { state, config } = carousel;
+        
+        if (state.isAnimating) return;
+        
+        let nextIndex = state.currentIndex + 1;
+        
+        // Handle non-infinite scroll case
+        if (!config.infiniteScroll) {
+            const maxIndex = Math.max(0, state.images.length - config.visibleImages);
+            
+            if (nextIndex > maxIndex) {
+                // Either loop to the beginning or stay at the end
+                nextIndex = config.returnToStart ? 0 : maxIndex;
+            }
+        }
+        
+        goToSlide(carousel, nextIndex);
+        
+        // Reset auto-rotation
+        if (config.autoRotate) {
+            stopAutoRotate(carousel);
+            startAutoRotate(carousel);
+        }
+    }
+    
+    /**
+     * Start auto-rotation
+     */
+    function startAutoRotate(carousel) {
+        const { state, config } = carousel;
+        
+        if (state.autoRotateTimer) {
+            clearInterval(state.autoRotateTimer);
+        }
+        
+        state.autoRotateTimer = setInterval(() => {
+            goToNextSlide(carousel);
+        }, config.rotationSpeed);
+    }
+    
+    /**
+     * Stop auto-rotation
+     */
+    function stopAutoRotate(carousel) {
+        const { state } = carousel;
+        
+        if (state.autoRotateTimer) {
+            clearInterval(state.autoRotateTimer);
+            state.autoRotateTimer = null;
+        }
+    }
+    
+    /**
+     * Create fullscreen viewer for displaying expanded images
      */
     function createFullscreenViewer() {
-        // Create viewer elements
         fullscreenViewer = document.createElement('div');
         fullscreenViewer.id = 'reality-fullscreen-viewer';
         fullscreenViewer.className = 'reality-fullscreen-viewer';
@@ -684,68 +968,87 @@ const RealityCarousel = (function() {
         const image = document.createElement('img');
         image.className = 'fullscreen-image';
         
-        // Assemble elements
         imageContainer.appendChild(image);
         fullscreenViewer.appendChild(closeBtn);
         fullscreenViewer.appendChild(imageContainer);
         document.body.appendChild(fullscreenViewer);
         
-        // Event listeners
+        // Close button event
         closeBtn.addEventListener('click', closeFullscreen);
         
-        // Click background to close
-        fullscreenViewer.addEventListener('click', function(e) {
+        // Background click to close
+        fullscreenViewer.addEventListener('click', e => {
             if (e.target === fullscreenViewer || e.target === imageContainer) {
                 closeFullscreen();
             }
         });
         
-        // Swipe to dismiss
-        let startY, currentY;
+        // Improved mobile swipe to dismiss
+        let startY, currentY, startTime;
         
-        imageContainer.addEventListener('touchstart', function(e) {
+        imageContainer.addEventListener('touchstart', e => {
             startY = e.touches[0].clientY;
+            startTime = Date.now();
         }, { passive: true });
         
-        imageContainer.addEventListener('touchmove', function(e) {
+        imageContainer.addEventListener('touchmove', e => {
             currentY = e.touches[0].clientY;
             const deltaY = currentY - startY;
             
-            if (Math.abs(deltaY) > 20) {
+            // Only move if dragging vertically
+            if (Math.abs(deltaY) > 10) {
                 const opacity = 1 - Math.min(Math.abs(deltaY) / window.innerHeight, 0.8);
                 fullscreenViewer.style.opacity = opacity.toString();
                 image.style.transform = `translateY(${deltaY}px)`;
+                
+                // Prevent scrolling while dragging
+                e.preventDefault();
             }
-        }, { passive: true });
+        }, { passive: false });
         
-        imageContainer.addEventListener('touchend', function() {
-            const deltaY = currentY - startY;
+        imageContainer.addEventListener('touchend', e => {
+            if (!currentY) return;
             
-            if (Math.abs(deltaY) > 100) {
+            const deltaY = currentY - startY;
+            const deltaTime = Date.now() - startTime;
+            const velocity = Math.abs(deltaY) / deltaTime;
+            
+            // Close if dragged far enough or with enough velocity
+            if (Math.abs(deltaY) > 100 || (Math.abs(deltaY) > 50 && velocity > 0.5)) {
                 closeFullscreen();
             } else {
+                // Spring back
                 fullscreenViewer.style.opacity = '1';
                 image.style.transform = '';
             }
+            
+            currentY = null;
         });
     }
     
     /**
-     * Open the fullscreen viewer
+     * Open fullscreen viewer with the given image
      */
     function openFullscreen(imageSrc) {
         if (!fullscreenViewer) createFullscreenViewer();
         
         const image = fullscreenViewer.querySelector('.fullscreen-image');
         
+        // Show loading state
+        fullscreenViewer.classList.add('loading');
+        
         // Reset styles
         image.style.transform = '';
         fullscreenViewer.style.opacity = '1';
         
-        // Set image source
+        // Load image
+        image.onload = function() {
+            fullscreenViewer.classList.remove('loading');
+        };
+        
         image.src = imageSrc;
         
-        // Show viewer
+        // Show viewer with animation
         fullscreenViewer.style.display = 'flex';
         setTimeout(() => {
             fullscreenViewer.classList.add('visible');
@@ -756,7 +1059,7 @@ const RealityCarousel = (function() {
     }
     
     /**
-     * Close the fullscreen viewer
+     * Close fullscreen viewer
      */
     function closeFullscreen() {
         fullscreenViewer.classList.remove('visible');
@@ -772,6 +1075,17 @@ const RealityCarousel = (function() {
             // Restore body scrolling
             document.body.style.overflow = '';
         }, 300);
+    }
+    
+    /**
+     * Utility: Debounce function for performance
+     */
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
     }
     
     // Public API

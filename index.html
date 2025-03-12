@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/png" href="images/favicon1tr.png">
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reality Bar & Cafe - The Easiest Place to Make Friends in Da Nang</title>
+  <title>REALITY - cafe & bar - the Easiest Place to Make Friends in Da Nang</title>
   
   <!-- SEO Meta Tags -->
-  <meta name="description" content="Reality Bar & Cafe in Da Nang - the easiest place to make friends in the city. Join us for events, board games, quiz nights, coworking space and social gatherings.">
+  <meta name="description" content="Reality Cafe & Bar in Da Nang - the easiest place to make friends in the city. Join us for events, board games, quiz nights, coworking space and social gatherings.">
   <meta name="keywords" content="Da Nang bar, Danang cafe, Da Nang events, Da Nang workspace, board games Da Nang, meet friends Da Nang, social space, international community, quiz night, language exchange">
-  <meta name="author" content="Reality Bar & Cafe">
+  <meta name="author" content="Reality cafe & bar">
   
   <!-- Open Graph / Social Media -->
-  <meta property="og:title" content="Reality Bar & Cafe - Make Friends in Da Nang">
+  <meta property="og:title" content="Reality cafe & bar - Make Friends in Da Nang">
   <meta property="og:description" content="Reality is the easiest place to make friends in Da Nang. Events, drinks, and community in the heart of the city.">
   <meta property="og:image" content="images/RealityWordform-black2048tr.png">
   <meta property="og:url" content="https://realitydn.com">
@@ -72,6 +74,21 @@
       --transition-speed: 0.3s;
     }
     
+    /* Prevent horizontal overflow */
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      position: relative;
+    }
+    
+    /* Ensure all content respects container width */
+    .container {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+    
     /* Ensure hero area has a transparent background and sufficient top padding */
     .hero {
       background: transparent;
@@ -79,6 +96,8 @@
       min-height: 80vh;
       display: flex;
       align-items: center;
+      width: 100%;
+      overflow-x: hidden;
     }
     
     /* Override buttons & accents to use black/white and the accent color */
@@ -134,12 +153,47 @@
       margin-bottom: 1.5rem;
     }
     
+    /* Fix for navigation on mobile */
     @media (max-width: 768px) {
       nav .logo-wordform {
         height: 24px;
       }
       .contact .logo-wordform {
         height: 40px;
+      }
+      .hamburger-menu {
+        position: relative;
+        margin-left: auto;
+        z-index: 105;
+        margin-right: 15px;
+      }
+      .language-toggle {
+        z-index: 103;
+      }
+    }
+    
+    /* Adjust hamburger and language toggle positioning */
+    @media (max-width: 576px) {
+      .language-toggle {
+        position: fixed;
+        top: 18px;
+        right: 70px;
+        z-index: 102;
+      }
+      nav {
+        padding: 0.75rem 0;
+      }
+      .hamburger-menu {
+        margin-right: 10px;
+      }
+    }
+    
+    @media (max-width: 400px) {
+      .language-toggle {
+        right: 55px;
+      }
+      .hamburger-menu {
+        margin-right: 0;
       }
     }
     
@@ -178,6 +232,29 @@
       font-size: 0.9rem;
       color: #666;
     }
+    
+    /* Gallery section fixes */
+    .gallery {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
+    .gallery .container {
+      max-width: 100%;
+      width: 100%;
+      padding: 0 1rem;
+      overflow-x: hidden;
+    }
+    
+    /* Carousel container fixes */
+    .carousel-container {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -189,7 +266,7 @@
         srcset="images/RealityWordform-black1024tr.png 1024w, 
                 images/RealityWordform-black2048tr.png 2048w"
         sizes="(max-width: 768px) 80vw, 300px"
-        alt="Reality Bar & Cafe Da Nang" 
+        alt="Reality cafe & bar Da Nang" 
         class="logo-wordform"
         loading="eager"
         decoding="async"
@@ -415,7 +492,7 @@
         <div class="logo">
           <img 
             src="images/RealityWordform-white2048tr.png" 
-            alt="Reality Bar & Cafe Da Nang" 
+            alt="Reality cafe & bar Da Nang" 
             class="logo-wordform" 
             loading="lazy"
             style="height: 40px; width: auto;">

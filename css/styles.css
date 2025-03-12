@@ -25,6 +25,8 @@
 
 html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    width: 100%;
 }
 
 body {
@@ -35,6 +37,9 @@ body {
     padding: 0;
     background-color: var(--primary-bg);
     padding-top: 70px; /* For fixed header */
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Typography - MUCH BIGGER heading text */
@@ -88,12 +93,16 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: var(--grid-gap);
+    width: 100%;
 }
 
 .grid-1 {
@@ -132,6 +141,8 @@ body {
 section {
     padding: 8rem 0; /* More padding for dramatic sections */
     position: relative;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 section:nth-child(odd) {
@@ -152,6 +163,7 @@ nav {
     background-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 1px 10px rgba(0,0,0,0.05);
     transition: background-color 0.3s ease;
+    width: 100%;
 }
 
 .logo {
@@ -198,6 +210,7 @@ nav {
     width: 30px;
     height: 21px;
     cursor: pointer;
+    z-index: 105;
 }
 
 .hamburger-menu span {
@@ -243,6 +256,7 @@ nav {
     position: relative;
     padding: 0;
     background: linear-gradient(135deg, rgba(59, 90, 229, 0.1), rgba(255, 255, 255, 0.1));
+    width: 100%;
 }
 
 .hero:before {
@@ -410,6 +424,7 @@ nav {
 /* Events Section */
 .events {
     padding: 8rem 0;
+    width: 100%;
 }
 
 .events-header {
@@ -435,6 +450,7 @@ nav {
     padding: 1rem;
     overflow: hidden;
     position: relative;
+    width: 100%;
 }
 
 /* Menu Section */
@@ -496,6 +512,7 @@ nav {
     padding: 1rem;
     position: relative;
     overflow: hidden;
+    width: 100%;
 }
 
 /* FAQ Section */
@@ -715,6 +732,7 @@ nav {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     overflow: hidden;
     position: relative;
+    width: 100%;
 }
 
 /* Footer */
@@ -722,12 +740,15 @@ footer {
     padding: 5rem 2rem 2rem;
     background-color: #111;
     color: white;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .footer-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 2rem;
+    width: 100%;
 }
 
 .footer-left {
@@ -815,4 +836,18 @@ footer {
     letter-spacing: 0.1em;
     font-weight: 900; /* Extra bold */
     font-size: 1rem;
+}
+
+/* Gallery section fixes */
+.gallery {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.gallery .container {
+    max-width: 100%;
+    width: 100%;
+    padding: 0 1rem;
+    overflow-x: hidden;
 }

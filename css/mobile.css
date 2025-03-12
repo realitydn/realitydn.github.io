@@ -3,6 +3,13 @@
  * Combines existing mobile styles with fixes for Google Map horizontal scrolling
  */
 
+/* Prevent horizontal overflow on mobile */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
 /* Larger Screens (5-Column Layout) */
 @media screen and (max-width: 1200px) {
     /* Typography scaling */
@@ -183,6 +190,9 @@
     .hamburger-menu {
         display: flex;
         z-index: 101;
+        position: relative;
+        margin-left: auto;
+        margin-right: 15px;
     }
     
     .nav-links {
@@ -452,10 +462,20 @@
         padding-right: 0;
     }
     
+    /* Carousel container fix for overflow */
+    .carousel-container {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+    }
+    
     /* Contact section and map fixes */
     .container {
-        padding-left: 0;
-        padding-right: 0;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .contact .container {
@@ -474,6 +494,9 @@
 @media screen and (max-width: 400px) {
     .container {
         padding: 0 1rem;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
     
     h1 {
@@ -492,5 +515,14 @@
         padding: 12px 30px;
         width: 100%;
         text-align: center;
+    }
+    
+    /* Adjust hamburger and language toggle spacing */
+    .hamburger-menu {
+        margin-right: 0;
+    }
+    
+    .language-toggle {
+        right: 55px;
     }
 }

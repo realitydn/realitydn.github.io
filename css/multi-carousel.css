@@ -7,6 +7,7 @@
 .reality-multi-carousel {
     position: relative;
     width: 100%;
+    max-width: 100%;
     overflow: hidden;
     touch-action: pan-y;
     user-select: none;
@@ -14,6 +15,16 @@
     will-change: transform; /* Hardware acceleration hint */
     -webkit-backface-visibility: hidden; /* GPU acceleration for smoother animations */
     backface-visibility: hidden;
+    box-sizing: border-box;
+}
+
+/* Carousel container */
+.carousel-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 /* Loading indicator */
@@ -37,6 +48,7 @@
     left: 0;
     will-change: transform;
     transform: translateZ(0); /* Force GPU acceleration */
+    max-width: 100%;
 }
 
 /* Individual slides */
@@ -189,6 +201,15 @@
 /* Special styles for flyers carousel */
 #flyers-carousel {
     margin-bottom: 20px; /* Space between carousels */
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+#spaces-carousel {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* Responsive adjustments with optimizations for mobile */
@@ -243,5 +264,14 @@
     /* Simplify transitions even further for very small screens */
     .carousel-slide img {
         transition: none;
+    }
+    
+    .reality-multi-carousel {
+        width: 100vw;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 0;
+        margin-left: auto;
+        margin-right: auto;
     }
 }

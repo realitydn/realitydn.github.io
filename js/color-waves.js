@@ -40,14 +40,14 @@ document.addEventListener('DOMContentLoaded', function() {
         blendMode: 'multiply',
         
         // Reduced blur on mobile (significant performance impact)
-        minBlur: isLowEnd ? 3 : (isMobile ? 5 : 10),
-        maxBlur: isLowEnd ? 15 : (isMobile ? 30 : 100),
+        minBlur: isLowEnd ? 3 : (isMobile ? 3 : 3),
+        maxBlur: isLowEnd ? 15 : (isMobile ? 30 : 50),
         
         // Animation cycles
-        blurCycleDuration: { min: 8000, max: 24000 },
+        blurCycleDuration: { min: 2000, max: 24000 },
         opacityCycleDuration: { min: 10000, max: 28000 },
         minOpacity: 0.2,
-        maxOpacity: 0.75,
+        maxOpacity: 0.9,
         
         // Use canvas rendering on mobile for better performance
         useCanvas: isMobile,

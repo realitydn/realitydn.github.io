@@ -1,6 +1,6 @@
 /* 
- * Reality Website - Responsive Styles with 5/3 Column Breakpoints
- * Bold typography focus matching the event poster aesthetic
+ * Reality Website - Mobile Responsive Styles with Map Fix
+ * Combines existing mobile styles with fixes for Google Map horizontal scrolling
  */
 
 /* Larger Screens (5-Column Layout) */
@@ -320,6 +320,34 @@
         gap: 0.5rem;
     }
     
+    /* Contact section map fix */
+    .contact-wrapper {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden; /* Prevent horizontal scroll */
+    }
+    
+    .contact-info {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Ensure map container doesn't overflow */
+    .map {
+        width: 100%;
+        height: auto;
+        max-width: 100vw;
+        margin-left: 0;
+        margin-right: 0;
+        overflow: hidden;
+    }
+    
+    .map iframe {
+        max-width: 100%;
+        width: 100%;
+        display: block;
+    }
+    
     /* Footer adjustments */
     .footer-grid {
         grid-template-columns: 1fr;
@@ -422,6 +450,23 @@
     
     .faq-answer {
         padding-right: 0;
+    }
+    
+    /* Contact section and map fixes */
+    .container {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .contact .container {
+        max-width: 100vw;
+        overflow-x: hidden;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .map iframe {
+        height: 350px;
     }
 }
 

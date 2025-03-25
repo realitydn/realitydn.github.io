@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const iframe = document.createElement('iframe');
             iframe.src = "menu.pdf";
             iframe.width = "100%";
-            iframe.height = "800px";
+            iframe.height = "1000px";
             iframe.style.border = "none";
             iframe.title = "Reality Menu";
             iframe.setAttribute('loading', 'lazy');

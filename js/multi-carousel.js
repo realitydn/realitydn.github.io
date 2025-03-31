@@ -1,9 +1,10 @@
 /**
  * Reality Website - Multi-Image Carousel
- * Performance-optimized version with:
- * - Reliable directory scanning
- * - Proper infinite scrolling that prevents showing empty spaces
- * - Efficient image loading with preloading
+ * Enhanced with:
+ * - True infinite scrolling without blank spaces
+ * - Improved performance
+ * - Better image loading
+ * - More reliable clone handling
  */
 
 const RealityCarousel = (function() {
@@ -33,7 +34,12 @@ const RealityCarousel = (function() {
         aspectRatio: 'auto',       // Image aspect ratio
         lazyLoad: true,            // Enable lazy loading for better performance
         infiniteScroll: true,      // Enable true infinite scrolling
-        returnToStart: true        // When reaching the end, return to start (used if infiniteScroll is false)
+        returnToStart: true,       // When reaching the end, return to start (used if infiniteScroll is false)
+        
+        // New options
+        cloneMultiplier: 2,        // How many sets of clones to create (higher number = more buffer)
+        preloadAdjacentImages: 2,  // How many adjacent images to preload
+        debug: false               // Enable debug logging
     };
     
     /**
@@ -101,7 +107,9 @@ const RealityCarousel = (function() {
             hasClones: false,      // Whether we've added clone slides for infinite scrolling
             itemCount: 0,          // Count of original items
             cloneCount: 0,         // Number of clones added at start and end
-            jumpDisabled: false    // Temp flag to prevent multiple jumps
+            jumpDisabled: false,   // Temp flag to prevent multiple jumps
+            isInitialized: false,  // Whether the carousel has been fully initialized
+            loadedImages: new Set() // Track which images have been loaded
         };
         
         // Carousel object
@@ -116,9 +124,6 @@ const RealityCarousel = (function() {
         
         // Add to collection
         carousels.push(carousel);
-        
-        // Add event listeners
-        setupEventListeners(carousel);
         
         // Load images
         loadImages(carousel).then(() => {
@@ -135,7 +140,7 @@ const RealityCarousel = (function() {
             ensureSufficientImages(carousel);
             
             // Create clone slides for infinite scrolling if needed
-            if (config.infiniteScroll && state.originalImages.length > config.visibleImages) {
+            if (config.infiniteScroll && state.originalImages.length > 1) {
                 createCloneSlides(carousel);
             }
             
@@ -145,10 +150,16 @@ const RealityCarousel = (function() {
             // Initialize position
             initializePosition(carousel);
             
+            // Add event listeners
+            setupEventListeners(carousel);
+            
             // Start auto-rotation if enabled
             if (config.autoRotate && state.originalImages.length > config.visibleImages) {
                 startAutoRotate(carousel);
             }
+            
+            // Mark as initialized
+            state.isInitialized = true;
             
             // Handle window resize
             window.addEventListener('resize', debounce(function() {
@@ -166,14 +177,15 @@ const RealityCarousel = (function() {
                 updateLayout(carousel);
                 
                 // Check if we need to update clone setup
-                if (config.infiniteScroll && state.originalImages.length > config.visibleImages) {
-                    // Remove existing clones and recreate them
+                if (config.infiniteScroll && state.originalImages.length > 1) {
+                    // Reset carousel
                     state.images = [...state.originalImages];
                     createCloneSlides(carousel);
+                    renderSlides(carousel);
+                    initializePosition(carousel);
+                } else {
+                    updateTrackPosition(carousel);
                 }
-                
-                renderSlides(carousel);
-                initializePosition(carousel);
             }, 250));
         });
         
@@ -187,8 +199,8 @@ const RealityCarousel = (function() {
     function ensureSufficientImages(carousel) {
         const { state, config } = carousel;
         
-        // We need at least visibleImages + 1 for scrolling to work well
-        const minImageCount = config.visibleImages + 1;
+        // We need at least 2 images for a carousel
+        const minImageCount = Math.max(2, config.visibleImages);
         
         // If we don't have enough images but have at least one
         if (state.images.length > 0 && state.images.length < minImageCount) {
@@ -200,7 +212,9 @@ const RealityCarousel = (function() {
                 state.images = [...state.images, ...originalImages];
             }
             
-            console.log(`[${config.containerId}] Duplicated ${originalImages.length} images to ensure proper carousel function`);
+            if (config.debug) {
+                console.log(`[${config.containerId}] Duplicated ${originalImages.length} images to ensure proper carousel function`);
+            }
         }
         
         // Store original images if not already done
@@ -213,6 +227,7 @@ const RealityCarousel = (function() {
     
     /**
      * Create clone slides for infinite scrolling
+     * Using multiple sets of clones to ensure smooth scrolling
      */
     function createCloneSlides(carousel) {
         const { state, config } = carousel;
@@ -224,19 +239,21 @@ const RealityCarousel = (function() {
         
         state.itemCount = state.originalImages.length;
         
-        // Calculate clone count based on visible images (minimum 2)
-        state.cloneCount = Math.max(2, Math.ceil(config.visibleImages));
+        // Calculate clone count based on visible images and multiplier
+        state.cloneCount = Math.max(2, Math.ceil(config.visibleImages)) * config.cloneMultiplier;
         
         // Create expanded array with clones at both ends
         let expanded = [];
         
         // Add clones at the beginning (from end of original array)
+        // Add reverse order so the last items appear first in the clones
         for (let i = 0; i < state.cloneCount; i++) {
             const sourceIndex = state.itemCount - 1 - (i % state.itemCount);
             expanded.push({
                 src: state.originalImages[sourceIndex].src || state.originalImages[sourceIndex],
                 isClone: true,
-                originalIndex: sourceIndex
+                originalIndex: sourceIndex,
+                clonePosition: 'start'
             });
         }
         
@@ -248,7 +265,8 @@ const RealityCarousel = (function() {
             expanded.push({
                 src: state.originalImages[i].src || state.originalImages[i],
                 isClone: false,
-                originalIndex: i
+                originalIndex: i,
+                clonePosition: 'original'
             });
         }
         
@@ -258,13 +276,18 @@ const RealityCarousel = (function() {
             expanded.push({
                 src: state.originalImages[sourceIndex].src || state.originalImages[sourceIndex],
                 isClone: true,
-                originalIndex: sourceIndex
+                originalIndex: sourceIndex,
+                clonePosition: 'end'
             });
         }
         
         // Update state
         state.images = expanded;
         state.hasClones = true;
+        
+        if (config.debug) {
+            console.log(`[${config.containerId}] Created ${state.cloneCount} clones at each end. Total slides: ${state.images.length}`);
+        }
     }
     
     /**
@@ -297,10 +320,10 @@ const RealityCarousel = (function() {
      * Update the track position based on the current index
      */
     function updateTrackPosition(carousel) {
-        const { state, track } = carousel;
+        const { state, track, config } = carousel;
         
         // Calculate position based on current index, item width, and gap
-        const position = -state.currentIndex * (state.itemWidth + carousel.config.gap);
+        const position = -state.currentIndex * (state.itemWidth + config.gap);
         state.position = position;
         
         // Apply position using hardware-accelerated transform
@@ -308,7 +331,7 @@ const RealityCarousel = (function() {
     }
     
     /**
-     * Load images for the carousel
+     * Improved function to load images for the carousel
      */
     function loadImages(carousel) {
         const { config, state } = carousel;
@@ -325,18 +348,24 @@ const RealityCarousel = (function() {
                 fetchImagesFromFolder(config.imageFolder)
                     .then(images => {
                         if (images && images.length > 0) {
-                            console.log(`[${config.containerId}] Loaded ${images.length} images from folder ${config.imageFolder}`);
+                            if (config.debug) {
+                                console.log(`[${config.containerId}] Loaded ${images.length} images from folder ${config.imageFolder}`);
+                            }
                             state.images = images;
                             return resolve();
                         } else {
                             // Fallback to supplied fallback images
                             if (config.fallbackImages && config.fallbackImages.length > 0) {
-                                console.log(`[${config.containerId}] Using ${config.fallbackImages.length} fallback images`);
+                                if (config.debug) {
+                                    console.log(`[${config.containerId}] Using ${config.fallbackImages.length} fallback images`);
+                                }
                                 state.images = [...config.fallbackImages];
                                 return resolve();
                             } else {
                                 // Last resort default images
-                                console.log(`[${config.containerId}] Using default fallback images`);
+                                if (config.debug) {
+                                    console.log(`[${config.containerId}] Using default fallback images`);
+                                }
                                 state.images = [
                                     'https://picsum.photos/seed/img1/800/600',
                                     'https://picsum.photos/seed/img2/800/600',
@@ -365,7 +394,7 @@ const RealityCarousel = (function() {
     }
     
     /**
-     * Improved function to fetch all images from a folder
+     * Function to fetch images from a folder
      */
     function fetchImagesFromFolder(folderPath) {
         return new Promise(resolve => {
@@ -373,8 +402,6 @@ const RealityCarousel = (function() {
             if (!folderPath.endsWith('/')) {
                 folderPath += '/';
             }
-            
-            console.log(`Attempting to fetch images from: ${folderPath}`);
             
             // Try to use the directory index API if available (server must support it)
             fetch(folderPath)
@@ -411,17 +438,14 @@ const RealityCarousel = (function() {
                             }
                         });
                         
-                        console.log(`Found ${imageUrls.length} images via directory listing`, imageUrls);
                         return resolve(imageUrls);
                     } else {
                         // Directory listing didn't work or no images found, try common patterns
-                        console.log(`No images found via directory listing, trying pattern search`);
-                        fallbackToPatternSearch(folderPath).then(resolve);
+                        return fallbackToPatternSearch(folderPath).then(resolve);
                     }
                 })
-                .catch((error) => {
+                .catch(() => {
                     // If fetching the directory fails, try pattern-based searching
-                    console.log(`Error fetching directory: ${error}, trying pattern search`);
                     fallbackToPatternSearch(folderPath).then(resolve);
                 });
         });
@@ -432,8 +456,6 @@ const RealityCarousel = (function() {
      */
     function fallbackToPatternSearch(folderPath) {
         return new Promise(resolve => {
-            console.log(`Starting pattern-based image search in: ${folderPath}`);
-            
             // Common image extensions
             const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
             
@@ -466,11 +488,9 @@ const RealityCarousel = (function() {
                         const img = new Image();
                         
                         img.onload = function() {
-                            console.log(`Found image: ${url}`);
                             foundImages.push(url);
                             checkedCount--;
                             if (checkedCount === 0) {
-                                console.log(`Pattern search complete, found ${foundImages.length} images`);
                                 resolve(foundImages);
                             }
                         };
@@ -478,7 +498,6 @@ const RealityCarousel = (function() {
                         img.onerror = function() {
                             checkedCount--;
                             if (checkedCount === 0) {
-                                console.log(`Pattern search complete, found ${foundImages.length} images`);
                                 resolve(foundImages);
                             }
                         };
@@ -491,7 +510,6 @@ const RealityCarousel = (function() {
             // Safety check in case all images failed to load
             setTimeout(() => {
                 if (foundImages.length === 0) {
-                    console.log('No images found via pattern search after timeout');
                     resolve([]);
                 }
             }, 5000);
@@ -511,6 +529,10 @@ const RealityCarousel = (function() {
         
         // Update state
         state.itemWidth = itemWidth;
+        
+        if (config.debug) {
+            console.log(`[${config.containerId}] Layout updated: containerWidth=${containerWidth}, itemWidth=${itemWidth}`);
+        }
     }
     
     /**
@@ -535,19 +557,13 @@ const RealityCarousel = (function() {
             slide.dataset.index = index;
             
             // For infinite scroll, add special classes to clones
-            if (state.hasClones) {
-                if (index < state.cloneCount) {
-                    slide.classList.add('clone', 'clone-end');
-                    slide.dataset.originalIndex = image.originalIndex !== undefined ? 
-                        image.originalIndex : state.itemCount - (state.cloneCount - index);
-                } else if (index >= state.cloneCount + state.itemCount) {
-                    slide.classList.add('clone', 'clone-start');
-                    slide.dataset.originalIndex = image.originalIndex !== undefined ? 
-                        image.originalIndex : index - (state.cloneCount + state.itemCount);
-                } else {
-                    slide.dataset.originalIndex = image.originalIndex !== undefined ? 
-                        image.originalIndex : index - state.cloneCount;
-                }
+            if (image.isClone) {
+                slide.classList.add('clone');
+                slide.classList.add(`clone-${image.clonePosition}`);
+                slide.dataset.originalIndex = image.originalIndex.toString();
+            } else {
+                slide.dataset.originalIndex = image.originalIndex !== undefined ? 
+                    image.originalIndex.toString() : index.toString();
             }
             
             // Set width and margin
@@ -566,6 +582,8 @@ const RealityCarousel = (function() {
                 img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='; // Transparent placeholder
             } else {
                 img.src = imgSrc;
+                // Mark as loaded
+                state.loadedImages.add(index);
             }
             
             img.alt = `Image ${(image.originalIndex !== undefined ? image.originalIndex : index) + 1}`;
@@ -574,6 +592,11 @@ const RealityCarousel = (function() {
             if (config.aspectRatio !== 'auto') {
                 img.style.aspectRatio = config.aspectRatio;
             }
+            
+            // Add loading event handlers
+            img.onload = function() {
+                state.loadedImages.add(index);
+            };
             
             slide.appendChild(img);
             track.appendChild(slide);
@@ -586,7 +609,7 @@ const RealityCarousel = (function() {
     function isInitiallyVisible(carousel, index) {
         const { state, config } = carousel;
         const startIndex = config.infiniteScroll && state.hasClones ? state.cloneCount : 0;
-        return index >= startIndex && index < startIndex + config.visibleImages + 1; // +1 for buffer
+        return index >= startIndex && index < startIndex + config.visibleImages + config.preloadAdjacentImages;
     }
     
     /**
@@ -709,6 +732,9 @@ const RealityCarousel = (function() {
         
         // Track transition end for infinite scrolling reset
         track.addEventListener('transitionend', () => {
+            // If a transition was triggered while dragging, it won't finish properly
+            if (state.isDragging) return;
+            
             state.isAnimating = false;
             
             if (!config.infiniteScroll || !state.hasClones || state.jumpDisabled) return;
@@ -717,13 +743,17 @@ const RealityCarousel = (function() {
             const lastRealIndex = state.cloneCount + state.itemCount - 1;
             const firstRealIndex = state.cloneCount;
             
-            // Handle edge cases
-            if (state.currentIndex <= (state.cloneCount - 1)) {
-                // We're at the beginning clones, jump to the real slides at the end
+            // Handle edge cases with improved reliability
+            if (state.currentIndex <= state.cloneCount - 1) {
+                // We're in the beginning clones, jump to the real slides at the end
                 state.jumpDisabled = true; // Prevent multiple jumps
                 track.style.transition = 'none';
                 state.currentIndex = lastRealIndex - (state.cloneCount - 1 - state.currentIndex);
                 updateTrackPosition(carousel);
+                
+                if (config.debug) {
+                    console.log(`[${config.containerId}] Jump from beginning clones to end: ${state.currentIndex}`);
+                }
                 
                 // Force reflow
                 track.offsetHeight;
@@ -733,12 +763,16 @@ const RealityCarousel = (function() {
                     track.style.transition = `transform ${config.transitionSpeed}ms ease`;
                     state.jumpDisabled = false;
                 }, 50);
-            } else if (state.currentIndex >= (lastRealIndex + 1)) {
-                // We're at the end clones, jump to the real slides at the beginning
+            } else if (state.currentIndex >= lastRealIndex + 1) {
+                // We're in the end clones, jump to the real slides at the beginning
                 state.jumpDisabled = true; // Prevent multiple jumps
                 track.style.transition = 'none';
                 state.currentIndex = firstRealIndex + (state.currentIndex - lastRealIndex - 1);
                 updateTrackPosition(carousel);
+                
+                if (config.debug) {
+                    console.log(`[${config.containerId}] Jump from end clones to beginning: ${state.currentIndex}`);
+                }
                 
                 // Force reflow
                 track.offsetHeight;
@@ -750,11 +784,11 @@ const RealityCarousel = (function() {
                 }, 50);
             }
             
-            // Load lazy images that are now visible
+            // Load images that are now visible
             lazyLoadVisibleImages(carousel);
         });
         
-        // Lazy load initially visible images
+        // Initial lazy loading
         if (config.lazyLoad) {
             // Use intersection observer if available
             if ('IntersectionObserver' in window) {
@@ -771,7 +805,7 @@ const RealityCarousel = (function() {
                     });
                 }, { 
                     root: null,
-                    rootMargin: '100px',
+                    rootMargin: '200px', // Increased margin for better preloading
                     threshold: 0.1
                 });
                 
@@ -791,6 +825,31 @@ const RealityCarousel = (function() {
                 }, 200));
             }
         }
+        
+        // Handle keyboard navigation (only when carousel is in viewport)
+        document.addEventListener('keydown', (e) => {
+            // Only respond to keyboard if carousel is in viewport
+            if (isElementInViewport(container)) {
+                if (e.key === 'ArrowLeft') {
+                    goToPrevSlide(carousel);
+                } else if (e.key === 'ArrowRight') {
+                    goToNextSlide(carousel);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Check if element is in viewport
+     */
+    function isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top < window.innerHeight &&
+            rect.bottom > 0 &&
+            rect.left < window.innerWidth &&
+            rect.right > 0
+        );
     }
     
     /**
@@ -799,19 +858,26 @@ const RealityCarousel = (function() {
     function lazyLoadVisibleImages(carousel) {
         const { track, state, config } = carousel;
         
-        if (!config.lazyLoad) return;
+        if (!config.lazyLoad || !state.isInitialized) return;
         
-        const visibleRange = config.visibleImages + 2; // Add buffer
-        const startIdx = Math.max(0, state.currentIndex - 1);
+        const visibleRange = config.visibleImages + config.preloadAdjacentImages * 2;
+        const startIdx = Math.max(0, state.currentIndex - config.preloadAdjacentImages);
         const endIdx = Math.min(state.images.length - 1, startIdx + visibleRange);
         
+        // Preload visible slides plus buffer
         for (let i = startIdx; i <= endIdx; i++) {
+            if (state.loadedImages.has(i)) continue;
+            
             const slide = track.children[i];
             if (slide) {
                 const img = slide.querySelector('img');
                 if (img && img.dataset.src) {
+                    // Set the real source
                     img.src = img.dataset.src;
                     delete img.dataset.src;
+                    
+                    // Mark as loaded
+                    state.loadedImages.add(i);
                 }
             }
         }
@@ -823,8 +889,8 @@ const RealityCarousel = (function() {
     function goToSlide(carousel, index, immediate = false) {
         const { track, config, state } = carousel;
         
-        if (state.isAnimating) return;
-        state.isAnimating = true;
+        if (state.isAnimating && !immediate) return;
+        state.isAnimating = !immediate;
         
         // Handle the case when we reach the end with returnToStart option
         if (!config.infiniteScroll && config.returnToStart) {
@@ -861,7 +927,7 @@ const RealityCarousel = (function() {
             }, 50);
         }
         
-        // Lazy load newly visible images
+        // Preload images
         lazyLoadVisibleImages(carousel);
     }
     
@@ -1023,6 +1089,15 @@ const RealityCarousel = (function() {
             }
             
             currentY = null;
+        });
+        
+        // Keyboard events
+        document.addEventListener('keydown', e => {
+            if (fullscreenViewer.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    closeFullscreen();
+                }
+            }
         });
     }
     

@@ -5,6 +5,7 @@
  * - Better event delegation
  * - Throttled and debounced events
  * - Optimized animations
+ * - Responsive layout adjustments
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -55,6 +56,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.classList.add('menu-overlay');
+            overlay.style.display = 'none';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            overlay.style.zIndex = '99';
             body.appendChild(overlay);
             
             // Add event listener to overlay
@@ -68,12 +77,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         hamburger.classList.toggle('active');
         navLinks.classList.toggle('active');
-        overlay.classList.toggle('active');
         
-        // Control body scrolling
+        // Toggle overlay display
         if (navLinks.classList.contains('active')) {
+            overlay.style.display = 'block';
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+            }, 10);
             body.style.overflow = 'hidden';
         } else {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
             body.style.overflow = '';
         }
     }
@@ -82,7 +98,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeMenu() {
         hamburger.classList.remove('active');
         navLinks.classList.remove('active');
-        if (overlay) overlay.classList.remove('active');
+        
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
+        
         body.style.overflow = '';
     }
     
@@ -114,6 +137,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const targetElement = document.querySelector(targetId);
                 
                 if (targetElement) {
+                    // Close mobile menu if open
+                    if (navLinks.classList.contains('active')) {
+                        closeMenu();
+                    }
+                    
                     // Use native smooth scrolling (more performant than JS)
                     targetElement.scrollIntoView({
                         behavior: 'smooth',
@@ -186,12 +214,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ===== Handle Resize Events =====
-    window.addEventListener('resize', debounce(function() {
+    const handleResize = debounce(function() {
         // Reset mobile menu state on window resize
-        if (window.innerWidth > 900 && navLinks && navLinks.classList.contains('active')) {
+        if (window.innerWidth > 768 && navLinks && navLinks.classList.contains('active')) {
             closeMenu();
         }
-    }, 250));
+        
+        // Update page height for color-waves if needed
+        const colorWavesContainer = document.getElementById('floating-rectangles-container');
+        if (colorWavesContainer) {
+            colorWavesContainer.style.height = document.documentElement.scrollHeight + 'px';
+            
+            // Update canvas height if it exists
+            const canvas = colorWavesContainer.querySelector('canvas');
+            if (canvas) {
+                canvas.height = document.documentElement.scrollHeight;
+            }
+        }
+    }, 250);
+    
+    window.addEventListener('resize', handleResize);
     
     // ===== Check if page was loaded with a hash and scroll to it =====
     if (window.location.hash) {
@@ -205,4 +247,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 500);
     }
+    
+    // ===== Ensure Responsive Layout Updates =====
+    // Add responsive class to body based on viewport
+    function updateResponsiveClasses() {
+        if (window.innerWidth < 576) {
+            body.classList.remove('desktop', 'tablet', 'mobile');
+            body.classList.add('xs-mobile');
+        } else if (window.innerWidth < 768) {
+            body.classList.remove('desktop', 'tablet', 'xs-mobile');
+            body.classList.add('mobile');
+        } else if (window.innerWidth < 992) {
+            body.classList.remove('desktop', 'mobile', 'xs-mobile');
+            body.classList.add('tablet');
+        } else {
+            body.classList.remove('tablet', 'mobile', 'xs-mobile');
+            body.classList.add('desktop');
+        }
+    }
+    
+    // Initial call
+    updateResponsiveClasses();
+    
+    // Update on resize
+    window.addEventListener('resize', debounce(updateResponsiveClasses, 250));
+    
+    // ===== Fix for iOS vh units =====
+    function fixVhUnits() {
+        // First we get the viewport height and we multiply it by 1% to get a value for a vh unit
+        let vh = window.innerHeight * 0.01;
+        // Then we set the value in the --vh custom property to the root of the document
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    // Initial call
+    fixVhUnits();
+    
+    // Update on resize
+    window.addEventListener('resize', debounce(fixVhUnits, 250));
 });

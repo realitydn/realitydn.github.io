@@ -7,19 +7,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>REALITY - cafe & bar - the Easiest Place to Make Friends in Da Nang</title>
   
-  <!-- SEO Meta Tags -->
   <meta name="description" content="Reality Cafe & Bar in Da Nang - the easiest place to make friends in the city. Join us for events, board games, quiz nights, coworking space and social gatherings.">
   <meta name="keywords" content="Da Nang bar, Danang cafe, Da Nang events, Da Nang workspace, board games Da Nang, meet friends Da Nang, social space, international community, quiz night, language exchange">
   <meta name="author" content="Reality cafe & bar">
   
-  <!-- Open Graph / Social Media -->
   <meta property="og:title" content="Reality cafe & bar - Make Friends in Da Nang">
   <meta property="og:description" content="Reality is the easiest place to make friends in Da Nang. Events, drinks, and community in the heart of the city.">
   <meta property="og:image" content="images/RealityWordform-black2048tr.png">
   <meta property="og:url" content="https://realitydn.com">
   <meta property="og:type" content="website">
   
-  <!-- Resource hints for faster connections -->
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="dns-prefetch" href="https://fonts.gstatic.com">
   <link rel="dns-prefetch" href="https://calendar.google.com">
@@ -27,18 +24,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   
-  <!-- Preload critical resources -->
   <link rel="preload" href="images/RealityWordform-black2048tr.png" as="image">
   
-  <!-- Google Fonts with font-display:swap for better performance -->
-  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,900|Space+Grotesk:400,700&display=swap&font-display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,900;1,600&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Integrated Stylesheets -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/mobile.css">
   <link rel="stylesheet" href="css/multi-carousel.css">
   
-  <!-- Browser/device detection for adaptive loading -->
   <script>
     // Simple browser capability detection
     document.documentElement.classList.add(
@@ -59,7 +52,6 @@
     }
   </script>
   
-  <!-- Critical CSS for above-the-fold content -->
   <style>
     :root {
       --primary-bg: #f5f5f786;
@@ -92,7 +84,7 @@
     /* Ensure hero area has a transparent background and sufficient top padding */
     .hero {
       background: transparent;
-      padding-top: 120px;
+      padding-top: 120px; /* Adjusted from original 120px to ensure content visibility below nav */
       min-height: 80vh;
       display: flex;
       align-items: center;
@@ -123,16 +115,7 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
       transition: background-color 0.3s, box-shadow 0.3s;
     }
-    
-    /* Canvas for calendar events */
-    #calendarCanvas {
-      width: 100%;
-      height: 300px;
-      background: rgba(255, 255, 255, 0.205);
-      border: 1px solid rgba(0,0,0,0.1);
-      margin-top: 2rem;
-    }
-    
+        
     /* Logo styling */
     .logo-wordform {
       max-width: 100%;
@@ -169,6 +152,9 @@
       }
       .language-toggle {
         z-index: 103;
+      }
+      .hero {
+          padding-top: 80px; /* Reduce padding on mobile below nav */
       }
     }
     
@@ -255,11 +241,26 @@
       margin: 0 auto;
       box-sizing: border-box;
     }
+    
+    /* Style for Facebook CTA below calendar */
+    .facebook-cta {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 1rem;
+    }
+    .facebook-cta a {
+        color: var(--accent-color-1);
+        font-weight: 600;
+        text-decoration: underline;
+    }
+    .facebook-cta a:hover {
+        text-decoration: none;
+    }
+
   </style>
 </head>
 <body>
-  <!-- Updated Navigation with improved alignment -->
-<nav id="mainNav">
+  <nav id="mainNav">
   <div class="container nav-container">
     <div class="logo">
       <img 
@@ -294,11 +295,10 @@
   </div>
 </nav>
 
- <!-- Hero Section with updated content and alignment -->
-<section class="hero section-animate" id="hero">
+ <section class="hero section-animate" id="hero">
   <div class="container hero-grid">
     <div class="hero-content">
-      <h1 class="translatable" data-en="THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG" data-vn="NƠI DỄ DÀNG KẾT BẠN NHẤT ĐÀ NẴNG">
+      <h1 class="translatable accent-italic" data-en="THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG" data-vn="NƠI DỄ DÀNG KẾT BẠN NHẤT ĐÀ NẴNG">
         THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG
       </h1>
       <p class="translatable" data-en="drinks / snacks / spaces" data-vn="đồ uống / đồ ăn nhẹ / không gian">
@@ -318,7 +318,6 @@
   </div>
 </section>
 
-  <!-- Event Calendar Section -->
   <section id="events" class="events section-animate">
     <div class="container grid">
       <div class="events-header grid-7">
@@ -333,41 +332,37 @@
         </p>
       </div>
       <div class="events-calendar grid-7" id="event-calendar">
-        <!-- Google Calendar embed with lazy loading -->
         <iframe 
           src="https://calendar.google.com/calendar/embed?height=600&wkst=1&bgcolor=%23FFFFFF&ctz=Asia%2FHo_Chi_Minh&showPrint=0&showNav=1&showTitle=0&showTabs=0&showCalendars=0&showTz=0&mode=WEEK&src=realitydn%40gmail.com&color=%23000000" 
-          style="border: none; width: 100%; height: 100%;" 
+          style="border: none;" 
           loading="lazy"
           title="Reality Event Calendar">
         </iframe>
+         <p class="facebook-cta translatable" data-en="Follow us on <a href='https://www.facebook.com/realitybarcafedanang' target='_blank' rel='noopener noreferrer'>Facebook</a> for the latest event details!" data-vn="Theo dõi chúng tôi trên <a href='https://www.facebook.com/realitybarcafedanang' target='_blank' rel='noopener noreferrer'>Facebook</a> để biết chi tiết sự kiện mới nhất!">
+            Follow us on <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer">Facebook</a> for the latest event details!
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- Gallery Section with Multi-Image Carousels -->
   <section class="gallery section-animate" id="gallery">
     <div class="container">
-      <!-- Event Flyers Carousel -->
       <div id="flyers-carousel" class="carousel-container"></div>
       
-      <!-- Space Photos Carousel -->
       <div id="spaces-carousel" class="carousel-container"></div>
     </div>
   </section>
 
-  <!-- Menu Section -->
   <section class="menu section-animate" id="menu">
     <div class="container grid">
       <h2 class="translatable" data-en="Our Menu" data-vn="Thực Đơn">
         Our Menu
       </h2>
       <div class="menu-viewer grid-7">
-        <!-- PDF viewer will be initialized by the pdf-viewer.js script -->
-      </div>
+        </div>
     </div>
   </section>
 
-  <!-- FAQ Section -->
   <section class="faq section-animate" id="faq">
     <div class="container grid">
       <h2 class="translatable" data-en="Frequently Asked Questions" data-vn="Câu Hỏi Thường Gặp">
@@ -395,7 +390,7 @@
             <div class="faq-toggle"></div>
           </div>
           <div class="faq-answer">
-            <p class="translatable" data-en="Yes, until 5pm daily. After that, laptops away as we transition from workspace to social space." data-vn="Có, cho đến 5 giờ chiều hàng ngày. Sau đó, laptop cất đi khi chúng tôi chuyển từ không gian làm việc sang không gian giao tiếp.">
+             <p class="translatable" data-en="Yes, until 5pm daily. After that, laptops away as we transition from workspace to social space." data-vn="Có, cho đến 5 giờ chiều hàng ngày. Sau đó, laptop cất đi khi chúng tôi chuyển từ không gian làm việc sang không gian giao tiếp.">
               Yes, until 5pm daily. After that, laptops away as we transition from workspace to social space.
             </p>
           </div>
@@ -408,7 +403,7 @@
             <div class="faq-toggle"></div>
           </div>
           <div class="faq-answer">
-            <p class="translatable" data-en="Outdoors only. Enjoy the view from our third-floor balcony." data-vn="Chỉ ở ngoài trời. Tận hưởng tầm nhìn từ ban công tầng ba của chúng tôi.">
+             <p class="translatable" data-en="Outdoors only. Enjoy the view from our third-floor balcony." data-vn="Chỉ ở ngoài trời. Tận hưởng tầm nhìn từ ban công tầng ba của chúng tôi.">
               Outdoors only. Enjoy the view from our third-floor balcony.
             </p>
           </div>
@@ -421,7 +416,7 @@
             <div class="faq-toggle"></div>
           </div>
           <div class="faq-answer">
-            <p class="translatable" data-en="Respect everyone. No discrimination. We want this to be a comfortable space for all." data-vn="Tôn trọng mọi người. Không phân biệt đối xử. Chúng tôi muốn đây là không gian thoải mái cho tất cả mọi người.">
+             <p class="translatable" data-en="Respect everyone. No discrimination. We want this to be a comfortable space for all." data-vn="Tôn trọng mọi người. Không phân biệt đối xử. Chúng tôi muốn đây là không gian thoải mái cho tất cả mọi người.">
               Respect everyone. No discrimination. We want this to be a comfortable space for all.
             </p>
           </div>
@@ -434,7 +429,7 @@
             <div class="faq-toggle"></div>
           </div>
           <div class="faq-answer">
-            <p class="translatable" data-en="Talk to a member of management about your idea. If it fits our space and community, we'll help you make it happen." data-vn="Trao đổi với một thành viên quản lý về ý tưởng của bạn. Nếu phù hợp với không gian và cộng đồng của chúng tôi, chúng tôi sẽ giúp bạn thực hiện nó.">
+             <p class="translatable" data-en="Talk to a member of management about your idea. If it fits our space and community, we'll help you make it happen." data-vn="Trao đổi với một thành viên quản lý về ý tưởng của bạn. Nếu phù hợp với không gian và cộng đồng của chúng tôi, chúng tôi sẽ giúp bạn thực hiện nó.">
               Talk to a member of management about your idea. If it fits our space and community, we'll help you make it happen.
             </p>
           </div>
@@ -443,7 +438,6 @@
     </div>
   </section>
 
-  <!-- Contact Section -->
   <section class="contact section-animate" id="contact">
     <div class="container grid">
       <h2 class="translatable" data-en="Let's talk" data-vn="Hãy trò chuyện">
@@ -462,10 +456,6 @@
             </p>
           </div>
           <div class="contact-info-item">
-            <h3 class="translatable" data-en="Phone" data-vn="Điện Thoại">Phone</h3>
-            <p><a href="tel:+1234567890">+xxxxxxxxx</a></p>
-          </div>
-          <div class="contact-info-item">
             <h3 class="translatable" data-en="Follow Us" data-vn="Theo Dõi Chúng Tôi">Follow Us</h3>
             <div class="social-links">
               <a href="https://www.facebook.com/realitybarcafedanang" class="social-icon">Facebook</a>
@@ -474,8 +464,8 @@
           </div>
         </div>
         <div class="map">
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.302259561011!2d108.21919731533003!3d16.04707958877415!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142195c3a8d3f4f%3A0x9a4b14a5ad0f5d4a!2s86%20Mai%20Th%E1%BB%A7c%20Lan%2C%20Da%20N%C4%83ng%2C%20Vietnam!5e0!3m2!1sen!2sus!4v1616176748162" 
+           <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3834.170838965941!2d108.24066711485978!3d16.05671948888867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142177f0e5a5c5b%3A0x185c4f5c885f8554!2s86%20Mai%20Th%C3%BAc%20L%C3%A2n%2C%20B%E1%BA%AFc%20M%E1%BB%B9%20Ph%C3%BA%2C%20Ng%C5%A9%20H%C3%A0nh%20S%C6%A1n%2C%20%C4%90%C3%A0%20N%E1%BA%B5ng%20550000%2C%20Vietnam!5e0!3m2!1sen!2sus!4v1682873847123!5m2!1sen!2sus" 
             width="100%" 
             height="400" 
             style="border:0;" 
@@ -489,7 +479,6 @@
     </div>
   </section>
 
-  <!-- Footer -->
   <footer>
     <div class="container footer-grid">
       <div class="footer-left">
@@ -501,7 +490,7 @@
             loading="lazy"
             style="height: 40px; width: auto;">
         </div>
-        <p class="tagline translatable" data-en="The easiest place to make friends in Da Nang" data-vn="Nơi dễ dàng kết bạn nhất Đà Nẵng">
+        <p class="tagline translatable accent-italic" data-en="The easiest place to make friends in Da Nang" data-vn="Nơi dễ dàng kết bạn nhất Đà Nẵng">
           The easiest place to make friends in Da Nang
         </p>
       </div>
@@ -517,12 +506,11 @@
         </p>
       </div>
       <div class="footer-bottom">
-        &copy; 2025 Reality Bar &amp; Cafe. All rights reserved.
+        © 2025 Reality Bar & Cafe. All rights reserved. 
       </div>
     </div>
   </footer>
 
-  <!-- Optimized script loading -->
   <script src="js/main.js" defer></script>
   <script src="js/language.js" defer></script>
   <script src="js/color-waves.js" defer></script>
@@ -530,7 +518,6 @@
   <script src="js/multi-carousel.js" defer loading="lazy"></script>
   <script src="js/pdf-viewer.js" defer loading="lazy"></script>
 
-  <!-- Carousel Initialization Script -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Adaptive initialization based on device capabilities
@@ -542,7 +529,7 @@
       // Initialize the event flyers carousel with adaptive settings
       RealityCarousel.init({
         containerId: 'flyers-carousel',
-        imageFolder: 'images/flyers/',
+        imageFolder: 'images/flyers/', // Consider explicitly listing image URLs here for reliability
         height: isLowPerformance ? '300px' : '400px',
         aspectRatio: '3/4',  // Portrait orientation for event flyers
         rotationSpeed: isLowPerformance ? 5000 : 3300,  // Slower on mobile
@@ -561,7 +548,7 @@
       // Initialize the space photos carousel with adaptive settings
       RealityCarousel.init({
         containerId: 'spaces-carousel',
-        imageFolder: 'images/spaces/',
+        imageFolder: 'images/spaces/', // Consider explicitly listing image URLs here for reliability
         height: isLowPerformance ? '250px' : '350px',
         aspectRatio: '16/9',  // Landscape orientation for space photos
         rotationSpeed: isLowPerformance ? 4000 : 2500,

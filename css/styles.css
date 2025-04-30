@@ -1,9 +1,8 @@
-/* 
- * Reality Website Styles - Enhanced Alignment & Typography
+/* * Reality Website Styles - Enhanced Alignment & Typography
  * Following strict Swiss design principles with bold typography focus
  */
 
-:root {
+ :root {
     --primary-bg: #fffbf2;
     --text-color: #111111;
     --text-light: #555555;
@@ -34,7 +33,7 @@ html {
 
 body {
     font-family: var(--body-font);
-    line-height: 1.5;
+    line-height: 1.6; /* Slightly increased default for better spacing */
     color: var(--text-color);
     margin: 0;
     padding: 0;
@@ -45,10 +44,10 @@ body {
     max-width: 100%;
 }
 
-/* Typography - MUCH BIGGER heading text */
+/* Typography - Updated heading weight */
 h1, h2, h3, h4 {
     font-family: var(--heading-font);
-    font-weight: 900; /* Extra bold for stronger typography */
+    font-weight: 600; /* Changed from 900 to 600 (Semi-Bold) */
     text-transform: uppercase;
     letter-spacing: -0.01em;
     margin-bottom: 1rem;
@@ -58,7 +57,7 @@ h1, h2, h3, h4 {
 
 h1 {
     font-size: 6rem; /* Much bigger */
-    font-weight: 900;
+    /* Removed specific weight here, uses the h1-h4 rule above */
 }
 
 h2 {
@@ -84,8 +83,28 @@ h3 {
 p {
     margin-bottom: 1.5rem;
     font-size: 1.1rem;
+    font-weight: 400; /* Explicitly set Space Grotesk Regular */
     max-width: 65ch; /* Control line width for readability */
 }
+
+/* Accent Italic Style */
+.accent-italic {
+    font-family: var(--heading-font); /* Montserrat */
+    font-weight: 600; /* Semi-Bold */
+    font-style: italic;
+    /* font-size: inherit; /* Inherit size from parent or adjust as needed */
+    /* color: inherit; /* Inherit color or set specific color */
+}
+
+/* Increased line-height for Vietnamese text */
+html[lang="vn"] .translatable {
+  line-height: 1.7; 
+}
+/* More specific rule for paragraphs if needed */
+html[lang="vn"] p.translatable {
+  line-height: 1.7;
+}
+
 
 /* Left-aligned text as default, never center */
 body {
@@ -99,7 +118,7 @@ body {
     padding: 0 var(--content-padding);
     width: 100%;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow-x: hidden; /* Keep this for containers */
 }
 
 .nav-container {
@@ -132,7 +151,7 @@ section {
     padding: 8rem 0; /* More padding for dramatic sections */
     position: relative;
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: hidden; /* Keep this for sections */
 }
 
 section:nth-child(odd) {
@@ -158,7 +177,7 @@ nav {
 
 .logo {
     font-family: var(--heading-font);
-    font-weight: 900; /* Extra bold */
+    font-weight: 900; /* Keep logo bold */
     font-size: 2rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -172,7 +191,7 @@ nav {
 
 .nav-links a {
     color: var(--text-color);
-    font-weight: 600;
+    font-weight: 600; /* Semi-Bold for nav links */
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.9rem;
@@ -276,7 +295,7 @@ nav {
 }
 
 .hero h1 {
-    font-size: 5.5rem; /* MUCH BIGGER */
+    font-size: 5.5rem; 
     margin-bottom: 1rem;
     line-height: 0.9;
 }
@@ -291,7 +310,7 @@ nav {
 .soft-opening {
     font-size: 1.5rem;
     margin-bottom: 2rem;
-    font-weight: 700;
+    font-weight: 700; /* Keep this bold */
     color: var(--accent-color-1);
     position: relative;
     display: inline-block;
@@ -313,7 +332,7 @@ nav {
     background: var(--accent-color-1);
     color: white;
     text-decoration: none;
-    font-weight: 700;
+    font-weight: 700; /* Keep buttons bold */
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-family: var(--heading-font);
@@ -408,6 +427,21 @@ footer {
     opacity: 0.7;
 }
 
+/* Calendar Styling */
+.events-calendar {
+  width: 100%;
+  aspect-ratio: 4 / 3; /* Adjusted from fixed height */
+  overflow: hidden; /* Prevent iframe overflow */
+  position: relative; /* Needed for absolute positioning of children if any */
+}
+
+.events-calendar iframe {
+  width: 100%;
+  height: 100%;
+  border: none; /* Already set inline, but good to have here */
+  display: block; /* Prevents potential small gaps below iframe */
+}
+
 /* Animation effects for page elements */
 @keyframes fadeIn {
     from { 
@@ -425,46 +459,26 @@ footer {
 }
 
 /* Media Queries for Swiss precision at all sizes */
+/* Styles for smaller screens will be handled primarily in mobile.css */
+/* Basic adjustments for larger breakpoints */
+
 @media screen and (max-width: 1200px) {
     :root {
         --grid-columns: 5;
     }
     
-    h1 {
-        font-size: 5rem;
-    }
+    h1 { font-size: 5rem; }
+    h2 { font-size: 3.5rem; }
+    .hero h1 { font-size: 4.5rem; } /* Adjust hero H1 specifically */
     
-    h2 {
-        font-size: 3.5rem;
-    }
+    .hero-content { grid-column: 1 / 4; }
+    .hero-meta { grid-column: 4 / 6; }
     
-    .hero-content {
-        grid-column: 1 / 4;
-    }
-    
-    .hero-meta {
-        grid-column: 4 / 6;
-    }
-    
-    .footer-grid {
-        grid-template-columns: repeat(5, 1fr);
-    }
-    
-    .footer-left {
-        grid-column: 1 / 2;
-    }
-    
-    .footer-center {
-        grid-column: 2 / 4;
-    }
-    
-    .footer-right {
-        grid-column: 4 / 6;
-    }
-    
-    .footer-bottom {
-        grid-column: 1 / 6;
-    }
+    .footer-grid { grid-template-columns: repeat(5, 1fr); }
+    .footer-left { grid-column: 1 / 2; }
+    .footer-center { grid-column: 2 / 4; }
+    .footer-right { grid-column: 4 / 6; }
+    .footer-bottom { grid-column: 1 / 6; }
 }
 
 @media screen and (max-width: 992px) {
@@ -472,189 +486,20 @@ footer {
         --grid-columns: 3;
     }
     
-    h1 {
-        font-size: 4.5rem;
-    }
+    h1 { font-size: 4rem; } /* Adjusted */
+    h2 { font-size: 3rem; }
+    h3 { font-size: 2rem; }
+    .hero h1 { font-size: 3.5rem; } /* Adjusted */
     
-    h2 {
-        font-size: 3rem;
-    }
+    .hero-content { grid-column: 1 / 4; }
+    .hero-meta { grid-column: 1 / 4; margin-top: 2rem; }
+    .hero-meta:before { display: none; }
     
-    h3 {
-        font-size: 2rem;
-    }
-    
-    .hero h1 {
-        font-size: 4rem;
-    }
-    
-    .hero-content {
-        grid-column: 1 / 4;
-    }
-    
-    .hero-meta {
-        grid-column: 1 / 4;
-        margin-top: 2rem;
-    }
-    
-    .hero-meta:before {
-        display: none;
-    }
-    
-    .footer-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .footer-left {
-        grid-column: 1 / 2;
-    }
-    
-    .footer-center {
-        grid-column: 2 / 3;
-    }
-    
-    .footer-right {
-        grid-column: 3 / 4;
-    }
-    
-    .footer-bottom {
-        grid-column: 1 / 4;
-    }
+    .footer-grid { grid-template-columns: repeat(3, 1fr); }
+    .footer-left { grid-column: 1 / 2; }
+    .footer-center { grid-column: 2 / 3; }
+    .footer-right { grid-column: 3 / 4; }
+    .footer-bottom { grid-column: 1 / 4; }
 }
 
-@media screen and (max-width: 768px) {
-    :root {
-        --grid-columns: 1;
-        --content-padding: 1.25rem;
-    }
-    
-    h1 {
-        font-size: 3.5rem;
-    }
-    
-    h2 {
-        font-size: 2.5rem;
-    }
-    
-    h3 {
-        font-size: 1.8rem;
-    }
-    
-    .hero h1 {
-        font-size: 3.2rem;
-    }
-    
-    .soft-opening {
-        font-size: 1.3rem;
-    }
-    
-    .cta-button {
-        padding: 15px 40px;
-        font-size: 1rem;
-    }
-    
-    /* Mobile menu setup */
-    .hamburger-menu {
-        display: flex;
-    }
-    
-    .nav-links {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 80%;
-        max-width: 320px;
-        height: 100vh;
-        background-color: white;
-        flex-direction: column;
-        padding: 100px 2rem 2rem;
-        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-        transition: right 0.3s ease;
-        gap: 2rem;
-        z-index: 100;
-    }
-    
-    .nav-links.active {
-        right: 0;
-    }
-    
-    .hamburger-menu.active span:nth-child(1) {
-        transform: translateY(9px) rotate(45deg);
-    }
-    
-    .hamburger-menu.active span:nth-child(2) {
-        opacity: 0;
-    }
-    
-    .hamburger-menu.active span:nth-child(3) {
-        transform: translateY(-9px) rotate(-45deg);
-    }
-    
-    .footer-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .footer-left, 
-    .footer-center, 
-    .footer-right {
-        grid-column: 1 / 2;
-        text-align: left;
-    }
-    
-    .footer-bottom {
-        grid-column: 1 / 2;
-    }
-}
-
-@media screen and (max-width: 576px) {
-    h1 {
-        font-size: 2.8rem;
-    }
-    
-    h2 {
-        font-size: 2.2rem;
-    }
-    
-    .hero h1 {
-        font-size: 2.8rem;
-    }
-    
-    .hero p {
-        font-size: 1.2rem;
-    }
-    
-    .soft-opening {
-        font-size: 1.1rem;
-    }
-    
-    .cta-button {
-        width: 100%;
-        text-align: center;
-        padding: 15px 20px;
-    }
-    
-    .language-toggle {
-        position: fixed;
-        top: 18px;
-        right: 70px;
-        z-index: 102;
-    }
-}
-
-@media screen and (max-width: 400px) {
-    :root {
-        --content-padding: 1rem;
-    }
-    
-    h1 {
-        font-size: 2.5rem;
-    }
-    
-    .hero h1 {
-        font-size: 2.5rem;
-    }
-    
-    .language-toggle {
-        right: 60px;
-    }
-}
+/* Further responsive adjustments in mobile.css */

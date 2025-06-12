@@ -4,7 +4,7 @@
  * - Clean, minimalist design matching site aesthetic
  * - Better responsiveness across all devices
  * - Improved scrolling behavior
- * - Option to view menu directly or download
+ * - Option to view different menus (Day/Night) or download
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -24,14 +24,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 Check out our drinks, snacks, and more
             </p>
             <div class="menu-actions">
-                <button class="view-menu-btn cta-button translatable" data-en="View Menu" data-vn="Xem Thực Đơn">View Menu</button>
-                <a href="menu.pdf" class="download-menu-btn translatable" download data-en="Download PDF" data-vn="Tải PDF">Download PDF</a>
+                <button class="view-menu-btn cta-button translatable" data-pdf="day-menu.pdf" data-en="Daytime Menu" data-vn="Thực Đơn Ban Ngày">Daytime Menu</button>
+                <button class="view-menu-btn cta-button translatable" data-pdf="night-menu.pdf" data-en="Nighttime Menu" data-vn="Thực Đơn Ban Đêm">Nighttime Menu</button>
             </div>
         </div>
         <div class="pdf-container" style="display: none;">
             <div class="pdf-controls">
                 <button class="back-btn translatable" data-en="← Back" data-vn="← Quay lại">← Back</button>
-                <a href="menu.pdf" class="download-inline-btn" download>
+                <a href="#" class="download-inline-btn" download>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -49,20 +49,21 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     // Add event listeners
-    const viewMenuBtn = menuViewer.querySelector('.view-menu-btn');
-    const backBtn = menuViewer.querySelector('.back-btn');
     const menuOptions = menuViewer.querySelector('.menu-options');
     const pdfContainer = menuViewer.querySelector('.pdf-container');
+    const backBtn = menuViewer.querySelector('.back-btn');
     const pdfFrameContainer = menuViewer.querySelector('.pdf-frame-container');
-    
-    // Show PDF viewer when "View Menu" is clicked
-    viewMenuBtn.addEventListener('click', function() {
-        menuOptions.style.display = 'none';
-        pdfContainer.style.display = 'block';
-        
-        // Only load the PDF the first time it's requested
-        if (!pdfFrameContainer.querySelector('iframe')) {
-            loadPdfViewer();
+    const downloadLink = menuViewer.querySelector('.download-inline-btn');
+
+    // Use event delegation for the menu buttons
+    menuOptions.addEventListener('click', function(e) {
+        if (e.target.classList.contains('view-menu-btn')) {
+            const pdfFile = e.target.dataset.pdf;
+            if (pdfFile) {
+                menuOptions.style.display = 'none';
+                pdfContainer.style.display = 'block';
+                loadPdfViewer(pdfFile);
+            }
         }
     });
     
@@ -70,17 +71,25 @@ document.addEventListener('DOMContentLoaded', function() {
     backBtn.addEventListener('click', function() {
         pdfContainer.style.display = 'none';
         menuOptions.style.display = 'block';
+        pdfFrameContainer.innerHTML = ''; // Clear the iframe to allow loading a different one next time
     });
     
     // Apply styles
     applyPdfViewerStyles();
     
     /**
-     * Load the PDF viewer based on device type
+     * Load the PDF viewer based on device type and selected PDF
      */
-    function loadPdfViewer() {
+    function loadPdfViewer(pdfFile) {
+        // Clear any previous PDF
+        pdfFrameContainer.innerHTML = '';
+
         const pdfLoading = menuViewer.querySelector('.pdf-loading');
+        pdfLoading.style.display = 'flex'; // Show loading indicator
         
+        // Update download link
+        downloadLink.href = pdfFile;
+
         // Create the PDF iframe with appropriate settings
         const iframe = document.createElement('iframe');
         
@@ -93,30 +102,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Different approach for mobile vs desktop
         if (isMobile) {
-            // For mobile: Add extra parameters for better mobile viewing
-            // - page-fit: Fits the page to the viewport
-            // - zoom=50: Start at 50% zoom for better readability
-            // - toolbar=0: Hide the toolbar for more space
             iframe.style.height = '65vh';
-            iframe.src = `menu.pdf#page=1&view=FitH,top&zoom=50&toolbar=0`;
-            
-            // Add mobile controls if needed
-            const mobileControls = document.createElement('div');
-            mobileControls.className = 'mobile-pdf-controls';
-            mobileControls.innerHTML = `
-                <p class="translatable" data-en="Pinch to zoom, swipe to navigate" data-vn="Chụm để phóng to, vuốt để điều hướng">
-                    <small>Pinch to zoom, swipe to navigate</small>
-                </p>
-            `;
-            pdfFrameContainer.appendChild(mobileControls);
+            iframe.src = `${pdfFile}#page=1&view=FitH,top&zoom=50&toolbar=0`;
         } else if (isTablet) {
-            // For tablets: Similar to mobile but with more height
             iframe.style.height = '70vh';
-            iframe.src = `menu.pdf#page=1&view=FitH,top&zoom=75&toolbar=0`;
+            iframe.src = `${pdfFile}#page=1&view=FitH,top&zoom=75&toolbar=0`;
         } else {
-            // For desktop: More standard viewing experience
             iframe.style.height = '80vh';
-            iframe.src = `menu.pdf#page=1&view=FitH&toolbar=1`;
+            iframe.src = `${pdfFile}#page=1&view=FitH&toolbar=1`;
         }
         
         // Add iframe to container
@@ -130,14 +123,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add error handling
         setTimeout(() => {
             if (pdfLoading.style.display !== 'none') {
-                pdfLoading.innerHTML = `
-                    <p class="translatable" data-en="Having trouble loading the menu?" data-vn="Gặp sự cố khi tải thực đơn?">
-                        Having trouble loading the menu?
-                    </p>
-                    <a href="menu.pdf" class="cta-button translatable" download data-en="Download Instead" data-vn="Tải Xuống">
-                        Download Instead
-                    </a>
+                pdfFrameContainer.innerHTML = `
+                    <div class="pdf-error">
+                        <p class="translatable" data-en="Having trouble loading the menu?" data-vn="Gặp sự cố khi tải thực đơn?">
+                            Having trouble loading the menu?
+                        </p>
+                        <a href="${pdfFile}" class="cta-button translatable" download data-en="Download Instead" data-vn="Tải Xuống">
+                            Download Instead
+                        </a>
+                    </div>
                 `;
+                 pdfLoading.style.display = 'none';
             }
         }, 8000);
     }
@@ -204,13 +200,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 margin: 0;
             }
             
-            .download-menu-btn {
-                color: #111;
-                text-decoration: underline;
-                font-weight: 600;
-                padding: 0.5rem 1rem;
-            }
-            
             .pdf-container {
                 width: 100%;
                 height: 100%;
@@ -221,6 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .pdf-controls {
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
                 padding: 1rem 1.5rem;
                 background-color: #f8f8f8;
                 border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -253,12 +243,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 text-decoration: underline;
             }
             
-            .pdf-loading {
+            .pdf-loading, .pdf-error {
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                height: 200px;
+                padding: 2rem;
+                min-height: 200px;
                 color: #555;
             }
             
@@ -280,6 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .pdf-frame-container {
                 flex: 1;
                 width: 100%;
+                position: relative;
             }
             
             .pdf-frame-container iframe {
@@ -288,14 +280,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 border: none;
                 display: block;
             }
-            
-            .mobile-pdf-controls {
-                text-align: center;
-                padding: 0.5rem;
-                background-color: #f8f8f8;
-                border-top: 1px solid rgba(0, 0, 0, 0.05);
-                font-size: 0.8rem;
-                color: #555;
+
+            .pdf-error .cta-button {
+                margin-top: 1rem;
             }
             
             /* Responsive adjustments */
@@ -312,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 .view-menu-btn {
                     width: 100%;
+                    text-align: center;
                 }
             }
             

@@ -89,9 +89,39 @@
       display: flex;
       align-items: center;
       width: 100%;
-      overflow-x: hidden;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-image-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: -2;
+        overflow: hidden;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        background-image: url('images/hero.jpg?q=80&w=2047&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        transform: scale(1.1);
     }
     
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 251, 242, 0.2);
+        z-index: -1;
+    }
+
     /* Override buttons & accents to use black/white and the accent color */
     .cta-button {
       background: var(--accent-color-1);
@@ -242,81 +272,112 @@
       box-sizing: border-box;
     }
     
-    /* Style for Facebook CTA below calendar */
-    .facebook-cta {
-        margin-top: 1.5rem;
-        text-align: center;
-        font-size: 1rem;
+    /* Social Icon Styling */
+    footer .social-links {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
     }
-    .facebook-cta a {
-        color: var(--accent-color-1);
-        font-weight: 600;
-        text-decoration: underline;
+    footer .social-links a svg {
+        fill: white;
+        width: 24px;
+        height: 24px;
+        opacity: 0.8;
+        transition: opacity 0.3s;
     }
-    .facebook-cta a:hover {
-        text-decoration: none;
+    footer .social-links a:hover svg {
+        opacity: 1;
     }
-
+    .contact-info .social-links {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+    .contact-info .social-links a svg {
+        fill: var(--text-color);
+        width: 24px;
+        height: 24px;
+        opacity: 0.8;
+        transition: opacity 0.3s;
+    }
+    .contact-info .social-links a:hover svg {
+        opacity: 1;
+    }
+    
   </style>
 </head>
 <body>
+  <div id="fb-root"></div>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v23.0"></script>
+
   <nav id="mainNav">
-  <div class="container nav-container">
-    <div class="logo">
-      <img 
-        src="images/RealityWordform-black2048tr.png" 
-        srcset="images/RealityWordform-black1024tr.png 1024w, 
-                images/RealityWordform-black2048tr.png 2048w"
-        sizes="(max-width: 768px) 80vw, 300px"
-        alt="Reality cafe & bar Da Nang" 
-        class="logo-wordform"
-        loading="eager"
-        decoding="async"
-        width="300" 
-        height="60">
+    <div class="container nav-container">
+      <div class="logo">
+        <img 
+          src="images/RealityWordform-black2048tr.png" 
+          srcset="images/RealityWordform-black1024tr.png 1024w, 
+                  images/RealityWordform-black2048tr.png 2048w"
+          sizes="(max-width: 768px) 80vw, 300px"
+          alt="Reality cafe & bar Da Nang" 
+          class="logo-wordform"
+          loading="eager"
+          decoding="async"
+          width="300" 
+          height="60">
+      </div>
+      <div class="nav-links">
+        <a href="#hero" class="translatable" data-en="Home" data-vn="Trang Chủ">Home</a>
+        <a href="#events" class="translatable" data-en="Events" data-vn="Sự Kiện">Events</a>
+        <a href="#gallery" class="translatable" data-en="Gallery" data-vn="Hình Ảnh">Gallery</a>
+        <a href="#menu" class="translatable" data-en="Menu" data-vn="Thực Đơn">Menu</a>
+        <a href="#faq" class="translatable" data-en="FAQ" data-vn="Hỏi Đáp">FAQ</a>
+        <a href="#contact" class="translatable" data-en="Contact" data-vn="Liên Hệ">Contact</a>
+      </div>
+       <div class="nav-socials">
+          <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/reality.dn/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+          </a>
+      </div>
+      <div class="language-toggle">
+        <button class="language-btn active" data-lang="en">EN</button>
+        <button class="language-btn" data-lang="vn">VN</button>
+      </div>
+      <div class="hamburger-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
-    <div class="nav-links">
-      <a href="#hero" class="translatable" data-en="Home" data-vn="Trang Chủ">Home</a>
-      <a href="#events" class="translatable" data-en="Events" data-vn="Sự Kiện">Events</a>
-      <a href="#gallery" class="translatable" data-en="Gallery" data-vn="Hình Ảnh">Gallery</a>
-      <a href="#menu" class="translatable" data-en="Menu" data-vn="Thực Đơn">Menu</a>
-      <a href="#faq" class="translatable" data-en="FAQ" data-vn="Hỏi Đáp">FAQ</a>
-      <a href="#contact" class="translatable" data-en="Contact" data-vn="Liên Hệ">Contact</a>
-    </div>
-    <div class="language-toggle">
-      <button class="language-btn active" data-lang="en">EN</button>
-      <button class="language-btn" data-lang="vn">VN</button>
-    </div>
-    <div class="hamburger-menu">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
-</nav>
+  </nav>
 
  <section class="hero section-animate" id="hero">
-  <div class="container hero-grid">
-    <div class="hero-content">
-      <h1 class="translatable accent-italic" data-en="THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG" data-vn="NƠI DỄ DÀNG KẾT BẠN NHẤT ĐÀ NẴNG">
-        THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG
-      </h1>
-      <p class="translatable" data-en="drinks / snacks / spaces" data-vn="đồ uống / đồ ăn nhẹ / không gian">
-        drinks / snacks / spaces
-      </p>
-      <p class="translatable" data-en="Open daily 10am-2am | 86 Mai Thuc Lan" data-vn="Mở cửa hàng ngày 10am-2am | 86 Mai Thúc Lân">
-        Open daily 10am-2am | 86 Mai Thuc Lan
-      </p>
-      <p class="soft-opening translatable" data-en="Open!" data-vn="Open!">
-        Open!
-      </p>
-      <a href="#events" class="cta-button translatable" data-en="View Events" data-vn="Xem Sự Kiện">
-        View Events
-      </a>
+    <div class="hero-image-container">
+        <div class="hero-image"></div>
     </div>
-    <div class="hero-meta"></div>
-  </div>
-</section>
+    <div class="hero-overlay"></div>
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <h1 class="translatable accent-italic" data-en="THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG" data-vn="NƠI DỄ DÀNG KẾT BẠN NHẤT ĐÀ NẴNG">
+          THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG
+        </h1>
+        <p class="translatable" data-en="cafe / bar / spaces" data-vn="cafe / bar / không gian">
+          cafe / bar / spaces
+        </p>
+        <p class="translatable" data-en="Open daily 10am-2am | 86 Mai Thuc Lan" data-vn="Mở cửa hàng ngày 10am-2am | 86 Mai Thúc Lân">
+          Open daily 10am-2am | 86 Mai Thuc Lan
+        </p>
+        <a href="#events" class="cta-button translatable" data-en="View Events" data-vn="Xem Sự Kiện">
+          View Events
+        </a>
+      </div>
+      <div class="hero-meta">
+        <div class="fb-page" data-href="https://www.facebook.com/realitybarcafedanang" data-tabs="timeline" data-height="300" data-small-header="true" data-adapt-container-width="true" data-hide-cover="true" data-show-facepile="true"><blockquote cite="https://www.facebook.com/realitybarcafedanang" class="fb-xfbml-parse-ignore"><a href="https://www.facebook.com/realitybarcafedanang">REALITY - Đà Nẵng</a></blockquote></div>
+      </div>
+    </div>
+  </section>
 
   <section id="events" class="events section-animate">
     <div class="container grid">
@@ -383,6 +444,19 @@
           </div>
         </div>
         <div class="faq-item">
+            <div class="faq-question">
+              <h3 class="translatable" data-en="How 'free' are free events?" data-vn="Các sự kiện 'miễn phí' có thực sự miễn phí không?">
+                How 'free' are free events?
+              </h3>
+              <div class="faq-toggle"></div>
+            </div>
+            <div class="faq-answer">
+               <p class="translatable" data-en="We ask that when you use the space, you order something from us, so we can pay our employees, landlord, and suppliers." data-vn="Chúng tôi yêu cầu khi bạn sử dụng không gian, bạn hãy gọi một món gì đó từ chúng tôi, để chúng tôi có thể trả lương cho nhân viên, chủ nhà và các nhà cung cấp.">
+                We ask that when you use the space, you order something from us, so we can pay our employees, landlord, and suppliers.
+              </p>
+            </div>
+        </div>
+        <div class="faq-item">
           <div class="faq-question">
             <h3 class="translatable" data-en="Can I work on my laptop here?" data-vn="Tôi có thể làm việc với laptop ở đây không?">
               Can I work on my laptop here?
@@ -390,8 +464,8 @@
             <div class="faq-toggle"></div>
           </div>
           <div class="faq-answer">
-             <p class="translatable" data-en="Yes, until 5pm daily. After that, laptops away as we transition from workspace to social space." data-vn="Có, cho đến 5 giờ chiều hàng ngày. Sau đó, laptop cất đi khi chúng tôi chuyển từ không gian làm việc sang không gian giao tiếp.">
-              Yes, until 5pm daily. After that, laptops away as we transition from workspace to social space.
+             <p class="translatable" data-en="Yes, you are welcome to work on your laptop here anytime. We have plenty of space and outlets available." data-vn="Có, bạn có thể làm việc với laptop ở đây bất cứ lúc nào. Chúng tôi có nhiều không gian và ổ cắm.">
+              Yes, you are welcome to work on your laptop here anytime. We have plenty of space and outlets available.
             </p>
           </div>
         </div>
@@ -458,22 +532,26 @@
           <div class="contact-info-item">
             <h3 class="translatable" data-en="Follow Us" data-vn="Theo Dõi Chúng Tôi">Follow Us</h3>
             <div class="social-links">
-              <a href="https://www.facebook.com/realitybarcafedanang" class="social-icon">Facebook</a>
-              <a href="https://www.instagram.com/reality.dn" class="social-icon">Instagram</a>
+              <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/reality.dn/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+              </a>
             </div>
           </div>
         </div>
         <div class="map">
-           <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3834.170838965941!2d108.24066711485978!3d16.05671948888867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142177f0e5a5c5b%3A0x185c4f5c885f8554!2s86%20Mai%20Th%C3%BAc%20L%C3%A2n%2C%20B%E1%BA%AFc%20M%E1%BB%B9%20Ph%C3%BA%2C%20Ng%C5%A9%20H%C3%A0nh%20S%C6%A1n%2C%20%C4%90%C3%A0%20N%E1%BA%B5ng%20550000%2C%20Vietnam!5e0!3m2!1sen!2sus!4v1682873847123!5m2!1sen!2sus" 
-            width="100%" 
-            height="400" 
-            style="border:0;" 
-            loading="lazy" 
-            title="Location Map"
-            referrerpolicy="no-referrer-when-downgrade"
-            allowfullscreen="">
-          </iframe>
+          <iframe
+    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d665.6871532302732!2d108.24208350027376!3d16.052159858227263!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY%20-%20cafe%2C%20bar%2C%20spaces!5e1!3m2!1sen!2s!4v1749755452556!5m2!1sen!2s"
+    width="100%"
+    height="400"
+    style="border:0;"
+    allowfullscreen=""
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"
+    title="Location Map">
+  </iframe>
         </div>
       </div>
     </div>
@@ -496,8 +574,12 @@
       </div>
       <div class="footer-center">
         <div class="social-links">
-          <a href="https://www.facebook.com/realitybarcafedanang" class="social-icon">Facebook</a>
-          <a href="https://www.instagram.com/reality.dn" class="social-icon">Instagram</a>
+           <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+          </a>
+          <a href="https://www.instagram.com/reality.dn/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+          </a>
         </div>
       </div>
       <div class="footer-right">
@@ -529,39 +611,27 @@
       // Initialize the event flyers carousel with adaptive settings
       RealityCarousel.init({
         containerId: 'flyers-carousel',
-        imageFolder: 'images/flyers/', // Consider explicitly listing image URLs here for reliability
+        imageFolder: 'images/flyers/',
         height: isLowPerformance ? '300px' : '400px',
         aspectRatio: '3/4',  // Portrait orientation for event flyers
         rotationSpeed: isLowPerformance ? 5000 : 3300,  // Slower on mobile
         visibleImages: isMobile ? (window.innerWidth < 576 ? 1 : 2) : 3, // Adaptive count
-        gap: 0,
+        gap: 10,
         transitionSpeed: isLowPerformance ? 800 : 1000,
-        lazyLoad: true,
-        fallbackImages: [
-          'https://picsum.photos/seed/flyer1/600/800',
-          'https://picsum.photos/seed/flyer2/600/800',
-          'https://picsum.photos/seed/flyer3/600/800',
-          'https://picsum.photos/seed/flyer4/600/800'
-        ]
+        lazyLoad: true
       });
       
       // Initialize the space photos carousel with adaptive settings
       RealityCarousel.init({
         containerId: 'spaces-carousel',
-        imageFolder: 'images/spaces/', // Consider explicitly listing image URLs here for reliability
+        imageFolder: 'images/spaces/',
         height: isLowPerformance ? '250px' : '350px',
         aspectRatio: '16/9',  // Landscape orientation for space photos
         rotationSpeed: isLowPerformance ? 4000 : 2500,
         visibleImages: isMobile ? (window.innerWidth < 576 ? 1 : 2) : 4,
-        gap: 0,
+        gap: 10,
         transitionSpeed: isLowPerformance ? 800 : 2000,
-        lazyLoad: true,
-        fallbackImages: [
-          'https://picsum.photos/seed/space1/800/450',
-          'https://picsum.photos/seed/space2/800/450',
-          'https://picsum.photos/seed/space3/800/450',
-          'https://picsum.photos/seed/space4/800/450'
-        ]
+        lazyLoad: true
       });
       
       // Add performance monitoring when debug parameter is in URL

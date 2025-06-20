@@ -1,646 +1,665 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" type="image/png" href="images/favicon1tr.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reality - cafe / bar / spaces</title>
+    <meta name="description" content="coffee / cocktails / community in Đà Nẵng">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>REALITY - cafe & bar - the Easiest Place to Make Friends in Da Nang</title>
-  
-  <meta name="description" content="Reality Cafe & Bar in Da Nang - the easiest place to make friends in the city. Join us for events, board games, quiz nights, coworking space and social gatherings.">
-  <meta name="keywords" content="Da Nang bar, Danang cafe, Da Nang events, Da Nang workspace, board games Da Nang, meet friends Da Nang, social space, international community, quiz night, language exchange">
-  <meta name="author" content="Reality cafe & bar">
-  
-  <meta property="og:title" content="Reality cafe & bar - Make Friends in Da Nang">
-  <meta property="og:description" content="Reality is the easiest place to make friends in Da Nang. Events, drinks, and community in the heart of the city.">
-  <meta property="og:image" content="images/RealityWordform-black2048tr.png">
-  <meta property="og:url" content="https://realitydn.com">
-  <meta property="og:type" content="website">
-  
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-  <link rel="dns-prefetch" href="https://calendar.google.com">
-  <link rel="dns-prefetch" href="https://maps.googleapis.com">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  
-  <link rel="preload" href="images/RealityWordform-black2048tr.png" as="image">
-  
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,900;1,600&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/mobile.css">
-  <link rel="stylesheet" href="css/multi-carousel.css">
-  
-  <script>
-    // Simple browser capability detection
-    document.documentElement.classList.add(
-      'ontouchstart' in document.documentElement ? 'touch' : 'no-touch',
-      window.innerWidth < 768 ? 'mobile' : 'desktop',
-      'js-enabled'
-    );
-    
-    // Check for performance constraints
-    const isLowPerformance = (
-      window.innerWidth < 768 || 
-      ('ontouchstart' in window) || 
-      (navigator.hardwareConcurrency <= 4)
-    );
-    
-    if (isLowPerformance) {
-      document.documentElement.classList.add('low-performance');
-    }
-  </script>
-  
-  <style>
-    :root {
-      --primary-bg: #f5f5f786;
-      --text-color: #111111;
-      --text-light: #555555;
-      --accent-color-1: #000000;
-      --accent-color-2: #00000000;
-      --heading-font: 'Montserrat', sans-serif;
-      --body-font: 'Space Grotesk', sans-serif;
-      --border-radius: 0px;
-      --grid-gap: 2rem;
-      --transition-speed: 0.3s;
-    }
-    
-    /* Prevent horizontal overflow */
-    html, body {
-      overflow-x: hidden;
-      width: 100%;
-      position: relative;
-    }
-    
-    /* Ensure all content respects container width */
-    .container {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      overflow-x: hidden;
-    }
-    
-    /* Ensure hero area has a transparent background and sufficient top padding */
-    .hero {
-      background: transparent;
-      padding-top: 120px; /* Adjusted from original 120px to ensure content visibility below nav */
-      min-height: 80vh;
-      display: flex;
-      align-items: center;
-      width: 100%;
-      overflow: hidden;
-      position: relative;
-    }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            line-height: 1.6;
+            color: #151515;
+            background: #ffffff;
+        }
 
-    .hero-image-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: -2;
-        overflow: hidden;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-    .hero-image {
-        width: 100%;
-        height: 100%;
-        background-image: url('images/hero.jpg?q=80&w=2047&auto=format&fit=crop');
-        background-size: cover;
-        background-position: center;
-        transform: scale(1.1);
-    }
-    
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 251, 242, 0.2);
-        z-index: -1;
-    }
+        h1, h2, h3 {
+            font-family: 'Montserrat Alternates', sans-serif;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
 
-    /* Override buttons & accents to use black/white and the accent color */
-    .cta-button {
-      background: var(--accent-color-1);
-      color: #ffffff;
-      border: none;
-    }
-    
-    .cta-button:hover {
-      background: #000000;
-      color: #ffffff;
-    }
-    
-    /* Update nav links hover state */
-    .nav-links a:hover:after {
-      background: var(--accent-color-1);
-    }
-    
-    /* Sticky nav styling overrides */
-    nav.sticky {
-      background-color: rgba(255, 255, 255, 0.98);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      transition: background-color 0.3s, box-shadow 0.3s;
-    }
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
         
-    /* Logo styling */
-    .logo-wordform {
-      max-width: 100%;
-      height: auto;
-    }
-    
-    nav .logo-wordform {
-      height: 30px;
-      width: auto;
-    }
-    
-    nav.sticky .logo-wordform {
-      height: 24px;
-    }
-    
-    .contact .logo-wordform {
-      height: 60px;
-      margin-bottom: 1.5rem;
-    }
-    
-    /* Fix for navigation on mobile */
-    @media (max-width: 768px) {
-      nav .logo-wordform {
-        height: 24px;
-      }
-      .contact .logo-wordform {
-        height: 40px;
-      }
-      .hamburger-menu {
-        position: relative;
-        margin-left: auto;
-        z-index: 105;
-        margin-right: 15px;
-      }
-      .language-toggle {
-        z-index: 103;
-      }
-      .hero {
-          padding-top: 80px; /* Reduce padding on mobile below nav */
-      }
-    }
-    
-    /* Adjust hamburger and language toggle positioning */
-    @media (max-width: 576px) {
-      .language-toggle {
-        position: fixed;
-        top: 18px;
-        right: 70px;
-        z-index: 102;
-      }
-      nav {
-        padding: 0.75rem 0;
-      }
-      .hamburger-menu {
-        margin-right: 10px;
-      }
-    }
-    
-    @media (max-width: 400px) {
-      .language-toggle {
-        right: 55px;
-      }
-      .hamburger-menu {
-        margin-right: 0;
-      }
-    }
-    
-    /* Optimize FAQ animations */
-    .faq-answer {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s ease;
-      padding-right: 3rem;
-    }
+        h2 {
+            text-align: left;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
 
-    .faq-item.active .faq-answer {
-      max-height: var(--content-height, 1000px);
-    }
-    
-    /* PDF viewer styles */
-    .pdf-placeholder {
-      text-align: center;
-      padding: 2rem;
-      background: rgba(255, 255, 255, 0.5);
-    }
+        .tagline {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
 
-    .pdf-loading {
-      margin-top: 1rem;
-      color: #666;
-    }
+        /* Header */
+        header {
+            background: white;
+            padding: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 3px solid #f8f9fa;
+        }
 
-    .mobile-pdf-viewer {
-      width: 100%;
-      margin-top: 1rem;
-    }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
 
-    .mobile-pdf-controls {
-      text-align: center;
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
-      color: #666;
-    }
-    
-    /* Gallery section fixes */
-    .gallery {
-      width: 100%;
-      max-width: 100%;
-      overflow-x: hidden;
-    }
-    
-    .gallery .container {
-      max-width: 100%;
-      width: 100%;
-      padding: 0 1rem;
-      overflow-x: hidden;
-    }
-    
-    /* Carousel container fixes */
-    .carousel-container {
-      width: 100%;
-      max-width: 100%;
-      overflow-x: hidden;
-      margin: 0 auto;
-      box-sizing: border-box;
-    }
-    
-    /* Social Icon Styling */
-    footer .social-links {
-        display: flex;
-        gap: 1.5rem;
-        align-items: center;
-    }
-    footer .social-links a svg {
-        fill: white;
-        width: 24px;
-        height: 24px;
-        opacity: 0.8;
-        transition: opacity 0.3s;
-    }
-    footer .social-links a:hover svg {
-        opacity: 1;
-    }
-    .contact-info .social-links {
-        display: flex;
-        gap: 1.5rem;
-        align-items: center;
-    }
-    .contact-info .social-links a svg {
-        fill: var(--text-color);
-        width: 24px;
-        height: 24px;
-        opacity: 0.8;
-        transition: opacity 0.3s;
-    }
-    .contact-info .social-links a:hover svg {
-        opacity: 1;
-    }
-    
-  </style>
+        .logo-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .logo-svg {
+            width: 100%;
+            max-width: 450px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .tagline {
+            margin-top: 0.5rem;
+        }
+
+        .translate-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .language-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .translate-btn {
+            background: #f8f9fa;
+            color: #151515;
+            border: 2px solid #151515;
+            padding: 0.4rem 0.8rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .translate-btn:hover, .translate-btn.active {
+            color: #ffffff;
+            animation: bg-color-cycle 4s linear infinite;
+        }
+
+        .header-social {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            background: #151515;
+            border: 2px solid #151515;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .social-link svg {
+            fill: #ffffff;
+            width: 24px;
+            height: 24px;
+            transition: all 0.3s;
+        }
+
+        .social-link:hover {
+            animation: bg-color-cycle 4s linear infinite;
+        }
+
+        /* Main Content */
+        main {
+            padding-top: 3rem;
+        }
+        
+        main > .container > .content-grid,
+        main > .container > .section {
+            margin-bottom: 3rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+        
+        .full-width-section {
+            grid-column: 1 / -1;
+        }
+
+        .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #eeeeee;
+        }
+
+        .social-widget-container {
+            display: flex;
+            justify-content: center;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            min-height: 400px;
+            align-items: center;
+        }
+        
+        .calendar-placeholder iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        
+        .map-placeholder iframe {
+            width: 100%;
+            height: 300px;
+            border: 0;
+            border-radius: 5px;
+        }
+
+        .menu-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .menu-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #151515;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .menu-link:hover {
+            background-color: #ffffff;
+            animation: border-color-cycle 4s linear infinite;
+        }
+        
+        .menu-link span:last-child {
+            text-align: right;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .faq-item {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #eeeeee;
+        }
+
+        .faq-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Partners Section & Tooltip Styling */
+        .partners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+        
+        .partner-link {
+            position: relative;
+            display: block;
+            text-decoration: none;
+            transition: transform 0.3s;
+        }
+        
+        .partner-link:hover {
+            transform: translateY(-4px);
+        }
+
+        .partner-link:hover .partner-logo {
+            animation: border-color-cycle 4s linear infinite;
+        }
+        
+        .partner-link::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #151515;
+            color: #ffffff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+        }
+        
+        .partner-link:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .partner-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #ffffff;
+            border: 2px solid #151515;
+            border-radius: 10px;
+            padding: 1.5rem;
+            aspect-ratio: 1;
+            transition: border-color 0.3s;
+        }
+
+        /* Footer */
+        footer {
+            background: #151515;
+            color: #ffffff;
+            text-align: center;
+            padding: 2rem 0;
+            border-top: 3px solid #f8f9fa;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .contact-info {
+            text-align: left;
+        }
+        .contact-info a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Animation Keyframes */
+        @keyframes bg-color-cycle {
+            0%, 100% { background-color: #35a7ff; border-color: #35a7ff; } /* Blue */
+            33%      { background-color: #ffe74c; border-color: #ffe74c; } /* Yellow */
+            66%      { background-color: #ff5964; border-color: #ff5964; } /* Red */
+        }
+        
+        @keyframes border-color-cycle {
+            0%, 100% { border-color: #35a7ff; } /* Blue */
+            33%      { border-color: #ffe74c; } /* Yellow */
+            66%      { border-color: #ff5964; } /* Red */
+        }
+
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+                margin-bottom: 0;
+            }
+
+            .content-grid .section {
+                margin-bottom: 3rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .contact-info {
+                text-align: center;
+            }
+
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .menu-links {
+                grid-template-columns: 1fr;
+            }
+
+            .partners-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="fb-root"></div>
-  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v23.0"></script>
-
-  <nav id="mainNav">
-    <div class="container nav-container">
-      <div class="logo">
-        <img 
-          src="images/RealityWordform-black2048tr.png" 
-          srcset="images/RealityWordform-black1024tr.png 1024w, 
-                  images/RealityWordform-black2048tr.png 2048w"
-          sizes="(max-width: 768px) 80vw, 300px"
-          alt="Reality cafe & bar Da Nang" 
-          class="logo-wordform"
-          loading="eager"
-          decoding="async"
-          width="300" 
-          height="60">
-      </div>
-      <div class="nav-links">
-        <a href="#hero" class="translatable" data-en="Home" data-vn="Trang Chủ">Home</a>
-        <a href="#events" class="translatable" data-en="Events" data-vn="Sự Kiện">Events</a>
-        <a href="#gallery" class="translatable" data-en="Gallery" data-vn="Hình Ảnh">Gallery</a>
-        <a href="#menu" class="translatable" data-en="Menu" data-vn="Thực Đơn">Menu</a>
-        <a href="#faq" class="translatable" data-en="FAQ" data-vn="Hỏi Đáp">FAQ</a>
-        <a href="#contact" class="translatable" data-en="Contact" data-vn="Liên Hệ">Contact</a>
-      </div>
-       <div class="nav-socials">
-          <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
-          </a>
-          <a href="https://www.instagram.com/reality.dn/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
-          </a>
-      </div>
-      <div class="language-toggle">
-        <button class="language-btn active" data-lang="en">EN</button>
-        <button class="language-btn" data-lang="vn">VN</button>
-      </div>
-      <div class="hamburger-menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-    </div>
-  </nav>
-
- <section class="hero section-animate" id="hero">
-    <div class="hero-image-container">
-        <div class="hero-image"></div>
-    </div>
-    <div class="hero-overlay"></div>
-    <div class="container hero-grid">
-      <div class="hero-content">
-        <h1 class="translatable accent-italic" data-en="THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG" data-vn="NƠI DỄ DÀNG KẾT BẠN NHẤT ĐÀ NẴNG">
-          THE EASIEST PLACE TO MAKE FRIENDS IN ĐÀ NẴNG
-        </h1>
-        <p class="translatable" data-en="cafe / bar / spaces" data-vn="cafe / bar / không gian">
-          cafe / bar / spaces
-        </p>
-        <p class="translatable" data-en="Open daily 10am-2am | 86 Mai Thuc Lan" data-vn="Mở cửa hàng ngày 10am-2am | 86 Mai Thúc Lân">
-          Open daily 10am-2am | 86 Mai Thuc Lan
-        </p>
-        <a href="#events" class="cta-button translatable" data-en="View Events" data-vn="Xem Sự Kiện">
-          View Events
-        </a>
-      </div>
-      <div class="hero-meta">
-        <div class="fb-page" data-href="https://www.facebook.com/realitybarcafedanang" data-tabs="timeline" data-height="300" data-small-header="true" data-adapt-container-width="true" data-hide-cover="true" data-show-facepile="true"><blockquote cite="https://www.facebook.com/realitybarcafedanang" class="fb-xfbml-parse-ignore"><a href="https://www.facebook.com/realitybarcafedanang">REALITY - Đà Nẵng</a></blockquote></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="events" class="events section-animate">
-    <div class="container grid">
-      <div class="events-header grid-7">
-        <h2 class="translatable" data-en="Events that bring people together" data-vn="Những sự kiện kết nối mọi người">
-          Events that bring people together
-        </h2>
-        <p class="translatable" data-en="Our calendar features regular quiz nights, language exchanges, film screenings, workshops, and more. No experience or connections needed to join - these events are designed to help you meet new people." data-vn="Lịch của chúng tôi có các đêm quiz, giao lưu ngôn ngữ, chiếu phim, hội thảo và nhiều hơn nữa. Không cần kinh nghiệm hay mối quan hệ để tham gia - các sự kiện được thiết kế để giúp bạn gặp gỡ người mới.">
-          Our calendar features regular quiz nights, language exchanges, film screenings, workshops, and more. No experience or connections needed to join - these events are designed to help you meet new people.
-        </p>
-        <p class="translatable" data-en="Have an event idea? Get in touch. We're always looking for interesting things to add to our schedule." data-vn="Có ý tưởng sự kiện? Hãy liên hệ. Chúng tôi luôn tìm kiếm những điều thú vị để thêm vào lịch trình.">
-          Have an event idea? Get in touch. We're always looking for interesting things to add to our schedule.
-        </p>
-      </div>
-      <div class="events-calendar grid-7" id="event-calendar">
-        <iframe 
-          src="https://calendar.google.com/calendar/embed?height=600&wkst=1&bgcolor=%23FFFFFF&ctz=Asia%2FHo_Chi_Minh&showPrint=0&showNav=1&showTitle=0&showTabs=0&showCalendars=0&showTz=0&mode=WEEK&src=realitydn%40gmail.com&color=%23000000" 
-          style="border: none;" 
-          loading="lazy"
-          title="Reality Event Calendar">
-        </iframe>
-         <p class="facebook-cta translatable" data-en="Follow us on <a href='https://www.facebook.com/realitybarcafedanang' target='_blank' rel='noopener noreferrer'>Facebook</a> for the latest event details!" data-vn="Theo dõi chúng tôi trên <a href='https://www.facebook.com/realitybarcafedanang' target='_blank' rel='noopener noreferrer'>Facebook</a> để biết chi tiết sự kiện mới nhất!">
-            Follow us on <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer">Facebook</a> for the latest event details!
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <section class="gallery section-animate" id="gallery">
-    <div class="container">
-      <div id="flyers-carousel" class="carousel-container"></div>
-      
-      <div id="spaces-carousel" class="carousel-container"></div>
-    </div>
-  </section>
-
-  <section class="menu section-animate" id="menu">
-    <div class="container grid">
-      <h2 class="translatable" data-en="Our Menu" data-vn="Thực Đơn">
-        Our Menu
-      </h2>
-      <div class="menu-viewer grid-7">
-        </div>
-    </div>
-  </section>
-
-  <section class="faq section-animate" id="faq">
-    <div class="container grid">
-      <h2 class="translatable" data-en="Frequently Asked Questions" data-vn="Câu Hỏi Thường Gặp">
-        Frequently Asked Questions
-      </h2>
-      <div class="faq-list grid-7">
-        <div class="faq-item">
-          <div class="faq-question">
-            <h3 class="translatable" data-en="Do I need to know people to participate in events?" data-vn="Tôi có cần quen biết ai đó để tham gia sự kiện không?">
-              Do I need to know people to participate in events?
-            </h3>
-            <div class="faq-toggle"></div>
-          </div>
-          <div class="faq-answer">
-            <p class="translatable" data-en="No. Unless marked as private, all our events welcome newcomers. Come alone and meet people, or bring friends - either works." data-vn="Không. Trừ khi được đánh dấu là riêng tư, tất cả sự kiện của chúng tôi đều chào đón người mới. Đến một mình và gặp gỡ mọi người, hoặc mang theo bạn bè - cả hai đều được.">
-              No. Unless marked as private, all our events welcome newcomers. Come alone and meet people, or bring friends - either works.
-            </p>
-          </div>
-        </div>
-        <div class="faq-item">
-            <div class="faq-question">
-              <h3 class="translatable" data-en="How 'free' are free events?" data-vn="Các sự kiện 'miễn phí' có thực sự miễn phí không?">
-                How 'free' are free events?
-              </h3>
-              <div class="faq-toggle"></div>
-            </div>
-            <div class="faq-answer">
-               <p class="translatable" data-en="We ask that when you use the space, you order something from us, so we can pay our employees, landlord, and suppliers." data-vn="Chúng tôi yêu cầu khi bạn sử dụng không gian, bạn hãy gọi một món gì đó từ chúng tôi, để chúng tôi có thể trả lương cho nhân viên, chủ nhà và các nhà cung cấp.">
-                We ask that when you use the space, you order something from us, so we can pay our employees, landlord, and suppliers.
-              </p>
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v23.0"></script>
+    
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 512 84" class="logo-svg">
+                      <g>
+                        <g id="Layer_1">
+                          <g>
+                            <path d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/>
+                            <path d="M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z"/>
+                            <path d="M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z"/>
+                            <path d="M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z"/>
+                            <path d="M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z"/>
+                            <path d="M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z"/>
+                            <path d="M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z"/>
+                          </g>
+                        </g>
+                      </g>
+                    </svg>
+                    <p id="tagline" class="tagline">coffee / cocktails / community</p>
+                </div>
+                <div class="translate-section">
+                    <div class="language-buttons">
+                        <button id="lang-en" class="translate-btn active" onclick="setLanguage('en')">English</button>
+                        <button id="lang-vi" class="translate-btn" onclick="setLanguage('vi')">Tiếng Việt</button>
+                    </div>
+                    <div class="header-social">
+                        <a href="https://www.facebook.com/realitybarcafedanang" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+                        </a>
+                        <a href="https://www.instagram.com/reality.dn/" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="faq-item">
-          <div class="faq-question">
-            <h3 class="translatable" data-en="Can I work on my laptop here?" data-vn="Tôi có thể làm việc với laptop ở đây không?">
-              Can I work on my laptop here?
-            </h3>
-            <div class="faq-toggle"></div>
-          </div>
-          <div class="faq-answer">
-             <p class="translatable" data-en="Yes, you are welcome to work on your laptop here anytime. We have plenty of space and outlets available." data-vn="Có, bạn có thể làm việc với laptop ở đây bất cứ lúc nào. Chúng tôi có nhiều không gian và ổ cắm.">
-              Yes, you are welcome to work on your laptop here anytime. We have plenty of space and outlets available.
-            </p>
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-question">
-            <h3 class="translatable" data-en="Is smoking allowed?" data-vn="Có được hút thuốc không?">
-              Is smoking allowed?
-            </h3>
-            <div class="faq-toggle"></div>
-          </div>
-          <div class="faq-answer">
-             <p class="translatable" data-en="Outdoors only. Enjoy the view from our third-floor balcony." data-vn="Chỉ ở ngoài trời. Tận hưởng tầm nhìn từ ban công tầng ba của chúng tôi.">
-              Outdoors only. Enjoy the view from our third-floor balcony.
-            </p>
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-question">
-            <h3 class="translatable" data-en="What's your code of conduct?" data-vn="Quy tắc ứng xử của quán là gì?">
-              What's your code of conduct?
-            </h3>
-            <div class="faq-toggle"></div>
-          </div>
-          <div class="faq-answer">
-             <p class="translatable" data-en="Respect everyone. No discrimination. We want this to be a comfortable space for all." data-vn="Tôn trọng mọi người. Không phân biệt đối xử. Chúng tôi muốn đây là không gian thoải mái cho tất cả mọi người.">
-              Respect everyone. No discrimination. We want this to be a comfortable space for all.
-            </p>
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-question">
-            <h3 class="translatable" data-en="I'd like to host an event at Reality. How does that work?" data-vn="Tôi muốn tổ chức sự kiện tại Reality. Làm thế nào để thực hiện?">
-              I'd like to host an event at Reality. How does that work?
-            </h3>
-            <div class="faq-toggle"></div>
-          </div>
-          <div class="faq-answer">
-             <p class="translatable" data-en="Talk to a member of management about your idea. If it fits our space and community, we'll help you make it happen." data-vn="Trao đổi với một thành viên quản lý về ý tưởng của bạn. Nếu phù hợp với không gian và cộng đồng của chúng tôi, chúng tôi sẽ giúp bạn thực hiện nó.">
-              Talk to a member of management about your idea. If it fits our space and community, we'll help you make it happen.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+    </header>
 
-  <section class="contact section-animate" id="contact">
-    <div class="container grid">
-      <h2 class="translatable" data-en="Let's talk" data-vn="Hãy trò chuyện">
-        Let's talk
-      </h2>
-      <p class="translatable" data-en="Questions? Event bookings? Other inquiries? Drop by, message us, or reach out on social media." data-vn="Có câu hỏi? Đặt sự kiện? Thắc mắc khác? Ghé thăm, nhắn tin, hoặc liên hệ qua mạng xã hội.">
-        Questions? Event bookings? Other inquiries? Drop by, message us, or reach out on social media.
-      </p>
-      <div class="contact-wrapper grid-7">
-        <div class="contact-info">
-          <div class="contact-info-item">
-            <h3 class="translatable" data-en="Location" data-vn="Địa Chỉ">Location</h3>
-            <p>86 Mai Thuc Lan, Da Nang</p>
-            <p class="address-note translatable" data-en="Find us on the map below" data-vn="Tìm chúng tôi trên bản đồ bên dưới">
-              Find us on the map below
-            </p>
-          </div>
-          <div class="contact-info-item">
-            <h3 class="translatable" data-en="Follow Us" data-vn="Theo Dõi Chúng Tôi">Follow Us</h3>
-            <div class="social-links">
-              <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
-              </a>
-              <a href="https://www.instagram.com/reality.dn/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
-              </a>
+    <main>
+        <div class="container">
+            
+            <div class="content-grid">
+                <div class="section">
+                    <h2 id="meet-reality-header">Meet Reality</h2>
+                    <div class="social-widget-container">
+                        <div class="fb-page" data-href="https://www.facebook.com/realitybarcafedanang" data-tabs="timeline" data-small-header="false" data-adapt-container-width="true" data-hide-cover="false" data-show-facepile="false"><blockquote cite="https://www.facebook.com/realitybarcafedanang" class="fb-xfbml-parse-ignore"><a href="https://www.facebook.com/realitybarcafedanang">REALITY - Đà Nẵng</a></blockquote></div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 id="see-reality-header">See Reality</h2>
+                    <div class="social-widget-container">
+                        <script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script><iframe src="//lightwidget.com/widgets/7e511580cc6c5d45b4b6335990c0053e.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" style="width:100%;border:0;overflow:hidden;"></iframe>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="map">
-          <iframe
-    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d665.6871532302732!2d108.24208350027376!3d16.052159858227263!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY%20-%20cafe%2C%20bar%2C%20spaces!5e1!3m2!1sen!2s!4v1749755452556!5m2!1sen!2s"
-    width="100%"
-    height="400"
-    style="border:0;"
-    allowfullscreen=""
-    loading="lazy"
-    referrerpolicy="no-referrer-when-downgrade"
-    title="Location Map">
-  </iframe>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <footer>
-    <div class="container footer-grid">
-      <div class="footer-left">
-        <div class="logo">
-          <img 
-            src="images/RealityWordform-white2048tr.png" 
-            alt="Reality cafe & bar Da Nang" 
-            class="logo-wordform" 
-            loading="lazy"
-            style="height: 40px; width: auto;">
-        </div>
-        <p class="tagline translatable accent-italic" data-en="The easiest place to make friends in Da Nang" data-vn="Nơi dễ dàng kết bạn nhất Đà Nẵng">
-          The easiest place to make friends in Da Nang
-        </p>
-      </div>
-      <div class="footer-center">
-        <div class="social-links">
-           <a href="https://www.facebook.com/realitybarcafedanang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
-          </a>
-          <a href="https://www.instagram.com/reality.dn/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
-          </a>
-        </div>
-      </div>
-      <div class="footer-right">
-        <p class="footer-text translatable" data-en="Open daily 10am-2am" data-vn="Mở cửa hàng ngày 10am-2am">
-          Open daily 10am-2am
-        </p>
-      </div>
-      <div class="footer-bottom">
-        © 2025 Reality Bar & Cafe. All rights reserved. 
-      </div>
-    </div>
-  </footer>
+            <div class="section full-width-section">
+                <h2 id="calendar-header">Event calendar</h2>
+                <div class="calendar-placeholder">
+                    <iframe src="https://calendar.google.com/calendar/embed?height=600&wkst=1&bgcolor=%23FFFFFF&ctz=Asia%2FHo_Chi_Minh&showPrint=0&showNav=1&showTitle=0&showTabs=0&showCalendars=0&showTz=0&mode=WEEK&src=realitydn%40gmail.com&color=%23000000" loading="lazy" title="Reality Event Calendar"></iframe>
+                </div>
+            </div>
 
-  <script src="js/main.js" defer></script>
-  <script src="js/language.js" defer></script>
-  <script src="js/color-waves.js" defer></script>
-  <script src="js/faq.js" defer loading="lazy"></script>
-  <script src="js/multi-carousel.js" defer loading="lazy"></script>
-  <script src="js/pdf-viewer.js" defer loading="lazy"></script>
+            <div class="content-grid">
+                <div class="section">
+                    <h2 id="community-header">Find your community</h2>
+                    <p style="margin-bottom: 1rem;"><strong><a href="https://maps.app.goo.gl/DXWGWN2Z9yihv3FJ6" target="_blank" rel="noopener noreferrer" style="text-decoration:none; color: #151515;">86 Mai Thúc Lân, Đà Nẵng</a></strong></p>
+                    <p id="hours-find" style="margin-bottom: 1rem;">Open daily 10am-2am</p>
+                    <div class="map-placeholder">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d665.6871532302732!2d108.24208350027376!3d16.052159858227263!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY%20-%20cafe%2C%20bar%2C%20spaces!5e1!3m2!1sen!2s!4v1749755452556!5m2!1sen!2s" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Location Map"></iframe>
+                    </div>
+                </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Adaptive initialization based on device capabilities
-      const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
-      const isLowPerformance = isMobile || navigator.hardwareConcurrency <= 4;
-      
-      console.log('Initializing carousels...');
-      
-      // Initialize the event flyers carousel with adaptive settings
-      RealityCarousel.init({
-        containerId: 'flyers-carousel',
-        imageFolder: 'images/flyers/',
-        height: isLowPerformance ? '300px' : '400px',
-        aspectRatio: '3/4',  // Portrait orientation for event flyers
-        rotationSpeed: isLowPerformance ? 5000 : 3300,  // Slower on mobile
-        visibleImages: isMobile ? (window.innerWidth < 576 ? 1 : 2) : 3, // Adaptive count
-        gap: 10,
-        transitionSpeed: isLowPerformance ? 800 : 1000,
-        lazyLoad: true
-      });
-      
-      // Initialize the space photos carousel with adaptive settings
-      RealityCarousel.init({
-        containerId: 'spaces-carousel',
-        imageFolder: 'images/spaces/',
-        height: isLowPerformance ? '250px' : '350px',
-        aspectRatio: '16/9',  // Landscape orientation for space photos
-        rotationSpeed: isLowPerformance ? 4000 : 2500,
-        visibleImages: isMobile ? (window.innerWidth < 576 ? 1 : 2) : 4,
-        gap: 10,
-        transitionSpeed: isLowPerformance ? 800 : 2000,
-        lazyLoad: true
-      });
-      
-      // Add performance monitoring when debug parameter is in URL
-      if (window.location.search.includes('debug=1')) {
-        const script = document.createElement('script');
-        script.src = 'js/performance-monitor.js';
-        document.body.appendChild(script);
-      }
-    });
-  </script>
+                <div class="section">
+                    <h2 id="menu-header">Our menus</h2>
+                    <div class="menu-links">
+                        <a href="menu-daytime-en.pdf" class="menu-link" target="_blank">
+                            <span id="menu-day-en-text">Daytime Menu - English</span>
+                            <span id="menu-day-en-link">View | Download PDF</span>
+                        </a>
+                        <a href="menu-daytime-vn.pdf" class="menu-link" target="_blank">
+                            <span id="menu-day-vn-text">Daytime Menu - Vietnamese</span>
+                            <span id="menu-day-vn-link">View | Download PDF</span>
+                        </a>
+                        <a href="menu-nighttime-en.pdf" class="menu-link" target="_blank">
+                            <span id="menu-night-en-text">Nighttime Menu - English</span>
+                            <span id="menu-night-en-link">View | Download PDF</span>
+                        </a>
+                        <a href="menu-nighttime-vn.pdf" class="menu-link" target="_blank">
+                            <span id="menu-night-vn-text">Nighttime Menu - Vietnamese</span>
+                            <span id="menu-night-vn-link">View | Download PDF</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section full-width-section">
+                <h2 id="how-it-works-header">How Reality works</h2>
+                <div class="faq-grid">
+                    <div class="faq-column">
+                        <div class="faq-item">
+                            <div id="faq1-q" class="faq-question">Do I need to know anyone to join events?</div>
+                            <div id="faq1-a" class="faq-answer">Nope! Unless marked as private, all our events welcome newcomers. Bring yourself or bring a crew.</div>
+                        </div>
+                        <div class="faq-item">
+                            <div id="faq2-q" class="faq-question">Can I work here?</div>
+                            <div id="faq2-a" class="faq-answer">Sure! Lots of people do. We can't always guarantee privacy or quiet, and it's really not an ideal space for long video calls, but we've got AC and a lot of electrical outlets.</div>
+                        </div>
+                        <div class="faq-item">
+                            <div id="faq3-q" class="faq-question">Can I smoke here?</div>
+                            <div id="faq3-a" class="faq-answer">Only on the third floor patio, and only tobacco.</div>
+                        </div>
+                    </div>
+                    <div class="faq-column">
+                        <div class="faq-item">
+                            <div id="faq4-q" class="faq-question">Do I need to buy something to use the space?</div>
+                            <div id="faq4-a" class="faq-answer">Please do! We need to pay rent, employees, our landlord, etc., etc., etc.</div>
+                        </div>
+                        <div class="faq-item">
+                            <div id="faq5-q" class="faq-question">Can I host an event here?</div>
+                            <div id="faq5-a" class="faq-answer">Just talk to a member of management about your idea. If it fits our space, community, and calendar, we'll make it work.</div>
+                        </div>
+                        <div class="faq-item">
+                            <div id="faq6-q" class="faq-question">Other rules?</div>
+                            <div id="faq6-a" class="faq-answer">Respect all guests, staff, and everybody else that walks in. Don't leave your kids unattended. Only tiny, leashed pets that stay right with you are allowed. No outside food or drink except when pre-approved by management.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section full-width-section">
+                <h2 id="partners-header">Community partners</h2>
+                <div class="partners-grid">
+                    <a href="https://bamboo-bob.com" target="_blank" rel="noopener noreferrer" class="partner-link" data-tooltip="Bamboo Bob">
+                        <img src="images/partners/bambooboblogo.avif" alt="Bamboo Bob" class="partner-logo">
+                    </a>
+                    <a href="https://www.instagram.com/grandmavuongs/" target="_blank" rel="noopener noreferrer" class="partner-link" data-tooltip="Grandma Vượng's Bánh Mì & Deli">
+                        <img src="images/partners/grandmavuonglogo.jpg" alt="Grandma Vượng's Bánh Mì & Deli" class="partner-logo">
+                    </a>
+                    <a href="https://www.wildcats.io" target="_blank" rel="noopener noreferrer" class="partner-link" data-tooltip="Wildcats.io">
+                        <img src="images/partners/wildcatslogo.jpg" alt="Wildcats.io" class="partner-logo">
+                    </a>
+                    <a href="https://www.facebook.com/LearnToDanceDANANG" target="_blank" rel="noopener noreferrer" class="partner-link" data-tooltip="LearnToDanceDANANG">
+                        <img src="images/partners/learntodancelogo.jpg" alt="LearnToDanceDANANG" class="partner-logo">
+                    </a>
+                    <a href="https://houseoflegends.vn/" target="_blank" rel="noopener noreferrer" class="partner-link" data-tooltip="House of Legends">
+                        <img src="images/partners/houseoflegendslogo.png" alt="House of Legends" class="partner-logo">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="contact-info">
+                    <p><strong>Reality Cafe & Bar</strong></p>
+                    <p><a href="https://maps.app.goo.gl/DXWGWN2Z9yihv3FJ6" target="_blank" rel="noopener noreferrer">86 Mai Thúc Lân, Đà Nẵng</a></p>
+                    <p id="hours-footer">Open daily 10am-2am</p>
+                </div>
+                <div class="header-social">
+                    <a href="https://www.facebook.com/realitybarcafedanang" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+                    </a>
+                    <a href="https://www.instagram.com/reality.dn/" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.058 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- TRANSLATION SCRIPT ---
+        const translations = {
+            en: {
+                tagline: 'coffee / cocktails / community',
+                'meet-reality-header': 'Meet Reality',
+                'see-reality-header': 'See Reality',
+                'calendar-header': 'Event calendar',
+                'community-header': 'Find your community',
+                'hours-find': 'Open daily 10am-2am',
+                'menu-header': 'Our menus',
+                'menu-day-en-text': 'Daytime Menu - English',
+                'menu-day-en-link': 'View | Download PDF',
+                'menu-day-vn-text': 'Daytime Menu - Vietnamese',
+                'menu-day-vn-link': 'View | Download PDF',
+                'menu-night-en-text': 'Nighttime Menu - English',
+                'menu-night-en-link': 'View | Download PDF',
+                'menu-night-vn-text': 'Nighttime Menu - Vietnamese',
+                'menu-night-vn-link': 'View | Download PDF',
+                'how-it-works-header': 'How Reality works',
+                'faq1-q': 'Do I need to know anyone to join events?',
+                'faq1-a': 'Nope! Unless marked as private, all our events welcome newcomers. Bring yourself or bring a crew.',
+                'faq2-q': 'Can I work here?',
+                'faq2-a': "Sure! Lots of people do. We can't always guarantee privacy or quiet, and it's really not an ideal space for long video calls, but we've got AC and a lot of electrical outlets.",
+                'faq3-q': 'Can I smoke here?',
+                'faq3-a': 'Only on the third floor patio, and only tobacco.',
+                'faq4-q': 'Do I need to buy something to use the space?',
+                'faq4-a': 'Please do! We need to pay rent, employees, our landlord, etc., etc., etc.',
+                'faq5-q': 'Can I host an event here?',
+                'faq5-a': "Just talk to a member of management about your idea. If it fits our space, community, and calendar, we'll make it work.",
+                'faq6-q': 'Other rules?',
+                'faq6-a': "Respect all guests, staff, and everybody else that walks in. Don't leave your kids unattended. Only tiny, leashed pets that stay right with you are allowed. No outside food or drink except when pre-approved by management.",
+                'partners-header': 'Community partners',
+                'hours-footer': 'Open daily 10am-2am',
+            },
+            vi: {
+                tagline: 'cà phê / cocktail / cộng đồng',
+                'meet-reality-header': 'Gặp gỡ Reality',
+                'see-reality-header': 'Khám phá Reality',
+                'calendar-header': 'Lịch sự kiện',
+                'community-header': 'Tìm cộng đồng của bạn',
+                'hours-find': 'Mở cửa hàng ngày 10h sáng - 2h sáng',
+                'menu-header': 'Thực đơn',
+                'menu-day-en-text': 'Thực đơn ban ngày - Tiếng Anh',
+                'menu-day-en-link': 'Xem | Tải PDF',
+                'menu-day-vn-text': 'Thực đơn ban ngày - Tiếng Việt',
+                'menu-day-vn-link': 'Xem | Tải PDF',
+                'menu-night-en-text': 'Thực đơn ban đêm - Tiếng Anh',
+                'menu-night-en-link': 'Xem | Tải PDF',
+                'menu-night-vn-text': 'Thực đơn ban đêm - Tiếng Việt',
+                'menu-night-vn-link': 'Xem | Tải PDF',
+                'how-it-works-header': 'Reality hoạt động thế nào?',
+                'faq1-q': 'Tôi có cần quen ai để tham gia sự kiện không?',
+                'faq1-a': 'Không hề! Trừ những sự kiện riêng tư, tất cả sự kiện của chúng tôi đều chào đón người mới. Bạn có thể đến một mình hoặc đi cùng bạn bè.',
+                'faq2-q': 'Tôi có thể làm việc ở đây không?',
+                'faq2-a': "Chắc chắn rồi! Rất nhiều người làm việc ở đây. Chúng tôi không thể luôn đảm bảo sự riêng tư hay yên tĩnh, và đây không phải là không gian lý tưởng cho các cuộc gọi video dài, nhưng chúng tôi có máy lạnh và rất nhiều ổ cắm điện.",
+                'faq3-q': 'Tôi có thể hút thuốc ở đây không?',
+                'faq3-a': 'Chỉ ở sân thượng tầng ba, và chỉ hút thuốc lá.',
+                'faq4-q': 'Tôi có cần mua gì để sử dụng không gian không?',
+                'faq4-a': 'Vui lòng nhé! Chúng tôi cần trả tiền thuê mặt bằng, nhân viên, chủ nhà, v.v.',
+                'faq5-q': 'Tôi có thể tổ chức sự kiện ở đây không?',
+                'faq5-a': "Chỉ cần trao đổi với quản lý về ý tưởng của bạn. Nếu nó phù hợp với không gian, cộng đồng và lịch trình của chúng tôi, chúng tôi sẽ giúp bạn biến nó thành hiện thực.",
+                'faq6-q': 'Các quy tắc khác?',
+                'faq6-a': "Tôn trọng tất cả khách hàng, nhân viên và mọi người khác bước vào. Không để trẻ em không có người trông coi. Chỉ cho phép thú cưng nhỏ, có dây xích và luôn ở ngay bên cạnh bạn. Không mang đồ ăn hoặc thức uống bên ngoài vào, trừ khi được quản lý chấp thuận trước.",
+                'partners-header': 'Các đối tác cộng đồng',
+                'hours-footer': 'Mở cửa hàng ngày 10h sáng - 2h sáng',
+            }
+        };
+
+        const setLanguage = (lang) => {
+            if (!translations[lang]) {
+                console.warn(`No translations found for language: ${lang}`);
+                return;
+            }
+            
+            document.querySelectorAll('.translate-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+
+            const elementsToTranslate = translations[lang];
+            for (const id in elementsToTranslate) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.innerHTML = elementsToTranslate[id];
+                }
+            }
+        };
+    </script>
 </body>
 </html>

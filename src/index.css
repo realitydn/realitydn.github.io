@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom properties */
+:root {
+  --cream: #fffbf2;
+  --ink: #0d0906;
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #FDFBF7;
+  color: #0d0906;
+  font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+.font-mont {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.font-space {
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* Custom colors that Tailwind might miss */
+.bg-cream {
+  background-color: #fffbf2;
+}
+
+.bg-ink {
+  background-color: #0d0906;
+}
+
+.text-cream {
+  color: #fffbf2;
+}
+
+.text-ink {
+  color: #0d0906;
+}
+
+.border-ink {
+  border-color: #0d0906;
+}
+
+/* Enhanced shadows */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.shadow-3xl {
+  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.4);
+}
+
+.shadow-event {
+  box-shadow: 0 20px 60px rgba(251, 146, 60, 0.3);
+}
+
+.shadow-event-hover {
+  box-shadow: 0 30px 70px rgba(251, 146, 60, 0.4);
+}
+
+/* Scrollbar styles */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid #0d0906;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #0d0906;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+button, a {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Backdrop blur support */
+@supports (backdrop-filter: blur(12px)) {
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    color: black;
+    background: white;
+  }
+}

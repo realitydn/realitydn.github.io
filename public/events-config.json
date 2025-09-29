@@ -1,0 +1,16 @@
+{
+  "comment": "Just list the image filenames you want to show, in order",
+  "events": [
+    "a.jpg",
+    "b.jpg",
+    "c.jpg",
+    "d.jpg",
+    "e.jpg",
+    "f.jpg",
+    "g.jpg",
+    "h.jpg",
+    "i.jpg",
+    "j.jpg",
+    "k.jpg"
+  ]
+}

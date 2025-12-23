@@ -88,8 +88,8 @@ export const MENU = [
       { nameEN: 'Daydream', nameVI: 'Daydream', descEN: 'Tall glass full of smile. Absolut, Galliano Vanilla, passion fruit, mango, lime, eggwhite', descVI: 'Ly cao đầy nụ cười. Absolut, Galliano Vanilla, chanh dây, xoài, chanh, lòng trắng trứng', price: '135' },
       { nameEN: 'Le Botanique', nameVI: 'Le Botanique', descEN: 'Eternal Spring. Jasmine-infused Tanqueray Dry, lavender, aloe vera, lime, whey', descVI: 'Mùa xuân vĩnh cửu. Tanqueray Dry ngâm hoa nhài, lavender, nha đam, chanh, whey', price: '160' },
       { nameEN: 'Tomelo Collins', nameVI: 'Tomelo Collins', descEN: 'Talk philosophy flirtatiously. TA gin, pomelo, lemon, soda', descVI: 'Tán tỉnh bằng triết lý. TA gin, bưởi, chanh, soda', price: '100' },
-      { nameEN: 'Naked & Awake', nameVI: 'Naked & Awake', descEN: 'For when it\'s decision time. Coffee-infused tequila, cold brew, caramelized sugarcane juice', descVI: 'Dành cho lúc gấp gáp. Tequila ngâm cà phê, cold brew, nước mía caramel', price: '140' },
-      { nameEN: 'Virtual Reality', nameVI: 'Virtual Reality', descEN: 'Đà Nẵng\'s subconsciousness. Pandan-infused Havana 3y rum, coconut, tofu, lime', descVI: 'Tiềm thức của Đà Nẵng. Rượu rum Havana 3y ngâm lá dứa, dừa, đậu hũ, chanh', price: '125' },
+      { nameEN: 'Naked & Awake', nameVI: 'Naked & Awake', descEN: "For when it's decision time. Coffee-infused tequila, cold brew, caramelized sugarcane juice", descVI: 'Dành cho lúc gấp gáp. Tequila ngâm cà phê, cold brew, nước mía caramel', price: '140' },
+      { nameEN: 'Virtual Reality', nameVI: 'Virtual Reality', descEN: "Đà Nẵng's subconsciousness. Pandan-infused Havana 3y rum, coconut, tofu, lime", descVI: 'Tiềm thức của Đà Nẵng. Rượu rum Havana 3y ngâm lá dứa, dừa, đậu hũ, chanh', price: '125' },
       { nameEN: 'Surrealism', nameVI: 'Surrealism', descEN: 'Solve your mind. Creyente mezcal, Palo Santo, aloe vera', descVI: 'Giải mã tâm trí. Creyente mezcal, Palo Santo, nha đam', price: '300' },
     ]
   },

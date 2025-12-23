@@ -12,25 +12,31 @@ export default function InfoSection({ t }) {
   };
 
   return (
-    <section id="info" className="max-w-7xl mx-auto px-4 py-16">
+    <section id="info" className="section max-w-7xl mx-auto px-4 py-16">
       <div className="mb-8">
-        <h2 className="font-space text-3xl md:text-5xl leading-[1] tracking-tight uppercase text-ink">
+        <h2 className="font-title text-3xl md:text-5xl leading-[1] tracking-[0.1em] text-ink">
           {t.use('infoTitle')}
         </h2>
       </div>
       <div className="grid grid-cols-12 gap-6">
         {t.use('infoItems').map((item, i) => (
           <div key={i} className="col-span-12 md:col-span-6">
-            <div className="rounded-3xl border border-ink/15 bg-cream p-6 transition-all hover:shadow-lg hover:border-ink/25 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-ink">
-              <div className="flex items-start gap-3">
-                <span className="shrink-0 h-10 w-10 rounded-xl bg-ink text-cream grid place-items-center">
-                  {iconMap[item.icon]("#FDFBF7")}
+            <div 
+              className="card p-6 h-full"
+              style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+            >
+              <div className="flex items-start gap-4">
+                <span 
+                  className="shrink-0 h-12 w-12 bg-ink text-cream grid place-items-center"
+                  style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                >
+                  {iconMap[item.icon]("#FFFBF2")}
                 </span>
                 <div>
-                  <h3 className="font-space text-xl md:text-2xl font-bold leading-tight">
+                  <h3 className="font-title text-lg md:text-xl leading-tight tracking-[0.05em]">
                     {item.q}
                   </h3>
-                  <p className="mt-2 text-gray-700 font-mont">
+                  <p className="mt-2 text-gray-700 font-body">
                     {item.a}
                   </p>
                 </div>

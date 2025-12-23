@@ -7,38 +7,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        cream: '#fffbf2',
-        ink: '#0d0906',
+        cream: '#FFFBF1',
+        ink: '#0D0906',
+        // Official accent colors
+        red: '#E72D33',
+        orange: '#FD9D32',
+        yellow: '#FFE527',
+        green: '#00AB4D',
+        teal: '#00AB8D',
+        blue: '#0077A3',
+        purple: '#403785',
+        magenta: '#A93397',
+        pink: '#E92775',
       },
       fontFamily: {
-        mont: ['Montserrat', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        space: ['Space Grotesk', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        title: ['Montserrat', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        body: ['Space Grotesk', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
       },
       aspectRatio: {
         '4/5': '4 / 5',
       },
       boxShadow: {
-        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.4)',
-        'event': '0 20px 60px rgba(251, 146, 60, 0.3)',
-        'event-hover': '0 30px 70px rgba(251, 146, 60, 0.4)',
+        'sm': '0 4px 12px rgba(0, 0, 0, 0.1)',
+        'md': '0 8px 24px rgba(0, 0, 0, 0.15)',
+        'lg': '0 16px 40px rgba(0, 0, 0, 0.2)',
+        'xl': '0 24px 56px rgba(0, 0, 0, 0.25)',
       },
-      animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.5s ease-out',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { transform: 'translateY(20px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-      },
-      backdropBlur: {
-        md: '12px',
+      borderRadius: {
+        'none': '0',
       },
       maxWidth: {
         '7xl': '80rem',

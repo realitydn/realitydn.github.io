@@ -4,8 +4,25 @@
 
 /* Custom properties */
 :root {
-  --cream: #fffbf2;
-  --ink: #0d0906;
+  --cream: #FFFBF1;
+  --ink: #0D0906;
+  
+  /* Official accent palette */
+  --red: #E72D33;
+  --orange: #FD9D32;
+  --yellow: #FFE527;
+  --green: #00AB4D;
+  --teal: #00AB8D;
+  --blue: #0077A3;
+  --purple: #403785;
+  --magenta: #A93397;
+  --pink: #E92775;
+  
+  /* Shadow system - always pointing south */
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.15);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.2);
+  --shadow-xl: 0 24px 56px rgba(0,0,0,0.25);
 }
 
 /* Base styles */
@@ -20,58 +37,103 @@ html {
 }
 
 body {
-  background-color: #FDFBF7;
-  color: #0d0906;
-  font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Typography */
-.font-mont {
+/* Typography - Montserrat for titles/headers */
+.font-title {
   font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 }
 
-.font-space {
+/* Typography - Space Grotesk for body/details */
+.font-body {
   font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 400;
 }
 
-/* Custom colors that Tailwind might miss */
+/* Card system - square corners, south shadows */
+.card {
+  background-color: var(--cream);
+  box-shadow: var(--shadow-md);
+  border-radius: 0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-static {
+  background-color: var(--cream);
+  box-shadow: var(--shadow-md);
+  border-radius: 0;
+}
+
+.card-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-lg:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: var(--ink);
+  color: var(--cream);
+  border-radius: 0;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  background-color: var(--cream);
+  color: var(--ink);
+  border: 1px solid rgba(13, 9, 6, 0.2);
+  border-radius: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(13, 9, 6, 0.4);
+}
+
+/* Custom colors */
 .bg-cream {
-  background-color: #fffbf2;
+  background-color: var(--cream);
 }
 
 .bg-ink {
-  background-color: #0d0906;
+  background-color: var(--ink);
 }
 
 .text-cream {
-  color: #fffbf2;
+  color: var(--cream);
 }
 
 .text-ink {
-  color: #0d0906;
-}
-
-.border-ink {
-  border-color: #0d0906;
-}
-
-/* Enhanced shadows */
-.shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.shadow-3xl {
-  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.4);
-}
-
-.shadow-event {
-  box-shadow: 0 20px 60px rgba(251, 146, 60, 0.3);
-}
-
-.shadow-event-hover {
-  box-shadow: 0 30px 70px rgba(251, 146, 60, 0.4);
+  color: var(--ink);
 }
 
 /* Scrollbar styles */
@@ -86,13 +148,13 @@ body {
 
 /* Focus styles */
 :focus-visible {
-  outline: 2px solid #0d0906;
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #0d0906;
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -101,15 +163,26 @@ button, a {
   transition: all 0.2s ease;
 }
 
-button:active {
-  transform: scale(0.98);
+/* Accent color backgrounds */
+.accent-red { background-color: var(--red); }
+.accent-orange { background-color: var(--orange); }
+.accent-yellow { background-color: var(--yellow); }
+.accent-green { background-color: var(--green); }
+.accent-teal { background-color: var(--teal); }
+.accent-blue { background-color: var(--blue); }
+.accent-purple { background-color: var(--purple); }
+.accent-magenta { background-color: var(--magenta); }
+.accent-pink { background-color: var(--pink); }
+
+/* Multiply blend for accent overlays */
+.blend-multiply {
+  mix-blend-mode: multiply;
 }
 
-/* Backdrop blur support */
-@supports (backdrop-filter: blur(12px)) {
-  .backdrop-blur-md {
-    backdrop-filter: blur(12px);
-  }
+/* Section spacing */
+.section {
+  position: relative;
+  z-index: 1;
 }
 
 /* Print styles */

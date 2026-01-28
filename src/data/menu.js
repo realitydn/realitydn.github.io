@@ -4,23 +4,23 @@ export const MENU = [
     labelEN: 'Phin Coffee', 
     labelVI: 'Cà phê phin', 
     items: [
-      { nameEN: 'Black', nameVI: 'Đen', price: '30' },
-      { nameEN: 'White', nameVI: 'Nâu', price: '35' },
-      { nameEN: 'Coconut Cream', nameVI: 'Kem dừa', price: '55' },
-      { nameEN: 'Salt', nameVI: 'Muối', price: '50' },
-      { nameEN: 'Bạc xỉu', nameVI: 'Bạc xỉu', price: '45' },
-      { nameEN: 'Oatmilk Honey Latte', nameVI: 'Latte yến mạch mật ong', price: '55' },
+      { nameEN: 'Black Coffee', nameVI: 'Cà phê đen', descEN: 'hot/cold', descVI: 'nóng/đá', price: '35' },
+      { nameEN: 'White Coffee', nameVI: 'Cà phê nâu', descEN: 'hot/cold', descVI: 'nóng/đá', price: '40' },
+      { nameEN: 'Bạc Xỉu Coffee', nameVI: 'Bạc xỉu', descEN: 'hot/cold', descVI: 'nóng/đá', price: '45' },
+      { nameEN: 'Salt Coffee', nameVI: 'Cà phê muối', price: '50' },
+      { nameEN: 'Coconut Cream Coffee', nameVI: 'Cà phê kem dừa', price: '55' },
+      { nameEN: 'Oatmilk Honey Latte', nameVI: 'Latte yến mạch mật ong', descEN: 'hot/cold', descVI: 'nóng/đá', price: '55' },
     ]
   },
   { 
     key: 'coldbrew', 
-    labelEN: 'Cold-brew Coffee', 
-    labelVI: 'Cold-brew', 
+    labelEN: 'Coldbrew', 
+    labelVI: 'Coldbrew', 
     items: [
-      { nameEN: 'Black', nameVI: 'Đen', price: '45' },
+      { nameEN: 'Black Coldbrew', nameVI: 'Coldbrew đen', descEN: 'coffee + time', descVI: 'cà phê + thời gian', price: '45' },
       { nameEN: 'Mazagran', nameVI: 'Mazagran', descEN: '+ lemon, pomelo, tonic', descVI: '+ chanh, bưởi, tonic', price: '55' },
       { nameEN: 'Tropican', nameVI: 'Tropican', descEN: '+ mango, passionfruit, tonic', descVI: '+ xoài, chanh dây, tonic', price: '55' },
-      { nameEN: 'Lavender', nameVI: 'Oải hương', descEN: '+ lavender, lime, soda', descVI: '+ lavender, chanh xanh, soda', price: '55' },
+      { nameEN: 'Lavender', nameVI: 'Oải hương', descEN: '+ lavender, lime, soda', descVI: '+ oải hương, chanh, soda', price: '55' },
     ]
   },
   { 
@@ -28,18 +28,22 @@ export const MENU = [
     labelEN: 'Tea', 
     labelVI: 'Trà', 
     items: [
-      { nameEN: 'Matcha Latte', nameVI: 'Matcha Latte', price: '65' },
-      { nameEN: 'Salt Cream Matcha', nameVI: 'Matcha kem muối', price: '65' },
-      { nameEN: 'Houjicha Latte', nameVI: 'Houjicha Latte', price: '60' },
-      { nameEN: 'Salt Cream Houjicha', nameVI: 'Houjicha kem muối', price: '60' },
-      { nameEN: 'Fresh Ginger Tea', nameVI: 'Trà gừng tươi', price: '45' },
-      { nameEN: 'Fresh Mint Tea', nameVI: 'Trà bạc hà tươi', price: '40' },
-      { nameEN: 'Pomelo Rose Tea', nameVI: 'Trà bưởi hoa hồng', price: '50' },
-      { nameEN: 'Mango Passionfruit Tea', nameVI: 'Trà xoài chanh dây', price: '50' },
-      { nameEN: 'Lavender Rose Tea', nameVI: 'Trà lavender hoa hồng', price: '50' },
-      { nameEN: 'Oolong Tea', nameVI: 'Trà ô long', price: '45' },
-      { nameEN: 'Tension Tamer Tea', nameVI: 'Tension Tamer', price: '40' },
-      { nameEN: 'Chamomile Tea', nameVI: 'Trà hoa cúc', price: '40' },
+      { nameEN: 'Matcha Latte or Salt Cream', nameVI: 'Matcha Latte hoặc Kem Muối', descEN: 'Japanese-origin, 100% natural matcha. Latte hot or cold, Salt Cream served cold.', descVI: 'Matcha 100% tự nhiên, xuất xứ Nhật Bản. Latte có nóng hoặc đá, Kem Muối phục vụ đá.', price: '65' },
+      { nameEN: 'Houjicha Latte or Salt Cream', nameVI: 'Houjicha Latte hoặc Kem Muối', descEN: 'Low-caffeine houjicha powder, made from roasted Sencha. Latte hot or cold, Salt Cream served cold.', descVI: 'Bột houjicha ít caffeine, làm từ Sencha rang. Latte có nóng hoặc đá, Kem Muối phục vụ đá.', price: '60' },
+      { nameEN: 'Oolong Tea', nameVI: 'Trà Ô Long', descEN: 'Blend of Vietnamese ôlong teas by Phúc Long, served hot.', descVI: 'Hỗn hợp trà ô long Việt Nam của Phúc Long, phục vụ nóng.', price: '45' },
+      { nameEN: 'Jasmine Green Iced Tea', nameVI: 'Trà xanh nhài đá', descEN: 'Vietnamese green tea scented with jasmine flowers.', descVI: 'Trà xanh Việt Nam ướp hoa nhài.', price: '45' },
+    ]
+  },
+  { 
+    key: 'herbal', 
+    labelEN: 'Herbal Tea', 
+    labelVI: 'Trà thảo mộc', 
+    items: [
+      { nameEN: 'Honey Hibiscus Tea', nameVI: 'Trà atiso đỏ mật ong', descEN: 'Hibiscus blossoms + raw wild honey, served hot.', descVI: 'Hoa atiso đỏ + mật ong rừng, phục vụ nóng.', price: '45' },
+      { nameEN: 'Daytripper', nameVI: 'Daytripper', descEN: 'Chrysanthemum, longan, goji berry, jujube, lotus heart, notoginseng buds. Served hot.', descVI: 'Hoa cúc, nhãn, kỷ tử, táo đỏ, tâm sen, và nụ tam thất. Phục vụ nóng.', price: '55' },
+      { nameEN: 'Sunshine', nameVI: 'Sunshine', descEN: 'Bright, fruit-forward herbal infusion of passion fruit, kumquat, and rock sugar. Served hot.', descVI: 'Trà thảo mộc tươi sáng với chanh dây, quất, và đường phèn. Phục vụ nóng.', price: '50' },
+      { nameEN: 'Fresh Ginger Tea', nameVI: 'Trà gừng tươi', descEN: 'One of the ultimate ginger experiences. Served hot.', descVI: 'Một trong những trải nghiệm gừng tuyệt vời nhất. Phục vụ nóng.', price: '45' },
+      { nameEN: 'Fresh Mint Tea', nameVI: 'Trà bạc hà tươi', descEN: 'As simple as it gets; fresh mint, purified water, no sugar. Hot.', descVI: 'Đơn giản nhất có thể; bạc hà tươi, nước tinh khiết, không đường. Nóng.', price: '45' },
     ]
   },
   { 
@@ -47,73 +51,65 @@ export const MENU = [
     labelEN: 'Cacao', 
     labelVI: 'Ca cao', 
     items: [
-      { nameEN: 'Cacao Latte', nameVI: 'Cacao Latte', price: '55' },
-      { nameEN: 'Salt Cream Cacao', nameVI: 'Cacao kem muối', price: '55' },
+      { nameEN: 'Cacao Latte or Salt Cream', nameVI: 'Cacao Latte hoặc Kem Muối', descEN: '100% all natural Vietnamese cacao. Available hot or cold.', descVI: '100% cacao Việt Nam tự nhiên. Có nóng hoặc đá.', price: '55' },
     ]
   },
   { 
-    key: 'mock', 
-    labelEN: 'Mocktails + Juices', 
-    labelVI: 'Mocktail + Nước ép', 
+    key: 'zeroproof', 
+    labelEN: 'Zero Proof', 
+    labelVI: 'Không cồn', 
     items: [
-      { nameEN: 'Not Thirsty', nameVI: 'Not Thirsty', descEN: 'Donate to Children of Vietnam – 100% to charity', descVI: 'Ủng hộ Children of Vietnam – 100% từ thiện', price: '100' },
-      { nameEN: 'Summer Fling', nameVI: 'Summer Fling', descEN: 'pomelo, lemon, soda', descVI: 'bưởi, chanh, soda', price: '65' },
-      { nameEN: 'Safe Word', nameVI: 'Safe Word', descEN: 'passion fruit, mango, lime, ginger ale', descVI: 'chanh dây, xoài, chanh xanh, ginger ale', price: '65' },
-      { nameEN: '419', nameVI: '419', descEN: 'pineapple juice, Vietnamese basil, soda', descVI: 'ép dứa, húng quế, soda', price: '65' },
-      { nameEN: 'Virgin Mojito', nameVI: 'Virgin Mojito', descEN: 'lime, mint, ginger ale', descVI: 'chanh xanh, bạc hà, ginger ale', price: '65' },
-      { nameEN: 'Happy Ending', nameVI: 'Happy Ending', descEN: 'passion fruit, lavender, ginger ale', descVI: 'chanh dây, lavender, ginger ale', price: '65' },
-      { nameEN: 'Orange Juice', nameVI: 'Nước cam', price: '45' },
-      { nameEN: 'Lemonade', nameVI: 'Nước chanh', price: '35' },
-      { nameEN: 'Ginger Ale', nameVI: 'Ginger Ale', price: '35' },
-      { nameEN: 'Soda', nameVI: 'Soda', price: '30' },
+      { nameEN: 'Safe Word', nameVI: 'Safe Word', descEN: 'The most popular non-alcoholic drink we\'ve ever invented. Passion fruit, mango, lime, ginger ale.', descVI: 'Thức uống không cồn phổ biến nhất chúng tôi từng sáng tạo. Chanh dây, xoài, chanh, ginger ale.', price: '80' },
+      { nameEN: 'Good Girl Mojito', nameVI: 'Good Girl Mojito', descEN: 'Somewhere between innocence and ecstasy. Lime, fresh mint, ginger ale.', descVI: 'Đâu đó giữa ngây thơ và ngất ngây. Chanh, bạc hà tươi, ginger ale.', price: '70' },
+      { nameEN: '419', nameVI: '419', descEN: 'At least tonight we are free. Pineapple juice, Vietnamese basil, soda.', descVI: 'Ít nhất tối nay ta được tự do. Nước ép dứa, húng quế, soda.', price: '65' },
+      { nameEN: 'Free Love', nameVI: 'Free Love', descEN: 'Let\'s quit our jobs and hitchhike to California. Ginger, raw wild honey, lime, soda.', descVI: 'Nghỉ việc đi, quá giang đến California thôi. Gừng, mật ong rừng, chanh, soda.', price: '75' },
+      { nameEN: 'Summer Fling', nameVI: 'Summer Fling', descEN: 'Both the sweetness + bitterness of that summer... Pomelo, lime, soda.', descVI: 'Cả vị ngọt + đắng của mùa hè ấy... Bưởi, chanh, soda.', price: '60' },
+    ]
+  },
+  { 
+    key: 'sodajuice', 
+    labelEN: 'Soda / Juice', 
+    labelVI: 'Nước ngọt / Nước ép', 
+    items: [
+      { nameEN: 'Fresh-Squeezed Orange Juice', nameVI: 'Nước cam vắt tươi', descEN: 'Straight from the market, no sugar added.', descVI: 'Vắt tươi từ chợ, không thêm đường.', price: '45' },
+      { nameEN: 'Coke, Coke Zero, Ginger Ale', nameVI: 'Coke, Coke Zero, Ginger Ale', descEN: 'The official beverages of the Illuminati.', descVI: 'Thức uống chính thức của Illuminati.', price: '35' },
+      { nameEN: 'House-Made Limeade', nameVI: 'Nước chanh tự làm', descEN: 'For summer, or whenever you wish it was.', descVI: 'Cho mùa hè, hoặc bất cứ khi nào bạn ước đang là mùa hè.', price: '35' },
+      { nameEN: 'Đảnh Thạnh Mineral Water', nameVI: 'Nước khoáng Đảnh Thạnh', descEN: 'Sparkling mineral water bottled at source, naturally high pH.', descVI: 'Nước khoáng có gas đóng chai tại nguồn, độ pH cao tự nhiên.', price: '40' },
     ]
   },
   { 
     key: 'classic', 
     labelEN: 'Classic Cocktails', 
-    labelVI: 'Cocktail kinh điển', 
+    labelVI: 'Cocktail cổ điển', 
     items: [
-      { nameEN: 'Lavender Margarita', nameVI: 'Lavender Margarita', descEN: 'Two Fingers Silver, Cointreau, lime, pepper, lavender', descVI: 'Two Fingers Silver, Cointreau, chanh, tiêu, lavender', price: '125' },
-      { nameEN: 'Negroni', nameVI: 'Negroni', descEN: 'Tanqueray Dry, Campari, Dolin Rouge', descVI: 'Tanqueray Dry, Campari, Dolin Rouge', price: '155' },
-      { nameEN: 'Whiskey Sour', nameVI: 'Whiskey Sour', descEN: 'Jim Beam Black, Angostura, lemon, eggwhite', descVI: 'Jim Beam Black, Angostura, chanh, lòng trắng trứng', price: '160' },
-      { nameEN: 'Mojito', nameVI: 'Mojito', descEN: 'Havana 3y, lime, mint, soda', descVI: 'Havana 3y, chanh, bạc hà, soda', price: '110' },
-      { nameEN: 'Old-Fashioned', nameVI: 'Old-Fashioned', descEN: 'Jim Beam Black, Angostura, citrus oil', descVI: 'Jim Beam Black, Angostura, tinh dầu cam', price: '135' },
+      { nameEN: 'Negroni', nameVI: 'Negroni', descEN: 'The anytime drink for every reason. Tanqueray Dry, Campari, Dolin Rouge.', descVI: 'Thức uống mọi lúc, cho mọi lý do. Tanqueray Dry, Campari, Dolin Rouge.', price: '165' },
+      { nameEN: 'Mojito', nameVI: 'Mojito', descEN: 'Classic cocktail that also freshens breath. Havana 3y, lime, mint, soda.', descVI: 'Cocktail cổ điển còn làm thơm hơi thở. Havana 3y, chanh, bạc hà, soda.', price: '125' },
+      { nameEN: 'Whiskey Sour', nameVI: 'Whiskey Sour', descEN: 'An important source of protein, and whiskey. Jim Beam Black, Angostura, lemon, eggwhite.', descVI: 'Nguồn protein quan trọng, và whiskey. Jim Beam Black, Angostura, chanh, lòng trắng trứng.', price: '160' },
+      { nameEN: 'Old-Fashioned', nameVI: 'Old-Fashioned', descEN: 'For when you\'re feeling too little or too much. Jim Beam Black, Angostura, citrus oil.', descVI: 'Cho lúc bạn cảm thấy quá ít hoặc quá nhiều. Jim Beam Black, Angostura, tinh dầu cam chanh.', price: '145' },
+      { nameEN: 'Cuba Libre', nameVI: 'Cuba Libre', descEN: 'The original Rum + Coke, done correct. Havana 3y, Coca-Cola, lime.', descVI: 'Rum + Coke nguyên bản, đúng cách. Havana 3y, Coca-Cola, chanh.', price: '95' },
+      { nameEN: 'Long Island Iced Tea', nameVI: 'Long Island Iced Tea', descEN: 'For getting real fucked up real quick. All the alcohols + a splash of Coca-Cola.', descVI: 'Để say thật nhanh. Tất cả các loại rượu + chút Coca-Cola.', price: '180' },
     ]
   },
   { 
     key: 'signature', 
     labelEN: 'Signature Cocktails', 
-    labelVI: 'Signature', 
+    labelVI: 'Cocktail đặc trưng', 
     items: [
-      { nameEN: 'Daydream', nameVI: 'Daydream', descEN: 'Tall glass full of smile. Absolut, Galliano Vanilla, passion fruit, mango, lime, eggwhite', descVI: 'Ly cao đầy nụ cười. Absolut, Galliano Vanilla, chanh dây, xoài, chanh, lòng trắng trứng', price: '135' },
-      { nameEN: 'Le Botanique', nameVI: 'Le Botanique', descEN: 'Eternal Spring. Jasmine-infused Tanqueray Dry, lavender, aloe vera, lime, whey', descVI: 'Mùa xuân vĩnh cửu. Tanqueray Dry ngâm hoa nhài, lavender, nha đam, chanh, whey', price: '160' },
-      { nameEN: 'Tomelo Collins', nameVI: 'Tomelo Collins', descEN: 'Talk philosophy flirtatiously. TA gin, pomelo, lemon, soda', descVI: 'Tán tỉnh bằng triết lý. TA gin, bưởi, chanh, soda', price: '100' },
-      { nameEN: 'Naked & Awake', nameVI: 'Naked & Awake', descEN: "For when it's decision time. Coffee-infused tequila, cold brew, caramelized sugarcane juice", descVI: 'Dành cho lúc gấp gáp. Tequila ngâm cà phê, cold brew, nước mía caramel', price: '140' },
-      { nameEN: 'Virtual Reality', nameVI: 'Virtual Reality', descEN: "Đà Nẵng's subconsciousness. Pandan-infused Havana 3y rum, coconut, tofu, lime", descVI: 'Tiềm thức của Đà Nẵng. Rượu rum Havana 3y ngâm lá dứa, dừa, đậu hũ, chanh', price: '125' },
-      { nameEN: 'Surrealism', nameVI: 'Surrealism', descEN: 'Solve your mind. Creyente mezcal, Palo Santo, aloe vera', descVI: 'Giải mã tâm trí. Creyente mezcal, Palo Santo, nha đam', price: '300' },
+      { nameEN: 'Le Botanique', nameVI: 'Le Botanique', descEN: 'Extremely refined, inconceivably tasteful. Jasmine-infused Tanqueray Dry, lavender, aloe vera, lime, whey.', descVI: 'Cực kỳ tinh tế, thanh lịch khó tin. Tanqueray Dry ngâm hoa nhài, oải hương, nha đam, chanh, whey.', price: '160' },
+      { nameEN: 'Virtual Reality', nameVI: 'Virtual Reality', descEN: 'The previously undiscovered heart of Central Việt Nam. Pandan-infused Havana 3y rum, coconut, tofu, lime.', descVI: 'Trái tim chưa được khám phá của miền Trung Việt Nam. Rum Havana 3y ngâm lá dứa, dừa, đậu phụ, chanh.', price: '125' },
+      { nameEN: 'Daydream', nameVI: 'Daydream', descEN: 'Sweet as you. Absolut, Galliano Vanilla, passion fruit, mango, lime, eggwhite.', descVI: 'Ngọt như bạn. Absolut, Galliano Vanilla, chanh dây, xoài, chanh, lòng trắng trứng.', price: '150' },
+      { nameEN: 'Clockwork Orange', nameVI: 'Clockwork Orange', descEN: 'Dedicated to Generous Ben Nappez. Havana 7y, Jim Beam Black, Cointreau, cinnamon, almond, ginger, lime.', descVI: 'Dành tặng Generous Ben Nappez. Havana 7y, Jim Beam Black, Cointreau, quế, hạnh nhân, gừng, chanh.', price: '180' },
+      { nameEN: 'Lavender Margarita', nameVI: 'Lavender Margarita', descEN: 'For floating through the party. Two Fingers Silver, Cointreau, lime, pepper, lavender.', descVI: 'Để lơ lửng qua bữa tiệc. Two Fingers Silver, Cointreau, chanh, tiêu, oải hương.', price: '140' },
     ]
   },
   { 
-    key: 'beer', 
-    labelEN: 'Beer', 
-    labelVI: 'Bia', 
+    key: 'seasonal', 
+    labelEN: 'Seasonal Cocktails', 
+    labelVI: 'Cocktail theo mùa', 
     items: [
-      { nameEN: "Kurtz's Insane IPA", nameVI: "Kurtz's Insane IPA", price: '125' },
-      { nameEN: 'Excited Magpie Dry Irish Stout', nameVI: 'Excited Magpie Dry Irish Stout', price: '110' },
-      { nameEN: 'Hoegaarden', nameVI: 'Hoegaarden', price: '85' },
-      { nameEN: 'Big Huda', nameVI: 'Huda lớn', price: '40' },
-      { nameEN: 'Small Huda', nameVI: 'Huda nhỏ', price: '30' },
-      { nameEN: 'Tiger', nameVI: 'Tiger', price: '35' },
-    ]
-  },
-  { 
-    key: 'wine', 
-    labelEN: 'Wine (bottle)', 
-    labelVI: 'Rượu vang (chai)', 
-    items: [
-      { nameEN: 'Sauvignon Blanc – Woolshed (AU)', nameVI: 'Sauvignon Blanc – Woolshed (Úc)', price: '575' },
-      { nameEN: 'Cabernet Sauvignon – Woolshed (AU)', nameVI: 'Cabernet Sauvignon – Woolshed (Úc)', price: '575' },
-      { nameEN: 'Blanc de Blancs Brut – Maison Chevalier (FR)', nameVI: 'Blanc de Blancs Brut – Maison Chevalier (Pháp)', price: '600' },
+      { nameEN: 'Phin Cà Phê Martini', nameVI: 'Phin Cà Phê Martini', descEN: 'Knock it back for a pick me up. Absolut, Kahlua, phin coffee.', descVI: 'Uống một phát để tỉnh táo. Absolut, Kahlua, cà phê phin.', price: '140' },
+      { nameEN: 'Tomelo Collins', nameVI: 'Tomelo Collins', descEN: 'Tart drink for the no-nonsense set. TA gin, pomelo, soda.', descVI: 'Thức uống chua cho người thực tế. TA gin, bưởi, soda.', price: '110' },
+      { nameEN: 'Pink Seoul', nameVI: 'Pink Seoul', descEN: 'Girls\' Night out in Hongdae! TA gin, Soju, lemongrass, house-made grenadine, lime.', descVI: 'Đêm hội con gái ở Hongdae! TA gin, Soju, sả, grenadine tự làm, chanh.', price: '135' },
     ]
   },
   { 
@@ -121,10 +117,88 @@ export const MENU = [
     labelEN: 'Gin + Tonic', 
     labelVI: 'Gin + Tonic', 
     items: [
-      { nameEN: 'w/ TA', nameVI: 'với TA', price: '90' },
-      { nameEN: 'w/ Rose Apple-Infused TA', nameVI: 'với TA ủ táo mận', price: '100' },
-      { nameEN: 'w/ Tanqueray', nameVI: 'với Tanqueray', price: '110' },
-      { nameEN: 'w/ Roku', nameVI: 'với Roku', price: '150' },
+      { nameEN: 'w/ TA Gin', nameVI: 'với TA Gin', price: '90' },
+      { nameEN: 'w/ Tanqueray Gin', nameVI: 'với Tanqueray Gin', price: '120' },
+      { nameEN: 'w/ Roku Gin', nameVI: 'với Roku Gin', price: '150' },
+      { nameEN: 'w/ Hendrick\'s Gin', nameVI: 'với Hendrick\'s Gin', price: '180' },
+    ]
+  },
+  { 
+    key: 'reserve', 
+    labelEN: 'Reserve Cocktails', 
+    labelVI: 'Cocktail cao cấp', 
+    items: [
+      { nameEN: 'Surrealism', nameVI: 'Surrealism', descEN: 'Smoke your mind. Creyente mezcal, Palo Santo, aloe vera.', descVI: 'Làm mờ tâm trí. Creyente mezcal, Palo Santo, nha đam.', price: '250' },
+      { nameEN: 'Penicillin', nameVI: 'Penicillin', descEN: 'The cure for the common life. Monkey Shoulder, Laphroaig 10 single malt, lime, ginger, Angostura.', descVI: 'Thuốc chữa cuộc sống tầm thường. Monkey Shoulder, Laphroaig 10 single malt, chanh, gừng, Angostura.', price: '280' },
+    ]
+  },
+  { 
+    key: 'wine', 
+    labelEN: 'Wine', 
+    labelVI: 'Rượu vang', 
+    items: [
+      { nameEN: 'Sauvignon Blanc', nameVI: 'Sauvignon Blanc', descEN: 'Australian (Murray-Darling/Victoria), ~12% ABV, fresh citrus and green fruit. Woolshed; Australia.', descVI: 'Úc (Murray-Darling/Victoria), ~12% ABV, hương cam chanh và trái cây xanh tươi mát. Woolshed; Úc.', price: '575/chai' },
+      { nameEN: 'Cabernet Sauvignon', nameVI: 'Cabernet Sauvignon', descEN: 'Australian (South-Eastern Australia), ~13.5% ABV, dry red wine.', descVI: 'Úc (Đông Nam Úc), ~13.5% ABV, vang đỏ khô.', price: '575/chai' },
+      { nameEN: 'Blanc de Blancs Brut', nameVI: 'Blanc de Blancs Brut', descEN: 'French sparkling wine, ~12% ABV, dry style. Maison Chevalier; France.', descVI: 'Vang sủi Pháp, ~12% ABV, phong cách khô. Maison Chevalier; Pháp.', price: '600/chai' },
+    ]
+  },
+  { 
+    key: 'beer', 
+    labelEN: 'Beer / Etc.', 
+    labelVI: 'Bia / V.v.', 
+    items: [
+      { nameEN: 'Excited Magpie Stout', nameVI: 'Excited Magpie Stout', descEN: 'Heart of Darkness, HCMC. Irish-style dry stout. 4.2% abv.', descVI: 'Heart of Darkness, TPHCM. Stout khô kiểu Ireland. 4.2% abv.', price: '110' },
+      { nameEN: 'Kurtz\'s Insane IPA', nameVI: 'Kurtz\'s Insane IPA', descEN: 'Heart of Darkness, HCMC. Hop-head IPA, 102 IBU, 7.1% abv.', descVI: 'Heart of Darkness, TPHCM. IPA đậm hoa bia, 102 IBU, 7.1% abv.', price: '125' },
+      { nameEN: 'Hoegaarden', nameVI: 'Hoegaarden', descEN: 'Classic Belgian witbier. 250ml, 4.9% abv.', descVI: 'Bia trắng Bỉ cổ điển. 250ml, 4.9% abv.', price: '65' },
+      { nameEN: 'Tiger', nameVI: 'Tiger', descEN: 'International pale lager originally from Singapore. 5.0% abv.', descVI: 'Lager nhạt quốc tế, xuất xứ Singapore. 5.0% abv.', price: '40' },
+      { nameEN: 'Big Huda', nameVI: 'Huda lớn', descEN: 'Pale lager from Carlsberg-owned Hue Brewery, Huế.', descVI: 'Lager nhạt từ Nhà máy Bia Huế thuộc Carlsberg, Huế.', price: '40' },
+      { nameEN: 'Strongbow Golden Apple', nameVI: 'Strongbow Golden Apple', descEN: 'UK\'s best-selling cider brand. Gluten-free. 4.5% abv.', descVI: 'Thương hiệu cider bán chạy nhất UK. Không gluten. 4.5% abv.', price: '75' },
+      { nameEN: 'Soju Jinro Original', nameVI: 'Soju Jinro Original', descEN: 'A fixture of Korean drinking for over 100 years. 360 ml, ~18% abv.', descVI: 'Biểu tượng văn hóa uống Hàn Quốc hơn 100 năm. 360 ml, ~18% abv.', price: '170' },
+    ]
+  },
+  { 
+    key: 'snacks', 
+    labelEN: 'Snacks', 
+    labelVI: 'Đồ nhắm', 
+    items: [
+      { nameEN: 'Mixed Nuts', nameVI: 'Hạt hỗn hợp', descEN: 'A generous mix of almonds, cashews, and peanuts, all from Việt Nam.', descVI: 'Hỗn hợp hào phóng gồm hạnh nhân, hạt điều, và đậu phộng, tất cả từ Việt Nam.', price: '55' },
+      { nameEN: 'Chips! (Crisps)', nameVI: 'Chips! (Crisps)', descEN: 'In British, Crisps. In American, Chips.', descVI: 'Người Anh gọi Crisps. Người Mỹ gọi Chips.', price: '35' },
+    ]
+  },
+  { 
+    key: 'shots', 
+    labelEN: 'Shots (30ml)', 
+    labelVI: 'Shot (30ml)', 
+    items: [
+      { nameEN: 'Rượu Mơ / Apricot Rice Wine', nameVI: 'Rượu Mơ', price: '50' },
+      { nameEN: 'Two Fingers Silver Tequila', nameVI: 'Two Fingers Silver Tequila', price: '75' },
+      { nameEN: 'Lunazul Anejo Tequila', nameVI: 'Lunazul Anejo Tequila', price: '125' },
+      { nameEN: 'Creyente Mezcal', nameVI: 'Creyente Mezcal', price: '150' },
+      { nameEN: 'Bailey\'s Irish Cream', nameVI: 'Bailey\'s Irish Cream', price: '70' },
+      { nameEN: 'St. Remy XO Brandy', nameVI: 'St. Remy XO Brandy', price: '85' },
+      { nameEN: 'Fernet Branca', nameVI: 'Fernet Branca', price: '130' },
+      { nameEN: 'Bartender\'s Feelings (4 shots)', nameVI: 'Bartender\'s Feelings (4 shot)', price: '220' },
+    ]
+  },
+  { 
+    key: 'pours', 
+    labelEN: 'Pours (45ml)', 
+    labelVI: 'Rượu nguyên chất (45ml)', 
+    items: [
+      { nameEN: 'Rum — Havana 3y', nameVI: 'Rum — Havana 3y', price: '95' },
+      { nameEN: 'Rum — Havana 7y', nameVI: 'Rum — Havana 7y', price: '135' },
+      { nameEN: 'Vodka — Absolut Original', nameVI: 'Vodka — Absolut Original', price: '95' },
+      { nameEN: 'Vodka — Zubrowka', nameVI: 'Vodka — Zubrowka', price: '105' },
+      { nameEN: 'Vodka — Grey Goose', nameVI: 'Vodka — Grey Goose', price: '180' },
+      { nameEN: 'Tequila — Two Fingers Silver', nameVI: 'Tequila — Two Fingers Silver', price: '105' },
+      { nameEN: 'Tequila — Lunazul Anejo', nameVI: 'Tequila — Lunazul Anejo', price: '175' },
+      { nameEN: 'Mezcal — Creyente', nameVI: 'Mezcal — Creyente', price: '215' },
+      { nameEN: 'Brandy — ST Remy XO', nameVI: 'Brandy — ST Remy XO', price: '125' },
+      { nameEN: 'Jameson Whisky (Ireland)', nameVI: 'Jameson Whisky (Ireland)', price: '105' },
+      { nameEN: 'Jim Beam Black Bourbon (USA)', nameVI: 'Jim Beam Black Bourbon (Mỹ)', price: '105' },
+      { nameEN: 'Jack Daniel\'s Whiskey (USA)', nameVI: 'Jack Daniel\'s Whiskey (Mỹ)', price: '125' },
+      { nameEN: 'Monkey Shoulder Scotch (Scotland)', nameVI: 'Monkey Shoulder Scotch (Scotland)', price: '180' },
+      { nameEN: 'Laphroaig 10 Single-Malt (Scotland)', nameVI: 'Laphroaig 10 Single-Malt (Scotland)', price: '250' },
     ]
   },
 ];

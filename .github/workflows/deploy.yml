@@ -1,0 +1,44 @@
+# Deploy to Cloudflare Pages with pre-rendering
+#
+# Triggers on every push to main. Installs Puppeteer, runs the full build
+# (which pre-renders SEO routes), then ships dist/ to Cloudflare Pages.
+#
+# Required GitHub secrets (set these in your repo settings):
+#   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account ID
+#   CLOUDFLARE_API_TOKEN   — API token with "Cloudflare Pages: Edit" permission
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Puppeteer needs these system libs for headless Chrome
+      - name: Install Puppeteer browser
+        run: npx puppeteer browsers install chrome
+
+      - name: Build (with pre-rendering)
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist/ --project-name=realitydn

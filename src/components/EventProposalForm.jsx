@@ -520,13 +520,13 @@ export default function EventProposalForm({ t, onSuccess }) {
                 </div>
                 <div>
                   <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
-                    {t.use('eventForm.recurrence')}
+                    {t.use('eventForm.recurrenceLabel')}
                   </p>
-                  <p className="font-body">{t.use(`eventForm.recurrence.${formData.recurrence}`)}</p>
+                  <p className="font-body">{formData.recurrence}</p>
                 </div>
                 <div>
                   <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
-                    {t.use('eventForm.languages')}
+                    {t.use('eventForm.languagesLabel')}
                   </p>
                   <p className="font-body">{formData.languages.join(', ')}</p>
                 </div>

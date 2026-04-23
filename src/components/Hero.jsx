@@ -13,17 +13,17 @@ export default function Hero({ t }) {
             {t.use('heroSub')}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <a 
-              href="#events" 
+            <a
+              href="#events"
               className="btn-primary px-6 py-4 font-title text-sm tracking-[0.15em] inline-block"
             >
-              See Events
+              {t.use('nav.events')}
             </a>
-            <a 
-              href="#menus" 
+            <a
+              href="#menus"
               className="btn-secondary px-6 py-4 font-title text-sm tracking-[0.15em] inline-block"
             >
-              View Menus
+              {t.use('nav.menus')}
             </a>
           </div>
         </div>
@@ -36,11 +36,21 @@ export default function Hero({ t }) {
           style={{ boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
         >
           <div className="w-full h-full bg-gradient-to-br from-stone-400 to-stone-600">
-            <img 
-              src="/images/hero.jpg" 
-              alt="REALITY interior" 
+            <img
+              src="/images/hero.jpg"
+              alt="Inside REALITY — coffee shop, bar and community space in Đà Nẵng"
               className="w-full h-full object-cover"
+              /* LCP candidate: eager + high fetch priority so it loads before
+                 below-the-fold content. Matches a hero <Preload> from the
+                 server side once Cloudflare is handling delivery. */
               loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              /* Dimensions are placeholders — the aspect-ratio container
+                 controls the final size. Providing any width/height tells
+                 the browser to reserve the box and suppresses CLS warnings. */
+              width="1200"
+              height="900"
               onError={(e) => e.target.style.display = 'none'}
             />
           </div>

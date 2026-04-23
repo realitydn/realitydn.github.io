@@ -3,43 +3,147 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    
+
     <!-- Primary Meta Tags -->
     <title>REALITY — coffee / cocktails / community</title>
     <meta name="title" content="REALITY — coffee / cocktails / community" />
-    <meta name="description" content="REALITY - coffee, cocktails, and community in Da Nang. Join us for events, great drinks, and making new friends."/>
-    
+    <meta name="description" content="REALITY — coffee, cocktails, and community at 86 Mai Thúc Lân, Đà Nẵng. Events, live music, open mics, art shows, and the easiest place in the city to make friends. Open daily 11 AM – 2 AM."/>
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://realitydn.com/" />
     <meta property="og:title" content="REALITY — coffee / cocktails / community" />
-    <meta property="og:description" content="REALITY - coffee, cocktails, and community in Da Nang. Join us for events, great drinks, and making new friends." />
-    <meta property="og:image" content="https://realitydn.com/images/og-image.jpg" />
+    <meta property="og:description" content="REALITY — coffee, cocktails, and community at 86 Mai Thúc Lân, Đà Nẵng. Events, live music, open mics, and the easiest place to make friends in the city." />
+    <meta property="og:image" content="https://realitydn.com/images/hero.jpg" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://realitydn.com/" />
     <meta property="twitter:title" content="REALITY — coffee / cocktails / community" />
-    <meta property="twitter:description" content="REALITY - coffee, cocktails, and community in Da Nang. Join us for events, great drinks, and making new friends." />
-    <meta property="twitter:image" content="https://realitydn.com/images/og-image.jpg" />
-    
+    <meta property="twitter:description" content="REALITY — coffee, cocktails, and community at 86 Mai Thúc Lân, Đà Nẵng. Events, live music, open mics, and the easiest place to make friends in the city." />
+    <meta property="twitter:image" content="https://realitydn.com/images/hero.jpg" />
+
     <!-- Favicons - User to provide these files -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    
+
+    <!-- Hero image preload — LCP candidate on homepage. -->
+    <link rel="preload" as="image" href="/images/hero.jpg" fetchpriority="high" />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-    
+
+    <!-- Canonical + Language
+         Default values for the shipped index.html; the <SEO> React component
+         overrides them per route at hydration time and Puppeteer captures the
+         overrides into each route's static HTML. ISO 639-1 "vi" (not "vn"). -->
+    <link rel="canonical" href="https://realitydn.com/" />
+    <link rel="alternate" hreflang="en" href="https://realitydn.com/" />
+    <link rel="alternate" hreflang="vi" href="https://realitydn.com/vn" />
+    <link rel="alternate" hreflang="x-default" href="https://realitydn.com/" />
+
     <!-- Theme Color -->
     <meta name="theme-color" content="#FFFBF2" />
+
+    <!-- Structured Data: LocalBusiness + Restaurant -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": ["Restaurant", "BarOrPub", "CafeOrCoffeeShop"],
+      "@id": "https://realitydn.com/#business",
+      "name": "REALITY",
+      "alternateName": "REALITY Đà Nẵng",
+      "description": "Coffee, cocktails, and community in Đà Nẵng. Events, live music, open mics, art shows, and the easiest place in the city to make friends.",
+      "url": "https://realitydn.com",
+      "email": "realitydn@gmail.com",
+      "image": "https://realitydn.com/images/hero.jpg",
+      "logo": "https://realitydn.com/favicon.svg",
+      "menu": "https://realitydn.com/menu-drinks-en.pdf",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "86 Mai Thúc Lân",
+        "addressLocality": "Đà Nẵng",
+        "addressRegion": "Đà Nẵng",
+        "addressCountry": "VN"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 16.052411,
+        "longitude": 108.241252
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "11:00",
+        "closes": "02:00"
+      },
+      "priceRange": "$$",
+      "servesCuisine": ["Cocktails", "Coffee", "Drinks"],
+      "hasMap": "https://maps.google.com/?cid=9044780155655225419",
+      "sameAs": [
+        "https://www.instagram.com/reality.dn/",
+        "https://www.facebook.com/realitybarcafedanang/"
+      ],
+      "potentialAction": {
+        "@type": "ReserveAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO"
+        },
+        "result": {
+          "@type": "Reservation",
+          "name": "Contact via WhatsApp"
+        }
+      }
+    }
+    </script>
 
     <meta name="facebook-domain-verification" content="v8dfv6ad2h83rymr9lcykj80unjqmg" />
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- SEO fallback: visible to crawlers that don't execute JS -->
+    <noscript>
+      <header style="max-width:960px;margin:0 auto;padding:2rem;font-family:sans-serif">
+        <h1>REALITY — coffee / cocktails / community</h1>
+        <p>The easiest place in Đà Nẵng to make friends. A bar, cafe, and community space at <strong>86 Mai Thúc Lân, Đà Nẵng, Việt Nam</strong>.</p>
+        <p>Open daily, 11:00 AM – 2:00 AM.</p>
+      </header>
+      <main style="max-width:960px;margin:0 auto;padding:0 2rem;font-family:sans-serif">
+        <section>
+          <h2>Events &amp; Live Music in Đà Nẵng</h2>
+          <p>REALITY hosts live music, open mics, art shows, language exchanges, game nights, DJ sets, and community meetups every week. Whether you're a local, an expat, or a digital nomad passing through — you're welcome.</p>
+          <p><a href="/event-guidelines">Event Guidelines</a> · <a href="/host-guide">Host Guide</a></p>
+        </section>
+        <section>
+          <h2>Coffee &amp; Cocktails</h2>
+          <p>Great coffee by day, creative cocktails by night. Check our <a href="https://realitydn.com/menu-drinks-en.pdf">drinks menu</a> for the full lineup including happy hour specials.</p>
+        </section>
+        <section>
+          <h2>A Community Space in Đà Nẵng</h2>
+          <p>Three floors of flexible space — a ground-floor lounge, a second-floor event space, and a rooftop patio. Work on your laptop, host a class, throw an art show, or just hang out and meet people.</p>
+        </section>
+        <section>
+          <h2>Find Us</h2>
+          <p>86 Mai Thúc Lân, Đà Nẵng, Việt Nam</p>
+          <p>Open daily · 11:00 AM – 2:00 AM</p>
+          <p>
+            <a href="https://www.instagram.com/reality.dn/">Instagram</a> ·
+            <a href="https://www.facebook.com/realitybarcafedanang/">Facebook</a> ·
+            <a href="https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO">WhatsApp Community</a>
+          </p>
+        </section>
+        <section>
+          <h2>Quán bar cà phê cộng đồng tại Đà Nẵng</h2>
+          <p>REALITY — cà phê, cocktail và cộng đồng tại 86 Mai Thúc Lân, Đà Nẵng. Sự kiện, nhạc sống, open mic, triển lãm nghệ thuật, và nơi dễ kết bạn nhất thành phố. Mở cửa mỗi ngày từ 11:00 sáng đến 2:00 đêm.</p>
+        </section>
+      </main>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

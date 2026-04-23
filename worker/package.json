@@ -1,0 +1,14 @@
+{
+  "name": "reality-form-handler",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for REALITY website form submissions",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "deploy:dev": "wrangler deploy --env development"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

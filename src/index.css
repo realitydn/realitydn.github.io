@@ -158,6 +158,45 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* Skip-to-content link — hidden until focused. Lets keyboard and screen-reader
+   users jump straight into the main content without tabbing through the
+   header. Appears in the top-left on focus. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 0.75rem 1rem;
+  background: var(--ink);
+  color: var(--cream);
+  z-index: 100;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+/* Respect users who've asked for reduced motion. Kills the smooth-scroll
+   and strips transitions down to near-instant — helpful for motion-sensitive
+   visitors and also keeps pre-rendered pages from looking animated to bots
+   that throttle rendering. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Smooth transitions */
 button, a {
   transition: all 0.2s ease;

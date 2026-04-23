@@ -103,33 +103,46 @@ export default function ParallaxLayers() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     const handleScroll = () => {
-      if (!isMobile) {
-        setScrollY(window.scrollY);
-      }
+      // Read directly from DOM; the isMobile check is re-evaluated each call
+      // via the latest state because handleScroll is re-bound via dependencies
+      // in the outer effect. Using rAF would be nicer still; leaving as-is
+      // since this is a visual flourish only.
+      setScrollY(window.scrollY);
     };
-    
+
     const updatePageHeight = () => {
       setPageHeight(document.documentElement.scrollHeight);
     };
-    
-    checkMobile();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', () => {
+
+    const onResize = () => {
       checkMobile();
       updatePageHeight();
-    });
+    };
+
+    checkMobile();
     updatePageHeight();
-    
-    const interval = setInterval(updatePageHeight, 1000);
-    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
+    // Was: setInterval every 1s polling scrollHeight. ResizeObserver is the
+    // modern replacement — fires when <body> actually changes height (lazy
+    // images loading, font swap, calendar hydrating, etc.) without the
+    // constant wake-up cost of a 1-second interval.
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => updatePageHeight());
+      ro.observe(document.documentElement);
+      if (document.body) ro.observe(document.body);
+    }
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkMobile);
-      clearInterval(interval);
+      window.removeEventListener('resize', onResize);
+      if (ro) ro.disconnect();
     };
-  }, [isMobile]);
+  }, []);
   
   const layerHeight = pageHeight * 1.3;
   

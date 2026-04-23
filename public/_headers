@@ -1,0 +1,54 @@
+# Cache-Control policy for the site.
+#
+# Why this file exists
+# --------------------
+# Both Netlify and Cloudflare Pages honor a `_headers` file at the site root.
+# It lives in public/ so Vite copies it verbatim into dist/. Keeping a single
+# file means the migration from Netlify to Cloudflare doesn't need a rewrite.
+#
+# Strategy
+# --------
+# Hashed build assets (JS / CSS emitted by Vite into /assets/) are immutable —
+# the content hash changes when the contents change, so we cache them forever.
+# Static assets with stable filenames (images, fonts, PDFs) get a day of CDN
+# caching. HTML is served fresh so pre-rendered content updates propagate.
+
+# Immutable hashed build output — cache forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images served from /images/ (event posters, gallery, hero). Stable URLs but
+# we do occasionally replace files without renaming — a day is a good balance.
+/images/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# PDFs (menus). Same reasoning as images.
+/*.pdf
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# Fonts and favicons — rarely change. One year, but allow revalidation.
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/favicon.svg
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+
+# Sitemap + robots — check every hour so new routes get picked up quickly.
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+# Events config — read on every homepage visit. Keep it short so adding a
+# new event shows up without waiting for a CDN purge.
+/events-config.json
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Everything else (HTML). Don't cache — pre-rendered HTML must stay current.
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

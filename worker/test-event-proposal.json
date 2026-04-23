@@ -1,0 +1,15 @@
+{
+  "hostName": "John Doe Events",
+  "email": "john@example.com",
+  "contact": "+84 123 456 789 / john@example.com",
+  "eventDescription": "Monthly live music performance featuring local artists and international performers. Casual atmosphere with drinks and light food available.",
+  "recurrence": "Monthly",
+  "schedule": "Third Friday of every month at 8 PM",
+  "duration": "3 hours",
+  "cost": "Free entry, drinks available for purchase",
+  "language": ["English", "Vietnamese"],
+  "space": ["Ground floor lounge (1L)", "Reading nook"],
+  "equipment": ["Sound system", "Projector", "DJ equipment"],
+  "anythingElse": "We can bring our own sound engineer. Looking for a partnership with REALITY.",
+  "honeypot": ""
+}

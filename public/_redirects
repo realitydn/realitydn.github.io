@@ -1,0 +1,17 @@
+# SPA fallback for client-side routing.
+#
+# Why this exists
+# ---------------
+# When a user hits a deep URL (e.g. /event-guidelines, /vn/host-guide) we want
+# the host to serve the pre-rendered HTML for that route if it exists, and
+# otherwise fall through to index.html so React Router can handle it.
+#
+# Both Netlify and Cloudflare Pages honor a `_redirects` file. Pre-rendered
+# routes ship real HTML at /event-guidelines/index.html, /vn/index.html, etc.,
+# so those are served directly — this catch-all only kicks in for routes the
+# crawler-facing prerender didn't cover (mostly fat-finger URLs).
+#
+# Note: netlify.toml has the same catch-all rewrite defined. That one keeps
+# Netlify happy; this file keeps Cloudflare Pages happy. They do not conflict.
+
+/*    /index.html   200

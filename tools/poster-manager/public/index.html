@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poster Manager — REALITY</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1a1a;
+      --cream: #f5f0eb;
+      --warm: #e8e0d8;
+      --accent: #c5a572;
+      --red: #c0392b;
+      --green: #27ae60;
+      --radius: 4px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--ink);
+      color: var(--cream);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--ink);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.15);
+      color: var(--cream);
+    }
+
+    .btn-danger {
+      background: var(--red);
+      color: white;
+    }
+
+    .btn-small {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .toolbar {
+      padding: 12px 24px;
+      background: var(--warm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .toolbar-info {
+      font-size: 13px;
+      color: rgba(26,26,26,0.6);
+    }
+
+    .drop-zone {
+      margin: 16px 24px;
+      padding: 32px;
+      border: 2px dashed rgba(26,26,26,0.2);
+      border-radius: var(--radius);
+      text-align: center;
+      color: rgba(26,26,26,0.5);
+      font-size: 14px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(197,165,114,0.08);
+      color: var(--ink);
+    }
+
+    .drop-zone input { display: none; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 16px 24px 80px;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: box-shadow 0.15s, transform 0.15s;
+      position: relative;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .card.sortable-ghost {
+      opacity: 0.4;
+    }
+
+    .card.sortable-chosen {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      transform: scale(1.02);
+    }
+
+    .card-thumb {
+      width: 100%;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      display: block;
+      background: var(--warm);
+      cursor: grab;
+    }
+
+    .card-thumb:active { cursor: grabbing; }
+
+    .card-order {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: var(--ink);
+      color: var(--cream);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .card-body {
+      padding: 10px;
+    }
+
+    .card-filename {
+      font-size: 11px;
+      color: rgba(26,26,26,0.45);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-field {
+      width: 100%;
+      border: 1px solid rgba(26,26,26,0.12);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      margin-bottom: 6px;
+      resize: vertical;
+      min-height: 28px;
+      transition: border-color 0.15s;
+    }
+
+    .card-field:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .card-field::placeholder {
+      color: rgba(26,26,26,0.3);
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-size {
+      font-size: 11px;
+      color: rgba(26,26,26,0.4);
+    }
+
+    .card-remove {
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 18px;
+      padding: 2px 6px;
+      line-height: 1;
+      opacity: 0.4;
+      transition: opacity 0.15s;
+    }
+
+    .card-remove:hover { opacity: 1; }
+
+    /* Status bar at bottom */
+    .status-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--ink);
+      color: var(--cream);
+      padding: 10px 24px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+
+    .status-bar .progress {
+      flex: 1;
+      max-width: 300px;
+      height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      margin-left: 16px;
+      overflow: hidden;
+    }
+
+    .status-bar .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s;
+      width: 0%;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      color: rgba(26,26,26,0.4);
+    }
+
+    .empty-state h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 60px;
+      right: 24px;
+      background: var(--ink);
+      color: var(--cream);
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      z-index: 200;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.2s;
+      pointer-events: none;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>POSTER MANAGER</h1>
+  <div class="header-actions">
+    <button class="btn-secondary" onclick="generateThumbs()" id="thumbBtn">Refresh Thumbnails</button>
+    <button class="btn-primary" onclick="publish()" id="publishBtn">Publish</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-info" id="toolbar-info">Loading...</div>
+  <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+    <input type="checkbox" id="autoSave" checked> Auto-save on reorder
+  </label>
+</div>
+
+<div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+  <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/tiff">
+  Drop poster images here or click to browse
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="empty-state" id="emptyState" style="display: none;">
+  <h2>No posters yet</h2>
+  <p>Drop image files above or into the <code>originals/</code> folder, then refresh.</p>
+</div>
+
+<div class="status-bar" id="statusBar" style="display: none;">
+  <span id="statusText">Ready</span>
+  <div class="progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let posters = [];
+  let sortable = null;
+  let saveTimeout = null;
+
+  // ---- Init ----
+
+  async function init() {
+    await loadPosters();
+    await generateThumbs();
+  }
+
+  // ---- Data ----
+
+  async function loadPosters() {
+    const res = await fetch('/api/posters');
+    const data = await res.json();
+    posters = data.posters;
+    render();
+  }
+
+  async function saveOrder() {
+    const order = posters.map(p => p.file);
+    await fetch('/api/posters/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order })
+    });
+    toast('Order saved');
+  }
+
+  async function saveMetadata(file, field, value) {
+    await fetch(`/api/posters/${encodeURIComponent(file)}/metadata`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value })
+    });
+    // Update local state
+    const p = posters.find(x => x.file === file);
+    if (p) p[field] = value;
+  }
+
+  async function removePoster(file) {
+    if (!confirm(`Remove "${file}" from the poster list?`)) return;
+    await fetch(`/api/posters/${encodeURIComponent(file)}`, { method: 'DELETE' });
+    posters = posters.filter(p => p.file !== file);
+    render();
+    toast('Poster removed');
+  }
+
+  async function uploadFiles(files) {
+    const form = new FormData();
+    for (const f of files) form.append('posters', f);
+    showStatus(`Uploading ${files.length} file(s)...`);
+    try {
+      const res = await fetch('/api/posters/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        toast('Upload failed: ' + (data.error || 'Unknown error'));
+        hideStatus();
+        return;
+      }
+      hideStatus();
+      await loadPosters();
+      await generateThumbs();
+      toast(`${data.uploaded} file(s) uploaded`);
+    } catch (e) {
+      toast('Upload failed: ' + e.message);
+      hideStatus();
+    }
+  }
+
+  async function generateThumbs() {
+    const btn = document.getElementById('thumbBtn');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    showStatus('Generating thumbnails...');
+    try {
+      await fetch('/api/generate-thumbs', { method: 'POST' });
+      await loadPosters();
+    } catch (e) {
+      toast('Thumbnail generation failed');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Refresh Thumbnails';
+    hideStatus();
+  }
+
+  async function publish() {
+    const btn = document.getElementById('publishBtn');
+    if (!confirm(`Publish ${posters.length} posters? This will overwrite the current event images.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Publishing...';
+    showStatus('Processing images...');
+    setProgress(10);
+
+    try {
+      const res = await fetch('/api/publish', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        setProgress(100);
+        toast(`Published ${data.processed} posters (${data.totalFiles} files, ${data.totalSizeMB} MB)`);
+      } else {
+        toast('Publish failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (e) {
+      toast('Publish failed: ' + e.message);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Publish';
+    setTimeout(hideStatus, 1500);
+  }
+
+  // ---- Render ----
+
+  function render() {
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('emptyState');
+    const info = document.getElementById('toolbar-info');
+
+    if (posters.length === 0) {
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+      info.textContent = 'No posters';
+      return;
+    }
+
+    empty.style.display = 'none';
+    info.textContent = `${posters.length} poster${posters.length !== 1 ? 's' : ''} — drag to reorder`;
+
+    grid.innerHTML = posters.map((p, i) => `
+      <div class="card" data-file="${esc(p.file)}">
+        <span class="card-order">${i + 1}</span>
+        <img
+          class="card-thumb"
+          src="${p.hasThumb ? p.thumbUrl + '?t=' + Date.now() : ''}"
+          alt="${esc(p.alt || p.file)}"
+          loading="lazy"
+          onerror="this.style.display='none'"
+        >
+        <div class="card-body">
+          <div class="card-filename" title="${esc(p.file)}">${esc(p.file)}</div>
+          <input
+            class="card-field"
+            placeholder="Title (e.g. Jazz Night — May 2026)"
+            value="${esc(p.title || '')}"
+            data-file="${esc(p.file)}"
+            data-field="title"
+            onchange="onFieldChange(this)"
+          >
+          <textarea
+            class="card-field"
+            placeholder="Alt text for SEO (describe the event)"
+            rows="2"
+            data-file="${esc(p.file)}"
+            data-field="alt"
+            onchange="onFieldChange(this)"
+          >${esc(p.alt || '')}</textarea>
+          <div class="card-actions">
+            <span class="card-size">${formatSize(p.size)}</span>
+            <button class="card-remove" onclick="removePoster('${esc(p.file)}')" title="Remove">&times;</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Init sortable
+    if (sortable) sortable.destroy();
+    sortable = new Sortable(grid, {
+      animation: 180,
+      handle: '.card-thumb',
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: () => {
+        // Rebuild posters array from DOM order
+        const cards = grid.querySelectorAll('.card');
+        const fileOrder = Array.from(cards).map(c => c.dataset.file);
+        const map = new Map(posters.map(p => [p.file, p]));
+        posters = fileOrder.map(f => map.get(f));
+        updateOrderNumbers();
+        if (document.getElementById('autoSave').checked) {
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(saveOrder, 400);
+        }
+      }
+    });
+  }
+
+  function updateOrderNumbers() {
+    const nums = document.querySelectorAll('.card-order');
+    nums.forEach((el, i) => el.textContent = i + 1);
+  }
+
+  function onFieldChange(el) {
+    const file = el.dataset.file;
+    const field = el.dataset.field;
+    const value = el.value.trim();
+    saveMetadata(file, field, value);
+  }
+
+  // ---- Drag & drop upload ----
+
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) uploadFiles(fileInput.files);
+    fileInput.value = '';
+  });
+
+  // ---- Helpers ----
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function showStatus(text) {
+    document.getElementById('statusBar').style.display = 'flex';
+    document.getElementById('statusText').textContent = text;
+    setProgress(0);
+  }
+
+  function hideStatus() {
+    document.getElementById('statusBar').style.display = 'none';
+  }
+
+  function setProgress(pct) {
+    document.getElementById('progressFill').style.width = pct + '%';
+  }
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 3000);
+  }
+
+  // ---- Go ----
+  init();
+</script>
+</body>
+</html>

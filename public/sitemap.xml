@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Homepage: EN + VN twins. Each lists the other as an alternate so Google
+       understands they're translations of the same page, not duplicates. -->
+  <url>
+    <loc>https://realitydn.com/</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://realitydn.com/vn"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://realitydn.com/"/>
+  </url>
+  <url>
+    <loc>https://realitydn.com/vn</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://realitydn.com/vn"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://realitydn.com/"/>
+  </url>
+
+  <!-- Event Guidelines: EN + VN twins. -->
+  <url>
+    <loc>https://realitydn.com/event-guidelines</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/event-guidelines"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://realitydn.com/vn/event-guidelines"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://realitydn.com/event-guidelines"/>
+  </url>
+  <url>
+    <loc>https://realitydn.com/vn/event-guidelines</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/event-guidelines"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://realitydn.com/vn/event-guidelines"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://realitydn.com/event-guidelines"/>
+  </url>
+
+  <!-- /host-guide intentionally omitted — it's a stub page, noindexed at the
+       document level until real content ships. -->
+</urlset>

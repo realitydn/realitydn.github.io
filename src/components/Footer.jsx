@@ -73,10 +73,14 @@ export default function Footer({ lang }) {
                 className="w-20 h-20 md:w-24 md:h-24 bg-cream flex items-center justify-center"
                 style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
               >
-                <img 
-                  src="/images/whatsapp-qr.png" 
-                  alt="WhatsApp QR Code" 
+                <img
+                  src="/images/whatsapp-qr.png"
+                  alt="Scan to join the REALITY WhatsApp community"
                   className="w-full h-full object-contain p-1"
+                  loading="lazy"
+                  decoding="async"
+                  width="96"
+                  height="96"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.parentElement.innerHTML = '<span class="text-ink text-xs font-body text-center px-2">QR Code</span>';

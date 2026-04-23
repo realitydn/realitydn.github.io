@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The REALITY Event Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@500;600;700&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0906;
+    --cream: #fffbf2;
+    --sand: #f0ebe0;
+    --ink-light: rgba(13, 9, 6, 0.5);
+    --ink-faint: rgba(13, 9, 6, 0.12);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 17px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* --- NAV --- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--cream);
+    border-bottom: 1px solid var(--ink-faint);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  nav .nav-brand {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  nav .nav-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--ink-faint);
+    flex-shrink: 0;
+  }
+
+  nav a {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-light);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  nav a:hover {
+    color: var(--ink);
+  }
+
+  /* --- HERO --- */
+  .hero {
+    padding: 6rem 2rem 4rem;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .hero h1 {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 700;
+    font-size: 2.6rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+  }
+
+  .hero .intro p {
+    margin-bottom: 1.2rem;
+    color: var(--ink);
+  }
+
+  /* --- CONTENT --- */
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* Part headers */
+  .part-header {
+    margin-top: 5rem;
+    margin-bottom: 3rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .part-header h2 {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Section headers */
+  .section {
+    margin-bottom: 3.5rem;
+  }
+
+  .section h3 {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 600;
+    font-size: 1.35rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.4rem;
+  }
+
+  .section-number {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: var(--ink-light);
+    letter-spacing: 0.06em;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .section p {
+    margin-bottom: 1.1rem;
+  }
+
+  /* --- TABLE OF CONTENTS --- */
+  .toc {
+    margin: 3rem 0;
+    padding: 2rem;
+    background: var(--sand);
+    border-radius: 2px;
+  }
+
+  .toc-part {
+    margin-bottom: 1.2rem;
+  }
+
+  .toc-part:last-child {
+    margin-bottom: 0;
+  }
+
+  .toc-part-title {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 0.5rem;
+  }
+
+  .toc-items {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 1.5rem;
+  }
+
+  .toc-items a {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink-faint);
+    transition: border-color 0.2s;
+  }
+
+  .toc-items a:hover {
+    border-color: var(--ink);
+  }
+
+  /* --- FOOTER --- */
+  .footer-note {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--ink-faint);
+    font-style: italic;
+    color: var(--ink-light);
+    font-size: 0.95rem;
+  }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 600px) {
+    html { font-size: 16px; }
+    .hero { padding: 4rem 1.5rem 3rem; }
+    .hero h1 { font-size: 2rem; }
+    .content { padding: 0 1.5rem 4rem; }
+    nav { padding: 0.8rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">Reality</span>
+  <span class="nav-divider"></span>
+  <a href="#part-1">Around the Event</a>
+  <a href="#part-2">At the Event</a>
+</nav>
+
+<div class="hero">
+  <h1>The REALITY Event Guide</h1>
+  <div class="intro">
+    <p>REALITY runs a lot of events, and we've tried a lot of things. Some have worked beautifully. Some have grown into something bigger than the original idea. Some have floated for a while, and some have fallen apart spectacularly.</p>
+    <p>This guide is meant to help hosts develop their events and connect more compellingly with their audience. It's based on what I've observed and experienced, and it's meant to provoke thought, not define a path.</p>
+  </div>
+
+  <div class="toc">
+    <div class="toc-part">
+      <div class="toc-part-title">Part 1: Around the Event</div>
+      <ol class="toc-items">
+        <li><a href="#goals">Understand your goals</a></li>
+        <li><a href="#audience">Understand your audience</a></li>
+        <li><a href="#naming">Name your event</a></li>
+        <li><a href="#scheduling">Scheduling + consistency</a></li>
+        <li><a href="#community">Building your community</a></li>
+        <li><a href="#marketing">Marketing + content</a></li>
+      </ol>
+    </div>
+    <div class="toc-part">
+      <div class="toc-part-title">Part 2: At the Event</div>
+      <ol class="toc-items">
+        <li><a href="#setup">Setup + materials</a></li>
+        <li><a href="#welcoming">Welcoming people</a></li>
+        <li><a href="#commanding">Commanding attention</a></li>
+        <li><a href="#disruptions">Handling disruptions</a></li>
+        <li><a href="#debriefing">Debriefing with REALITY</a></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ======== PART 1 ======== -->
+  <div class="part-header" id="part-1">
+    <h2>Part 1: Around the Event</h2>
+  </div>
+
+  <div class="section" id="goals">
+    <span class="section-number">01</span>
+    <h3>Understand your goals</h3>
+    <p>There are many reasons to host an event, and not all of them have to do with attendance. Some events exist to fill the room. Some exist to build a particular kind of community. Some exist to give a host a platform for something they care about. All of these are legitimate, but they lead to very different decisions about format, pricing, marketing, and what "success" looks like. Before you start planning, be honest with yourself about what you're actually trying to do.</p>
+    <p>It's worth thinking about what REALITY gets out of hosting your event. We're a business. Events that bring people through the door who order food and drinks help us keep the lights on, which is what allows us to keep hosting events. That doesn't mean every event needs to be a revenue machine, but a recurring event with zero bar spend and five attendees is hard to sustain no matter how cool the concept is. The best events are ones where everyone wins: the host gets to do their thing, the attendees have a great time, and REALITY has a busy, energized room.</p>
+    <p>Your goals will evolve. Something that starts as a casual experiment might grow into the anchor event of your week. Something you expected to be huge might find its real life as a small, devoted gathering. Stay open to what the event is actually becoming, even if it's not what you originally imagined.</p>
+  </div>
+
+  <div class="section" id="audience">
+    <span class="section-number">02</span>
+    <h3>Understand your audience</h3>
+    <p>Understanding who actually shows up is different from understanding who you imagine showing up. Pay attention to the room. Are people coming alone or in pairs? Regulars or first-timers? Here because they care about the topic or because someone dragged them along? All of these people need different things from you.</p>
+    <p>Think about language. We have English-dominant speakers, Vietnamese speakers, and a whole spectrum in between. Some events naturally skew one direction. Knowing this in advance changes how you MC, how you write your descriptions, and whether you need bilingual support. A lot of hosts don't think about this until they're standing in front of a room where half the people can't follow what they're saying.</p>
+    <p>Think about skill level and familiarity. A board game night where half the table has never played and the other half are deep strategists needs a different approach than a room full of beginners. Pitch to the middle but design for the edges.</p>
+    <p>Know the difference between your core audience and your aspirational audience. Your core audience is who actually, reliably shows up. Your aspirational audience is who you wish would show up. Design for your core first. If the event is good for them, the aspirational crowd will hear about it. And ask yourself what people are really getting out of the event — the stated purpose and the actual reason people attend are often not the same thing. A pub quiz is nominally about trivia but functionally about having a reason to talk to strangers.</p>
+    <p>Pay attention to who comes once and never returns versus who becomes a regular. Both groups are giving you information. "How'd you hear about us?" and "Was this your first time?" are two of the most useful questions in event hosting. Ask them often.</p>
+    <p>Consider the economic reality of your attendees. Digital nomads on Western salaries, local Vietnamese professionals, backpackers on tight budgets, long-term expats — they all have different price sensitivities and different expectations. One size rarely fits all, and pretending otherwise just means you've chosen one group without realizing it.</p>
+  </div>
+
+  <div class="section" id="naming">
+    <span class="section-number">03</span>
+    <h3>Name your event</h3>
+    <p>The name should do at least one of three jobs: tell people what it is, make them curious, or make them smile. Two out of three is ideal.</p>
+    <p>For functional events, clarity beats cleverness. If it's a pub quiz, people need to know it's a pub quiz. For recurring events, the name becomes a brand — it needs to be easy to say, easy to remember, and easy to search for. Test it out loud. If it's awkward to say to someone at the bar, it's awkward. If someone can't tell their friend about it without explaining the name first, the name is working against you.</p>
+    <p>Think about how it looks in text and whether it scales. It'll show up in social media posts, group chats, on posters — long names get truncated, weird punctuation gets mangled. And "Dan's Tuesday Trivia" has a ceiling. It's tied to a person and a day. Something less specific gives you more room to grow.</p>
+    <p>Bilingual naming is worth considering. A name that works in both English and Vietnamese, or at least doesn't alienate either group, opens doors. Even just a Vietnamese subtitle signals that the event isn't just for the expat bubble.</p>
+    <p>Don't overthink it. A mediocre name attached to a great event will always outperform a brilliant name attached to a forgettable one.</p>
+  </div>
+
+  <div class="section" id="scheduling">
+    <span class="section-number">04</span>
+    <h3>Scheduling + consistency</h3>
+    <p>Pick a time slot, pick a cadence, and stick to them. Weekly, biweekly, monthly — whatever you can actually sustain. Every time you skip a week or shuffle the schedule, you lose momentum and confuse people who were planning to come. And think about what you're competing with — not just other events, but people's energy levels, work schedules, the rhythms of the week.</p>
+    <p>Start times matter more than you think. Too early and people are still working or eating. Too late and you lose the crowd with morning commitments. For weeknight events, the 7–8pm window is generally the sweet spot, but pay attention to when people actually arrive versus when you say the event starts. If your event starts at 7 and nobody shows up until 7:30, your event starts at 7:30. Design the opening to be low-stakes so latecomers don't feel like they've missed something and early arrivers don't feel awkward.</p>
+    <p>Two hours is a solid default for most social events. Past three hours, energy drops hard unless the format naturally sustains itself. Leave people wanting more, not checking their phones.</p>
+    <p>Consistency is the single most underrated factor in building a successful event series. The first three to five iterations are an investment. Attendance will be uneven. Don't panic. Show up even when the numbers are low — some of your most loyal community members were forged in the small early events. The people who come when there are six people in the room are the ones who'll bring their friends when there are sixty. Set a minimum commitment: at least four to six runs before you evaluate whether it's working.</p>
+    <p>Consistent doesn't mean static. Evolve the format, but do it gradually. One new element at a time. If you change everything at once, you lose the thread of what was actually working. And keep notes after each event, even just a few lines. Patterns only emerge when you track things over time.</p>
+  </div>
+
+  <div class="section" id="community">
+    <span class="section-number">05</span>
+    <h3>Building your community</h3>
+    <p>Community is not the same as audience. An audience watches. A community participates. Your job is to create the conditions for participation, not just attendance.</p>
+    <p>Introduce people to each other. This is the most powerful thing a host can do and it costs nothing. "Hey, you two should talk, you're both into [thing]" is community-building in its most direct form. Do this constantly.</p>
+    <p>Create roles for regulars — not formal titles, but ways for people to contribute. Someone who helps set up, someone who always picks the playlist, someone who welcomes newcomers. When people have a stake in the event, they stop being attendees and start being participants. And celebrate returning faces. Acknowledge when someone's been coming for months. Notice when someone brings a friend. These small recognitions build loyalty that no discount or perk can match.</p>
+    <p>Build bridges between REALITY communities. The karaoke crowd and the AI meetup crowd might have more in common than they realize. Cross-pollination makes the whole ecosystem stronger.</p>
+    <p>Handle conflict quickly. Nothing kills community faster than one person who makes others feel unwelcome or unsafe. Protecting the vibe of the room is more important than avoiding an uncomfortable conversation.</p>
+    <p>Make it easy for newcomers to break in. The hardest moment at any event is walking through the door alone for the first time. A greeter, a clear place to go, an easy way to join in. Every barrier you lower is another person who comes back.</p>
+    <p>Online spaces extend the life of in-person events. A group chat gives people a way to stay connected between events and lowers the activation energy for showing up next time. But keep the signal-to-noise ratio healthy — a group chat that's mostly spam becomes a group chat people mute.</p>
+    <p>Don't manufacture intimacy. Let it develop naturally. Forced fun is worse than no fun. Create the conditions and get out of the way. Community is built in the margins — the five minutes before the event starts, the conversations at the bar after it ends, the random Tuesday someone pops in because they feel at home.</p>
+  </div>
+
+  <div class="section" id="marketing">
+    <span class="section-number">06</span>
+    <h3>Marketing + content</h3>
+    <p>Start marketing before you have every detail nailed down. A "save the date" post with a good image and a one-line description does more than a perfectly polished announcement posted two days before the event.</p>
+    <p>Figure out where your audience actually is. For most of our crowd, that means some combination of Facebook groups, Instagram, and word of mouth. Don't spread yourself thin across every platform — go deep on the two or three channels that actually drive attendance. And personal invitation is the most effective marketing for community events, and it's not even close. A DM saying "hey, I think you'd really like this" converts at a dramatically higher rate than any poster.</p>
+    <p>Create a visual identity for recurring events. Same color palette, same layout, same feel. People should be able to recognize your event post while scrolling without reading a single word.</p>
+    <p>Write descriptions that answer the three questions people actually have: What is it? When is it? Is it for me? Don't bury the practical details under hype.</p>
+    <p>Stagger your marketing. Don't post once and hope. For a weekly event, a good rhythm might be: an early-week save the date, a detailed post two days before, a day-of reminder, and a live story during the event. Cross-promote between REALITY events — someone who comes to karaoke might love the film screening if they knew about it.</p>
+    <p>Post-event content is just as important as pre-event content. A recap rewards the people who came and creates FOMO for the people who didn't. Every event is a content factory if you're paying attention — photos, short videos, behind-the-scenes moments. Designate someone to capture the room. Candid moments over posed ones. A shot of people laughing mid-conversation is worth more than a lineup of people smiling at the camera.</p>
+    <p>Get consent before posting photos. A quick "I'm going to take some photos for our socials, let me know if you'd rather not be in them" at the start covers you. This matters especially in a mixed international community where people have different comfort levels.</p>
+    <p>Encourage attendees to post and tag REALITY. User-generated content is the best content. Make it easy by having good lighting and share-worthy moments built into the event.</p>
+    <p>Capture contacts during the event, not after. A QR code to a group chat, a sign-up sheet, a follow prompt. By the time people leave, they're thinking about their next thing. A mid-event prompt catches people at peak engagement. But respect the contact — don't spam, don't add people to things they didn't opt into.</p>
+    <p>Track what actually drives attendance. Ask people how they heard about it. The channel you spend the most time on may not be the one that's actually filling your room.</p>
+  </div>
+
+  <!-- ======== PART 2 ======== -->
+  <div class="part-header" id="part-2">
+    <h2>Part 2: At the Event</h2>
+  </div>
+
+  <div class="section" id="setup">
+    <span class="section-number">01</span>
+    <h3>Setup + materials</h3>
+    <p>Get there early. The room should be ready before the first person walks in. If people arrive to a host still scrambling to set up, the event starts on a note of chaos and it's hard to recover from that.</p>
+    <p>Know exactly what you need and confirm it's available before the day of. Sound system, projector, seating, supplies — whatever your event requires. If there's something REALITY needs to provide, communicate that well in advance, not the afternoon of.</p>
+    <p>Think about the physical layout of the space. Where will people sit? Where will you stand? Is there a natural focal point? The way the room is arranged communicates what kind of event this is before you say a word. A circle says "discussion." Rows say "performance." Scattered tables say "social." Be intentional.</p>
+    <p>Sound matters more than most people realize. If people can't hear you, nothing else matters. Test the mic, check the levels, figure out where to stand so your voice carries. If there's background music, make sure it adds atmosphere without competing with you.</p>
+    <p>Have a visible schedule if the format is complex — a whiteboard with the event flow, a projected slide, even just a verbal rundown at the start. And always have a backup plan for the things most likely to go wrong. You don't need a contingency for everything, but think through the most probable failure points.</p>
+  </div>
+
+  <div class="section" id="welcoming">
+    <span class="section-number">02</span>
+    <h3>Welcoming people</h3>
+    <p>The first sixty seconds of someone's experience at your event determines whether they come back. That is barely an exaggeration.</p>
+    <p>Have someone positioned to greet people as they arrive. It doesn't have to be formal — eye contact, a smile, "Hey, welcome, is this your first time?" opens every useful door. If they're new, you can orient them. If they're returning, you can acknowledge that.</p>
+    <p>If someone comes alone, take extra care. Introduce them to someone. Don't leave them standing by themselves trying to figure out where to be. The solo attendee who has a good first experience becomes your most enthusiastic evangelist. The one who feels invisible never comes back — and you'll never know why, because they just quietly don't show up again.</p>
+    <p>Use people's names. Be especially attentive to anyone who looks like they might feel out of place. If the room is mostly one demographic and someone from outside that group walks in, they're already wondering if they belong. A warm, direct welcome answers that question immediately.</p>
+    <p>Create a moment of shared experience early — a group laugh, a show of hands, something that breaks the wall between strangers. Brief your regulars to be welcoming too. They set the tone as much as you do. A quick "if you see someone new tonight, say hi" before the event starts can shift the whole energy of the space.</p>
+    <p>The bar is lower than you'd think. Most people walk into an event expecting to be mildly ignored. Just noticing them and making them feel seen puts you ahead of almost everything else happening in the city.</p>
+  </div>
+
+  <div class="section" id="commanding">
+    <span class="section-number">03</span>
+    <h3>Commanding attention</h3>
+    <p>You don't need to be loud to command a room, but you do need to be clear and deliberate. The biggest mistake new hosts make is being tentative. If you need the room's attention, take it. Don't apologize for it. Don't start with "um, hey, so..." Wait for the right moment, project your voice, and speak with intention.</p>
+    <p>Your opening sets the tone for everything that follows. A confident, warm, slightly funny opening gives people permission to relax and be present. A nervous, rambling opening makes people nervous for you.</p>
+    <p>Develop a consistent signal for getting attention — a clap pattern, a bell, raising your hand. Whatever it is, use the same one every time. Regulars will learn it. Newcomers will follow the regulars.</p>
+    <p>Speak to the whole room, not to one corner of it. Make eye contact across the space. And when you need to make an announcement or transition, say what needs to be said and get out of the way. Every word should be doing work.</p>
+    <p>Silence is a tool. A pause before you speak creates anticipation. A pause after you say something important gives it weight. New hosts rush to fill every silence. Good hosts use it.</p>
+    <p>Your energy is the ceiling of the room's energy. If you're flat, the room will be flat. If you're frantic, the room will be anxious. But don't confuse energy with volume. A chill acoustic night needs a different hosting energy than a pub quiz. Match your energy to the event, not to some generic idea of what "hosting" looks like.</p>
+    <p>Read the room constantly. Watch for energy levels, body language, who's engaged, who's checked out. And watch the edges of the room, not the center — the people in the middle are fine. The one standing alone, the one scrolling their phone, the one who looks confused — they're the ones who need your attention. If something isn't working, pivot. "We're going to switch things up" is a perfectly fine thing to say.</p>
+    <p>Manage transitions deliberately. The gap between segments is where you lose people. "In about five minutes we're going to move into the next round" gives people a runway. An abrupt demand for attention mid-conversation doesn't.</p>
+    <p>Know when to step back. Once the event is rolling and people are engaged, your job shifts from leading to monitoring. The best compliment for a host is when people say "that was a great event" and don't specifically mention you. It means the experience felt effortless — which means you did your job.</p>
+  </div>
+
+  <div class="section" id="disruptions">
+    <span class="section-number">04</span>
+    <h3>Handling disruptions</h3>
+    <p>Every event eventually has one. The person who talks too much, the drunk guy getting loud, the side conversation that won't quit. How you handle these moments defines you as a host.</p>
+    <p>The first tool is structural. Design your format to limit dominance — time limits, round-robin formats, small group breakouts, pair discussions before group ones. These choices do the work for you without any confrontation.</p>
+    <p>The second tool is redirection. "Great point — let's hear from someone who hasn't spoken yet." "Let me pause you there and open it up." These phrases are polite, firm, and effective. Practice them until they're automatic. The key is warmth without weakness. You're not shutting someone down. You're opening the room up.</p>
+    <p>The third tool is the private conversation. If someone is consistently dominating, pull them aside. "Hey, I really appreciate your energy. I'm trying to get some of the quieter people to participate more, and I think if you hold back a little it would help create space for that." Frame it as enlisting them, not correcting them.</p>
+    <p>The fourth tool — which you hopefully never need — is the direct boundary. "I need to move on." "I'm going to stop you there." Said calmly, without hostility, this is not rude. It's hosting. The room will silently thank you.</p>
+    <p>For low-level disruptions, humor is usually the best move — "Sounds like someone's having a great time over there" with a smile can rein in a loud side conversation without creating tension. For persistent disruptions, escalate privately: step over, lower your voice, be specific. For genuinely problematic behavior — hostility, harassment, aggression — be direct and be willing to ask someone to leave. "I need you to step outside" is a complete sentence.</p>
+    <p>After any significant disruption, acknowledge it briefly and move on. "Alright, let's get back to it." The room takes its cue from you. If you're calm and moving forward, they will be too.</p>
+    <p>Don't let your desire to be liked prevent you from managing the room. A host who lets one person hijack the event because they don't want an uncomfortable moment has failed everyone else in the room. Being kind and being firm are not opposites. The best hosts are both at the same time.</p>
+  </div>
+
+  <div class="section" id="debriefing">
+    <span class="section-number">05</span>
+    <h3>Debriefing with REALITY</h3>
+    <p>After each event, take a few minutes to check in with us. This doesn't need to be a formal meeting — a quick conversation or message covering the basics: How did it go? How was attendance? Anything notable? Anything you need from us next time?</p>
+    <p>We want to know what's working and what isn't. If something about the space, the setup, the timing, or the support isn't right, we'd rather hear about it than have you quietly struggle. We've run enough events to have seen most problems before, and we can usually help.</p>
+    <p>Be honest about the numbers and the trajectory. If attendance is declining, let's talk about why. If the event is growing and you need more space or resources, let's plan for that. If you're burning out, say so — we'd rather help you find a sustainable rhythm than watch you flame out. Keep track of your own observations too. Even a few notes after each event adds up to real insight after a month.</p>
+    <p>This is a partnership. We're investing our space, our staff, our audience, and our reputation in your event. You're investing your time, your creativity, and your energy. The more openly we communicate, the better this works for everyone.</p>
+  </div>
+
+  <p class="footer-note">This is a living document. If you've hosted at REALITY and have something to add, we want to hear it.</p>
+
+</div>
+
+</body>
+</html>

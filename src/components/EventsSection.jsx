@@ -6,15 +6,33 @@ export default function EventsSection({ t }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch the config file
+    // Fetch the config file. Each entry is either:
+    //   "a.jpg"                                      — bare filename
+    //   { "file": "a.jpg", "alt": "...", "title": "..." }  — richer, preferred
     fetch('/events-config.json')
       .then(res => res.json())
       .then(config => {
-        const eventList = config.events.map((filename, index) => ({
-          id: `event-${index + 1}`,
-          img: `/images/events/${filename}`,
-          alt: `Event poster`
-        }));
+        const eventList = config.events.map((entry, index) => {
+          const obj = typeof entry === 'string' ? { file: entry } : entry;
+
+          // New format from poster-manager: { slug, webp, jpg, full, alt, title }
+          // Legacy format: bare string "a.jpg" or { file: "a.jpg", alt, title }
+          const isNew = !!obj.slug;
+          const img = isNew
+            ? `/images/events/${obj.jpg}`
+            : `/images/events/${obj.file}`;
+          const webp = isNew ? `/images/events/${obj.webp}` : null;
+          const full = isNew ? `/images/events/${obj.full}` : null;
+
+          return {
+            id: `event-${index + 1}`,
+            img,
+            webp,
+            full,
+            alt: obj.alt || obj.title || 'REALITY event poster — Đà Nẵng',
+            title: obj.title || null,
+          };
+        });
         setEvents(eventList);
         setLoading(false);
       })
@@ -51,27 +69,38 @@ export default function EventsSection({ t }) {
   };
 
   const renderEventCard = (ev) => (
-    <div 
-      className="card cursor-pointer overflow-hidden"
-      onClick={() => openLightbox(ev.img)}
+    <button
+      type="button"
+      className="card cursor-pointer overflow-hidden block w-full text-left p-0"
+      onClick={() => openLightbox(ev.full || ev.img, ev.alt)}
       style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+      aria-label={ev.title ? `Open poster: ${ev.title}` : 'Open event poster'}
     >
       <div className="aspect-[4/5] relative bg-cream">
-        <img 
-          src={ev.img} 
-          alt={ev.alt} 
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        <picture>
+          {ev.webp && <source srcSet={ev.webp} type="image/webp" />}
+          <img
+            src={ev.img}
+            alt={ev.alt}
+            title={ev.title || undefined}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+            width="400"
+            height="500"
+          />
+        </picture>
       </div>
-    </div>
+    </button>
   );
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImg, setLightboxImg] = useState('');
+  const [lightboxAlt, setLightboxAlt] = useState('');
 
-  const openLightbox = (img) => {
+  const openLightbox = (img, alt) => {
     setLightboxImg(img);
+    setLightboxAlt(alt || 'REALITY event poster');
     setLightboxOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -79,8 +108,17 @@ export default function EventsSection({ t }) {
   const closeLightbox = () => {
     setLightboxOpen(false);
     setLightboxImg('');
+    setLightboxAlt('');
     document.body.style.overflow = '';
   };
+
+  // Close on Escape — basic keyboard affordance for the lightbox.
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') closeLightbox(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxOpen]);
 
   if (loading) {
     return (
@@ -129,9 +167,9 @@ export default function EventsSection({ t }) {
             className="max-w-4xl max-h-[90vh] card-static overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <img 
-              src={lightboxImg} 
-              alt="Event poster" 
+            <img
+              src={lightboxImg}
+              alt={lightboxAlt}
               className="w-full h-full object-contain"
             />
           </div>

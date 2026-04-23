@@ -1,0 +1,9 @@
+name = "reality-form-handler"
+main = "src/index.js"
+compatibility_date = "2024-03-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://realitydn.com"
+
+[env.development]
+vars = { ALLOWED_ORIGIN = "http://localhost:5173" }

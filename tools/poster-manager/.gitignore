@@ -1,0 +1,8 @@
+node_modules/
+thumbs/
+originals/*.jpg
+originals/*.jpeg
+originals/*.png
+originals/*.webp
+originals/*.tiff
+originals/*.tif

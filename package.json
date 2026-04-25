@@ -11,6 +11,7 @@
     "clean": "rm -rf dist node_modules package-lock.json"
   },
   "dependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.2",
     "embla-carousel-autoplay": "^8.1.6",
     "embla-carousel-react": "^8.1.6",
     "react": "^18.3.1",

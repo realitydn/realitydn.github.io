@@ -5,8 +5,7 @@ import Header from "./components/Header";
 import Hero from "./components/Hero";
 import EventsSection from "./components/EventsSection";
 import Calendar from "./components/Calendar";
-import InfoSection from "./components/InfoSection";
-import ProposalSection from "./components/ProposalSection";
+import InfoHostSection from "./components/InfoHostSection";
 import DarkCTA from "./components/DarkCTA";
 import MenuSection from "./components/MenuSection";
 import VisitSection from "./components/VisitSection";
@@ -14,7 +13,6 @@ import GallerySection from "./components/GallerySection";
 import Footer from "./components/Footer";
 import SEO from "./components/SEO";
 import FAQSchema from "./components/FAQSchema";
-import EventGuidelines from "./pages/EventGuidelines";
 import HostGuide from "./pages/HostGuide";
 import { STR } from "./data/translations";
 
@@ -43,7 +41,11 @@ function HomePage({ lang }) {
   return (
     <div className="min-h-screen">
       <SEO lang={lang} title={title} description={description} />
-      <FAQSchema items={STR[lang].infoItems} />
+      <FAQSchema items={[
+        { q: STR[lang].infoHost.welcomeTitle, a: STR[lang].infoHost.welcomeBody },
+        { q: STR[lang].infoHost.rulesTitle, a: STR[lang].infoHost.rules[0] },
+        { q: STR[lang].infoHost.hostTitle, a: STR[lang].infoHost.hostIntro },
+      ]} />
       {/* Skip link — first focusable element so keyboard users can jump past
           the header. Visually hidden until focused (see .skip-link in CSS). */}
       <a href="#main-content" className="skip-link">
@@ -61,8 +63,7 @@ function HomePage({ lang }) {
           <Hero t={t} />
           <EventsSection t={t} />
           <Calendar lang={lang} />
-          <InfoSection t={t} lang={lang} />
-          <ProposalSection t={t} />
+          <InfoHostSection t={t} lang={lang} />
           <DarkCTA lang={lang} />
           <MenuSection lang={lang} t={t} />
           <VisitSection lang={lang} t={t} />
@@ -94,19 +95,8 @@ export default function App() {
 }
 
 function EventGuidelinesRoute({ lang }) {
-  const t = makeT(lang);
-  const title = lang === 'VN'
-    ? 'Hướng dẫn sự kiện — REALITY'
-    : 'Event Guidelines — REALITY';
-  const description = lang === 'VN'
-    ? 'Hướng dẫn đề xuất sự kiện tại REALITY — cách hợp tác với chúng tôi, các loại sự kiện chúng tôi tổ chức, và quy trình đề xuất.'
-    : 'How to propose an event at REALITY Đà Nẵng — what we look for, the kinds of events we host, and how the submission process works.';
-  return (
-    <>
-      <SEO lang={lang} title={title} description={description} />
-      <EventGuidelines lang={lang} t={t} />
-    </>
-  );
+  const home = lang === 'VN' ? '/vn' : '/';
+  return <Navigate to={`${home}#info`} replace />;
 }
 
 function HostGuideRoute({ lang }) {

@@ -32,12 +32,11 @@ export function validateEventProposalPayload(data) {
     'contact',
     'eventDescription',
     'recurrence',
-    'schedule',
+    'daysAndTimes',
     'duration',
-    'cost',
-    'language',
-    'space',
-    'equipment'
+    'eventCost',
+    'languages',
+    'preferredSpace',
   ];
 
   const missingErrors = validateRequired(data, requiredFields);
@@ -49,14 +48,11 @@ export function validateEventProposalPayload(data) {
   }
 
   // Validate arrays
-  if (!Array.isArray(data.language) || data.language.length === 0) {
-    errors.push('Language must be a non-empty array');
+  if (!Array.isArray(data.languages) || data.languages.length === 0) {
+    errors.push('Languages must be a non-empty array');
   }
-  if (!Array.isArray(data.space) || data.space.length === 0) {
-    errors.push('Space must be a non-empty array');
-  }
-  if (!Array.isArray(data.equipment) || data.equipment.length === 0) {
-    errors.push('Equipment must be a non-empty array');
+  if (!Array.isArray(data.preferredSpace) || data.preferredSpace.length === 0) {
+    errors.push('Preferred space must be a non-empty array');
   }
 
   // Check honeypot

@@ -35,7 +35,7 @@ export async function handleArtExhibition(request, env) {
     }
 
     // Send confirmation email (non-critical - best effort)
-    const emailResult = await sendConfirmationEmail(env, body.email, 'art-exhibition').catch(error => {
+    const emailResult = await sendConfirmationEmail(env, body.email, 'art-exhibition', body).catch(error => {
       console.error('Error sending email:', error);
       return { success: false, error: error.message };
     });

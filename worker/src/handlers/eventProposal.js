@@ -7,7 +7,7 @@ import { createNotionPage, buildEventProposalProperties } from '../services/noti
 import { appendSheetRow, formatEventProposalForSheets } from '../services/sheets.js';
 import { sendConfirmationEmail } from '../services/resend.js';
 
-const EVENT_PROPOSAL_DB_ID = '9dbb8b04-5d08-4599-b34b-51ced6dbb64a';
+const EVENT_PROPOSAL_DB_ID = 'aa5974af9aaf48cda868b33b4e8096f6';
 
 export async function handleEventProposal(request, env) {
   try {
@@ -35,7 +35,7 @@ export async function handleEventProposal(request, env) {
     }
 
     // Send confirmation email (non-critical - best effort)
-    const emailResult = await sendConfirmationEmail(env, body.email, 'event-proposal').catch(error => {
+    const emailResult = await sendConfirmationEmail(env, body.email, 'event-proposal', body).catch(error => {
       console.error('Error sending email:', error);
       return { success: false, error: error.message };
     });

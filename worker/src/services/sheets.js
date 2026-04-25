@@ -184,11 +184,11 @@ export function formatEventProposalForSheets(formData) {
     formData.contact,
     formData.eventDescription,
     formData.recurrence,
-    formData.schedule,
+    formData.daysAndTimes,
     formData.duration,
-    formData.cost,
-    Array.isArray(formData.language) ? formData.language.join('; ') : formData.language,
-    Array.isArray(formData.space) ? formData.space.join('; ') : formData.space,
+    formData.eventCost,
+    Array.isArray(formData.languages) ? formData.languages.join('; ') : formData.languages,
+    Array.isArray(formData.preferredSpace) ? formData.preferredSpace.join('; ') : formData.preferredSpace,
     Array.isArray(formData.equipment) ? formData.equipment.join('; ') : formData.equipment,
     formData.anythingElse || ''
   ];

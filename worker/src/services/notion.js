@@ -79,7 +79,7 @@ export function buildEventProposalProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.schedule
+            content: formData.daysAndTimes || ''
           }
         }
       ]
@@ -97,24 +97,24 @@ export function buildEventProposalProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.cost
+            content: formData.eventCost || ''
           }
         }
       ]
     },
     'Language': {
-      multi_select: formData.language.map(lang => ({
+      multi_select: (formData.languages || []).map(lang => ({
         name: lang
       }))
     },
     'Preferred Space': {
-      multi_select: mapEventSpaces(formData.space)
+      multi_select: mapEventSpaces(formData.preferredSpace || [])
     },
     'Equipment Needed': {
       rich_text: [
         {
           text: {
-            content: Array.isArray(formData.equipment) ? formData.equipment.join(', ') : formData.equipment
+            content: Array.isArray(formData.equipment) ? formData.equipment.join(', ') : (formData.equipment || '')
           }
         }
       ]
@@ -278,11 +278,11 @@ export function buildArtExhibitionProperties(formData) {
 
 function mapRecurrence(recurrenceValue) {
   const mapping = {
-    'Weekly': 'Recurring',
-    'Biweekly': 'Recurring',
-    'Monthly': 'Recurring',
-    'One-time': 'One-time',
-    "Let's discuss": null
+    'weekly': 'Recurring',
+    'biweekly': 'Recurring',
+    'monthly': 'Recurring',
+    'one-time': 'One-time',
+    'discuss': null
   };
 
   const mapped = mapping[recurrenceValue];

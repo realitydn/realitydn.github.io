@@ -43,6 +43,80 @@ export const STR = {
         a: "Respect guests and staff. Don't leave kids unattended. Only tiny, leashed pets right with you. No outside food/drink unless pre-approved."
       }
     ],
+    infoHost: {
+      sectionEyebrow: "Info",
+      sectionTitle: "Your questions, answered",
+      navWelcome: "Do I need to know anyone?",
+      navRules: "Rules of the space",
+      navHost: "Host an event",
+      navPublic: "Public",
+      navPrivate: "Private / Paid",
+      navArt: "Art Show",
+
+      welcomeTitle: "Do I need to know anyone to join events?",
+      welcomeBody: "You don't need to know anyone to join, and you will certainly meet other people! We have 3 missions at REALITY:",
+      welcomeMissions: [
+        "To become the easiest place to make friends in Đà Nẵng.",
+        "To be a platform for communities.",
+        "To become a bridge between locals and foreigners in Đà Nẵng.",
+      ],
+      welcomeFooter: "Some events do have entry fees and some ask for pre-registration; we indicate these on our weekly schedule, and on the posters for events. If you've got any questions, please join our",
+      welcomeWA: "WhatsApp Community",
+      welcomeOr: "or message our",
+      welcomeIG: "Instagram",
+      welcomeFBOr: "or",
+      welcomeFB: "Facebook",
+      welcomePages: "pages.",
+
+      rulesTitle: "What are the rules of the space?",
+      rules: [
+        "Be kind and respectful to other staff and guests—if you make other people uncomfortable, we'll have the uncomfortable task of asking you to leave.",
+        "Everyone using the space must make a purchase. Unfortunately, money exists, and we need it to stay open. Perhaps someday we will become a park, but for now, we are a business.",
+        "We do not allow outside food or drink, except when pre-approved by management. This is both because of the reason above, and because we want to be sure that anything consumed on our premises meets our safety and quality standards.",
+        "Smoking tobacco is allowed on the 1st- and 3rd-floor patios. Smoking of other things is not allowed anywhere.",
+        "Tiny pets kept on a leash and with you at all times are welcome to visit, but please be conscientious of other patron's and your pet's comfort.",
+        "Coworking and holding classes is welcomed, but unless you rent the space (described in the Private Events section) we cannot guarantee quiet.",
+      ],
+
+      hostTitle: "How can I host an event here?",
+      hostIntro: "We have a few different rules and requirements we need to follow to ensure the accessibility of the space, and the success of events for us and you and guests and neighbors and whoever else.",
+      hostPrompt: "What kind of event are you thinking about?",
+      generalRulesLink: "general rules",
+      allEventsPrefix: "All events and guests must follow our",
+
+      publicTitle: "For Public Community Events",
+      publicRules: [
+        "We can work with you to reserve the amount of space needed for your event, and help set up the space and equipment to facilitate your planned activities.",
+        "For event materials and announcements, we're happy to help spread the word and collaborate on online marketing (see: How REALITY Can Help with Promotion). Please follow our brand guidelines below so we can help spread the word, and please make sure to include something along the lines of \"Please buy a drink from REALITY to support the business!\" in event descriptions so that guests aren't surprised or feel like they got tricked into something.",
+        "If you're holding a public event that has an entry fee, you can either rent the space (as detailed in the section below), or split the cost of entry with REALITY 50/50.",
+        "Please arrive at least 15 minutes before the event to help facilitate setup—ensure the tables and chairs are arranged as you need, ensure the right cords are there to connect with the projector or speakers, etc.",
+      ],
+      publicCTA: "Propose an Event",
+
+      privateTitle: "For Private or For-Profit Events",
+      privateRules: [
+        "To reserve a whole room (and restrict access to other guests), or to present a commercial good or service, we require a rental fee, based on the room in mind, day of the week, time of day, and length of the event.",
+        "If you've got special requests or requirements, please discuss them with us as we're scheduling the event to make sure we can work them out.",
+      ],
+      privateCTA: "Propose an Event",
+
+      artTitle: "Art Shows & Exhibitions",
+      artIntro: "We welcome artists of all genres and media, though this form is specifically for visual art installation and exhibition. If you're interested in holding a performance or another form of time-based art, please use the Event Proposal Form.",
+      artNote: "We will do our best to accommodate requests and preferences, but please understand we are a very busy very multi-use space, and we basically always need all the help we can get :)",
+      artGuidelinesLabel: "Guidelines",
+      artGuidelines: [
+        "Due to the amount of work involved in hanging art, producing online and physical marketing, and scheduling for opening parties, we strongly preference shows that can stay up for a full month.",
+        "We ask for a 30% commission on pieces sold at REALITY.",
+        "Due to the mores of our beloved Việt Nam, there are some subject matters that are difficult or impossible for us to show.",
+        "We cannot warranty or ensure the work hung at REALITY, though so far we have an excellent track record of respectful guests and undamaged art.",
+        "We do accept queries for group shows so long as there is a clear curator or point of contact; interfacing with potentially dozens of artists at once far exceeds our bandwidth.",
+      ],
+      artCTA: "Propose an Exhibition",
+
+      thanksTitle: "Thank you!",
+      thanksBody: "We've got your proposal and we'll be in touch within a few days. Keep an eye on your inbox.",
+      thanksAction: "Submit another",
+    },
     drinkEyebrow: "Have a drink",
     menus: "Menus",
     downloadPdf: "Download full drinks PDF",
@@ -322,6 +396,80 @@ export const STR = {
         a: "Tôn trọng mọi người. Không để trẻ em một mình. Chỉ thú cưng nhỏ có dây dắt và luôn ở cạnh bạn. Không mang đồ ăn/uống từ ngoài vào trừ khi đã được chấp thuận."
       }
     ],
+    infoHost: {
+      sectionEyebrow: "Thông tin",
+      sectionTitle: "Câu hỏi của bạn, đã có câu trả lời",
+      navWelcome: "Mình có cần quen ai không?",
+      navRules: "Quy định của không gian",
+      navHost: "Tổ chức sự kiện",
+      navPublic: "Công khai",
+      navPrivate: "Riêng tư / Trả phí",
+      navArt: "Triển lãm nghệ thuật",
+
+      welcomeTitle: "Mình có cần quen ai để tham gia sự kiện không?",
+      welcomeBody: "Bạn không cần quen ai cả, và chắc chắn sẽ gặp được những người bạn mới! REALITY có 3 sứ mệnh:",
+      welcomeMissions: [
+        "Trở thành nơi dễ kết bạn nhất ở Đà Nẵng.",
+        "Trở thành nền tảng cho các cộng đồng.",
+        "Trở thành cầu nối giữa người địa phương và người nước ngoài tại Đà Nẵng.",
+      ],
+      welcomeFooter: "Một số sự kiện có phí vào cửa và một số yêu cầu đăng ký trước; chúng tôi ghi rõ trên lịch hàng tuần và trên poster sự kiện. Nếu bạn có câu hỏi, hãy tham gia",
+      welcomeWA: "Cộng đồng WhatsApp",
+      welcomeOr: "hoặc nhắn tin qua",
+      welcomeIG: "Instagram",
+      welcomeFBOr: "hoặc",
+      welcomeFB: "Facebook",
+      welcomePages: "của chúng tôi.",
+
+      rulesTitle: "Quy định của không gian là gì?",
+      rules: [
+        "Hãy tử tế và tôn trọng nhân viên và khách khác—nếu bạn làm người khác không thoải mái, chúng tôi sẽ phải làm việc không thoải mái là mời bạn ra về.",
+        "Mọi người sử dụng không gian cần mua đồ. Thật không may, tiền vẫn tồn tại, và chúng tôi cần nó để duy trì hoạt động. Có lẽ một ngày nào đó chúng tôi sẽ trở thành công viên, nhưng hiện tại chúng tôi là một doanh nghiệp.",
+        "Chúng tôi không cho phép mang đồ ăn hoặc đồ uống từ ngoài vào, trừ khi được quản lý đồng ý trước. Lý do vừa giống điều trên, vừa vì chúng tôi muốn đảm bảo mọi thứ được tiêu thụ trong không gian đều đạt tiêu chuẩn an toàn và chất lượng.",
+        "Hút thuốc lá được phép ở sân tầng 1 và tầng 3. Hút các thứ khác không được phép ở bất kỳ đâu.",
+        "Thú cưng nhỏ có dây dắt và luôn ở cạnh bạn được chào đón, nhưng hãy lưu ý đến sự thoải mái của khách khác và thú cưng của bạn.",
+        "Làm việc và tổ chức lớp học được hoan nghênh, nhưng trừ khi bạn thuê không gian (mô tả trong phần Sự kiện Riêng tư) chúng tôi không thể đảm bảo sự yên tĩnh.",
+      ],
+
+      hostTitle: "Làm sao để tổ chức sự kiện ở đây?",
+      hostIntro: "Chúng tôi có một số quy định và yêu cầu để đảm bảo không gian luôn thân thiện với mọi người, và để sự kiện thành công cho cả chúng tôi, bạn, khách mời, hàng xóm, và bất kỳ ai liên quan.",
+      hostPrompt: "Bạn đang nghĩ đến loại sự kiện nào?",
+      generalRulesLink: "quy định chung",
+      allEventsPrefix: "Tất cả sự kiện và khách phải tuân theo",
+
+      publicTitle: "Cho Sự kiện Cộng đồng Công khai",
+      publicRules: [
+        "Chúng tôi có thể làm việc với bạn để sắp xếp lượng không gian cần thiết cho sự kiện, và hỗ trợ setup không gian cùng thiết bị phục vụ hoạt động của bạn.",
+        "Về tài liệu và thông báo sự kiện, chúng tôi sẵn sàng giúp lan tỏa và phối hợp về marketing online (xem: Cách REALITY có thể Hỗ trợ Quảng bá). Vui lòng tuân thủ hướng dẫn thương hiệu bên dưới để chúng tôi dễ hỗ trợ, và nhớ ghi đại loại như \"Hãy mua đồ uống từ REALITY để ủng hộ quán nhé!\" vào mô tả sự kiện để khách không bất ngờ hoặc cảm thấy bị dụ tới.",
+        "Nếu bạn tổ chức sự kiện công khai có thu phí vào cửa, bạn có thể thuê không gian (chi tiết ở mục bên dưới), hoặc chia đôi phí vào cửa với REALITY theo tỷ lệ 50/50.",
+        "Vui lòng đến trước ít nhất 15 phút để hỗ trợ setup—sắp xếp bàn ghế theo nhu cầu, đảm bảo các dây cáp kết nối máy chiếu hay loa đã sẵn sàng, v.v.",
+      ],
+      publicCTA: "Đề xuất sự kiện",
+
+      privateTitle: "Cho Sự kiện Riêng tư hoặc Vì Lợi nhuận",
+      privateRules: [
+        "Để đặt riêng cả một phòng (và hạn chế khách khác ra vào), hoặc để giới thiệu sản phẩm/dịch vụ thương mại, chúng tôi yêu cầu phí thuê, tùy theo phòng, ngày trong tuần, thời điểm trong ngày, và thời lượng của sự kiện.",
+        "Nếu bạn có yêu cầu hoặc nhu cầu đặc biệt, vui lòng trao đổi khi chúng ta lên lịch để cùng giải quyết.",
+      ],
+      privateCTA: "Đề xuất sự kiện",
+
+      artTitle: "Triển lãm Nghệ thuật",
+      artIntro: "Chúng tôi chào đón nghệ sĩ mọi thể loại và chất liệu, tuy nhiên form này dành riêng cho việc lắp đặt và triển lãm nghệ thuật thị giác. Nếu bạn muốn tổ chức biểu diễn hoặc loại hình nghệ thuật theo thời gian khác, vui lòng sử dụng Form Đề xuất Sự kiện.",
+      artNote: "Chúng tôi sẽ cố gắng hết sức để đáp ứng yêu cầu và sở thích của bạn, nhưng xin hiểu rằng chúng tôi là một không gian rất bận rộn và đa năng, và chúng tôi cơ bản luôn cần sự giúp đỡ :)",
+      artGuidelinesLabel: "Hướng dẫn",
+      artGuidelines: [
+        "Do lượng công việc liên quan đến treo tranh, sản xuất marketing online và vật lý, và lên lịch tiệc khai mạc, chúng tôi ưu tiên các triển lãm có thể treo trong một tháng.",
+        "Chúng tôi thu 30% hoa hồng trên các tác phẩm bán được tại REALITY.",
+        "Do thuần phong mỹ tục của Việt Nam thân yêu, có một số chủ đề khó hoặc không thể trưng bày.",
+        "Chúng tôi không thể bảo đảm hay bảo hiểm tác phẩm treo tại REALITY, mặc dù cho đến nay chúng tôi có thành tích tuyệt vời về khách hàng tôn trọng và tác phẩm không bị hư hại.",
+        "Chúng tôi nhận yêu cầu triển lãm nhóm miễn là có một curator hoặc đầu mối liên hệ rõ ràng; giao tiếp với hàng chục nghệ sĩ cùng lúc vượt quá khả năng của chúng tôi.",
+      ],
+      artCTA: "Đề xuất triển lãm",
+
+      thanksTitle: "Cảm ơn bạn!",
+      thanksBody: "Chúng tôi đã nhận được đề xuất và sẽ phản hồi bạn trong vài ngày tới. Nhớ để ý hộp mail nhé.",
+      thanksAction: "Gửi đề xuất khác",
+    },
     drinkEyebrow: "Gọi đồ uống",
     menus: "Thực đơn",
     downloadPdf: "Tải PDF đồ uống",

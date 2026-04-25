@@ -290,9 +290,7 @@ export default function InfoHostSection({ t, lang }) {
                 {submittedFlavor === 'event' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
-                  <FormToggle id="info-proposal-event" label={ih('publicCTA')}>
-                    <EventProposalForm t={t} onSuccess={() => handleSuccess('event')} />
-                  </FormToggle>
+                  <EventProposalForm t={t} onSuccess={() => handleSuccess('event')} />
                 )}
               </Slide>
 
@@ -308,9 +306,7 @@ export default function InfoHostSection({ t, lang }) {
                 {submittedFlavor === 'event-private' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
-                  <FormToggle id="info-proposal-private" label={ih('privateCTA')}>
-                    <EventProposalForm t={t} onSuccess={() => handleSuccess('event-private')} />
-                  </FormToggle>
+                  <EventProposalForm t={t} onSuccess={() => handleSuccess('event-private')} />
                 )}
               </Slide>
 
@@ -331,9 +327,7 @@ export default function InfoHostSection({ t, lang }) {
                 {submittedFlavor === 'art' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
-                  <FormToggle id="info-proposal-art" label={ih('artCTA')}>
-                    <ArtExhibitionForm t={t} onSuccess={() => handleSuccess('art')} />
-                  </FormToggle>
+                  <ArtExhibitionForm t={t} onSuccess={() => handleSuccess('art')} />
                 )}
               </Slide>
             </div>
@@ -378,32 +372,6 @@ function GeneralRulesLink({ ih, goTo }) {
       </button>
       .
     </p>
-  );
-}
-
-function FormToggle({ id, label, children }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="btn-primary px-6 py-3 font-title text-sm tracking-[0.15em]"
-      >
-        {label}
-      </button>
-      <div
-        id={id}
-        style={{
-          maxHeight: open ? '2400px' : '0px',
-          opacity: open ? 1 : 0,
-          overflow: 'hidden',
-          transition: 'max-height 0.4s ease, opacity 0.4s ease',
-        }}
-      >
-        <div className="mt-6">{children}</div>
-      </div>
-    </>
   );
 }
 

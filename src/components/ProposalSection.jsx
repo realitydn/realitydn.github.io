@@ -9,13 +9,15 @@ export default function ProposalSection({ t }) {
   const [activeTab, setActiveTab] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [submittedFlavor, setSubmittedFlavor] = useState(null);
-  const formRef = useRef(null);
+  const tabsRef = useRef(null);
 
   const scrollToForm = () => {
-    // Wait for the expand transition to start, then scroll the form into view.
+    // Brief delay lets the expand transition start so the user sees motion,
+    // then scroll the tab buttons to the top of the viewport — the opening
+    // form content appears directly below them.
     setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 80);
+      tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleTabClick = (tab) => {
@@ -75,7 +77,7 @@ export default function ProposalSection({ t }) {
         </p>
 
         {/* Tab buttons */}
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-8 mb-6">
+        <div ref={tabsRef} className="flex flex-col md:flex-row gap-3 md:gap-4 mt-8 mb-6">
           <button
             onClick={() => handleTabClick('event')}
             className={`flex-1 px-5 py-4 font-title text-sm md:text-base tracking-[0.15em] transition-all ${
@@ -96,7 +98,6 @@ export default function ProposalSection({ t }) {
 
         {/* Form / thank-you container with smooth collapse */}
         <div
-          ref={formRef}
           style={{
             maxHeight: isExpanded || submittedFlavor ? '2400px' : '0',
             opacity: isExpanded || submittedFlavor ? 1 : 0,

@@ -48,7 +48,7 @@ export async function handleEventProposal(request, env) {
     let sheetsResult = { success: true };
     if (env.EVENT_PROPOSAL_SHEET_ID) {
       const rowData = formatEventProposalForSheets(body);
-      sheetsResult = await appendSheetRow(env, env.EVENT_PROPOSAL_SHEET_ID, 'Sheet1', rowData).catch(error => {
+      sheetsResult = await appendSheetRow(env, env.EVENT_PROPOSAL_SHEET_ID, 'Form Responses 1', rowData).catch(error => {
         console.error('Error appending to Sheets:', error);
         return { success: false, error: error.message };
       });

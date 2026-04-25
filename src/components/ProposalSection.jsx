@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import EventProposalForm from './EventProposalForm';
 import ArtExhibitionForm from './ArtExhibitionForm';
 
@@ -9,23 +9,30 @@ export default function ProposalSection({ t }) {
   const [activeTab, setActiveTab] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [submittedFlavor, setSubmittedFlavor] = useState(null);
+  const formRef = useRef(null);
+
+  const scrollToForm = () => {
+    // Wait for the expand transition to start, then scroll the form into view.
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 80);
+  };
 
   const handleTabClick = (tab) => {
     if (submittedFlavor) {
-      // If a thank-you is showing, clicking a tab resets and opens that form.
       setSubmittedFlavor(null);
       setActiveTab(tab);
       setIsExpanded(true);
+      scrollToForm();
       return;
     }
     if (activeTab === tab) {
-      // Collapse if clicking active tab
       setIsExpanded(false);
       setActiveTab(null);
     } else {
-      // Switch to new tab
       setActiveTab(tab);
       setIsExpanded(true);
+      scrollToForm();
     }
   };
 
@@ -89,6 +96,7 @@ export default function ProposalSection({ t }) {
 
         {/* Form / thank-you container with smooth collapse */}
         <div
+          ref={formRef}
           style={{
             maxHeight: isExpanded || submittedFlavor ? '2400px' : '0',
             opacity: isExpanded || submittedFlavor ? 1 : 0,

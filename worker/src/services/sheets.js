@@ -60,12 +60,6 @@ async function getAccessToken(serviceAccountKey) {
     const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
     const unsignedToken = `${headerB64}.${payloadB64}`;
 
-    // In production, sign with the private key using SubtleCrypto
-    // For now, return a placeholder that will need to be replaced with proper signing
-    console.warn('JWT signing not yet implemented - using placeholder');
-
-    // This is where you would sign the unsignedToken with the private key
-    // For Cloudflare Workers, use SubtleCrypto API
     const signedToken = await signJWT(unsignedToken, serviceAccount.private_key);
 
     // Exchange JWT for access token

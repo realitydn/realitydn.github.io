@@ -10,6 +10,18 @@ const MAIN_PANELS = ['welcome', 'rules', 'host'];
 // Sub-panels within the "host" panel — each is its own carousel slide
 const EVENT_TYPES = ['public', 'private', 'art'];
 
+// Accent colors from the REALITY palette, one per nav button
+const NAV_ACCENTS = {
+  welcome: '#00AB4D',  // green
+  rules:   '#0077A3',  // blue
+  host:    '#E72D33',  // red
+};
+const EVENT_ACCENTS = {
+  public:  '#FD9D32',  // orange
+  private: '#403785',  // purple
+  art:     '#E92775',  // pink
+};
+
 // All slides in order: welcome, rules, public, private, art
 // "host" isn't a slide itself — clicking it shows the first event type (public)
 function slideIndex(panel, eventType) {
@@ -61,8 +73,19 @@ export default function InfoHostSection({ t, lang }) {
   const handleSuccess = (flavor) => setSubmittedFlavor(flavor);
   const resetThanks = () => {
     setSubmittedFlavor(null);
-    // Go back to whichever event type they were on
     goTo('host', activeEventType);
+  };
+
+  // Nav button label helper
+  const navLabel = (panel) => {
+    if (panel === 'welcome') return ih('navWelcome');
+    if (panel === 'rules') return ih('navRules');
+    return ih('navHost');
+  };
+  const eventLabel = (type) => {
+    if (type === 'public') return ih('navPublic');
+    if (type === 'private') return ih('navPrivate');
+    return ih('navArt');
   };
 
   return (
@@ -86,30 +109,29 @@ export default function InfoHostSection({ t, lang }) {
                 onClick={() =>
                   goTo(panel, panel === 'host' ? activeEventType : undefined)
                 }
-                className={`text-left px-4 py-3 rounded-xl border font-title uppercase tracking-[0.15em] text-xs transition-all ${
+                className={`text-left px-4 py-3 rounded-xl border font-title uppercase tracking-[0.15em] text-xs transition-all flex items-center gap-3 ${
                   activeMain === panel
                     ? 'bg-ink text-cream border-ink'
                     : 'bg-transparent text-ink border-ink/20 hover:border-ink/50'
                 } focus:ring-2 focus:ring-offset-2 focus:ring-ink focus:outline-none`}
               >
-                {panel === 'welcome' && ih('navWelcome')}
-                {panel === 'rules' && ih('navRules')}
-                {panel === 'host' && ih('navHost')}
+                <span
+                  className="w-2.5 h-2.5 rounded-sm shrink-0"
+                  style={{ backgroundColor: NAV_ACCENTS[panel] }}
+                  aria-hidden="true"
+                />
+                {navLabel(panel)}
               </button>
             ))}
 
-            {/* Event type sub-nav — visible when on any host sub-panel */}
+            {/* Event type sub-nav */}
             {activeMain === 'host' && (
               <div className="flex flex-col gap-1.5 mt-1">
                 {EVENT_TYPES.map((type) => (
                   <button
                     key={type}
                     onClick={() => goTo('host', type)}
-                    className={`text-left px-4 py-2.5 rounded-lg border font-title uppercase tracking-[0.12em] text-[10px] transition-all ${
-                      activeEventType === type
-                        ? 'bg-red/8 border-red text-red'
-                        : 'bg-transparent border-transparent text-ink hover:bg-ink/4'
-                    } focus:ring-2 focus:ring-offset-2 focus:ring-ink focus:outline-none`}
+                    className="text-left px-4 py-2.5 rounded-lg border font-title uppercase tracking-[0.12em] text-[10px] transition-all flex items-center gap-2.5 focus:ring-2 focus:ring-offset-2 focus:ring-ink focus:outline-none"
                     style={
                       activeEventType === type
                         ? {
@@ -117,12 +139,18 @@ export default function InfoHostSection({ t, lang }) {
                             borderColor: '#c0392b',
                             color: '#c0392b',
                           }
-                        : {}
+                        : {
+                            backgroundColor: 'transparent',
+                            borderColor: 'transparent',
+                          }
                     }
                   >
-                    {type === 'public' && ih('navPublic')}
-                    {type === 'private' && ih('navPrivate')}
-                    {type === 'art' && ih('navArt')}
+                    <span
+                      className="w-2 h-2 rounded-sm shrink-0"
+                      style={{ backgroundColor: EVENT_ACCENTS[type] }}
+                      aria-hidden="true"
+                    />
+                    {eventLabel(type)}
                   </button>
                 ))}
               </div>
@@ -132,35 +160,38 @@ export default function InfoHostSection({ t, lang }) {
 
         {/* Main content area */}
         <div className="col-span-12 md:col-span-9">
-          {/* Mobile horizontal nav */}
-          <div className="md:hidden -mx-2 px-2 mb-4">
-            <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory py-1 scrollbar-hide">
+          {/* Mobile nav — vertical stack, no swiping */}
+          <div className="md:hidden mb-4">
+            <div className="flex flex-col gap-2">
               {MAIN_PANELS.map((panel) => (
                 <button
                   key={panel}
                   onClick={() =>
                     goTo(panel, panel === 'host' ? activeEventType : undefined)
                   }
-                  className={`snap-start shrink-0 px-4 py-3 rounded-xl border font-title uppercase tracking-[0.15em] text-xs transition-all ${
+                  className={`text-left px-4 py-3 rounded-xl border font-title uppercase tracking-[0.15em] text-xs transition-all flex items-center gap-3 ${
                     activeMain === panel
                       ? 'bg-ink text-cream border-ink'
                       : 'bg-transparent text-ink border-ink/20'
                   } focus:ring-2 focus:ring-offset-2 focus:ring-ink focus:outline-none`}
                 >
-                  {panel === 'welcome' && ih('navWelcome')}
-                  {panel === 'rules' && ih('navRules')}
-                  {panel === 'host' && ih('navHost')}
+                  <span
+                    className="w-2.5 h-2.5 rounded-sm shrink-0"
+                    style={{ backgroundColor: NAV_ACCENTS[panel] }}
+                    aria-hidden="true"
+                  />
+                  {navLabel(panel)}
                 </button>
               ))}
             </div>
             {/* Mobile event type sub-nav */}
             {activeMain === 'host' && (
-              <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory py-1 mt-2 scrollbar-hide">
+              <div className="flex gap-2 mt-2 pl-5">
                 {EVENT_TYPES.map((type) => (
                   <button
                     key={type}
                     onClick={() => goTo('host', type)}
-                    className={`snap-start shrink-0 px-3 py-2 rounded-lg border font-title uppercase tracking-[0.12em] text-[10px] transition-all focus:ring-2 focus:ring-offset-2 focus:ring-ink focus:outline-none`}
+                    className="px-3 py-2 rounded-lg border font-title uppercase tracking-[0.12em] text-[10px] transition-all flex items-center gap-2 focus:ring-2 focus:ring-offset-2 focus:ring-ink focus:outline-none"
                     style={
                       activeEventType === type
                         ? {
@@ -175,9 +206,12 @@ export default function InfoHostSection({ t, lang }) {
                           }
                     }
                   >
-                    {type === 'public' && ih('navPublic')}
-                    {type === 'private' && ih('navPrivate')}
-                    {type === 'art' && ih('navArt')}
+                    <span
+                      className="w-2 h-2 rounded-sm shrink-0"
+                      style={{ backgroundColor: EVENT_ACCENTS[type] }}
+                      aria-hidden="true"
+                    />
+                    {eventLabel(type)}
                   </button>
                 ))}
               </div>
@@ -205,7 +239,7 @@ export default function InfoHostSection({ t, lang }) {
                     href={URLS.WA}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-red underline hover:opacity-70"
+                    className="underline hover:opacity-70"
                     style={{ color: '#c0392b' }}
                   >
                     {ih('welcomeWA')}
@@ -215,7 +249,7 @@ export default function InfoHostSection({ t, lang }) {
                     href={URLS.IG}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-red underline hover:opacity-70"
+                    className="underline hover:opacity-70"
                     style={{ color: '#c0392b' }}
                   >
                     {ih('welcomeIG')}
@@ -225,7 +259,7 @@ export default function InfoHostSection({ t, lang }) {
                     href={URLS.FB}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-red underline hover:opacity-70"
+                    className="underline hover:opacity-70"
                     style={{ color: '#c0392b' }}
                   >
                     {ih('welcomeFB')}
@@ -247,17 +281,7 @@ export default function InfoHostSection({ t, lang }) {
               {/* Slide 2: Public Events */}
               <Slide>
                 <SlideTitle>{ih('publicTitle')}</SlideTitle>
-                <p className="mb-4">
-                  {ih('allEventsPrefix')}{' '}
-                  <button
-                    onClick={() => goTo('rules')}
-                    className="underline font-semibold hover:opacity-70 transition-opacity"
-                    style={{ color: '#c0392b' }}
-                  >
-                    {ih('generalRulesLink')}
-                  </button>
-                  .
-                </p>
+                <GeneralRulesLink ih={ih} goTo={goTo} />
                 <ol className="list-decimal pl-5 space-y-3 mb-6">
                   {ih('publicRules').map((rule, i) => (
                     <li key={i}>{rule}</li>
@@ -266,42 +290,16 @@ export default function InfoHostSection({ t, lang }) {
                 {submittedFlavor === 'event' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
-                  <>
-                    <CTAButton onClick={() => {
-                      const el = document.getElementById('info-proposal-event');
-                      if (el) {
-                        el.style.maxHeight = el.style.maxHeight === '0px' || !el.style.maxHeight ? '2400px' : '0px';
-                        el.style.opacity = el.style.maxHeight === '2400px' ? '1' : '0';
-                      }
-                    }}>
-                      {ih('publicCTA')}
-                    </CTAButton>
-                    <div
-                      id="info-proposal-event"
-                      style={{ maxHeight: '0px', opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease, opacity 0.4s ease' }}
-                    >
-                      <div className="mt-6">
-                        <EventProposalForm t={t} onSuccess={() => handleSuccess('event')} />
-                      </div>
-                    </div>
-                  </>
+                  <FormToggle id="info-proposal-event" label={ih('publicCTA')}>
+                    <EventProposalForm t={t} onSuccess={() => handleSuccess('event')} />
+                  </FormToggle>
                 )}
               </Slide>
 
               {/* Slide 3: Private Events */}
               <Slide>
                 <SlideTitle>{ih('privateTitle')}</SlideTitle>
-                <p className="mb-4">
-                  {ih('allEventsPrefix')}{' '}
-                  <button
-                    onClick={() => goTo('rules')}
-                    className="underline font-semibold hover:opacity-70 transition-opacity"
-                    style={{ color: '#c0392b' }}
-                  >
-                    {ih('generalRulesLink')}
-                  </button>
-                  .
-                </p>
+                <GeneralRulesLink ih={ih} goTo={goTo} />
                 <ol className="list-decimal pl-5 space-y-3 mb-6">
                   {ih('privateRules').map((rule, i) => (
                     <li key={i}>{rule}</li>
@@ -310,42 +308,16 @@ export default function InfoHostSection({ t, lang }) {
                 {submittedFlavor === 'event-private' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
-                  <>
-                    <CTAButton onClick={() => {
-                      const el = document.getElementById('info-proposal-private');
-                      if (el) {
-                        el.style.maxHeight = el.style.maxHeight === '0px' || !el.style.maxHeight ? '2400px' : '0px';
-                        el.style.opacity = el.style.maxHeight === '2400px' ? '1' : '0';
-                      }
-                    }}>
-                      {ih('privateCTA')}
-                    </CTAButton>
-                    <div
-                      id="info-proposal-private"
-                      style={{ maxHeight: '0px', opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease, opacity 0.4s ease' }}
-                    >
-                      <div className="mt-6">
-                        <EventProposalForm t={t} onSuccess={() => handleSuccess('event-private')} />
-                      </div>
-                    </div>
-                  </>
+                  <FormToggle id="info-proposal-private" label={ih('privateCTA')}>
+                    <EventProposalForm t={t} onSuccess={() => handleSuccess('event-private')} />
+                  </FormToggle>
                 )}
               </Slide>
 
               {/* Slide 4: Art Show */}
               <Slide>
                 <SlideTitle>{ih('artTitle')}</SlideTitle>
-                <p className="mb-4">
-                  {ih('allEventsPrefix')}{' '}
-                  <button
-                    onClick={() => goTo('rules')}
-                    className="underline font-semibold hover:opacity-70 transition-opacity"
-                    style={{ color: '#c0392b' }}
-                  >
-                    {ih('generalRulesLink')}
-                  </button>
-                  .
-                </p>
+                <GeneralRulesLink ih={ih} goTo={goTo} />
                 <p className="mb-3">{ih('artIntro')}</p>
                 <p className="mb-4">{ih('artNote')}</p>
                 <p className="font-title uppercase tracking-[0.15em] text-[10px] text-gray-500 mb-2 mt-6">
@@ -359,25 +331,9 @@ export default function InfoHostSection({ t, lang }) {
                 {submittedFlavor === 'art' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
-                  <>
-                    <CTAButton onClick={() => {
-                      const el = document.getElementById('info-proposal-art');
-                      if (el) {
-                        el.style.maxHeight = el.style.maxHeight === '0px' || !el.style.maxHeight ? '2400px' : '0px';
-                        el.style.opacity = el.style.maxHeight === '2400px' ? '1' : '0';
-                      }
-                    }}>
-                      {ih('artCTA')}
-                    </CTAButton>
-                    <div
-                      id="info-proposal-art"
-                      style={{ maxHeight: '0px', opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease, opacity 0.4s ease' }}
-                    >
-                      <div className="mt-6">
-                        <ArtExhibitionForm t={t} onSuccess={() => handleSuccess('art')} />
-                      </div>
-                    </div>
-                  </>
+                  <FormToggle id="info-proposal-art" label={ih('artCTA')}>
+                    <ArtExhibitionForm t={t} onSuccess={() => handleSuccess('art')} />
+                  </FormToggle>
                 )}
               </Slide>
             </div>
@@ -393,7 +349,7 @@ export default function InfoHostSection({ t, lang }) {
 
 function Slide({ children }) {
   return (
-    <section className="basis-full shrink-0 p-6 md:p-10 overflow-y-auto max-h-[70vh]">
+    <section className="basis-full shrink-0 p-6 md:p-10 overflow-y-auto max-h-[50vh]">
       <div className="font-body text-sm md:text-base text-gray-700 leading-relaxed">
         {children}
       </div>
@@ -409,14 +365,45 @@ function SlideTitle({ children }) {
   );
 }
 
-function CTAButton({ children, onClick }) {
+function GeneralRulesLink({ ih, goTo }) {
   return (
-    <button
-      onClick={onClick}
-      className="btn-primary px-6 py-3 font-title text-sm tracking-[0.15em]"
-    >
-      {children}
-    </button>
+    <p className="mb-4">
+      {ih('allEventsPrefix')}{' '}
+      <button
+        onClick={() => goTo('rules')}
+        className="underline font-semibold hover:opacity-70 transition-opacity"
+        style={{ color: '#c0392b' }}
+      >
+        {ih('generalRulesLink')}
+      </button>
+      .
+    </p>
+  );
+}
+
+function FormToggle({ id, label, children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="btn-primary px-6 py-3 font-title text-sm tracking-[0.15em]"
+      >
+        {label}
+      </button>
+      <div
+        id={id}
+        style={{
+          maxHeight: open ? '2400px' : '0px',
+          opacity: open ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.4s ease, opacity 0.4s ease',
+        }}
+      >
+        <div className="mt-6">{children}</div>
+      </div>
+    </>
   );
 }
 

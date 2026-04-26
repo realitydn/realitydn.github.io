@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { URLS } from '../data/translations';
 import EventProposalForm from './EventProposalForm';
@@ -70,7 +70,16 @@ export default function InfoHostSection({ t, lang }) {
     embla?.scrollTo(idx);
   };
 
-  const handleSuccess = (flavor) => setSubmittedFlavor(flavor);
+  const carouselContainerRef = useRef(null);
+  const handleSuccess = (flavor) => {
+    setSubmittedFlavor(flavor);
+    // Reset the active slide's scroll to top so ThankYou is visible
+    // instead of blank cream space left over from the form's scroll position.
+    requestAnimationFrame(() => {
+      const slides = carouselContainerRef.current?.querySelectorAll(':scope > section');
+      slides?.forEach((s) => { s.scrollTop = 0; });
+    });
+  };
   const resetThanks = () => {
     setSubmittedFlavor(null);
     goTo('host', activeEventType);
@@ -223,7 +232,7 @@ export default function InfoHostSection({ t, lang }) {
             className="overflow-hidden rounded-3xl border border-ink/10 bg-white"
             ref={viewportRef}
           >
-            <div className="flex">
+            <div className="flex" ref={carouselContainerRef}>
               {/* Slide 0: Welcome */}
               <Slide>
                 <SlideTitle>{ih('welcomeTitle')}</SlideTitle>

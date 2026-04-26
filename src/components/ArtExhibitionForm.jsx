@@ -533,15 +533,15 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                 </div>
                 <div>
                   <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
-                    {t.use('artForm.flexibility')}
+                    {t.use('artForm.flexibilityLabel')}
                   </p>
-                  <p className="font-body">{t.use(`artForm.flexibility.${formData.flexibility}`)}</p>
+                  <p className="font-body">{formData.flexibility}</p>
                 </div>
                 <div>
                   <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
-                    {t.use('artForm.isGroupShow')}
+                    {t.use('artForm.isGroupShowLabel')}
                   </p>
-                  <p className="font-body">{t.use(`artForm.isGroupShow.${formData.isGroupShow}`)}</p>
+                  <p className="font-body">{formData.isGroupShow}</p>
                 </div>
               </div>
 

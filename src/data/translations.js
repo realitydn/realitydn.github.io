@@ -773,3 +773,31 @@ export const URLS = {
   MAP: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1766.9182173001361!2d108.24125224818768!3d16.05241110360417!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY!5e1!3m2!1sen!2s!4v1756275333082!5m2!1sen!2s",
   PDF: "https://realitydn.com/menu-drinks-en.pdf"
 };
+ "Những gì bạn có thể làm:",
+      promoteYou: [
+        "Đăng sự kiện vào các nhóm Facebook, WhatsApp, và kênh mạng xã hội khác mà bạn nghĩ sẽ có người quan tâm.",
+        "Nếu bạn in bưu thiếp hoặc tờ rơi, hãy dán ở bất cứ đâu phù hợp, và để lại một ít tại REALITY để chúng tôi củng cố nhận diện ở đó.",
+        "Nếu bạn nghĩ ra cách nào khác chúng ta có thể hợp tác để lan tỏa, hãy pitch chúng tôi nhé! Chúng tôi tổ chức khá nhiều sự kiện công khai mỗi tuần nên năng lực có hạn, nhưng nếu là điều chúng tôi làm được và trong khả năng, chúng tôi rất muốn giúp.",
+      ],
+
+      checklistTitle: "Danh sách Sự kiện",
+      checklistBody: "Sẵn sàng gửi đề xuất?",
+      ctaTitle: "Bước tiếp theo là điền Form Đề xuất Sự kiện REALITY.",
+      ctaButton: "Điền form đề xuất",
+    },
+    hostGuide: {
+      title: "Hướng dẫn chủ sở hữu",
+      message: "Trang này sẽ sớm xuất hiện. Hãy kiểm tra lại để có hướng dẫn đầy đủ về việc lưu trữ tại REALITY.",
+      backButton: "Quay lại REALITY",
+    },
+  },
+};
+
+export const URLS = {
+  WA: "https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO",
+  IG: "https://www.instagram.com/reality.dn/",
+  FB: "https://www.facebook.com/realitybarcafedanang/",
+  CAL: "https://calendar.google.com/calendar/embed?src=realitydn%40gmail.com&ctz=Asia%2FHo_Chi_Minh",
+  MAP: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1766.9182173001361!2d108.24125224818768!3d16.05241110360417!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY!5e1!3m2!1sen!2s!4v1756275333082!5m2!1sen!2s",
+  PDF: "https://realitydn.com/menu-drinks-en.pdf"
+};

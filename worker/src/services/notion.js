@@ -145,7 +145,7 @@ export function buildEventProposalProperties(formData) {
  * Build Notion property object for Art Exhibition
  */
 export function buildArtExhibitionProperties(formData) {
-  const artistName = formData.artistName || formData.name;
+  const artistName = formData.artistCollectiveName || formData.name;
 
   return {
     'Artist / Collective Name': {
@@ -173,7 +173,7 @@ export function buildArtExhibitionProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.location
+            content: formData.basedWhere
           }
         }
       ]
@@ -191,33 +191,31 @@ export function buildArtExhibitionProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.bio
+            content: formData.artistBio
           }
         }
       ]
     },
     'Portfolio Link': {
-      url: formData.portfolioLink
+      url: formData.workLink.match(/^https?:\/\//) ? formData.workLink : formData.workLink ? `https://${formData.workLink}` : null
     },
     'Show Concept': {
       rich_text: [
         {
           text: {
-            content: formData.showConcept
+            content: formData.showDescription
           }
         }
       ]
     },
     'Spaces Requested': {
-      multi_select: (formData.spaces || []).map(space => ({
-        name: space
-      }))
+      multi_select: mapArtSpaces(formData.showAreas || [])
     },
     'Space Scale': {
       rich_text: [
         {
           text: {
-            content: formData.spaceScale
+            content: formData.spaceAmount
           }
         }
       ]
@@ -226,7 +224,7 @@ export function buildArtExhibitionProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.installationNeeds || ''
+            content: formData.technicalNeeds || ''
           }
         }
       ]
@@ -235,21 +233,21 @@ export function buildArtExhibitionProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.preferredDates
+            content: formData.preferredDate
           }
         }
       ]
     },
     'Timeline Flexibility': {
       select: {
-        name: formData.flexibility === 'Very flexible' ? 'Flexible' : formData.flexibility
+        name: mapFlexibility(formData.flexibility)
       }
     },
     'Group Show': {
       rich_text: [
         {
           text: {
-            content: formData.groupShow === 'yes' ? `Yes (${formData.artistCount || '?'} artists)` : 'No'
+            content: formData.isGroupShow === 'yes' ? `Yes (${formData.numArtists || '?'} artists)` : 'No'
           }
         }
       ]
@@ -258,7 +256,7 @@ export function buildArtExhibitionProperties(formData) {
       rich_text: [
         {
           text: {
-            content: formData.curator || ''
+            content: formData.curatorInfo || ''
           }
         }
       ]
@@ -297,4 +295,25 @@ function mapEventSpaces(spaces) {
     }
     return { name: mappedName };
   });
+}
+
+// Map art form showAreas values to Notion "Spaces Requested" option names
+function mapArtSpaces(areas) {
+  const mapping = {
+    'floor1':   'Main Bar',
+    'floor2l':  '2F Lounge',
+    'floor2e':  '2F Event Space',
+    'rooftop':  'Garden',
+  };
+  return areas.map(area => ({ name: mapping[area] || area }));
+}
+
+// Map art form flexibility radio values to Notion "Timeline Flexibility" option names
+function mapFlexibility(value) {
+  const mapping = {
+    'veryFlexible': 'Flexible',
+    'somewhat':     'Somewhat Flexible',
+    'fixed':        'Fixed',
+  };
+  return mapping[value] || value;
 }

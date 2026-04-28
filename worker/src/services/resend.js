@@ -106,19 +106,19 @@ function buildSubmissionSummary(formType, data) {
         <h3 style="font-size:14px;color:#666;margin-bottom:8px;">Here's what you submitted:</h3>
         <table style="font-size:14px;border-collapse:collapse;width:100%;">
           ${row('Name', data.name)}
-          ${row('Artist / Collective', data.artistName)}
+          ${row('Artist / Collective', data.artistCollectiveName)}
           ${row('Email', data.email)}
           ${row('Contact', data.contact)}
-          ${row('Location', data.location)}
-          ${row('Bio', data.bio)}
-          ${row('Portfolio', data.portfolioLink)}
-          ${row('Concept', data.showConcept)}
-          ${row('Spaces', arr(data.spaces))}
-          ${row('Scale', data.spaceScale)}
-          ${row('Installation', data.installationNeeds)}
-          ${row('Dates', data.preferredDates)}
+          ${row('Location', data.basedWhere)}
+          ${row('Bio', data.artistBio)}
+          ${row('Portfolio', data.workLink)}
+          ${row('Concept', data.showDescription)}
+          ${row('Spaces', arr(data.showAreas))}
+          ${row('Scale', data.spaceAmount)}
+          ${row('Installation', data.technicalNeeds)}
+          ${row('Dates', data.preferredDate)}
           ${row('Flexibility', data.flexibility)}
-          ${row('Group show', data.groupShow)}
+          ${row('Group show', data.isGroupShow === 'yes' ? 'Yes (' + (data.numArtists || '?') + ' artists)' : 'No')}
         </table>
       </div>`;
   }

@@ -66,19 +66,19 @@ export function validateEventProposalPayload(data) {
 export function validateArtExhibitionPayload(data) {
   const errors = [];
 
-  // Check required fields
+  // Check required fields — names must match the React form's state keys
   const requiredFields = [
     'email',
     'name',
-    'location',
+    'basedWhere',
     'contact',
-    'bio',
-    'portfolioLink',
-    'showConcept',
-    'spaceScale',
-    'preferredDates',
+    'artistBio',
+    'workLink',
+    'showDescription',
+    'spaceAmount',
+    'preferredDate',
     'flexibility',
-    'groupShow'
+    'isGroupShow'
   ];
 
   const missingErrors = validateRequired(data, requiredFields);
@@ -87,11 +87,6 @@ export function validateArtExhibitionPayload(data) {
   // Validate email format
   if (data.email && !validateEmail(data.email)) {
     errors.push('Invalid email format');
-  }
-
-  // Validate portfolio link is a URL
-  if (data.portfolioLink && !isValidUrl(data.portfolioLink)) {
-    errors.push('Portfolio link must be a valid URL');
   }
 
   // Check honeypot

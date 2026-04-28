@@ -22,6 +22,19 @@ const EVENT_ACCENTS = {
   art:     '#E92775',  // pink
 };
 
+// Full chromatic palette used for list bullets and decorative blocks.
+// Cycles per slide so consecutive items get distinct colors.
+const CHROMATIC = [
+  '#E72D33', // red
+  '#FD9D32', // orange
+  '#FFE527', // yellow
+  '#00AB4D', // green
+  '#00AB8D', // teal
+  '#0077A3', // blue
+  '#403785', // purple
+  '#E92775', // pink
+];
+
 // All slides in order: welcome, rules, public, private, art
 // "host" isn't a slide itself — clicking it shows the first event type (public)
 function slideIndex(panel, eventType) {
@@ -235,13 +248,9 @@ export default function InfoHostSection({ t, lang }) {
             <div className="flex" ref={carouselContainerRef}>
               {/* Slide 0: Welcome */}
               <Slide>
-                <SlideTitle>{ih('welcomeTitle')}</SlideTitle>
+                <SlideTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</SlideTitle>
                 <p className="mb-4">{ih('welcomeBody')}</p>
-                <ol className="list-decimal pl-5 space-y-2 mb-4">
-                  {ih('welcomeMissions').map((m, i) => (
-                    <li key={i}>{m}</li>
-                  ))}
-                </ol>
+                <ColorList items={ih('welcomeMissions')} />
                 <p>
                   {ih('welcomeFooter')}{' '}
                   <a
@@ -279,23 +288,15 @@ export default function InfoHostSection({ t, lang }) {
 
               {/* Slide 1: Rules */}
               <Slide>
-                <SlideTitle>{ih('rulesTitle')}</SlideTitle>
-                <ol className="list-decimal pl-5 space-y-3">
-                  {ih('rules').map((rule, i) => (
-                    <li key={i}>{rule}</li>
-                  ))}
-                </ol>
+                <SlideTitle accent={NAV_ACCENTS.rules}>{ih('rulesTitle')}</SlideTitle>
+                <ColorList items={ih('rules')} />
               </Slide>
 
               {/* Slide 2: Public Events */}
               <Slide>
-                <SlideTitle>{ih('publicTitle')}</SlideTitle>
+                <SlideTitle accent={EVENT_ACCENTS.public}>{ih('publicTitle')}</SlideTitle>
                 <GeneralRulesLink ih={ih} goTo={goTo} />
-                <ol className="list-decimal pl-5 space-y-3 mb-6">
-                  {ih('publicRules').map((rule, i) => (
-                    <li key={i}>{rule}</li>
-                  ))}
-                </ol>
+                <ColorList items={ih('publicRules')} className="mb-6" />
                 {submittedFlavor === 'event' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
@@ -305,13 +306,10 @@ export default function InfoHostSection({ t, lang }) {
 
               {/* Slide 3: Private Events */}
               <Slide>
-                <SlideTitle>{ih('privateTitle')}</SlideTitle>
+                <SlideTitle accent={EVENT_ACCENTS.private}>{ih('privateTitle')}</SlideTitle>
                 <GeneralRulesLink ih={ih} goTo={goTo} />
-                <ol className="list-decimal pl-5 space-y-3 mb-6">
-                  {ih('privateRules').map((rule, i) => (
-                    <li key={i}>{rule}</li>
-                  ))}
-                </ol>
+                <ColorList items={ih('privateRules')} className="mb-6" />
+                <PricingTable ih={ih} />
                 {submittedFlavor === 'event-private' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
@@ -321,18 +319,12 @@ export default function InfoHostSection({ t, lang }) {
 
               {/* Slide 4: Art Show */}
               <Slide>
-                <SlideTitle>{ih('artTitle')}</SlideTitle>
+                <SlideTitle accent={EVENT_ACCENTS.art}>{ih('artTitle')}</SlideTitle>
                 <GeneralRulesLink ih={ih} goTo={goTo} />
                 <p className="mb-3">{ih('artIntro')}</p>
                 <p className="mb-4">{ih('artNote')}</p>
-                <p className="font-title uppercase tracking-[0.15em] text-[10px] text-gray-500 mb-2 mt-6">
-                  {ih('artGuidelinesLabel')}
-                </p>
-                <ol className="list-decimal pl-5 space-y-3 mb-6">
-                  {ih('artGuidelines').map((g, i) => (
-                    <li key={i}>{g}</li>
-                  ))}
-                </ol>
+                <SectionLabel accent="#A93397">{ih('artGuidelinesLabel')}</SectionLabel>
+                <ColorList items={ih('artGuidelines')} className="mb-6" />
                 {submittedFlavor === 'art' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (
@@ -360,11 +352,195 @@ function Slide({ children }) {
   );
 }
 
-function SlideTitle({ children }) {
+function SlideTitle({ children, accent }) {
   return (
-    <h3 className="font-body text-2xl md:text-3xl font-bold uppercase leading-tight mb-6">
-      {children}
-    </h3>
+    <div className="flex items-start gap-3 md:gap-4 mb-6">
+      {accent && (
+        <span
+          className="inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
+          style={{
+            backgroundColor: accent,
+            boxShadow: '0 4px 1px rgba(13, 9, 5, 0.12)',
+          }}
+          aria-hidden="true"
+        />
+      )}
+      <h3 className="font-body text-2xl md:text-3xl font-bold uppercase leading-tight">
+        {children}
+      </h3>
+    </div>
+  );
+}
+
+// A small uppercase eyebrow label paired with a colored square.
+function SectionLabel({ children, accent = '#0d0905' }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-3 mt-6">
+      <span
+        className="inline-block w-2.5 h-2.5 shrink-0"
+        style={{ backgroundColor: accent }}
+        aria-hidden="true"
+      />
+      <p className="font-title uppercase tracking-[0.15em] text-[10px] text-gray-600 m-0">
+        {children}
+      </p>
+    </div>
+  );
+}
+
+// A numbered list that uses a colored square + 2-digit index in place of
+// the default decimal marker. Items can be strings or React nodes.
+function ColorList({ items, className = '', palette = CHROMATIC, startIndex = 0 }) {
+  return (
+    <ol className={`space-y-3 ${className}`}>
+      {items.map((item, i) => {
+        const color = palette[(i + startIndex) % palette.length];
+        return (
+          <li key={i} className="flex gap-3 items-start">
+            <span className="flex items-center gap-2 shrink-0 mt-[3px]">
+              <span
+                className="inline-block w-3 h-3 shrink-0"
+                style={{ backgroundColor: color }}
+                aria-hidden="true"
+              />
+              <span
+                className="font-title text-[11px] font-bold tabular-nums"
+                style={{ color }}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+            </span>
+            <span className="flex-1">{item}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+// Room rental rate card. Each room and time slot gets its own swatch so the
+// table reads as a colored grid rather than a wall of numbers.
+function PricingTable({ ih }) {
+  const slots = [
+    { id: 'day',   accent: '#FFE527' }, // yellow
+    { id: 'peak',  accent: '#E72D33' }, // red
+    { id: 'night', accent: '#0077A3' }, // blue
+  ];
+  const rooms = [
+    { id: '2e', color: '#E92775' }, // pink
+    { id: '2l', color: '#403785' }, // purple
+    { id: '1l', color: '#00AB8D' }, // teal
+    { id: '3p', color: '#FD9D32' }, // orange
+  ];
+  const prices = {
+    '2e': ['300', '500', '200'],
+    '2l': ['250', '250', '200'],
+    '1l': ['200', '200', '150'],
+    '3p': ['150', '200', null],
+  };
+  const unit = ih('pricing.unit');
+  const unavailable = ih('pricing.unavailable');
+
+  return (
+    <div className="my-8">
+      <div className="flex items-center gap-2.5 mb-2">
+        <span
+          className="inline-block w-3.5 h-3.5 shrink-0"
+          style={{ backgroundColor: '#E72D33' }}
+          aria-hidden="true"
+        />
+        <h4 className="font-body text-lg md:text-xl font-bold uppercase leading-none m-0 tracking-tight">
+          {ih('pricing.title')}
+        </h4>
+      </div>
+      <p className="font-body text-xs md:text-sm text-gray-600 mb-4 ml-6">
+        {ih('pricing.subtitle')}
+      </p>
+
+      {/* Rate grid */}
+      <div className="overflow-x-auto -mx-1">
+        <div className="inline-block min-w-full align-middle px-1">
+          <div
+            className="grid gap-1.5"
+            style={{ gridTemplateColumns: 'minmax(140px, 1.4fr) repeat(3, minmax(80px, 1fr))' }}
+          >
+            {/* Header row */}
+            <div aria-hidden="true" />
+            {slots.map((slot) => (
+              <div
+                key={slot.id}
+                className="text-center px-2 py-2"
+                style={{ backgroundColor: slot.accent }}
+              >
+                <div className="font-title uppercase tracking-[0.1em] text-[9px] md:text-[10px] font-bold text-ink leading-tight">
+                  {ih(`pricing.slotsLabel.${slot.id}`)}
+                </div>
+                <div className="font-body text-[10px] md:text-xs text-ink/80 mt-0.5 tabular-nums">
+                  {ih(`pricing.slots.${slot.id}`)}
+                </div>
+              </div>
+            ))}
+
+            {/* Body rows */}
+            {rooms.map((room) => (
+              <React.Fragment key={room.id}>
+                <div className="flex items-center gap-2.5 py-2 pr-2">
+                  <span
+                    className="inline-block w-3.5 h-3.5 shrink-0"
+                    style={{ backgroundColor: room.color }}
+                    aria-hidden="true"
+                  />
+                  <span className="font-body text-sm font-semibold text-ink leading-tight">
+                    {ih(`pricing.spaces.${room.id}`)}
+                  </span>
+                </div>
+                {prices[room.id].map((price, i) => (
+                  <div
+                    key={i}
+                    className="bg-cream py-3 px-2 text-center flex flex-col items-center justify-center"
+                    style={{
+                      borderTop: `2px solid ${slots[i].accent}`,
+                    }}
+                  >
+                    {price === null ? (
+                      <span className="font-body text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                        {unavailable}
+                      </span>
+                    ) : (
+                      <span className="font-title font-bold text-base md:text-lg text-ink leading-none tabular-nums">
+                        {price}
+                        <span className="font-body font-normal text-[10px] text-gray-500 ml-0.5">
+                          {unit}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Fine print */}
+      <SectionLabel accent="#0077A3">{ih('pricing.notesLabel')}</SectionLabel>
+      <ul className="space-y-2">
+        {ih('pricing.notes').map((note, i) => {
+          const palette = ['#E72D33', '#00AB4D', '#FD9D32'];
+          const color = palette[i % palette.length];
+          return (
+            <li key={i} className="flex gap-3 items-start text-sm text-gray-700">
+              <span
+                className="inline-block w-2 h-2 mt-2 shrink-0"
+                style={{ backgroundColor: color }}
+                aria-hidden="true"
+              />
+              <span className="flex-1">{note}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

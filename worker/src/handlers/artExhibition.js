@@ -7,7 +7,7 @@ import { createNotionPage, buildArtExhibitionProperties } from '../services/noti
 import { appendSheetRow, formatArtExhibitionForSheets } from '../services/sheets.js';
 import { sendConfirmationEmail } from '../services/resend.js';
 
-const ART_EXHIBITION_DB_ID = 'd8d20674-cb93-42aa-aed0-c72308da7eec';
+const ART_EXHIBITION_DB_ID = '13e35baff66941c58470ca8906f891ad';
 
 export async function handleArtExhibition(request, env) {
   try {
@@ -21,6 +21,8 @@ export async function handleArtExhibition(request, env) {
     // Validate required fields and honeypot
     const validationErrors = validateArtExhibitionPayload(body);
     if (validationErrors.length > 0) {
+      console.error('Art exhibition validation failed:', JSON.stringify(validationErrors));
+      console.error('Received fields:', Object.keys(body).join(', '));
       return createErrorResponse(400, 'Validation failed', validationErrors);
     }
 

@@ -192,23 +192,23 @@ export function formatEventProposalForSheets(formData) {
  * Format Art Exhibition data for Sheets
  */
 export function formatArtExhibitionForSheets(formData) {
-  const artistName = formData.artistName || formData.name;
+  const artistName = formData.artistCollectiveName || formData.name;
   return [
     new Date().toISOString(),
     artistName,
     formData.email,
     formData.name,
-    formData.location,
+    formData.basedWhere,
     formData.contact,
-    formData.bio,
-    formData.portfolioLink,
-    formData.showConcept,
-    Array.isArray(formData.spaces) ? formData.spaces.join('; ') : '',
-    formData.spaceScale,
-    formData.installationNeeds || '',
-    formData.preferredDates,
+    formData.artistBio,
+    formData.workLink,
+    formData.showDescription,
+    Array.isArray(formData.showAreas) ? formData.showAreas.join('; ') : '',
+    formData.spaceAmount,
+    formData.technicalNeeds || '',
+    formData.preferredDate,
     formData.flexibility,
-    formData.groupShow === 'yes' ? `Yes (${formData.artistCount || '?'} artists)` : 'No',
-    formData.curator || ''
+    formData.isGroupShow === 'yes' ? `Yes (${formData.numArtists || '?'} artists)` : 'No',
+    formData.curatorInfo || ''
   ];
 }

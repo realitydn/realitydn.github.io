@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>REALITY — Icon Preview (16)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;600;700&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fffbf1;
+    --ink: #0d0905;
+    --yellow: #fddf00;
+    --amber: #fdb515;
+    --red: #ed2123;
+    --pink: #ed1b71;
+    --purple: #3f3785;
+    --blue: #17a7df;
+    --teal: #00b7a5;
+    --green: #91c745;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    padding: 48px 32px 24px;
+    border-bottom: 1px solid rgba(13,9,5,0.1);
+  }
+  .wordmark {
+    font-family: 'Montserrat Alternates', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    font-size: 34px;
+    line-height: 1.05;
+    margin: 8px 0 12px;
+    text-transform: uppercase;
+  }
+  .lede { max-width: 640px; color: #4a4540; font-size: 15px; }
+  main { padding: 32px; max-width: 1200px; margin: 0 auto; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+  }
+  .cell {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 16px 14px;
+    box-shadow: 0 4px 1px rgba(13, 9, 5, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    border: 1px solid rgba(13,9,5,0.08);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: space-between;
+  }
+  .swatch-light {
+    flex: 1;
+    height: 88px;
+    background: var(--cream);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    border: 1px dashed rgba(13,9,5,0.12);
+  }
+  .swatch-dark {
+    width: 64px;
+    height: 64px;
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .small-row { display: flex; gap: 8px; align-items: center; }
+  .small-row svg { color: var(--ink); }
+  .label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+  .id {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    color: #8b857d;
+    letter-spacing: 0.08em;
+  }
+  .desc { color: #6b665f; font-size: 12px; line-height: 1.4; }
+
+  /* Section dividers */
+  .section-head {
+    grid-column: 1 / -1;
+    padding: 18px 4px 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-top: 1px solid rgba(13,9,5,0.08);
+    margin-top: 6px;
+  }
+  .section-head:first-child { border-top: none; margin-top: 0; padding-top: 4px; }
+  .section-head h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin: 0;
+  }
+  .section-head .pill {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: #8b857d;
+    text-transform: uppercase;
+  }
+
+  footer {
+    margin-top: 48px;
+    padding: 24px 32px 56px;
+    color: #8b857d;
+    font-size: 12px;
+    text-align: center;
+    border-top: 1px solid rgba(13,9,5,0.08);
+  }
+
+  /* The icon SVG defaults — match Icons.jsx */
+  svg.icon {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">REALITY</div>
+  <h1>Icon Set Preview — 16 SVGs</h1>
+  <p class="lede">
+    Stroke style, 24×24 viewBox, stroke-width 1.9, round caps and joins. Designed to drop into <code>Icons.jsx</code>
+    without breaking layouts. Each card shows the icon on cream (utility) and reversed inside an ink square (info-block usage).
+  </p>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  Cream <code>#fffbf1</code> · Ink <code>#0d0905</code> · Stroke 1.9 · 24×24 viewBox · all paths use <code>currentColor</code>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------
+   Icon source. Each entry: { id, name, desc, paths }
+   `paths` is the inner SVG content. The wrapper svg supplies styles.
+   Order: 6 info-block icons → 2 social → 4 hospitality → 4 community
+------------------------------------------------------------------- */
+const ICONS = [
+  // ============== SECTION: INFO BLOCK ==============
+  { _section: "Info block", _note: "wired in InfoSection.jsx" },
+
+  {
+    id: "people",
+    name: "People",
+    desc: "Group of three. Reads as community at small sizes.",
+    paths: `
+      <circle cx="12" cy="8" r="2.7"/>
+      <path d="M6.5 19c0-2.6 2.4-4.4 5.5-4.4s5.5 1.8 5.5 4.4"/>
+      <circle cx="5" cy="9.5" r="1.9"/>
+      <path d="M2 17c0-1.6 1.2-2.8 3-2.8"/>
+      <circle cx="19" cy="9.5" r="1.9"/>
+      <path d="M22 17c0-1.6-1.2-2.8-3-2.8"/>
+    `
+  },
+  {
+    id: "laptop",
+    name: "Laptop",
+    desc: "Open laptop with desk-line. Trackpad notch for character.",
+    paths: `
+      <path d="M5 5h14a1 1 0 0 1 1 1v10H4V6a1 1 0 0 1 1-1z"/>
+      <path d="M2 19h20"/>
+      <path d="M10.5 19h3"/>
+    `
+  },
+  {
+    id: "smoke",
+    name: "Smoke",
+    desc: "Cigarette with rising smoke. Clearer than abstract bars.",
+    paths: `
+      <rect x="3" y="14.5" width="14" height="2.4" rx="0.4"/>
+      <path d="M14 14.5v2.4"/>
+      <path d="M19 14.8c1 0 1 .9 1 1.4M22 15c0 .8-.5 1.4-1.5 1.5"/>
+      <path d="M8 11c0-1.4 1-1.4 1-2.8s-1-1.4-1-2.8"/>
+      <path d="M13 11c0-1.4 1-1.4 1-2.8s-1-1.4-1-2.8"/>
+    `
+  },
+  {
+    id: "buy",
+    name: "Buy",
+    desc: "Receipt with totals — fits a cafe better than a shopping cart.",
+    paths: `
+      <path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/>
+      <path d="M9 8h6"/>
+      <path d="M9 11.5h6"/>
+      <path d="M9 15h3.5"/>
+      <path d="M14.5 15H15"/>
+    `
+  },
+  {
+    id: "lightbulb",
+    name: "Lightbulb",
+    desc: "Bulb with tighter shoulders and a filament hint.",
+    paths: `
+      <path d="M7 9.5a5 5 0 1 1 8.5 3.6c-.8.7-1.2 1.5-1.2 2.4H9.7c0-.9-.4-1.7-1.2-2.4A4.97 4.97 0 0 1 7 9.5z"/>
+      <path d="M9 18.5h6"/>
+      <path d="M10 21h4"/>
+      <path d="M11 12.5h2"/>
+    `
+  },
+  {
+    id: "rules",
+    name: "Rules",
+    desc: "Clipboard with two checked items. Reads as a checklist instantly.",
+    paths: `
+      <rect x="4" y="5" width="16" height="16" rx="2"/>
+      <rect x="9" y="3" width="6" height="3.4" rx="0.6"/>
+      <path d="M7.5 11l1.4 1.4 2.3-2.3"/>
+      <path d="M13.5 11.5h3.2"/>
+      <path d="M7.5 16.5l1.4 1.4 2.3-2.3"/>
+      <path d="M13.5 17h3.2"/>
+    `
+  },
+
+  // ============== SECTION: SOCIAL LOGOS ==============
+  { _section: "Social logos", _note: "official silhouettes, drawn as strokes to match the family" },
+
+  {
+    id: "whatsapp",
+    name: "WhatsApp",
+    desc: "Real bubble shape with bottom-left tail; phone-handset glyph inside.",
+    paths: `
+      <path d="M12 2.8a9.2 9.2 0 0 0-7.9 13.9L2.8 21.5l4.95-1.27A9.2 9.2 0 1 0 12 2.8z"/>
+      <path d="M9 9.4c.35-1 1.7-1.2 2.4-.25l.55.75c.2.3.2.7-.1 1l-.65.55c.75 1.15 1.7 2.1 2.85 2.85l.55-.65c.25-.3.7-.3 1-.1l.75.55c.95.7.75 2.05-.25 2.4-1.7.55-4.55-.65-6.7-2.8s-3.4-5-2.85-6.7z"/>
+    `
+  },
+  {
+    id: "facebook",
+    name: "Facebook",
+    desc: "Rounded square with a clean lowercase f built from strokes.",
+    paths: `
+      <rect x="3" y="3" width="18" height="18" rx="3.5"/>
+      <path d="M14.5 8.2h-1.3a2 2 0 0 0-2 2V21"/>
+      <path d="M9 13h5.4"/>
+    `
+  },
+
+  // ============== SECTION: HOSPITALITY ==============
+  { _section: "Hospitality", _note: "menu, hours, visit, calendar" },
+
+  {
+    id: "coffee",
+    name: "Coffee",
+    desc: "Side-view cup with handle, saucer line, and two steam wisps.",
+    paths: `
+      <path d="M4 9h13v4.5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/>
+      <path d="M17 11h1.8a2.2 2.2 0 0 1 0 4.4H17"/>
+      <path d="M3 21h15"/>
+      <path d="M8 6.5c0-1 .9-1 .9-2s-.9-1-.9-2"/>
+      <path d="M12 6.5c0-1 .9-1 .9-2s-.9-1-.9-2"/>
+    `
+  },
+  {
+    id: "cocktail",
+    name: "Cocktail",
+    desc: "Martini glass with stem, base, and a cherry on a pick.",
+    paths: `
+      <path d="M3.6 5h16.8"/>
+      <path d="M5.2 5L12 13l6.8-8"/>
+      <path d="M12 13v7"/>
+      <path d="M8 20h8"/>
+      <path d="M14 9l3-3.5"/>
+      <circle cx="14" cy="9" r="1.05"/>
+    `
+  },
+  {
+    id: "calendar",
+    name: "Calendar",
+    desc: "Page with binder rings and a single highlighted date.",
+    paths: `
+      <rect x="3" y="5" width="18" height="16" rx="2"/>
+      <path d="M3 9.5h18"/>
+      <path d="M8 3v4"/>
+      <path d="M16 3v4"/>
+      <rect x="11" y="13" width="2.8" height="2.8" rx="0.4"/>
+    `
+  },
+  {
+    id: "clock",
+    name: "Clock",
+    desc: "Round face, 12 o'clock tick, and hands at 10:10 (welcoming).",
+    paths: `
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 3.2v1.4"/>
+      <path d="M12 12l3.2 2"/>
+      <path d="M12 12V7.5"/>
+    `
+  },
+
+  // ============== SECTION: COMMUNITY / EVENTS ==============
+  { _section: "Community / Events", _note: "for event cards, future tagging" },
+
+  {
+    id: "music",
+    name: "Music",
+    desc: "Two beamed eighth notes — the universal music shorthand.",
+    paths: `
+      <path d="M9 18.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"/>
+      <path d="M19.5 16.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"/>
+      <path d="M11.4 16V4.5l10.5 2v9.4"/>
+      <path d="M11.4 7l10.5 2"/>
+    `
+  },
+  {
+    id: "palette",
+    name: "Art palette",
+    desc: "Painter's palette with thumb hole and four paint dabs.",
+    paths: `
+      <path d="M13.6 3.5c4.6 0 7.9 2.7 7.9 6 0 2.7-2.4 4.7-5.5 4.7h-2.1c-1 0-1.5.5-1.5 1.5 0 .65.4 1.05.4 1.85 0 1.1-1 1.95-2.3 1.95C5.4 19.5 2.5 15.7 2.5 11.5c0-4.7 4.6-8 11.1-8z"/>
+      <circle cx="8.5" cy="9.5" r="1.05"/>
+      <circle cx="13" cy="7.2" r="1.05"/>
+      <circle cx="17.4" cy="8.6" r="1.05"/>
+      <circle cx="17.4" cy="12" r="1.05"/>
+    `
+  },
+  {
+    id: "mic",
+    name: "Microphone",
+    desc: "Capsule mic with stand arc — for talks, music nights, podcasts.",
+    paths: `
+      <rect x="9" y="3" width="6" height="11.5" rx="3"/>
+      <path d="M5 11.5a7 7 0 0 0 14 0"/>
+      <path d="M12 18.5v3"/>
+      <path d="M9 21.5h6"/>
+    `
+  },
+  {
+    id: "camera",
+    name: "Camera",
+    desc: "Body with viewfinder bump, lens, and a flash mark.",
+    paths: `
+      <rect x="3" y="7" width="18" height="13" rx="2.2"/>
+      <path d="M9 7l1-2h4l1 2"/>
+      <circle cx="12" cy="13.5" r="3.6"/>
+      <path d="M5.5 9.7h1.4"/>
+    `
+  },
+];
+
+/* ------------------------------------------------------------------ */
+
+const grid = document.getElementById('grid');
+
+function svg(paths, size=44, cls='icon') {
+  return `<svg class="${cls}" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${paths}</svg>`;
+}
+
+ICONS.forEach((it) => {
+  if (it._section) {
+    const head = document.createElement('div');
+    head.className = 'section-head';
+    head.innerHTML = `<h2>${it._section}</h2><span class="pill">${it._note}</span>`;
+    grid.appendChild(head);
+    return;
+  }
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `
+    <div class="row">
+      <div class="swatch-light" title="On cream — utility usage">${svg(it.paths, 44)}</div>
+      <div class="swatch-dark" title="Reversed on ink — info-block usage">${svg(it.paths, 28)}</div>
+    </div>
+    <div class="small-row" title="At small sizes (16px / 22px / 28px)">
+      ${svg(it.paths, 16)} ${svg(it.paths, 22)} ${svg(it.paths, 28)}
+    </div>
+    <div class="label-row">
+      <div class="name">${it.name}</div>
+      <div class="id">${it.id}</div>
+    </div>
+    <div class="desc">${it.desc}</div>
+  `;
+  grid.appendChild(cell);
+});
+</script>
+
+</body>
+</html>

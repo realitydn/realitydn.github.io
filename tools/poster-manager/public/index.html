@@ -387,11 +387,11 @@
   }
 
   async function removePoster(file) {
-    if (!confirm(`Remove "${file}" from the poster list?`)) return;
-    await fetch(`/api/posters/${encodeURIComponent(file)}`, { method: 'DELETE' });
+    if (!confirm(`Delete "${file}"? This removes the original file from disk.`)) return;
+    await fetch(`/api/posters/${encodeURIComponent(file)}?deleteFile=true`, { method: 'DELETE' });
     posters = posters.filter(p => p.file !== file);
     render();
-    toast('Poster removed');
+    toast('Poster deleted');
   }
 
   async function uploadFiles(files) {
@@ -445,7 +445,8 @@
       const data = await res.json();
       if (data.ok) {
         setProgress(100);
-        toast(`Published ${data.processed} posters (${data.totalFiles} files, ${data.totalSizeMB} MB)`);
+        const orphanNote = data.orphansRemoved ? `, ${data.orphansRemoved} orphan${data.orphansRemoved !== 1 ? 's' : ''} swept` : '';
+        toast(`Published ${data.processed} posters (${data.totalFiles} files, ${data.totalSizeMB} MB${orphanNote})`);
       } else {
         toast('Publish failed: ' + (data.error || 'Unknown error'));
       }

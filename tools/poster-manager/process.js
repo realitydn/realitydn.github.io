@@ -8,7 +8,7 @@ const fs = require('fs');
  *   - lightbox:  1600w WebP                 (click-to-expand full res)
  *
  * All outputs maintain 4:5 aspect ratio via cover-crop.
- * Quality is tuned for poster artwork — slightly higher than photo defaults.
+ * Quality is tuned for poster artwork - slightly higher than photo defaults.
  */
 const OUTPUTS = [
   { suffix: '',          width: 800,  height: 1000, format: 'webp', quality: 82 },
@@ -16,11 +16,15 @@ const OUTPUTS = [
   { suffix: '-full',     width: 1600, height: 2000, format: 'webp', quality: 80 },
 ];
 
+const OUTPUT_EXTENSIONS = ['.jpg', '.jpeg', '.webp', '.png'];
+
 async function processPosters({ posters, originalsDir, outputDir, configPath }) {
   fs.mkdirSync(outputDir, { recursive: true });
 
   const results = [];
   const configEntries = [];
+  const expectedFiles = new Set();
+  let orphansRemoved = 0;
 
   for (let i = 0; i < posters.length; i++) {
     const poster = posters[i];
@@ -57,6 +61,7 @@ async function processPosters({ posters, originalsDir, outputDir, configPath }) 
 
       const stats = fs.statSync(destPath);
       generated.push({ filename, size: stats.size });
+      expectedFiles.add(filename);
     }
 
     results.push({ slug, generated });
@@ -80,6 +85,17 @@ async function processPosters({ posters, originalsDir, outputDir, configPath }) 
   };
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
 
+  // Sweep orphans: any image in outputDir that was not generated from a current
+  // poster is dead weight. Removing it keeps deleted posters from coming back
+  // in the published images folder.
+  for (const entry of fs.readdirSync(outputDir)) {
+    const ext = path.extname(entry).toLowerCase();
+    if (!OUTPUT_EXTENSIONS.includes(ext)) continue;
+    if (expectedFiles.has(entry)) continue;
+    fs.unlinkSync(path.join(outputDir, entry));
+    orphansRemoved++;
+  }
+
   // Summary
   const totalSize = results.reduce((sum, r) =>
     sum + r.generated.reduce((s, g) => s + g.size, 0), 0);
@@ -88,7 +104,8 @@ async function processPosters({ posters, originalsDir, outputDir, configPath }) 
     processed: results.length,
     totalFiles: results.reduce((sum, r) => sum + r.generated.length, 0),
     totalSize,
-    totalSizeMB: (totalSize / 1024 / 1024).toFixed(1)
+    totalSizeMB: (totalSize / 1024 / 1024).toFixed(1),
+    orphansRemoved
   };
 }
 

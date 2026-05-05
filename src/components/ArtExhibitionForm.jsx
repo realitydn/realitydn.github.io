@@ -111,8 +111,14 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Honeypot tripped: fake a success so bots don't retry, but never POST.
+    // Browsers like Brave/Cốc Cốc/iOS Safari and password managers can
+    // autofill hidden fields, so a silent return would block real users too —
+    // showing the thank-you screen at least keeps them moving.
     if (formData.honeypot) {
-      console.log('Honeypot triggered');
+      setSubmitStatus('success');
+      setStep(1);
+      if (typeof onSuccess === 'function') onSuccess();
       return;
     }
 
@@ -128,7 +134,13 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
         body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
+      // Guard against the SPA catch-all serving index.html when the worker
+      // route isn't actually wired up — a 200 with text/html would otherwise
+      // look like a successful submit.
+      const contentType = response.headers.get('content-type') || '';
+      const gotJson = contentType.includes('application/json');
+
+      if (response.ok && gotJson) {
         setSubmitStatus('success');
         setFormData({
           email: '',
@@ -302,15 +314,26 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
             {errors.workLink && <p className="text-red-500 text-sm mt-1">{errors.workLink}</p>}
           </div>
 
-          {/* Honeypot */}
+          {/* Honeypot — off-screen instead of display:none so password
+              managers and aggressive autofill (Brave/Cốc Cốc/iOS Safari)
+              treat it less like a hidden trap, with a deceptive name so
+              bots still target it. */}
           <input
             type="text"
-            name="honeypot"
+            name="website"
             value={formData.honeypot}
-            onChange={handleInputChange}
-            style={{ display: 'none' }}
+            onChange={(e) => setFormData((prev) => ({ ...prev, honeypot: e.target.value }))}
+            style={{
+              position: 'absolute',
+              left: '-9999px',
+              top: '-9999px',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+            }}
             tabIndex="-1"
             autoComplete="off"
+            aria-hidden="true"
           />
         </div>
       )}

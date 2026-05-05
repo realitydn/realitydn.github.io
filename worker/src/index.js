@@ -7,13 +7,23 @@ import { handleEventProposal } from './handlers/eventProposal.js';
 import { handleArtExhibition } from './handlers/artExhibition.js';
 
 /**
+ * Check if origin is allowed (configured origins + localhost dev)
+ */
+function isOriginAllowed(origin, allowedOrigins) {
+  return (
+    allowedOrigins.includes(origin) ||
+    origin === 'http://localhost:5173' ||
+    origin === 'http://localhost:3000'
+  );
+}
+
+/**
  * Add CORS headers to response
  */
-function addCORSHeaders(response, origin, allowedOrigin) {
+function addCORSHeaders(response, origin, allowedOrigins) {
   const headers = new Headers(response.headers);
 
-  // Only allow CORS from configured origins
-  if (origin === allowedOrigin || origin === 'http://localhost:5173' || origin === 'http://localhost:3000') {
+  if (isOriginAllowed(origin, allowedOrigins)) {
     headers.set('Access-Control-Allow-Origin', origin);
   }
 
@@ -31,14 +41,14 @@ function addCORSHeaders(response, origin, allowedOrigin) {
 /**
  * Handle preflight requests
  */
-function handleOptions(origin, allowedOrigin) {
+function handleOptions(origin, allowedOrigins) {
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400'
   };
 
-  if (origin === allowedOrigin || origin === 'http://localhost:5173' || origin === 'http://localhost:3000') {
+  if (isOriginAllowed(origin, allowedOrigins)) {
     headers['Access-Control-Allow-Origin'] = origin;
   }
 
@@ -55,11 +65,16 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('origin') || '';
-    const allowedOrigin = env.ALLOWED_ORIGIN || 'https://realitydn.com';
+    // ALLOWED_ORIGIN may be a single origin or a comma-separated list
+    // (e.g. "https://realitydn.com,https://www.realitydn.com").
+    const allowedOrigins = (env.ALLOWED_ORIGIN || 'https://realitydn.com,https://www.realitydn.com')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
 
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
-      return handleOptions(origin, allowedOrigin);
+      return handleOptions(origin, allowedOrigins);
     }
 
     // Route requests
@@ -82,6 +97,6 @@ export default {
     }
 
     // Add CORS headers to all responses
-    return addCORSHeaders(response, origin, allowedOrigin);
+    return addCORSHeaders(response, origin, allowedOrigins);
   }
 };

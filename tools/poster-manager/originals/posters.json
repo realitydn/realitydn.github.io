@@ -1,28 +1,16 @@
 {
   "posters": [
     {
-      "file": "ab-ben-electro-cat-birthday2.jpg",
+      "file": "ab-kayla-stress-cortisol-food.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-ben-electro-cat-birthday2"
+      "slug": "ab-kayla-stress-cortisol-food"
     },
     {
-      "file": "ab-irina-ai-brunch.jpg",
+      "file": "ab-tearoom-opendecks1.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-irina-ai-brunch"
-    },
-    {
-      "file": "ab-tearoom-2.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-tearoom-2"
-    },
-    {
-      "file": "ab-raluca-womens-clothing-swap.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-raluca-womens-clothing-swap"
+      "slug": "ab-tearoom-opendecks1"
     },
     {
       "file": "ab-board-game-night.jpg",
@@ -31,10 +19,22 @@
       "slug": "ab-board-game-night"
     },
     {
+      "file": "ab-content-creators-meetup.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-content-creators-meetup"
+    },
+    {
       "file": "ab-french-social-club.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-french-social-club"
+    },
+    {
+      "file": "ab-talk-circle-love-and-power.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-talk-circle-love-and-power"
     },
     {
       "file": "ab-language-mixer.jpg",
@@ -43,28 +43,22 @@
       "slug": "ab-language-mixer"
     },
     {
-      "file": "ab-tosa-japanese-palette-pt-2.jpg",
+      "file": "ab-filmmaker-meetup.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-tosa-japanese-palette-pt-2"
+      "slug": "ab-filmmaker-meetup"
+    },
+    {
+      "file": "ab-reshma-sisterhood-circle.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-reshma-sisterhood-circle"
     },
     {
       "file": "ab-greta-startup-abc.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-greta-startup-abc"
-    },
-    {
-      "file": "ab-chess.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-chess"
-    },
-    {
-      "file": "ab-filmmaker-meetup.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-filmmaker-meetup"
     },
     {
       "file": "ab-grounded-mens-wellness-talk.jpg",
@@ -97,16 +91,22 @@
       "slug": "ab-karaoke"
     },
     {
+      "file": "ab-indie-shorts-master.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-indie-shorts-master"
+    },
+    {
       "file": "ab-fire-meetup.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-fire-meetup"
     },
     {
-      "file": "ab-irina-porn-or-art.jpg",
+      "file": "ab-vietnamese-talk.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-irina-porn-or-art"
+      "slug": "ab-vietnamese-talk"
     },
     {
       "file": "ab-no-mic-open-mic.jpg",
@@ -115,22 +115,10 @@
       "slug": "ab-no-mic-open-mic"
     },
     {
-      "file": "ab-darya-inner-world-discovery.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-darya-inner-world-discovery"
-    },
-    {
       "file": "ab-createincommunity.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-createincommunity"
-    },
-    {
-      "file": "ab-film-club-dont-burn.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-film-club-dont-burn"
     },
     {
       "file": "ab-speak-easy-english.jpg",
@@ -145,22 +133,10 @@
       "slug": "ab-hitster"
     },
     {
-      "file": "ab-indie-shorts-master.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-indie-shorts-master"
-    },
-    {
       "file": "ab-practical-happiness.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-practical-happiness"
-    },
-    {
-      "file": "ab-vietnamese-talk.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-vietnamese-talk"
     },
     {
       "file": "ab-normal-people-poetry-clique2.jpg",
@@ -169,22 +145,16 @@
       "slug": "ab-normal-people-poetry-clique2"
     },
     {
-      "file": "ab-film-club-the-boy-and-the-heron.jpg",
+      "file": "sign-bogo-happy-hour-cocktails-a4-1.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-film-club-the-boy-and-the-heron"
+      "slug": "sign-bogo-happy-hour-cocktails-a4-1"
     },
     {
-      "file": "ab-tosa-japanese-palette-pt-1.jpg",
+      "file": "ab-chess.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-tosa-japanese-palette-pt-1"
-    },
-    {
-      "file": "ab-write-it-out-cbt-journaling.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-write-it-out-cbt-journaling"
+      "slug": "ab-chess"
     }
   ]
 }

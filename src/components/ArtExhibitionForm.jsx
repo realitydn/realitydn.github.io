@@ -314,13 +314,15 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
             {errors.workLink && <p className="text-red-500 text-sm mt-1">{errors.workLink}</p>}
           </div>
 
-          {/* Honeypot — off-screen instead of display:none so password
-              managers and aggressive autofill (Brave/Cốc Cốc/iOS Safari)
-              treat it less like a hidden trap, with a deceptive name so
-              bots still target it. */}
+          {/* Honeypot — the HTML name is deliberately not one of the common
+              autofill targets (email/name/phone/website/address/...) so
+              password managers and aggressive autofill (Brave/Cốc Cốc/iOS
+              Safari, 1Password, LastPass) leave it alone. The data-* hints
+              reinforce the opt-out for the major password managers. Bots
+              that fill every input still trip the trap. */}
           <input
             type="text"
-            name="website"
+            name="hp_field"
             value={formData.honeypot}
             onChange={(e) => setFormData((prev) => ({ ...prev, honeypot: e.target.value }))}
             style={{
@@ -334,6 +336,8 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
             tabIndex="-1"
             autoComplete="off"
             aria-hidden="true"
+            data-1p-ignore="true"
+            data-lpignore="true"
           />
         </div>
       )}

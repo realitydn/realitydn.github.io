@@ -1,10 +1,16 @@
 {
   "posters": [
     {
-      "file": "ab-tearoom-opendecks1.jpg",
+      "file": "ab-vy-katharine-birthday.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-tearoom-opendecks1"
+      "slug": "ab-vy-katharine-birthday"
+    },
+    {
+      "file": "ab-tearoom-opendecks3.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-tearoom-opendecks3"
     },
     {
       "file": "ab-board-game-night.jpg",
@@ -25,22 +31,16 @@
       "slug": "ab-french-social-club"
     },
     {
-      "file": "ab-kink-101.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-kink-101"
-    },
-    {
-      "file": "ab-talk-circle-love-and-power.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-talk-circle-love-and-power"
-    },
-    {
       "file": "ab-language-mixer.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-language-mixer"
+    },
+    {
+      "file": "ab-film-club-nocturnal-animals.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-film-club-nocturnal-animals"
     },
     {
       "file": "ab-filmmaker-meetup.jpg",
@@ -55,22 +55,10 @@
       "slug": "ab-reshma-sisterhood-circle"
     },
     {
-      "file": "ab-grounded-mens-wellness-talk.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-grounded-mens-wellness-talk"
-    },
-    {
       "file": "ab-geoguessr.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-geoguessr"
-    },
-    {
-      "file": "ab-mitch-march-adhd-myths-facts-endless-quest-for-dopamine.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-mitch-march-adhd-myths-facts-endless-quest-for-dopamine"
     },
     {
       "file": "ab-content-creators-meetup.jpg",
@@ -97,12 +85,6 @@
       "slug": "ab-karaoke"
     },
     {
-      "file": "ab-film-club-500-days-of-summer.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-film-club-500-days-of-summer"
-    },
-    {
       "file": "ab-indie-shorts-master.jpg",
       "alt": "",
       "title": "",
@@ -127,6 +109,12 @@
       "slug": "ab-no-mic-open-mic"
     },
     {
+      "file": "ab-book-club-this-is-how-you-lose-the-time-war.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-book-club-this-is-how-you-lose-the-time-war"
+    },
+    {
       "file": "ab-createincommunity.jpg",
       "alt": "",
       "title": "",
@@ -145,18 +133,6 @@
       "slug": "ab-hitster"
     },
     {
-      "file": "ab-practical-happiness.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-practical-happiness"
-    },
-    {
-      "file": "ab-normal-people-poetry-clique2.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-normal-people-poetry-clique2"
-    },
-    {
       "file": "sign-bogo-happy-hour-cocktails-a4-1.jpg",
       "alt": "",
       "title": "",
@@ -167,6 +143,12 @@
       "alt": "",
       "title": "",
       "slug": "ab-chess"
+    },
+    {
+      "file": "ab-cnc-things-that-shouldnt-matter.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-cnc-things-that-shouldnt-matter"
     }
   ]
 }

@@ -1,28 +1,52 @@
 {
   "posters": [
     {
-      "file": "ab-vy-katharine-birthday.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-vy-katharine-birthday"
-    },
-    {
-      "file": "ab-tearoom-opendecks3.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-tearoom-opendecks3"
-    },
-    {
       "file": "ab-board-game-night.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-board-game-night"
     },
     {
+      "file": "ab-tearoom-opendecks4.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-tearoom-opendecks4"
+    },
+    {
+      "file": "ab-film-club-parasite.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-film-club-parasite"
+    },
+    {
+      "file": "ab-darya-russian-alphabet.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-darya-russian-alphabet"
+    },
+    {
+      "file": "ab-bruno-dj-lessons.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-bruno-dj-lessons"
+    },
+    {
+      "file": "ab-awareness-itself-nondual-meditation.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-awareness-itself-nondual-meditation"
+    },
+    {
       "file": "ab-greta-sales-abc.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-greta-sales-abc"
+    },
+    {
+      "file": "ab-filmmaker-meetup2.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-filmmaker-meetup2"
     },
     {
       "file": "ab-french-social-club.jpg",
@@ -37,34 +61,22 @@
       "slug": "ab-language-mixer"
     },
     {
-      "file": "ab-film-club-nocturnal-animals.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-film-club-nocturnal-animals"
-    },
-    {
-      "file": "ab-filmmaker-meetup.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-filmmaker-meetup"
-    },
-    {
-      "file": "ab-reshma-sisterhood-circle.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-reshma-sisterhood-circle"
-    },
-    {
       "file": "ab-geoguessr.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-geoguessr"
     },
     {
-      "file": "ab-content-creators-meetup.jpg",
+      "file": "ab-short-films-talk.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-content-creators-meetup"
+      "slug": "ab-short-films-talk"
+    },
+    {
+      "file": "ab-film-club-coco.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-film-club-coco"
     },
     {
       "file": "ab-pub-quiz2.jpg",
@@ -73,22 +85,10 @@
       "slug": "ab-pub-quiz2"
     },
     {
-      "file": "ab-ecstatic-dance.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-ecstatic-dance"
-    },
-    {
       "file": "ab-karaoke.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-karaoke"
-    },
-    {
-      "file": "ab-indie-shorts-master.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-indie-shorts-master"
     },
     {
       "file": "ab-fire-meetup.jpg",
@@ -121,12 +121,6 @@
       "slug": "ab-createincommunity"
     },
     {
-      "file": "ab-speak-easy-english.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-speak-easy-english"
-    },
-    {
       "file": "ab-hitster.jpg",
       "alt": "",
       "title": "",
@@ -143,12 +137,6 @@
       "alt": "",
       "title": "",
       "slug": "ab-chess"
-    },
-    {
-      "file": "ab-cnc-things-that-shouldnt-matter.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-cnc-things-that-shouldnt-matter"
     }
   ]
 }

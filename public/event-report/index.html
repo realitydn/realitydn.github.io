@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY Event Report</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="REALITY's first year in numbers — events, categories, and rhythms from our calendar in Đà Nẵng.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;600;700&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #fffbf1; color: #0d0905; font-family: 'Space Grotesk', sans-serif; font-weight: 400; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* Site toolbar — mirrors the main realitydn.com header */
+.site-nav { position: sticky; top: 0; z-index: 100; background: #fffbf1; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.site-nav-inner { max-width: 1280px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.site-nav-logo { display: flex; align-items: center; flex-shrink: 0; }
+.site-nav-logo svg { height: 28px; width: auto; display: block; }
+.site-nav-links { display: none; align-items: center; gap: 32px; }
+.site-nav-links a { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: #0d0906; text-decoration: none; transition: opacity 0.2s ease; }
+.site-nav-links a:hover { opacity: 0.7; }
+.site-nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.site-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.site-btn svg { display: block; flex-shrink: 0; }
+.site-btn-primary { background: #0d0906; color: #fffbf1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.site-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.site-btn-secondary { background: #fffbf1; color: #0d0906; border: 1px solid rgba(13,9,6,0.2); }
+.site-btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: rgba(13,9,6,0.4); }
+.site-btn .btn-label { display: none; }
+.site-btn .btn-label-wide { display: none; }
+@media (min-width: 600px) { .site-btn .btn-label { display: inline; } }
+@media (min-width: 1024px) { .site-nav-links { display: flex; } .site-btn .btn-label-wide { display: inline; } }
+
+/* Hero */
+.hero { padding: 80px 0 60px; text-align: center; }
+.wordmark { font-family: 'Montserrat Alternates', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #0d0905; margin-bottom: 16px; }
+.hero-number { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: clamp(72px, 12vw, 140px); line-height: 1; color: #0d0905; }
+.hero-sub { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #0d0905; opacity: 0.5; margin-top: 12px; }
+
+/* Section headers */
+h2 { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; margin: 60px 0 24px; color: #0d0905; }
+
+/* Stat cards */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 40px; }
+.stat-card { background: #fff; padding: 20px 16px; box-shadow: 0 8px 2px rgba(13,9,5,0.08); }
+.stat-card .num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 28px; line-height: 1; }
+.stat-card .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5; margin-top: 6px; font-weight: 500; }
+
+/* Category bars */
+.cat-bar-wrap { margin-bottom: 8px; }
+.cat-bar-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.cat-bar-name { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+.cat-bar-count { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 14px; }
+.cat-bar { height: 28px; mix-blend-mode: multiply; transition: width 0.8s ease; }
+
+/* Growth chart */
+.growth-chart { width: 100%; overflow-x: auto; }
+.growth-chart svg { display: block; }
+
+/* Heatmap */
+.heatmap-wrap { overflow-x: auto; margin-bottom: 40px; }
+.heatmap { border-collapse: collapse; width: 100%; min-width: 600px; }
+.heatmap th { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 6px; text-align: center; white-space: nowrap; }
+.heatmap th:first-child { text-align: left; min-width: 160px; }
+.heatmap td { padding: 6px; text-align: center; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px; min-width: 52px; }
+
+/* Day of week */
+.dow-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 40px; }
+.dow-card { background: #fff; padding: 12px 8px; box-shadow: 0 4px 1px rgba(13,9,5,0.08); text-align: center; }
+.dow-card .day-name { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.dow-card .day-num { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 24px; margin: 6px 0; }
+.dow-card .day-bar { height: 4px; margin: 4px auto; mix-blend-mode: multiply; }
+
+/* Time strip */
+.time-strip { display: flex; height: 32px; margin-bottom: 40px; overflow: hidden; }
+.time-strip .segment { display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 10px; color: #fff; letter-spacing: 0.05em; white-space: nowrap; }
+
+/* Category panels */
+.cat-panel { background: #fff; padding: 24px; margin-bottom: 16px; box-shadow: 0 8px 2px rgba(13,9,5,0.08); }
+.cat-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.cat-panel-title { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 15px; letter-spacing: 0.05em; text-transform: uppercase; }
+.cat-panel-count { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 24px; }
+.series-list { columns: 2; column-gap: 24px; }
+.series-item { break-inside: avoid; display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; border-bottom: 1px solid rgba(13,9,5,0.06); }
+.series-item .s-name { opacity: 0.8; }
+.series-item .s-count { font-weight: 600; min-width: 24px; text-align: right; }
+
+/* Sparkline */
+.sparkline { display: flex; align-items: flex-end; gap: 2px; height: 40px; margin-bottom: 12px; }
+.sparkline .spark-bar { flex: 1; min-width: 4px; transition: height 0.5s ease; }
+
+/* Top regulars */
+.top-list { columns: 2; column-gap: 32px; }
+.top-item { break-inside: avoid; display: flex; align-items: baseline; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(13,9,5,0.06); }
+.top-rank { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 12px; opacity: 0.3; min-width: 24px; }
+.top-name { flex: 1; font-size: 14px; }
+.top-count { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; }
+
+/* Drift chart */
+.drift-wrap { overflow-x: auto; margin-bottom: 40px; }
+
+/* Uncategorized warning */
+.uncat-warning { background: #fff3cd; padding: 16px; margin-bottom: 24px; font-size: 13px; }
+
+/* Footer */
+.footer { text-align: center; padding: 40px 0 60px; font-size: 12px; opacity: 0.4; font-weight: 500; }
+
+/* Insight cards */
+.insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 40px; }
+.insight-card { background: #fff; padding: 24px; box-shadow: 0 8px 2px rgba(13,9,5,0.08); }
+.insight-card .i-title { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; color: #ed2123; }
+.insight-card .i-body { font-size: 14px; line-height: 1.6; color: #0d0905; opacity: 0.85; }
+.insight-card.full-width { grid-column: 1 / -1; }
+.cat-narrative { font-size: 13px; line-height: 1.5; color: #0d0905; opacity: 0.7; margin-bottom: 12px; font-style: italic; }
+.cat-narrative-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.cat-narr-item { padding: 12px 16px; border-left: 3px solid; }
+.cat-narr-item .cn-name { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+.cat-narr-item .cn-body { font-size: 13px; line-height: 1.5; opacity: 0.8; }
+
+@media (max-width: 640px) {
+  .dow-grid { grid-template-columns: repeat(4, 1fr); }
+  .series-list, .top-list { columns: 1; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a class="site-nav-logo" href="https://realitydn.com/" aria-label="REALITY home">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 84" role="img" aria-label="REALITY">
+        <g fill="#0d0906">
+          <path d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/>
+          <path d="M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z"/>
+          <path d="M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z"/>
+          <path d="M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z"/>
+          <path d="M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z"/>
+          <path d="M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z"/>
+          <path d="M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z"/>
+        </g>
+      </svg>
+    </a>
+
+    <nav class="site-nav-links">
+      <a href="https://realitydn.com/#events">Events</a>
+      <a href="https://realitydn.com/#info">Info</a>
+      <a href="https://realitydn.com/#menus">Menus</a>
+      <a href="https://realitydn.com/#visit">Visit</a>
+    </nav>
+
+    <div class="site-nav-actions">
+      <a class="site-btn site-btn-primary" href="https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO" target="_blank" rel="noreferrer" aria-label="Join WhatsApp">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fffbf1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9.5 9.2c.3-1 2-1.2 2.7-.2l.5.7c.2.3.2.7-.1 1l-.7.6c.8 1.2 1.8 2.2 3 3l.6-.7c.3-.3.7-.3 1 0l.7.5c1 .7.8 2.4-.2 2.7-1.7.6-4.6-.6-6.8-2.8-2.2-2.2-3.4-5.1-2.8-6.8z"/></svg>
+        <span class="btn-label">WhatsApp</span>
+      </a>
+      <a class="site-btn site-btn-secondary" href="https://www.instagram.com/reality.dn/" target="_blank" rel="noreferrer" aria-label="Follow on Instagram">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d0906" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/><path d="M16.5 7.5h.01"/></svg>
+        <span class="btn-label-wide">Instagram</span>
+      </a>
+      <a class="site-btn site-btn-secondary" href="https://www.facebook.com/realitybarcafedanang/" target="_blank" rel="noreferrer" aria-label="Follow on Facebook">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d0906" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M13 8h2v3h-2v7h-3v-7H8V8h2V7a3 3 0 0 1 3-3h2v3h-2a1 1 0 0 0-1 1z"/></svg>
+        <span class="btn-label-wide">Facebook</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<div class="hero">
+  <div class="wordmark">REALITY</div>
+  <div class="hero-number" id="hero-counter">0</div>
+  <div class="hero-sub">events since opening</div>
+</div>
+
+<div class="stats-grid" id="stats-grid"></div>
+
+<h2>Programming by Category</h2>
+<div id="cat-bars"></div>
+
+<h2>Growth Curve</h2>
+<div class="growth-chart" id="growth-chart"></div>
+
+<h2>Day of Week</h2>
+<div class="dow-grid" id="dow-grid"></div>
+
+<h2>Time of Day</h2>
+<div class="time-strip" id="time-strip"></div>
+
+<h2>Category x Month</h2>
+<div class="heatmap-wrap" id="heatmap-wrap"></div>
+
+<h2>Curatorial Drift</h2>
+<div class="drift-wrap" id="drift-chart"></div>
+
+<h2>Analysis</h2>
+<div class="insight-grid" id="insight-grid"></div>
+
+<h2>Category Deep Dives</h2>
+<div id="cat-panels"></div>
+
+<h2>Top 25 Regulars</h2>
+<div class="top-list" id="top-list"></div>
+
+<div class="footer">
+  REALITY / 86 Mai Thuc Lan, Da Nang / www.realitydn.com<br>
+  Report generated May 29, 2026
+</div>
+
+</div>
+
+<script>
+const D = {"total": 1039, "meta": {"period_start": "2025-05-26", "period_end": "2026-05-29", "cutoff_date": "2026-05-29", "days_active": 368, "weeks_active": 52.6, "total_raw_entries": 1104, "excluded": 24, "duplicates_removed": 41, "total_unique_events": 1039, "distinct_event_types": 217, "recurring_series_count": 65, "oneoff_count": 152, "avg_per_week": 19.8, "avg_per_month": 76.2}, "catCounts": {"Games + Trivia": 214, "Language + Conversation": 158, "Creative Arts": 155, "Music + Dance + Performance": 130, "Tech + Business": 114, "Wellness + Growth": 108, "Film + Screenings": 90, "Social + Community": 56, "Parties + Special Events": 14}, "monthCounts": {"2025-06": 33, "2025-07": 59, "2025-08": 57, "2025-09": 70, "2025-10": 79, "2025-11": 85, "2025-12": 79, "2026-01": 107, "2026-02": 93, "2026-03": 127, "2026-04": 123, "2026-05": 125}, "monthlyCat": {"2025-06": {"Games + Trivia": 7, "Tech + Business": 9, "Music + Dance + Performance": 3, "Language + Conversation": 1, "Creative Arts": 8, "Parties + Special Events": 1, "Wellness + Growth": 2, "Film + Screenings": 1, "Social + Community": 1}, "2025-07": {"Social + Community": 4, "Tech + Business": 9, "Creative Arts": 14, "Wellness + Growth": 3, "Film + Screenings": 6, "Music + Dance + Performance": 6, "Games + Trivia": 9, "Language + Conversation": 8}, "2025-08": {"Creative Arts": 14, "Music + Dance + Performance": 6, "Film + Screenings": 4, "Language + Conversation": 10, "Games + Trivia": 14, "Tech + Business": 2, "Social + Community": 4, "Wellness + Growth": 2, "Parties + Special Events": 1}, "2025-09": {"Language + Conversation": 15, "Games + Trivia": 16, "Tech + Business": 13, "Creative Arts": 10, "Music + Dance + Performance": 8, "Film + Screenings": 4, "Wellness + Growth": 3, "Social + Community": 1}, "2025-10": {"Music + Dance + Performance": 11, "Language + Conversation": 15, "Games + Trivia": 18, "Creative Arts": 16, "Tech + Business": 8, "Wellness + Growth": 4, "Film + Screenings": 2, "Social + Community": 3, "Parties + Special Events": 2}, "2025-11": {"Music + Dance + Performance": 14, "Language + Conversation": 17, "Creative Arts": 11, "Games + Trivia": 22, "Tech + Business": 7, "Wellness + Growth": 6, "Film + Screenings": 4, "Social + Community": 3, "Parties + Special Events": 1}, "2025-12": {"Games + Trivia": 20, "Language + Conversation": 12, "Tech + Business": 3, "Wellness + Growth": 12, "Creative Arts": 13, "Music + Dance + Performance": 8, "Film + Screenings": 8, "Social + Community": 1, "Parties + Special Events": 2}, "2026-01": {"Language + Conversation": 16, "Wellness + Growth": 13, "Film + Screenings": 11, "Music + Dance + Performance": 13, "Creative Arts": 13, "Games + Trivia": 27, "Social + Community": 7, "Tech + Business": 6, "Parties + Special Events": 1}, "2026-02": {"Music + Dance + Performance": 12, "Creative Arts": 18, "Games + Trivia": 18, "Film + Screenings": 12, "Wellness + Growth": 10, "Language + Conversation": 9, "Social + Community": 7, "Tech + Business": 6, "Parties + Special Events": 1}, "2026-03": {"Music + Dance + Performance": 15, "Games + Trivia": 24, "Creative Arts": 17, "Tech + Business": 19, "Wellness + Growth": 17, "Language + Conversation": 13, "Film + Screenings": 12, "Social + Community": 8, "Parties + Special Events": 2}, "2026-04": {"Language + Conversation": 21, "Wellness + Growth": 19, "Tech + Business": 13, "Film + Screenings": 13, "Music + Dance + Performance": 17, "Creative Arts": 12, "Social + Community": 7, "Games + Trivia": 20, "Parties + Special Events": 1}, "2026-05": {"Tech + Business": 19, "Creative Arts": 8, "Film + Screenings": 13, "Music + Dance + Performance": 17, "Language + Conversation": 21, "Social + Community": 10, "Wellness + Growth": 17, "Parties + Special Events": 2, "Games + Trivia": 18}}, "dowCat": {"Monday": {"Games + Trivia": 52, "Language + Conversation": 6, "Tech + Business": 16, "Wellness + Growth": 11, "Music + Dance + Performance": 1, "Film + Screenings": 1, "Creative Arts": 1}, "Tuesday": {"Tech + Business": 45, "Creative Arts": 6, "Social + Community": 4, "Language + Conversation": 45, "Games + Trivia": 43, "Wellness + Growth": 22, "Film + Screenings": 1}, "Wednesday": {"Tech + Business": 13, "Wellness + Growth": 48, "Creative Arts": 7, "Games + Trivia": 7, "Music + Dance + Performance": 35, "Film + Screenings": 27, "Parties + Special Events": 2, "Language + Conversation": 11}, "Thursday": {"Creative Arts": 28, "Film + Screenings": 9, "Language + Conversation": 50, "Tech + Business": 12, "Social + Community": 10, "Games + Trivia": 44, "Wellness + Growth": 10}, "Friday": {"Music + Dance + Performance": 53, "Tech + Business": 13, "Games + Trivia": 12, "Creative Arts": 46, "Social + Community": 8, "Parties + Special Events": 2, "Film + Screenings": 25, "Wellness + Growth": 2, "Language + Conversation": 7}, "Saturday": {"Parties + Special Events": 10, "Creative Arts": 33, "Tech + Business": 12, "Social + Community": 29, "Music + Dance + Performance": 24, "Film + Screenings": 18, "Games + Trivia": 13, "Wellness + Growth": 9, "Language + Conversation": 33}, "Sunday": {"Language + Conversation": 6, "Games + Trivia": 43, "Film + Screenings": 9, "Social + Community": 5, "Wellness + Growth": 6, "Creative Arts": 34, "Music + Dance + Performance": 17, "Tech + Business": 3}}, "timeCat": {"Morning (before 12)": {"Tech + Business": 20, "Parties + Special Events": 2, "Creative Arts": 4, "Social + Community": 2, "Language + Conversation": 53, "Wellness + Growth": 3, "Music + Dance + Performance": 15}, "Afternoon (12-17)": {"Creative Arts": 90, "Language + Conversation": 73, "Tech + Business": 23, "Film + Screenings": 7, "Wellness + Growth": 57, "Social + Community": 25, "Music + Dance + Performance": 3, "Games + Trivia": 8}, "Evening (17-21)": {"Games + Trivia": 192, "Tech + Business": 70, "Music + Dance + Performance": 82, "Wellness + Growth": 48, "Creative Arts": 60, "Film + Screenings": 79, "Social + Community": 26, "Language + Conversation": 32, "Parties + Special Events": 5}, "Late Night (21+)": {"Tech + Business": 1, "Film + Screenings": 4, "Music + Dance + Performance": 30, "Games + Trivia": 13, "Parties + Special Events": 7, "Creative Arts": 1, "Social + Community": 3}}, "catSeries": {"Games + Trivia": {"Monday Board Games": 52, "Chess Club": 45, "Pub Quiz": 38, "GeoGuessr": 27, "PowerPoint Karaoke": 10, "Hitster": 6, "Chess Tournament": 6, "Game Show": 5, "Intro to Shogi": 5, "Social / Party Games": 4, "GeekON (Ukrainian Pub Quiz)": 4, "Friday Party Games": 4, "Coup Players": 1, "DNBoardgame.com Meetup": 1, "Game Night: This or That - Spicy Edition": 1, "Retro Games": 1, "REALITY Gameshow: Truth or Dare - Night of Chaos": 1, "Tin Foil Hat Anonymous: Presentations": 1, "Truth or Dare": 1, "Blitz Chess Tournament": 1}, "Creative Arts": {"Create in Community": 43, "Page to Stage": 16, "Writing Workshop Group": 13, "IRL Passion Projects": 12, "Crocheting Circle": 10, "Writing Stories for Stage + Screen": 8, "Painting / Art Workshop": 6, "Art Opening / Exhibition": 6, "Normal People Poetry Clique": 5, "Open Art Circle": 4, "Inter-Action: Paint-Jam": 4, "Slow Sunday + Book Chat": 2, "Class: Writing Stories for Stage + Screen": 2, "Book Club": 2, "Photography Opening: Resilience, Redefined: Single Mothers of Viet Nam": 1, "Letter to Self: Guided Writing Sessions": 1, "Russian Poetry Club": 1, "Salt + Egg Coffee Workshop w/ Bamboo Bob Coffee": 1, "Opening Reception: Jeffrey Hessing, Paintings + Drawings": 1, "Workshop: I Fear Making Art": 1, "Workshop: I Fear Making Art (pt 1, the void)": 1, "Workshop: I Fear Making Art pt. 1": 1, "Jeffrey Hessing Talk": 1, "Workshop: I Fear Making Art: pt.1 The Void": 1, "Handmade Gift Workshop with Miuk Workshop": 1, "Last Call: Jeffrey Hessing Paintings Closing Party": 1, "Christmas Tree Decorating Workshop": 1, "Workshop: Flower + Candle Decor w/Hera Floral": 1, "Erosa Chocolate Tasting": 1, "Creative Tools for Drawing, Painting, + Possibly Life": 1, "Book Launch: Wishes Under the Winter Sky: Tết Poetry for Children": 1, "Pecha Kucha": 1, "Subconscious Color: Art + Performance by Praskovya from Yakutia": 1, "Interactive lecture: A Colourful History of the Japanese Palette pt. 1": 1, "Inner World Creative Discovery through Play and Metaphorical Cards": 1, "Interactive lecture: A Colourful History of the Japanese Palette - Part 2": 1}, "Tech + Business": {"AI / Dev Meetup": 38, "FIRE Weekly": 12, "Trader Talk": 7, "Russian Business Breakfast": 6, "Networking / Workshop": 4, "Buildathon": 4, "L [AI] SY Brunch - AI Problemsolving": 4, "Startup ABC": 3, "Content Creator Meetup": 3, "Online Coaches Club": 2, "LinkedIn Workshop": 2, "public group GameDev;": 2, "Sales ABC": 2, "AI Superoheros Mingling": 1, "HODL my BEER - SOLANA SUMMIT afterparty": 1, "Wildcats.io Signature Networking Event": 1, "Personal Branding Workshop: Who Am I?": 1, "Workshop: Storytelling Your Product": 1, "Workshop: From Hunted to Hunter: Master Social Media Advertising": 1, "Wildcats Town Hall": 1, "Workshop: Hiring a Marketing Team (in Ukrainian)": 1, "Da Nang Game Design Workshop + Game Jam Kickoff": 1, "Game Design Workshop + Game Jam Check-In": 1, "Workshop: Sale Smart": 1, "Workshop: How to Build an AI Agent": 1, "Workshop: Vietnam Residence Cards for Entrepreneurs + Investors": 1, "Vibe Coding": 1, "GameDev Meetup": 1, "Workshop: Making Claude Code Behave": 1, "Workshop: Build Multiple Sources of Income to Fund Your Abundant Lifestyle": 1, "Hidden Patterns Talk": 1, "Network States Talk": 1, "Business Clinic": 1, "Workshop: LinkedIn Growth for Founders and Creators": 1, "Workshop: Teamwork & Leadership: What’s Effective in the Digital Age?": 1, "AI Video Workshop": 1, "Workshop: How To Build Personal Brand On LinkedIn": 1, "The Da Nang AI Introductory Workshop": 1}, "Music + Dance + Performance": {"Karaoke": 36, "No Mic Open Mic": 28, "LearnToDance / Jive Social": 16, "Ecstatic Dance": 15, "Bachata Workshop": 7, "Latin Dance Playground": 5, "Acoustic Jam Session": 4, "Tearoom - DJ Open Decks": 4, "Improv Comedy Workshop": 2, "Tearoom - DJ Series": 2, "LERNY : In Concert": 1, "Open Decks on the Rooftop": 1, "This is not a concert by SLEEQ": 1, "(Re)Birth: A Performance of Dance and Art": 1, "(Re)Birth: Masterclass by Vera Nikolaeva": 1, "A Swingin' Holiday Sing-a-Long": 1, "Prototype Radio": 1, "Dance Party: Gradient feat Amo + Ben Nappez": 1, "The Shaft Show: Live Coaching": 1, "Bollywood Dance Workshop": 1, "Listening Party": 1}, "Language + Conversation": {"Coffee + Conversation": 43, "Speak Easy English": 33, "Vietnamese Language": 26, "Talk Circle": 18, "Vietnam Talk": 11, "French Social Club": 7, "Language Mixer": 5, "Real Talk Philosophy": 3, "Culture Ca Phe": 2, "Chinese Language Club": 2, "Mandarin Fun Club": 2, "small things, mostly: Travel Sharing Meetup": 1, "Vietnam Unfiltered": 1, "Full Moon Myths Around the World": 1, "Speedu: Language App Call for Collabs": 1, "Language Exchange: Flirting Edition": 1, "Language Mixer: Folktales, Urban Legends & Scary Stories": 1}, "Parties + Special Events": {"Valentine's Event": 2, "GRAND OPENING PARTY": 1, "Extape Release Party": 1, "HALLOWEEN ALL DAY ALL NIGHT": 1, "Halloween Party!": 1, "Flood Relief Benefit Party": 1, "REALITY Christmas Party 2025": 1, "New Years Eve Party": 1, "Das Partei-Politbüro von Sasha: Sasha's Public Birthday Party": 1, "Spring Fling Party": 1, "Birthday Party Combo Pack: Don + June": 1, "Ben Nappez Electrocats Birthday Open Party": 1, "Katharine + Vy's Open Birthday Party": 1}, "Wellness + Growth": {"Authentic Relating / Circling": 26, "Tai Chi / Qi Gong": 15, "Practical Happiness": 11, "Personal Growth Meetup": 5, "Grounded: A Men's Wellness Talk": 4, "Somatic Therapy Workshop": 3, "Write it Out: CBT Journaling Workshop": 3, "Workshop: Purposeful Emotions": 2, "Calming Anxiety Workshop": 2, "Assertiveness Training": 2, "Grounded: A Men’s Wellness Talk": 2, "Workshop: Are you on your period? w/Julia Zucker": 1, "Workshop: Get in Shape with Love + Kindness": 1, "Workshop: Stress, Cortisol, and Anxiety": 1, "Workshop: Sự Chấp Nhận Vô Điều Kiện": 1, "Workshop: Unconditional Acceptance": 1, "Workshop: Pleasure as Healing: Awakening the Body’s Inner Medicine": 1, "Workshop: Soulates: Are They Born or Made?": 1, "Workshop: Our Earth: From Crisis to Action": 1, "Workshop: Psychosomatics: How Our Psyche Affects Our Body": 1, "Soulful Christmas Yoga Party": 1, "Energy Workshop": 1, "Values + Visions Workshop": 1, "Workshop: After Sexual Assault: Understanding Trauma + Offering Support": 1, "Yin Yoga + Sound Healing": 1, "Workshop: Goals, Habits, + Procrastination": 1, "Workshop: Developing an Effective Self-Care Plan: Prioritising Health + Wellbeing": 1, "Feng Shui Tips for 2026": 1, "Relationships Workshop": 1, "Reflective Listening Workshop": 1, "Authentic Self Workshop": 1, "Stress Hacking Workshop": 1, "Workshop: Breast Cancer": 1, "Workshop: Procrastination, Goals & Habits": 1, "Grateful Vibes: Saturday Brunch & Manifestation Experience": 1, "Workshop: Understanding Emotional Eating Patterns": 1, "Workshop: Developing and Maintaining an Effective Self-Care Plan": 1, "Workshop: Relationship Patterns: How We Love, Connect, and Repair": 1, "Lecture/Discussion: Porn or Art? Why are we still ashamed of desire?": 1, "Workshop: Stress, Cortisol, + Food": 1, "ADHD: Myths, Facts & the Endless Quest for Dopamine": 1, "Nutrition Workshop: The Gut Microbiome": 1, "Workshop: Nutrition Mythbusting: Women's Hormonal Health": 1, "Awareness Itself – An Introduction to Nondual Meditation": 1}, "Film + Screenings": {"Film Club": 44, "Indie Shorts Film Forum": 24, "Filmmakers Meetup": 12, "Filmmaking Workshop": 6, "Film Premiere: Extape": 1, "TV Pizza Party: Pluribas, eps 1 + 2": 1, "Short Film Focus": 1, "Meet the Maker: Screenwriter Abby Hoàng Anh": 1}, "Social + Community": {"Women of REALITY": 18, "Kink Group Munch": 8, "Shibari Course": 6, "Dating Event": 4, "Speed Friending": 3, "Let's Chat: Sisterhood Circle - Connect, Reflect, Share": 3, "Clothes Swap: From Her to Her": 1, "Let's Talk About SEXuality! Understand Your Cycle & Redesign Your Life": 1, "Women's Entrepreneurship & Empowerment Meetup": 1, "Mix + Mingle + Meet People Party": 1, "Flirty Party": 1, "CHILL: Slow Meet Night": 1, "Lecture: The History of Shibari: Origins, Styles, Masters": 1, "Women of Da Nang: Dr. Trang on Life After 40": 1, "BLOOM Women Club": 1, "Friendsgiving Potluck": 1, "Manny's Late Night Talk Show... with CJ + Sima!": 1, "Shibari Master Class": 1, "Women Clothes Swap": 1, "Kink 101: An Introduction": 1}}, "topSeries": [["Monday Board Games", 52], ["Chess Club", 45], ["Film Club", 44], ["Create in Community", 43], ["Coffee + Conversation", 43], ["AI / Dev Meetup", 38], ["Pub Quiz", 38], ["Karaoke", 36], ["Speak Easy English", 33], ["No Mic Open Mic", 28], ["GeoGuessr", 27], ["Vietnamese Language", 26], ["Authentic Relating / Circling", 26], ["Indie Shorts Film Forum", 24], ["Talk Circle", 18], ["Women of REALITY", 18], ["LearnToDance / Jive Social", 16], ["Page to Stage", 16], ["Tai Chi / Qi Gong", 15], ["Ecstatic Dance", 15], ["Writing Workshop Group", 13], ["IRL Passion Projects", 12], ["FIRE Weekly", 12], ["Filmmakers Meetup", 12], ["Practical Happiness", 11]], "catShare": {"2025-06": {"Games + Trivia": 21.2, "Language + Conversation": 3.0, "Creative Arts": 24.2, "Music + Dance + Performance": 9.1, "Wellness + Growth": 6.1, "Tech + Business": 27.3, "Film + Screenings": 3.0, "Social + Community": 3.0, "Parties + Special Events": 3.0}, "2025-07": {"Games + Trivia": 15.3, "Language + Conversation": 13.6, "Creative Arts": 23.7, "Music + Dance + Performance": 10.2, "Wellness + Growth": 5.1, "Tech + Business": 15.3, "Film + Screenings": 10.2, "Social + Community": 6.8, "Parties + Special Events": 0.0}, "2025-08": {"Games + Trivia": 24.6, "Language + Conversation": 17.5, "Creative Arts": 24.6, "Music + Dance + Performance": 10.5, "Wellness + Growth": 3.5, "Tech + Business": 3.5, "Film + Screenings": 7.0, "Social + Community": 7.0, "Parties + Special Events": 1.8}, "2025-09": {"Games + Trivia": 22.9, "Language + Conversation": 21.4, "Creative Arts": 14.3, "Music + Dance + Performance": 11.4, "Wellness + Growth": 4.3, "Tech + Business": 18.6, "Film + Screenings": 5.7, "Social + Community": 1.4, "Parties + Special Events": 0.0}, "2025-10": {"Games + Trivia": 22.8, "Language + Conversation": 19.0, "Creative Arts": 20.3, "Music + Dance + Performance": 13.9, "Wellness + Growth": 5.1, "Tech + Business": 10.1, "Film + Screenings": 2.5, "Social + Community": 3.8, "Parties + Special Events": 2.5}, "2025-11": {"Games + Trivia": 25.9, "Language + Conversation": 20.0, "Creative Arts": 12.9, "Music + Dance + Performance": 16.5, "Wellness + Growth": 7.1, "Tech + Business": 8.2, "Film + Screenings": 4.7, "Social + Community": 3.5, "Parties + Special Events": 1.2}, "2025-12": {"Games + Trivia": 25.3, "Language + Conversation": 15.2, "Creative Arts": 16.5, "Music + Dance + Performance": 10.1, "Wellness + Growth": 15.2, "Tech + Business": 3.8, "Film + Screenings": 10.1, "Social + Community": 1.3, "Parties + Special Events": 2.5}, "2026-01": {"Games + Trivia": 25.2, "Language + Conversation": 15.0, "Creative Arts": 12.1, "Music + Dance + Performance": 12.1, "Wellness + Growth": 12.1, "Tech + Business": 5.6, "Film + Screenings": 10.3, "Social + Community": 6.5, "Parties + Special Events": 0.9}, "2026-02": {"Games + Trivia": 19.4, "Language + Conversation": 9.7, "Creative Arts": 19.4, "Music + Dance + Performance": 12.9, "Wellness + Growth": 10.8, "Tech + Business": 6.5, "Film + Screenings": 12.9, "Social + Community": 7.5, "Parties + Special Events": 1.1}, "2026-03": {"Games + Trivia": 18.9, "Language + Conversation": 10.2, "Creative Arts": 13.4, "Music + Dance + Performance": 11.8, "Wellness + Growth": 13.4, "Tech + Business": 15.0, "Film + Screenings": 9.4, "Social + Community": 6.3, "Parties + Special Events": 1.6}, "2026-04": {"Games + Trivia": 16.3, "Language + Conversation": 17.1, "Creative Arts": 9.8, "Music + Dance + Performance": 13.8, "Wellness + Growth": 15.4, "Tech + Business": 10.6, "Film + Screenings": 10.6, "Social + Community": 5.7, "Parties + Special Events": 0.8}, "2026-05": {"Games + Trivia": 14.4, "Language + Conversation": 16.8, "Creative Arts": 6.4, "Music + Dance + Performance": 13.6, "Wellness + Growth": 13.6, "Tech + Business": 15.2, "Film + Screenings": 10.4, "Social + Community": 8.0, "Parties + Special Events": 1.6}}, "weeklyAvg": {"2025-06": 8.0, "2025-07": 13.3, "2025-08": 12.9, "2025-09": 16.3, "2025-10": 17.8, "2025-11": 19.8, "2025-12": 17.8, "2026-01": 24.2, "2026-02": 23.2, "2026-03": 28.7, "2026-04": 29.7, "2026-05": 30.2}, "uncategorized": [], "categoryOrder": ["Games + Trivia", "Language + Conversation", "Creative Arts", "Music + Dance + Performance", "Wellness + Growth", "Tech + Business", "Film + Screenings", "Social + Community", "Parties + Special Events"], "categoryColors": {"Games + Trivia": "#17a7df", "Language + Conversation": "#fdb515", "Creative Arts": "#ed1b71", "Music + Dance + Performance": "#3f3785", "Wellness + Growth": "#00b7a5", "Tech + Business": "#91c745", "Film + Screenings": "#ed2123", "Social + Community": "#fddf00", "Parties + Special Events": "#fdb515", "Uncategorized": "#666666"}, "insights": [{"title": "Growth Trajectory", "body": "Your first three full months averaged 50 events/month. Your most recent three averaged 125 — a 152% increase, at a fairly steady rate throughout. Peak month was March 2026 with 127 events. Quietest full month was June 2025 at 33.", "narratives": {}}, {"title": "Curatorial Drift", "body": "Comparing your first three months to your most recent three, the programming mix has shifted. Categories gaining share: Wellness + Growth (5% to 14%), Film + Screenings (7% to 10%), Language + Conversation (11% to 15%), Music + Dance + Performance (10% to 13%). Categories losing share: Creative Arts (24% to 10%), Games + Trivia (20% to 17%). This doesn't mean you're running fewer events in shrinking categories — total volume is up across the board — but some categories are growing faster than others, changing what REALITY feels like on a given week.", "narratives": {}}, {"title": "Programming Diversity", "body": "Programming diversity has increased — events are more evenly spread across categories than they were early on. This is healthy; it means growth isn't coming from one or two dominant categories.", "narratives": {}}, {"title": "Series Lifecycle", "body": "Across 12 full months, 217 distinct series debuted for the first time. Of those, 65 stuck around for 3+ total appearances — a 30% retention rate. Your most recent three months saw 57 new series debut, suggesting the experimentation rate is holding steady. Recently gone quiet (were running regularly 3-5 months ago, absent the last 2): Trader Talk, Art Opening / Exhibition, Game Show, Bachata Workshop, Intro to Shogi, Page to Stage, Vietnamese Language, Inter-Action: Paint-Jam. Longer-term dormancies among established series: Vietnamese Language (last seen Feb 2026), Bachata Workshop (last seen Feb 2026), Art Opening / Exhibition (last seen Feb 2026), Filmmaking Workshop (last seen Feb 2026), Game Show (last seen Feb 2026), Intro to Shogi (last seen Feb 2026).", "narratives": {}}, {"title": "April 2026 Profile", "body": "April 2026 had 123 events, above your 86-event average by 42%. It was your #3 busiest month. Over-indexed on: Wellness + Growth (+6pp). Under-indexed on: Creative Arts (-7pp), Games + Trivia (-5pp).", "narratives": {}}, {"title": "Weekly Rhythm", "body": "Saturday is your busiest day (181 events), Monday is quietest (88). Weekends account for 29% of programming. Tuesday through Friday are tightly clustered, all carrying 12-16% each — the calendar is spread fairly evenly across the working week rather than spiking on any particular day.", "narratives": {}}, {"title": "Time of Day", "body": "Evening (5-9pm) dominates at 57% of all events — this is when REALITY is a bar with programming, not a cafe with events. Afternoon (12-5pm) holds 28%, mostly language and creative events. Morning has 10% (Coffee + Conversation anchoring that slot). Late night (9pm+) accounts for 6%, almost entirely Karaoke and parties.", "narratives": {}}, {"title": "Anchor Events", "body": "Your top 5 series (Monday Board Games, Chess Club, Film Club, Create in Community, Coffee + Conversation) account for 227 events — 22% of all programming. These are the backbone: weekly fixtures that people build their schedules around. The remaining 812 events across 212 series provide the variety and experimentation that keeps the calendar interesting.", "narratives": {}}, {"title": "Category Trajectories", "body": "CATEGORY_NARRATIVES", "narratives": {"Games + Trivia": "214 events (21% of total). Growing — more events in recent months than early on. Built on 12 recurring series and 8 one-offs. Anchored by Monday Board Games (52), Chess Club (45), Pub Quiz (38).", "Language + Conversation": "158 events (15% of total). Growing — more events in recent months than early on. Built on 8 recurring series and 9 one-offs. Anchored by Coffee + Conversation (43), Speak Easy English (33), Vietnamese Language (26).", "Creative Arts": "155 events (15% of total). Stable — roughly consistent volume across the full period. Built on 11 recurring series and 25 one-offs. Anchored by Create in Community (43), Page to Stage (16), Writing Workshop Group (13).", "Music + Dance + Performance": "130 events (13% of total). Growing — more events in recent months than early on. Built on 8 recurring series and 13 one-offs. Anchored by Karaoke (36), No Mic Open Mic (28), LearnToDance / Jive Social (16).", "Wellness + Growth": "108 events (10% of total). Growing — more events in recent months than early on. Built on 7 recurring series and 37 one-offs. Anchored by Authentic Relating / Circling (26), Tai Chi / Qi Gong (15), Practical Happiness (11).", "Tech + Business": "114 events (11% of total). Growing — more events in recent months than early on. Built on 9 recurring series and 29 one-offs. Anchored by AI / Dev Meetup (38), FIRE Weekly (12), Trader Talk (7).", "Film + Screenings": "90 events (9% of total). Growing — more events in recent months than early on. Built on 4 recurring series and 4 one-offs. Anchored by Film Club (44), Indie Shorts Film Forum (24), Filmmakers Meetup (12).", "Social + Community": "56 events (5% of total). Growing — more events in recent months than early on. Built on 6 recurring series and 14 one-offs. Anchored by Women of REALITY (18), Kink Group Munch (8), Shibari Course (6).", "Parties + Special Events": "14 events (1% of total). Growing — more events in recent months than early on. Built on 0 recurring series and 13 one-offs. Anchored by Valentine's Event (2), GRAND OPENING PARTY (1), Extape Release Party (1)."}}], "monthLabels": {"2025-06": "Jun '25", "2025-07": "Jul '25", "2025-08": "Aug '25", "2025-09": "Sep '25", "2025-10": "Oct '25", "2025-11": "Nov '25", "2025-12": "Dec '25", "2026-01": "Jan '26", "2026-02": "Feb '26", "2026-03": "Mar '26", "2026-04": "Apr '26", "2026-05": "May '26"}};
+const CATS = D.categoryOrder;
+const COLORS = D.categoryColors;
+const MONTHS = Object.keys(D.monthCounts);
+const ML = D.monthLabels;
+
+// Hero counter
+function animateCounter(el, target, duration) {
+  let start = 0;
+  const step = (ts) => {
+    if (!start) start = ts;
+    const progress = Math.min((ts - start) / duration, 1);
+    el.textContent = Math.floor(progress * target).toLocaleString();
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = target.toLocaleString();
+  };
+  requestAnimationFrame(step);
+}
+
+// Stats
+const statsEl = document.getElementById('stats-grid');
+const weeks = Math.round(D.meta.weeks_active);
+const distinctTypes = D.meta.distinct_event_types;
+const recurring = D.meta.recurring_series_count;
+const avgWeek = D.meta.avg_per_week;
+const statsData = [
+  [D.total, 'total events'],
+  [weeks, 'weeks active'],
+  [distinctTypes, 'event types'],
+  [recurring, 'recurring series'],
+  [avgWeek, 'avg / week'],
+  [CATS.length, 'categories'],
+  [Object.keys(D.monthCounts).length, 'months'],
+  [D.topSeries[0][1], D.topSeries[0][0].toLowerCase() + ' (top)'],
+];
+statsData.forEach(([num, label]) => {
+  const card = document.createElement('div');
+  card.className = 'stat-card';
+  card.innerHTML = `<div class="num">${typeof num === 'number' && num % 1 !== 0 ? num.toFixed(1) : num}</div><div class="label">${label}</div>`;
+  statsEl.appendChild(card);
+});
+
+// Category bars
+const catBarsEl = document.getElementById('cat-bars');
+const maxCat = Math.max(...CATS.map(c => D.catCounts[c] || 0));
+CATS.forEach(cat => {
+  const count = D.catCounts[cat] || 0;
+  const pct = (count / D.total * 100).toFixed(1);
+  const w = (count / maxCat * 100).toFixed(1);
+  const wrap = document.createElement('div');
+  wrap.className = 'cat-bar-wrap';
+  wrap.innerHTML = `<div class="cat-bar-label"><span class="cat-bar-name">${cat}</span><span class="cat-bar-count">${count} <span style="font-weight:400;font-size:11px;opacity:0.5">(${pct}%)</span></span></div><div class="cat-bar" style="width:${w}%;background:${COLORS[cat]}"></div>`;
+  catBarsEl.appendChild(wrap);
+});
+
+// Growth chart (SVG)
+const growthEl = document.getElementById('growth-chart');
+const gW = 900, gH = 280, gPad = 40, gBarW = Math.min(50, (gW - gPad * 2) / MONTHS.length - 4);
+const maxMonth = Math.max(...MONTHS.map(m => D.monthCounts[m]));
+let svg = `<svg viewBox="0 0 ${gW} ${gH}" xmlns="http://www.w3.org/2000/svg">`;
+// Bars
+MONTHS.forEach((m, i) => {
+  const x = gPad + i * ((gW - gPad * 2) / MONTHS.length) + ((gW - gPad * 2) / MONTHS.length - gBarW) / 2;
+  const h = D.monthCounts[m] / maxMonth * (gH - gPad * 2 - 20);
+  const y = gH - gPad - h;
+  svg += `<rect x="${x}" y="${y}" width="${gBarW}" height="${h}" fill="#0d0905" opacity="0.12"/>`;
+  svg += `<text x="${x + gBarW/2}" y="${y - 6}" text-anchor="middle" font-family="Montserrat" font-weight="700" font-size="11" fill="#0d0905">${D.monthCounts[m]}</text>`;
+  svg += `<text x="${x + gBarW/2}" y="${gH - gPad + 16}" text-anchor="middle" font-family="Montserrat" font-weight="600" font-size="9" letter-spacing="0.05em" fill="#0d0905" opacity="0.5">${ML[m]}</text>`;
+});
+// Weekly avg line
+let linePoints = '';
+MONTHS.forEach((m, i) => {
+  const x = gPad + i * ((gW - gPad * 2) / MONTHS.length) + ((gW - gPad * 2) / MONTHS.length) / 2;
+  const maxWk = Math.max(...MONTHS.map(mm => D.weeklyAvg[mm] || 0));
+  const h = (D.weeklyAvg[m] || 0) / maxWk * (gH - gPad * 2 - 20);
+  const y = gH - gPad - h;
+  linePoints += `${x},${y} `;
+});
+svg += `<polyline points="${linePoints.trim()}" fill="none" stroke="#ed2123" stroke-width="2" stroke-dasharray="6,4"/>`;
+svg += `<text x="${gW - gPad}" y="${24}" text-anchor="end" font-family="Space Grotesk" font-size="10" fill="#ed2123" opacity="0.7">--- weekly avg</text>`;
+svg += '</svg>';
+growthEl.innerHTML = svg;
+
+// Day of week
+const dowEl = document.getElementById('dow-grid');
+const dowNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const dowTotals = dowNames.map(d => Object.values(D.dowCat[d] || {}).reduce((a,b)=>a+b, 0));
+const maxDow = Math.max(...dowTotals);
+dowNames.forEach((d, i) => {
+  const card = document.createElement('div');
+  card.className = 'dow-card';
+  const w = (dowTotals[i] / maxDow * 100).toFixed(0);
+  card.innerHTML = `<div class="day-name">${d.slice(0,3)}</div><div class="day-num">${dowTotals[i]}</div><div class="day-bar" style="width:${w}%;background:#0d0905;opacity:0.15"></div>`;
+  dowEl.appendChild(card);
+});
+
+// Time strip
+const timeEl = document.getElementById('time-strip');
+const timeColors = {'Morning (before 12)':'#fdb515','Afternoon (12-17)':'#91c745','Evening (17-21)':'#3f3785','Late Night (21+)':'#0d0905'};
+const timeLabels = {'Morning (before 12)':'Morning','Afternoon (12-17)':'Afternoon','Evening (17-21)':'Evening','Late Night (21+)':'Late Night'};
+const timeTotals = Object.fromEntries(Object.entries(D.timeCat).map(([k,v]) => [k, Object.values(v).reduce((a,b)=>a+b,0)]));
+const timeTotal = Object.values(timeTotals).reduce((a,b)=>a+b,0);
+Object.keys(timeTotals).forEach(bucket => {
+  const pct = (timeTotals[bucket] / timeTotal * 100).toFixed(1);
+  const seg = document.createElement('div');
+  seg.className = 'segment';
+  seg.style.width = pct + '%';
+  seg.style.background = timeColors[bucket];
+  if (parseFloat(pct) > 10) seg.textContent = `${timeLabels[bucket]} ${Math.round(pct)}%`;
+  timeEl.appendChild(seg);
+});
+
+// Heatmap
+const hmEl = document.getElementById('heatmap-wrap');
+let hmHtml = '<table class="heatmap"><thead><tr><th></th>';
+MONTHS.forEach(m => { hmHtml += `<th>${ML[m]}</th>`; });
+hmHtml += '</tr></thead><tbody>';
+CATS.forEach(cat => {
+  hmHtml += `<tr><th style="color:${COLORS[cat]}">${cat}</th>`;
+  const catMax = Math.max(...MONTHS.map(m => (D.monthlyCat[m]||{})[cat] || 0), 1);
+  MONTHS.forEach(m => {
+    const val = (D.monthlyCat[m]||{})[cat] || 0;
+    const opacity = val === 0 ? 0 : Math.max(0.15, val / catMax);
+    hmHtml += `<td style="background:${COLORS[cat]};opacity:${opacity.toFixed(2)};color:${opacity > 0.5 ? '#fff' : '#0d0905'}">${val || ''}</td>`;
+  });
+  hmHtml += '</tr>';
+});
+hmHtml += '</tbody></table>';
+hmEl.innerHTML = hmHtml;
+
+// Drift chart (SVG line chart of category shares)
+const driftEl = document.getElementById('drift-chart');
+const dW = 900, dH = 320, dPad = 50;
+let dSvg = `<svg viewBox="0 0 ${dW} ${dH}" xmlns="http://www.w3.org/2000/svg">`;
+// Y axis labels
+for (let pct = 0; pct <= 30; pct += 10) {
+  const y = dH - dPad - (pct / 30) * (dH - dPad * 2);
+  dSvg += `<line x1="${dPad}" y1="${y}" x2="${dW - 20}" y2="${y}" stroke="#0d0905" stroke-opacity="0.08"/>`;
+  dSvg += `<text x="${dPad - 6}" y="${y + 4}" text-anchor="end" font-family="Montserrat" font-size="9" fill="#0d0905" opacity="0.4">${pct}%</text>`;
+}
+// X axis labels
+MONTHS.forEach((m, i) => {
+  const x = dPad + i * ((dW - dPad - 20) / (MONTHS.length - 1));
+  dSvg += `<text x="${x}" y="${dH - dPad + 18}" text-anchor="middle" font-family="Montserrat" font-weight="600" font-size="8" letter-spacing="0.05em" fill="#0d0905" opacity="0.4">${ML[m]}</text>`;
+});
+// Lines per category
+CATS.slice(0, 8).forEach(cat => {
+  let pts = '';
+  MONTHS.forEach((m, i) => {
+    const x = dPad + i * ((dW - dPad - 20) / (MONTHS.length - 1));
+    const share = (D.catShare[m]||{})[cat] || 0;
+    const y = dH - dPad - (share / 30) * (dH - dPad * 2);
+    pts += `${x},${y} `;
+  });
+  dSvg += `<polyline points="${pts.trim()}" fill="none" stroke="${COLORS[cat]}" stroke-width="2" opacity="0.8"/>`;
+  // Label at end
+  const lastShare = (D.catShare[MONTHS[MONTHS.length-1]]||{})[cat] || 0;
+  const lastY = dH - dPad - (lastShare / 30) * (dH - dPad * 2);
+  dSvg += `<text x="${dW - 16}" y="${lastY + 3}" font-family="Space Grotesk" font-size="8" fill="${COLORS[cat]}" font-weight="600">${cat.split(' ')[0]}</text>`;
+});
+dSvg += '</svg>';
+driftEl.innerHTML = dSvg;
+
+// Category panels
+const panelsEl = document.getElementById('cat-panels');
+CATS.forEach(cat => {
+  const count = D.catCounts[cat] || 0;
+  if (count === 0) return;
+  const series = D.catSeries[cat] || {};
+  const panel = document.createElement('div');
+  panel.className = 'cat-panel';
+  let seriesHtml = '';
+  Object.entries(series).sort((a,b) => b[1]-a[1]).forEach(([name, cnt]) => {
+    seriesHtml += `<div class="series-item"><span class="s-name">${name}</span><span class="s-count">${cnt}</span></div>`;
+  });
+  // Sparkline
+  let sparkHtml = '<div class="sparkline">';
+  const catMonthMax = Math.max(...MONTHS.map(m => (D.monthlyCat[m]||{})[cat] || 0), 1);
+  MONTHS.forEach(m => {
+    const val = (D.monthlyCat[m]||{})[cat] || 0;
+    const h = Math.max(2, (val / catMonthMax) * 40);
+    sparkHtml += `<div class="spark-bar" style="height:${h}px;background:${COLORS[cat]};opacity:0.7"></div>`;
+  });
+  sparkHtml += '</div>';
+
+  // Category narrative from insights
+  const catNarrInsight = D.insights.find(i => i.title === 'Category Trajectories');
+  const narrative = catNarrInsight && catNarrInsight.narratives[cat] ? `<div class="cat-narrative">${catNarrInsight.narratives[cat]}</div>` : '';
+
+  // Time-of-day strip for this category
+  const timeBuckets = ['Morning (before 12)', 'Afternoon (12-17)', 'Evening (17-21)', 'Late Night (21+)'];
+  const timeBucketLabels = {'Morning (before 12)':'Morning','Afternoon (12-17)':'Afternoon','Evening (17-21)':'Evening','Late Night (21+)':'Late Night'};
+  const timeBucketColors = {'Morning (before 12)':'#fdb515','Afternoon (12-17)':'#91c745','Evening (17-21)':'#3f3785','Late Night (21+)':'#0d0905'};
+  let catTimeTotals = {};
+  let catTimeTotal = 0;
+  timeBuckets.forEach(b => {
+    const val = (D.timeCat[b] || {})[cat] || 0;
+    catTimeTotals[b] = val;
+    catTimeTotal += val;
+  });
+  let catTimeHtml = '<div style="display:flex;height:20px;margin-bottom:8px;overflow:hidden">';
+  if (catTimeTotal > 0) {
+    timeBuckets.forEach(b => {
+      const pct = (catTimeTotals[b] / catTimeTotal * 100);
+      if (pct > 0) {
+        catTimeHtml += `<div style="width:${pct.toFixed(1)}%;background:${timeBucketColors[b]};display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-weight:600;font-size:9px;color:#fff;letter-spacing:0.03em;white-space:nowrap">${pct > 12 ? timeBucketLabels[b] + ' ' + Math.round(pct) + '%' : ''}</div>`;
+      }
+    });
+  }
+  catTimeHtml += '</div>';
+
+  // Day-of-week mini bars for this category
+  const dowNamesShort = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dowFull = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  let catDowVals = dowFull.map(d => (D.dowCat[d] || {})[cat] || 0);
+  const catDowMax = Math.max(...catDowVals, 1);
+  let catDowHtml = '<div style="display:flex;gap:4px;align-items:flex-end;height:36px;margin-bottom:12px">';
+  catDowVals.forEach((v, i) => {
+    const h = Math.max(2, v / catDowMax * 32);
+    catDowHtml += `<div style="flex:1;text-align:center"><div style="height:${h}px;background:${COLORS[cat]};opacity:0.5;margin:0 auto;width:100%"></div><div style="font-family:Montserrat;font-size:8px;font-weight:600;opacity:0.4;margin-top:2px">${dowNamesShort[i]}</div></div>`;
+  });
+  catDowHtml += '</div>';
+  
+  panel.innerHTML = `<div class="cat-panel-header"><span class="cat-panel-title" style="color:${COLORS[cat]}">${cat}</span><span class="cat-panel-count">${count}</span></div>${sparkHtml}${narrative}${catTimeHtml}${catDowHtml}<div class="series-list">${seriesHtml}</div>`;
+  panelsEl.appendChild(panel);
+});
+
+// Insight cards
+const insightEl = document.getElementById('insight-grid');
+D.insights.forEach(insight => {
+  if (insight.title === 'Category Trajectories') return; // rendered in panels
+  const card = document.createElement('div');
+  card.className = 'insight-card';
+  // Full-width for longer insights
+  if (insight.body.length > 300) card.classList.add('full-width');
+  card.innerHTML = `<div class="i-title">${insight.title}</div><div class="i-body">${insight.body}</div>`;
+  insightEl.appendChild(card);
+});
+
+// Top 25
+const topEl = document.getElementById('top-list');
+D.topSeries.forEach(([name, count], i) => {
+  const cat = '""';
+  const item = document.createElement('div');
+  item.className = 'top-item';
+  item.innerHTML = `<span class="top-rank">${i+1}</span><span class="top-name">${name}</span><span class="top-count">${count}</span>`;
+  topEl.appendChild(item);
+});
+
+// Uncategorized warning
+if (D.uncategorized.length > 0) {
+  const warn = document.createElement('div');
+  warn.className = 'uncat-warning';
+  warn.innerHTML = '<strong>Uncategorized series:</strong> ' + D.uncategorized.join(', ');
+  document.querySelector('.container').insertBefore(warn, document.getElementById('cat-bars'));
+}
+
+// Animate hero
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(document.getElementById('hero-counter'), D.total, 1500);
+      observer.unobserve(e.target);
+    }
+  });
+});
+observer.observe(document.getElementById('hero-counter'));
+</script>
+</body>
+</html>

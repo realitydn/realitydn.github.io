@@ -14,10 +14,10 @@
       "full": "ab-tearoom-opendecks4-full.webp"
     },
     {
-      "slug": "ab-film-club-parasite",
-      "webp": "ab-film-club-parasite.webp",
-      "jpg": "ab-film-club-parasite.jpg",
-      "full": "ab-film-club-parasite-full.webp"
+      "slug": "ab-cnc-tiny-human-rituals",
+      "webp": "ab-cnc-tiny-human-rituals.webp",
+      "jpg": "ab-cnc-tiny-human-rituals.jpg",
+      "full": "ab-cnc-tiny-human-rituals-full.webp"
     },
     {
       "slug": "ab-darya-russian-alphabet",
@@ -26,10 +26,22 @@
       "full": "ab-darya-russian-alphabet-full.webp"
     },
     {
+      "slug": "ab-kayla-nutrition-heat-hydration-electrolytes",
+      "webp": "ab-kayla-nutrition-heat-hydration-electrolytes.webp",
+      "jpg": "ab-kayla-nutrition-heat-hydration-electrolytes.jpg",
+      "full": "ab-kayla-nutrition-heat-hydration-electrolytes-full.webp"
+    },
+    {
       "slug": "ab-bruno-dj-lessons",
       "webp": "ab-bruno-dj-lessons.webp",
       "jpg": "ab-bruno-dj-lessons.jpg",
       "full": "ab-bruno-dj-lessons-full.webp"
+    },
+    {
+      "slug": "ab-pulse-sessions",
+      "webp": "ab-pulse-sessions.webp",
+      "jpg": "ab-pulse-sessions.jpg",
+      "full": "ab-pulse-sessions-full.webp"
     },
     {
       "slug": "ab-awareness-itself-nondual-meditation",
@@ -42,6 +54,12 @@
       "webp": "ab-greta-sales-abc.webp",
       "jpg": "ab-greta-sales-abc.jpg",
       "full": "ab-greta-sales-abc-full.webp"
+    },
+    {
+      "slug": "ab-spill-it",
+      "webp": "ab-spill-it.webp",
+      "jpg": "ab-spill-it.jpg",
+      "full": "ab-spill-it-full.webp"
     },
     {
       "slug": "ab-filmmaker-meetup2",
@@ -60,12 +78,6 @@
       "webp": "ab-language-mixer.webp",
       "jpg": "ab-language-mixer.jpg",
       "full": "ab-language-mixer-full.webp"
-    },
-    {
-      "slug": "ab-geoguessr",
-      "webp": "ab-geoguessr.webp",
-      "jpg": "ab-geoguessr.jpg",
-      "full": "ab-geoguessr-full.webp"
     },
     {
       "slug": "ab-short-films-talk",
@@ -104,12 +116,6 @@
       "full": "ab-vietnamese-talk-full.webp"
     },
     {
-      "slug": "ab-no-mic-open-mic",
-      "webp": "ab-no-mic-open-mic.webp",
-      "jpg": "ab-no-mic-open-mic.jpg",
-      "full": "ab-no-mic-open-mic-full.webp"
-    },
-    {
       "slug": "ab-book-club-this-is-how-you-lose-the-time-war",
       "webp": "ab-book-club-this-is-how-you-lose-the-time-war.webp",
       "jpg": "ab-book-club-this-is-how-you-lose-the-time-war.jpg",
@@ -122,6 +128,12 @@
       "full": "ab-createincommunity-full.webp"
     },
     {
+      "slug": "ab-reconnect-with-your-inner-child",
+      "webp": "ab-reconnect-with-your-inner-child.webp",
+      "jpg": "ab-reconnect-with-your-inner-child.jpg",
+      "full": "ab-reconnect-with-your-inner-child-full.webp"
+    },
+    {
       "slug": "ab-hitster",
       "webp": "ab-hitster.webp",
       "jpg": "ab-hitster.jpg",
@@ -132,6 +144,18 @@
       "webp": "sign-bogo-happy-hour-cocktails-a4-1.webp",
       "jpg": "sign-bogo-happy-hour-cocktails-a4-1.jpg",
       "full": "sign-bogo-happy-hour-cocktails-a4-1-full.webp"
+    },
+    {
+      "slug": "ab-geoguessr",
+      "webp": "ab-geoguessr.webp",
+      "jpg": "ab-geoguessr.jpg",
+      "full": "ab-geoguessr-full.webp"
+    },
+    {
+      "slug": "ab-no-mic-open-mic",
+      "webp": "ab-no-mic-open-mic.webp",
+      "jpg": "ab-no-mic-open-mic.jpg",
+      "full": "ab-no-mic-open-mic-full.webp"
     },
     {
       "slug": "ab-chess",

@@ -13,10 +13,10 @@
       "slug": "ab-tearoom-opendecks4"
     },
     {
-      "file": "ab-film-club-parasite.jpg",
+      "file": "ab-cnc-tiny-human-rituals.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-film-club-parasite"
+      "slug": "ab-cnc-tiny-human-rituals"
     },
     {
       "file": "ab-darya-russian-alphabet.jpg",
@@ -25,10 +25,22 @@
       "slug": "ab-darya-russian-alphabet"
     },
     {
+      "file": "ab-kayla-nutrition-heat-hydration-electrolytes.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-kayla-nutrition-heat-hydration-electrolytes"
+    },
+    {
       "file": "ab-bruno-dj-lessons.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-bruno-dj-lessons"
+    },
+    {
+      "file": "ab-pulse-sessions.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-pulse-sessions"
     },
     {
       "file": "ab-awareness-itself-nondual-meditation.jpg",
@@ -41,6 +53,12 @@
       "alt": "",
       "title": "",
       "slug": "ab-greta-sales-abc"
+    },
+    {
+      "file": "ab-spill-it.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-spill-it"
     },
     {
       "file": "ab-filmmaker-meetup2.jpg",
@@ -59,12 +77,6 @@
       "alt": "",
       "title": "",
       "slug": "ab-language-mixer"
-    },
-    {
-      "file": "ab-geoguessr.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-geoguessr"
     },
     {
       "file": "ab-short-films-talk.jpg",
@@ -103,12 +115,6 @@
       "slug": "ab-vietnamese-talk"
     },
     {
-      "file": "ab-no-mic-open-mic.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-no-mic-open-mic"
-    },
-    {
       "file": "ab-book-club-this-is-how-you-lose-the-time-war.jpg",
       "alt": "",
       "title": "",
@@ -121,6 +127,12 @@
       "slug": "ab-createincommunity"
     },
     {
+      "file": "ab-reconnect-with-your-inner-child.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-reconnect-with-your-inner-child"
+    },
+    {
       "file": "ab-hitster.jpg",
       "alt": "",
       "title": "",
@@ -131,6 +143,18 @@
       "alt": "",
       "title": "",
       "slug": "sign-bogo-happy-hour-cocktails-a4-1"
+    },
+    {
+      "file": "ab-geoguessr.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-geoguessr"
+    },
+    {
+      "file": "ab-no-mic-open-mic.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-no-mic-open-mic"
     },
     {
       "file": "ab-chess.jpg",

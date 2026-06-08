@@ -1,8 +1,36 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
 import { URLS } from '../data/translations';
 import EventProposalForm from './EventProposalForm';
 import ArtExhibitionForm from './ArtExhibitionForm';
+
+// Wrap the public-events cross-references ("How REALITY Can Help with
+// Promotion" and "brand guidelines") with links to the full Event Guidelines
+// page — the homepage carousel doesn't contain those sections itself.
+function linkifyPhrases(text, links) {
+  let parts = [text];
+  links.forEach(({ phrase, to }, li) => {
+    parts = parts.flatMap((part, pi) => {
+      if (typeof part !== 'string') return [part];
+      const idx = part.indexOf(phrase);
+      if (idx === -1) return [part];
+      return [
+        part.slice(0, idx),
+        <Link
+          key={`lnk-${li}-${pi}`}
+          to={to}
+          className="underline font-semibold hover:opacity-70 transition-opacity"
+          style={{ color: '#c0392b' }}
+        >
+          {phrase}
+        </Link>,
+        part.slice(idx + phrase.length),
+      ];
+    });
+  });
+  return parts.filter((p) => p !== '');
+}
 
 // Main panels in the carousel
 const MAIN_PANELS = ['welcome', 'rules', 'host'];
@@ -46,6 +74,22 @@ function slideIndex(panel, eventType) {
 
 export default function InfoHostSection({ t, lang }) {
   const ih = (k) => t.use(`infoHost.${k}`);
+
+  // Public-events copy references the branding + promotion sections, which live
+  // on the full Event Guidelines page (not in this carousel) — link to them.
+  const guidelinesBase = lang === 'VN' ? '/vn/event-guidelines' : '/event-guidelines';
+  const publicCrossRefs = lang === 'VN'
+    ? [
+        { phrase: 'Cách REALITY có thể Hỗ trợ Quảng bá', to: `${guidelinesBase}#promote` },
+        { phrase: 'hướng dẫn thương hiệu', to: `${guidelinesBase}#branding` },
+      ]
+    : [
+        { phrase: 'How REALITY Can Help with Promotion', to: `${guidelinesBase}#promote` },
+        { phrase: 'brand guidelines', to: `${guidelinesBase}#branding` },
+      ];
+  const publicRulesItems = ih('publicRules').map((it) =>
+    typeof it === 'string' ? linkifyPhrases(it, publicCrossRefs) : it
+  );
 
   const [viewportRef, embla] = useEmblaCarousel({
     align: 'start',
@@ -296,7 +340,7 @@ export default function InfoHostSection({ t, lang }) {
               <Slide>
                 <SlideTitle accent={EVENT_ACCENTS.public}>{ih('publicTitle')}</SlideTitle>
                 <GeneralRulesLink ih={ih} goTo={goTo} />
-                <ColorList items={ih('publicRules')} className="mb-6" />
+                <ColorList items={publicRulesItems} className="mb-6" />
                 {submittedFlavor === 'event' ? (
                   <ThankYou ih={ih} onReset={resetThanks} />
                 ) : (

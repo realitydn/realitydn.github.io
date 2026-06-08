@@ -1,10 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 
+// Splits a plain-text guideline string on known phrases and wraps each match in
+// an anchor link — used for the "see: How REALITY Can Help with Promotion" and
+// "brand guidelines" cross-references in the public-events copy, which point at
+// the matching sections further down this page.
+function linkifyPhrases(text, links) {
+  let parts = [text];
+  links.forEach(({ phrase, href }, li) => {
+    parts = parts.flatMap((part, pi) => {
+      if (typeof part !== 'string') return [part];
+      const idx = part.indexOf(phrase);
+      if (idx === -1) return [part];
+      return [
+        part.slice(0, idx),
+        <a
+          key={`lnk-${li}-${pi}`}
+          href={href}
+          className="underline font-semibold hover:opacity-70 transition-opacity"
+          style={{ color: '#c0392b' }}
+        >
+          {phrase}
+        </a>,
+        part.slice(idx + phrase.length),
+      ];
+    });
+  });
+  return parts.filter((p) => p !== '');
+}
+
 // Numbered list: consistent numeral column + body that wraps cleanly under the
-// first word. Supports either plain strings or {lead, body} pairs where the
-// lead is emphasized.
+// first word. Supports plain strings, {lead, body} pairs, or pre-built nodes
+// (arrays/elements) for items that contain inline links.
 function NumberedList({ items }) {
   return (
     <ol className="space-y-3 font-body text-gray-700 leading-relaxed">
@@ -14,7 +42,7 @@ function NumberedList({ items }) {
             {i + 1}.
           </span>
           <p className="flex-1">
-            {typeof item === 'string' ? (
+            {typeof item === 'string' || Array.isArray(item) || React.isValidElement(item) ? (
               item
             ) : (
               <>
@@ -47,6 +75,30 @@ export default function EventGuidelines({ lang, t }) {
   const enHref = '/event-guidelines';
   const vnHref = '/vn/event-guidelines';
   const proposalHref = `${homeHref === '/' ? '' : homeHref}/#proposal`;
+
+  // Scroll to an in-page section when arriving via a hash link — handles both
+  // same-page jumps and cross-page links from the homepage public-events copy
+  // (e.g. /event-guidelines#branding).
+  useEffect(() => {
+    const { hash } = window.location;
+    if (!hash) return;
+    const el = document.querySelector(hash);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // Cross-reference phrases in the public-events copy → on-page anchors.
+  const crossRefs = lang === 'VN'
+    ? [
+        { phrase: 'Cách REALITY có thể Hỗ trợ Quảng bá', href: '#promote' },
+        { phrase: 'hướng dẫn thương hiệu', href: '#branding' },
+      ]
+    : [
+        { phrase: 'How REALITY Can Help with Promotion', href: '#promote' },
+        { phrase: 'brand guidelines', href: '#branding' },
+      ];
+  const publicEventsItems = t.use('eventGuidelines.publicEvents').map((it) =>
+    typeof it === 'string' ? linkifyPhrases(it, crossRefs) : it
+  );
 
   return (
     <div className="min-h-screen bg-cream">
@@ -121,7 +173,7 @@ export default function EventGuidelines({ lang, t }) {
             <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
               {t.use('eventGuidelines.publicEventsTitle')}
             </h2>
-            <NumberedList items={t.use('eventGuidelines.publicEvents')} />
+            <NumberedList items={publicEventsItems} />
           </section>
 
           {/* Private / For-Profit Events */}
@@ -141,7 +193,7 @@ export default function EventGuidelines({ lang, t }) {
           </section>
 
           {/* Branding Guidelines */}
-          <section className="space-y-6">
+          <section id="branding" className="space-y-6 scroll-mt-24">
             <div>
               <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
                 {t.use('eventGuidelines.brandingTitle')}
@@ -165,7 +217,7 @@ export default function EventGuidelines({ lang, t }) {
           </section>
 
           {/* How REALITY Can Help */}
-          <section className="space-y-6">
+          <section id="promote" className="space-y-6 scroll-mt-24">
             <div>
               <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
                 {t.use('eventGuidelines.promoteTitle')}

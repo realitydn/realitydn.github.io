@@ -8,6 +8,7 @@ import { URLS } from '../data/translations';
 // signature color so the menu reads as a colored grid, not gray text.
 const CATEGORY_ACCENTS = {
   cocktails: '#E72D33', // red
+  spirits:   '#E92775', // pink
   beerwine:  '#403785', // purple
   coffee:    '#FD9D32', // orange
   tea:       '#00AB4D', // green
@@ -167,6 +168,11 @@ export default function MenuSection({ lang, t }) {
                                   </span>
                                 )}
                               </div>
+                              {(item.tagEN || item.tagVI) && (
+                                <div className="text-ink/70 text-sm italic mt-1">
+                                  {lang === 'VN' ? (item.tagVI || item.tagEN) : item.tagEN}
+                                </div>
+                              )}
                               {(item.descEN || item.descVI) && (
                                 <div className="text-gray-600 text-sm mt-1">
                                   {lang === 'VN' ? (item.descVI || item.descEN) : item.descEN}

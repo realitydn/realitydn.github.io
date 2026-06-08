@@ -5,7 +5,7 @@
        understands they're translations of the same page, not duplicates. -->
   <url>
     <loc>https://realitydn.com/</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/"/>
@@ -14,7 +14,7 @@
   </url>
   <url>
     <loc>https://realitydn.com/vn</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/"/>
@@ -25,7 +25,7 @@
   <!-- Event Guidelines: EN + VN twins. -->
   <url>
     <loc>https://realitydn.com/event-guidelines</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/event-guidelines"/>
@@ -34,7 +34,7 @@
   </url>
   <url>
     <loc>https://realitydn.com/vn/event-guidelines</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://realitydn.com/event-guidelines"/>

@@ -14,6 +14,7 @@ import Footer from "./components/Footer";
 import SEO from "./components/SEO";
 import FAQSchema from "./components/FAQSchema";
 import HostGuide from "./pages/HostGuide";
+import EventGuidelines from "./pages/EventGuidelines";
 import { STR } from "./data/translations";
 
 // Builds the `t` helper from a language code. Same shape as before; callers
@@ -95,8 +96,19 @@ export default function App() {
 }
 
 function EventGuidelinesRoute({ lang }) {
-  const home = lang === 'VN' ? '/vn' : '/';
-  return <Navigate to={`${home}#info`} replace />;
+  const t = makeT(lang);
+  const title = lang === 'VN'
+    ? 'Hướng dẫn Sự kiện & Thương hiệu — REALITY'
+    : 'Event & Branding Guidelines — REALITY';
+  const description = lang === 'VN'
+    ? 'Hướng dẫn tổ chức sự kiện tại REALITY Đà Nẵng — quy định chung, sự kiện công khai/riêng tư, và hướng dẫn thương hiệu của chúng tôi.'
+    : 'Guidelines for hosting at REALITY Đà Nẵng — general rules, public and private events, and our branding guidelines.';
+  return (
+    <>
+      <SEO lang={lang} title={title} description={description} />
+      <EventGuidelines lang={lang} t={t} />
+    </>
+  );
 }
 
 function HostGuideRoute({ lang }) {

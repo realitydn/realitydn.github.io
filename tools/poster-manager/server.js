@@ -70,16 +70,26 @@ function syncState() {
   // Build a map of existing state entries by filename
   const existing = new Map(state.posters.map(p => [p.file, p]));
 
-  // Add any new files not in state
+  // Collect any new files not already tracked. New posters go to the TOP of the
+  // list (most recently added first) so fresh artwork is easy to find and lands
+  // at the front of the published carousel. Existing posters keep their order.
+  const newEntries = [];
   for (const file of files) {
     if (!existing.has(file)) {
-      state.posters.push({
+      newEntries.push({
         file,
         alt: '',
         title: '',
         slug: path.basename(file, path.extname(file)).toLowerCase().replace(/[^a-z0-9]+/g, '-')
       });
     }
+  }
+  if (newEntries.length) {
+    newEntries.sort((a, b) =>
+      fs.statSync(path.join(ORIGINALS_DIR, b.file)).mtimeMs -
+      fs.statSync(path.join(ORIGINALS_DIR, a.file)).mtimeMs
+    );
+    state.posters = [...newEntries, ...state.posters];
   }
 
   // Remove entries whose files no longer exist
@@ -139,8 +149,16 @@ app.delete('/api/posters/:file', (req, res) => {
   const { file } = req.params;
   const deleteFile = req.query.deleteFile === 'true';
   const state = loadState();
+  const poster = state.posters.find(p => p.file === file);
   state.posters = state.posters.filter(p => p.file !== file);
   saveState(state);
+  // Drop the cached thumbnail too. The thumb is keyed by slug, so a same-name
+  // re-add would otherwise reuse this stale file — clearing it keeps delete +
+  // re-add fully repopulating, and avoids leaving orphaned thumbs behind.
+  if (poster) {
+    const thumbPath = path.join(__dirname, 'thumbs', `${poster.slug}.webp`);
+    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+  }
   if (deleteFile) {
     const filePath = path.join(ORIGINALS_DIR, file);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -172,7 +190,13 @@ app.post('/api/generate-thumbs', async (req, res) => {
     for (const poster of state.posters) {
       const src = path.join(ORIGINALS_DIR, poster.file);
       const dest = path.join(thumbDir, `${poster.slug}.webp`);
-      if (!fs.existsSync(dest)) {
+      // Rebuild when the thumb is missing OR older than its source. This is what
+      // makes re-adding a poster under the same name actually repopulate: the
+      // slug (and thumb filename) is unchanged, but the source is newer, so the
+      // stale thumb would otherwise be kept forever.
+      const stale = !fs.existsSync(dest) ||
+        fs.statSync(src).mtimeMs > fs.statSync(dest).mtimeMs;
+      if (stale) {
         await sharp(src)
           .resize(300, 375, { fit: 'cover' })
           .webp({ quality: 70 })

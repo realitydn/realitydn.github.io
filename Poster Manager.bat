@@ -33,6 +33,11 @@ echo   Browser will open at http://localhost:4400
 echo   Close this window to stop the server.
 echo.
 
+rem Free port 4400 if a previous server is still running. Node loads server.js
+rem once at startup and never hot-reloads, so without this an old instance would
+rem keep serving stale code and the browser would just reconnect to it.
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr /C:":4400 " ^| findstr "LISTENING"') do taskkill /F /PID %%a >nul 2>&1
+
 start "" cmd /c "ping -n 4 127.0.0.1 >nul && start http://localhost:4400"
 
 node server.js

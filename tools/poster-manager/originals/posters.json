@@ -1,10 +1,46 @@
 {
   "posters": [
     {
-      "file": "ab-tearoom-opendecks5.jpg",
+      "file": "ab-anniversary-1.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-tearoom-opendecks5"
+      "slug": "ab-anniversary-1"
+    },
+    {
+      "file": "ab-speed-friending-4.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-speed-friending-4"
+    },
+    {
+      "file": "ab-karaoke-thursday.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-karaoke-thursday"
+    },
+    {
+      "file": "ab-small-things-mostly-2.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-small-things-mostly-2"
+    },
+    {
+      "file": "ab-film-club-sicario.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-film-club-sicario"
+    },
+    {
+      "file": "ab-cnc-starting-over.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-cnc-starting-over"
+    },
+    {
+      "file": "ab-kayla-getting-stronger-w-protein.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-kayla-getting-stronger-w-protein"
     },
     {
       "file": "ab-board-game-night.jpg",
@@ -13,28 +49,40 @@
       "slug": "ab-board-game-night"
     },
     {
-      "file": "ab-tearoom-opendecks4.jpg",
+      "file": "ab-geoguessr.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-tearoom-opendecks4"
+      "slug": "ab-geoguessr"
     },
     {
-      "file": "ab-cnc-tiny-human-rituals.jpg",
+      "file": "ab-women-of-reality.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-cnc-tiny-human-rituals"
+      "slug": "ab-women-of-reality"
     },
     {
-      "file": "ab-darya-russian-alphabet.jpg",
+      "file": "ab-pub-quiz2.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-darya-russian-alphabet"
+      "slug": "ab-pub-quiz2"
     },
     {
-      "file": "ab-kayla-nutrition-heat-hydration-electrolytes.jpg",
+      "file": "ab-ai-meetup2.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-kayla-nutrition-heat-hydration-electrolytes"
+      "slug": "ab-ai-meetup2"
+    },
+    {
+      "file": "ab-fire-meetup2.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-fire-meetup2"
+    },
+    {
+      "file": "ab-talk-circle-playfulness-attraction.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-talk-circle-playfulness-attraction"
     },
     {
       "file": "ab-bruno-dj-lessons.jpg",
@@ -53,12 +101,6 @@
       "alt": "",
       "title": "",
       "slug": "ab-awareness-itself-nondual-meditation"
-    },
-    {
-      "file": "ab-greta-sales-abc.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-greta-sales-abc"
     },
     {
       "file": "ab-spill-it.jpg",
@@ -91,30 +133,6 @@
       "slug": "ab-short-films-talk"
     },
     {
-      "file": "ab-film-club-coco.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-film-club-coco"
-    },
-    {
-      "file": "ab-pub-quiz2.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-pub-quiz2"
-    },
-    {
-      "file": "ab-karaoke.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-karaoke"
-    },
-    {
-      "file": "ab-fire-meetup.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-fire-meetup"
-    },
-    {
       "file": "ab-vietnamese-talk.jpg",
       "alt": "",
       "title": "",
@@ -133,12 +151,6 @@
       "slug": "ab-createincommunity"
     },
     {
-      "file": "ab-reconnect-with-your-inner-child.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-reconnect-with-your-inner-child"
-    },
-    {
       "file": "ab-hitster.jpg",
       "alt": "",
       "title": "",
@@ -149,12 +161,6 @@
       "alt": "",
       "title": "",
       "slug": "sign-bogo-happy-hour-cocktails-a4-1"
-    },
-    {
-      "file": "ab-geoguessr.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-geoguessr"
     },
     {
       "file": "ab-no-mic-open-mic.jpg",

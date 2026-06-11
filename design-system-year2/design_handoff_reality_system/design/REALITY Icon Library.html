@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Icon Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<style>
+  .mh-tag{ white-space:nowrap; }
+  .lib-ctrl{ position:sticky; top:0; z-index:50; background:var(--bg); border-bottom:3px solid var(--fg);
+    transition:background .35s ease,border-color .35s ease; }
+  .lib-ctrl .wrap{ display:flex; align-items:center; gap:28px; flex-wrap:wrap; padding:16px 40px; }
+  .lib-ctrl .grp{ display:flex; align-items:center; gap:10px; }
+  .lib-ctrl .gl{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.16em; font-size:10px; color:var(--fg-faint); }
+  .seg2{ display:flex; border:2px solid var(--fg); }
+  .seg2 button{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:11px; padding:8px 13px; color:var(--fg); }
+  .seg2 button[aria-pressed="true"]{ background:var(--fg); color:var(--bg); }
+  .seg2 button + button{ border-left:2px solid var(--fg); }
+  .inks{ display:flex; gap:7px; }
+  .ink{ width:24px; height:24px; border:2px solid var(--fg); box-shadow:var(--sh-light); transition:transform .12s; }
+  .ink[aria-pressed="true"]{ transform:translateY(-3px); box-shadow:var(--sh-default); }
+
+  .cat{ margin-bottom:54px; }
+  .cat-head{ display:flex; align-items:baseline; gap:14px; border-bottom:1.5px solid var(--fg); padding-bottom:10px; margin-bottom:24px; }
+  .cat-head .t{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:clamp(17px,2vw,24px); }
+  .cat-head .c{ font-family:var(--mont); font-weight:700; font-size:12px; letter-spacing:.1em; color:var(--fg-faint); }
+  .icells{ display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); border:2px solid var(--fg); }
+  .icell{ display:flex; flex-direction:column; align-items:center; gap:11px; padding:24px 8px 16px;
+    border-right:1px solid var(--hairline); border-bottom:1px solid var(--hairline); aspect-ratio:1/0.92; justify-content:center;
+    transition:background .12s; }
+  .icell:hover{ background:var(--surface-2); }
+  .icell .lab{ font-family:var(--mont); font-weight:600; text-transform:uppercase; letter-spacing:.09em; font-size:9px; color:var(--fg-faint); text-align:center; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word">Reality</span>
+    <span class="mh-tag">Icon Library</span>
+  </div>
+</header>
+
+<div class="lib-ctrl">
+  <div class="wrap">
+    <div class="grp"><span class="gl">Paper</span>
+      <div class="seg2" id="theme">
+        <button data-theme="light">Day</button>
+        <button data-theme="dark">Night</button>
+      </div>
+    </div>
+    <div class="grp"><span class="gl">Treatment</span>
+      <div class="seg2" id="treat">
+        <button data-dir="stroke">Stroke</button>
+        <button data-dir="solid">Solid</button>
+        <button data-dir="echo">Echo</button>
+      </div>
+    </div>
+    <div class="grp"><span class="gl">Accent</span>
+      <div class="inks" id="inks">
+        <button class="ink" data-ink="#ed1b72" style="background:#ed1b72"></button>
+        <button class="ink" data-ink="#18a7e0" style="background:#18a7e0"></button>
+        <button class="ink" data-ink="#fdb515" style="background:#fdb515"></button>
+        <button class="ink" data-ink="#ed2224" style="background:#ed2224"></button>
+        <button class="ink" data-ink="#43b02a" style="background:#43b02a"></button>
+        <button class="ink" data-ink="#6e3179" style="background:#6e3179"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section class="intro" style="padding:48px 0 8px;">
+    <div class="kick">One geometric set</div>
+    <h1>The <b>icon</b><br>library.</h1>
+    <p class="lede">Every glyph is built from the same hard-edged primitives on a 24px grid — <b>2px strokes, square caps, mitered corners</b>, matching the system's borders. Drinks for the bar, plus a set for every kind of night. Switch the paper, treatment and accent above; this is the full set.</p>
+  </section>
+  <div id="root"></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="muted">REALITY Design System · Year 2</span>
+    <span class="muted">Icon Library</span>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="icons/icons.jsx"></script>
+<script type="text/babel">
+const ALL = [{ group:'Core · System', items: ICON_CORE }].concat(ICON_CATEGORIES);
+
+function Library({ dir }){
+  return (
+    <React.Fragment>
+      {ALL.map(cat => (
+        <div className="cat" key={cat.group}>
+          <div className="cat-head">
+            <span className="t">{cat.group}</span>
+            <span className="c">{cat.items.length}</span>
+          </div>
+          <div className="icells">
+            {cat.items.map(n => (
+              <div className="icell" key={n}>
+                <Icon name={n} dir={dir} size={34} color="var(--fg)" echo="var(--accent)" />
+                <span className="lab">{ICON_LABELS[n] || n}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </React.Fragment>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+let state = { theme:'dark', dir:'echo', ink:'#ed1b72' };
+
+function apply(){
+  document.documentElement.setAttribute('data-theme', state.theme);
+  document.documentElement.style.setProperty('--accent', state.ink);
+  // when stroke is chosen in night, use the cream stroke-echo; else as picked
+  const dir = state.dir;
+  root.render(<Library dir={dir} />);
+  sync();
+}
+function sync(){
+  document.querySelectorAll('#theme button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.theme===state.theme));
+  document.querySelectorAll('#treat button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.dir===state.dir));
+  document.querySelectorAll('#inks button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.ink===state.ink));
+}
+document.querySelectorAll('#theme button').forEach(b=>b.onclick=()=>{ state.theme=b.dataset.theme; apply(); });
+document.querySelectorAll('#treat button').forEach(b=>b.onclick=()=>{ state.dir=b.dataset.dir; apply(); });
+document.querySelectorAll('#inks button').forEach(b=>b.onclick=()=>{ state.ink=b.dataset.ink; apply(); });
+apply();
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
 
 // Splits a plain-text guideline string on known phrases and wraps each match in
 // an anchor link — used for the "see: How REALITY Can Help with Promotion" and
@@ -19,7 +20,7 @@ function linkifyPhrases(text, links) {
           key={`lnk-${li}-${pi}`}
           href={href}
           className="underline font-semibold hover:opacity-70 transition-opacity"
-          style={{ color: '#c0392b' }}
+          style={{ color: 'var(--red)' }}
         >
           {phrase}
         </a>,
@@ -103,7 +104,7 @@ export default function EventGuidelines({ lang, t }) {
   return (
     <div className="min-h-screen bg-cream">
       {/* Header */}
-      <header className="border-b border-ink/10 py-4 sticky top-0 z-40 bg-cream">
+      <header className="py-4 sticky top-0 z-40 bg-cream" style={{ borderBottom: '3px solid var(--fg)' }}>
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
@@ -116,7 +117,7 @@ export default function EventGuidelines({ lang, t }) {
               </svg>
             </Link>
             <Link to={homeHref} aria-label="REALITY home">
-              <Logo />
+              <Logo color="var(--fg)" />
             </Link>
           </div>
           <div className="flex items-center gap-4">
@@ -140,6 +141,7 @@ export default function EventGuidelines({ lang, t }) {
             >
               VN
             </Link>
+            <ThemeToggle lang={lang} compact />
           </div>
         </div>
       </header>
@@ -149,7 +151,7 @@ export default function EventGuidelines({ lang, t }) {
         <section className="section max-w-3xl mx-auto px-4 space-y-12">
           {/* Page Title */}
           <div>
-            <h1 className="font-title text-4xl md:text-5xl leading-[1] tracking-[0.1em] text-ink mb-4">
+            <h1 className="h-section text-4xl md:text-5xl text-ink mb-4">
               {t.use('eventGuidelines.title')}
             </h1>
             <p className="font-body text-gray-700 text-lg">
@@ -162,7 +164,7 @@ export default function EventGuidelines({ lang, t }) {
 
           {/* General Rules */}
           <section>
-            <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+            <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
               {t.use('eventGuidelines.generalRulesTitle')}
             </h2>
             <NumberedList items={t.use('eventGuidelines.generalRules')} />
@@ -170,7 +172,7 @@ export default function EventGuidelines({ lang, t }) {
 
           {/* Public Community Events */}
           <section>
-            <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+            <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
               {t.use('eventGuidelines.publicEventsTitle')}
             </h2>
             <NumberedList items={publicEventsItems} />
@@ -178,7 +180,7 @@ export default function EventGuidelines({ lang, t }) {
 
           {/* Private / For-Profit Events */}
           <section>
-            <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+            <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
               {t.use('eventGuidelines.privateEventsTitle')}
             </h2>
             <NumberedList items={t.use('eventGuidelines.privateEvents')} />
@@ -186,7 +188,7 @@ export default function EventGuidelines({ lang, t }) {
 
           {/* Classes */}
           <section>
-            <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+            <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
               {t.use('eventGuidelines.classesTitle')}
             </h2>
             <NumberedList items={t.use('eventGuidelines.classes')} />
@@ -195,7 +197,7 @@ export default function EventGuidelines({ lang, t }) {
           {/* Branding Guidelines */}
           <section id="branding" className="space-y-6 scroll-mt-24">
             <div>
-              <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+              <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
                 {t.use('eventGuidelines.brandingTitle')}
               </h2>
               <p className="font-body text-gray-700 leading-relaxed">
@@ -203,13 +205,13 @@ export default function EventGuidelines({ lang, t }) {
               </p>
             </div>
             <div>
-              <h3 className="font-title text-lg md:text-xl leading-tight tracking-[0.1em] text-ink mb-3">
+              <h3 className="h-section text-lg md:text-xl text-ink mb-3">
                 {t.use('eventGuidelines.brandingMaterialsTitle')}
               </h3>
               <NumberedList items={t.use('eventGuidelines.brandingMaterials')} />
             </div>
             <div>
-              <h3 className="font-title text-lg md:text-xl leading-tight tracking-[0.1em] text-ink mb-3">
+              <h3 className="h-section text-lg md:text-xl text-ink mb-3">
                 {t.use('eventGuidelines.brandingSocialsTitle')}
               </h3>
               <NumberedList items={t.use('eventGuidelines.brandingSocials')} />
@@ -219,7 +221,7 @@ export default function EventGuidelines({ lang, t }) {
           {/* How REALITY Can Help */}
           <section id="promote" className="space-y-6 scroll-mt-24">
             <div>
-              <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+              <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
                 {t.use('eventGuidelines.promoteTitle')}
               </h2>
               <p className="font-body text-gray-700 leading-relaxed">
@@ -227,13 +229,13 @@ export default function EventGuidelines({ lang, t }) {
               </p>
             </div>
             <div>
-              <h3 className="font-title text-lg md:text-xl leading-tight tracking-[0.1em] text-ink mb-3">
+              <h3 className="h-section text-lg md:text-xl text-ink mb-3">
                 {t.use('eventGuidelines.promoteWeTitle')}
               </h3>
               <BulletList items={t.use('eventGuidelines.promoteWe')} />
             </div>
             <div>
-              <h3 className="font-title text-lg md:text-xl leading-tight tracking-[0.1em] text-ink mb-3">
+              <h3 className="h-section text-lg md:text-xl text-ink mb-3">
                 {t.use('eventGuidelines.promoteYouTitle')}
               </h3>
               <BulletList items={t.use('eventGuidelines.promoteYou')} />
@@ -241,8 +243,8 @@ export default function EventGuidelines({ lang, t }) {
           </section>
 
           {/* Event Checklist / CTA */}
-          <section className="mt-16 pt-8 border-t border-ink/10">
-            <h2 className="font-title text-2xl md:text-3xl leading-tight tracking-[0.1em] text-ink mb-4">
+          <section className="mt-16 pt-8" style={{ borderTop: '2px solid var(--fg)' }}>
+            <h2 className="h-section text-2xl md:text-3xl text-ink mb-4">
               {t.use('eventGuidelines.checklistTitle')}
             </h2>
             <p className="font-body text-gray-700 leading-relaxed mb-2">
@@ -255,7 +257,7 @@ export default function EventGuidelines({ lang, t }) {
                 on the target page. React Router's <Link> wouldn't scroll. */}
             <a
               href={proposalHref}
-              className="btn-primary px-6 py-3 font-title text-sm tracking-[0.15em] inline-block"
+              className="btn-primary px-6 py-3 text-sm inline-block"
             >
               {t.use('eventGuidelines.ctaButton')}
             </a>

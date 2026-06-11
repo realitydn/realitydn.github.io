@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — App Components</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="components.css" rel="stylesheet">
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="icons/icons.jsx"></script>
+<script type="text/babel" src="components/ui.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+function Masthead() {
+  const [theme, setTheme] = useState('light');
+  const [accent, setAccent] = useState('pink');
+  const swatches = ['yellow', 'red', 'blue', 'pink', 'amber', 'green', 'purple'];
+  const setT = (t) => { document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light'); setTheme(t); };
+  const setA = (a) => { document.documentElement.style.setProperty('--accent', `var(--${a})`); setAccent(a); };
+  return (
+    <header className="masthead">
+      <div className="wrap">
+        <span className="wordmark mh-word" data-word="Reality">Reality</span>
+        <span className="mh-tag" style={{ whiteSpace: 'nowrap' }}>App Components</span>
+        <div className="controls">
+          <a href="REALITY Design System.html" style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', fontSize: 11, color: 'var(--fg-dim)', textDecoration: 'none', borderBottom: '2px solid var(--hairline)', paddingBottom: 3 }}>← Design System</a>
+          <div className="ctl" role="group" aria-label="Theme">
+            <button className="seg" aria-pressed={theme === 'light'} onClick={() => setT('light')}>Day</button>
+            <button className="seg" aria-pressed={theme === 'dark'} onClick={() => setT('dark')}>Night</button>
+          </div>
+          <span className="ctl-label">Category</span>
+          <div className="swatches" role="group" aria-label="Lead accent">
+            {swatches.map(s => <button key={s} className="sw" style={{ background: `var(--${s})` }} aria-pressed={accent === s} aria-label={s} onClick={() => setA(s)}></button>)}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Sec({ num, title, note, children }) {
+  return (
+    <section>
+      <div className="sec-head">
+        <span className="sec-num">{num}</span><h2 className="sec-title">{title}</h2>
+        <span className="sec-note">{note}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+const Label = ({ children }) => <div className="blk-label">{children}</div>;
+
+function App() {
+  const [radio, setRadio] = useState('bingo');
+  return (
+    <React.Fragment>
+      <Masthead />
+      <main className="wrap">
+        <section className="intro" style={{ paddingTop: 50 }}>
+          <div className="kick">Built on the new spacing scale + the day/night icon set</div>
+          <h1>The kit,<br /><b>screen by screen.</b></h1>
+          <p className="lede">Every control rides the <b>--space</b> tokens and flips with the theme — hard corners, the flat down-shadow, colour by role. Toggle <b>Day/Night</b> and swap the <b>category accent</b> up top; the whole kit re-skins, icons included.</p>
+        </section>
+
+        <Sec num="01" title="Bottom Nav" note="Five tabs, centre Scan raised as the primary act — “scan to join”. Active tab inverts to ink.">
+          <div className="miniphone">
+            <div style={{ padding: '16px 20px', borderBottom: '2px solid var(--fg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="wordmark" style={{ fontSize: 22 }} data-word="Reality">Reality</span>
+              <span style={{ position: 'relative', display: 'inline-flex' }}>
+                <Icon name="bell" dir="stroke" size={24} />
+                <span style={{ position: 'absolute', top: -4, right: -6 }}><Dot /></span>
+              </span>
+            </div>
+            <div style={{ height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-faint)', fontFamily: 'var(--mont)', fontWeight: 600, letterSpacing: '.12em', fontSize: 11, textTransform: 'uppercase' }}>· screen content ·</div>
+            <NavBar />
+          </div>
+        </Sec>
+
+        <Sec num="02" title="Controls" note="Switch, checkbox, radio. Square knobs, square ticks — no soft toggles.">
+          <div className="cg cg-3">
+            <div className="blk"><Label>Switch</Label><div className="blk-col"><Toggle defaultOn={true} label="Sounds on" /><Toggle label="Vibrate" /></div></div>
+            <div className="blk"><Label>Checkbox</Label><div className="blk-col"><Check defaultChecked={true} label="Join as a team" /><Check label="Show me on the TV" /></div></div>
+            <div className="blk"><Label>Radio</Label><div className="blk-col">
+              <Radio value="bingo" selected={radio} setSelected={setRadio} label="Bingo" />
+              <Radio value="quiz" selected={radio} setSelected={setRadio} label="Pub quiz" />
+              <Radio value="karaoke" selected={radio} setSelected={setRadio} label="Karaoke" />
+            </div></div>
+          </div>
+        </Sec>
+
+        <Sec num="03" title="Leaderboard & Avatars" note="Rank, square category-coloured avatar, name, score. Leader row inverts to ink.">
+          <div className="cg cg-2">
+            <div className="blk"><Label>Leaderboard rows</Label><Leaderboard /></div>
+            <div className="blk"><Label>Avatars · category-coloured initials</Label>
+              <div className="blk-row">
+                <Avatar initials="LK" color="var(--pink)" />
+                <Avatar initials="MN" color="var(--blue)" />
+                <Avatar initials="TK" color="var(--green)" />
+                <Avatar initials="PD" color="var(--amber)" />
+                <Avatar initials="?" color="var(--surface-2)" />
+              </div>
+              <Label>With status badge</Label>
+              <div className="blk-row">
+                <span style={{ position: 'relative', display: 'inline-flex' }}>
+                  <Avatar initials="LK" color="var(--pink)" size={52} />
+                  <span style={{ position: 'absolute', top: -8, right: -8 }}><Badge>3</Badge></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </Sec>
+
+        <Sec num="04" title="Timers & Progress" note="The game clock. Segmented bars drain in accent; the count turns red in the final five.">
+          <div className="cg cg-3">
+            <div className="blk"><Label>Countdown · quiz / bingo</Label><Timer left={9} total={15} mmss="0:09" /></div>
+            <div className="blk"><Label>Progress · determinate</Label>
+              <div className="blk-col" style={{ gap: 'var(--space-5)' }}>
+                <Progress pct={72} />
+                <Progress pct={30} color="var(--fg)" />
+              </div>
+              <Label>Round stepper</Label><Stepper current={2} total={5} />
+            </div>
+            <div className="blk"><Label>Loading</Label>
+              <div className="blk-row"><span className="rd-spin" style={{ color: 'var(--fg)' }}></span><span style={{ fontFamily: 'var(--mont)', fontWeight: 700, letterSpacing: '.12em', fontSize: 11, textTransform: 'uppercase', color: 'var(--fg-dim)' }}>Tallying scores…</span></div>
+            </div>
+          </div>
+        </Sec>
+
+        <Sec num="05" title="Feedback" note="Toasts and alerts carry a solid icon tile, colour by role — never a bare accent stripe.">
+          <div className="cg cg-2">
+            <div className="blk"><Label>Toasts</Label><div className="blk-col">
+              <Toast kind="success" title="You're in the room" msg="Table 4 · Pulse Sessions. Good luck." />
+              <Toast kind="info" title="Round 2 starts soon" msg="Karaoke is up next on the 2nd floor." />
+              <Toast kind="action" title="Connection lost" msg="Reconnecting you to the game…" />
+            </div></div>
+            <div className="blk"><Label>Inline alert</Label>
+              <Alert kind="notice" title="Heads up" msg="Last call for the quiz — doors to entries close in two minutes." action="Join now" />
+              <Label>Badges & dots</Label>
+              <div className="blk-row">
+                <Badge>5</Badge><Badge color="var(--fg)" text="var(--bg)">12</Badge><Badge color="var(--blue)" text="#0d0905">99+</Badge>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Dot /><span style={{ fontFamily: 'var(--grotesk)', fontSize: 13, color: 'var(--fg-dim)' }}>live</span></span>
+              </div>
+            </div>
+          </div>
+        </Sec>
+
+        <Sec num="06" title="States" note="Buttons by role, then default → disabled → loading. Inputs show focus and error.">
+          <div className="blk"><Label>Buttons · by role</Label>
+            <div className="blk-row">
+              <Button role="action">Join game</Button>
+              <Button role="info">Details</Button>
+              <Button role="notice">Heads up</Button>
+              <Button role="ghost">Maybe later</Button>
+            </div>
+          </div>
+          <div className="blk" style={{ marginTop: 'var(--space-7)' }}><Label>Buttons · states</Label>
+            <div className="blk-row">
+              <Button role="action">Default</Button>
+              <Button role="action" state="disabled">Disabled</Button>
+              <Button role="action" state="loading">Joining…</Button>
+            </div>
+          </div>
+          <div className="blk" style={{ marginTop: 'var(--space-7)' }}><Label>Inputs · states</Label>
+            <div className="cg cg-3" style={{ gap: 'var(--space-6)' }}>
+              <Field label="Display name" placeholder="e.g. Linh from table 4" />
+              <Field label="Display name" value="Linh" state="focus" hint="Looks good." />
+              <Field label="Display name" value="" state="error" hint="Pick a name to join." placeholder="Required" />
+            </div>
+          </div>
+        </Sec>
+      </main>
+
+      <footer>
+        <div className="wrap">
+          <span className="wordmark" style={{ fontSize: 24 }} data-word="Reality">Reality</span>
+          <span className="muted">coffee / cocktails / community — Đà Nẵng</span>
+          <span className="muted">Design System · Year 2 · app components</span>
+        </div>
+      </footer>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

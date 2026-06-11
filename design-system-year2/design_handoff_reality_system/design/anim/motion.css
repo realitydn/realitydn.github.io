@@ -1,0 +1,73 @@
+/* ============================================================
+   REALITY DS — MOTION SECTION
+   Hosts the 14 motion demos (anim/demos.css + anim/bold.css) inside
+   the design-system page. The demos were authored against cream/ink
+   token names and a dark stage; here each demo runs inside a dark
+   "performance window" (.tile-stage) that aliases those names to
+   fixed night values, while the card chrome rides the page theme.
+   ============================================================ */
+
+/* thesis pills — the four motion rules */
+#motion .mo-thesis{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:26px;}
+#motion .mo-pill{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;border:2px solid var(--fg);padding:8px 14px;display:flex;align-items:center;gap:8px;}
+#motion .mo-pill .k{color:var(--accent);}
+
+/* toolbar */
+#motion .mo-toolbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:32px;}
+#motion .mo-btn{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;border:2px solid var(--fg);padding:12px 22px;background:var(--fg);color:var(--bg);box-shadow:var(--sh-default);transition:transform .12s var(--ease-snap),box-shadow .12s var(--ease-snap);}
+#motion .mo-btn:hover{transform:translateY(-3px);box-shadow:var(--sh-heavy);}
+#motion .mo-btn:active{transform:translateY(2px);box-shadow:var(--sh-light);}
+#motion .mo-btn.ghost{background:transparent;color:var(--fg);}
+#motion .mo-btn.ghost[aria-pressed="false"]{color:var(--fg-faint);border-color:var(--hairline);}
+#motion .mo-hint{font-family:var(--mont);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--fg-faint);}
+
+/* grid of demo cards */
+#motion .lab{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+@media(max-width:980px){#motion .lab{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){#motion .lab{grid-template-columns:1fr;}}
+
+#motion .tile{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default);display:flex;flex-direction:column;cursor:pointer;position:relative;}
+#motion .tile.wide{grid-column:span 2;}
+@media(max-width:640px){#motion .tile.wide{grid-column:span 1;}}
+
+/* the performance window.
+   Default = paper/phone surface: follows the page theme (cream in Day,
+   ink in Night) so demo cards are never muddy. The demos were authored in
+   cream/ink names, so we alias those to the page's semantic tokens. */
+#motion .tile-stage{
+  height:230px;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border-bottom:2px solid var(--hairline);
+  --cream:var(--fg);--cream-dim:var(--fg-dim);--cream-faint:var(--fg-faint);
+  --ink:var(--bg);
+  transition:background .35s ease;
+}
+/* screen/TV demos stay dark — the big screen is dark, and the riso
+   screen-blend passes (takeover, separation, kinetic) only register on ink. */
+#motion .tile-stage.screen{
+  background:#0a0703;border-bottom-color:#3a2c1c;
+  --fg:#fffbf1;--bg:#0a0703;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;
+  --surface:#171109;--surface-2:#241a10;
+  --cream:#fffbf1;--cream-dim:rgba(255,251,241,.60);--cream-faint:rgba(255,251,241,.32);
+  --ink:#0a0703;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);
+  --sh-default:0 9px 2px rgba(255,251,241,.18);
+  --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+}
+/* ink stays ink on bright accent fills, regardless of stage theme */
+#motion .d-btn,#motion .d-squeegee .p-new{color:#0d0905;}
+/* demo chips bring their own look — neutralize the global .chip .dot border */
+#motion .d-chips .chip .dot{border:none;}
+
+#motion .tile-meta{padding:16px 18px 18px;}
+#motion .tile-meta .num{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--fg-faint);}
+#motion .tile-meta h3{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:17px;margin:4px 0 6px;}
+#motion .tile-meta p{font-size:12.5px;color:var(--fg-dim);line-height:1.5;}
+
+#motion .replay-tag{position:absolute;top:0;right:0;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:9px;color:var(--bg);background:var(--fg);padding:5px 9px;opacity:0;transition:opacity .15s;z-index:5;}
+#motion .tile:hover .replay-tag{opacity:1;}
+
+/* bold-tier divider */
+#motion .lab-divider{grid-column:1/-1;display:flex;align-items:center;gap:18px;margin:20px 0 2px;}
+#motion .lab-divider .lbl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.15em;font-size:12px;color:var(--accent);white-space:nowrap;}
+#motion .lab-divider .ln{flex:1;height:2px;background:var(--hairline);}

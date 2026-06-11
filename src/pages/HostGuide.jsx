@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function HostGuide({ lang, t }) {
   const homeHref = lang === 'VN' ? '/vn' : '/';
@@ -10,7 +11,7 @@ export default function HostGuide({ lang, t }) {
   return (
     <div className="min-h-screen bg-cream">
       {/* Header */}
-      <header className="border-b border-ink/10 py-4 sticky top-0 z-40 bg-cream">
+      <header className="py-4 sticky top-0 z-40 bg-cream" style={{ borderBottom: '3px solid var(--fg)' }}>
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
@@ -23,7 +24,7 @@ export default function HostGuide({ lang, t }) {
               </svg>
             </Link>
             <Link to={homeHref} aria-label="REALITY home">
-              <Logo />
+              <Logo color="var(--fg)" />
             </Link>
           </div>
           <div className="flex items-center gap-4">
@@ -47,6 +48,7 @@ export default function HostGuide({ lang, t }) {
             >
               VN
             </Link>
+            <ThemeToggle lang={lang} compact />
           </div>
         </div>
       </header>
@@ -55,7 +57,7 @@ export default function HostGuide({ lang, t }) {
       <main className="py-12 md:py-16">
         <section className="section max-w-3xl mx-auto px-4 text-center">
           {/* Page Title */}
-          <h1 className="font-title text-4xl md:text-5xl leading-[1] tracking-[0.1em] text-ink mb-6">
+          <h1 className="h-section text-4xl md:text-5xl text-ink mb-6">
             {t.use('hostGuide.title')}
           </h1>
 
@@ -66,7 +68,7 @@ export default function HostGuide({ lang, t }) {
             </p>
             <Link
               to={homeHref}
-              className="btn-primary px-6 py-3 font-title text-sm tracking-[0.15em] inline-block"
+              className="btn-primary px-6 py-3 text-sm inline-block"
             >
               {t.use('hostGuide.backButton')}
             </Link>

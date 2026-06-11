@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Poster App · Feature Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="poster-grid.css" rel="stylesheet">
+<link href="poster-app.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word" data-word="Reality">Reality</span>
+    <span class="mh-tag">Feature Menu</span>
+    <div class="controls">
+      <a href="REALITY Poster Grid System.html" style="font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:11px;color:var(--fg-dim);text-decoration:none;border-bottom:2px solid var(--hairline);padding-bottom:3px">← Grid System</a>
+      <div class="ctl" role="group" aria-label="Page theme">
+        <button class="seg" data-theme-btn="light" aria-pressed="true">Day</button>
+        <button class="seg" data-theme-btn="dark" aria-pressed="false">Night</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ STICKY PICK BAR ============ -->
+<div class="pickbar">
+  <div class="wrap">
+    <div class="pb-left">
+      <span class="pb-count" id="pbCount"><b>0</b> / 15</span>
+      <span class="pb-lab">features picked for the build</span>
+    </div>
+    <button class="pb-clear" id="pbClear">Clear</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section class="intro">
+    <div class="kick">Beyond the core nine slots</div>
+    <h1>What should<br><b>the app do?</b></h1>
+    <p class="lede">The grid system handles the constant skeleton. This is the menu of <b>everything the generator could do on top of it</b> — resizing, extra content blocks, riso stamps, and image tricks. Every feature here keeps the down-shadow DNA and obeys the safe square. <b>Tap the checkbox on anything you want in the build</b>; the count up top tracks your shortlist, and it survives a refresh.</p>
+
+    <div class="note">
+      <h4>How priorities are flagged</h4>
+      <p><span class="fc-prio ship" style="display:inline-block;vertical-align:middle">Ship first</span> &nbsp;— core to a usable v1: the resize engine and the constant ticket. <span class="fc-prio next" style="display:inline-block;vertical-align:middle">Phase 2</span> &nbsp;— high-value blocks that make nightlife sing. <span class="fc-prio stretch" style="display:inline-block;vertical-align:middle">Stretch</span> &nbsp;— delight features for once the foundation holds. These are my suggestions — your picks override them.</p>
+    </div>
+  </section>
+
+  <!-- ============ GROUP A · RESIZE & REFLOW ============ -->
+  <section>
+    <div class="gphead">
+      <span class="gp-k">A</span><h3>Resize &amp; Reflow</h3>
+      <p>The heart of your ask — one design, every channel. The center cluster stays locked in the safe square while the frame and outer elements adapt to each format.</p>
+    </div>
+    <div class="fgrid">
+
+      <!-- A1 · multi-format reflow (span 2) -->
+      <article class="fcard span2" data-feat="reflow">
+        <div class="fc-stage appstage night">
+          <div class="reflow-row">
+            <div class="reflow-item">
+              <div class="rfi-frame"><div class="mp night r916">
+                <div class="mb acc" style="top:20%;left:14%;width:40%;height:4%"></div>
+                <div class="mb solid" style="top:27%;left:14%;width:72%;height:14%"></div>
+                <div class="mb paper" style="top:55%;left:14%;width:56%;height:7%"></div>
+                <div class="mb" style="bottom:5%;right:8%;width:34%;height:7%;background:#0a0703"></div>
+              </div></div>
+              <div class="rfi-lab"><b>9:16</b>Story / Reel</div>
+            </div>
+            <div class="reflow-item">
+              <div class="rfi-frame"><div class="mp night r57">
+                <div class="mb acc" style="top:19%;left:14%;width:42%;height:4%"></div>
+                <div class="mb solid" style="top:26%;left:14%;width:72%;height:15%"></div>
+                <div class="mb paper" style="top:55%;left:14%;width:56%;height:7%"></div>
+                <div class="mb" style="bottom:5%;right:8%;width:38%;height:8%;background:#0a0703"></div>
+              </div></div>
+              <div class="rfi-lab"><b>5:7</b>Poster / IG</div>
+            </div>
+            <div class="reflow-item">
+              <div class="rfi-frame"><div class="mp night r11">
+                <div class="mb acc" style="top:17%;left:12%;width:44%;height:5%"></div>
+                <div class="mb solid" style="top:27%;left:12%;width:70%;height:20%"></div>
+                <div class="mb paper" style="top:60%;left:12%;width:58%;height:9%"></div>
+                <div class="mb" style="bottom:7%;right:8%;width:40%;height:11%;background:#0a0703"></div>
+              </div></div>
+              <div class="rfi-lab"><b>1:1</b>WhatsApp / FB</div>
+            </div>
+            <div class="reflow-item wide">
+              <div class="rfi-frame"><div class="mp night rfb">
+                <div class="mb acc" style="top:18%;left:6%;width:24%;height:9%"></div>
+                <div class="mb solid" style="top:34%;left:6%;width:46%;height:32%"></div>
+                <div class="mb" style="top:30%;right:5%;width:30%;height:40%;background:#0a0703"></div>
+              </div></div>
+              <div class="rfi-lab"><b>1.91:1</b>FB event cover</div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">A1</span><div class="fc-name">Multi-format auto-reflow</div><p class="fc-desc">Lay it out once; export to 9:16 Story, 5:7 poster, 1:1 square, and the FB cover. The center cluster is pinned to the safe square so it never crops out — outer boxes and the ticket adapt per ratio.</p></div>
+          <span class="fc-prio ship">Ship first</span>
+        </div>
+      </article>
+
+      <!-- A2 · story safe zones -->
+      <article class="fcard" data-feat="storysafe">
+        <div class="fc-stage appstage night" style="height:240px">
+          <div class="storyzones">
+            <div class="uiband top"></div>
+            <div class="uiband bot"></div>
+            <span class="zlab2" style="top:6px">avatar / name</span>
+            <span class="zlab2" style="bottom:8px">reply bar · stickers</span>
+            <div class="mb solid" style="position:absolute;top:32%;left:18%;width:64%;height:18%;border-color:#fffbf1"></div>
+            <div class="mb acc" style="position:absolute;top:54%;left:30%;width:40%;height:8%"></div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">A2</span><div class="fc-name">Story sticker-safe zones</div><p class="fc-desc">In 9:16, guides mark where IG/FB chrome — avatar, reply bar, sticker tray — will sit, so nothing important hides behind the UI.</p></div>
+          <span class="fc-prio ship">Ship first</span>
+        </div>
+      </article>
+
+      <!-- A3 · snap & re-balance -->
+      <article class="fcard" data-feat="snap">
+        <div class="fc-stage appstage" style="height:240px">
+          <div class="snapwrap">
+            <div class="snapgrid"></div>
+            <div class="snapbox ghost" style="top:25%;left:25%;width:38%;height:18%">snap</div>
+            <div class="snapbox" style="top:50%;left:37.5%;width:38%;height:18%">box</div>
+            <div class="snaparrow" style="top:38%;left:64%">↘</div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">A3</span><div class="fc-name">Snap &amp; re-balance</div><p class="fc-desc">Drag any box and it clicks to the module grid. A one-tap "re-center" rebalances the whole cluster on the spine — instant symmetry for community bills.</p></div>
+          <span class="fc-prio next">Phase 2</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ GROUP B · MORE CONTENT BLOCKS ============ -->
+  <section>
+    <div class="gphead">
+      <span class="gp-k">B</span><h3>More Content Blocks</h3>
+      <p>Optional modules that drop onto the grid — mostly for the busier nightlife bills you flagged. Each is just another box that obeys the down-shadow and the safe square.</p>
+    </div>
+    <div class="fgrid">
+
+      <!-- B1 · lineup -->
+      <article class="fcard" data-feat="lineup">
+        <div class="fc-stage appstage night" style="height:280px">
+          <div class="vig">
+            <div class="lineup">
+              <div class="lu-h">On the decks</div>
+              <div class="lu-row"><span class="nm head">DJ Milk</span><span class="tm">23:00</span></div>
+              <div class="lu-row"><span class="nm">Hanø</span><span class="tm">00:30</span></div>
+              <div class="lu-row"><span class="nm">b2b Suki</span><span class="tm">02:00 — late</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">B1</span><div class="fc-name">Lineup / bill</div><p class="fc-desc">A stacked list of acts with set times — headliner emphasized. Scales from one DJ to a festival bill without breaking the grid.</p></div>
+          <span class="fc-prio next">Phase 2</span>
+        </div>
+      </article>
+
+      <!-- B2 · drink specials -->
+      <article class="fcard" data-feat="specials">
+        <div class="fc-stage appstage" style="height:280px">
+          <div class="vig">
+            <div class="specials">
+              <div class="sp-h">Happy<br>Hour</div>
+              <div class="sp-row"><span>Draft + shot</span><span class="pr">₫65k</span></div>
+              <div class="sp-row"><span>House spirits</span><span class="pr">₫50k</span></div>
+              <div class="sp-row"><span>Til 1am</span><span class="pr">2-for-1</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">B2</span><div class="fc-name">Drink specials</div><p class="fc-desc">An itemized specials block with prices — the nightlife extra you mentioned. Defaults to an accent fill so it pops as the deal.</p></div>
+          <span class="fc-prio next">Phase 2</span>
+        </div>
+      </article>
+
+      <!-- B3 · price tiers -->
+      <article class="fcard" data-feat="tiers">
+        <div class="fc-stage appstage" style="height:280px">
+          <div class="vig">
+            <div class="tiers">
+              <div class="tier"><div class="ti-l">Before 11</div><div class="ti-p">Free</div></div>
+              <div class="tier hot"><div class="ti-l">Early bird</div><div class="ti-p">₫100k</div></div>
+              <div class="tier"><div class="ti-l">Door</div><div class="ti-p">₫150k</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">B3</span><div class="fc-name">Entry / price tiers</div><p class="fc-desc">Free-before / early-bird / door, as joined chips. One tier can be highlighted as the call-to-action.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+      <!-- B4 · recurring badge -->
+      <article class="fcard" data-feat="recur">
+        <div class="fc-stage appstage" style="height:280px">
+          <div class="vig">
+            <div class="recur"><div class="rc-top">Every</div><div class="rc-day">Wed</div><div class="rc-sub">all year</div></div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">B4</span><div class="fc-name">Recurring-series badge</div><p class="fc-desc">A round stamp for regular community nights — pub quiz, open mic — so the weekly cadence reads at a glance. Doubles as a series template seed.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+      <!-- B5 · sponsor row -->
+      <article class="fcard span2" data-feat="sponsors">
+        <div class="fc-stage appstage night" style="height:200px">
+          <div class="mb solid" style="position:absolute;top:24%;left:10%;width:50%;height:24%;border-color:#fffbf1"></div>
+          <div class="mb acc" style="position:absolute;top:52%;left:10%;width:30%;height:9%"></div>
+          <div class="sponsors">
+            <span class="sp-lab">In partnership with</span>
+            <div class="sp-logos">
+              <span class="sp-logo">LOGO</span>
+              <span class="sp-logo">PARTNER</span>
+              <span class="sp-logo">BRAND</span>
+              <span class="sp-logo">SUPPORT</span>
+            </div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">B5</span><div class="fc-name">Partner / sponsor row</div><p class="fc-desc">A logo-lockup strip along the base for co-promoted nights and sponsored events. Drops in monochrome so guest logos don't fight the palette.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ GROUP C · STAMPS & MARKS ============ -->
+  <section>
+    <div class="gphead">
+      <span class="gp-k">C</span><h3>Stamps &amp; Marks</h3>
+      <p>Quick riso punctuation — droppable, rotatable overlays that add urgency and energy without touching the underlying layout.</p>
+    </div>
+    <div class="fgrid">
+
+      <!-- C1 · status stamps -->
+      <article class="fcard" data-feat="stamps">
+        <div class="fc-stage appstage night" style="height:280px">
+          <span class="stamp so">Sold out</span>
+          <span class="stamp free">Free entry</span>
+          <span class="stamp age">18+</span>
+          <span class="stamp tonight">Tonight</span>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">C1</span><div class="fc-name">Status stamps</div><p class="fc-desc">A library of rotatable stamps — SOLD OUT, FREE ENTRY, 18+, TONIGHT, LIMITED. Pulls major palette colors; snaps to a jaunty angle.</p></div>
+          <span class="fc-prio next">Phase 2</span>
+        </div>
+      </article>
+
+      <!-- C2 · burst + arrow -->
+      <article class="fcard" data-feat="burst">
+        <div class="fc-stage appstage" style="height:280px">
+          <div class="burst" style="top:40px;left:60px">New<br>night</div>
+          <div class="arrowmark" style="bottom:60px;right:80px;transform:rotate(20deg)">➜</div>
+          <div class="mb paper" style="position:absolute;bottom:56px;left:50px;width:36%;height:14%"></div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">C2</span><div class="fc-name">Bursts &amp; arrow marks</div><p class="fc-desc">Starbursts and hand-drawn arrows that point at the deal or the door. Riso decoration that keeps the energy without more boxes.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+      <!-- C3 · QR styling (span 2) -->
+      <article class="fcard span2" data-feat="qr">
+        <div class="fc-stage appstage" style="height:220px;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap">
+          <div class="qrcard"><div class="qr" data-qr="day"></div><div class="qr-txt"><div class="big">Scan for<br>the night</div><div class="acc">realitydn.com</div></div></div>
+          <div class="qrcard night"><div class="qr" data-qr="night"></div><div class="qr-txt"><div class="big">Tickets +<br>location</div><div class="sm">point camera here</div></div></div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">C3</span><div class="fc-name">Branded QR block</div><p class="fc-desc">The QR with a styled frame, day/night fill, and a short call-to-action ("scan for the night"). Always routes to the main site; the label is editable.</p></div>
+          <span class="fc-prio ship">Ship first</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ GROUP D · IMAGE & TYPE TRICKS ============ -->
+  <section>
+    <div class="gphead">
+      <span class="gp-k">D</span><h3>Image &amp; Type Tricks</h3>
+      <p>Where the photo and the title interact. These push the supplied image and the headline further into the REALITY language — use them when you want extra punch.</p>
+    </div>
+    <div class="fgrid">
+
+      <!-- D1 · duotone -->
+      <article class="fcard" data-feat="duotone">
+        <div class="fc-stage appstage" style="height:260px">
+          <div class="vig" style="gap:14px">
+            <div class="duos">
+              <div class="duo raw"><div class="base"></div><div class="dl">supplied</div></div>
+              <div class="duo day"><div class="base"></div><div class="tint"></div><div class="dl">day lock</div></div>
+              <div class="duo night"><div class="base"></div><div class="tint"></div><div class="dl">night lock</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">D1</span><div class="fc-name">Duotone photo-lock</div><p class="fc-desc">Optional one-tap push of any supplied photo into the day (blue/green) or night (pink/red) palette — so even off-brand source images unify across a series. Off by default; your image language stays untouched unless you ask.</p></div>
+          <span class="fc-prio next">Phase 2</span>
+        </div>
+      </article>
+
+      <!-- D2 · knockout title -->
+      <article class="fcard" data-feat="knockout">
+        <div class="fc-stage appstage night" style="height:260px;display:flex;align-items:center;justify-content:center">
+          <div class="knock">After<br>Dark</div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">D2</span><div class="fc-name">Knockout photo-title</div><p class="fc-desc">The headline cut from the photo — the image shows through the letters. Maximum drama for a hero night; reserve for one big word.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+      <!-- D3 · title orientation -->
+      <article class="fcard" data-feat="orient">
+        <div class="fc-stage appstage night" style="height:260px">
+          <div class="vtitle">Pulse</div>
+          <div class="mb acc" style="position:absolute;top:30%;right:14%;width:40%;height:6%"></div>
+          <div class="mb solid" style="position:absolute;top:44%;right:14%;width:46%;height:18%;border-color:#fffbf1"></div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">D3</span><div class="fc-name">Title orientation</div><p class="fc-desc">Run the title vertically up the spine or on a curved baseline — frees the center for the photo and adds a kinetic, editorial edge.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+      <!-- D4 · animated export -->
+      <article class="fcard" data-feat="animated">
+        <div class="fc-stage appstage night animframe" style="height:260px">
+          <div class="mb solid" style="position:absolute;top:18%;left:16%;width:68%;height:16%;border-color:#fffbf1"></div>
+          <div class="mb acc" style="position:absolute;top:36%;left:34%;width:32%;height:6%"></div>
+          <div class="play"></div>
+          <div class="fmt-tags"><span>MP4</span><span>GIF</span><span>Reel</span></div>
+        </div>
+        <div class="fc-foot">
+          <button class="fcheck" aria-label="Pick feature"><svg viewBox="0 0 18 18"><path d="M2 9l5 5 9-11" fill="none" stroke="#0d0905" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="fc-trigger"><span class="fc-num">D4</span><div class="fc-name">Animated export</div><p class="fc-desc">A motion preset that pops the boxes and misregister into a 5–8s loop for Reels and Stories — same layout, exported as MP4/GIF.</p></div>
+          <span class="fc-prio stretch">Stretch</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ CLOSING ============ -->
+  <section style="border-top:2px solid var(--fg);padding-top:30px;margin-top:8px">
+    <div class="note" style="max-width:none">
+      <h4>My recommended v1</h4>
+      <p>If you want a fast, useful first build: ship <b>A1 multi-format reflow</b>, <b>A2 story safe-zones</b>, and <b>C3 branded QR</b> — that alone replaces the Photoshop resizing grind. Then layer <b>B1 lineup</b>, <b>B2 specials</b>, and <b>C1 stamps</b> for nightlife. Everything in <b>Group D</b> is delight you can add once the foundation feels right.</p>
+      <p style="margin-top:10px">Tap the features you want above — then tell me your shortlist and I'll build the working generator around exactly those.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="wordmark" style="font-size:24px" data-word="Reality">Reality</span>
+    <span class="muted">coffee / cocktails / community — Đà Nẵng</span>
+    <span class="muted">Poster App · feature menu</span>
+  </div>
+</footer>
+
+<script src="reality-ds.js"></script>
+<script>
+(function(){
+  var KEY='reality-app-features';
+  var cards=[].slice.call(document.querySelectorAll('.fcard'));
+  var total=cards.length;
+  var countEl=document.getElementById('pbCount');
+  var clearBtn=document.getElementById('pbClear');
+  var picked={};
+  try{picked=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){picked={};}
+
+  function render(){
+    var n=0;
+    cards.forEach(function(c){
+      var id=c.getAttribute('data-feat');
+      if(picked[id]){c.classList.add('is-picked');n++;}
+      else c.classList.remove('is-picked');
+    });
+    countEl.innerHTML='<b>'+n+'</b> / '+total;
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(picked));}catch(e){}}
+  function toggle(id){picked[id]=!picked[id];if(!picked[id])delete picked[id];save();render();}
+
+  cards.forEach(function(c){
+    var id=c.getAttribute('data-feat');
+    var check=c.querySelector('.fcheck');
+    var trig=c.querySelector('.fc-trigger');
+    check.addEventListener('click',function(e){e.stopPropagation();toggle(id);});
+    if(trig)trig.addEventListener('click',function(){toggle(id);});
+  });
+  clearBtn.addEventListener('click',function(){picked={};save();render();});
+  render();
+})();
+</script>
+</body>
+</html>

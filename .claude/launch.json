@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "poster-studio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve-studio.cjs"],
+      "port": 4501
     }
   ]
 }

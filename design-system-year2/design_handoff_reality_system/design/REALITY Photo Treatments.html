@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Photo Treatments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="riso.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word">Reality</span>
+    <span class="mh-tag">Photo Treatments · Riso Studies</span>
+  </div>
+</header>
+
+<!-- ============ CONTROL BAR ============ -->
+<div class="ctrlbar">
+  <div class="wrap">
+    <div class="cgroup">
+      <span class="gl">Photo</span>
+      <div class="grow">
+        <label class="drop" id="drop">
+          <canvas data-treat="raw" width="236" height="148"></canvas>
+          <span class="dz">Drop a photo</span>
+          <input id="file" type="file" accept="image/*" hidden>
+        </label>
+        <div class="samples">
+          <button data-sample="spotlight">DJ</button>
+          <button data-sample="crowd">Crowd</button>
+          <button data-sample="portrait">Portrait</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cgroup">
+      <span class="gl">Ink</span>
+      <div class="inks">
+        <button class="ink" data-ink="pink"   style="background:#ed1b72"></button>
+        <button class="ink" data-ink="blue"   style="background:#18a7e0"></button>
+        <button class="ink" data-ink="amber"  style="background:#fdb515"></button>
+        <button class="ink" data-ink="red"    style="background:#ed2224"></button>
+        <button class="ink" data-ink="green"  style="background:#43b02a"></button>
+        <button class="ink" data-ink="purple" style="background:#6e3179"></button>
+      </div>
+    </div>
+
+    <div class="cgroup">
+      <span class="gl">Paper</span>
+      <div class="seg-ctl">
+        <button data-paper="day">Day</button>
+        <button data-paper="night">Night</button>
+      </div>
+    </div>
+
+    <div class="cgroup">
+      <span class="gl">Grain</span>
+      <div class="seg-ctl">
+        <button data-grain="on">On</button>
+        <button data-grain="off">Off</button>
+      </div>
+    </div>
+
+    <div class="cgroup">
+      <span class="gl">Press controls</span>
+      <div class="grow" style="gap:18px; flex-wrap:wrap; max-width:560px;">
+        <div class="knob"><div class="kl">Contrast <span class="v" id="v-contrast">1.18</span></div>
+          <input id="k-contrast" type="range" min="0.7" max="1.9" step="0.01"></div>
+        <div class="knob"><div class="kl">Tone balance <span class="v" id="v-balance">0.50</span></div>
+          <input id="k-balance" type="range" min="0.1" max="0.9" step="0.01"></div>
+        <div class="knob"><div class="kl">Screen angle <span class="v" id="v-angle">30°</span></div>
+          <input id="k-angle" type="range" min="0" max="360" step="1"></div>
+        <div class="knob"><div class="kl">Edge softness <span class="v" id="v-soft">0.12</span></div>
+          <input id="k-soft" type="range" min="0.01" max="0.4" step="0.01"></div>
+        <div class="knob"><div class="kl">Dot screen <span class="v" id="v-dot">9px</span></div>
+          <input id="k-dot" type="range" min="5" max="20" step="1"></div>
+        <div class="knob"><div class="kl">Bands <span class="v" id="v-bands">4</span></div>
+          <input id="k-bands" type="range" min="2" max="6" step="1"></div>
+      </div>
+    </div>
+
+    <div class="cgroup">
+      <span class="gl">Dot shape</span>
+      <div class="seg-ctl">
+        <button data-shape="circle">Dot</button>
+        <button data-shape="square">Square</button>
+        <button data-shape="line">Line</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section class="intro">
+    <div class="kick">The expansion · photographic ink</div>
+    <h1>Print the <b>photo</b>,<br>don't place it.</h1>
+    <p class="lede">REALITY already prints like a riso — misregistered echoes, flat down-shadows, a locked three-ink palette. <b>Photos should obey the same press.</b> Instead of dropping a full-colour image into a silkscreen poster, every photo runs through an ink treatment so it belongs to the system. Six directions below — each leans on the riso angle and mixes it with one more idea. Swap the ink, flip the paper, drop your own shot.</p>
+  </section>
+
+  <!-- ============ GALLERY ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2 class="sec-title">Six treatments</h2>
+      <span class="sec-note">All six read the same source photo and the same ink. Live — every control above repaints them.</span>
+    </div>
+
+    <div class="gal">
+
+      <article class="shot">
+        <div class="pic grainable">
+          <canvas data-treat="duotone" width="460" height="575"></canvas>
+          <span class="no">01</span>
+          <div class="tagstrip"><span class="tag">Riso × Duotone</span></div>
+        </div>
+        <div class="meta">
+          <h3>Two-Colour Sep</h3>
+          <p>The bread-and-butter riso move. Luminance is remapped onto two inks — paper for the lights, the accent for the shadows. Full tonal photo, zero off-palette colour.</p>
+          <div class="tech">Map · <b>shadow → ink, highlight → paper</b> · the safest, most legible option</div>
+        </div>
+      </article>
+
+      <article class="shot">
+        <div class="pic grainable">
+          <canvas data-treat="offregister" width="460" height="575"></canvas>
+          <span class="no">02</span>
+          <div class="tagstrip"><span class="tag">Riso × Misregister</span></div>
+        </div>
+        <div class="meta">
+          <h3>Off-Register</h3>
+          <p>Your signature, applied to photos. The image prints twice — accent and its partner ink — shifted a few millimetres so colour fringes bleed at every edge. The print that didn't quite line up.</p>
+          <div class="tech">Two passes · <b>offset + overprint</b> · the most on-brand of the set</div>
+        </div>
+      </article>
+
+      <article class="shot">
+        <div class="pic grainable">
+          <canvas data-treat="halftone" width="460" height="575"></canvas>
+          <span class="no">03</span>
+          <div class="tagstrip"><span class="tag">Riso × Newsprint</span></div>
+        </div>
+        <div class="meta">
+          <h3>Halftone Screen</h3>
+          <p>One ink, rendered as a rotated dot screen — dots fatten in the shadows, thin to nothing in the light. Cheap-print energy, gig-poster grit. Best on high-contrast shots.</p>
+          <div class="tech">Single ink · <b>dot size = darkness</b> · tune with the dot-screen slider</div>
+        </div>
+      </article>
+
+      <article class="shot">
+        <div class="pic grainable">
+          <canvas data-treat="posterize" width="460" height="575"></canvas>
+          <span class="no">04</span>
+          <div class="tagstrip"><span class="tag">Riso × Silkscreen</span></div>
+        </div>
+        <div class="meta">
+          <h3>Banded Tones</h3>
+          <p>Tones crushed into a few flat steps, each step snapped to a palette ink. No gradients — pure silkscreen flatness, the way a hand-pulled print separates. Posterised, not photographic.</p>
+          <div class="tech">Quantise · <b>ink → accent → paper ramp</b> · set the step count with Bands</div>
+        </div>
+      </article>
+
+      <article class="shot">
+        <div class="pic grainable">
+          <canvas data-treat="cutout" width="460" height="575"></canvas>
+          <span class="no">05</span>
+          <div class="tagstrip"><span class="tag">Riso × Flat Field</span></div>
+        </div>
+        <div class="meta">
+          <h3>Ink Cutout</h3>
+          <p>The lit subject knocks out of a solid accent field and prints in a single ink. Maximum poster punch — reads from across a dark room. Pairs with the accent-field type-slam layout.</p>
+          <div class="tech">Threshold · <b>subject in ink, field in accent</b> · loud and graphic</div>
+        </div>
+      </article>
+
+      <article class="shot">
+        <div class="pic grainable">
+          <canvas data-treat="overprint" width="460" height="575"></canvas>
+          <span class="no">06</span>
+          <div class="tagstrip"><span class="tag">Riso × Wet Overlap</span></div>
+        </div>
+        <div class="meta">
+          <h3>Overprint</h3>
+          <p>Two flat ink fields lock together and a third colour blooms where they overlap — like wet inks bleeding on press. Pink over blue makes purple for free. The richest, most unexpected look.</p>
+          <div class="tech">Two flat fields · <b>multiply / screen overlap</b> · breeds a bonus hue</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ IN CONTEXT ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2 class="sec-title">On a real poster</h2>
+      <span class="sec-note">Treatments carrying a full layout — title slam, kicker, ticket footer, QR. Night posters; still driven by the ink above.</span>
+    </div>
+
+    <div class="posters">
+      <div class="pwrap">
+        <div class="pframe grainable">
+          <canvas class="pcanvas" data-treat="offregister" data-paper="night" width="540" height="756"></canvas>
+          <div class="scrim"></div>
+          <div class="pbadge">Every Fri</div>
+          <div class="pcontent">
+            <div class="pk">Fri · 22:00 · Main Room</div>
+            <div class="pttl"><span class="thin">Pulse</span>Sessions</div>
+            <div class="psub">House &amp; disco til late. DJ Milk b2b Hanø — no cover before midnight.</div>
+            <div class="pfoot">
+              <div class="pword">Reality</div>
+              <div class="pmid">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></div>
+              <div class="pqr"></div>
+            </div>
+          </div>
+        </div>
+        <p class="pcap"><b>Off-Register hero</b> — the misprint becomes the whole image. Party / DJ night.</p>
+      </div>
+
+      <div class="pwrap">
+        <div class="pframe grainable">
+          <canvas class="pcanvas" data-treat="halftone" data-paper="night" width="540" height="756"></canvas>
+          <div class="scrim"></div>
+          <div class="pcontent">
+            <div class="pk">Sat · 20:30 · Live</div>
+            <div class="pttl"><span class="thin">Echo</span>Chamber</div>
+            <div class="psub">Live set + support. Doors 20:00. Limited tickets on the door.</div>
+            <div class="pfoot">
+              <div class="pword">Reality</div>
+              <div class="pmid">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></div>
+              <div class="pqr"></div>
+            </div>
+          </div>
+        </div>
+        <p class="pcap"><b>Halftone hero</b> — newsprint grit for gigs &amp; live music.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDIO INTEGRATION ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2 class="sec-title">How it lands in Poster Studio</h2>
+      <span class="sec-note">A proposed <b>Photo</b> element — drop an image, pick a treatment, and it inherits the poster's ink automatically.</span>
+    </div>
+
+    <div class="studio-mock">
+      <div class="sm-stage">
+        <div class="sm-poster">
+          <canvas data-treat="duotone" data-paper="night" width="460" height="413"></canvas>
+          <div class="selbox"></div>
+          <div class="sp-body">
+            <div class="sp-k">Fri · 22:00</div>
+            <div class="sp-t">Pulse<br>Sessions</div>
+          </div>
+        </div>
+      </div>
+      <div class="sm-insp">
+        <div class="sm-ctx"><b>Master</b> source · photo element selected</div>
+        <div class="sm-sech">Photo</div>
+        <div class="sm-chips"><span class="sm-chip">Replace…</span><span class="sm-chip on">Fit · Cover</span><span class="sm-chip">Fit · Contain</span></div>
+        <div class="sm-sech">Treatment</div>
+        <div class="sm-chips">
+          <span class="sm-chip on">Duotone</span><span class="sm-chip">Off-Register</span>
+          <span class="sm-chip">Halftone</span><span class="sm-chip">Banded</span>
+          <span class="sm-chip">Cutout</span><span class="sm-chip">Overprint</span>
+        </div>
+        <div class="sm-sech">Ink</div>
+        <div class="sm-sw">
+          <i class="on" style="background:#ed1b72"></i><i style="background:#18a7e0"></i>
+          <i style="background:#fdb515"></i><i style="background:#ed2224"></i>
+          <i style="background:#43b02a"></i><i style="background:#6e3179"></i>
+        </div>
+        <div class="sm-row">Follow poster accent <span class="sm-toggle on"><i></i></span></div>
+        <div class="sm-sech">Press</div>
+        <div class="sm-row">Contrast<span>1.18</span></div><div class="sm-slider"><i style="left:38%"></i></div>
+        <div class="sm-row">Grain<span class="sm-toggle on"><i></i></span></div>
+        <div class="sm-note">The treatment is non-destructive — it re-renders whenever the poster's ink, paper or format changes, so one photo carries through Master into every export size.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2 class="sec-title">Why lean in</h2>
+    </div>
+    <div class="why">
+      <div class="w"><div class="n">01</div><h5>One press, everything</h5><p>Type, shapes and now photos all separate into the same inks. A poster reads as a single printed object, not artwork with a photo pasted on.</p></div>
+      <div class="w"><div class="n">02</div><h5>Palette stays locked</h5><p>Treatments can only deposit system inks, so a phone snapshot can't drag an off-brand colour into the poster. The palette polices itself.</p></div>
+      <div class="w"><div class="n">03</div><h5>Cheap shots look intentional</h5><p>Blurry, badly-lit nightlife photos are the reality. Halftone and cutout turn that grit into the point instead of hiding it.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="muted">REALITY Design System · Year 2</span>
+    <span class="muted">Photo Treatments — exploration</span>
+  </div>
+</footer>
+
+<script src="riso-engine.js"></script>
+<script src="riso-app.js"></script>
+</body>
+</html>

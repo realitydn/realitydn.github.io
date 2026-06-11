@@ -1,0 +1,124 @@
+/* ============================================================
+   REALITY — POSTER APP · TAXONOMY SUPPLEMENT
+   The generator's grammar: Frame · Parts · Dials.
+   Depends on reality-ds.css + poster-grid.css + poster-app.css.
+   ============================================================ */
+
+/* ---- three-layer model diagram ---- */
+.layers{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:8px;}
+@media(max-width:820px){.layers{grid-template-columns:1fr;max-width:460px;}}
+.layer{border:2px solid var(--fg);box-shadow:var(--sh-default);background:var(--surface);overflow:hidden;}
+.layer .lh{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:2px solid var(--fg);background:var(--fg);color:var(--bg);}
+.layer .lh .ln{font-family:var(--mont);font-weight:800;font-size:13px;letter-spacing:.06em;border:2px solid var(--bg);width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex:none;}
+.layer .lh h3{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:17px;}
+.layer .lb{padding:16px 18px 18px;}
+.layer .lb .verb{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--accent);margin-bottom:8px;}
+.layer .lb p{font-size:13.5px;color:var(--fg-dim);line-height:1.55;}
+.layer .lb .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.layer .lb .chips span{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:9.5px;
+  border:1.5px solid var(--hairline);padding:4px 8px;color:var(--fg-dim);}
+
+/* ============================================================
+   DIAL CARD — a spectrum from community to nightlife
+   ============================================================ */
+.dial{border:2px solid var(--fg);box-shadow:var(--sh-default);background:var(--surface);
+  padding:22px 24px 24px;margin-bottom:22px;}
+.dial-head{display:flex;align-items:baseline;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:6px;}
+.dial-head .dn{display:flex;align-items:baseline;gap:12px;}
+.dial-head .dn .num{font-family:var(--mont);font-weight:700;font-size:12px;color:var(--fg-faint);letter-spacing:.08em;}
+.dial-head .dn h3{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:22px;}
+.dial-head .poles{display:flex;align-items:center;gap:10px;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:11px;}
+.dial-head .poles .pl{color:var(--blue);}
+.dial-head .poles .pr{color:var(--accent);}
+.dial-head .poles .ar{color:var(--fg-faint);}
+
+.dial-why{font-size:14.5px;color:var(--fg-dim);line-height:1.55;max-width:74ch;margin-bottom:20px;}
+.dial-why b{color:var(--fg);font-weight:600;}
+
+/* spectrum track of sample stops */
+.spectrum{position:relative;display:grid;gap:18px;align-items:end;}
+.spectrum::before{content:"";position:absolute;left:4%;right:4%;top:50%;height:2px;
+  background:linear-gradient(90deg,var(--blue),var(--amber),var(--accent));z-index:0;opacity:.5;}
+.spectrum.s3{grid-template-columns:repeat(3,1fr);}
+.spectrum.s4{grid-template-columns:repeat(4,1fr);}
+.stop{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:11px;}
+.stop .frame-mini{width:128px;max-width:100%;}
+.stop .cap{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;text-align:center;color:var(--fg-dim);line-height:1.35;}
+.stop .cap b{display:block;color:var(--fg);font-size:12px;letter-spacing:.03em;}
+
+/* mini stage behind a mini-poster for some dials */
+.ministage{position:relative;width:128px;height:120px;border:2px solid var(--fg);overflow:hidden;
+  background:repeating-linear-gradient(54deg,#9c9488 0 18px,#8b8378 18px 36px);box-shadow:var(--sh-light);}
+.ministage.night{background:repeating-linear-gradient(54deg,#241a26 0 18px,#191120 18px 36px);}
+.minibox{position:absolute;border:2px solid #0d0905;background:#fffbf1;box-shadow:0 4px 0 rgba(13,9,5,.22);
+  font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  display:flex;align-items:center;justify-content:center;color:#0d0905;}
+.ministage.night .minibox{border-color:#fffbf1;background:#171109;color:#fffbf1;box-shadow:0 4px 0 rgba(255,251,241,.2);}
+.minibox.solid{background:#0d0905;color:#fffbf1;}
+.ministage.night .minibox.solid{background:#fffbf1;color:#0d0905;}
+.minibox.acc{background:var(--accent);border-color:var(--accent);color:#0d0905;}
+.minibox.outline{background:transparent;}
+.ministage.night .minibox.outline{background:transparent;}
+.minibox.scrim{background:rgba(255,251,241,.72);color:#0d0905;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);}
+.ministage.night .minibox.scrim{background:rgba(10,7,3,.55);color:#fffbf1;}
+
+/* type-weight samples */
+.wsamp{font-family:var(--mont);text-transform:uppercase;line-height:.82;text-align:center;color:var(--fg);}
+.wsamp.w1{font-weight:100;letter-spacing:.04em;font-size:42px;}
+.wsamp.w5{font-weight:500;letter-spacing:.01em;font-size:42px;}
+.wsamp.w8{font-weight:800;letter-spacing:.005em;font-size:42px;}
+.wstage{width:128px;height:120px;border:2px solid var(--fg);display:flex;align-items:center;justify-content:center;
+  background:var(--surface);box-shadow:var(--sh-light);}
+
+/* accent swatch row */
+.accrow{width:128px;height:120px;border:2px solid var(--fg);box-shadow:var(--sh-light);display:flex;flex-direction:column;}
+.accrow .ab{flex:1;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mont);font-weight:800;font-size:11px;letter-spacing:.06em;color:#0d0905;}
+
+/* ============================================================
+   COLOR RATIONALE — chips with design reasons
+   ============================================================ */
+.palette-reason{display:grid;grid-template-columns:repeat(2,1fr);gap:0;
+  border:2px solid var(--fg);box-shadow:var(--sh-default);background:var(--surface);}
+@media(max-width:680px){.palette-reason{grid-template-columns:1fr;}}
+.pcolor{display:grid;grid-template-columns:64px 1fr;border-right:1.5px solid var(--hairline);border-bottom:1.5px solid var(--hairline);}
+.pcolor .sw{position:relative;}
+.pcolor .sw .role{position:absolute;left:6px;bottom:6px;font-family:var(--mont);font-weight:800;font-size:8px;
+  letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;background:rgba(13,9,5,.78);color:#fffbf1;}
+.pcolor .meat{padding:14px 16px;}
+.pcolor .meat .nm{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:14px;display:flex;align-items:baseline;gap:8px;}
+.pcolor .meat .nm .hex{font-weight:600;font-size:10px;color:var(--fg-faint);letter-spacing:.05em;}
+.pcolor .meat .reason{font-size:12.5px;color:var(--fg-dim);line-height:1.5;margin-top:5px;}
+.pcolor .meat .reason b{color:var(--fg);font-weight:600;}
+
+/* side dividers for day / night halves */
+.color-halves{display:grid;grid-template-columns:1fr 1fr;gap:26px;}
+@media(max-width:820px){.color-halves{grid-template-columns:1fr;max-width:460px;}}
+.color-halves .half-h{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.color-halves .half-h .dot{width:14px;height:14px;border:2px solid var(--fg);}
+.color-halves .half-h .dot.day{background:var(--blue);}
+.color-halves .half-h .dot.night{background:var(--pink);}
+.color-halves .half-h h4{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;}
+.color-halves .half-h span{font-family:var(--grotesk);font-size:12px;color:var(--fg-dim);}
+.palette-reason.single{grid-template-columns:1fr;}
+.palette-reason.single .pcolor{border-right:none;}
+
+/* ============================================================
+   RECIPE READOUT — an archetype expressed as dial coordinates
+   ============================================================ */
+.recipes{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+@media(max-width:820px){.recipes{grid-template-columns:1fr;max-width:460px;}}
+.recipe{border:2px solid var(--fg);box-shadow:var(--sh-default);overflow:hidden;}
+.recipe .rh{padding:14px 18px;border-bottom:2px solid var(--fg);display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.recipe .rh .rtype{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;}
+.recipe .rh .rname{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:18px;}
+.recipe.day .rh{background:#fffbf1;color:#0d0905;}
+.recipe.night .rh{background:#0a0703;color:#fffbf1;}
+.recipe .rb{padding:8px 18px 16px;background:var(--surface);}
+.readout{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1.5px solid var(--hairline);}
+.readout:last-child{border-bottom:none;}
+.readout .rk{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;color:var(--fg-dim);}
+.readout .rv{display:flex;align-items:center;gap:8px;}
+.readout .track{width:110px;height:6px;background:var(--hairline);position:relative;}
+.readout .track .fill{position:absolute;top:50%;transform:translateY(-50%);width:11px;height:14px;background:var(--accent);border:1.5px solid var(--fg);}
+.readout .rval{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:10.5px;min-width:64px;text-align:right;}

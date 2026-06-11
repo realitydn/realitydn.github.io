@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="motion-doc.css" rel="stylesheet">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word">Reality</span>
+    <span class="mh-tag">Motion</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="intro">
+    <div class="kick">How REALITY moves</div>
+    <h1>Stamped,<br>not <b>floated</b>.</h1>
+    <p class="lede">Motion in REALITY behaves like the print it comes from: things <b>stamp down</b> with a little overshoot, <b>lift</b> when you touch them, and ink <b>misregisters</b> into place. Nothing drifts or fades aimlessly. This is the spec — the curves, the durations, and what triggers them. The full library of named animations lives, playable, in the Design System page.</p>
+    <button class="mo-replay" id="moReplay" style="margin-top:28px;">▸ Replay demos</button>
+  </section>
+
+  <!-- ===== RULES ===== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2 class="sec-title">Four rules</h2></div>
+    <div class="principles">
+      <div class="principle"><div class="pn">01</div><h5>Stamp, don't float</h5><p>Entrances punch in with a slight overshoot and settle — like a stamp hitting paper. No slow fades from nowhere.</p></div>
+      <div class="principle"><div class="pn">02</div><h5>Touch lifts</h5><p>Interactive things rise a few px and the shadow deepens on hover; they press back down on click. The shadow is the feedback.</p></div>
+      <div class="principle"><div class="pn">03</div><h5>Misregister into place</h5><p>Accent layers slide in offset and converge — the riso print that didn't quite register. Reserved for hero moments.</p></div>
+      <div class="principle"><div class="pn">04</div><h5>Move with purpose</h5><p>Every motion has a trigger and an end-state. If it can't be justified, it doesn't move. Decorative loops stay out of content.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== EASING ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span><h2 class="sec-title">Easing curves</h2>
+      <span class="sec-note">Three curves cover everything. Watch the dot — same distance, different feel.</span>
+    </div>
+    <div class="ease-grid">
+      <div class="ease" style="--ez:var(--ease-stamp)">
+        <div class="nm">Stamp</div>
+        <div class="tok">--ease-stamp</div>
+        <div class="cb">cubic-bezier(0.2, 1.4, 0.45, 1)</div>
+        <div class="ease-track"><div class="ease-dot"></div></div>
+        <p><b>Overshoot punch.</b> Entrances, counters landing, badges, anything that should feel stamped. The 1.4 control point pushes past the target then snaps back.</p>
+      </div>
+      <div class="ease" style="--ez:var(--ease-snap)">
+        <div class="nm">Snap</div>
+        <div class="tok">--ease-snap</div>
+        <div class="cb">cubic-bezier(0.3, 0, 0.2, 1)</div>
+        <div class="ease-track"><div class="ease-dot"></div></div>
+        <p><b>Quick settle.</b> Buttons, toggles, hovers, presses — short state changes that need to feel immediate and crisp, no overshoot.</p>
+      </div>
+      <div class="ease" style="--ez:var(--ease-out)">
+        <div class="nm">Glide</div>
+        <div class="tok">--ease-out</div>
+        <div class="cb">cubic-bezier(0.16, 1, 0.3, 1)</div>
+        <div class="ease-track"><div class="ease-dot"></div></div>
+        <p><b>Long decel.</b> Number rolls, kinetic headlines, large entrances and surface crossfades — a fast start that eases out over distance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DURATION ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span><h2 class="sec-title">Duration scale</h2>
+      <span class="sec-note">Four steps. Bars play at true speed — short means short.</span>
+    </div>
+    <div class="dur">
+      <div class="drow"><div class="dt">Tap<small>--dur-tap</small></div><div class="dms">120ms</div>
+        <div class="dtrack"><div class="dbar" data-ms="120"></div></div>
+        <div class="du">Hover lift &amp; button press. Instant tactile feedback, paired with Snap.</div></div>
+      <div class="drow"><div class="dt">Quick<small>--dur-quick</small></div><div class="dms">200ms</div>
+        <div class="dtrack"><div class="dbar" data-ms="200"></div></div>
+        <div class="du">Chips, small toggles, selection states. Snappy but visible.</div></div>
+      <div class="drow"><div class="dt">Settle<small>--dur-settle</small></div><div class="dms">350ms</div>
+        <div class="dtrack"><div class="dbar" data-ms="350"></div></div>
+        <div class="du">Day/Night flip and surface crossfades. The whole page eases between palettes.</div></div>
+      <div class="drow"><div class="dt">Entrance<small>--dur-enter</small></div><div class="dms">700ms</div>
+        <div class="dtrack"><div class="dbar" data-ms="700"></div></div>
+        <div class="du">Counters, kinetic headlines, hero reveals. Siblings stagger by ~90ms so a group ripples in.</div></div>
+    </div>
+  </section>
+
+  <!-- ===== TRIGGERS ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span><h2 class="sec-title">Triggers</h2>
+      <span class="sec-note">What fires what. Hover the button; the rest loop.</span>
+    </div>
+    <div class="trig">
+      <div class="tcard">
+        <div class="th">Hover → lift · Click → press</div>
+        <div class="tstage">
+          <button class="btn">Hover me</button>
+          <button class="btn alt">And me</button>
+        </div>
+        <p>On hover, the element rises <b>−3px</b> and the shadow steps from default to heavy. On <b>:active</b> it drops to <b>+2px</b> with the light shadow — pressed into the paper.</p>
+        <div class="spec">120ms · Snap · transform + box-shadow</div>
+      </div>
+
+      <div class="tcard">
+        <div class="th">Stamp → entrance</div>
+        <div class="tstage">
+          <span class="pop-chip">Quiz</span>
+          <span class="pop-chip">Karaoke</span>
+          <span class="pop-chip">Live</span>
+        </div>
+        <p>Elements enter with the <b>Stamp</b> curve — punching up from a slight offset with an accent echo that misregisters behind. Used for chips, badges, filter results.</p>
+        <div class="spec">460ms · Stamp · stagger 120ms</div>
+      </div>
+
+      <div class="tcard">
+        <div class="th">Theme toggle → crossfade</div>
+        <div class="tstage">
+          <div class="fade-sw">Day</div>
+          <div class="fade-sw night">Night</div>
+        </div>
+        <p>Flipping Day/Night doesn't cut — every surface and text colour <b>crosses over the Settle duration</b> so the whole page turns together.</p>
+        <div class="spec">350ms · ease · background + color</div>
+      </div>
+
+      <div class="tcard">
+        <div class="th">On-screen → reveal</div>
+        <div class="tstage">
+          <div style="display:flex; gap:10px; align-items:flex-end;">
+            <div class="dtrack" style="width:24px; height:60px; transform:rotate(180deg);"><div class="dbar" data-ms="500" style="background:var(--accent);"></div></div>
+            <div class="dtrack" style="width:24px; height:84px; transform:rotate(180deg);"><div class="dbar" data-ms="640" style="background:var(--accent);"></div></div>
+            <div class="dtrack" style="width:24px; height:46px; transform:rotate(180deg);"><div class="dbar" data-ms="760" style="background:var(--accent);"></div></div>
+          </div>
+        </div>
+        <p>Big content animates <b>once</b>, when it scrolls into view (IntersectionObserver) — never on every render. Charts grow, counters roll, headlines stamp.</p>
+        <div class="spec">700ms · Glide · play once, then rest</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== NAMED ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">05</span><h2 class="sec-title">Named animations</h2>
+      <span class="sec-note">The signature set — playable in the Design System page. Specs below.</span>
+    </div>
+    <div class="named">
+      <div class="n"><div class="ix">07</div><h5>Color Separation</h5><p>The wordmark builds like a riso print — red, blue and amber passes slide in offset and converge into registration.</p><div class="sp">Trigger: brand reveal / splash · Glide · ~900ms</div></div>
+      <div class="n"><div class="ix">08</div><h5>Chip Pop</h5><p>Filters lay down left-to-right on a stagger, each shooting a misregistered accent print out behind it.</p><div class="sp">Trigger: filter / category tap · Stamp · 460ms · 120ms stagger</div></div>
+      <div class="n"><div class="ix">13</div><h5>Kinetic Headline</h5><p>Words punch in at TV scale as a riso registration — red, blue and amber crash in and lock, the last word landing on yellow.</p><div class="sp">Trigger: headline reveal · Glide · 700ms per word</div></div>
+    </div>
+  </section>
+
+  <!-- ===== REDUCED MOTION ===== -->
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">Reduced motion</h2></div>
+    <div class="reduce-note">
+      <h4>The contract</h4>
+      <p>When a visitor sets <b>prefers-reduced-motion: reduce</b>, REALITY honours it system-wide: all transitions are switched off, auto-loops never start, and any entrance shows its <b>end-state immediately</b> instead of animating in. Nothing important is ever gated behind a motion the visitor has opted out of — the page is fully usable, just still.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="muted">REALITY Design System · Year 2</span>
+    <span class="muted">Motion</span>
+  </div>
+</footer>
+
+<script src="motion-doc.js"></script>
+</body>
+</html>

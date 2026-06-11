@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Photo Guidance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="guidance.css" rel="stylesheet">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word">Reality</span>
+    <span class="mh-tag">Photo Guidance</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="intro">
+    <div class="kick">How to put a photo in a poster</div>
+    <h1>Every photo<br>gets <b>printed</b>.</h1>
+    <p class="lede">A raw photo never goes straight onto a REALITY poster — it runs through one ink treatment so it prints like the rest of the system. This page is the short version: <b>which treatment for which job, which paper for which night, and how the logo sits on top.</b> The live tool is the <b>Poster Studio</b>; this is the rulebook.</p>
+  </section>
+
+  <!-- ===== TREATMENT RUBRIC ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2 class="sec-title">Pick a treatment</h2>
+      <span class="sec-note">Start with Duotone. Reach for the others when the photo or the night needs more punch.</span>
+    </div>
+
+    <div class="rubric">
+      <div class="rb">
+        <div class="rb-pic"><canvas data-treat="duotone" data-sample="portrait" data-ink="pink" data-paper="night" width="520" height="416"></canvas><span class="tg">Duotone</span></div>
+        <div class="rb-txt">
+          <h3>Two-Colour Sep · the default</h3>
+          <p class="lead">Keeps the whole photo legible in two inks. If you're unsure, use this — it never fights the layout.</p>
+          <div class="rb-use">
+            <div class="yes"><div class="h">Best for</div><p>Faces, portraits, anything that has to stay readable.</p></div>
+            <div class="no"><div class="h">Avoid when</div><p>You want maximum graphic punch — go louder below.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rb">
+        <div class="rb-pic"><canvas data-treat="offregister" data-sample="spotlight" data-ink="pink" data-paper="night" width="520" height="416"></canvas><span class="tg">Off-Register</span></div>
+        <div class="rb-txt">
+          <h3>Off-Register · the signature</h3>
+          <p class="lead">Two ink passes shifted apart — the misprint. Carries the most REALITY energy.</p>
+          <div class="rb-use">
+            <div class="yes"><div class="h">Best for</div><p>Hero DJ / party shots, movement, big sizes.</p></div>
+            <div class="no"><div class="h">Avoid when</div><p>The photo is text-dense or printed small — fringing muddies it.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rb">
+        <div class="rb-pic"><canvas data-treat="halftone" data-sample="crowd" data-ink="pink" data-paper="night" data-angle="15" width="520" height="416"></canvas><span class="tg">Halftone</span></div>
+        <div class="rb-txt">
+          <h3>Halftone · newsprint grit</h3>
+          <p class="lead">One ink as a dot screen. Cheap-print, gig-poster feel. Loves contrast.</p>
+          <div class="rb-use">
+            <div class="yes"><div class="h">Best for</div><p>Live music, crowds, high-contrast images.</p></div>
+            <div class="no"><div class="h">Avoid when</div><p>The photo is soft and flat — the dots vanish.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rb">
+        <div class="rb-pic"><canvas data-treat="posterize" data-sample="portrait" data-ink="amber" data-paper="night" width="520" height="416"></canvas><span class="tg">Banded</span></div>
+        <div class="rb-txt">
+          <h3>Banded · silkscreen flatness</h3>
+          <p class="lead">Tones crushed to a few flat steps on palette inks. Posterised, not photographic.</p>
+          <div class="rb-use">
+            <div class="yes"><div class="h">Best for</div><p>Bold, simple compositions with one clear subject.</p></div>
+            <div class="no"><div class="h">Avoid when</div><p>The scene is detailed — fine detail collapses.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rb">
+        <div class="rb-pic"><canvas data-treat="cutout" data-sample="spotlight" data-ink="pink" data-paper="night" width="520" height="416"></canvas><span class="tg">Cutout</span></div>
+        <div class="rb-txt">
+          <h3>Ink Cutout · max punch</h3>
+          <p class="lead">Lit subject knocked out of a solid accent field. Reads from across a dark room.</p>
+          <div class="rb-use">
+            <div class="yes"><div class="h">Best for</div><p>One clear subject on a dark background; loud headlines.</p></div>
+            <div class="no"><div class="h">Avoid when</div><p>The background is busy — the subject won't separate.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rb">
+        <div class="rb-pic"><canvas data-treat="overprint" data-sample="crowd" data-ink="blue" data-paper="night" width="520" height="416"></canvas><span class="tg">Overprint</span></div>
+        <div class="rb-txt">
+          <h3>Overprint · wet overlap</h3>
+          <p class="lead">Two flat inks overlap and bloom a third colour. The richest, most abstract look.</p>
+          <div class="rb-use">
+            <div class="yes"><div class="h">Best for</div><p>Texture / abstract shots, covers, two-colour richness.</p></div>
+            <div class="no"><div class="h">Avoid when</div><p>Literal clarity matters — it abstracts the image.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DAY / NIGHT RUBRIC ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2 class="sec-title">Day or night paper</h2>
+      <span class="sec-note">Paper sets the whole mood. Match it to the event, then pick an accent from that side.</span>
+    </div>
+
+    <div class="daynight">
+      <div class="dn scope-day">
+        <div class="dn-head"><span class="t">Day paper</span><span class="s">Cream · #FFFBF1</span></div>
+        <div class="dn-pic"><canvas data-treat="duotone" data-sample="portrait" data-ink="blue" data-paper="day" width="760" height="332"></canvas></div>
+        <div class="dn-body">
+          <div class="row"><b>Use for</b><span>Daytime, community, sundowner, markets, workshops, all-ages.</span></div>
+          <div class="row"><b>Accents</b><span>Blue · Amber · Green — the open, friendly end.</span></div>
+          <div class="row"><b>Treatments</b><span>Duotone &amp; Banded sit warmest and most legible on cream.</span></div>
+          <div class="row"><b>Mood</b><span>Editorial, approachable, easy to read in daylight.</span></div>
+        </div>
+      </div>
+
+      <div class="dn scope-night">
+        <div class="dn-head"><span class="t">Night paper</span><span class="s">Near-black · #0A0703</span></div>
+        <div class="dn-pic"><canvas data-treat="offregister" data-sample="spotlight" data-ink="pink" data-paper="night" width="760" height="332"></canvas></div>
+        <div class="dn-body">
+          <div class="row"><b>Use for</b><span>Club nights, DJ sets, live music, late parties.</span></div>
+          <div class="row"><b>Accents</b><span>Pink · Red · Purple — the loud, after-dark end.</span></div>
+          <div class="row"><b>Treatments</b><span>Off-Register, Halftone, Cutout &amp; Overprint hit hardest on black.</span></div>
+          <div class="row"><b>Mood</b><span>High-energy, electric, glows in a dark room.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LOGO BOX ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2 class="sec-title">The Reality logo box</h2>
+      <span class="sec-note">The wordmark never floats bare on a treated photo — it always sits in a box.</span>
+    </div>
+
+    <div class="logo-demo">
+      <div class="lb-stage">
+        <canvas data-treat="duotone" data-sample="spotlight" data-ink="pink" data-paper="night" width="640" height="512"></canvas>
+        <div class="lb-lock">
+          <span class="w">Reality</span>
+          <span class="meta">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></span>
+        </div>
+      </div>
+      <div class="lb-rules">
+        <div class="principle"><h5>Contain it</h5><p>The REALITY wordmark always rides a solid paper or ink box — most often the ticket footer. Never set it bare over a busy treated photo.</p></div>
+        <div class="principle"><h5>Clear space</h5><p>Keep a margin equal to the wordmark's cap-height on all four sides of the box. Nothing else enters that zone.</p></div>
+        <div class="principle"><h5>Contrast first</h5><p>If the photo behind is loud, the box stays opaque. The treatment runs <i>behind</i> the lockup, never under the letters themselves.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DO / DON'T ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2 class="sec-title">Quick rules</h2>
+    </div>
+    <div class="dd">
+      <div class="col do">
+        <h4>Do</h4>
+        <ul>
+          <li>Start from a high-contrast source — treatments live on tonal range.</li>
+          <li>Let one ink lead; follow the poster accent unless there's a reason not to.</li>
+          <li>Size the halftone dots to the room — bigger for a poster, finer for a phone story.</li>
+          <li>Export at 1080px wide minimum; use the A4 format for anything printed.</li>
+        </ul>
+      </div>
+      <div class="col dont">
+        <h4>Don't</h4>
+        <ul>
+          <li>Drop a full-colour photo in raw — it breaks the locked palette.</li>
+          <li>Stack treatments or invent off-palette tints.</li>
+          <li>Run the wordmark over a bare treated photo — use the box.</li>
+          <li>Use Cutout on a busy background, or tiny Halftone on a small format.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="muted">REALITY Design System · Year 2</span>
+    <span class="muted">Photo Guidance</span>
+  </div>
+</footer>
+
+<script src="riso-engine.js"></script>
+<script>
+(function(){
+  function paint(){
+    if(!window.RISO){ return setTimeout(paint, 60); }
+    document.querySelectorAll('canvas[data-treat]').forEach(function(cv){
+      var d=cv.dataset;
+      window.RISO.setSource(window.RISO.sampleCanvas(d.sample||'spotlight', 900, 1125));
+      window.RISO.render(cv, d.treat, {
+        ink: d.ink||'pink', paper: d.paper||'night',
+        contrast: d.contrast? parseFloat(d.contrast): 1.22,
+        dot: 9, bands: 4, shape: d.shape||'circle',
+        angle: d.angle!=null? parseFloat(d.angle): undefined
+      });
+    });
+  }
+  paint();
+})();
+</script>
+</body>
+</html>

@@ -73,7 +73,6 @@ export default function EventsSection({ t }) {
       type="button"
       className="card cursor-pointer overflow-hidden block w-full text-left p-0"
       onClick={() => openLightbox(ev.full || ev.img, ev.alt)}
-      style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
       aria-label={ev.title ? `Open poster: ${ev.title}` : 'Open event poster'}
     >
       <div className="aspect-[4/5] relative bg-cream">
@@ -148,14 +147,19 @@ export default function EventsSection({ t }) {
         />
       </section>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal — paper scrim, stamped frame */}
       {lightboxOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/90"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgb(var(--bg-rgb) / 0.88)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+          }}
           onClick={closeLightbox}
         >
           <button
-            className="absolute top-4 right-4 text-cream hover:opacity-70 transition-opacity p-2"
+            className="absolute top-4 right-4 text-ink hover:opacity-70 transition-opacity p-2"
             onClick={closeLightbox}
             aria-label="Close lightbox"
           >
@@ -163,8 +167,8 @@ export default function EventsSection({ t }) {
               <path d="M6 6l12 12M6 18L18 6"/>
             </svg>
           </button>
-          <div 
-            className="max-w-4xl max-h-[90vh] card-static overflow-hidden"
+          <div
+            className="max-w-4xl max-h-[90vh] card-static stamp-in overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <img

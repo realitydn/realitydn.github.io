@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
+import ThemeToggle from './ThemeToggle';
 import { URLS } from '../data/translations';
 
 export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
@@ -24,15 +25,18 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
   const homeHref = lang === 'VN' ? '/vn' : '/';
 
   return (
-    <header className="sticky top-0 z-40 bg-cream" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+    <header
+      className="sticky top-0 z-40 bg-cream"
+      style={{ borderBottom: '3px solid var(--fg)' }}
+    >
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         {/* Logo */}
         <Link to={homeHref} onClick={onLogoClick} className="flex items-center" aria-label="REALITY home">
-          <Logo className="h-6 md:h-7 w-auto" color="#0d0906" />
+          <Logo className="h-6 md:h-7 w-auto" color="var(--fg)" />
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-12 font-title text-xs md:text-sm tracking-[0.2em]">
+        <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em]">
           <a href="#events" className="hover:opacity-70 transition-opacity focus:underline focus:outline-none">
             {t.use('nav.events')}
           </a>
@@ -48,24 +52,23 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
         </nav>
 
         {/* Desktop Actions — only at lg+ so the md (tablet) viewport uses the
-            compact mobile layout with a hamburger. Previously these showed at
-            md which left tablet users with no way to open the nav. */}
+            compact mobile layout with a hamburger. */}
         <div className="hidden lg:flex items-center gap-2">
           <a
             href={URLS.WA}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary px-3 py-2 flex items-center gap-2 font-title text-xs tracking-[0.15em]"
+            className="btn-primary px-3 py-2 flex items-center gap-2 text-xs"
             aria-label="Join WhatsApp"
           >
-            {Icons.whatsapp('#FFFBF2')}
+            {Icons.whatsapp()}
             <span className="hidden sm:inline">WhatsApp</span>
           </a>
           <a
             href={URLS.IG}
             target="_blank"
             rel="noreferrer"
-            className="btn-secondary px-3 py-2 flex items-center gap-2 font-title text-xs tracking-[0.15em]"
+            className="btn-secondary px-3 py-2 flex items-center gap-2 text-xs"
             aria-label="Follow on Instagram"
           >
             {Icons.instagram()}
@@ -75,7 +78,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             href={URLS.FB}
             target="_blank"
             rel="noreferrer"
-            className="btn-secondary px-3 py-2 flex items-center gap-2 font-title text-xs tracking-[0.15em]"
+            className="btn-secondary px-3 py-2 flex items-center gap-2 text-xs"
             aria-label="Follow on Facebook"
           >
             {Icons.facebook()}
@@ -85,41 +88,34 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               source of truth for language. Crawlers see two indexable pages. */}
           <Link
             to={otherLangPath}
-            className="btn-secondary px-3 py-2 font-title text-xs tracking-[0.15em] w-[54px] text-center"
+            className="btn-secondary px-3 py-2 text-xs w-[54px] text-center"
             aria-label={lang === 'EN' ? 'Xem bằng tiếng Việt' : 'View in English'}
             hrefLang={lang === 'EN' ? 'vi' : 'en'}
           >
             {lang === 'EN' ? 'VN' : 'EN'}
           </Link>
+          <ThemeToggle lang={lang} />
         </div>
 
-        {/* Mobile + tablet actions — shown below lg. Touch targets are 44px+
-            (p-3 with 22px icons = 46x46), meeting HIG / Material recs. */}
+        {/* Mobile + tablet actions — shown below lg. Touch targets are 44px+. */}
         <div className="flex lg:hidden items-center gap-1 sm:gap-2">
           <a
             href={URLS.WA}
             className="btn-primary p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="WhatsApp"
           >
-            {Icons.whatsapp('#FFFBF2')}
+            {Icons.whatsapp()}
           </a>
           <a
             href={URLS.IG}
-            className="btn-secondary p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="btn-secondary p-3 min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
             aria-label="Instagram"
           >
             {Icons.instagram()}
           </a>
-          <a
-            href={URLS.FB}
-            className="btn-secondary p-3 min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
-            aria-label="Facebook"
-          >
-            {Icons.facebook()}
-          </a>
           <Link
             to={otherLangPath}
-            className="btn-secondary px-3 py-3 min-w-[44px] min-h-[44px] flex items-center justify-center font-title text-xs"
+            className="btn-secondary px-3 py-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-xs"
             aria-label={lang === 'EN' ? 'Xem bằng tiếng Việt' : 'View in English'}
             hrefLang={lang === 'EN' ? 'vi' : 'en'}
           >
@@ -139,12 +135,13 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
 
       {/* Mobile Navigation */}
       {mobileOpen && (
-        <div id="mobile-nav" className="lg:hidden border-t border-ink/10 bg-cream">
-          <nav className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 gap-3 font-title text-xs tracking-[0.2em]">
+        <div id="mobile-nav" className="lg:hidden bg-cream" style={{ borderTop: '2px solid var(--fg)' }}>
+          <nav className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 gap-3 font-title font-bold text-xs tracking-[0.12em] stamp-stagger">
             <a
               onClick={() => setMobileOpen(false)}
               href="#events"
               className="btn-secondary px-4 py-3 text-center"
+              style={{ '--ri': 0 }}
             >
               {t.use('nav.events')}
             </a>
@@ -152,6 +149,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               onClick={() => setMobileOpen(false)}
               href="#info"
               className="btn-secondary px-4 py-3 text-center"
+              style={{ '--ri': 1 }}
             >
               {t.use('nav.info')}
             </a>
@@ -159,6 +157,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               onClick={() => setMobileOpen(false)}
               href="#menus"
               className="btn-secondary px-4 py-3 text-center"
+              style={{ '--ri': 2 }}
             >
               {t.use('nav.menus')}
             </a>
@@ -166,9 +165,23 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               onClick={() => setMobileOpen(false)}
               href="#visit"
               className="btn-secondary px-4 py-3 text-center"
+              style={{ '--ri': 3 }}
             >
               {t.use('nav.visit')}
             </a>
+            <div className="col-span-2 flex justify-between items-center gap-3 pt-1">
+              <a
+                href={URLS.FB}
+                className="btn-secondary px-4 py-3 flex-1 flex items-center justify-center gap-2"
+                aria-label="Facebook"
+                style={{ '--ri': 4 }}
+              >
+                {Icons.facebook()} Facebook
+              </a>
+              <div style={{ '--ri': 5 }}>
+                <ThemeToggle lang={lang} compact />
+              </div>
+            </div>
           </nav>
         </div>
       )}

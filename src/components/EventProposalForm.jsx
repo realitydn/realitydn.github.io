@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { URLS } from '../data/translations';
 
 const WORKER_URL = '';
 
@@ -172,21 +173,25 @@ export default function EventProposalForm({ t, onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit} className="card-static p-6 md:p-8 max-w-2xl">
-      {/* Progress indicator */}
+      {/* Progress indicator — stamped squares on a rule */}
       <div className="mb-8 flex justify-between items-center">
         {[1, 2, 3, 4].map((num) => (
-          <div key={num} className="flex items-center">
+          <div key={num} className="flex items-center flex-1 last:flex-none">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-title text-sm ${
-                step >= num ? 'bg-ink text-cream' : 'bg-gray-300 text-gray-600'
+              className={`w-9 h-9 shrink-0 flex items-center justify-center font-title font-bold text-sm border-2 transition-colors ${
+                step >= num
+                  ? 'bg-ink text-cream border-ink'
+                  : 'bg-transparent text-ink/40 border-ink/25'
               }`}
+              style={step === num ? { boxShadow: 'var(--sh-light)' } : undefined}
+              aria-current={step === num ? 'step' : undefined}
             >
               {num}
             </div>
             {num < 4 && (
               <div
-                className={`h-1 mx-2 md:mx-4 w-12 md:w-16 ${
-                  step > num ? 'bg-ink' : 'bg-gray-300'
+                className={`h-[2px] mx-2 md:mx-3 flex-1 ${
+                  step > num ? 'bg-ink' : 'bg-ink/20'
                 }`}
               />
             )}
@@ -203,10 +208,10 @@ export default function EventProposalForm({ t, onSuccess }) {
       {/* Step 1: About You */}
       {step === 1 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('eventForm.step1Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step1Title')}</h3>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.email')} *
             </label>
             <input
@@ -214,14 +219,14 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.emailPlaceholder')}
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            {errors.email && <p className="field-hint-error">{errors.email}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.hostName')} *
             </label>
             <input
@@ -229,14 +234,14 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="hostName"
               value={formData.hostName}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.hostNamePlaceholder')}
             />
-            {errors.hostName && <p className="text-red-500 text-sm mt-1">{errors.hostName}</p>}
+            {errors.hostName && <p className="field-hint-error">{errors.hostName}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.organization')}
             </label>
             <input
@@ -244,13 +249,13 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="organization"
               value={formData.organization}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.organizationPlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.contact')} *
             </label>
             <input
@@ -258,10 +263,10 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="contact"
               value={formData.contact}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.contactPlaceholder')}
             />
-            {errors.contact && <p className="text-red-500 text-sm mt-1">{errors.contact}</p>}
+            {errors.contact && <p className="field-hint-error">{errors.contact}</p>}
           </div>
 
           {/* Honeypot — the HTML name is deliberately not one of the common
@@ -295,10 +300,10 @@ export default function EventProposalForm({ t, onSuccess }) {
       {/* Step 2: About the Event */}
       {step === 2 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('eventForm.step2Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step2Title')}</h3>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.eventTitle')} *
             </label>
             <input
@@ -306,29 +311,29 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="eventTitle"
               value={formData.eventTitle}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.eventTitlePlaceholder')}
             />
-            {errors.eventTitle && <p className="text-red-500 text-sm mt-1">{errors.eventTitle}</p>}
+            {errors.eventTitle && <p className="field-hint-error">{errors.eventTitle}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.eventDescription')} *
             </label>
             <textarea
               name="eventDescription"
               value={formData.eventDescription}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.eventDescriptionPlaceholder')}
               rows="4"
             />
-            {errors.eventDescription && <p className="text-red-500 text-sm mt-1">{errors.eventDescription}</p>}
+            {errors.eventDescription && <p className="field-hint-error">{errors.eventDescription}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('eventForm.recurrenceLabel')} *
             </label>
             <div className="space-y-2">
@@ -340,32 +345,32 @@ export default function EventProposalForm({ t, onSuccess }) {
                     value={option}
                     checked={formData.recurrence === option}
                     onChange={handleRadioChange}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`eventForm.recurrence.${option}`)}</span>
                 </label>
               ))}
             </div>
-            {errors.recurrence && <p className="text-red-500 text-sm mt-1">{errors.recurrence}</p>}
+            {errors.recurrence && <p className="field-hint-error">{errors.recurrence}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.daysAndTimes')} *
             </label>
             <textarea
               name="daysAndTimes"
               value={formData.daysAndTimes}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.daysAndTimesPlaceholder')}
               rows="3"
             />
-            {errors.daysAndTimes && <p className="text-red-500 text-sm mt-1">{errors.daysAndTimes}</p>}
+            {errors.daysAndTimes && <p className="field-hint-error">{errors.daysAndTimes}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.duration')} *
             </label>
             <input
@@ -373,14 +378,14 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="duration"
               value={formData.duration}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.durationPlaceholder')}
             />
-            {errors.duration && <p className="text-red-500 text-sm mt-1">{errors.duration}</p>}
+            {errors.duration && <p className="field-hint-error">{errors.duration}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.eventCost')} *
             </label>
             <input
@@ -388,10 +393,10 @@ export default function EventProposalForm({ t, onSuccess }) {
               name="eventCost"
               value={formData.eventCost}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.eventCostPlaceholder')}
             />
-            {errors.eventCost && <p className="text-red-500 text-sm mt-1">{errors.eventCost}</p>}
+            {errors.eventCost && <p className="field-hint-error">{errors.eventCost}</p>}
           </div>
         </div>
       )}
@@ -399,10 +404,10 @@ export default function EventProposalForm({ t, onSuccess }) {
       {/* Step 3: Logistics */}
       {step === 3 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('eventForm.step3Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step3Title')}</h3>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('eventForm.languagesLabel')} *
             </label>
             <div className="space-y-2">
@@ -413,7 +418,7 @@ export default function EventProposalForm({ t, onSuccess }) {
                     value={lang}
                     checked={formData.languages.includes(lang)}
                     onChange={(e) => handleCheckboxChange(e, 'languages')}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`eventForm.languages.${lang}`)}</span>
                 </label>
@@ -424,16 +429,16 @@ export default function EventProposalForm({ t, onSuccess }) {
                   value="other"
                   checked={formData.languages.includes('other')}
                   onChange={(e) => handleCheckboxChange(e, 'languages')}
-                  className="w-4 h-4"
+                  className="shrink-0"
                 />
                 <span className="font-body">{t.use('eventForm.languages.other')}</span>
               </label>
             </div>
-            {errors.languages && <p className="text-red-500 text-sm mt-1">{errors.languages}</p>}
+            {errors.languages && <p className="field-hint-error">{errors.languages}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('eventForm.preferredSpaceLabel')} *
             </label>
             <div className="space-y-2">
@@ -444,17 +449,17 @@ export default function EventProposalForm({ t, onSuccess }) {
                     value={space}
                     checked={formData.preferredSpace.includes(space)}
                     onChange={(e) => handleCheckboxChange(e, 'preferredSpace')}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`eventForm.preferredSpace.${space}`)}</span>
                 </label>
               ))}
             </div>
-            {errors.preferredSpace && <p className="text-red-500 text-sm mt-1">{errors.preferredSpace}</p>}
+            {errors.preferredSpace && <p className="field-hint-error">{errors.preferredSpace}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('eventForm.equipmentLabel')}
             </label>
             <div className="space-y-2">
@@ -465,7 +470,7 @@ export default function EventProposalForm({ t, onSuccess }) {
                     value={equip}
                     checked={formData.equipment.includes(equip)}
                     onChange={(e) => handleCheckboxChange(e, 'equipment')}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`eventForm.equipment.${equip}`)}</span>
                 </label>
@@ -476,7 +481,7 @@ export default function EventProposalForm({ t, onSuccess }) {
                   value="other"
                   checked={formData.equipment.includes('other')}
                   onChange={(e) => handleCheckboxChange(e, 'equipment')}
-                  className="w-4 h-4"
+                  className="shrink-0"
                 />
                 <span className="font-body">{t.use('eventForm.equipment.other')}</span>
               </label>
@@ -484,14 +489,14 @@ export default function EventProposalForm({ t, onSuccess }) {
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('eventForm.anythingElse')}
             </label>
             <textarea
               name="anythingElse"
               value={formData.anythingElse}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('eventForm.anythingElsePlaceholder')}
               rows="3"
             />
@@ -502,10 +507,10 @@ export default function EventProposalForm({ t, onSuccess }) {
       {/* Step 4: Review & Submit */}
       {step === 4 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('eventForm.step4Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step4Title')}</h3>
 
           {submitStatus === 'success' && (
-            <div className="p-4 bg-green-100 text-green-800 font-body rounded-none">
+            <div className="alert-success">
               <p className="flex items-center gap-2">
                 <span>✓</span> {t.use('eventForm.successMessage')}
               </p>
@@ -513,11 +518,11 @@ export default function EventProposalForm({ t, onSuccess }) {
           )}
 
           {submitStatus === 'error' && (
-            <div className="p-4 bg-red-100 text-red-800 font-body rounded-none">
+            <div className="alert-error">
               <p>{t.use('eventForm.errorMessage')}</p>
               <p className="mt-2 text-sm">
                 {t.use('eventForm.fallbackMessage')}{' '}
-                <a href="https://wa.me/84123456789" className="font-title underline">
+                <a href={URLS.WA} target="_blank" rel="noreferrer" className="font-title underline">
                   WhatsApp
                 </a>
               </p>
@@ -526,33 +531,36 @@ export default function EventProposalForm({ t, onSuccess }) {
 
           {submitStatus !== 'success' && (
             <>
-              <div className="space-y-4 bg-gray-50 p-4">
+              <div
+                className="space-y-4 p-4"
+                style={{ border: '2px solid var(--hairline)', background: 'var(--surface-2)' }}
+              >
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('eventForm.email')}
                   </p>
                   <p className="font-body">{formData.email}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('eventForm.hostName')}
                   </p>
                   <p className="font-body">{formData.hostName}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('eventForm.eventTitle')}
                   </p>
                   <p className="font-body">{formData.eventTitle}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('eventForm.recurrenceLabel')}
                   </p>
                   <p className="font-body">{formData.recurrence}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('eventForm.languagesLabel')}
                   </p>
                   <p className="font-body">{formData.languages.join(', ')}</p>
@@ -563,14 +571,14 @@ export default function EventProposalForm({ t, onSuccess }) {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="btn-secondary px-4 py-2 font-title text-sm tracking-[0.15em]"
+                  className="btn-secondary px-5 py-3 text-sm"
                 >
                   {t.use('eventForm.back')}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary px-4 py-2 font-title text-sm tracking-[0.15em] disabled:opacity-50"
+                  className="btn-primary px-5 py-3 text-sm disabled:opacity-50"
                 >
                   {loading ? t.use('eventForm.submitting') : t.use('eventForm.submit')}
                 </button>
@@ -594,7 +602,7 @@ export default function EventProposalForm({ t, onSuccess }) {
             <button
               type="button"
               onClick={prevStep}
-              className="btn-secondary px-4 py-2 font-title text-sm tracking-[0.15em]"
+              className="btn-secondary px-5 py-3 text-sm"
             >
               {t.use('eventForm.back')}
             </button>
@@ -603,7 +611,7 @@ export default function EventProposalForm({ t, onSuccess }) {
             <button
               type="button"
               onClick={nextStep}
-              className="btn-primary px-4 py-2 font-title text-sm tracking-[0.15em]"
+              className="btn-primary px-5 py-3 text-sm"
             >
               {t.use('eventForm.next')}
             </button>
@@ -612,7 +620,7 @@ export default function EventProposalForm({ t, onSuccess }) {
             <button
               type="button"
               onClick={nextStep}
-              className="btn-primary px-4 py-2 font-title text-sm tracking-[0.15em]"
+              className="btn-primary px-5 py-3 text-sm"
             >
               {t.use('eventForm.review')}
             </button>

@@ -2,30 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom properties */
+/* ============================================================
+   REALITY — Year 2 design tokens (silkscreen / riso DNA)
+   Source of truth: design-system-year2/tokens/reality-tokens.css
+   One tokened theme: Day (default) ↔ Night via data-theme="dark"
+   ============================================================ */
 :root {
-  --cream: #FFFBF1;
-  --ink: #0D0906;
-  
-  /* Official accent palette */
-  --red: #E72D33;
-  --orange: #FD9D32;
-  --yellow: #FFE527;
-  --green: #00AB4D;
-  --teal: #00AB8D;
-  --blue: #0077A3;
-  --purple: #403785;
-  --magenta: #A93397;
-  --pink: #E92775;
-  
-  /* Shadow system - always pointing south */
-  --shadow-sm: 0 4px 12px rgba(0,0,0,0.1);
-  --shadow-md: 0 8px 24px rgba(0,0,0,0.15);
-  --shadow-lg: 0 16px 40px rgba(0,0,0,0.2);
-  --shadow-xl: 0 24px 56px rgba(0,0,0,0.25);
+  /* ---- BRAND PALETTE — 3 majors + 4 minors. LOCKED. ---- */
+  --yellow: #fddf00;
+  --red:    #ed2224;
+  --blue:   #18a7e0;
+  --pink:   #ed1b72;
+  --amber:  #fdb515;
+  --green:  #43b02a;
+  --purple: #6e3179;   /* lifts in night */
+
+  /* category accent — swappable per context. The site leads with the
+     majors (blue/yellow/red); minors play second fiddle. Blue is the
+     site's lead accent, pink its misregistration partner. */
+  --accent:   var(--blue);
+  --accent-2: var(--pink);
+
+  /* ---- SURFACES — DAY (default) ---- */
+  --bg:        #fffbf1;
+  --surface:   #fffbf1;
+  --surface-2: #fffbf1;
+  --fg:        #0d0905;
+  --fg-dim:    rgba(13, 9, 5, .72);
+  --fg-faint:  rgba(13, 9, 5, .45);
+  --hairline:  rgba(13, 9, 5, .16);
+  --on-ink:    #fffbf1;
+
+  /* RGB triplets — lets Tailwind utilities apply alpha (text-ink/50 etc.) */
+  --fg-rgb: 13 9 5;
+  --bg-rgb: 255 251 241;
+
+  /* ---- FLAT DOWN-SHADOWS — ink leaking beneath a lifted edge ---- */
+  --sh-light:   0 4px 1px rgba(13, 9, 5, .08);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
+  --sh-heavy:   0 12px 3px rgba(13, 9, 5, .18);
+
+  /* ---- SPACING — 4px ramp ---- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-7: 32px; --space-8: 48px; --space-9: 64px; --space-10: 96px;
+  --tap-min: 48px;
+
+  /* ---- TYPEFACES ---- */
+  --mont:    'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  --alt:     'Montserrat Alternates', ui-sans-serif, system-ui, sans-serif;
+  --grotesk: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- MOTION ---- */
+  --ease-stamp: cubic-bezier(0.2, 1.4, 0.45, 1);
+  --ease-snap:  cubic-bezier(0.3, 0, 0.2, 1);
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-tap:    120ms;
+  --dur-quick:  200ms;
+  --dur-settle: 350ms;
+  --dur-enter:  700ms;
+  --stagger:    90ms;
+
+  color-scheme: light;
+
+  /* Legacy aliases — older markup references these names. */
+  --cream: var(--bg);
+  --ink:   var(--fg);
 }
 
-/* Base styles */
+/* ---- NIGHT — "after dark". Shadows invert to cream. ---- */
+[data-theme="dark"] {
+  --purple:    #9a4faa;
+
+  --bg:        #0a0703;
+  --surface:   #171109;
+  --surface-2: #241a10;
+  --fg:        #fffbf1;
+  --fg-dim:    rgba(255, 251, 241, .60);
+  --fg-faint:  rgba(255, 251, 241, .32);
+  --hairline:  #3a2c1c;
+  --on-ink:    #fffbf1;
+
+  --fg-rgb: 255 251 241;
+  --bg-rgb: 10 7 3;
+
+  --sh-light:   0 4px 1px rgba(255, 251, 241, .14);
+  --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
+  --sh-heavy:   0 14px 3px rgba(255, 251, 241, .26);
+
+  color-scheme: dark;
+}
+
+/* Local theme scopes — one block rendered in the opposite mode
+   (e.g. the After Dark band on a Day page). */
+.scope-night {
+  --bg: #0a0703; --surface: #171109; --surface-2: #241a10;
+  --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .32);
+  --hairline: #3a2c1c; --purple: #9a4faa;
+  --fg-rgb: 255 251 241; --bg-rgb: 10 7 3;
+  --sh-light: 0 4px 1px rgba(255, 251, 241, .14);
+  --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
+  --sh-heavy: 0 14px 3px rgba(255, 251, 241, .26);
+  color-scheme: dark;
+}
+.scope-day {
+  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #fffbf1;
+  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .45);
+  --hairline: rgba(13, 9, 5, .16); --purple: #6e3179;
+  --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
+  --sh-light: 0 4px 1px rgba(13, 9, 5, .08);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
+  --sh-heavy: 0 12px 3px rgba(13, 9, 5, .18);
+  color-scheme: light;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
 * {
   margin: 0;
   padding: 0;
@@ -37,104 +129,365 @@ html {
 }
 
 body {
-  background-color: var(--cream);
-  color: var(--ink);
-  font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--grotesk);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Theme flip settles, it doesn't blink. */
+  transition: background-color var(--dur-settle) var(--ease-snap),
+              color var(--dur-settle) var(--ease-snap);
 }
 
-/* Typography - Montserrat for titles/headers */
+/* Hard corners everywhere — stamped rectangles, no exceptions. */
+*, *::before, *::after {
+  border-radius: 0 !important;
+}
+
+/* ============================================================
+   Type roles
+   ============================================================ */
 .font-title {
-  font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--mont);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.05em;
 }
 
-/* Typography - Space Grotesk for body/details */
 .font-body {
-  font-family: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--grotesk);
   font-weight: 400;
 }
 
-/* Card system - square corners, south shadows */
+/* Display — Montserrat Thin, for the big statements. Pair with a
+   .font-display-bold line for the slam. */
+.font-display {
+  font-family: var(--mont);
+  font-weight: 100;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+}
+.font-display-bold {
+  font-family: var(--mont);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+/* H1/H2 — bold uppercase Montserrat */
+.h-section {
+  font-family: var(--mont);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+}
+
+/* Eyebrow / label — small, wide, often accent-colored */
+.eyebrow {
+  font-family: var(--mont);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 13px;
+}
+
+/* Wordmark — Montserrat Alternates 600 (text contexts; SVG logo preferred) */
+.wordmark {
+  font-family: var(--alt);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.9;
+}
+
+/* ============================================================
+   Components — bordered, shadowed, stamped
+   Borders carry structure: in Day all surfaces are the same cream,
+   so the 2px ink border + flat down-shadow IS the card.
+   ============================================================ */
+.card,
+.card-static {
+  background-color: var(--surface);
+  border: 2px solid var(--fg);
+  box-shadow: var(--sh-default);
+}
+
 .card {
-  background-color: var(--cream);
-  box-shadow: var(--shadow-md);
-  border-radius: 0;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform var(--dur-tap) ease, box-shadow var(--dur-tap) ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.card-static {
-  background-color: var(--cream);
-  box-shadow: var(--shadow-md);
-  border-radius: 0;
+  transform: translateY(-3px);
+  box-shadow: var(--sh-heavy);
 }
 
 .card-lg {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--sh-heavy);
 }
 
-.card-lg:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-xl);
+/* Buttons — Montserrat 700, uppercase, stamped. Hover lifts, press stamps. */
+.btn-primary,
+.btn-secondary {
+  font-family: var(--mont);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 2px solid var(--fg);
+  box-shadow: var(--sh-default);
+  transition: transform var(--dur-tap) ease, box-shadow var(--dur-tap) ease;
+  cursor: pointer;
 }
 
-/* Button styles */
 .btn-primary {
-  background-color: var(--ink);
-  color: var(--cream);
-  border-radius: 0;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--fg);
+  color: var(--bg);
 }
 
 .btn-secondary {
-  background-color: var(--cream);
-  color: var(--ink);
-  border: 1px solid rgba(13, 9, 6, 0.2);
-  border-radius: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  background-color: var(--surface);
+  color: var(--fg);
 }
 
+.btn-primary:hover,
 .btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-  border-color: rgba(13, 9, 6, 0.4);
+  transform: translateY(-3px);
+  box-shadow: var(--sh-heavy);
 }
 
-/* Custom colors */
-.bg-cream {
-  background-color: var(--cream);
+.btn-primary:active,
+.btn-secondary:active {
+  transform: translateY(2px);
+  box-shadow: var(--sh-light);
 }
 
-.bg-ink {
-  background-color: var(--ink);
+/* Chip — small bordered tag, optional bordered dot */
+.chip {
+  font-family: var(--mont);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  border: 2px solid var(--fg);
+  background: var(--surface);
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chip .dot {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--fg);
 }
 
-.text-cream {
-  color: var(--cream);
+/* Fields — paper surface, ink border, accent focus ring */
+.field {
+  border: 2px solid var(--fg);
+  background: var(--surface);
+  box-shadow: var(--sh-light);
+  padding: 14px 16px;
+  width: 100%;
+  font-family: var(--grotesk);
+  font-size: 16px;
+  color: var(--fg);
+  transition: border-color var(--dur-quick) var(--ease-snap),
+              outline-color var(--dur-quick) var(--ease-snap);
+}
+.field::placeholder {
+  color: var(--fg-faint);
+}
+.field:focus {
+  outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+.field.field-error {
+  border-color: var(--red);
+}
+.field-label {
+  font-family: var(--mont);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  margin-bottom: 8px;
+  display: block;
+}
+.field-hint-error {
+  color: var(--red);
+  font-family: var(--grotesk);
+  font-size: 14px;
+  margin-top: 6px;
 }
 
-.text-ink {
-  color: var(--ink);
+/* Native checks/radios pick up the accent; sized for touch. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
 }
+
+/* Form alerts */
+.alert-success,
+.alert-error {
+  border: 2px solid var(--fg);
+  box-shadow: var(--sh-light);
+  padding: 16px;
+  font-family: var(--grotesk);
+  color: #0d0905;
+}
+.alert-success { background: var(--green); }
+.alert-error   { background: var(--red); color: #fffbf1; }
+.alert-error a { color: #fffbf1; }
+
+/* ============================================================
+   Focus / a11y
+   ============================================================ */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Skip-to-content link — hidden until focused. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 0.75rem 1rem;
+  background: var(--fg);
+  color: var(--bg);
+  z-index: 100;
+  text-decoration: none;
+  font-family: var(--mont);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transform: translateY(-100%);
+  transition: transform var(--dur-quick) ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+/* ============================================================
+   Motion — stamp, don't float
+   ============================================================ */
+
+/* The two entrance moves, straight from the motion library (anim/demos.css):
+
+   stampIn — the stamp drops from above, slightly oversized and tilted,
+   and lands square. For single blocks: lightboxes, the expanded form,
+   revealed headers.
+
+   riseIn — the chip-lay from "Chip Pop": items slide on from up-left and
+   settle, staggered, so a group builds itself. For staggered children.
+
+   Only ever applied by interaction or scroll arming, so prerendered HTML
+   ships the end-state. */
+.stamp-in {
+  animation: stampIn 0.5s var(--ease-stamp) both;
+}
+@keyframes stampIn {
+  0%   { opacity: 0; transform: translateY(-36px) scale(1.06) rotate(-1.2deg); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+@keyframes riseIn {
+  0%   { opacity: 0; transform: translate(-12px, -5px); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: translate(0, 0); }
+}
+
+/* Staggered children — set --ri per item. */
+.stamp-stagger > * {
+  animation: riseIn 0.46s var(--ease-stamp) both;
+  animation-delay: calc(var(--ri, 0) * var(--stagger));
+}
+
+/* Scroll reveals (see Reveal.jsx) — armed just before a block scrolls on,
+   so nothing visible ever blinks out first. */
+.stamp-go {
+  animation: stampIn 0.5s var(--ease-stamp) both;
+}
+.stamp-stagger-go > *,
+.panel-swap > * {
+  animation: riseIn 0.46s var(--ease-stamp) both;
+}
+.stamp-stagger-go > *:nth-child(2), .panel-swap > *:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.stamp-stagger-go > *:nth-child(3), .panel-swap > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.stamp-stagger-go > *:nth-child(4), .panel-swap > *:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.stamp-stagger-go > *:nth-child(5), .panel-swap > *:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.stamp-stagger-go > *:nth-child(6), .panel-swap > *:nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+.stamp-stagger-go > *:nth-child(7), .panel-swap > *:nth-child(7) { animation-delay: calc(var(--stagger) * 6); }
+.stamp-stagger-go > *:nth-child(n+8), .panel-swap > *:nth-child(n+8) { animation-delay: calc(var(--stagger) * 7); }
+
+/* Day ↔ Night settle — while html carries .theme-settling (added by the
+   toggle for the flip's duration), every surface, border, shadow and SVG
+   fill crossfades together instead of snapping. The whole page settles
+   into the other mode, like the demo pages. */
+html.theme-settling,
+html.theme-settling body,
+html.theme-settling *,
+html.theme-settling *::before,
+html.theme-settling *::after {
+  transition:
+    background-color var(--dur-enter) var(--ease-snap),
+    color var(--dur-enter) var(--ease-snap),
+    border-color var(--dur-enter) var(--ease-snap),
+    outline-color var(--dur-enter) var(--ease-snap),
+    box-shadow var(--dur-enter) var(--ease-snap),
+    fill var(--dur-enter) var(--ease-snap),
+    stroke var(--dur-enter) var(--ease-snap) !important;
+}
+
+/* Reduced-motion contract: no transitions, content ships its end-state.
+   The .theme-settling rules above are repeated here at higher specificity
+   so the settle is instant too. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after,
+  html.theme-settling,
+  html.theme-settling body,
+  html.theme-settling *,
+  html.theme-settling *::before,
+  html.theme-settling *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Smooth transitions for interactive elements */
+button, a {
+  transition: transform var(--dur-tap) ease, box-shadow var(--dur-tap) ease,
+              background-color var(--dur-quick) var(--ease-snap),
+              color var(--dur-quick) var(--ease-snap),
+              border-color var(--dur-quick) var(--ease-snap),
+              opacity var(--dur-quick) ease;
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+.bg-cream { background-color: var(--bg); }
+.bg-ink   { background-color: var(--fg); }
+.text-cream { color: var(--bg); }
+.text-ink   { color: var(--fg); }
 
 /* Scrollbar styles */
 .scrollbar-hide {
@@ -146,72 +499,14 @@ body {
   display: none;
 }
 
-/* Focus styles */
-:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-
-/* Skip-to-content link — hidden until focused. Lets keyboard and screen-reader
-   users jump straight into the main content without tabbing through the
-   header. Appears in the top-left on focus. */
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  padding: 0.75rem 1rem;
-  background: var(--ink);
-  color: var(--cream);
-  z-index: 100;
-  text-decoration: none;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  transform: translateY(-100%);
-  transition: transform 0.2s ease;
-}
-
-.skip-link:focus {
-  transform: translateY(0);
-  top: 0.5rem;
-  left: 0.5rem;
-}
-
-/* Respect users who've asked for reduced motion. Kills the smooth-scroll
-   and strips transitions down to near-instant — helpful for motion-sensitive
-   visitors and also keeps pre-rendered pages from looking animated to bots
-   that throttle rendering. */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Smooth transitions */
-button, a {
-  transition: all 0.2s ease;
-}
-
-/* Accent color backgrounds */
-.accent-red { background-color: var(--red); }
-.accent-orange { background-color: var(--orange); }
+/* Accent color backgrounds — the locked 7. */
 .accent-yellow { background-color: var(--yellow); }
-.accent-green { background-color: var(--green); }
-.accent-teal { background-color: var(--teal); }
-.accent-blue { background-color: var(--blue); }
+.accent-amber  { background-color: var(--amber); }
+.accent-red    { background-color: var(--red); }
+.accent-pink   { background-color: var(--pink); }
 .accent-purple { background-color: var(--purple); }
-.accent-magenta { background-color: var(--magenta); }
-.accent-pink { background-color: var(--pink); }
+.accent-blue   { background-color: var(--blue); }
+.accent-green  { background-color: var(--green); }
 
 /* Multiply blend for accent overlays */
 .blend-multiply {
@@ -224,12 +519,17 @@ button, a {
   z-index: 1;
 }
 
+/* Anchor targets clear the sticky masthead. */
+section[id], div[id="proposal"] {
+  scroll-margin-top: 90px;
+}
+
 /* Print styles */
 @media print {
   .no-print {
     display: none !important;
   }
-  
+
   body {
     color: black;
     background: white;

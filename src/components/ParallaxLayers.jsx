@@ -1,20 +1,38 @@
 import React, { useEffect, useState, useRef } from 'react';
 
-// Official REALITY color palette
-const ACCENT_COLORS = [
-  '#E72D33', // red
-  '#FD9D32', // orange
-  '#FFE527', // yellow
-  '#00AB4D', // green
-  '#00AB8D', // teal
-  '#0077A3', // blue
-  '#403785', // purple
-  '#A93397', // magenta
-  '#E92775', // pink
-];
+/**
+ * ParallaxLayers — the deepest planes of the page, in the poster language.
+ *
+ * Riso logic: most blocks are flat single-color rectangles ("solid"); a few
+ * carry a misregistered echo — an offset outline copy of themselves, like a
+ * second screen-print pass that missed ("echo"); a few are outline-only
+ * ghost frames ("ghost"). Paper islands float above with hairline frames.
+ * Balance over busy-ness: echoes and ghosts are rationed, everything else
+ * stays flat.
+ *
+ * Color hierarchy: the majors (blue / yellow / red) carry the background;
+ * minors appear roughly 1-in-4 as seasoning.
+ */
+const COLORS = {
+  blue: 'var(--blue)',
+  yellow: 'var(--yellow)',
+  red: 'var(--red)',
+  pink: 'var(--pink)',
+  amber: 'var(--amber)',
+  green: 'var(--green)',
+  purple: 'var(--purple)',
+};
 
-const CREAM = '#FFFBF1';
-const INK = '#0D0906';
+// Surfaces ride the theme: paper base, paper islands.
+const BASE = 'var(--bg)';
+const ISLAND = 'var(--surface)';
+// Flat riso down-shadows (invert to cream in Night via the tokens).
+const SH = 'var(--sh-default)';
+
+// Misregistration offset for echo blocks — straight down-right, like the
+// second pass slipped on the press.
+const ECHO_X = 14;
+const ECHO_Y = 18;
 
 // Grid configuration
 const GRID = {
@@ -27,32 +45,33 @@ const gridToPixel = (gridUnits) => {
   return gridUnits * (GRID.cellSize + GRID.gutter);
 };
 
-// Desktop: Full parallax layout
+// Desktop layout. c = color, v = variant (solid | echo | ghost).
+// 24 blocks: 17 majors (6 blue / 6 yellow / 5 red), 7 minors.
 const ACCENT_LAYOUT = [
-  { col: 0, row: 0, colSpan: 3, rowSpan: 2, colorIndex: 1 },
-  { col: 4, row: 1, colSpan: 2, rowSpan: 3, colorIndex: 5 },
-  { col: 8, row: 0, colSpan: 4, rowSpan: 2, colorIndex: 3 },
-  { col: 1, row: 4, colSpan: 2, rowSpan: 2, colorIndex: 8 },
-  { col: 6, row: 3, colSpan: 3, rowSpan: 2, colorIndex: 2 },
-  { col: 10, row: 4, colSpan: 2, rowSpan: 3, colorIndex: 6 },
-  { col: 0, row: 7, colSpan: 4, rowSpan: 2, colorIndex: 4 },
-  { col: 5, row: 6, colSpan: 2, rowSpan: 2, colorIndex: 0 },
-  { col: 8, row: 8, colSpan: 3, rowSpan: 2, colorIndex: 3 },
-  { col: 2, row: 10, colSpan: 3, rowSpan: 2, colorIndex: 7 },
-  { col: 6, row: 11, colSpan: 2, rowSpan: 3, colorIndex: 1 },
-  { col: 9, row: 10, colSpan: 3, rowSpan: 2, colorIndex: 5 },
-  { col: 0, row: 13, colSpan: 2, rowSpan: 2, colorIndex: 3 },
-  { col: 4, row: 14, colSpan: 3, rowSpan: 2, colorIndex: 8 },
-  { col: 8, row: 13, colSpan: 4, rowSpan: 3, colorIndex: 2 },
-  { col: 1, row: 17, colSpan: 3, rowSpan: 2, colorIndex: 4 },
-  { col: 5, row: 16, colSpan: 2, rowSpan: 2, colorIndex: 6 },
-  { col: 9, row: 17, colSpan: 2, rowSpan: 2, colorIndex: 0 },
-  { col: 0, row: 20, colSpan: 4, rowSpan: 2, colorIndex: 3 },
-  { col: 6, row: 19, colSpan: 3, rowSpan: 3, colorIndex: 7 },
-  { col: 10, row: 20, colSpan: 2, rowSpan: 2, colorIndex: 1 },
-  { col: 2, row: 23, colSpan: 2, rowSpan: 2, colorIndex: 5 },
-  { col: 5, row: 22, colSpan: 3, rowSpan: 2, colorIndex: 8 },
-  { col: 9, row: 23, colSpan: 3, rowSpan: 2, colorIndex: 4 },
+  { col: 0,  row: 0,  colSpan: 3, rowSpan: 2, c: 'yellow', v: 'solid' },
+  { col: 4,  row: 1,  colSpan: 2, rowSpan: 3, c: 'blue',   v: 'echo'  },
+  { col: 8,  row: 0,  colSpan: 4, rowSpan: 2, c: 'red',    v: 'solid' },
+  { col: 1,  row: 4,  colSpan: 2, rowSpan: 2, c: 'pink',   v: 'solid' },
+  { col: 6,  row: 3,  colSpan: 3, rowSpan: 2, c: 'yellow', v: 'ghost' },
+  { col: 10, row: 4,  colSpan: 2, rowSpan: 3, c: 'blue',   v: 'solid' },
+  { col: 0,  row: 7,  colSpan: 4, rowSpan: 2, c: 'red',    v: 'echo'  },
+  { col: 5,  row: 6,  colSpan: 2, rowSpan: 2, c: 'green',  v: 'solid' },
+  { col: 8,  row: 8,  colSpan: 3, rowSpan: 2, c: 'yellow', v: 'solid' },
+  { col: 2,  row: 10, colSpan: 3, rowSpan: 2, c: 'blue',   v: 'solid' },
+  { col: 6,  row: 11, colSpan: 2, rowSpan: 3, c: 'amber',  v: 'solid' },
+  { col: 9,  row: 10, colSpan: 3, rowSpan: 2, c: 'red',    v: 'ghost' },
+  { col: 0,  row: 13, colSpan: 2, rowSpan: 2, c: 'yellow', v: 'solid' },
+  { col: 4,  row: 14, colSpan: 3, rowSpan: 2, c: 'blue',   v: 'echo'  },
+  { col: 8,  row: 13, colSpan: 4, rowSpan: 3, c: 'purple', v: 'solid' },
+  { col: 1,  row: 17, colSpan: 3, rowSpan: 2, c: 'red',    v: 'solid' },
+  { col: 5,  row: 16, colSpan: 2, rowSpan: 2, c: 'yellow', v: 'ghost' },
+  { col: 9,  row: 17, colSpan: 2, rowSpan: 2, c: 'blue',   v: 'solid' },
+  { col: 0,  row: 20, colSpan: 4, rowSpan: 2, c: 'green',  v: 'solid' },
+  { col: 6,  row: 19, colSpan: 3, rowSpan: 3, c: 'yellow', v: 'echo'  },
+  { col: 10, row: 20, colSpan: 2, rowSpan: 2, c: 'red',    v: 'solid' },
+  { col: 2,  row: 23, colSpan: 2, rowSpan: 2, c: 'blue',   v: 'ghost' },
+  { col: 5,  row: 22, colSpan: 3, rowSpan: 2, c: 'amber',  v: 'solid' },
+  { col: 9,  row: 23, colSpan: 3, rowSpan: 2, c: 'pink',   v: 'solid' },
 ];
 
 const CREAM_LAYOUT = [
@@ -77,38 +96,81 @@ const CREAM_LAYOUT = [
   { col: 7, row: 24, colSpan: 5, rowSpan: 2 },
 ];
 
-// Mobile: Simple static accent blocks (no parallax)
+// Mobile: simple static blocks peeking from the edges. Majors-led; one echo.
 const MOBILE_ACCENTS = [
-  { top: '5%', left: '-10%', width: '50%', height: '120px', colorIndex: 1 },
-  { top: '15%', right: '-5%', width: '40%', height: '100px', colorIndex: 4 },
-  { top: '30%', left: '-15%', width: '45%', height: '140px', colorIndex: 6 },
-  { top: '45%', right: '-10%', width: '55%', height: '110px', colorIndex: 2 },
-  { top: '60%', left: '-8%', width: '48%', height: '130px', colorIndex: 8 },
-  { top: '75%', right: '-12%', width: '50%', height: '120px', colorIndex: 3 },
-  { top: '88%', left: '-5%', width: '42%', height: '100px', colorIndex: 5 },
+  { top: '5%',  left: '-10%',  width: '50%', height: '120px', c: 'yellow', v: 'solid' },
+  { top: '15%', right: '-5%',  width: '40%', height: '100px', c: 'blue',   v: 'echo'  },
+  { top: '30%', left: '-15%',  width: '45%', height: '140px', c: 'red',    v: 'solid' },
+  { top: '45%', right: '-10%', width: '55%', height: '110px', c: 'blue',   v: 'ghost' },
+  { top: '60%', left: '-8%',   width: '48%', height: '130px', c: 'pink',   v: 'solid' },
+  { top: '75%', right: '-12%', width: '50%', height: '120px', c: 'yellow', v: 'solid' },
+  { top: '88%', left: '-5%',   width: '42%', height: '100px', c: 'green',  v: 'solid' },
 ];
+
+// One background block in its riso variant. `box` carries position/size
+// styles; the variant decides fills, frames, and the misregistered echo.
+function RisoBlock({ box, c, v }) {
+  const color = COLORS[c] || COLORS.blue;
+
+  if (v === 'ghost') {
+    return (
+      <div
+        className="absolute"
+        style={{
+          ...box,
+          backgroundColor: 'transparent',
+          border: `3px solid ${color}`,
+          boxShadow: 'var(--sh-light)',
+        }}
+      />
+    );
+  }
+
+  if (v === 'echo') {
+    return (
+      <div className="absolute" style={box}>
+        {/* the slipped second pass — outline copy, down-right */}
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: `translate(${ECHO_X}px, ${ECHO_Y}px)`,
+            border: `3px solid ${color}`,
+            opacity: 0.65,
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: color, boxShadow: SH }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="absolute"
+      style={{ ...box, backgroundColor: color, boxShadow: SH }}
+    />
+  );
+}
 
 export default function ParallaxLayers() {
   const [scrollY, setScrollY] = useState(0);
   const [pageHeight, setPageHeight] = useState(5000);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef(null);
-  
+
   const speeds = {
     accentLayer: 0.08,
     creamLayer: 0.18,
   };
-  
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
     const handleScroll = () => {
-      // Read directly from DOM; the isMobile check is re-evaluated each call
-      // via the latest state because handleScroll is re-bound via dependencies
-      // in the outer effect. Using rAF would be nicer still; leaving as-is
-      // since this is a visual flourish only.
       setScrollY(window.scrollY);
     };
 
@@ -126,10 +188,8 @@ export default function ParallaxLayers() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', onResize);
 
-    // Was: setInterval every 1s polling scrollHeight. ResizeObserver is the
-    // modern replacement — fires when <body> actually changes height (lazy
-    // images loading, font swap, calendar hydrating, etc.) without the
-    // constant wake-up cost of a 1-second interval.
+    // ResizeObserver fires when <body> actually changes height (lazy images
+    // loading, font swap, calendar hydrating, etc.).
     let ro = null;
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver(() => updatePageHeight());
@@ -143,85 +203,83 @@ export default function ParallaxLayers() {
       if (ro) ro.disconnect();
     };
   }, []);
-  
+
   const layerHeight = pageHeight * 1.3;
-  
+
   // Mobile: Simple static background
   if (isMobile) {
     return (
-      <div 
+      <div
         ref={containerRef}
         className="fixed inset-0 pointer-events-none overflow-hidden"
         style={{ zIndex: -1 }}
       >
-        {/* Cream base */}
-        <div 
+        {/* Paper base */}
+        <div
           className="absolute inset-0"
-          style={{ backgroundColor: CREAM }}
+          style={{ backgroundColor: BASE }}
         />
-        
-        {/* Simple accent blocks peeking from edges */}
+
+        {/* Accent blocks peeking from the edges */}
         {MOBILE_ACCENTS.map((block, i) => (
-          <div
+          <RisoBlock
             key={`mobile-accent-${i}`}
-            className="absolute"
-            style={{
+            box={{
               top: block.top,
               left: block.left,
               right: block.right,
               width: block.width,
               height: block.height,
-              backgroundColor: ACCENT_COLORS[block.colorIndex],
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
             }}
+            c={block.c}
+            v={block.v}
           />
         ))}
       </div>
     );
   }
-  
+
   // Desktop: Full parallax system
   return (
-    <div 
+    <div
       ref={containerRef}
       className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ zIndex: -1 }}
     >
-      {/* Layer 4 (bottom): Full cream base */}
-      <div 
+      {/* Layer 4 (bottom): Full paper base */}
+      <div
         className="absolute inset-0"
-        style={{ backgroundColor: CREAM }}
+        style={{ backgroundColor: BASE }}
       />
-      
-      {/* Layer 3: Accent color rectangles - gridded, with shadows */}
-      <div 
+
+      {/* Layer 3: riso color planes — gridded, mostly flat, a few echoes */}
+      <div
         className="absolute inset-0"
-        style={{ 
+        style={{
           transform: `translateY(${-scrollY * speeds.accentLayer}px) translateZ(0)`,
           willChange: 'transform',
           height: layerHeight,
         }}
       >
         {ACCENT_LAYOUT.map((rect, i) => (
-          <div
+          <RisoBlock
             key={`accent-${i}`}
-            className="absolute"
-            style={{
+            box={{
               left: gridToPixel(rect.col),
               top: gridToPixel(rect.row),
               width: gridToPixel(rect.colSpan) - GRID.gutter,
               height: gridToPixel(rect.rowSpan) - GRID.gutter,
-              backgroundColor: ACCENT_COLORS[rect.colorIndex],
-              boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
             }}
+            c={rect.c}
+            v={rect.v}
           />
         ))}
       </div>
-      
-      {/* Layer 2: Cream islands - gridded, with shadows */}
-      <div 
+
+      {/* Layer 2: paper islands — printed sheets with hairline frames */}
+      <div
         className="absolute inset-0"
-        style={{ 
+        style={{
           transform: `translateY(${-scrollY * speeds.creamLayer}px) translateZ(0)`,
           willChange: 'transform',
           height: layerHeight,
@@ -236,8 +294,9 @@ export default function ParallaxLayers() {
               top: gridToPixel(island.row),
               width: gridToPixel(island.colSpan) - GRID.gutter,
               height: gridToPixel(island.rowSpan) - GRID.gutter,
-              backgroundColor: CREAM,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              backgroundColor: ISLAND,
+              border: '2px solid var(--hairline)',
+              boxShadow: SH,
             }}
           />
         ))}

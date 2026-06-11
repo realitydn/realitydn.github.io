@@ -1,0 +1,25 @@
+/* ============================================================
+   REALITY — App Components gallery
+   Layout scaffold + on-brand spinner. Tokens come from reality-ds.css.
+   ============================================================ */
+
+.cg { display: grid; gap: var(--space-8); }
+.cg-2 { grid-template-columns: 1fr 1fr; }
+.cg-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 860px){ .cg-2, .cg-3 { grid-template-columns: 1fr; } }
+
+.blk { display: flex; flex-direction: column; gap: var(--space-4); }
+.blk-row { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: center; }
+.blk-col { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* phone-width frame to host screen-level components (nav, leaderboard) */
+.miniphone { width: 320px; border: 2px solid var(--fg); box-shadow: var(--sh-default); background: var(--bg); overflow: hidden; }
+
+/* on-brand spinner — a square bracket that rotates, no soft arcs */
+@keyframes rdSpin { to { transform: rotate(360deg); } }
+.rd-spin { width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-bottom-color: transparent; animation: rdSpin .7s linear infinite; }
+
+/* draining countdown bar segments */
+.seg-track { display: flex; gap: 3px; }
+.seg-track .s { flex: 1; height: 12px; border: 2px solid var(--fg); background: var(--surface); }
+.seg-track .s.on { background: var(--accent); }

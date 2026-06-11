@@ -34,10 +34,12 @@
 /apple-touch-icon.png
   Cache-Control: public, max-age=604800
 
-# Sitemap + robots — check every hour so new routes get picked up quickly.
+# Sitemap + robots + llms.txt — check every hour so updates propagate quickly.
 /sitemap.xml
   Cache-Control: public, max-age=3600
 /robots.txt
+  Cache-Control: public, max-age=3600
+/llms.txt
   Cache-Control: public, max-age=3600
 
 # Events config — read on every homepage visit. Keep it short so adding a

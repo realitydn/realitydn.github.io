@@ -1,0 +1,129 @@
+/* ===== REALITY motion demos =====
+   Each stage animates when it has .play (added/removed by JS to replay). */
+
+/* ---------- 1. STAMP IN ---------- */
+.d-stamp{width:150px;height:150px;background:var(--surface-2);border:2px solid var(--cream);display:flex;align-items:center;justify-content:center;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;font-size:13px;box-shadow:none;}
+.play .d-stamp{animation:stampIn .5s var(--ease-stamp) both;}
+@keyframes stampIn{
+  0%{transform:translateY(-90px) scale(1.18) rotate(-3deg);opacity:0;box-shadow:none;}
+  60%{opacity:1;}
+  100%{transform:translateY(0) scale(1) rotate(0);opacity:1;box-shadow:var(--sh-heavy);}
+}
+
+/* ---------- 2. LIFT & PRESS ---------- */
+.d-btn{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-size:14px;border:2px solid var(--cream);padding:15px 30px;background:var(--yellow);color:var(--ink);box-shadow:var(--sh-default);}
+.play .d-btn{animation:liftPress 1.5s var(--ease-snap) both;}
+@keyframes liftPress{
+  0%{transform:translateY(0);box-shadow:var(--sh-default);}
+  25%{transform:translateY(-6px);box-shadow:var(--sh-heavy);}
+  50%{transform:translateY(-6px);box-shadow:var(--sh-heavy);}
+  62%{transform:translateY(3px);box-shadow:var(--sh-light);}
+  78%{transform:translateY(-6px);box-shadow:var(--sh-heavy);}
+  100%{transform:translateY(0);box-shadow:var(--sh-default);}
+}
+
+/* ---------- 3. POSTER ECHO ---------- */
+.d-echo{position:relative;}
+.d-echo .layer{position:relative;z-index:3;background:var(--ink);border:2px solid var(--cream);padding:22px 26px;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;font-size:26px;line-height:1;}
+.d-echo::before,.d-echo::after{content:"";position:absolute;inset:0;border:2px solid var(--cream);transform:translate(0,0);opacity:0;}
+.d-echo::before{background:var(--blue);z-index:2;}
+.d-echo::after{background:var(--pink);z-index:1;}
+.play .d-echo::before{animation:echoB .55s .12s var(--ease-stamp) both;}
+.play .d-echo::after{animation:echoP .55s .2s var(--ease-stamp) both;}
+.play .d-echo .layer{animation:stampIn .45s var(--ease-stamp) both;}
+@keyframes echoB{from{transform:translate(0,0);opacity:0;}to{transform:translate(9px,11px);opacity:1;}}
+@keyframes echoP{from{transform:translate(0,0);opacity:0;}to{transform:translate(18px,22px);opacity:1;}}
+
+/* ---------- 4. BINGO DAUB ---------- */
+.d-bingo{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:6px;}
+.d-bingo .cell{border:2px solid var(--cream);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--mont);font-weight:700;font-size:16px;position:relative;}
+.d-bingo .cell .daub{position:absolute;inset:3px;background:var(--red);border-radius:0;transform:scale(0) rotate(-12deg);opacity:0;}
+.play .d-bingo .cell.hit .daub{animation:daub .4s var(--ease-stamp) both;}
+.play .d-bingo .cell:nth-child(1).hit .daub{animation-delay:.05s;}
+.play .d-bingo .cell:nth-child(5).hit .daub{animation-delay:.25s;}
+.play .d-bingo .cell:nth-child(9).hit .daub{animation-delay:.45s;}
+@keyframes daub{0%{transform:scale(1.6) rotate(-12deg);opacity:0;}55%{opacity:1;}100%{transform:scale(1) rotate(-5deg);opacity:1;}}
+
+/* ---------- 5. NUMBER ROLL (shared counter) ---------- */
+/* Split-Flap's mechanical roll, Score Count's clean type: digit columns
+   spin up like an odometer, later columns settle last, each pops on landing.
+   JS (counter) builds the columns fresh each play. Used on TV + leaderboard. */
+.d-counter{display:flex;gap:5px;font-family:var(--mont);font-weight:700;font-size:64px;line-height:1;color:var(--green);font-variant-numeric:tabular-nums;letter-spacing:0.01em;}
+.d-counter .col{height:1em;overflow:hidden;animation:counterPop var(--dur,.9s) var(--ease-snap) both;}
+.d-counter .col-roll{display:flex;flex-direction:column;will-change:transform;}
+.d-counter .col-roll span{height:1em;display:flex;align-items:center;justify-content:center;}
+@keyframes counterPop{0%,72%{transform:scale(1);}84%{transform:scale(1.13);}100%{transform:scale(1);}}
+
+/* ---------- 6. WINNER TAKEOVER ---------- */
+/* Riso registration at screen scale: red/blue/amber passes screen-blend in
+   from far offsets and converge, the cream word stamps on top with a print
+   flash + frame shake, then the passes keep breathing a live mis-register. */
+.d-takeover{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.d-takeover .wlayer{position:absolute;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;font-size:40px;opacity:0;will-change:transform;}
+.d-takeover .l-red{color:var(--red);mix-blend-mode:screen;--fx:-130px;--fy:-34px;--sx:-3px;--sy:2px;}
+.d-takeover .l-blue{color:var(--blue);mix-blend-mode:screen;--fx:124px;--fy:36px;--sx:3px;--sy:-2px;}
+.d-takeover .l-yellow{color:var(--amber);mix-blend-mode:screen;--fx:12px;--fy:-122px;--sx:0px;--sy:2px;}
+.d-takeover .l-cream{color:var(--cream);}
+.play .d-takeover .l-red{animation:tkIn .5s 0s var(--ease-stamp) both, tkDrift 2.8s .7s ease-in-out infinite;}
+.play .d-takeover .l-blue{animation:tkIn .5s .07s var(--ease-stamp) both, tkDrift 3.2s .9s ease-in-out infinite;}
+.play .d-takeover .l-yellow{animation:tkIn .5s .14s var(--ease-stamp) both, tkDrift 2.5s .6s ease-in-out infinite;}
+.play .d-takeover .l-cream{animation:tkCream .45s .26s var(--ease-stamp) both;}
+@keyframes tkIn{0%{opacity:0;transform:translate(var(--fx),var(--fy)) scale(1.5);}55%{opacity:1;}100%{opacity:1;transform:translate(var(--sx),var(--sy)) scale(1);}}
+@keyframes tkDrift{0%,100%{transform:translate(var(--sx),var(--sy));}50%{transform:translate(calc(var(--sx) - 3px),calc(var(--sy) + 3px));}}
+@keyframes tkCream{0%{opacity:0;transform:scale(2);}55%{opacity:1;transform:scale(0.94);}100%{opacity:1;transform:scale(1);}}
+.d-takeover .flash{position:absolute;inset:0;background:var(--cream);opacity:0;pointer-events:none;}
+.play .d-takeover .flash{animation:tkFlash .4s .26s var(--ease-snap) both;}
+@keyframes tkFlash{0%{opacity:0;}22%{opacity:.6;}100%{opacity:0;}}
+.play .d-takeover{animation:tkShake .5s .26s both;}
+@keyframes tkShake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}35%{transform:translate(5px,-3px);}55%{transform:translate(-3px,2px);}75%{transform:translate(2px,-1px);}}
+
+/* ---------- 7. COLOR SEPARATION ---------- */
+.d-sep{position:relative;font-family:var(--alt);font-weight:600;font-size:40px;letter-spacing:0.02em;text-transform:uppercase;}
+.d-sep .sep{display:block;}
+.d-sep .sep:not(:first-child){position:absolute;inset:0;}
+.d-sep .s-red{color:var(--red);mix-blend-mode:screen;}
+.d-sep .s-blue{color:var(--blue);mix-blend-mode:screen;}
+.d-sep .s-amber{color:var(--amber);mix-blend-mode:screen;}
+.d-sep .s-ink{color:var(--cream);}
+.play .d-sep .s-red{animation:sepR .9s var(--ease-out) both;}
+.play .d-sep .s-blue{animation:sepB .9s var(--ease-out) both;}
+.play .d-sep .s-amber{animation:sepA .9s var(--ease-out) both;}
+.play .d-sep .s-ink{animation:sepK .5s .55s var(--ease-stamp) both;}
+/* accents leave a deliberate 1-2px mis-register fringe */
+@keyframes sepR{0%{transform:translate(-30px,-14px);opacity:0;}20%{opacity:1;}100%{transform:translate(-2px,1px);opacity:1;}}
+@keyframes sepB{0%{transform:translate(28px,13px);opacity:0;}20%{opacity:1;}100%{transform:translate(2px,-1px);opacity:1;}}
+@keyframes sepA{0%{transform:translate(3px,-26px);opacity:0;}20%{opacity:1;}100%{transform:translate(0,1px);opacity:1;}}
+@keyframes sepK{0%{opacity:0;transform:scale(1.5);}55%{opacity:1;transform:scale(0.96);}100%{opacity:1;transform:scale(1);}}
+
+/* ---------- 8. CHIP POP ---------- */
+/* Borrowed from Poster Echo: each chip lays down on a stagger and shoots a
+   misregistered accent print out behind it, instead of a springy bubble pop. */
+.d-chips{display:flex;flex-wrap:wrap;gap:12px;max-width:200px;justify-content:center;}
+.d-chips .chip{position:relative;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;font-size:11px;border:2px solid var(--cream);padding:8px 13px;display:flex;align-items:center;gap:7px;background:var(--surface-2);opacity:0;}
+.d-chips .chip .dot{width:9px;height:9px;}
+.play .d-chips .chip{animation:chipUnfold .46s var(--ease-stamp) both;}
+.play .d-chips .chip:nth-child(1){animation-delay:.04s;}
+.play .d-chips .chip:nth-child(2){animation-delay:.13s;}
+.play .d-chips .chip:nth-child(3){animation-delay:.22s;}
+.play .d-chips .chip:nth-child(4){animation-delay:.31s;}
+@keyframes chipUnfold{0%{opacity:0;transform:translate(-11px,-4px);box-shadow:0 0 0 var(--echo,var(--red));}55%{opacity:1;}100%{opacity:1;transform:translate(0,0);box-shadow:7px 8px 0 var(--echo,var(--red));}}
+
+/* ---------- 9. LIVE PULSE ---------- */
+.d-live{display:flex;align-items:center;gap:14px;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.14em;font-size:18px;color:var(--cream);}
+.d-live .ring{position:relative;width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
+.d-live .ring::after{content:"";position:absolute;inset:0;background:var(--red);animation:livePulse 1.3s ease-out infinite;}
+.d-live .ring .core{width:14px;height:14px;background:var(--red);z-index:2;animation:liveCore 1.3s ease-out infinite;}
+@keyframes livePulse{0%{transform:scale(1);opacity:0.5;}100%{transform:scale(2.6);opacity:0;}}
+@keyframes liveCore{0%,100%{transform:scale(1);}50%{transform:scale(0.82);}}
+
+/* ---------- 10. SHEET UP ---------- */
+.d-sheet-frame{width:150px;height:200px;border:2px solid var(--cream);background:var(--ink);position:relative;overflow:hidden;}
+.d-sheet-frame .scrim{position:absolute;inset:0;background:rgba(10,7,3,0.6);opacity:0;}
+.d-sheet-frame .sheet{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--surface-2);border-top:2px solid var(--cream);transform:translateY(100%);padding:14px;}
+.d-sheet-frame .sheet .grab{width:36px;height:4px;background:var(--cream-faint);margin:0 auto 12px;}
+.d-sheet-frame .sheet .ttl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:13px;text-align:center;}
+.d-sheet-frame .sheet .bar{height:30px;border:2px solid var(--cream);background:var(--yellow);margin-top:14px;}
+.play .d-sheet-frame .scrim{animation:scrimIn .4s var(--ease-snap) both;}
+.play .d-sheet-frame .sheet{animation:sheetUp .5s var(--ease-stamp) both;}
+@keyframes scrimIn{from{opacity:0;}to{opacity:1;}}
+@keyframes sheetUp{0%{transform:translateY(100%);}70%{transform:translateY(-6px);}100%{transform:translateY(0);}}

@@ -1,0 +1,238 @@
+/* ============================================================
+   REALITY — POSTER GRID SYSTEM
+   The structural armature beneath the imagery.
+   Canvas 1080×1512 (5:7) · 108px square module · 10×14 grid.
+   Depends on reality-ds.css for tokens + atoms.
+   ============================================================ */
+
+/* ---- page-local helpers ---- */
+.pg-lede{font-size:19px;max-width:64ch;color:var(--fg-dim);}
+.pg-lede b{color:var(--fg);font-weight:500;}
+.subhead{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--accent);margin:0 0 10px;}
+.two{display:grid;grid-template-columns:1.15fr .85fr;gap:42px;align-items:start;}
+@media(max-width:880px){.two{grid-template-columns:1fr;gap:30px;}}
+
+/* spec list — annotated rules beside a diagram */
+.speclist{list-style:none;display:flex;flex-direction:column;gap:0;border:2px solid var(--fg);box-shadow:var(--sh-default);background:var(--surface);}
+.speclist li{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:16px 18px;border-bottom:1.5px solid var(--hairline);align-items:start;}
+.speclist li:last-child{border-bottom:none;}
+.speclist .mk{width:34px;height:34px;flex:none;border:2px solid var(--fg);display:flex;align-items:center;justify-content:center;font-family:var(--mont);font-weight:700;font-size:12px;background:var(--surface);}
+.speclist .mk.fill{background:var(--accent);color:#0d0905;border-color:var(--accent);}
+.speclist .mk.sq{background:repeating-linear-gradient(45deg,var(--fg),var(--fg) 4px,transparent 4px,transparent 8px);}
+.speclist .tt{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:13px;margin-bottom:3px;}
+.speclist .tt b{color:var(--accent);}
+.speclist p{font-size:13px;color:var(--fg-dim);line-height:1.5;}
+.speclist p code{font-family:var(--mont);font-weight:700;font-size:12px;color:var(--fg);}
+
+/* numeric spec mini-table */
+.spectable{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px;}
+@media(max-width:680px){.spectable{grid-template-columns:1fr 1fr;}}
+.spectable .cell{border:2px solid var(--fg);box-shadow:var(--sh-light);background:var(--surface);padding:16px;}
+.spectable .cell .big{font-family:var(--mont);font-weight:700;font-size:30px;line-height:1;letter-spacing:.01em;}
+.spectable .cell .big .u{font-size:14px;font-weight:600;color:var(--fg-faint);margin-left:3px;}
+.spectable .cell .lab{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--fg-faint);margin-top:8px;}
+
+/* ============================================================
+   DIAGRAM FRAME — resolution-independent (% grid), 5:7
+   ============================================================ */
+.dframe{position:relative;width:100%;aspect-ratio:1080/1512;border:2px solid var(--fg);
+  box-shadow:var(--sh-default);overflow:hidden;background:var(--surface);}
+.dframe.dark{--df-paper:#0a0703;--df-ink:#fffbf1;}
+.dframe.light{--df-paper:#fffbf1;--df-ink:#0d0905;}
+
+/* tonal "photo" placeholder — stands in for the full-bleed image */
+.dphoto{position:absolute;inset:0;
+  background:
+    radial-gradient(120% 80% at 50% 18%, rgba(255,255,255,.10), transparent 60%),
+    repeating-linear-gradient(58deg, rgba(13,9,5,.05) 0 22px, rgba(13,9,5,.10) 22px 44px);
+  background-color:#8a8378;}
+.dframe.dark .dphoto{background:
+    radial-gradient(120% 80% at 50% 16%, rgba(255,255,255,.10), transparent 55%),
+    repeating-linear-gradient(58deg, rgba(0,0,0,.20) 0 22px, rgba(0,0,0,.36) 22px 44px);
+  background-color:#2a2118;}
+.dphoto::after{content:"IMAGE · FULL BLEED — YOU SUPPLY";position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) rotate(-90deg);transform-origin:center;
+  font-family:var(--mont);font-weight:700;letter-spacing:.32em;font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap;}
+
+/* 10×14 module grid lines */
+.glines{position:absolute;inset:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(to right, rgba(255,255,255,.30) 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(to bottom, rgba(255,255,255,.30) 0 1px, transparent 1px calc(100%/14));}
+.dframe.light .glines{background-image:
+    repeating-linear-gradient(to right, rgba(13,9,5,.26) 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(to bottom, rgba(13,9,5,.26) 0 1px, transparent 1px calc(100%/14));}
+
+/* nested crop guides (centered) */
+.crop{position:absolute;left:0;right:0;pointer-events:none;}
+.crop .tag{position:absolute;left:8px;font-family:var(--mont);font-weight:700;text-transform:uppercase;
+  letter-spacing:.12em;font-size:10px;padding:3px 7px;white-space:nowrap;}
+.crop-ig{top:5.357%;bottom:5.357%;border:2px dashed rgba(255,255,255,.7);}
+.dframe.light .crop-ig{border-color:rgba(13,9,5,.55);}
+.crop-ig .tag{top:-1px;background:#18a7e0;color:#0d0905;}
+.crop-sq{top:14.286%;bottom:14.286%;border:3px solid var(--accent);}
+.crop-sq .tag{bottom:-1px;background:var(--accent);color:#0d0905;}
+.crop-sq.universal::before{content:"";position:absolute;inset:0;background:var(--accent);opacity:.10;}
+
+/* live margin (1 module sides, 1 module top/bottom) */
+.margins{position:absolute;left:10%;right:10%;top:7.143%;bottom:7.143%;
+  border:1.5px dashed rgba(255,255,255,.45);pointer-events:none;}
+.dframe.light .margins{border-color:rgba(13,9,5,.32);}
+
+/* schematic content boxes for the zone wireframe */
+.zbox{position:absolute;border:3px solid var(--df-ink);background:color-mix(in srgb,var(--df-paper) 86%, transparent);
+  box-shadow:0 7px 1px rgba(0,0,0,.22);display:flex;flex-direction:column;justify-content:center;
+  padding:10px 14px;color:var(--df-ink);}
+.dframe.dark .zbox{box-shadow:0 7px 1px rgba(255,251,241,.18);}
+.zbox .zlab{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10px;color:var(--accent);}
+.zbox .zname{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:.95;}
+.zbox.accentfill{background:var(--accent);border-color:var(--accent);color:#0d0905;}
+.zbox.accentfill .zlab{color:rgba(13,9,5,.6);}
+
+/* legend chips */
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:20px;}
+.legend .li{display:flex;align-items:center;gap:9px;font-family:var(--mont);font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;font-size:11px;color:var(--fg-dim);}
+.legend .sw{width:22px;height:14px;border:2px solid var(--fg);flex:none;}
+.legend .sw.ig{background:#18a7e0;}
+.legend .sw.sq{background:var(--accent);}
+.legend .sw.dash{background:transparent;border-style:dashed;}
+
+/* ============================================================
+   GRID-OPTION TRIPTYCH — three small schematic 5:7 frames
+   ============================================================ */
+.triptych{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+@media(max-width:780px){.triptych{grid-template-columns:1fr;max-width:340px;}}
+.gopt .dframe{margin-bottom:14px;}
+.gopt h4{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:15px;margin-bottom:5px;}
+.gopt h4 span{color:var(--accent);}
+.gopt p{font-size:13px;color:var(--fg-dim);line-height:1.5;}
+.sk{position:absolute;background:var(--df-ink);box-shadow:0 6px 1px rgba(0,0,0,.25);}
+.dframe.dark .sk{background:#fffbf1;box-shadow:0 6px 1px rgba(255,251,241,.22);}
+.sk.hollow{background:transparent;border:3px solid var(--df-ink);box-shadow:0 6px 1px rgba(0,0,0,.2);}
+.dframe.dark .sk.hollow{border-color:#fffbf1;}
+.sk.acc{background:var(--accent);box-shadow:0 6px 1px rgba(0,0,0,.25);}
+
+/* ============================================================
+   FILLED ARCHETYPE POSTERS — true 1080×1512, JS-scaled
+   (.poster is scaled by reality-ds.js: scale(clientWidth/1080))
+   ============================================================ */
+.frame.r57{aspect-ratio:1080/1512;}
+.poster.p57{height:1512px;}
+
+.poster-grid-rail{display:grid;grid-template-columns:repeat(2,1fr);gap:30px;}
+@media(max-width:900px){.poster-grid-rail{grid-template-columns:1fr;max-width:460px;}}
+.pcap{margin-top:14px;}
+.pcap .pc-cat{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--accent);}
+.pcap .pc-name{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:16px;margin:3px 0 6px;}
+.pcap .pc-note{font-size:13px;color:var(--fg-dim);line-height:1.5;}
+.pcap .pc-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+.pcap .pc-tags span{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:9.5px;border:1.5px solid var(--hairline);padding:4px 8px;color:var(--fg-dim);}
+
+/* ---- the photographic placeholder behind every archetype ---- */
+.pphoto{position:absolute;inset:0;z-index:0;}
+.pphoto.day{background:
+    radial-gradient(130% 90% at 50% 12%, rgba(255,255,255,.18), transparent 58%),
+    radial-gradient(120% 100% at 50% 105%, rgba(13,9,5,.28), transparent 55%),
+    repeating-linear-gradient(54deg, rgba(13,9,5,.05) 0 26px, rgba(13,9,5,.11) 26px 52px);
+  background-color:#9c9488;}
+.pphoto.night{background:
+    radial-gradient(130% 90% at 50% 10%, rgba(120,90,160,.30), transparent 55%),
+    radial-gradient(120% 100% at 50% 108%, rgba(0,0,0,.55), transparent 55%),
+    repeating-linear-gradient(54deg, rgba(0,0,0,.24) 0 26px, rgba(0,0,0,.42) 26px 52px);
+  background-color:#221a26;}
+.pphoto .ptag{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  font-family:var(--mont);font-weight:700;letter-spacing:.26em;font-size:13px;
+  color:rgba(255,255,255,.42);white-space:nowrap;}
+
+/* every archetype lays out on the 1080×1512 canvas */
+.pcanvas{position:absolute;inset:0;z-index:1;}
+
+/* shared box atom for archetypes */
+.box{border:3px solid currentColor;box-shadow:var(--sh-default);}
+.box.solid{background:var(--fg);color:var(--bg);}
+.box.paper{background:var(--bg);color:var(--fg);}
+.box.accent{background:var(--accent);color:#0d0905;border-color:var(--accent);}
+.box.scrim{background:color-mix(in srgb, var(--bg) 78%, transparent);color:var(--fg);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+.box.outline{background:transparent;color:var(--fg);}
+
+/* atoms reused inside posters */
+.aw{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;line-height:.8;}
+.amk{font-family:var(--mont);font-weight:700;text-transform:uppercase;}
+.akick{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.2em;font-size:23px;}
+.atitle{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.005em;line-height:.86;}
+.atitle.thin{font-weight:100;letter-spacing:.04em;}
+.atag{font-family:var(--grotesk);line-height:1.3;}
+
+/* QR sizing inside archetype ticket (reuses .qr machinery from reality-ds.css) */
+.t-qr{width:120px;height:120px;}
+
+/* ---- ticket: the constant anchor — band + corner variants ---- */
+.ticket-band{position:absolute;left:0;right:0;bottom:0;z-index:2;
+  border-top:3px solid currentColor;display:flex;align-items:center;justify-content:space-between;
+  gap:22px;padding:26px 54px;}
+.ticket-band .tk-word{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:50px;line-height:.78;}
+.ticket-band .tk-mid{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:17px;text-align:center;line-height:1.55;}
+.ticket-band .tk-mid span{display:block;font-weight:600;letter-spacing:.08em;opacity:.72;font-size:14px;}
+
+.ticket-corner{position:absolute;z-index:2;display:flex;align-items:center;gap:18px;
+  border:3px solid currentColor;box-shadow:var(--sh-heavy);padding:18px 22px;}
+.ticket-corner .tk-word{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:38px;line-height:.78;}
+.ticket-corner .tk-lines{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;line-height:1.5;}
+.ticket-corner .tk-lines span{display:block;font-weight:600;opacity:.72;font-size:12px;letter-spacing:.06em;}
+
+/* ============================================================
+   EXPLORE STRIPS — small comparison cards
+   ============================================================ */
+.explore{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+@media(max-width:780px){.explore{grid-template-columns:1fr;max-width:420px;}}
+.exo{border:2px solid var(--fg);box-shadow:var(--sh-light);background:var(--surface);overflow:hidden;}
+.exo .stage{position:relative;height:230px;overflow:hidden;
+  background:repeating-linear-gradient(54deg,#9c9488 0 24px,#8b8378 24px 48px);}
+.exo.dark .stage{background:repeating-linear-gradient(54deg,#241a10 0 24px,#191109 24px 48px);}
+.exo .exo-foot{border-top:2px solid var(--fg);padding:13px 16px;}
+.exo .exo-foot h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:13px;margin-bottom:4px;}
+.exo .exo-foot p{font-size:12px;color:var(--fg-dim);line-height:1.45;}
+
+/* sample boxes inside explore stages */
+.samp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  border:3px solid var(--fg);box-shadow:var(--sh-default);padding:18px 22px;min-width:150px;
+  font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95;}
+.samp .s-lab{font-size:9px;letter-spacing:.14em;opacity:.7;margin-bottom:6px;}
+.samp .s-big{font-size:26px;}
+.exo.dark .samp{border-color:#fffbf1;color:#fffbf1;}
+.samp.solid{background:#0d0905;color:#fffbf1;}
+.exo.dark .samp.solid{background:#fffbf1;color:#0d0905;}
+.samp.paper{background:#fffbf1;color:#0d0905;}
+.samp.outline{background:transparent;color:#0d0905;}
+.exo.dark .samp.outline{color:#fffbf1;}
+.samp.scrim{background:rgba(255,251,241,.8);color:#0d0905;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+.exo.dark .samp.scrim{background:rgba(10,7,3,.62);color:#fffbf1;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+
+/* title-treatment samples */
+.tsamp{position:absolute;left:24px;right:24px;top:50%;transform:translateY(-50%);
+  text-transform:uppercase;color:#0d0905;text-shadow:0 6px 1px rgba(0,0,0,.18);}
+.exo.dark .tsamp{color:#fffbf1;text-shadow:0 6px 1px rgba(255,251,241,.2);}
+.tsamp.thin{font-family:var(--mont);font-weight:100;letter-spacing:.04em;font-size:52px;line-height:.9;}
+.tsamp.slam{font-family:var(--mont);font-weight:700;letter-spacing:.005em;font-size:64px;line-height:.82;}
+.tsamp.alt{font-family:var(--alt);font-weight:600;letter-spacing:.01em;font-size:58px;line-height:.84;}
+
+/* footer-ticket samples reuse .dframe schematic at small size */
+.fsamp .dframe{aspect-ratio:1080/1512;}
+
+/* ============================================================
+   MISREGISTERED TITLE — the nightlife energy lever
+   stacked accent passes behind a cream/ink slam
+   ============================================================ */
+.mreg{position:relative;display:inline-block;}
+.mreg .l{display:block;font-family:var(--mont);font-weight:700;text-transform:uppercase;
+  letter-spacing:.005em;line-height:.84;margin:0;}
+.mreg .l.under{position:absolute;top:0;left:0;}
+.mreg .l.l2{color:var(--accent-2);transform:translate(18px,20px);z-index:1;}
+.mreg .l.l1{color:var(--accent);transform:translate(34px,40px);z-index:2;}
+.mreg .l.top{position:relative;z-index:3;color:currentColor;}
+
+/* small rotated flag tag for nightlife energy */
+.flag{display:inline-block;font-family:var(--mont);font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;border:3px solid currentColor;box-shadow:var(--sh-default);padding:10px 16px;}

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Design System, Year 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="anim/demos.css" rel="stylesheet">
+<link href="anim/bold.css" rel="stylesheet">
+<link href="anim/motion.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ MASTHEAD / CONTROLS ============ -->
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word" data-word="Reality">Reality</span>
+    <span class="mh-tag">System · Yr 2</span>
+    <div class="controls">
+      <div class="ctl" role="group" aria-label="Theme">
+        <button class="seg" data-theme-btn="light" aria-pressed="true">Day</button>
+        <button class="seg" data-theme-btn="dark" aria-pressed="false">Night</button>
+      </div>
+      <span class="ctl-label">Category</span>
+      <div class="swatches" role="group" aria-label="Lead accent">
+        <button class="sw" data-accent-btn="yellow" style="background:var(--yellow)" aria-label="Yellow" aria-pressed="false"></button>
+        <button class="sw" data-accent-btn="red"    style="background:var(--red)"    aria-label="Red"    aria-pressed="false"></button>
+        <button class="sw" data-accent-btn="blue"   style="background:var(--blue)"   aria-label="Blue"   aria-pressed="false"></button>
+        <button class="sw" data-accent-btn="pink"   style="background:var(--pink)"   aria-label="Pink"   aria-pressed="true"></button>
+        <button class="sw" data-accent-btn="amber"  style="background:var(--amber)"  aria-label="Amber"  aria-pressed="false"></button>
+        <button class="sw" data-accent-btn="green"  style="background:var(--green)"  aria-label="Green"  aria-pressed="false"></button>
+        <button class="sw" data-accent-btn="purple" style="background:var(--purple)" aria-label="Purple" aria-pressed="false"></button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section class="intro">
+    <div class="kick">86 Mai Thúc Lân · Đà Nẵng · open daily 11:00–02:00</div>
+    <h1>One system,<br><b>day and after dark.</b></h1>
+    <p class="lede">REALITY's silkscreen DNA — <b>cream paper, ink rectangles, hard down-shadows, misregistered color</b> — carried into a reconciled <b>Night</b> theme and stretched into a poster language built for the nightlife: parties, DJ sets, live music and the bar.</p>
+
+    <div class="note">
+      <h4>How to use this page</h4>
+      <p><b>One tokened theme, day and night.</b> Surfaces flip, borders &amp; text ride <span style="font-family:var(--mont);font-weight:600">--fg</span>, and shadows invert to cream. The palette is a tight <b>3 majors + 4 minors</b> on <b>Montserrat</b> (uppercase, wide-tracked) + <b>Space Grotesk</b> body, with the <b>Montserrat Alternates</b> wordmark, hard corners, and the flat riso down-shadow.</p>
+      <p><b>The palette is category-coding.</b> Pink for parties, blue for music, yellow for drink deals. Use the controls up top to switch <b>Day / Night</b>, flip <b>green &amp; purple</b> between the specced and lifted values, and swap the <b>category accent</b> — the whole page and every poster re-skins live.</p>
+    </div>
+  </section>
+
+  <!-- ============ COLOR ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span><h2 class="sec-title">Color</h2>
+      <span class="sec-note">Ink-on-cream by day, cream-on-ink after dark. Three majors carry the brand; four minors extend the category-coding.</span>
+    </div>
+    <div class="base-grid">
+      <div class="base-pair scope-day">
+        <div class="ph"><span>Day</span><span>light</span></div>
+        <div class="base-chip" style="background:#fffbf1;color:#0d0905"><span class="name">Cream · paper</span><span class="hex">#FFFBF1</span></div>
+        <div class="base-chip" style="background:#0d0905;color:#fffbf1"><span class="name">Ink · text + borders</span><span class="hex">#0D0905</span></div>
+      </div>
+      <div class="base-pair scope-night">
+        <div class="ph"><span>Night</span><span>dark</span></div>
+        <div class="base-chip" style="background:#0a0703;color:#fffbf1"><span class="name">Ink · paper</span><span class="hex">#0A0703</span></div>
+        <div class="base-chip" style="background:#171109;color:#fffbf1"><span class="name">Surface · raised</span><span class="hex">#171109</span></div>
+      </div>
+    </div>
+    <div class="tier-label">Major — working colours, carry attention</div>
+    <div class="accent-grid">
+      <div class="accent"><div class="swatch" style="background:var(--yellow)"></div><div class="label"><div class="n">Yellow</div><div class="h">#FDDF00</div></div></div>
+      <div class="accent"><div class="swatch" style="background:var(--red)"></div><div class="label"><div class="n">Red</div><div class="h">#ED2224</div></div></div>
+      <div class="accent"><div class="swatch" style="background:var(--blue)"></div><div class="label"><div class="n">Blue</div><div class="h">#18A7E0</div></div></div>
+    </div>
+    <div class="tier-label">Minor — accents, used sparingly</div>
+    <div class="accent-grid">
+      <div class="accent"><div class="swatch" style="background:var(--pink)"></div><div class="label"><div class="n">Pink</div><div class="h">#ED1B72</div></div></div>
+      <div class="accent"><div class="swatch" style="background:var(--amber)"></div><div class="label"><div class="n">Amber</div><div class="h">#FDB515</div></div></div>
+      <div class="accent"><div class="swatch" style="background:var(--green)"></div><div class="label"><div class="n">Green</div><div class="h">#43B02A</div></div></div>
+      <div class="accent"><div class="swatch" style="background:var(--purple)"></div><div class="label"><div class="n">Purple</div><div class="h">6E3179 · <span class="lift">night</span> 9A4FAA</div></div></div>
+    </div>
+
+    <div class="tier-label" style="margin-top:36px">Roles — a fixed job for each colour</div>
+    <div class="roles">
+      <div class="role">
+        <div class="rbar" style="background:var(--red)"></div>
+        <div class="rbody"><div class="rt">Red · Action</div><p>Imperatives and primary actions — join, confirm, “do it now”. The loudest call on a screen; aim for one per view.</p></div>
+      </div>
+      <div class="role">
+        <div class="rbar" style="background:var(--blue)"></div>
+        <div class="rbody"><div class="rt">Blue · Information</div><p>Informational and wayfinding — links, info states, secondary emphasis. Present, not urgent.</p></div>
+      </div>
+      <div class="role">
+        <div class="rbar" style="background:var(--yellow)"></div>
+        <div class="rbody"><div class="rt">Yellow · Notice</div><p>Highlights, notices and lower-priority button fills. <b>A fill behind ink only</b> — never set as text or thin marks on cream.</p></div>
+      </div>
+      <div class="role">
+        <div class="rbar minors"></div>
+        <div class="rbody"><div class="rt">Minors · Accents</div><p>Pink, amber, green, purple — sparingly, for category dots, misregister offsets and small flourishes. Not for body text or large fills.</p></div>
+      </div>
+      <div class="role">
+        <div class="rbar inkcream"></div>
+        <div class="rbody"><div class="rt">Ink + Cream · Structure</div><p>The frame everything sits on — text, borders, surfaces, and neutral controls like the Day/Night toggle. Colour rides on top; it never replaces the frame.</p></div>
+      </div>
+    </div>
+
+    <div class="contrast">
+      <span class="cx-head">Readability · on cream paper</span>
+      <div class="cx ok">
+        <span class="demo" style="background:var(--yellow)">Heads up</span>
+        <span class="tag"><span class="mk">✓</span>Yellow fill, ink label</span>
+      </div>
+      <div class="cx bad">
+        <span class="demo bare" style="color:var(--yellow)">Heads up</span>
+        <span class="tag"><span class="mk">✕</span>Yellow text on cream — fails</span>
+      </div>
+      <div class="cx ok">
+        <span class="demo" style="background:var(--red);color:#fffbf1">Join game</span>
+        <span class="tag"><span class="mk">✓</span>Red action, cream label</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TYPE ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span><h2 class="sec-title">Type</h2>
+      <span class="sec-note">Montserrat is the workhorse — headings &amp; buttons uppercase, wide-tracked. Body is Space Grotesk.</span>
+    </div>
+    <div class="type-row"><div class="type-meta">Wordmark<br>Mont. Alternates 600</div><div class="spec-word wordmark" data-word="Reality">Reality</div></div>
+    <div class="type-row"><div class="type-meta">Display<br>Montserrat 100</div><div class="spec-display">Play tonight</div></div>
+    <div class="type-row"><div class="type-meta">Heading H1<br>Montserrat 700</div><div class="spec-h1">Pulse Sessions</div></div>
+    <div class="type-row"><div class="type-meta">Heading H2<br>Montserrat 600</div><div class="spec-h2">Doors 21:00 · Friday</div></div>
+    <div class="type-row"><div class="type-meta">Label<br>Montserrat 700 · .15em</div><div class="spec-label">Scan to join</div></div>
+    <div class="type-row"><div class="type-meta">Body<br>Space Grotesk 400</div><div class="spec-body">Grab your phone, scan the QR on the table, and you're in the room. Bingo, quiz, karaoke, DJ sets — REALITY runs the night and the TV keeps score.</div></div>
+  </section>
+
+  <!-- ============ SHADOW ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span><h2 class="sec-title">Shadow</h2>
+      <span class="sec-note">A flat straight-down shift — big offset, almost no blur. Inverts to cream light after dark.</span>
+    </div>
+    <div class="shadow-grid">
+      <div><div class="shadow-demo l">Light</div><div class="shadow-cap">0 4px 1px</div></div>
+      <div><div class="shadow-demo d">Default</div><div class="shadow-cap">0 8px 2px</div></div>
+      <div><div class="shadow-demo h">Heavy</div><div class="shadow-cap">0 12px 3px</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENTS ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span><h2 class="sec-title">Components</h2>
+      <span class="sec-note">Hard corners everywhere. Hover lifts; click presses back down.</span>
+    </div>
+    <div class="comp-stage">
+      <div class="comp-block">
+        <div class="blk-label">Buttons — by role · hover to lift, press to sink</div>
+        <div class="btn-row">
+          <button class="btn action">Join game</button>
+          <button class="btn info">Details</button>
+          <button class="btn notice">Heads up</button>
+          <button class="btn">Maybe later</button>
+          <button class="btn alt">Cancel</button>
+        </div>
+      </div>
+      <div class="comp-block">
+        <div class="blk-label">Category chips</div>
+        <div class="chip-row">
+          <span class="chip"><span class="dot" style="background:var(--pink)"></span>Party</span>
+          <span class="chip"><span class="dot" style="background:var(--blue)"></span>Live music</span>
+          <span class="chip"><span class="dot" style="background:var(--yellow)"></span>Happy hour</span>
+          <span class="chip"><span class="dot" style="background:var(--green)"></span>Karaoke</span>
+        </div>
+      </div>
+      <div class="comp-block">
+        <div class="blk-label">Input field</div>
+        <label class="field-label">Display name</label>
+        <input class="field" type="text" placeholder="e.g. Linh from table 4">
+      </div>
+      <div class="comp-block">
+        <div class="blk-label">Card</div>
+        <div class="demo-card">
+          <div class="card-top"><span>Live now</span><span>2nd floor</span></div>
+          <div class="card-body">
+            <h4>Pulse Sessions</h4>
+            <p>House &amp; disco · doors 21:00 · free before 21:00. 28 in the room and climbing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MOTION ============ -->
+  <section id="motion">
+    <div class="sec-head">
+      <span class="sec-num">05</span><h2 class="sec-title">Motion</h2>
+      <span class="sec-note">Punchy, physical, silkscreen — things stamp into place, lift like real objects, and misregister into alignment. Hover a tile to replay; click to freeze-replay.</span>
+    </div>
+
+    <div class="mo-thesis">
+      <span class="mo-pill"><span class="k">01</span>Stamp, don't fade</span>
+      <span class="mo-pill"><span class="k">02</span>Overshoot &amp; settle</span>
+      <span class="mo-pill"><span class="k">03</span>Shadow snaps in on landing</span>
+      <span class="mo-pill"><span class="k">04</span>Press has weight</span>
+    </div>
+
+    <div class="mo-toolbar">
+      <button class="mo-btn" id="moReplayAll">Replay all ▸</button>
+      <button class="mo-btn ghost" id="moAutoToggle" aria-pressed="true">Auto-loop · On</button>
+      <span class="mo-hint">Built on three curves — <span style="font-family:var(--mont);font-weight:700">--ease-stamp</span> · <span style="font-family:var(--mont);font-weight:700">--ease-snap</span> · <span style="font-family:var(--mont);font-weight:700">--ease-out</span></span>
+    </div>
+
+    <div class="lab">
+
+      <div class="tile"><div class="tile-stage play"><div class="d-stamp">Round 3</div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">01</div><h3>Stamp In</h3><p>Cards slam down from above with a slight tilt, overshoot, then the cream shadow snaps in on landing. The default entrance for any surface.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-btn">I'm in</div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">02</div><h3>Lift &amp; Press</h3><p>Hover raises the element and deepens the shadow; a tap presses it back down past rest before settling. Every interactive thing behaves like a physical button.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-echo"><div class="layer">WIN</div></div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">03</div><h3>Poster Echo</h3><p>Two accent layers shoot out behind the block into a misregistered print. The hero entrance — title cards, winners, "you won" moments.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-bingo">
+        <div class="cell hit"><span>7</span><span class="daub"></span></div><div class="cell"><span>3</span></div><div class="cell"><span>9</span></div>
+        <div class="cell"><span>1</span></div><div class="cell hit"><span>5</span><span class="daub"></span></div><div class="cell"><span>8</span></div>
+        <div class="cell"><span>2</span></div><div class="cell"><span>4</span></div><div class="cell hit"><span>6</span><span class="daub"></span></div>
+      </div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">04</div><h3>Bingo Daub</h3><p>Tapping a called number stamps an ink daub — scales down oversized with a rotation, like a real marker hitting paper.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play screen"><div class="d-counter" data-to="248">248</div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">05</div><h3>Score Count</h3><p>Digits roll up like an odometer and pop as they land — the split-flap's mechanical rattle with clean tabular type. The TV and results-screen counter.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play screen"><div class="d-takeover">
+        <span class="wlayer l-red">Winner</span>
+        <span class="wlayer l-blue">Winner</span>
+        <span class="wlayer l-yellow">Winner</span>
+        <span class="wlayer l-cream">Winner</span>
+        <span class="flash"></span>
+      </div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">06</div><h3>Winner Takeover</h3><p>The whole screen gets seized: misregistered accent layers slam in from every direction, a print-flash pops, and the frame shakes on impact. The big payoff — replaces polite confetti.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play screen"><div class="d-sep">
+        <span class="sep s-red">Reality</span>
+        <span class="sep s-blue">Reality</span>
+        <span class="sep s-amber">Reality</span>
+        <span class="sep s-ink">Reality</span>
+      </div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">07</div><h3>Color Separation</h3><p>The wordmark builds like a riso print: red, blue and amber passes slide in from offset and converge into registration, then the cream layer stamps on top. A tiny mis-register fringe is left on purpose. The cold-open.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-chips">
+        <span class="chip" style="--echo:var(--red)"><span class="dot" style="background:var(--red)"></span>Bingo</span>
+        <span class="chip" style="--echo:var(--blue)"><span class="dot" style="background:var(--blue)"></span>Quiz</span>
+        <span class="chip" style="--echo:var(--green)"><span class="dot" style="background:var(--green)"></span>Karaoke</span>
+        <span class="chip" style="--echo:var(--amber)"><span class="dot" style="background:var(--amber)"></span>Photo</span>
+      </div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">08</div><h3>Chip Pop</h3><p>Filters lay down left-to-right on a stagger, each shooting a misregistered accent print out behind it — Poster Echo shrunk to chip scale.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-live"><span class="ring"><span class="core"></span></span>Live</div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">09</div><h3>Live Pulse</h3><p>A radar ring pulses out from the live dot while the core gently breathes. The one looping animation — signals "the room is playing right now."</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-sheet-frame"><div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="ttl">Join game</div><div class="bar"></div></div></div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">10</div><h3>Sheet Up</h3><p>Bottom sheets rise with an overshoot and a scrim fade. The primary way new actions and prompts arrive on the phone.</p></div>
+      </div>
+
+      <div class="lab-divider"><span class="lbl">Bolder territory</span><span class="ln"></span></div>
+
+      <div class="tile"><div class="tile-stage play"><div class="d-squeegee">
+        <div class="panel p-old">Lobby</div>
+        <div class="panel p-new">Round 1<br>Bingo</div>
+        <div class="bar"></div>
+      </div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">11</div><h3>Squeegee Wipe</h3><p>Screen transitions as a silkscreen pull — an ink bar drags across the frame and lays the next screen down behind its edge. Replaces generic slide/fade between steps.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play screen"><div class="d-counter lead" data-to="182" style="color:var(--yellow);font-size:56px">182</div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">12</div><h3>Leaderboard Roll</h3><p>The same roll on the scoreboard — columns spin up and settle right-to-last, in scoreboard yellow. One counter language for points and ranks.</p></div>
+      </div>
+
+      <div class="tile"><div class="tile-stage play screen"><div class="d-kinetic" data-words="Ready|Set|Bingo!">
+        <span class="k-layer k-red">Ready</span>
+        <span class="k-layer k-blue">Ready</span>
+        <span class="k-layer k-amber">Ready</span>
+        <span class="k-layer k-cream">Ready</span>
+      </div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">13</div><h3>Kinetic Headline</h3><p>Round intros punch in at TV scale as a riso registration — each word crashes in as red, blue and amber passes that converge into the cream word, swapping fast.</p></div>
+      </div>
+
+      <div class="tile wide"><div class="tile-stage play screen"><div class="d-marquee"><div class="track">
+        <div class="seg"><span class="item">Linh wins row 2</span><span class="sq sq-red"></span><span class="item">Table 4 on fire</span><span class="sq sq-blue"></span><span class="item">28 players live</span><span class="sq sq-amber"></span><span class="item">Karaoke next</span><span class="sq sq-yellow"></span></div>
+        <div class="seg"><span class="item">Linh wins row 2</span><span class="sq sq-red"></span><span class="item">Table 4 on fire</span><span class="sq sq-blue"></span><span class="item">28 players live</span><span class="sq sq-amber"></span><span class="item">Karaoke next</span><span class="sq sq-yellow"></span></div>
+      </div></div></div><span class="replay-tag">Replay ▸</span>
+        <div class="tile-meta"><div class="num">14</div><h3>Marquee Ticker</h3><p>The big-screen heartbeat — a continuous scroll of wins, call-outs and room status, punctuated by palette squares. Pure horizontal motion, sized for the TV.</p></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ POSTER SYSTEM ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">06</span><h2 class="sec-title">Poster System</h2>
+      <span class="sec-note">The expansion. One DNA, every kind of night — switch the category accent up top to re-skin all of them.</span>
+    </div>
+    <p class="lede" style="max-width:70ch;margin-bottom:34px;color:var(--fg-dim)">Every poster keeps three constants: a <b style="color:var(--fg);font-weight:600">Montserrat slam headline</b>, the <b style="color:var(--fg);font-weight:600">misregistered silkscreen print</b> as the energy lever, and a hard-ruled <b style="color:var(--fg);font-weight:600">footer ticket</b> — <i>Reality</i> wordmark, QR, and the standing details. What flexes is the colour (category-coded) and how loud the print runs.</p>
+
+    <div class="poster-rail">
+
+      <!-- A: misregistered hero — DJ / party -->
+      <div class="pcell">
+        <div class="frame">
+          <div class="poster pA">
+            <div class="stageA">
+              <div class="p-kick kick">Friday · 21:00 · til late</div>
+              <div class="echo">
+                <div class="layer">
+                  <div class="big">Pulse<br>Sessions</div>
+                  <div class="sub">House &amp; disco on three floors. Free before 21:00.</div>
+                </div>
+              </div>
+            </div>
+            <div class="p-foot">
+              <span class="wordmark pf-word" data-word="Reality">Reality</span>
+              <div class="pf-mid">coffee / cocktails / community<span>86 Mai Thúc Lân</span></div>
+              <div class="qr" data-qr="a"></div>
+            </div>
+          </div>
+        </div>
+        <p class="cap"><b>Misregistered hero</b> — DJ sets &amp; parties</p>
+      </div>
+
+      <!-- B: accent field type-slam — happy hour -->
+      <div class="pcell">
+        <div class="frame">
+          <div class="poster pB">
+            <div class="tagtop"><span>Daily</span><span>17:00–20:00</span></div>
+            <div class="slam">
+              <div class="l1">Happy hour</div>
+              <div class="l2">Buy 1<br>Get 1</div>
+              <div class="l3">All cocktails</div>
+            </div>
+            <div class="p-foot">
+              <span class="wordmark pf-word" data-word="Reality">Reality</span>
+              <div class="pf-mid">coffee / cocktails / community<span>open til 02:00</span></div>
+              <div class="qr" data-qr="b"></div>
+            </div>
+          </div>
+        </div>
+        <p class="cap"><b>Accent field slam</b> — drink deals &amp; signs</p>
+      </div>
+
+      <!-- C: photo + ticket — live music -->
+      <div class="pcell">
+        <div class="frame">
+          <div class="poster pC">
+            <div class="ph-img"><span>band photo</span></div>
+            <div class="body">
+              <div class="p-kick kick">Saturday · 20:30</div>
+              <div class="ttl">Small<br>Things</div>
+              <div class="ln">Live set + open floor. Suggested 50k to the band.</div>
+              <div class="row">
+                <span class="tag"><span class="d" style="background:var(--accent)"></span>Live music</span>
+                <span class="tag">Free entry</span>
+              </div>
+            </div>
+            <div class="p-foot">
+              <span class="wordmark pf-word" data-word="Reality">Reality</span>
+              <div class="pf-mid">coffee / cocktails / community<span>86 Mai Thúc Lân</span></div>
+              <div class="qr" data-qr="c"></div>
+            </div>
+          </div>
+        </div>
+        <p class="cap"><b>Photo + ticket</b> — live music &amp; gigs</p>
+      </div>
+
+    </div>
+
+    <!-- D: tall weekly schedule -->
+    <h3 class="spec-h2" style="margin:54px 0 8px">The week, one sheet</h3>
+    <p class="lede" style="max-width:64ch;margin-bottom:26px;color:var(--fg-dim)">Category colours do the heavy lifting on an info-dense schedule — a 4:5 sheet for the door, the socials, or the screen above the bar.</p>
+    <div style="max-width:360px">
+      <div class="frame tall">
+        <div class="poster tall pD">
+          <div class="top">
+            <div class="p-kick kick">This week at</div>
+            <div class="ttl">Reality<br>Nights</div>
+          </div>
+          <div class="list">
+            <div class="ev"><span class="swatch" style="background:var(--blue)"></span><span class="day">Thu</span><span class="nm">Karaoke</span><span class="tm">20:00</span></div>
+            <div class="ev"><span class="swatch" style="background:var(--pink)"></span><span class="day">Fri</span><span class="nm">Pulse Sessions</span><span class="tm">21:00</span></div>
+            <div class="ev"><span class="swatch" style="background:var(--green)"></span><span class="day">Sat</span><span class="nm">Live · Small Things</span><span class="tm">20:30</span></div>
+            <div class="ev"><span class="swatch" style="background:var(--yellow)"></span><span class="day">Sun</span><span class="nm">Pub Quiz</span><span class="tm">19:30</span></div>
+          </div>
+          <div class="p-foot">
+            <span class="wordmark pf-word" data-word="Reality">Reality</span>
+            <div class="pf-mid">scan for the<br>full calendar</div>
+            <div class="qr" data-qr="d"></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Weekly schedule · 1080×1350</b></p>
+    </div>
+  </section>
+
+  <!-- ============ DNA ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">07</span><h2 class="sec-title">DNA</h2>
+      <span class="sec-note">Four rules carry the whole look — unchanged in the dark.</span>
+    </div>
+    <div class="principles">
+      <div class="principle"><div class="pn">01</div><h5>Hard corners</h5><p>Zero border-radius — cards, buttons, posters are sharp rectangles. Rounding reads as off-brand.</p></div>
+      <div class="principle"><div class="pn">02</div><h5>Flat down-shadow</h5><p>Big vertical offset, almost no blur, no spread. A riso shift, not a soft ambient glow.</p></div>
+      <div class="principle"><div class="pn">03</div><h5>Hover = lift</h5><p>Interactive things rise a few px and the shadow deepens; they press back down on click.</p></div>
+      <div class="principle"><div class="pn">04</div><h5>Misregister</h5><p>Offset accent duplicates behind a hero block — a print that didn't quite register. The night's energy.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="wordmark" style="font-size:24px" data-word="Reality">Reality</span>
+    <span class="muted">coffee / cocktails / community — Đà Nẵng</span>
+    <span class="muted">Design System · Year 2 · day + night + posters</span>
+  </div>
+</footer>
+
+<script src="reality-ds.js"></script>
+<script src="anim/motion.js"></script>
+</body>
+</html>

@@ -1,9 +1,20 @@
 import React from 'react';
 
-export default function Logo({ className = "h-7 md:h-8", color = "#0d0906" }) {
+/**
+ * REALITY wordmark — the canonical mark.
+ *
+ * Construction: set in Montserrat, with the Montserrat Alternates forms
+ * substituted for the **A, I and Y** (those three glyphs are the distinctive
+ * Alternates cuts), tracked at letter-spacing 100 (0.1em). The letterforms
+ * are baked into these vector paths — this is the source of truth. Do NOT
+ * re-typeset the wordmark from live web fonts; a plain `font-family:
+ * 'Montserrat Alternates'` is not the canonical mark. The favicon (the "R")
+ * is the first glyph of this same vector. See the brand guidelines, §03.
+ */
+export default function Logo({ className = "h-7 md:h-8", color = "var(--fg)" }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 84"
       className={className}
       aria-label="REALITY"

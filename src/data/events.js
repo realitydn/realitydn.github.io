@@ -1,60 +1,6 @@
-export const EVENTS = [
-  { 
-    id: "vn-beginner", 
-    title: "BEGINNER VIETNAMESE", 
-    subtitle: "with June", 
-    date: "Sun · 14:00–15:30", 
-    url: "#", 
-    img: "/images/events/2025-09-01-beginner-vn.jpg", 
-    alt: "Beginner Vietnamese poster" 
-  },
-  { 
-    id: "art-circle", 
-    title: "OPEN ART CIRCLE", 
-    subtitle: "Vòng tròn sáng tạo", 
-    date: "Wed · 12:00–14:00", 
-    url: "#", 
-    img: "/images/events/2025-09-03-art-circle.jpg", 
-    alt: "Open Art Circle poster" 
-  },
-  { 
-    id: "ppt-karaoke", 
-    title: "POWERPOINT KARAOKE", 
-    subtitle: "Created by Idan", 
-    date: "Thu · 20:00", 
-    url: "#", 
-    img: "/images/events/2025-09-05-ppt-karaoke.jpg", 
-    alt: "PowerPoint Karaoke poster" 
-  },
-  { 
-    id: "flirty", 
-    title: "FLIRTY PARTY", 
-    subtitle: "", 
-    date: "Sat · 20:00–late", 
-    url: "#", 
-    img: "/images/events/2025-09-07-flirty.jpg", 
-    alt: "Flirty Party poster" 
-  },
-  { 
-    id: "pub-quiz", 
-    title: "PUB QUIZ", 
-    subtitle: "Hosted by Sam", 
-    date: "Wed · 20:00–23:00", 
-    url: "#", 
-    img: "/images/events/2025-09-10-pub-quiz.jpg", 
-    alt: "Pub Quiz poster" 
-  },
-  { 
-    id: "chess", 
-    title: "ĐÀ NẴNG NOMAD CHESS CLUB", 
-    subtitle: "", 
-    date: "Tue · 19:00–23:00", 
-    url: "#", 
-    img: "/images/events/2025-09-12-chess.jpg", 
-    alt: "Chess Club poster" 
-  },
-];
-
+// Live event posters come from /events-config.json (published by the
+// poster-manager tool) — see EventsSection. This file only holds the
+// gallery of photos from the space.
 export const GALLERY = [
   { src: "/images/gallery/a.jpg", alt: "Reality entrance with scooters parked" },
   { src: "/images/gallery/b.jpg", alt: "Bar with illuminated ceiling and shelves" },

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Poster Grid System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<link href="poster-grid.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="wrap">
+    <span class="wordmark mh-word" data-word="Reality">Reality</span>
+    <span class="mh-tag">Poster Grid</span>
+    <div class="controls">
+      <a href="REALITY Design System.html" style="font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:11px;color:var(--fg-dim);text-decoration:none;border-bottom:2px solid var(--hairline);padding-bottom:3px">← Design System</a>
+      <div class="ctl" role="group" aria-label="Page theme">
+        <button class="seg" data-theme-btn="light" aria-pressed="true">Day</button>
+        <button class="seg" data-theme-btn="dark" aria-pressed="false">Night</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section class="intro">
+    <div class="kick">The armature beneath the imagery</div>
+    <h1>One grid,<br><b>every kind of night.</b></h1>
+    <p class="lede">A single structural skeleton for every REALITY poster — regular enough to lay out fast, dynamic enough to tell a <b>talky community afternoon</b> apart from a <b>wild night</b> on the same visual language. You bring the full-bleed photo; the system places the title, the details, and the ticket on a grid that survives the crop from Instagram to WhatsApp.</p>
+
+    <div class="note">
+      <h4>How to read this spec</h4>
+      <p><b>The frame is fixed; the energy flexes.</b> Every poster is a <b>5:7 canvas on a 108px square module</b>, with the title and details locked into a centre <b>safe square</b> so they survive WhatsApp's crop. What moves between event types is the <b>palette (day vs night), the symmetry, the accent loudness, and how many info boxes</b> ride the grid.</p>
+      <p><b>Static examples first, generator later.</b> These are reference layouts to react to. Once the structure feels right, it becomes the rule-set for the poster generator — you'll pick an event type, drop a photo, type the details, and it assembles on this grid.</p>
+      <p><b>One honest tradeoff up top:</b> the bottom <b>ticket band</b> (wordmark · address · website · QR) sits below the WhatsApp safe square on purpose — the square chat thumbnail shows the punchy title cluster; the full poster and IG portrait show the ticket. Where the QR <i>must</i> survive the square crop, use the corner-ticket variant in §06.</p>
+    </div>
+  </section>
+
+  <!-- ============ 01 · CANVAS, MODULE & SAFE ZONES ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span><h2 class="sec-title">Canvas &amp; Safe Zones</h2>
+      <span class="sec-note">5:7 master · 108px square module · the centre square is the universal safe band.</span>
+    </div>
+    <div class="two">
+      <div>
+        <div class="dframe light">
+          <div class="dphoto"></div>
+          <div class="glines"></div>
+          <div class="margins"></div>
+          <div class="crop crop-ig"><span class="tag">4:5 · IG feed</span></div>
+          <div class="crop crop-sq universal"><span class="tag">1:1 · WhatsApp / IG grid — SAFE</span></div>
+        </div>
+        <div class="legend">
+          <span class="li"><span class="sw" style="background:transparent;border-color:var(--fg)"></span>5:7 full · 1080×1512</span>
+          <span class="li"><span class="sw ig"></span>4:5 IG feed</span>
+          <span class="li"><span class="sw sq"></span>1:1 safe square</span>
+          <span class="li"><span class="sw dash"></span>1-module margin</span>
+        </div>
+      </div>
+      <div>
+        <p class="subhead">Why 5:7 on a square module</p>
+        <p class="pg-lede" style="font-size:16px;margin-bottom:8px">The tall 5:7 frame privileges the Instagram grid; the square module keeps everything snapping cleanly. The crops nest <b>exactly on the grid</b> — so the safe zone isn't a guess, it's two rows in from top and bottom.</p>
+        <ul class="speclist" style="margin-top:18px">
+          <li><span class="mk">5:7</span><div><div class="tt">Full canvas — <b>1080 × 1512</b></div><p>The poster and the IG portrait post. Photo bleeds to all four edges; only atmosphere lives in the outer rows.</p></div></li>
+          <li><span class="mk" style="border-color:#18a7e0;color:#18a7e0">4:5</span><div><div class="tt">IG feed crop</div><p>Instagram trims to 4:5 in-feed — <code>≈0.75 module</code> off top &amp; bottom. Keep nothing vital in that sliver.</p></div></li>
+          <li><span class="mk fill">1:1</span><div><div class="tt">Safe square — <b>the WhatsApp thumb</b></div><p>Centred 1080×1080, inset <code>exactly 2 modules</code> (216px) top &amp; bottom. <b>Title + all details live here.</b> This is the cluster-in-the-middle rule, drawn to the grid.</p></div></li>
+        </ul>
+        <div class="spectable">
+          <div class="cell"><div class="big">1080<span class="u">×1512</span></div><div class="lab">Canvas · 5:7</div></div>
+          <div class="cell"><div class="big">108<span class="u">px</span></div><div class="lab">Square module</div></div>
+          <div class="cell"><div class="big">10<span class="u">×14</span></div><div class="lab">Module grid</div></div>
+          <div class="cell"><div class="big">2<span class="u">mod</span></div><div class="lab">Safe inset T/B</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 · CONTENT ZONES ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span><h2 class="sec-title">Content Zones</h2>
+      <span class="sec-note">Nine required elements, three zones. Marquee &amp; Credits ride the safe square; the Ticket anchors the base.</span>
+    </div>
+    <div class="two">
+      <div>
+        <div class="dframe light">
+          <div class="dphoto"></div>
+          <div class="margins"></div>
+          <div class="crop crop-sq"><span class="tag">safe square</span></div>
+          <!-- schematic zones -->
+          <div class="zbox accentfill" style="top:16.5%;left:30%;width:40%;height:5%"><span class="zlab">when · day + time</span></div>
+          <div class="zbox" style="top:24%;left:10%;width:80%;height:17%"><span class="zlab">marquee</span><span class="zname" style="font-size:34px">Event title<br><span style="font-size:15px;font-weight:600;letter-spacing:.04em;text-transform:none;color:var(--fg-dim)">+ tagline</span></span></div>
+          <div class="zbox" style="top:44%;left:18%;width:64%;height:8%"><span class="zlab">credits · host</span><span class="zname" style="font-size:18px">Presented by…</span></div>
+          <div class="zbox" style="top:54%;left:18%;width:64%;height:7%;border-style:dashed;opacity:.85"><span class="zlab">nightlife extras</span><span class="zname" style="font-size:15px;color:var(--fg-dim)">DJs · drink specials</span></div>
+          <div class="zbox" style="top:86.5%;left:0;width:100%;height:13.5%;background:var(--df-paper)"><span class="zlab">ticket — the constant</span><span class="zname" style="font-size:17px">Reality · address · website · QR</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="subhead">The nine, grouped</p>
+        <ul class="speclist">
+          <li><span class="mk fill">M</span><div><div class="tt">Marquee — <b>title + tagline</b></div><p>The slam. Biggest type on the grid, top of the safe square. Tagline rides directly beneath in Space Grotesk.</p></div></li>
+          <li><span class="mk">C</span><div><div class="tt">Credits — <b>host · day · time</b></div><p>Who's running it and when. Day + time often double as the <code>when</code> kicker above the title; the host gets its own box. Nightlife stacks extras here — DJ lineup, drink specials.</p></div></li>
+          <li><span class="mk sq"></span><div><div class="tt">Ticket — <b>wordmark · address · website · QR</b></div><p>The unchanging anchor. Same four marks on every poster so the brand and the scan are never in doubt. Band by day, corner cluster after dark.</p></div></li>
+        </ul>
+        <p class="pg-lede" style="font-size:14.5px;margin-top:20px;color:var(--fg-dim)">Each box keeps the riso <b style="color:var(--fg);font-weight:600">down-shadow</b> — a hard straight-down shift — so the structure reads as stacked paper even over a busy photo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 · THE FLEX ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span><h2 class="sec-title">Community ↔ Nightlife</h2>
+      <span class="sec-note">Same skeleton, four levers. Palette does the heaviest lifting: day for the talk, night for the wild.</span>
+    </div>
+    <div class="triptych" style="grid-template-columns:1fr 1fr;max-width:760px">
+      <div class="gopt">
+        <div class="dframe light">
+          <div class="dphoto"></div>
+          <div class="sk" style="top:17%;left:34%;width:32%;height:3.4%"></div>
+          <div class="sk" style="top:25%;left:14%;width:72%;height:15%"></div>
+          <div class="sk hollow" style="top:43%;left:24%;width:52%;height:6%"></div>
+          <div class="sk acc" style="top:52%;left:34%;width:32%;height:3.4%"></div>
+          <div class="sk" style="top:87%;left:0;width:100%;height:11%"></div>
+        </div>
+        <h4><span>Community</span> · symmetric, by day</h4>
+        <p>Day palette (ink on cream). Everything centred on the spine, calm accent — <b style="color:var(--fg)">blue or green</b>. Air between boxes. Reads as welcoming and legible.</p>
+      </div>
+      <div class="gopt">
+        <div class="dframe dark">
+          <div class="dphoto"></div>
+          <div class="sk acc" style="top:16%;left:9%;width:30%;height:3.2%"></div>
+          <div class="sk" style="top:24%;left:8%;width:64%;height:16%;transform:rotate(-1.5deg)"></div>
+          <div class="sk" style="top:55%;right:9%;left:auto;width:40%;height:8%"></div>
+          <div class="sk acc" style="top:46%;left:8%;width:26%;height:3.6%;transform:rotate(-2deg)"></div>
+          <div class="sk hollow" style="bottom:5%;right:6%;left:auto;width:46%;height:10%"></div>
+        </div>
+        <h4><span>Nightlife</span> · asymmetric, after dark</h4>
+        <p>Night palette (cream on ink). Title slams left and offsets, loud accent — <b style="color:var(--fg)">pink or red</b> — with a misregistered print. More boxes (DJs, specials) and a corner ticket. Reads loud and kinetic.</p>
+      </div>
+    </div>
+    <div class="legend" style="margin-top:24px;gap:26px">
+      <span class="li" style="color:var(--fg)">Levers&nbsp;→</span>
+      <span class="li"><span class="sw" style="background:linear-gradient(90deg,#fffbf1 50%,#0a0703 50%)"></span>Palette · day → night</span>
+      <span class="li"><span class="sw" style="background:transparent;border-color:var(--fg)"></span>Layout · symmetric → offset</span>
+      <span class="li"><span class="sw" style="background:linear-gradient(90deg,#18a7e0 50%,#ed1b72 50%)"></span>Accent · calm → loud</span>
+      <span class="li"><span class="sw" style="background:repeating-linear-gradient(90deg,var(--fg) 0 3px,transparent 3px 6px)"></span>Density · airy → packed</span>
+    </div>
+  </section>
+
+  <!-- ============ 04 · GRID OPTIONS ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span><h2 class="sec-title">Grid Options</h2>
+      <span class="sec-note">Three ways the same square module can carry a layout — from straight-laced to broken.</span>
+    </div>
+    <div class="triptych">
+      <div class="gopt">
+        <div class="dframe light">
+          <div class="dphoto"></div><div class="glines"></div>
+          <div class="sk" style="top:17%;left:35%;width:30%;height:3%"></div>
+          <div class="sk" style="top:25%;left:20%;width:60%;height:14%"></div>
+          <div class="sk hollow" style="top:42%;left:28%;width:44%;height:5%"></div>
+          <div class="sk" style="top:88%;left:0;width:100%;height:10%"></div>
+        </div>
+        <h4>A · <span>Symmetric stack</span></h4>
+        <p>Everything mirrored on the centre column. The professional default — what you've been building. Best for community and any info-light bill.</p>
+      </div>
+      <div class="gopt">
+        <div class="dframe light">
+          <div class="dphoto"></div><div class="glines"></div>
+          <div class="sk" style="top:16%;left:10%;width:50%;height:3%"></div>
+          <div class="sk" style="top:24%;left:10%;width:60%;height:18%"></div>
+          <div class="sk acc" style="top:46%;left:60%;width:30%;height:24%"></div>
+          <div class="sk hollow" style="top:46%;left:10%;width:42%;height:8%"></div>
+          <div class="sk" style="top:88%;left:0;width:100%;height:10%"></div>
+        </div>
+        <h4>B · <span>Broad / narrow split</span></h4>
+        <p>A 6 / 4 column break — headline owns the wide left, a tall accent box (lineup, specials, price) owns the narrow right. Asymmetry without chaos.</p>
+      </div>
+      <div class="gopt">
+        <div class="dframe dark">
+          <div class="dphoto"></div><div class="glines"></div>
+          <div class="sk acc" style="top:15%;left:8%;width:34%;height:3.2%;transform:rotate(-2deg)"></div>
+          <div class="sk" style="top:23%;left:8%;width:66%;height:17%;transform:rotate(-2deg)"></div>
+          <div class="sk hollow" style="top:55%;right:8%;left:auto;width:48%;height:9%;transform:rotate(2deg)"></div>
+          <div class="sk acc" style="top:44%;left:12%;width:28%;height:4%;transform:rotate(2deg)"></div>
+          <div class="sk" style="bottom:5%;left:6%;width:50%;height:11%"></div>
+        </div>
+        <h4>C · <span>Offset stagger</span></h4>
+        <p>Boxes break the grid — slight rotation, overlap, a corner ticket. Misregister as layout. Reserved for the wildest nights; use sparingly or it stops reading as REALITY.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 · ARCHETYPES ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">05</span><h2 class="sec-title">Four Archetypes</h2>
+      <span class="sec-note">The same nine slots, filled four ways. Two by day, two after dark. Photos are placeholders — you supply them.</span>
+    </div>
+    <div class="poster-grid-rail">
+
+      <!-- ===== 1 · PUB QUIZ — community / day / blue / symmetric / solid ===== -->
+      <div data-screen-label="Archetype · Pub Quiz (community)">
+        <div class="frame r57">
+          <div class="poster p57 scope-day" style="--accent:var(--blue)">
+            <div class="pphoto day"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+            <div class="pcanvas" style="color:#0d0905">
+              <div class="box solid" style="position:absolute;top:250px;left:50%;transform:translateX(-50%);padding:12px 26px"><span class="amk" style="letter-spacing:.18em;font-size:26px">Wed · 19:30</span></div>
+              <div style="position:absolute;top:350px;left:0;width:100%;text-align:center">
+                <div class="atitle" style="font-size:176px;text-shadow:0 9px 1px rgba(13,9,5,.16)">Pub</div>
+                <div class="atitle" style="font-size:176px;text-shadow:0 9px 1px rgba(13,9,5,.16)">Quiz</div>
+              </div>
+              <div class="box paper" style="position:absolute;top:712px;left:50%;transform:translateX(-50%);padding:16px 30px"><span class="atag" style="font-size:28px">Six rounds · cold beer · bragging rights</span></div>
+              <div class="box solid" style="position:absolute;top:830px;left:50%;transform:translateX(-50%);padding:20px 34px;text-align:center">
+                <div class="amk" style="color:var(--blue);letter-spacing:.2em;font-size:17px;margin-bottom:6px">Hosted by</div>
+                <div class="amk" style="font-size:44px;letter-spacing:.02em">The Quizmaster</div>
+              </div>
+            </div>
+            <div class="ticket-band" style="background:#fffbf1;color:#0d0905;--qr-bg:#fffbf1">
+              <span class="wordmark tk-word">Reality</span>
+              <div class="tk-mid">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></div>
+              <div class="qr t-qr" data-qr="1"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcap">
+          <div class="pc-cat">Community · day</div>
+          <div class="pc-name">Pub Quiz</div>
+          <p class="pc-note">Symmetric on the spine, calm <b style="color:var(--fg)">blue</b> accent, all solid blocks. The friendly baseline — every box snaps to the centre column inside the safe square.</p>
+          <div class="pc-tags"><span>Day palette</span><span>Symmetric</span><span>Solid boxes</span><span>Slam title</span><span>Ticket band</span></div>
+        </div>
+      </div>
+
+      <!-- ===== 2 · ACOUSTIC SESSIONS — community / day / green / symmetric / thin + outline ===== -->
+      <div data-screen-label="Archetype · Acoustic Sessions (community)">
+        <div class="frame r57">
+          <div class="poster p57 scope-day" style="--accent:var(--green)">
+            <div class="pphoto day"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+            <div class="pcanvas" style="color:#0d0905">
+              <div style="position:absolute;top:262px;left:0;width:100%;text-align:center">
+                <span class="amk" style="color:#0d0905;letter-spacing:.22em;font-size:25px">Sunday · 17:00 · free</span>
+              </div>
+              <div style="position:absolute;top:340px;left:0;width:100%;text-align:center">
+                <div class="atitle thin" style="font-size:140px;text-shadow:0 8px 1px rgba(13,9,5,.14)">Acoustic</div>
+                <div class="atitle thin" style="font-size:140px;text-shadow:0 8px 1px rgba(13,9,5,.14)">Sessions</div>
+              </div>
+              <div class="box paper" style="position:absolute;top:700px;left:50%;transform:translateX(-50%);padding:16px 30px"><span class="atag" style="font-size:27px">Unplugged on the patio</span></div>
+              <div class="box outline" style="position:absolute;top:822px;left:50%;transform:translateX(-50%);padding:20px 34px;text-align:center;background:rgba(255,251,241,.55)">
+                <div class="amk" style="color:var(--green);letter-spacing:.2em;font-size:17px;margin-bottom:6px">With</div>
+                <div class="amk" style="font-size:42px;letter-spacing:.02em">Mai Linh Trio</div>
+              </div>
+            </div>
+            <div class="ticket-band" style="background:#fffbf1;color:#0d0905;--qr-bg:#fffbf1">
+              <span class="wordmark tk-word">Reality</span>
+              <div class="tk-mid">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></div>
+              <div class="qr t-qr" data-qr="2"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcap">
+          <div class="pc-cat">Community · day</div>
+          <div class="pc-name">Acoustic Sessions</div>
+          <p class="pc-note">Same symmetric grid, but a <b style="color:var(--fg)">thin display title</b> and an <b style="color:var(--fg)">outline box</b> let it breathe — quieter, warmer, <b style="color:var(--fg)">green</b> accent. Proof the calm end of the range.</p>
+          <div class="pc-tags"><span>Day palette</span><span>Symmetric</span><span>Outline box</span><span>Thin title</span><span>Ticket band</span></div>
+        </div>
+      </div>
+
+      <!-- ===== 3 · PULSE SESSIONS — nightlife / night / pink / asymmetric / misregister + corner ===== -->
+      <div data-screen-label="Archetype · Pulse Sessions (nightlife)">
+        <div class="frame r57">
+          <div class="poster p57 scope-night" style="--accent:var(--pink);--accent-2:var(--blue)">
+            <div class="pphoto night"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+            <div class="pcanvas" style="color:#fffbf1">
+              <div style="position:absolute;top:250px;left:96px"><span class="akick" style="color:var(--pink)">Fri · 22:00 — late</span></div>
+              <div class="mreg" style="position:absolute;top:330px;left:90px;font-size:150px;color:#fffbf1">
+                <div class="l under l2">Pulse<br>Sessions</div>
+                <div class="l under l1">Pulse<br>Sessions</div>
+                <div class="l top">Pulse<br>Sessions</div>
+              </div>
+              <div class="flag" style="position:absolute;top:720px;left:96px;color:#0d0905;background:var(--pink);border-color:var(--pink);font-size:21px;transform:rotate(-3deg)">Free before 23:00</div>
+              <div class="box" style="position:absolute;top:828px;right:96px;left:auto;padding:22px 30px;text-align:right;background:#0a0703;color:#fffbf1">
+                <div class="amk" style="color:var(--pink);letter-spacing:.2em;font-size:16px;margin-bottom:7px">On the decks</div>
+                <div class="amk" style="font-size:46px;letter-spacing:.01em;line-height:.95">DJ Milk<br>Hanø · b2b</div>
+              </div>
+            </div>
+            <div class="ticket-corner" style="bottom:60px;right:60px;background:#0a0703;color:#fffbf1;--qr-bg:#0a0703">
+              <span class="wordmark tk-word">Reality</span>
+              <div class="tk-lines">realitydn.com<span>86 Mai Thúc Lân</span></div>
+              <div class="qr t-qr" data-qr="3" style="width:104px;height:104px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcap">
+          <div class="pc-cat">Nightlife · after dark</div>
+          <div class="pc-name">Pulse Sessions</div>
+          <p class="pc-note">Title slams left with a <b style="color:var(--fg)">misregistered print</b>, info offsets right, ticket drops to a <b style="color:var(--fg)">corner cluster</b>. Loud <b style="color:var(--fg)">pink</b>, night palette, asymmetric — the same nine slots gone kinetic.</p>
+          <div class="pc-tags"><span>Night palette</span><span>Asymmetric</span><span>Misregister</span><span>DJ box</span><span>Corner ticket</span></div>
+        </div>
+      </div>
+
+      <!-- ===== 4 · AFTER DARK — nightlife / night / red / wild / scrim + specials ===== -->
+      <div data-screen-label="Archetype · After Dark (nightlife)">
+        <div class="frame r57">
+          <div class="poster p57 scope-night" style="--accent:var(--red);--accent-2:var(--amber)">
+            <div class="pphoto night"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+            <div class="pcanvas" style="color:#fffbf1">
+              <div style="position:absolute;top:248px;left:96px"><span class="akick" style="color:var(--red)">Sat · 23:00 → 04:00</span></div>
+              <div class="box scrim" style="position:absolute;top:328px;left:80px;width:720px;padding:30px 40px 38px;transform:rotate(-2deg)">
+                <div class="atitle" style="font-size:150px;color:#fffbf1">After<br>Dark</div>
+                <div class="atag" style="font-size:26px;color:rgba(255,251,241,.82);margin-top:14px">Residents + guests · 3 floors</div>
+              </div>
+              <div class="box accent" style="position:absolute;top:842px;left:96px;padding:22px 32px;transform:rotate(2deg)">
+                <div class="amk" style="color:rgba(13,9,5,.6);letter-spacing:.2em;font-size:16px;margin-bottom:7px">Specials</div>
+                <div class="amk" style="font-size:44px;letter-spacing:.01em;line-height:.95">₫50k spirits<br>til 1am</div>
+              </div>
+            </div>
+            <div class="ticket-corner" style="bottom:60px;right:60px;background:#0a0703;color:#fffbf1;--qr-bg:#0a0703">
+              <span class="wordmark tk-word">Reality</span>
+              <div class="tk-lines">realitydn.com<span>86 Mai Thúc Lân</span></div>
+              <div class="qr t-qr" data-qr="4" style="width:104px;height:104px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcap">
+          <div class="pc-cat">Nightlife · after dark</div>
+          <div class="pc-name">After Dark</div>
+          <p class="pc-note">The wildest read: a <b style="color:var(--fg)">translucent scrim</b> floats the title over a busy photo, a rotated <b style="color:var(--fg)">red specials box</b> packs in extra info. Most asymmetry, loudest accent — still unmistakably the system.</p>
+          <div class="pc-tags"><span>Night palette</span><span>Offset stagger</span><span>Scrim box</span><span>Specials</span><span>Corner ticket</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 06 · EXPLORE ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">06</span><h2 class="sec-title">Open Questions</h2>
+      <span class="sec-note">Three variables to settle before the generator. Every option keeps the riso down-shadow.</span>
+    </div>
+
+    <p class="subhead">A · How the ticket sits</p>
+    <div class="explore" style="margin-bottom:42px">
+      <div class="fsamp">
+        <div class="dframe light" style="box-shadow:var(--sh-light)">
+          <div class="dphoto"></div>
+          <div class="sk" style="top:30%;left:18%;width:64%;height:20%"></div>
+          <div class="sk" style="top:87%;left:0;width:100%;height:11%"></div>
+        </div>
+        <div class="exo-foot" style="border:2px solid var(--fg);border-top:none"><h5>Band</h5><p>Full-width base rule. Maximum presence, but falls below the WhatsApp square.</p></div>
+      </div>
+      <div class="fsamp">
+        <div class="dframe dark" style="box-shadow:var(--sh-light)">
+          <div class="dphoto"></div>
+          <div class="sk" style="top:26%;left:8%;width:64%;height:18%"></div>
+          <div class="sk hollow" style="bottom:6%;right:6%;left:auto;width:46%;height:10%"></div>
+        </div>
+        <div class="exo-foot" style="border:2px solid var(--fg);border-top:none"><h5>Corner cluster</h5><p>Compressed to one corner. Frees the frame for asymmetric nights; reads as a stamp.</p></div>
+      </div>
+      <div class="fsamp">
+        <div class="dframe light" style="box-shadow:var(--sh-light)">
+          <div class="dphoto"></div>
+          <div class="sk" style="top:24%;left:18%;width:64%;height:16%"></div>
+          <div class="sk acc" style="top:62%;left:24%;width:52%;height:10%"></div>
+        </div>
+        <div class="exo-foot" style="border:2px solid var(--fg);border-top:none"><h5>Pulled into centre</h5><p>QR + wordmark inside the safe square. Survives every crop — at the cost of the clean base edge.</p></div>
+      </div>
+    </div>
+
+    <p class="subhead">B · How boxes sit on the photo</p>
+    <div class="explore" style="margin-bottom:42px">
+      <div class="exo">
+        <div class="stage"><div class="samp solid"><div class="s-lab">solid</div><div class="s-big">Friday</div></div></div>
+        <div class="exo-foot"><h5>Solid block</h5><p>Opaque ink/cream fill. Max contrast, zero compromise — the current DNA.</p></div>
+      </div>
+      <div class="exo">
+        <div class="stage"><div class="samp outline"><div class="s-lab">outline</div><div class="s-big">Friday</div></div></div>
+        <div class="exo-foot"><h5>Knockout outline</h5><p>Border only, photo shows through. Airy — best where the image is calm and key.</p></div>
+      </div>
+      <div class="exo dark">
+        <div class="stage"><div class="samp scrim"><div class="s-lab">scrim</div><div class="s-big">Friday</div></div></div>
+        <div class="exo-foot"><h5>Translucent scrim</h5><p>Frosted panel floats type over a busy shot. Keeps the photo present and the words legible.</p></div>
+      </div>
+    </div>
+
+    <p class="subhead">C · How the title is set</p>
+    <div class="explore">
+      <div class="exo">
+        <div class="stage"><div class="tsamp thin">Acoustic<br>Sessions</div></div>
+        <div class="exo-foot"><h5>Thin display · 100</h5><p>Elegant, quiet, measured. The talky-community voice.</p></div>
+      </div>
+      <div class="exo dark">
+        <div class="stage"><div class="tsamp slam">Pulse<br>Night</div></div>
+        <div class="exo-foot"><h5>Heavy slam · 700</h5><p>Loud, physical, kinetic. The nightlife voice — pairs with misregister.</p></div>
+      </div>
+      <div class="exo">
+        <div class="stage"><div class="tsamp alt">Reality<br>Live</div></div>
+        <div class="exo-foot"><h5>Alternates wordmark</h5><p>For brand-forward bills where the event name <i>is</i> REALITY. Use rarely.</p></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="wordmark" style="font-size:24px" data-word="Reality">Reality</span>
+    <span class="muted">coffee / cocktails / community — Đà Nẵng</span>
+    <span class="muted">Poster Grid · 5:7 · day + night + the ticket</span>
+  </div>
+</footer>
+
+<script src="reality-ds.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+/* ============================================================
+   REALITY — MOTION SPEC (page-specific). Builds on reality-ds.css.
+   ============================================================ */
+.mh-tag{ white-space:nowrap; }
+
+/* ---- easing cards ---- */
+.ease-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+@media(max-width:880px){ .ease-grid{ grid-template-columns:1fr; } }
+.ease{ border:2px solid var(--fg); background:var(--surface); box-shadow:var(--sh-default); padding:24px; }
+.ease .nm{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:18px; }
+.ease .tok{ font-family:var(--mont); font-weight:600; font-size:11px; letter-spacing:.04em; color:var(--accent); margin-top:4px; }
+.ease .cb{ font-family:var(--mont); font-weight:600; font-size:11px; color:var(--fg-faint); margin-top:2px; }
+.ease-track{ position:relative; height:10px; background:var(--hairline); margin:26px 0 22px; }
+.ease-dot{ position:absolute; top:50%; left:0; width:24px; height:24px; margin-top:-12px; margin-left:-12px;
+  background:var(--accent); border:2px solid var(--fg); box-shadow:var(--sh-light);
+  animation:mo-slide 1300ms var(--ez) infinite alternate; }
+@keyframes mo-slide{ from{ left:0; } to{ left:100%; } }
+.ease p{ font-size:13px; color:var(--fg-dim); line-height:1.55; }
+.ease p b{ color:var(--fg); font-weight:600; }
+
+/* ---- duration scale ---- */
+.dur{ border:2px solid var(--fg); box-shadow:var(--sh-default); }
+.dur .drow{ display:grid; grid-template-columns:150px 70px 1fr 1.4fr; gap:22px; align-items:center;
+  padding:16px 22px; border-top:1.5px solid var(--hairline); }
+.dur .drow:first-child{ border-top:none; }
+@media(max-width:780px){ .dur .drow{ grid-template-columns:120px 56px 1fr; } .dur .drow .du{ display:none; } }
+.dur .dt{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:13px; }
+.dur .dt small{ display:block; font-weight:600; font-size:9.5px; letter-spacing:.1em; color:var(--fg-faint); margin-top:3px; }
+.dur .dms{ font-family:var(--mont); font-weight:700; font-size:13px; color:var(--accent); }
+.dur .dtrack{ height:10px; background:var(--hairline); position:relative; overflow:hidden; }
+.dur .dbar{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--fg); }
+.dur .du{ font-size:12.5px; color:var(--fg-dim); line-height:1.5; }
+
+/* ---- triggers ---- */
+.trig{ display:grid; grid-template-columns:repeat(2,1fr); gap:24px; }
+@media(max-width:780px){ .trig{ grid-template-columns:1fr; } }
+.tcard{ border:2px solid var(--fg); background:var(--surface); box-shadow:var(--sh-default); padding:24px; display:flex; flex-direction:column; gap:16px; }
+.tcard .th{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:16px; }
+.tcard .tstage{ min-height:120px; display:flex; align-items:center; justify-content:center; gap:14px;
+  border:1.5px dashed var(--hairline); background:var(--bg); }
+.tcard p{ font-size:12.5px; color:var(--fg-dim); line-height:1.55; }
+.tcard p b{ color:var(--fg); font-weight:600; }
+.tcard .spec{ font-family:var(--mont); font-weight:600; text-transform:uppercase; letter-spacing:.06em; font-size:10px; color:var(--fg-faint); border-top:1.5px solid var(--hairline); padding-top:12px; }
+
+/* lift demo reuses .btn from reality-ds.css */
+/* chip pop */
+.pop-chip{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:12px;
+  border:2px solid var(--fg); background:var(--surface); padding:9px 15px; position:relative; }
+.pop-chip::after{ content:""; position:absolute; inset:0; border:2px solid var(--accent); background:var(--accent);
+  z-index:-1; transform:translate(0,0); opacity:0; }
+.pop-chip.go{ animation:mo-pop 460ms var(--ease-stamp) both; }
+.pop-chip.go::after{ animation:mo-echo 460ms var(--ease-stamp) both; }
+@keyframes mo-pop{ 0%{ transform:translateY(8px) scale(.9); opacity:0; } 100%{ transform:none; opacity:1; } }
+@keyframes mo-echo{ 0%{ transform:translate(0,0); opacity:0; } 60%{ opacity:1; } 100%{ transform:translate(6px,7px); opacity:1; } }
+
+/* theme crossfade swatch */
+.fade-sw{ width:120px; height:84px; border:2px solid var(--fg); box-shadow:var(--sh-light);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:11px;
+  background:#fffbf1; color:#0d0905; transition:background var(--dur-settle) ease, color var(--dur-settle) ease; }
+.fade-sw.night{ background:#0a0703; color:#fffbf1; }
+
+/* named animations */
+.named{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+@media(max-width:780px){ .named{ grid-template-columns:1fr; } }
+.named .n{ border:2px solid var(--fg); background:var(--surface); box-shadow:var(--sh-light); padding:20px 22px; }
+.named .n .ix{ font-family:var(--mont); font-weight:100; font-size:34px; line-height:1; color:var(--accent); }
+.named .n h5{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:14px; margin:8px 0 7px; }
+.named .n p{ font-size:12.5px; color:var(--fg-dim); line-height:1.5; }
+.named .n .sp{ margin-top:11px; font-family:var(--mont); font-weight:600; text-transform:uppercase; letter-spacing:.06em; font-size:9.5px; color:var(--fg-faint); }
+
+.reduce-note{ border:2px solid var(--fg); background:var(--surface); box-shadow:var(--sh-default); padding:24px 28px; }
+.reduce-note h4{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:12px; color:var(--accent); margin-bottom:12px; }
+.reduce-note p{ font-size:14px; color:var(--fg-dim); line-height:1.6; }
+.reduce-note b{ color:var(--fg); font-weight:600; }
+
+.mo-replay{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:12px;
+  border:2px solid var(--fg); background:var(--fg); color:var(--bg); padding:10px 18px; box-shadow:var(--sh-default);
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap); }
+.mo-replay:hover{ transform:translateY(-3px); box-shadow:var(--sh-heavy); }
+.mo-replay:active{ transform:translateY(2px); box-shadow:var(--sh-light); }
+
+@media(prefers-reduced-motion:reduce){
+  .ease-dot{ animation:none; left:100%; }
+  .pop-chip.go,.pop-chip.go::after{ animation:none; }
+}

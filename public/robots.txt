@@ -2,4 +2,42 @@ User-agent: *
 Allow: /
 Disallow: /src/
 
+# AI assistants and their crawlers are explicitly welcome — REALITY wants to
+# be discoverable and quotable. A structured summary lives at /llms.txt.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
 Sitemap: https://realitydn.com/sitemap.xml

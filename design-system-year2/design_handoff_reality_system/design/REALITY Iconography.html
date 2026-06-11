@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALITY — Iconography · directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="reality-ds.css" rel="stylesheet">
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="icons/icons.jsx"></script>
+
+<script type="text/babel">
+const ABW = 392, ABH = 560;
+
+function GlyphGrid({ dir }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, border: '2px solid var(--fg)' }}>
+      {ICON_CORE.map((n, i) => (
+        <div key={n} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+          padding: '18px 6px 12px',
+          borderRight: (i % 4 !== 3) ? '1px solid var(--hairline)' : 'none',
+          borderBottom: (i < 4) ? '1px solid var(--hairline)' : 'none',
+        }}>
+          <Icon name={n} dir={dir} size={30} />
+          <span style={{ fontFamily: 'var(--mont)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', fontSize: 9, color: 'var(--fg-faint)' }}>{ICON_LABELS[n]}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NavBar({ dir }) {
+  const items = ['home', 'scan', 'leaders', 'user'];
+  return (
+    <div style={{ border: '2px solid var(--fg)', boxShadow: 'var(--sh-default)', display: 'flex', background: 'var(--surface)' }}>
+      {items.map((n, i) => {
+        const active = i === 0;
+        return (
+          <div key={n} style={{
+            flex: 1, height: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+            background: active ? 'var(--fg)' : 'transparent',
+            color: active ? 'var(--bg)' : 'var(--fg)',
+            borderRight: i < items.length - 1 ? '2px solid var(--fg)' : 'none',
+          }}>
+            <Icon name={n} dir={active && dir === 'echo' ? 'solid' : dir} size={24} color="currentColor" echo="var(--accent)" />
+            <span style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', fontSize: 8 }}>{ICON_LABELS[n]}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Direction({ dir, num, title, blurb, spec }) {
+  return (
+    <div style={{ background: 'var(--bg)', border: '2px solid var(--fg)', boxShadow: 'var(--sh-default)', padding: 26, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div>
+        <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, fontSize: 11, letterSpacing: '.14em', color: 'var(--fg-faint)', marginBottom: 4 }}>DIRECTION {num}</div>
+        <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', fontSize: 21 }}>{title}</div>
+        <p style={{ fontFamily: 'var(--grotesk)', fontSize: 12.5, color: 'var(--fg-dim)', lineHeight: 1.55, marginTop: 8 }}>{blurb}</p>
+      </div>
+      <GlyphGrid dir={dir} />
+      <div>
+        <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', fontSize: 9, color: 'var(--fg-faint)', marginBottom: 8 }}>In context · bottom nav</div>
+        <NavBar dir={dir} />
+      </div>
+      <div style={{ marginTop: 'auto', fontFamily: 'var(--mont)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', fontSize: 9.5, color: 'var(--fg-faint)', borderTop: '1px solid var(--hairline)', paddingTop: 10 }}>{spec}</div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="dirs" title="02 · Iconography — pick a direction" subtitle="One core set, three treatments. Each shown as a swatch grid and in a live bottom nav.">
+        <DCArtboard id="stroke" label="A · Hairline stroke" width={ABW} height={ABH}>
+          <Direction dir="stroke" num="A" title="Hairline Stroke"
+            blurb="2px strokes, square caps, mitered corners — the exact weight of the system's borders. Quietest and most legible at small sizes; reads as precise and technical."
+            spec="2px · square cap · miter join · 24px grid" />
+        </DCArtboard>
+        <DCArtboard id="solid" label="B · Solid block" width={ABW} height={ABH}>
+          <Direction dir="solid" num="B" title="Solid Block"
+            blurb="Filled silhouettes, inherently-linear marks kept as thick strokes. Bold and poster-like; punches at a glance, pairs naturally with the ink fills and the Day/Night flip."
+            spec="filled · 2.6px linear marks · high contrast" />
+        </DCArtboard>
+        <DCArtboard id="echo" label="C · Riso echo" width={ABW} height={ABH}>
+          <Direction dir="echo" num="C" title="Riso Echo"
+            blurb="The solid set with an offset accent duplicate behind — the misregister DNA shrunk to icon scale. Loudest and most on-brand; best reserved for hero/marketing, calmer for dense UI."
+            spec="solid + 1.6px accent offset · category-coloured" />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="resolved" title="03 · Resolved — one set, theme-driven" subtitle="Decision: hairline by day, the same geometry as a cream stroke-echo after dark.">
+        <DCArtboard id="day" label="Day · hairline ink" width={ABW} height={ABH}>
+          <div className="scope-day" style={{ background: 'var(--bg)', border: '2px solid var(--fg)', boxShadow: 'var(--sh-default)', padding: 26, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, fontSize: 11, letterSpacing: '.14em', color: 'var(--fg-faint)', marginBottom: 4 }}>DAY</div>
+              <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', fontSize: 21 }}>Hairline · Ink</div>
+              <p style={{ fontFamily: 'var(--grotesk)', fontSize: 12.5, color: 'var(--fg-dim)', lineHeight: 1.55, marginTop: 8 }}>Direction A. Quiet, precise, exactly the border weight. The icon recedes so content leads.</p>
+            </div>
+            <GlyphGrid dir="stroke" />
+            <div>
+              <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', fontSize: 9, color: 'var(--fg-faint)', marginBottom: 8 }}>In context · bottom nav</div>
+              <NavBar dir="stroke" />
+            </div>
+            <div style={{ marginTop: 'auto', fontFamily: 'var(--mont)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', fontSize: 9.5, color: 'var(--fg-faint)', borderTop: '1px solid var(--hairline)', paddingTop: 10 }}>2px stroke · ink on cream</div>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="night" label="Night · cream stroke-echo" width={ABW} height={ABH}>
+          <div className="scope-night" style={{ background: 'var(--bg)', border: '2px solid var(--fg)', boxShadow: 'var(--sh-default)', padding: 26, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, fontSize: 11, letterSpacing: '.14em', color: 'var(--fg-faint)', marginBottom: 4 }}>NIGHT</div>
+              <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', fontSize: 21 }}>Cream Stroke-Echo</div>
+              <p style={{ fontFamily: 'var(--grotesk)', fontSize: 12.5, color: 'var(--fg-dim)', lineHeight: 1.55, marginTop: 8 }}>Same hairline geometry — but the ink becomes cream and an accent layer misregisters behind it. Calm structure, after-dark energy.</p>
+            </div>
+            <GlyphGrid dir="echo-line" />
+            <div>
+              <div style={{ fontFamily: 'var(--mont)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', fontSize: 9, color: 'var(--fg-faint)', marginBottom: 8 }}>In context · bottom nav</div>
+              <NavBar dir="echo-line" />
+            </div>
+            <div style={{ marginTop: 'auto', fontFamily: 'var(--mont)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', fontSize: 9.5, color: 'var(--fg-faint)', borderTop: '1px solid var(--hairline)', paddingTop: 10 }}>2px cream stroke + 1.6px accent offset</div>
+          </div>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

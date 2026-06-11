@@ -4,6 +4,10 @@ node_modules/
 # Build output
 dist/
 
+# Design-system bundle zips — large binaries, regenerate from
+# design-system-year2/ with: python tools/zip-bundle.py
+*.zip
+
 # Environment and secrets
 .env
 .env.*

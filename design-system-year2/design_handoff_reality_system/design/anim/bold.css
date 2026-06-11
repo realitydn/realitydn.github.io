@@ -1,0 +1,49 @@
+/* ===== REALITY — BOLD TIER motions =====
+   More ambitious, screen-scale moves. Animate on .play. */
+
+/* ---------- 11. SQUEEGEE WIPE ---------- */
+/* A screenprint pull: an ink-loaded bar drags across and lays the next
+   screen down behind its edge. Replaces generic slide/fade transitions. */
+.d-squeegee{position:relative;width:200px;height:150px;border:2px solid var(--cream);overflow:hidden;}
+.d-squeegee .panel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:22px;line-height:1.12;}
+.d-squeegee .p-old{background:var(--ink);color:var(--cream-dim);z-index:1;}
+.d-squeegee .p-new{background:var(--pink);color:var(--ink);z-index:2;clip-path:inset(0 100% 0 0);}
+.d-squeegee .bar{position:absolute;top:-6px;bottom:-6px;width:14px;left:-14px;background:var(--cream);z-index:3;box-shadow:5px 0 0 rgba(255,251,241,0.3);}
+.play .d-squeegee .p-new{animation:sqReveal .9s cubic-bezier(0.55,0,0.3,1) both;}
+.play .d-squeegee .bar{animation:sqBar .9s cubic-bezier(0.55,0,0.3,1) both;}
+@keyframes sqReveal{0%{clip-path:inset(0 100% 0 0);}100%{clip-path:inset(0 0 0 0);}}
+@keyframes sqBar{0%{left:-14px;}100%{left:200px;}}
+
+/* ---------- 13. KINETIC HEADLINE ---------- */
+/* TV-scale round intros built as a riso registration: each word crashes in as
+   red/blue/amber passes that converge into the cream word, swapping fast.
+   JS swaps text in every layer + re-adds .go (see page script). */
+.d-kinetic{position:relative;display:inline-block;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:46px;line-height:1;text-align:center;}
+.d-kinetic .k-layer{display:block;}
+.d-kinetic .k-layer:not(:first-child){position:absolute;inset:0;}
+.d-kinetic .k-red{color:var(--red);mix-blend-mode:screen;}
+.d-kinetic .k-blue{color:var(--blue);mix-blend-mode:screen;}
+.d-kinetic .k-amber{color:var(--amber);mix-blend-mode:screen;}
+.d-kinetic .k-cream{color:var(--cream);}
+.d-kinetic.go .k-red{animation:kSepR .6s var(--ease-out) both;}
+.d-kinetic.go .k-blue{animation:kSepB .6s var(--ease-out) both;}
+.d-kinetic.go .k-amber{animation:kSepA .6s var(--ease-out) both;}
+.d-kinetic.go .k-cream{animation:kSepK .52s .12s var(--ease-stamp) both;}
+@keyframes kSepR{0%{transform:translate(-30px,-14px) scale(1.25);opacity:0;}25%{opacity:1;}100%{transform:translate(-2px,1px) scale(1);opacity:1;}}
+@keyframes kSepB{0%{transform:translate(28px,15px) scale(1.25);opacity:0;}25%{opacity:1;}100%{transform:translate(2px,-1px) scale(1);opacity:1;}}
+@keyframes kSepA{0%{transform:translate(4px,-28px) scale(1.25);opacity:0;}25%{opacity:1;}100%{transform:translate(0,1px) scale(1);opacity:1;}}
+@keyframes kSepK{0%{opacity:0;transform:scale(1.8);}55%{opacity:1;transform:scale(0.95);}100%{opacity:1;transform:scale(1);}}
+
+/* ---------- 14. MARQUEE TICKER ---------- */
+/* The big-screen heartbeat: continuous scroll of wins + room status.
+   Two identical segments translate -50% for a seamless loop. */
+.d-marquee{width:100%;overflow:hidden;display:flex;align-items:center;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
+.d-marquee .track{display:flex;width:max-content;animation:marquee 14s linear infinite;}
+.d-marquee .seg{display:flex;align-items:center;gap:22px;padding-right:22px;}
+.d-marquee .item{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;font-size:16px;color:var(--cream);white-space:nowrap;}
+.d-marquee .sq{width:11px;height:11px;flex:none;}
+.d-marquee .sq-red{background:var(--red);}
+.d-marquee .sq-blue{background:var(--blue);}
+.d-marquee .sq-amber{background:var(--amber);}
+.d-marquee .sq-yellow{background:var(--yellow);}
+@keyframes marquee{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}

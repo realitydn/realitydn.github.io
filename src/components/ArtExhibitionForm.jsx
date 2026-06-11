@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { URLS } from '../data/translations';
 
 const WORKER_URL = '';
 
@@ -177,21 +178,25 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit} className="card-static p-6 md:p-8 max-w-2xl">
-      {/* Progress indicator */}
+      {/* Progress indicator — stamped squares on a rule */}
       <div className="mb-8 flex justify-between items-center">
         {[1, 2, 3, 4].map((num) => (
-          <div key={num} className="flex items-center">
+          <div key={num} className="flex items-center flex-1 last:flex-none">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center font-title text-sm ${
-                step >= num ? 'bg-ink text-cream' : 'bg-gray-300 text-gray-600'
+              className={`w-9 h-9 shrink-0 flex items-center justify-center font-title font-bold text-sm border-2 transition-colors ${
+                step >= num
+                  ? 'bg-ink text-cream border-ink'
+                  : 'bg-transparent text-ink/40 border-ink/25'
               }`}
+              style={step === num ? { boxShadow: 'var(--sh-light)' } : undefined}
+              aria-current={step === num ? 'step' : undefined}
             >
               {num}
             </div>
             {num < 4 && (
               <div
-                className={`h-1 mx-2 md:mx-4 w-12 md:w-16 ${
-                  step > num ? 'bg-ink' : 'bg-gray-300'
+                className={`h-[2px] mx-2 md:mx-3 flex-1 ${
+                  step > num ? 'bg-ink' : 'bg-ink/20'
                 }`}
               />
             )}
@@ -208,10 +213,10 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
       {/* Step 1: About You */}
       {step === 1 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('artForm.step1Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step1Title')}</h3>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.email')} *
             </label>
             <input
@@ -219,14 +224,14 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.emailPlaceholder')}
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            {errors.email && <p className="field-hint-error">{errors.email}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.name')} *
             </label>
             <input
@@ -234,14 +239,14 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.namePlaceholder')}
             />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            {errors.name && <p className="field-hint-error">{errors.name}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.artistCollectiveName')}
             </label>
             <input
@@ -249,13 +254,13 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="artistCollectiveName"
               value={formData.artistCollectiveName}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.artistCollectiveNamePlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.basedWhere')} *
             </label>
             <input
@@ -263,14 +268,14 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="basedWhere"
               value={formData.basedWhere}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.basedWherePlaceholder')}
             />
-            {errors.basedWhere && <p className="text-red-500 text-sm mt-1">{errors.basedWhere}</p>}
+            {errors.basedWhere && <p className="field-hint-error">{errors.basedWhere}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.contact')} *
             </label>
             <input
@@ -278,29 +283,29 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="contact"
               value={formData.contact}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.contactPlaceholder')}
             />
-            {errors.contact && <p className="text-red-500 text-sm mt-1">{errors.contact}</p>}
+            {errors.contact && <p className="field-hint-error">{errors.contact}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.artistBio')} *
             </label>
             <textarea
               name="artistBio"
               value={formData.artistBio}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.artistBioPlaceholder')}
               rows="4"
             />
-            {errors.artistBio && <p className="text-red-500 text-sm mt-1">{errors.artistBio}</p>}
+            {errors.artistBio && <p className="field-hint-error">{errors.artistBio}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.workLink')} *
             </label>
             <input
@@ -308,10 +313,10 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="workLink"
               value={formData.workLink}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.workLinkPlaceholder')}
             />
-            {errors.workLink && <p className="text-red-500 text-sm mt-1">{errors.workLink}</p>}
+            {errors.workLink && <p className="field-hint-error">{errors.workLink}</p>}
           </div>
 
           {/* Honeypot — the HTML name is deliberately not one of the common
@@ -345,25 +350,25 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
       {/* Step 2: About the Show */}
       {step === 2 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('artForm.step2Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step2Title')}</h3>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.showDescription')} *
             </label>
             <textarea
               name="showDescription"
               value={formData.showDescription}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.showDescriptionPlaceholder')}
               rows="5"
             />
-            {errors.showDescription && <p className="text-red-500 text-sm mt-1">{errors.showDescription}</p>}
+            {errors.showDescription && <p className="field-hint-error">{errors.showDescription}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('artForm.showAreasLabel')}
             </label>
             <div className="space-y-2">
@@ -374,7 +379,7 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                     value={area}
                     checked={formData.showAreas.includes(area)}
                     onChange={(e) => handleCheckboxChange(e, 'showAreas')}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`artForm.showAreas.${area}`)}</span>
                 </label>
@@ -383,7 +388,7 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.spaceAmount')} *
             </label>
             <input
@@ -391,21 +396,21 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="spaceAmount"
               value={formData.spaceAmount}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.spaceAmountPlaceholder')}
             />
-            {errors.spaceAmount && <p className="text-red-500 text-sm mt-1">{errors.spaceAmount}</p>}
+            {errors.spaceAmount && <p className="field-hint-error">{errors.spaceAmount}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.technicalNeeds')}
             </label>
             <textarea
               name="technicalNeeds"
               value={formData.technicalNeeds}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.technicalNeedsPlaceholder')}
               rows="3"
             />
@@ -416,10 +421,10 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
       {/* Step 3: Scheduling & Group Shows */}
       {step === 3 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('artForm.step3Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step3Title')}</h3>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-2">
+            <label className="field-label">
               {t.use('artForm.preferredDate')} *
             </label>
             <input
@@ -427,14 +432,14 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
               name="preferredDate"
               value={formData.preferredDate}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+              className="field"
               placeholder={t.use('artForm.preferredDatePlaceholder')}
             />
-            {errors.preferredDate && <p className="text-red-500 text-sm mt-1">{errors.preferredDate}</p>}
+            {errors.preferredDate && <p className="field-hint-error">{errors.preferredDate}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('artForm.flexibilityLabel')} *
             </label>
             <div className="space-y-2">
@@ -446,17 +451,17 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                     value={option}
                     checked={formData.flexibility === option}
                     onChange={handleRadioChange}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`artForm.flexibility.${option}`)}</span>
                 </label>
               ))}
             </div>
-            {errors.flexibility && <p className="text-red-500 text-sm mt-1">{errors.flexibility}</p>}
+            {errors.flexibility && <p className="field-hint-error">{errors.flexibility}</p>}
           </div>
 
           <div>
-            <label className="block font-title text-sm tracking-[0.1em] mb-3">
+            <label className="field-label mb-3">
               {t.use('artForm.isGroupShowLabel')} *
             </label>
             <div className="space-y-2">
@@ -468,19 +473,19 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                     value={option}
                     checked={formData.isGroupShow === option}
                     onChange={handleRadioChange}
-                    className="w-4 h-4"
+                    className="shrink-0"
                   />
                   <span className="font-body">{t.use(`artForm.isGroupShow.${option}`)}</span>
                 </label>
               ))}
             </div>
-            {errors.isGroupShow && <p className="text-red-500 text-sm mt-1">{errors.isGroupShow}</p>}
+            {errors.isGroupShow && <p className="field-hint-error">{errors.isGroupShow}</p>}
           </div>
 
           {formData.isGroupShow === 'yes' && (
             <>
               <div>
-                <label className="block font-title text-sm tracking-[0.1em] mb-2">
+                <label className="field-label">
                   {t.use('artForm.numArtists')} *
                 </label>
                 <input
@@ -488,21 +493,21 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                   name="numArtists"
                   value={formData.numArtists}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+                  className="field"
                   placeholder={t.use('artForm.numArtistsPlaceholder')}
                 />
-                {errors.numArtists && <p className="text-red-500 text-sm mt-1">{errors.numArtists}</p>}
+                {errors.numArtists && <p className="field-hint-error">{errors.numArtists}</p>}
               </div>
 
               <div>
-                <label className="block font-title text-sm tracking-[0.1em] mb-2">
+                <label className="field-label">
                   {t.use('artForm.curatorInfo')}
                 </label>
                 <textarea
                   name="curatorInfo"
                   value={formData.curatorInfo}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-ink/20 bg-cream text-ink font-body focus:border-ink focus:outline-none transition-colors"
+                  className="field"
                   placeholder={t.use('artForm.curatorInfoPlaceholder')}
                   rows="3"
                 />
@@ -515,10 +520,10 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
       {/* Step 4: Review & Submit */}
       {step === 4 && (
         <div className="space-y-4">
-          <h3 className="font-title text-xl md:text-2xl mb-6">{t.use('artForm.step4Title')}</h3>
+          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step4Title')}</h3>
 
           {submitStatus === 'success' && (
-            <div className="p-4 bg-green-100 text-green-800 font-body rounded-none">
+            <div className="alert-success">
               <p className="flex items-center gap-2">
                 <span>✓</span> {t.use('artForm.successMessage')}
               </p>
@@ -526,11 +531,11 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
           )}
 
           {submitStatus === 'error' && (
-            <div className="p-4 bg-red-100 text-red-800 font-body rounded-none">
+            <div className="alert-error">
               <p>{t.use('artForm.errorMessage')}</p>
               <p className="mt-2 text-sm">
                 {t.use('artForm.fallbackMessage')}{' '}
-                <a href="https://wa.me/84123456789" className="font-title underline">
+                <a href={URLS.WA} target="_blank" rel="noreferrer" className="font-title underline">
                   WhatsApp
                 </a>
               </p>
@@ -539,33 +544,36 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
 
           {submitStatus !== 'success' && (
             <>
-              <div className="space-y-4 bg-gray-50 p-4">
+              <div
+                className="space-y-4 p-4"
+                style={{ border: '2px solid var(--hairline)', background: 'var(--surface-2)' }}
+              >
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('artForm.email')}
                   </p>
                   <p className="font-body">{formData.email}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('artForm.name')}
                   </p>
                   <p className="font-body">{formData.name}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('artForm.basedWhere')}
                   </p>
                   <p className="font-body">{formData.basedWhere}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('artForm.flexibilityLabel')}
                   </p>
                   <p className="font-body">{formData.flexibility}</p>
                 </div>
                 <div>
-                  <p className="font-title text-sm tracking-[0.1em] text-gray-600 mb-1">
+                  <p className="field-label mb-1 text-gray-600">
                     {t.use('artForm.isGroupShowLabel')}
                   </p>
                   <p className="font-body">{formData.isGroupShow}</p>
@@ -576,14 +584,14 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="btn-secondary px-4 py-2 font-title text-sm tracking-[0.15em]"
+                  className="btn-secondary px-5 py-3 text-sm"
                 >
                   {t.use('artForm.back')}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary px-4 py-2 font-title text-sm tracking-[0.15em] disabled:opacity-50"
+                  className="btn-primary px-5 py-3 text-sm disabled:opacity-50"
                 >
                   {loading ? t.use('artForm.submitting') : t.use('artForm.submit')}
                 </button>
@@ -600,7 +608,7 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
             <button
               type="button"
               onClick={prevStep}
-              className="btn-secondary px-4 py-2 font-title text-sm tracking-[0.15em]"
+              className="btn-secondary px-5 py-3 text-sm"
             >
               {t.use('artForm.back')}
             </button>
@@ -609,7 +617,7 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
             <button
               type="button"
               onClick={nextStep}
-              className="btn-primary px-4 py-2 font-title text-sm tracking-[0.15em]"
+              className="btn-primary px-5 py-3 text-sm"
             >
               {t.use('artForm.next')}
             </button>
@@ -618,7 +626,7 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
             <button
               type="button"
               onClick={nextStep}
-              className="btn-primary px-4 py-2 font-title text-sm tracking-[0.15em]"
+              className="btn-primary px-5 py-3 text-sm"
             >
               {t.use('artForm.review')}
             </button>

@@ -1,0 +1,61 @@
+/* ============================================================
+   REALITY — PHOTO GUIDANCE (page-specific)
+   Builds on reality-ds.css tokens.
+   ============================================================ */
+.mh-tag{ white-space:nowrap; }
+
+/* ---- treatment rubric ---- */
+.rubric{ display:flex; flex-direction:column; }
+.rb{ display:grid; grid-template-columns:240px 1fr; gap:30px; padding:26px 0; border-bottom:1.5px solid var(--hairline); align-items:center; }
+.rb:last-child{ border-bottom:none; }
+@media(max-width:640px){ .rb{ grid-template-columns:1fr; gap:16px; } }
+.rb-pic{ position:relative; aspect-ratio:5/4; border:2px solid var(--fg); box-shadow:var(--sh-default); overflow:hidden; background:#16161c; }
+.rb-pic canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.rb-pic .tg{ position:absolute; left:0; bottom:0; z-index:2; font-family:var(--mont); font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em; font-size:10px; background:var(--accent); color:#0d0905; padding:5px 9px; }
+.rb-txt h3{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:21px; margin-bottom:6px; }
+.rb-txt .lead{ font-size:14.5px; color:var(--fg-dim); line-height:1.55; margin-bottom:14px; max-width:60ch; }
+.rb-use{ display:flex; gap:26px; flex-wrap:wrap; }
+.rb-use div{ flex:1; min-width:200px; }
+.rb-use .h{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:10px; margin-bottom:6px; }
+.rb-use .yes .h{ color:var(--green); } .rb-use .no .h{ color:var(--red); }
+.rb-use p{ font-size:13px; color:var(--fg-dim); line-height:1.5; }
+
+/* ---- day / night rubric ---- */
+.daynight{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media(max-width:780px){ .daynight{ grid-template-columns:1fr; } }
+.dn{ border:2px solid var(--fg); box-shadow:var(--sh-default); overflow:hidden; }
+.dn .dn-head{ display:flex; align-items:baseline; justify-content:space-between; padding:16px 20px; border-bottom:2px solid var(--fg); }
+.dn .dn-head .t{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:20px; }
+.dn .dn-head .s{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em; font-size:10px; opacity:.6; }
+.dn .dn-pic{ position:relative; aspect-ratio:16/7; border-bottom:2px solid var(--fg); overflow:hidden; }
+.dn .dn-pic canvas{ position:absolute; inset:0; width:100%; height:100%; }
+.dn .dn-body{ padding:18px 20px 20px; }
+.dn .dn-body .row{ display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--hairline); font-size:13.5px; color:var(--fg-dim); }
+.dn .dn-body .row:first-child{ border-top:none; }
+.dn .dn-body .row b{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:11px;
+  color:var(--fg); width:96px; flex:none; padding-top:1px; }
+
+/* ---- reality logo box ---- */
+.logo-demo{ display:grid; grid-template-columns:1.1fr 1fr; gap:30px; align-items:start; }
+@media(max-width:780px){ .logo-demo{ grid-template-columns:1fr; } }
+.lb-stage{ position:relative; aspect-ratio:5/4; border:2px solid var(--fg); box-shadow:var(--sh-heavy); overflow:hidden; background:#0a0703; }
+.lb-stage canvas{ position:absolute; inset:0; width:100%; height:100%; }
+.lb-lock{ position:absolute; left:7%; bottom:7%; right:7%; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  background:#fffbf1; border:3px solid #0d0905; padding:16px 20px; box-shadow:0 10px 2px rgba(13,9,5,.25); }
+.lb-lock .w{ font-family:var(--alt); font-weight:600; text-transform:uppercase; letter-spacing:.02em; font-size:clamp(22px,4vw,40px); line-height:.8; color:#0d0905; }
+.lb-lock .meta{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:clamp(8px,1.3vw,12px); text-align:right; line-height:1.5; color:#0d0905; }
+.lb-lock .meta span{ display:block; font-weight:600; opacity:.65; }
+.lb-clear{ position:absolute; left:7%; bottom:7%; right:7%; pointer-events:none; }
+.lb-clear .cs{ position:absolute; border:1.5px dashed var(--accent); }
+.lb-rules .principle{ margin-bottom:14px; }
+
+/* ---- do / don't ---- */
+.dd{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:640px){ .dd{ grid-template-columns:1fr; } }
+.dd .col{ border:2px solid var(--fg); box-shadow:var(--sh-light); background:var(--surface); padding:20px 22px; }
+.dd .col h4{ font-family:var(--mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em; font-size:13px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.dd .col.do h4{ color:var(--green); } .dd .col.dont h4{ color:var(--red); }
+.dd .col ul{ list-style:none; display:flex; flex-direction:column; gap:10px; }
+.dd .col li{ font-size:13.5px; color:var(--fg-dim); line-height:1.5; padding-left:18px; position:relative; }
+.dd .col li::before{ content:"—"; position:absolute; left:0; color:var(--fg-faint); }

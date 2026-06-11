@@ -86,6 +86,15 @@ async function prerender() {
     const page = await browser.newPage();
     const url = `http://localhost:${PORT}${route}`;
 
+    // The static capture is always Day (cream) — the canonical first
+    // impression for crawlers and first paint. Without this, a machine whose
+    // headless Chrome reports prefers-color-scheme: dark would bake
+    // data-theme="dark" into the shipped HTML. Real visitors still get Night
+    // via the inline theme bootstrap (saved preference / OS setting).
+    await page.emulateMediaFeatures([
+      { name: 'prefers-color-scheme', value: 'light' },
+    ]);
+
     console.log(`  → Rendering ${route}`);
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 });
 

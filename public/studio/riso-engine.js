@@ -54,11 +54,16 @@
 
   /* brightness shift (-0.5..0.5), set per render() — applied in lumBuffer */
   let BRIGHT = 0;
+  /* soft-focus blur (design px, 520-ref like dot/offset) applied to the source
+     BEFORE the press screens it — spreads halftone dots / posterize bands.
+     Set per render(). */
+  let PREBLUR = 0;
 
   /* luminance buffer (0..1) at canvas res, with brightness + contrast + gamma */
   function lumBuffer(w,h,contrast){
     const c=document.createElement('canvas'); c.width=w; c.height=h;
     const cx=c.getContext('2d',{willReadFrequently:true}); drawCover(cx,w,h);
+    blurCanvas(c, PREBLUR);
     const d=cx.getImageData(0,0,w,h).data, L=new Float32Array(w*h);
     const k=contrast||1;
     for(let i=0,p=0;i<d.length;i+=4,p++){
@@ -218,14 +223,74 @@
 
   const TREATMENTS = { duotone, offregister:offRegister, halftone, posterize, cutout, overprint };
 
+  /* ============================================================
+     FINISH PASSES — blur and grain
+     All sizes are design px relative to a 520-wide frame (like
+     dot/offset), so previews and 2× exports match exactly.
+     ============================================================ */
+  /* gaussian-blur a canvas in place; the redraw is overscanned so edges stay
+     opaque instead of fading to whatever sits behind the photo */
+  function blurCanvas(cv, design){
+    if(!design || design<=0) return;
+    const w=cv.width, h=cv.height, cx=cv.getContext('2d');
+    if(typeof cx.filter!=='string') return;            // no canvas filters — skip
+    const b=design*(w/520); if(b<0.3) return;
+    const t=document.createElement('canvas'); t.width=w; t.height=h;
+    t.getContext('2d').drawImage(cv,0,0);
+    const ov=Math.ceil(b*1.5)+2;
+    cx.filter='blur('+b+'px)';
+    cx.drawImage(t, -ov, -ov, w+2*ov, h+2*ov);
+    cx.filter='none';
+  }
+
+  /* deterministic film grain — seeded so the pattern never dances between
+     re-renders, and the noise tile depends only on grain size (not render
+     width), so the export reuses the preview's exact pattern */
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  let _noise = {};
+  function noiseTile(nw,nh){
+    const key=nw+'x'+nh;
+    if(_noise[key]) return _noise[key];
+    if(Object.keys(_noise).length>8) _noise={};
+    const c=document.createElement('canvas'); c.width=nw; c.height=nh;
+    const x=c.getContext('2d'), id=x.createImageData(nw,nh), d=id.data;
+    const rnd=mulberry32(19770604);
+    for(let i=0;i<d.length;i+=4){
+      const v=((rnd()+rnd()+rnd())/3)*255|0;   // triangular-ish — filmic, not salt & pepper
+      d[i]=d[i+1]=d[i+2]=v; d[i+3]=255;
+    }
+    x.putImageData(id,0,0); _noise[key]=c; return c;
+  }
+  /* amount 0..1, size = clump size in design px. Soft-light carries the tooth
+     in the mids; the faint normal pass keeps deep shadows + highlights grainy. */
+  function grain(cv, amount, size){
+    if(!amount || amount<=0.001) return;
+    const w=cv.width, h=cv.height, cx=cv.getContext('2d');
+    const s=Math.max(0.5, size||2);
+    const nw=Math.max(2,Math.ceil(520/s)), nh=Math.max(2,Math.ceil(nw*h/w));
+    const nc=noiseTile(nw,nh);
+    cx.save();
+    cx.imageSmoothingEnabled=true;
+    cx.globalCompositeOperation='soft-light';
+    cx.globalAlpha=Math.min(1,amount);
+    cx.drawImage(nc,0,0,w,h);
+    cx.globalCompositeOperation='source-over';
+    cx.globalAlpha=Math.min(1,amount)*0.15;
+    cx.drawImage(nc,0,0,w,h);
+    cx.restore();
+  }
+
   function render(cv, name, opts){
     const o=Object.assign({ ink:'pink', paper:'night', contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
       softness:0.12, angle:null, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
-      shape:'circle', split:0.16, offset:null }, opts||{});
+      shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2 }, opts||{});
     if(o.balance==null) o.balance=0.5; if(o.shadowTint==null) o.shadowTint=0.18;
     BRIGHT = o.brightness||0;
+    PREBLUR = o.blurUnder||0;
     cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
     (TREATMENTS[name]||duotone)(cv,o);
+    if(o.blurOver>0) blurCanvas(cv, o.blurOver);
+    if(o.grain>0) grain(cv, o.grain, o.grainSize!=null?o.grainSize:2);
   }
 
   /* ============================================================
@@ -281,6 +346,6 @@
     return c;
   }
 
-  window.RISO = { PAL, PAPER, PARTNER, setSource, setTransform, loadImage, render, sampleCanvas,
+  window.RISO = { PAL, PAPER, PARTNER, setSource, setTransform, loadImage, render, sampleCanvas, grain,
                   get source(){ return SRC; } };
 })();

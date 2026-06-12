@@ -136,6 +136,7 @@ const CATALOG = [
     { type:'host',    label:'Host',     hint:'Credit — size in panel' },
   ]},
   { group:'Blocks', items:[
+    { type:'block',   label:'Colour block', hint:'Flat ink field' },
     { type:'ticket',  label:'REALITY ticket', hint:'Banner / sizes in panel', wide:true },
     { type:'lineup',  label:'Lineup',   hint:'Acts + set times' },
     { type:'specials',label:'Specials', hint:'Drinks + prices' },
@@ -163,11 +164,13 @@ const DEFAULTS = {
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
+  block:   { w:540, h:420, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   photo:   { w:760, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
-             imgScale:1, imgX:0, imgY:0, imgRot:0 } },
+             imgScale:1, imgX:0, imgY:0, imgRot:0,
+             blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
 };
 
 function makeElement(type, x, y){

@@ -33,7 +33,8 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
       contrast:el.contrast, brightness:el.brightness, dot:el.dot, bands:el.bands, threshold:el.threshold,
       angle:el.angle, softness:el.softness, balance:el.balance, shadowTint:el.shadowTint,
-      invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset };
+      invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset,
+      blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
     const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
       window.RISO.render(cv, el.treatment, opts); };
@@ -92,6 +93,35 @@ function seResolve(colorKey, fallback){
   if(colorKey==='ink'||colorKey==='cream') return SE_LIT[colorKey];
   return SE_ACC.indexOf(colorKey)>=0 ? SE_PAL[colorKey] : fallback;
 }
+function seRGBA(hex, a){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+/* Solid colour block — a flat ink field. With grain it renders through a
+   canvas (the engine's noise pass) so the texture survives export 1:1;
+   without, it's a plain painted div. */
+function BlockEl({ el, theme, fillHex, exporting }){
+  const ref = React.useRef(null);
+  const t = seTheme(theme);
+  const grainy = (el.grain||0) > 0.001;
+  React.useEffect(()=>{
+    if(!grainy) return;
+    const cv=ref.current; if(!cv||!window.RISO) return;
+    const W = exporting ? Math.min(Math.round(el.w)*2, 2400) : Math.min(Math.round(el.w), 900);
+    const H = Math.max(1, Math.round(W*(el.h/el.w)));
+    cv.width=W; cv.height=H;
+    const cx=cv.getContext('2d');
+    cx.fillStyle=fillHex; cx.fillRect(0,0,W,H);
+    window.RISO.grain(cv, el.grain, el.grainSize!=null?el.grainSize:2);
+  });
+  return <div style={{ position:'absolute', inset:0, overflow:'hidden',
+    opacity: el.opacity!=null?el.opacity:1,
+    background: grainy? 'transparent' : fillHex,
+    border: el.outline? `3px solid ${t.fg}` : 'none', boxSizing:'border-box' }}>
+    {grainy && <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />}
+  </div>;
+}
 
 /* The canonical REALITY wordmark — Montserrat with Alternates A/I/Y, baked
    as vector (same paths as the site Logo). Posters use this, not set-text. */
@@ -144,6 +174,13 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     cursor: dragging ? 'grabbing' : 'grab',
     userSelect:'none', WebkitUserSelect:'none', touchAction:'none', boxSizing:'border-box'
   };
+
+  if(el.type==='block'){
+    // accentHex already resolved el.fill (Auto → the poster accent)
+    return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
+      <BlockEl el={el} theme={theme} fillHex={accentHex} exporting={exporting} />
+    </Wrap>;
+  }
   const box = (extra)=>Object.assign({
     width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
     display:'flex', flexDirection:'column', justifyContent:'center'
@@ -155,6 +192,22 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     // The Surface control now applies to the title too: 'none' = bare floating
     // text (with the drop shadow); any other surface wraps it in that block.
     const bare = !el.surface || el.surface==='none';
+    /* Shadow on the letters themselves. Explicit settings win; docs from before
+       the control keep the legacy behaviour (house press shadow on bare titles,
+       none on surfaced ones). Colour 'fg' = the theme's soft press shadow. */
+    const shOn = el.shadowOn!=null ? el.shadowOn : bare;
+    let tShadow = 'none';
+    if(shOn){
+      const dist = el.shadowDist!=null?el.shadowDist:6;
+      const ang  = (el.shadowAngle!=null?el.shadowAngle:90)*Math.PI/180;
+      const blur = el.shadowBlur!=null?el.shadowBlur:1;
+      const ck   = el.shadowColor||'fg';
+      const alpha= el.shadowAlpha!=null?el.shadowAlpha
+                 : (ck==='fg' ? (theme==='night'?0.22:0.16) : 0.9);
+      const col  = ck==='fg' ? t.shadow(alpha)
+                 : seRGBA(ck==='ink'?'#0d0905':ck==='cream'?'#fffbf1':(SE_PAL[ck]||'#0d0905'), alpha);
+      tShadow = `${Math.round(Math.cos(ang)*dist*10)/10}px ${Math.round(Math.sin(ang)*dist*10)/10}px ${blur}px ${col}`;
+    }
     const container = Object.assign({
       width:'100%', height:'100%', display:'flex', boxSizing:'border-box',
       alignItems:'center', justifyContent: el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'
@@ -167,7 +220,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           letterSpacing: (el.letterSpacing!=null?el.letterSpacing:(el.weight<300?0.04:0.005))+'em',
           color:textCol, textAlign:el.align,
           writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb',
-          textShadow: bare?`0 6px 1px ${t.shadow(theme==='night'?0.22:0.16)}`:'none',
+          textShadow: tShadow,
           whiteSpace:'pre-wrap', textWrap:'balance'
         }}>{el.text}</div>
       </div>

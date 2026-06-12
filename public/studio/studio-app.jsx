@@ -200,6 +200,7 @@ function PhotoControls({ el, update }){
       <div className="rs-sech">Press · {TREATS.find(x=>x.v===t).l}</div>
       <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
       <Slider label="Contrast" val={el.contrast} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
+      <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
       {t==='duotone' && <React.Fragment>
         <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
         <Slider label="Shadow tint" val={el.shadowTint} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
@@ -227,6 +228,12 @@ function PhotoControls({ el, update }){
         <Slider label="Field split" val={el.split} min={0.04} max={0.4} step={0.01} onChange={v=>update({split:v})} />
       </React.Fragment>}
 
+      <div className="rs-sech">Finish</div>
+      <Slider label="Blur" val={el.blurOver!=null?el.blurOver:0} min={0} max={30} step={0.5} onChange={v=>update({blurOver:v})} suffix="px" />
+      <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
+      {el.grain>0 && <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />}
+      <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Soft focus blurs the photo <b>before</b> the press — it spreads dots and bands. Blur + grain print <b>over</b> the finished image.</div>
+
       <div className="rs-sech">Frame</div>
       <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
 
@@ -236,6 +243,23 @@ function PhotoControls({ el, update }){
       <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
       <Slider label="Rotate" val={el.imgRot!=null?el.imgRot:0} min={-180} max={180} step={1} onChange={v=>update({imgRot:v})} suffix="°" />
       <button className="rs-addrow" onClick={()=>update({imgScale:1, imgX:0, imgY:0, imgRot:0})}>↺ Reset image</button>
+    </React.Fragment>
+  );
+}
+
+function BlockControls({ el, doc, update }){
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Fill</div>
+      <Swatches value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})}
+        autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+      <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
+      <div className="rs-sech">Texture</div>
+      <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
+      {el.grain>0 && <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />}
+      <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>A pinch of grain makes a flat field feel printed, not digital.</div>
+      <div className="rs-sech">Edge</div>
+      <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={!!el.outline} onChange={v=>update({outline:v})} />
     </React.Fragment>
   );
 }
@@ -353,9 +377,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       </React.Fragment>}
 
       {el.type==='photo' && <PhotoControls el={el} update={update} />}
+      {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
 
       {/* ---- style (shared) ---- */}
-      {el.type!=='photo' && <React.Fragment>
+      {el.type!=='photo' && el.type!=='block' && <React.Fragment>
       <div className="rs-sech">Surface</div>
       <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
       <Swatches label="Text colour" value={el.textColor!=null?el.textColor:el.color}
@@ -373,6 +398,32 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {(el.type==='title'||el.type==='tagline'||el.type==='host') &&
         <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
       {el.type==='title' && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient} onChange={v=>update({orient:v})} />}
+
+      {/* ---- title drop shadow (on the letters; legacy default = press shadow
+              when bare, none when surfaced — same look as before) ---- */}
+      {el.type==='title' && (()=>{
+        const bare = !el.surface || el.surface==='none';
+        const on = el.shadowOn!=null ? el.shadowOn : bare;
+        const ck = el.shadowColor||'fg';
+        const alphaVal = el.shadowAlpha!=null ? el.shadowAlpha : (ck==='fg' ? (doc.theme==='night'?0.22:0.16) : 0.9);
+        return (
+          <React.Fragment>
+            <div className="rs-sech">Shadow</div>
+            <Chips options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={on} onChange={v=>update({shadowOn:v})} />
+            {on && <React.Fragment>
+              <Slider label="Distance" val={el.shadowDist!=null?el.shadowDist:6} min={0} max={40} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
+              <Slider label="Direction" val={el.shadowAngle!=null?el.shadowAngle:90} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
+              <Slider label="Blur" val={el.shadowBlur!=null?el.shadowBlur:1} min={0} max={24} step={1} onChange={v=>update({shadowBlur:v})} suffix="px" />
+              <Slider label="Opacity" val={alphaVal} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
+              <Swatches label="Shadow colour" value={ck} autoTitle="Auto — soft press shadow"
+                onChange={v=>update(v==='fg'
+                  ? { shadowColor:'fg', shadowAlpha:null }
+                  : { shadowColor:v, shadowAlpha: el.shadowAlpha!=null?el.shadowAlpha:0.9 })} />
+              <div className="rs-mini" style={{ marginTop:-2 }}>Try a hard accent shadow — distance up, blur 0, full opacity. Very riso.</div>
+            </React.Fragment>}
+          </React.Fragment>
+        );
+      })()}
 
       {/* ---- transform (layout — per-format when on an output) ---- */}
       <div className="rs-sech">Transform{isOutput && <span className="rs-ovtag"> · {activeLabel} only</span>}</div>

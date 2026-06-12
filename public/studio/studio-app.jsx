@@ -8,12 +8,14 @@ const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, PALETTE:AP_PAL, A
         TYPE_SCALE:AP_SCALE, StudioCanvas:APCanvas,
         TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl } = window;
 const LS_KEY = 'reality-studio-doc-v2';
+const TPL_KEY = 'reality-studio-templates-v1';
 
 function starterDoc(){
   return {
     /* 4:5 (1080×1350) is the primary format — IG feed + the site pipeline */
     activeFormat:'master', masterFormat:'4x5',
     theme:'night', accent:'pink', showGrid:true, snap:true, overrides:{},
+    title:'', exportFormat:'png',
     elements:[
       Object.assign(apMake('photo', 80, 96), { w:920, h:700, treatment:'duotone', frame:false }),
       apMake('when', 360, 280),
@@ -23,7 +25,20 @@ function starterDoc(){
     ]
   };
 }
-function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5'}, d); } }catch(e){} return starterDoc(); }
+function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png'}, d); } }catch(e){} return starterDoc(); }
+
+/* Poster name → filename slug. Vietnamese-safe: đ/Đ are mapped by hand (they
+   don't decompose under NFD), the rest of the diacritics strip normally.
+   "Đêm Trò Chơi" → "dem-tro-choi"; "Board Game Night" → "board-game-night". */
+function slugify(s){
+  return (s||'').replace(/đ/g,'d').replace(/Đ/g,'D')
+    .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'),'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
+}
+
+/* My-templates store — full poster snapshots (elements, overrides, theme),
+   saved by name in localStorage, separate from the working doc. */
+function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
 
 /* ---------- small controls ---------- */
 function Field({ label, value, onChange, area }){
@@ -71,11 +86,13 @@ function Chips({ label, options, value, onChange }){
     </div>
   );
 }
-function Swatches({ label, value, onChange }){
+function Swatches({ label, value, onChange, autoTitle, autoBg }){
   // Auto adapts to the surface/theme; Ink and Cream are literal and fixed, so
-  // any element (esp. text over a photo) can be forced dark or light.
+  // any element (esp. text over a photo) can be forced dark or light. The Auto
+  // swatch is relabelled / recoloured per role (text contrast vs poster accent).
   const fixed = [
-    { v:'fg',    bg:'linear-gradient(135deg,#0d0905 0 50%,#fffbf1 50% 100%)', title:'Auto — adapts to surface / theme' },
+    { v:'fg',    bg: autoBg || 'linear-gradient(135deg,#0d0905 0 50%,#fffbf1 50% 100%)',
+                 title: autoTitle || 'Auto — adapts to surface / theme' },
     { v:'ink',   bg:'#0d0905', title:'Ink' },
     { v:'cream', bg:'#fffbf1', title:'Cream' },
   ];
@@ -108,14 +125,29 @@ const TICKET_FORMATS = {
 };
 
 /* ---------- photo helpers ---------- */
+/* Read an image File/Blob, downscale to ≤860px on the long edge, and hand back
+   a JPEG data URL. Shared by the upload button and clipboard paste. */
+function processImageFile(file, onReady){
+  if(!file) return;
+  const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{
+    const max=860, sc=Math.min(1,max/Math.max(im.width,im.height));
+    const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); onReady(c.toDataURL('image/jpeg',0.82));
+  }; im.src=fr.result; }; fr.readAsDataURL(file);
+}
+/* Pull the first image out of a paste payload (DataTransfer), or null. */
+function imageFromClipboard(cd){
+  if(!cd) return null;
+  const items=cd.items;
+  if(items){ for(let i=0;i<items.length;i++){ const it=items[i];
+    if(it.kind==='file' && it.type && it.type.indexOf('image/')===0) return it.getAsFile(); } }
+  const files=cd.files;
+  if(files){ for(let i=0;i<files.length;i++){ if(files[i].type && files[i].type.indexOf('image/')===0) return files[i]; } }
+  return null;
+}
 function PhotoUpload({ onPick }){
   const inp = React.useRef(null);
-  function handle(e){ const f=e.target.files[0]; if(!f) return;
-    const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{
-      const max=860, sc=Math.min(1,max/Math.max(im.width,im.height));
-      const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
-      c.getContext('2d').drawImage(im,0,0,c.width,c.height); onPick(c.toDataURL('image/jpeg',0.82));
-    }; im.src=fr.result; }; fr.readAsDataURL(f); e.target.value=''; }
+  function handle(e){ const f=e.target.files[0]; if(!f) return; processImageFile(f, onPick); e.target.value=''; }
   return (<React.Fragment>
     <button className="rs-addrow" onClick={()=>inp.current.click()}>⬆ Upload / replace photo…</button>
     <input ref={inp} type="file" accept="image/*" style={{display:'none'}} onChange={handle} />
@@ -140,6 +172,7 @@ function PhotoControls({ el, update }){
     <React.Fragment>
       <div className="rs-sech">Image</div>
       <PhotoUpload onPick={src=>update({ src })} />
+      <div className="rs-mini" style={{ margin:'2px 0 8px' }}>…or copy an image anywhere and paste it here with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
       <Chips label="Or a sample" options={[{v:'spotlight',l:'DJ'},{v:'crowd',l:'Crowd'},{v:'portrait',l:'Portrait'}]}
         value={el.src?null:el.sample} onChange={v=>update({ sample:v, src:null })} />
 
@@ -325,7 +358,11 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {el.type!=='photo' && <React.Fragment>
       <div className="rs-sech">Surface</div>
       <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
-      <Swatches label="Colour" value={el.color} onChange={v=>update({color:v})} />
+      <Swatches label="Text colour" value={el.textColor!=null?el.textColor:el.color}
+        onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
+      <Swatches label="Fill / accent" value={el.fill!=null?el.fill:el.color}
+        onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+      <div className="rs-mini" style={{ marginTop:-2 }}>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</div>
       </React.Fragment>}
 
       {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='stamp') &&
@@ -363,6 +400,18 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 /* ---------- topbar ---------- */
 function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, exporting, exportMsg }){
   const isOutput = doc.activeFormat!=='master';
+  /* Poster name is held locally while typing and committed on blur/Enter/Save —
+     committing per keystroke would re-render the riso canvases on every key. */
+  const [name, setName] = React.useState(doc.title||'');
+  React.useEffect(()=>{ setName(doc.title||''); }, [doc.title]);
+  const commit = ()=> setDoc(d=> d.title===name ? d : ({...d, title:name}));
+  const slug = slugify(name) || 'reality-poster';
+  const kind = doc.exportFormat||'png';
+  const scope = isOutput ? AP_FMT[doc.activeFormat].label+' only' : 'All formats';
+  const outName = isOutput
+    ? `${slug}-${doc.activeFormat}.${kind}`
+    : (kind==='pdf' ? `${slugify(name)? slug+'-poster' : 'reality-posters'}.pdf`
+                    : `${slugify(name)? slug+'-poster' : 'reality-posters'}.zip`);
   return (
     <div className="rs-top">
       <div className="rs-brand">Reality<small>POSTER STUDIO</small></div>
@@ -399,12 +448,22 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
       </div>
       <div className="spacer" />
       <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
-        <div className="rs-seg">
-          <button onClick={()=>onExport('png')} disabled={exporting}>PNG</button>
-          <button onClick={()=>onExport('jpg')} disabled={exporting}>JPG</button>
-          <button onClick={()=>onExport('pdf')} disabled={exporting}>PDF</button>
-          <button onClick={()=>onExport('all')} disabled={exporting} title="All four formats as a ZIP">ALL</button>
-        </div>
+        <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
+          onChange={e=>setName(e.target.value)} onBlur={commit}
+          onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
+          title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
+        <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
+          onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
+          <option value="png">PNG</option>
+          <option value="jpg">JPG</option>
+          <option value="pdf">PDF</option>
+        </select>
+        <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
+          title={(isOutput
+            ? 'Export the format you’re viewing'
+            : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
+          Save Images<small>{scope}</small>
+        </button>
       </div>
       <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
       <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
@@ -445,12 +504,16 @@ function App(){
   /* Delete / Backspace removes the selected element(s) — but not while you're
      typing in an inspector field. */
   const selIdsRef = React.useRef(selectedIds); selIdsRef.current = selectedIds;
+  /* kept current each render (assigned below, once sel / updateEl exist) so the
+     window-level paste handler always sees the live selection + edit routing. */
+  const selRef = React.useRef(null);
+  const updateElRef = React.useRef(null);
   React.useEffect(()=>{
     function onKey(e){
       if(e.key!=='Delete' && e.key!=='Backspace') return;
       const ids = selIdsRef.current; if(!ids.length) return;
       const ae = document.activeElement;
-      if(ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.isContentEditable)) return;
+      if(ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable)) return;
       e.preventDefault();
       setDoc(d=>{ const overrides=Object.assign({}, d.overrides);
         Object.keys(overrides).forEach(f=>{ let fo=overrides[f]; if(!fo) return; let changed=false;
@@ -462,6 +525,24 @@ function App(){
     }
     window.addEventListener('keydown', onKey);
     return ()=>window.removeEventListener('keydown', onKey);
+  }, []);
+
+  /* Ctrl/⌘-V over a selected photo replaces its image — same downscale → JPEG
+     pipeline as the upload button. Ignored while typing in an inspector field,
+     or when the selection isn't a photo (so text paste is never hijacked). */
+  React.useEffect(()=>{
+    function onPaste(e){
+      const el = selRef.current;
+      if(!el || el.type!=='photo') return;
+      const ae = document.activeElement;
+      if(ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable)) return;
+      const file = imageFromClipboard(e.clipboardData);
+      if(!file) return;
+      e.preventDefault();
+      processImageFile(file, src=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); });
+    }
+    window.addEventListener('paste', onPaste);
+    return ()=>window.removeEventListener('paste', onPaste);
   }, []);
 
   React.useLayoutEffect(()=>{
@@ -482,6 +563,7 @@ function App(){
     : apResolve(doc, doc.activeFormat)
   , [doc]);
   const sel = resolved.find(e=>e.id===selectedId) || null;
+  selRef.current = sel;
   const overrideCount = isOutput ? Object.keys((doc.overrides[doc.activeFormat])||{}).length : 0;
 
   /* routed edit: content → master, layout → per-format override */
@@ -505,6 +587,7 @@ function App(){
     });
   }
   const update = (patch)=> sel && updateEl(sel.id, patch);
+  updateElRef.current = updateEl;
 
   function resetOverride(id){
     const fmt = doc.activeFormat;
@@ -585,44 +668,109 @@ function App(){
     setSelectedIds([]);
   }
 
-  /* ---- export to PNG / JPG / PDF (current format) or ALL formats as a zip ---- */
-  async function doExport(kind){
+  /* ---- My templates — save / load / delete full poster snapshots ---- */
+  const [userTpls, setUserTpls] = React.useState(loadUserTpls);
+  function persistTpls(next){
+    try{ localStorage.setItem(TPL_KEY, JSON.stringify(next)); }
+    catch(e){ window.alert('Couldn’t save — browser storage is full. Delete an old template (ones with photos are heavy) and try again.'); return false; }
+    setUserTpls(next); return true;
+  }
+  function saveUserTpl(){
+    const d = docRef.current;
+    if(!d.elements.length){ window.alert('Nothing on the poster to save yet.'); return; }
+    const name = (window.prompt('Save this poster as a template called:', d.title || 'My layout') || '').trim();
+    if(!name) return;
+    const existing = userTpls.find(t=>t.name.toLowerCase()===name.toLowerCase());
+    if(existing && !window.confirm('A template called “'+existing.name+'” already exists. Replace it?')) return;
+    const snap = JSON.parse(JSON.stringify({ elements:d.elements, overrides:d.overrides||{},
+      masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'' }));
+    const t = { id: existing? existing.id : window.uid(), name, savedAt: Date.now(), doc: snap };
+    persistTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
+  }
+  function applyUserTpl(t){
+    if(docRef.current.elements.length &&
+       !window.confirm('Replace the current poster with “'+t.name+'”?')) return;
+    const snap = JSON.parse(JSON.stringify(t.doc));
+    /* fresh element ids (and remapped overrides) so the loaded copy can never
+       collide with anything else made this session */
+    const idMap = {};
+    snap.elements.forEach(e=>{ const nid=window.uid(); idMap[e.id]=nid; e.id=nid; });
+    const overrides = {};
+    Object.keys(snap.overrides||{}).forEach(f=>{ const fo=snap.overrides[f]||{}; const nfo={};
+      Object.keys(fo).forEach(id=>{ if(idMap[id]) nfo[idMap[id]]=fo[id]; }); overrides[f]=nfo; });
+    setDoc(d=>({ ...d, activeFormat:'master', masterFormat:snap.masterFormat||'4x5',
+      elements:snap.elements, overrides, theme:snap.theme, accent:snap.accent,
+      title: snap.title || d.title }));
+    setSelectedIds([]);
+  }
+  function delUserTpl(id){
+    const t = userTpls.find(x=>x.id===id);
+    if(t && !window.confirm('Delete the template “'+t.name+'”?')) return;
+    persistTpls(userTpls.filter(x=>x.id!==id));
+  }
+
+  /* ---- export — Save Images. Scope follows the active view (an output format
+     exports just itself; Master exports every format), the file type comes from
+     the toolbar select, and filenames come from the poster name:
+       "Board Game Night" →  board-game-night-4x5.png        (single format)
+                             board-game-night-poster.zip     (Master, png/jpg)
+                             board-game-night-poster.pdf     (Master, pdf — one page per format)
+     No name falls back to the old reality-poster-* names. ---- */
+  async function doExport(titleArg){
     if(exporting || !window.htmlToImage) return;
+    const kind = doc.exportFormat || 'png';
+    const slug = slugify(titleArg!=null ? titleArg : (doc.title||''));
+    const base = slug || 'reality-poster';
     setSelectedIds([]); setExporting(true); setExportMsg('Rendering…');
     const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
     const capture = (f, type)=>{
       const node=canvasRef.current;
-      const base={ width:f.w, height:f.h, pixelRatio:2, cacheBust:true, backgroundColor:bg,
+      const opts={ width:f.w, height:f.h, pixelRatio:2, cacheBust:true, backgroundColor:bg,
         style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
-      return type==='jpg' ? window.htmlToImage.toJpeg(node, Object.assign({quality:0.92}, base))
-                          : window.htmlToImage.toPng(node, base);
+      return type==='jpg' ? window.htmlToImage.toJpeg(node, Object.assign({quality:0.95}, opts))
+                          : window.htmlToImage.toPng(node, opts);
     };
     const dl = (href, name)=>{ const a=document.createElement('a'); a.href=href; a.download=name; document.body.appendChild(a); a.click(); a.remove(); };
+    const JS = window.jspdf && window.jspdf.jsPDF;
     try{
-      if(kind==='all'){
-        const prev = doc.activeFormat;
-        const zip = new window.JSZip();
-        for(const fmt of AP_OUT){
-          setExportMsg('Rendering '+AP_FMT[fmt].label+'…');
-          setDoc(d=>({ ...d, activeFormat:fmt }));
-          await new Promise(r=>setTimeout(r,380));   // React render + rescale + photo repaint
-          const url = await capture(AP_FMT[fmt]);
-          zip.file('reality-poster-'+fmt+'.png', url.split(',')[1], { base64:true });
-        }
-        setDoc(d=>({ ...d, activeFormat:prev }));
-        setExportMsg('Zipping…');
-        const blob = await zip.generateAsync({ type:'blob' });
-        dl(URL.createObjectURL(blob), 'reality-posters.zip');
-      } else {
+      if(doc.activeFormat!=='master'){
+        /* single format — exactly the view on screen */
         await new Promise(r=>setTimeout(r,140));   // let canvas repaint clean
-        const f=AP_FMT[viewFormat], name='reality-poster-'+viewFormat;
+        const f=AP_FMT[viewFormat], name=base+'-'+viewFormat;
         if(kind==='pdf'){
           const url=await capture(f);
-          const JS = window.jspdf && window.jspdf.jsPDF;
           const pdf=new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
           pdf.addImage(url,'PNG',0,0,f.w,f.h); pdf.save(name+'.pdf');
         } else {
           dl(await capture(f, kind), name+'.'+kind);
+        }
+      } else {
+        /* Master — every output format: zip of images, or one multi-page PDF */
+        const prev = doc.activeFormat;
+        const zip = kind!=='pdf' ? new window.JSZip() : null;
+        let pdf = null;
+        for(const fmt of AP_OUT){
+          setExportMsg('Rendering '+AP_FMT[fmt].label+'…');
+          setDoc(d=>({ ...d, activeFormat:fmt }));
+          await new Promise(r=>setTimeout(r,380));   // React render + rescale + photo repaint
+          const f = AP_FMT[fmt];
+          if(kind==='pdf'){
+            const url = await capture(f);
+            if(!pdf) pdf = new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
+            else pdf.addPage([f.w,f.h], f.w>f.h?'l':'p');
+            pdf.addImage(url,'PNG',0,0,f.w,f.h);
+          } else {
+            const url = await capture(f, kind);
+            zip.file(base+'-'+fmt+'.'+kind, url.split(',')[1], { base64:true });
+          }
+        }
+        setDoc(d=>({ ...d, activeFormat:prev }));
+        if(kind==='pdf'){
+          pdf.save((slug? slug+'-poster' : 'reality-posters')+'.pdf');
+        } else {
+          setExportMsg('Zipping…');
+          const blob = await zip.generateAsync({ type:'blob' });
+          dl(URL.createObjectURL(blob), (slug? slug+'-poster' : 'reality-posters')+'.zip');
         }
       }
     }catch(err){ console.error('export failed', err); setExportMsg('Export failed'); await new Promise(r=>setTimeout(r,1400)); }
@@ -641,6 +789,19 @@ function App(){
               <span>Templates</span><span style={{ fontSize:11, opacity:.6 }}>{tplOpen?'▾':'▸'}</span>
             </div>
             {tplOpen && <React.Fragment>
+              <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>My templates</div>
+              {userTpls.map(t=>(
+                <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
+                  style={{ cursor:'pointer', position:'relative', paddingRight:36 }}>
+                  <span className="ln">{t.name}</span>
+                  <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                  <button className="rs-tplx" title="Delete this template"
+                    onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
+                </div>
+              ))}
+              {userTpls.length===0 &&
+                <div className="rs-mini" style={{ margin:'2px 0 6px' }}>None yet — build a poster, then keep it here for next time.</div>}
+              <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:12 }}>＋ Save current poster as template</button>
               {AP_TPLG.map(grp=>(
                 <React.Fragment key={grp}>
                   <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>{grp}</div>

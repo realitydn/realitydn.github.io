@@ -41,6 +41,16 @@ function themeColors(theme){
     : { fg:'#0d0905', bg:'#fffbf1', paper:'#fffbf1', shadow:(a)=>`rgba(13,9,5,${a})` };
 }
 
+/* Pick the readable ink/cream for text sitting on a given fill. Threshold is
+   kept low so all seven brand accents keep dark ink (the Riso look); only a
+   genuinely dark fill (e.g. Ink) flips the text to cream. */
+function contrastInk(hex){
+  if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return '#0d0905';
+  const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  const L=0.2126*r + 0.7152*g + 0.0722*b;
+  return L<0.2 ? '#fffbf1' : '#0d0905';
+}
+
 /* surface → concrete box style (canvas px units) */
 function surfaceStyle(surface, theme, accentHex, lift){
   const t = themeColors(theme);
@@ -48,7 +58,7 @@ function surfaceStyle(surface, theme, accentHex, lift){
   switch(surface){
     case 'solid':   return { background:t.fg, color:t.bg, border:`3px solid ${t.fg}`, boxShadow:sh };
     case 'paper':   return { background:t.paper, color:t.fg, border:`3px solid ${t.fg}`, boxShadow:sh };
-    case 'accent':  return { background:accentHex, color:'#0d0905', border:`3px solid ${accentHex}`, boxShadow:sh };
+    case 'accent':  return { background:accentHex, color:contrastInk(accentHex), border:`3px solid ${accentHex}`, boxShadow:sh };
     case 'outline': return { background:'transparent', color:t.fg, border:`3px solid ${t.fg}`, boxShadow:sh };
     case 'scrim':   return { background: theme==='night'?'rgba(10,7,3,0.55)':'rgba(255,251,241,0.72)',
                              color:t.fg, border:`3px solid ${t.fg}`, boxShadow:sh,
@@ -310,7 +320,7 @@ function buildTemplate(tpl){
 Object.assign(window, {
   PALETTE, ACCENTS, FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
-  themeColors, surfaceStyle, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph,
+  themeColors, contrastInk, surfaceStyle, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph,
   resolveElements, mapElementToFormat, pointToMaster,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
 });

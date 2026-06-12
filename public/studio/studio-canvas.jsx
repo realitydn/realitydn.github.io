@@ -113,7 +113,7 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
           <div key={el.id} style={ el.hidden ? { opacity:.22, filter:'grayscale(.4)' } : null }>
             <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent}
               selected={el.id===selectedId} dragging={dragRef.current && dragRef.current.id===el.id}
-              onElPointerDown={startMove} />
+              onElPointerDown={startMove} exporting={exporting} />
           </div>
         ))}
 

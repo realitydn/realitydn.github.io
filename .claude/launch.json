@@ -8,10 +8,24 @@
       "port": 3000
     },
     {
+      "name": "reality-dist-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview"],
+      "port": 4173
+    },
+    {
       "name": "poster-studio",
       "runtimeExecutable": "node",
       "runtimeArgs": ["tools/serve-studio.cjs"],
-      "port": 4501
+      "port": 4501,
+      "autoPort": true
+    },
+    {
+      "name": "schedule-studio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve-schedule.cjs"],
+      "port": 4502,
+      "autoPort": true
     }
   ]
 }

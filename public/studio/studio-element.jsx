@@ -15,14 +15,20 @@ function getSample(kind){ kind=kind||'spotlight'; if(!_sampleCache[kind]) _sampl
 /* how far the faded overflow preview extends past the frame (1 = none) */
 const BLEED_K = 1.7;
 
-function PhotoEl({ el, theme, inkKey, selected }){
+function PhotoEl({ el, theme, inkKey, selected, exporting }){
   const ref = React.useRef(null);
   const bleedRef = React.useRef(null);
 
-  /* main riso canvas — the kept, in-frame region (clipped) */
+  /* main riso canvas — the kept, in-frame region (clipped).
+     While editing, the render is capped at 900px wide for responsiveness; the
+     screen shows it scaled DOWN, so it reads crisp. Exports rasterise at
+     pixelRatio 2 (up to 2160px wide), and upscaling the 900px render 2.4×
+     smears the dots/edges into the paper — colours go visibly flat. So during
+     export the riso is re-rendered 1:1 with the capture's pixel grid. */
   React.useEffect(()=>{
     const cv=ref.current; if(!cv||!window.RISO) return; let alive=true;
-    const W=Math.min(Math.round(el.w),900), H=Math.max(1,Math.round(W*(el.h/el.w)));
+    const W = exporting ? Math.min(Math.round(el.w)*2, 2400) : Math.min(Math.round(el.w),900);
+    const H=Math.max(1,Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
       contrast:el.contrast, brightness:el.brightness, dot:el.dot, bands:el.bands, threshold:el.threshold,
@@ -105,13 +111,18 @@ function WordmarkSVG({ height, color }){
   );
 }
 
-function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dragging, onElPointerDown }){
+function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dragging, onElPointerDown, exporting }){
   const t = seTheme(theme);
-  const accentHex = seResolve(el.color, posterAccentHex);
+  // Two independent colour roles, each falling back to the legacy single
+  // `color` when its own field is unset — so older docs/templates render
+  // unchanged:
+  //   fill  → an Accent surface's block colour + accent highlights (kickers,
+  //           headings, badge word). 'fg' (Auto) resolves to the poster accent.
+  //   text  → the main text colour. 'fg' (Auto) follows the surface's own
+  //           contrast colour, so text on a filled block always stays readable.
+  const accentHex = seResolve(el.fill!=null?el.fill:el.color, posterAccentHex);
   const surf = seSurf(el.surface, theme, accentHex, true);
-  // Text colour: 'fg' follows the surface's own contrast colour (so text on a
-  // solid/accent block stays readable); an explicit ink/cream/accent overrides.
-  const textCol = seResolve(el.color, surf.color);
+  const textCol = seResolve(el.textColor!=null?el.textColor:el.color, surf.color);
 
   if(el.type==='photo'){
     const inkKey = el.followAccent ? (posterAccent||'pink') : (el.ink||'pink');
@@ -121,7 +132,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       transition: dragging ? 'none' : 'transform .16s cubic-bezier(0.2,1.4,0.45,1)',
       cursor: dragging ? 'grabbing' : 'grab', userSelect:'none', touchAction:'none', boxSizing:'border-box'
     };
-    return <Wrap el={el} wrap={pwrap} sel={selected} onDown={onElPointerDown}><PhotoEl el={el} theme={theme} inkKey={inkKey} selected={selected} /></Wrap>;
+    return <Wrap el={el} wrap={pwrap} sel={selected} onDown={onElPointerDown}><PhotoEl el={el} theme={theme} inkKey={inkKey} selected={selected} exporting={exporting} /></Wrap>;
   }
 
   const wrap = {
@@ -136,7 +147,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   const box = (extra)=>Object.assign({
     width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
     display:'flex', flexDirection:'column', justifyContent:'center'
-  }, surf, extra);
+  }, surf, { color:textCol }, extra);
 
   let inner = null;
 

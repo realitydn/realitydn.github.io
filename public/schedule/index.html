@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Internal staff tool — keep it out of search and link graphs.
-     Canonical source lives here (public/studio/); the local launcher
-     (Poster Studio.bat) serves these same files. -->
+     Canonical source lives here (public/schedule/); the local launcher
+     (Schedule Studio.bat) serves these same files on port 4502. -->
 <meta name="robots" content="noindex, nofollow">
-<title>REALITY — Poster Studio</title>
+<title>REALITY — Schedule Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- crossorigin matters: html-to-image must read this sheet's cssRules to
-     embed the fonts into exported PNGs; without it, exports can lose the brand type. -->
+     embed the fonts into exported PNGs; without it, exports lose the brand type. -->
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" crossorigin="anonymous">
-<link href="studio.css" rel="stylesheet">
+<link href="schedule.css" rel="stylesheet">
 </head>
 <body>
 <div id="root"></div>
@@ -22,13 +22,11 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script src="riso-engine.js"></script>
 <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
-<script type="text/babel" src="studio-data.jsx"></script>
-<script type="text/babel" src="studio-element.jsx"></script>
-<script type="text/babel" src="studio-canvas.jsx"></script>
-<script type="text/babel" src="studio-app.jsx"></script>
+<script type="text/babel" src="schedule-data.jsx"></script>
+<script type="text/babel" src="schedule-render.jsx"></script>
+<script type="text/babel" src="schedule-app.jsx"></script>
 </body>
 </html>

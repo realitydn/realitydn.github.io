@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Vite's transient config-loader artifacts (left behind if a build is killed)
+vite.config.js.timestamp-*.mjs
+
 # Design-system bundle zips — large binaries, regenerate from
 # design-system-year2/ with: python tools/zip-bundle.py
 *.zip

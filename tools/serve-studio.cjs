@@ -11,7 +11,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 4501;
+// Default 4501 (what "Poster Studio.bat" expects). Honour PORT when set, so a
+// second instance — e.g. a preview server — can run on an assigned free port
+// without colliding with an already-open Studio.
+const PORT = process.env.PORT || 4501;
 // Canonical home: public/studio/ — the same files the site deploys to
 // realitydn.com/studio. Serving them here means the local launcher and the
 // live tool can never drift apart.

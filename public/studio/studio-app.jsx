@@ -461,7 +461,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, exporting, exportMsg }){
+function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, onExportA1, exporting, exportMsg }){
   const isOutput = doc.activeFormat!=='master';
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
      committing per keystroke would re-render the riso canvases on every key. */
@@ -528,6 +528,14 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
             : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
           Save Images<small>{scope}</small>
         </button>
+        {doc.activeFormat==='a4' &&
+          <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExportA1(name); }}
+            title={'Print-size A1 of this A4 layout — '+(kind==='pdf'
+              ? 'a true 594×841mm PDF a print shop runs 1:1'
+              : 'a 3508px-wide '+kind.toUpperCase()+' (150 dpi at A1)')
+              +'. On demand only — the all-formats export never includes it.'}>
+            A1 Print<small>594×841MM</small>
+          </button>}
       </div>
       <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
       <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
@@ -890,10 +898,47 @@ function App(){
     setExporting(false); setExportMsg('');
   }
 
+  /* ---- A1 print export — on demand from the A4 view only, never part of the
+     all-formats bundle (most posters don't get printed that big). Every
+     A-series sheet shares the 1:√2 aspect, so this is the A4 layout — its
+     per-format overrides included — captured at 3508px wide, true A1 @150dpi.
+     A PDF comes out at real-world size (594×841mm) so a shop prints it 1:1. ---- */
+  async function doExportA1(titleArg){
+    if(exporting || !window.htmlToImage || doc.activeFormat!=='a4') return;
+    const kind = doc.exportFormat || 'png';
+    const slug = slugify(titleArg!=null ? titleArg : (doc.title||''));
+    const name = (slug || 'reality-poster')+'-a1';
+    const f = AP_FMT.a4;
+    const ratio = 3508/f.w;                    // A1 short edge in px at 150 dpi
+    setSelectedIds([]); setExporting(ratio);   // the number rides the exporting flag →
+    setExportMsg('Rendering A1…');             // riso photos repaint 1:1 with the capture
+    const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
+    try{
+      await new Promise(r=>setTimeout(r,420)); // let those big repaints land
+      const node = canvasRef.current;
+      const opts = { width:f.w, height:f.h, pixelRatio:ratio, cacheBust:true, backgroundColor:bg,
+        style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
+      if(kind==='pdf'){
+        const url = await window.htmlToImage.toPng(node, opts);
+        const JS = window.jspdf && window.jspdf.jsPDF;
+        const pdf = new JS({ unit:'mm', format:[594,841], orientation:'portrait' });
+        pdf.addImage(url,'PNG',0,0,594,841,undefined,'FAST');
+        pdf.save(name+'.pdf');
+      } else {
+        const url = kind==='jpg'
+          ? await window.htmlToImage.toJpeg(node, Object.assign({quality:0.95}, opts))
+          : await window.htmlToImage.toPng(node, opts);
+        const a=document.createElement('a'); a.href=url; a.download=name+'.'+kind;
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+    }catch(err){ console.error('A1 export failed', err); setExportMsg('Export failed'); await new Promise(r=>setTimeout(r,1400)); }
+    setExporting(false); setExportMsg('');
+  }
+
   return (
     <div className="rs-app">
       <Topbar doc={doc} setDoc={setDoc} count={doc.elements.length} overrideCount={overrideCount} resetFormat={resetFormat}
-        onExport={doExport} exporting={exporting} exportMsg={exportMsg} />
+        onExport={doExport} onExportA1={doExportA1} exporting={exporting} exportMsg={exportMsg} />
       <div className="rs-body">
         <div className="rs-lib">
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>

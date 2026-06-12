@@ -27,7 +27,10 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
      export the riso is re-rendered 1:1 with the capture's pixel grid. */
   React.useEffect(()=>{
     const cv=ref.current; if(!cv||!window.RISO) return; let alive=true;
-    const W = exporting ? Math.min(Math.round(el.w)*2, 2400) : Math.min(Math.round(el.w),900);
+    /* `exporting` may carry the capture's pixelRatio as a number (A1 print is
+       ~3.25×); rendering the riso 1:1 with that grid keeps dots crisp in print. */
+    const xr = typeof exporting==='number' ? exporting : 2;
+    const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w),900);
     const H=Math.max(1,Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
@@ -108,7 +111,8 @@ function BlockEl({ el, theme, fillHex, exporting }){
   React.useEffect(()=>{
     if(!grainy) return;
     const cv=ref.current; if(!cv||!window.RISO) return;
-    const W = exporting ? Math.min(Math.round(el.w)*2, 2400) : Math.min(Math.round(el.w), 900);
+    const xr = typeof exporting==='number' ? exporting : 2;   // print captures pass their ratio
+    const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w), 900);
     const H = Math.max(1, Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
     const cx=cv.getContext('2d');

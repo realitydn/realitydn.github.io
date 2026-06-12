@@ -558,7 +558,9 @@ function App(){
     const url = await capturePart({ channelId:'print' }, ch);
     const JS = window.jspdf && window.jspdf.jsPDF;
     const pdf = new JS({ unit:'mm', format:'a4', orientation:'landscape' });
-    pdf.addImage(url, 'PNG', 0, 0, 297, 210);
+    /* compression flag matters: without it jsPDF embeds the decoded raster
+       essentially raw — ~30MB for the A4 sheet. FLATE is lossless. */
+    pdf.addImage(url, 'PNG', 0, 0, 297, 210, undefined, 'SLOW');
     return pdf;
   }
   async function doExport(scope){

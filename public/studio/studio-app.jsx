@@ -837,7 +837,11 @@ function App(){
         if(kind==='pdf'){
           const url=await capture(f);
           const pdf=new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
-          pdf.addImage(url,'PNG',0,0,f.w,f.h); pdf.save(name+'.pdf');
+          /* 'FAST' = lossless FLATE on the embedded raster — without a
+             compression arg jsPDF stores it raw and one page tops 20MB.
+             FAST over SLOW: same pixels, ~0.7MB larger, no multi-second
+             main-thread stall per page (matters for the 5-page master). */
+          pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST'); pdf.save(name+'.pdf');
         } else {
           dl(await capture(f, kind), name+'.'+kind);
         }
@@ -855,7 +859,7 @@ function App(){
             const url = await capture(f);
             if(!pdf) pdf = new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
             else pdf.addPage([f.w,f.h], f.w>f.h?'l':'p');
-            pdf.addImage(url,'PNG',0,0,f.w,f.h);
+            pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST');
           } else {
             const url = await capture(f, kind);
             zip.file(base+'-'+fmt+'.'+kind, url.split(',')[1], { base64:true });

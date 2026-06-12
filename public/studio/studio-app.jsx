@@ -761,6 +761,51 @@ function App(){
     persistTpls(userTpls.filter(x=>x.id!==id));
   }
 
+  /* ---- template portability — templates live in this browser's localStorage
+     only, so Export writes the whole "My templates" list to a .json (photo
+     data URLs included) and Import merges a file back in on another machine.
+     Same name or id replaces; anything else is added. */
+  const tplFileRef = React.useRef(null);
+  function exportUserTpls(){
+    if(!userTpls.length){ window.alert('No saved templates to export yet.'); return; }
+    const payload = { kind:'reality-studio-templates', version:1,
+      exportedAt:new Date().toISOString(), templates:userTpls };
+    const blob = new Blob([JSON.stringify(payload)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const d = new Date(), pad = n=>(n<10?'0':'')+n;
+    const a = document.createElement('a'); a.href = url;
+    a.download = 'reality-poster-templates-'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }
+  function importUserTpls(file){
+    const fr = new FileReader();
+    fr.onload = ()=>{
+      let list = null;
+      try{
+        const data = JSON.parse(fr.result);
+        list = Array.isArray(data) ? data : (data && Array.isArray(data.templates) ? data.templates : null);
+      }catch(e){}
+      if(!list){ window.alert('Couldn’t read that file — it doesn’t look like a Poster Studio template export.'); return; }
+      const incoming = list
+        .filter(t=>t && typeof t.name==='string' && t.name.trim() && t.doc && Array.isArray(t.doc.elements))
+        .map(t=>({ id: t.id || window.uid(), name: t.name.trim(), savedAt: t.savedAt || Date.now(),
+                   doc: Object.assign({ masterFormat:'4x5', theme:'day', accent:'blue', overrides:{}, title:'' }, t.doc) }));
+      if(!incoming.length){ window.alert('No usable templates in that file.'); return; }
+      const skipped = list.length - incoming.length;
+      const next = userTpls.slice(); let replaced = 0;
+      incoming.forEach(t=>{
+        const i = next.findIndex(p=>p.id===t.id || p.name.toLowerCase()===t.name.toLowerCase());
+        if(i>=0){ next[i]=t; replaced++; } else next.unshift(t);
+      });
+      if(persistTpls(next))
+        window.alert('Imported '+incoming.length+' template'+(incoming.length===1?'':'s')
+          +(replaced? ' — '+replaced+' replaced an existing one':'')
+          +(skipped? ' ('+skipped+' unreadable, skipped)':'')+'.');
+    };
+    fr.readAsText(file);
+  }
+
   /* ---- export — Save Images. Scope follows the active view (an output format
      exports just itself; Master exports every format), the file type comes from
      the toolbar select, and filenames come from the poster name:
@@ -853,7 +898,14 @@ function App(){
               ))}
               {userTpls.length===0 &&
                 <div className="rs-mini" style={{ margin:'2px 0 6px' }}>None yet — build a poster, then keep it here for next time.</div>}
-              <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:12 }}>＋ Save current poster as template</button>
+              <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6 }}>＋ Save current poster as template</button>
+              <div className="rs-rowflex" style={{ marginBottom:6 }}>
+                <button className="rs-addrow" onClick={exportUserTpls} title="Download all My templates (photos included) as one .json">⬇ Export all</button>
+                <button className="rs-addrow" onClick={()=>tplFileRef.current.click()} title="Load templates from an exported .json — same names update, new names add">⬆ Import…</button>
+              </div>
+              <input ref={tplFileRef} type="file" accept=".json,application/json" style={{ display:'none' }}
+                onChange={e=>{ const f=e.target.files[0]; if(f) importUserTpls(f); e.target.value=''; }} />
+              <div className="rs-mini" style={{ margin:'0 0 12px' }}>Templates live in this browser only — export a .json to carry them to another computer, photos and all.</div>
               {AP_TPLG.map(grp=>(
                 <React.Fragment key={grp}>
                   <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>{grp}</div>

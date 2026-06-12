@@ -2,7 +2,7 @@
    REALITY POSTER STUDIO — App
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
-const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, PALETTE:AP_PAL, ACCENTS:AP_ACC,
+const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
         TYPE_SCALE:AP_SCALE, StudioCanvas:APCanvas,
@@ -493,7 +493,8 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
         <div className="rs-swatches">
           {AP_ACC.map(a=>(
             <div key={a} className={'rs-sw'+(doc.accent===a?' on':'')} style={{ background:AP_PAL[a], width:22, height:22 }}
-              onClick={()=>setDoc(d=>({...d, accent:a}))} title={a} />
+              onClick={()=>setDoc(d=>({...d, accent:a}))}
+              title={a + (AP_DAYS[a] ? ' — ' + AP_DAYS[a] + '’s colour on the weekly schedule' : '')} />
           ))}
         </div>
       </div>

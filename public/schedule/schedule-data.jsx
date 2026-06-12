@@ -13,10 +13,10 @@ const ALT = "'Montserrat Alternates',sans-serif";
 const GROT = "'Space Grotesk',sans-serif";
 
 /* Year 2 locked palette, glued to weekdays (ISO 1=Mon .. 7=Sun):
-   MON yellow · TUE green · WED blue · THU purple · FRI pink · SAT red · SUN amber.
+   MON green · TUE blue · WED purple · THU pink · FRI red · SAT orange (amber) · SUN yellow.
    Purple is the one block that takes cream text (--on-ink logic). */
-const DAY_COLORS = { 1:'#fddf00', 2:'#43b02a', 3:'#18a7e0', 4:'#6e3179', 5:'#ed1b72', 6:'#ed2224', 7:'#fdb515' };
-const DAY_TEXT   = { 1:INK, 2:INK, 3:INK, 4:CREAM, 5:INK, 6:INK, 7:INK };
+const DAY_COLORS = { 1:'#43b02a', 2:'#18a7e0', 3:'#6e3179', 4:'#ed1b72', 5:'#ed2224', 6:'#fdb515', 7:'#fddf00' };
+const DAY_TEXT   = { 1:INK, 2:INK, 3:CREAM, 4:INK, 5:INK, 6:INK, 7:INK };
 const DAY_ABBR   = { 1:'MON', 2:'TUE', 3:'WED', 4:'THU', 5:'FRI', 6:'SAT', 7:'SUN' };
 const DAY_FULL   = { 1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 7:'Sunday' };
 

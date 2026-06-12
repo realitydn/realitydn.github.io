@@ -10,6 +10,13 @@ const PALETTE = {
   amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224'
 };
 const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
+/* Weekday each accent codes for on schedule surfaces (Year 2 scheme, shifted
+   June 2026) — surfaced as tooltips on the poster-accent picker so an event
+   poster can match its day. Amber is the schedule's "orange". */
+const ACCENT_DAYS = {
+  yellow:'Sunday', green:'Monday', blue:'Tuesday', purple:'Wednesday',
+  pink:'Thursday', red:'Friday', amber:'Saturday'
+};
 
 const FORMATS = {
   '4x5':  { w:1080, h:1350, label:'4:5', sub:'FEED' },   /* primary — IG feed + site pipeline */
@@ -321,7 +328,7 @@ function buildTemplate(tpl){
 }
 
 Object.assign(window, {
-  PALETTE, ACCENTS, FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
+  PALETTE, ACCENTS, ACCENT_DAYS, FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph,
   resolveElements, mapElementToFormat, pointToMaster,

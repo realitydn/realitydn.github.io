@@ -19,7 +19,7 @@ function themeTokens(theme, printish){
       id:'night', bg:'#0a0703', paper:'#171109', fg:'#fffbf1',
       fgStrong:'rgba(255,251,241,.88)', dim:'rgba(255,251,241,.6)', hairline:'#3a2c1c',
       shadow:'0 8px 2px rgba(255,251,241,.18)', shadowSm:'0 5px 1px rgba(255,251,241,.15)',
-      dc:Object.assign({}, R_DC, { 4:'#9a4faa' }), dt:R_DT,   /* Thursday purple lifts after dark */
+      dc:Object.assign({}, R_DC, { 3:'#9a4faa' }), dt:R_DT,   /* Wednesday purple lifts after dark */
     };
   }
   return {

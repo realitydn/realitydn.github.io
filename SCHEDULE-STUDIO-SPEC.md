@@ -155,9 +155,9 @@ Year 2 locks 7 accents; the mapping is **keyed to the weekday, not the position*
 
 | MON | TUE | WED | THU | FRI | SAT | SUN |
 |---|---|---|---|---|---|---|
-| yellow `#fddf00` | green `#43b02a` | blue `#18a7e0` | purple `#6e3179` | pink `#ed1b72` | red `#ed2224` | amber `#fdb515` |
+| green `#43b02a` | blue `#18a7e0` | purple `#6e3179` | pink `#ed1b72` | red `#ed2224` | orange (amber) `#fdb515` | yellow `#fddf00` |
 
-Ink text on all blocks except purple (Thursday), which takes cream (`--on-ink` logic); Night theme uses the lifted purple (`#9a4faa`). Mapping is overridable per document but the default should almost never move.
+Ink text on all blocks except purple (Wednesday), which takes cream (`--on-ink` logic); Night theme uses the lifted purple (`#9a4faa`). Mapping is overridable per document but the default should almost never move. *(Shifted June 2026 — each day took the colour of the day after it in the original Year 2 mapping.)*
 
 This is a deliberate, documented exception to the poster system's category-coding: on schedule surfaces, color codes **days**, not event categories.
 

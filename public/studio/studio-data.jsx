@@ -23,7 +23,12 @@ const FORMATS = {
   '5x7':  { w:1080, h:1512, label:'5:7', sub:'POSTER' },
   '1x1':  { w:1080, h:1080, label:'1:1', sub:'SQUARE' },
   '9x16': { w:1080, h:1920, label:'9:16', sub:'STORY' },
-  'a4':   { w:1080, h:1527, label:'A4', sub:'PRINT' }
+  'a4':   { w:1080, h:1527, label:'A4', sub:'PRINT' },
+  /* Extra print view — same sheet shape as A4 (all A-series paper is 1:√2),
+     but Save captures it at print resolution (3508px = A1 @ 150dpi; PDF at
+     true 594×841mm). Deliberately NOT in OUTPUT_FORMATS: it's on-demand for
+     the occasional big print, never part of the Save-All bundle. */
+  'a1':   { w:1080, h:1527, label:'A1', sub:'PRINT XL' }
 };
 const OUTPUT_FORMATS = ['4x5','5x7','1x1','9x16','a4'];
 /* modular type scale — font size snaps to these for consistency */

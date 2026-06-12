@@ -33,6 +33,11 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-seg button.on small{ color:rgba(13,9,5,.6); }
 .rs-seg button.master.on{ background:#fdb515; color:#0d0905; }
 .rs-seg button.master.on small{ color:rgba(13,9,5,.6); }
+/* the extra A1 print view — dashed frame + its own on-colour so it reads as
+   an on-demand add-on, never part of the Save-All bundle of formats */
+.rs-seg.xtra{ border-style:dashed; background:transparent; }
+.rs-seg.xtra button.on{ background:#43b02a; color:#0d0905; }
+.rs-seg.xtra button.on small{ color:rgba(13,9,5,.6); }
 .rs-iconbtn:disabled{ opacity:.4; cursor:default; }
 
 .rs-iconbtn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;

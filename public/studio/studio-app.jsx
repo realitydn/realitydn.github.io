@@ -461,7 +461,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, onExportA1, exporting, exportMsg }){
+function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, exporting, exportMsg }){
   const isOutput = doc.activeFormat!=='master';
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
      committing per keystroke would re-render the riso canvases on every key. */
@@ -490,6 +490,12 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, onEx
               {AP_FMT[fmt].label}<small>{AP_FMT[fmt].sub}</small>
             </button>
           ))}
+        </div>
+        <div className="rs-seg xtra"
+          title="Extra print view — never part of the Save-All bundle. Save here for a print-resolution A1: 3508px wide (150 dpi), PDF at true 594×841mm.">
+          <button className={doc.activeFormat==='a1'?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:'a1'}))}>
+            A1<small>PRINT XL</small>
+          </button>
         </div>
         {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
           title="Clear all overrides for this format">↺ {overrideCount||0}</button>}
@@ -523,19 +529,13 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, onEx
           <option value="pdf">PDF</option>
         </select>
         <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
-          title={(isOutput
-            ? 'Export the format you’re viewing'
-            : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
+          title={(doc.activeFormat==='a1'
+            ? 'Print-resolution A1 — 3508px wide (150 dpi)'+(kind==='pdf'?', a true 594×841mm PDF a shop runs 1:1':'')
+            : isOutput
+              ? 'Export the format you’re viewing'
+              : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
           Save Images<small>{scope}</small>
         </button>
-        {doc.activeFormat==='a4' &&
-          <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExportA1(name); }}
-            title={'Print-size A1 of this A4 layout — '+(kind==='pdf'
-              ? 'a true 594×841mm PDF a print shop runs 1:1'
-              : 'a 3508px-wide '+kind.toUpperCase()+' (150 dpi at A1)')
-              +'. On demand only — the all-formats export never includes it.'}>
-            A1 Print<small>594×841MM</small>
-          </button>}
       </div>
       <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
       <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
@@ -838,11 +838,15 @@ function App(){
     const kind = doc.exportFormat || 'png';
     const slug = slugify(titleArg!=null ? titleArg : (doc.title||''));
     const base = slug || 'reality-poster';
-    setSelectedIds([]); setExporting(true); setExportMsg('Rendering…');
+    /* The A1 view captures at print resolution — 3508px wide is true A1 @
+       150dpi. The ratio rides the `exporting` flag as a number so riso photos
+       and grainy blocks repaint 1:1 with the capture grid (no soft upscale). */
+    const a1Ratio = doc.activeFormat==='a1' ? 3508/AP_FMT.a1.w : 0;
+    setSelectedIds([]); setExporting(a1Ratio || true); setExportMsg('Rendering…');
     const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
-    const capture = (f, type)=>{
+    const capture = (f, type, ratio)=>{
       const node=canvasRef.current;
-      const opts={ width:f.w, height:f.h, pixelRatio:2, cacheBust:true, backgroundColor:bg,
+      const opts={ width:f.w, height:f.h, pixelRatio:ratio||2, cacheBust:true, backgroundColor:bg,
         style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
       return type==='jpg' ? window.htmlToImage.toJpeg(node, Object.assign({quality:0.95}, opts))
                           : window.htmlToImage.toPng(node, opts);
@@ -852,18 +856,24 @@ function App(){
     try{
       if(doc.activeFormat!=='master'){
         /* single format — exactly the view on screen */
-        await new Promise(r=>setTimeout(r,140));   // let canvas repaint clean
+        await new Promise(r=>setTimeout(r, a1Ratio?420:140));   // print-res riso repaints need longer
         const f=AP_FMT[viewFormat], name=base+'-'+viewFormat;
         if(kind==='pdf'){
-          const url=await capture(f);
-          const pdf=new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
+          const url=await capture(f, null, a1Ratio||null);
+          /* A1 PDFs are made at real-world size (594×841mm) so a print shop
+             runs them 1:1; screen formats keep the px-sized page. */
+          const pdf = a1Ratio
+            ? new JS({ unit:'mm', format:[594,841], orientation:'portrait' })
+            : new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
           /* 'FAST' = lossless FLATE on the embedded raster — without a
              compression arg jsPDF stores it raw and one page tops 20MB.
              FAST over SLOW: same pixels, ~0.7MB larger, no multi-second
              main-thread stall per page (matters for the 5-page master). */
-          pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST'); pdf.save(name+'.pdf');
+          if(a1Ratio) pdf.addImage(url,'PNG',0,0,594,841,undefined,'FAST');
+          else pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST');
+          pdf.save(name+'.pdf');
         } else {
-          dl(await capture(f, kind), name+'.'+kind);
+          dl(await capture(f, kind, a1Ratio||null), name+'.'+kind);
         }
       } else {
         /* Master — every output format: zip of images, or one multi-page PDF */
@@ -898,47 +908,10 @@ function App(){
     setExporting(false); setExportMsg('');
   }
 
-  /* ---- A1 print export — on demand from the A4 view only, never part of the
-     all-formats bundle (most posters don't get printed that big). Every
-     A-series sheet shares the 1:√2 aspect, so this is the A4 layout — its
-     per-format overrides included — captured at 3508px wide, true A1 @150dpi.
-     A PDF comes out at real-world size (594×841mm) so a shop prints it 1:1. ---- */
-  async function doExportA1(titleArg){
-    if(exporting || !window.htmlToImage || doc.activeFormat!=='a4') return;
-    const kind = doc.exportFormat || 'png';
-    const slug = slugify(titleArg!=null ? titleArg : (doc.title||''));
-    const name = (slug || 'reality-poster')+'-a1';
-    const f = AP_FMT.a4;
-    const ratio = 3508/f.w;                    // A1 short edge in px at 150 dpi
-    setSelectedIds([]); setExporting(ratio);   // the number rides the exporting flag →
-    setExportMsg('Rendering A1…');             // riso photos repaint 1:1 with the capture
-    const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
-    try{
-      await new Promise(r=>setTimeout(r,420)); // let those big repaints land
-      const node = canvasRef.current;
-      const opts = { width:f.w, height:f.h, pixelRatio:ratio, cacheBust:true, backgroundColor:bg,
-        style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
-      if(kind==='pdf'){
-        const url = await window.htmlToImage.toPng(node, opts);
-        const JS = window.jspdf && window.jspdf.jsPDF;
-        const pdf = new JS({ unit:'mm', format:[594,841], orientation:'portrait' });
-        pdf.addImage(url,'PNG',0,0,594,841,undefined,'FAST');
-        pdf.save(name+'.pdf');
-      } else {
-        const url = kind==='jpg'
-          ? await window.htmlToImage.toJpeg(node, Object.assign({quality:0.95}, opts))
-          : await window.htmlToImage.toPng(node, opts);
-        const a=document.createElement('a'); a.href=url; a.download=name+'.'+kind;
-        document.body.appendChild(a); a.click(); a.remove();
-      }
-    }catch(err){ console.error('A1 export failed', err); setExportMsg('Export failed'); await new Promise(r=>setTimeout(r,1400)); }
-    setExporting(false); setExportMsg('');
-  }
-
   return (
     <div className="rs-app">
       <Topbar doc={doc} setDoc={setDoc} count={doc.elements.length} overrideCount={overrideCount} resetFormat={resetFormat}
-        onExport={doExport} onExportA1={doExportA1} exporting={exporting} exportMsg={exportMsg} />
+        onExport={doExport} exporting={exporting} exportMsg={exportMsg} />
       <div className="rs-body">
         <div className="rs-lib">
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>

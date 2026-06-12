@@ -280,6 +280,31 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       ))}
     </div>;
   }
+  else if(el.type==='sessions'){
+    /* Series schedule — rows parsed live from the pasted text (number and date
+       optional per line). Row type auto-fits the box height so a 4-line and a
+       10-line paste both sit nicely; rowSize (S/M/L) overrides the fit. */
+    const items = window.parseSessions(el.raw);
+    const headH = el.heading ? 28 : 0;
+    const avail = el.h - 36 - headH;
+    const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
+    const fs = el.rowSize || auto;
+    const sub = Math.max(11, Math.round(fs*0.62));
+    inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
+      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null}
+      {items.map((it,i)=>(
+        <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
+          borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:'7px 0',
+          fontFamily:MONT, fontWeight:700, textTransform:'uppercase' }}>
+          {it.num ? <span style={{ flex:'none', fontSize:sub, color:accentHex, letterSpacing:'.08em' }}>{it.num}</span> : null}
+          <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:'.01em' }}>{it.title}</span>
+          {it.date ? <span style={{ flex:'none', fontSize:sub, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.date}</span> : null}
+        </div>
+      ))}
+      {!items.length && !exporting &&
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14, opacity:.4 }}>Paste the session list in the panel →</div>}
+    </div>;
+  }
   else if(el.type==='specials'){
     inner = <div style={box({ padding:'16px 24px', justifyContent:'flex-start' })}>
       <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:26, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>

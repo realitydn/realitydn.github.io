@@ -375,6 +375,18 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </div>
         <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
       </React.Fragment>}
+      {el.type==='sessions' && <React.Fragment>
+        <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
+        <div className="rs-row">
+          <div className="rs-lab">Sessions — one per line</div>
+          <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
+            placeholder={'001 — Session title — 3.6.26'}
+            onChange={e=>update({ raw:e.target.value })} />
+        </div>
+        <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste straight from your notes — <b>number — title — date</b> split by dashes, pipes or tabs. Number and date are optional on every line.</div>
+        <Chips label="Row size" options={[{v:0,l:'Auto fit'},{v:16,l:'S'},{v:21,l:'M'},{v:26,l:'L'}]}
+          value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
+      </React.Fragment>}
 
       {el.type==='photo' && <PhotoControls el={el} update={update} />}
       {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}

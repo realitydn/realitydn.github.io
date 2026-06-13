@@ -1,22 +1,10 @@
 {
   "posters": [
     {
-      "file": "ab-anniversary-1.jpg",
+      "file": "ab-filmmaker-meetup2.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-anniversary-1"
-    },
-    {
-      "file": "ab-speed-friending-4.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-speed-friending-4"
-    },
-    {
-      "file": "ab-karaoke-thursday.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-karaoke-thursday"
+      "slug": "ab-filmmaker-meetup2"
     },
     {
       "file": "ab-small-things-mostly-2.jpg",
@@ -25,22 +13,58 @@
       "slug": "ab-small-things-mostly-2"
     },
     {
-      "file": "ab-film-club-sicario.jpg",
+      "file": "ab-anniversary-1.jpg",
       "alt": "",
       "title": "",
-      "slug": "ab-film-club-sicario"
+      "slug": "ab-anniversary-1"
     },
     {
-      "file": "ab-cnc-starting-over.jpg",
+      "file": "chessnight-4x5.png",
       "alt": "",
       "title": "",
-      "slug": "ab-cnc-starting-over"
+      "slug": "chessnight-4x5"
     },
     {
-      "file": "ab-kayla-getting-stronger-w-protein.jpg",
+      "file": "letstalktaoism-4x5.png",
       "alt": "",
       "title": "",
-      "slug": "ab-kayla-getting-stronger-w-protein"
+      "slug": "letstalktaoism-4x5"
+    },
+    {
+      "file": "frenchsocialclub-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "frenchsocialclub-4x5"
+    },
+    {
+      "file": "fireweekly-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "fireweekly-4x5"
+    },
+    {
+      "file": "bookclubtimewar-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "bookclubtimewar-4x5"
+    },
+    {
+      "file": "awarenessitself-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "awarenessitself-4x5"
+    },
+    {
+      "file": "vietnamtalk-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "vietnamtalk-4x5"
+    },
+    {
+      "file": "ab-karaoke-thursday.jpg",
+      "alt": "",
+      "title": "",
+      "slug": "ab-karaoke-thursday"
     },
     {
       "file": "ab-board-game-night.jpg",
@@ -73,12 +97,6 @@
       "slug": "ab-ai-meetup2"
     },
     {
-      "file": "ab-fire-meetup2.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-fire-meetup2"
-    },
-    {
       "file": "ab-talk-circle-playfulness-attraction.jpg",
       "alt": "",
       "title": "",
@@ -97,22 +115,10 @@
       "slug": "ab-pulse-sessions"
     },
     {
-      "file": "ab-awareness-itself-nondual-meditation.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-awareness-itself-nondual-meditation"
-    },
-    {
       "file": "ab-spill-it.jpg",
       "alt": "",
       "title": "",
       "slug": "ab-spill-it"
-    },
-    {
-      "file": "ab-filmmaker-meetup2.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-filmmaker-meetup2"
     },
     {
       "file": "ab-french-social-club.jpg",
@@ -131,18 +137,6 @@
       "alt": "",
       "title": "",
       "slug": "ab-short-films-talk"
-    },
-    {
-      "file": "ab-vietnamese-talk.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-vietnamese-talk"
-    },
-    {
-      "file": "ab-book-club-this-is-how-you-lose-the-time-war.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-book-club-this-is-how-you-lose-the-time-war"
     },
     {
       "file": "ab-createincommunity.jpg",
@@ -167,12 +161,6 @@
       "alt": "",
       "title": "",
       "slug": "ab-no-mic-open-mic"
-    },
-    {
-      "file": "ab-chess.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-chess"
     }
   ]
 }

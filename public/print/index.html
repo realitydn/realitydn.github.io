@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Internal staff tool — keep it out of search and link graphs.
+     Canonical source lives here (public/print/); the local launcher
+     (Print Studio.bat) serves these same files. -->
+<meta name="robots" content="noindex, nofollow">
+<title>REALITY — Print Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous">
+<link href="print.css" rel="stylesheet">
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<!-- Vendored locally so the PDF engine + QR work offline and never drift. -->
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/fontkit.umd.min.js"></script>
+<script src="vendor/qrcode.js"></script>
+
+<script type="text/babel" src="print-data.jsx"></script>
+<script type="text/babel" src="print-element.jsx"></script>
+<script type="text/babel" src="print-canvas.jsx"></script>
+<script type="text/babel" src="print-export.jsx"></script>
+<script type="text/babel" src="print-app.jsx"></script>
+</body>
+</html>

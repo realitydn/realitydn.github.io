@@ -25,6 +25,8 @@
     if(t<=0) return stops[0]; if(t>=1) return stops[stops.length-1];
     const s=(stops.length-1)*t, i=Math.floor(s); return lerp(stops[i],stops[i+1],s-i);
   }
+  function rgbCss(c){ return 'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')'; }
+  function inkRGB(key,fallback){ return hex2rgb(PAL[key]||fallback||PAL.pink); }
 
   /* ---- source handling ---- */
   let SRC = null; // HTMLImageElement | HTMLCanvasElement
@@ -130,33 +132,89 @@
     cx.globalCompositeOperation='source-over';
   }
 
-  /* 3 · HALFTONE — single ink dot screen sized by luminance
-       params: dot (spacing), angle (deg), shape (circle|square|line) */
+  /* one screen dot at (gx,gy); amt = coverage 0..1 already gained */
+  function drawDot(cx,shape,gx,gy,amt,step){
+    if(amt<=0) return;
+    if(shape==='line'){ const t=amt*step; cx.fillRect(gx-step/2, gy-t/2, step+1, t); return; }
+    if(shape==='square'){ const s=amt*step*1.25; cx.fillRect(gx-s/2,gy-s/2,s,s); return; }
+    if(shape==='diamond'){ const s=amt*step*0.95; if(s<0.4) return; cx.save(); cx.translate(gx,gy); cx.rotate(0.7853981634); cx.fillRect(-s/2,-s/2,s,s); cx.restore(); return; }
+    if(shape==='ring'){ const r=amt*step*0.74; if(r<0.6) return; const lw=Math.max(0.6,r*0.42);
+      cx.beginPath(); cx.arc(gx,gy,r,0,7); cx.arc(gx,gy,Math.max(0.05,r-lw),0,7,true); cx.fill('evenodd'); return; }
+    const r=amt*step*0.72; if(r<0.4) return; cx.beginPath(); cx.arc(gx,gy,r,0,7); cx.fill();   // circle
+  }
+
+  /* 3 · HALFTONE — rotated dot screen sized by luminance, now in colour.
+       inkMode: single (accent) | black (paper's mono ink) | gradient | two (rosette)
+       gradient: gradMode tone|frame, gradA/gradB inks, gradAngle (frame)
+       field: paper | tint | ink  (+ fieldInk, fieldStrength)
+       shape: circle|square|diamond|ring|line · dotGain · jitter · invert
+       params: dot (spacing), angle (deg), screenOffset (two-ink) */
   function halftone(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const step=Math.max(4, o.dot|0)*(w/520);
     const L=lumBuffer(w,h,o.contrast);
     const night=o.paper==='night';
     const shape=o.shape||'circle';
-    cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h);
-    cx.fillStyle = night? PAL[o.ink] : INK.day;
-    const ang=(o.angle!=null?o.angle:-20)*Math.PI/180, cos=Math.cos(ang), sin=Math.sin(ang);
-    const diag=Math.ceil(Math.hypot(w,h));
-    const sample=(x,y)=>{ x=Math.max(0,Math.min(w-1,x|0)); y=Math.max(0,Math.min(h-1,y|0)); return L[y*w+x]; };
-    cx.save(); cx.translate(w/2,h/2); cx.rotate(ang); cx.translate(-w/2,-h/2);
-    for(let gy=-diag/2; gy<diag*1.5; gy+=step){
-      for(let gx=-diag/2; gx<diag*1.5; gx+=step){
-        const sx=(gx-w/2)*cos-(gy-h/2)*sin + w/2;
-        const sy=(gx-w/2)*sin+(gy-h/2)*cos + h/2;
-        if(sx<0||sx>=w||sy<0||sy>=h) continue;
-        const l=sample(sx,sy); const ink= night? l : 1-l;
-        if(ink<0.01) continue;
-        if(shape==='line'){ const t=Math.sqrt(Math.max(0,ink))*step; cx.fillRect(gx-step/2, gy-t/2, step+1, t); }
-        else if(shape==='square'){ const s=Math.sqrt(Math.max(0,ink))*step*1.25; cx.fillRect(gx-s/2,gy-s/2,s,s); }
-        else { const r=Math.sqrt(Math.max(0,ink))*step*0.72; if(r<0.4) continue; cx.beginPath(); cx.arc(gx,gy,r,0,7); cx.fill(); }
+    const mode=o.inkMode||'single';
+    const gain=o.dotGain!=null?o.dotGain:1;
+    const jit=(o.jitter||0)*step*0.5;            // max wobble: half a cell
+    const inv=!!o.invert;
+    const baseAngle=o.angle!=null?o.angle:-20;
+    const accent=accentRGB(o), partner=partnerRGB(o), paper=paperRGB(o);
+
+    /* ---- field (the ground the dots print over) ---- */
+    const fieldInk = o.fieldInk? inkRGB(o.fieldInk) : accent;
+    if(o.field==='ink'){ cx.fillStyle=rgbCss(fieldInk); }
+    else if(o.field==='tint'){ const s=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12));
+      cx.fillStyle=rgbCss(lerp(paper,fieldInk,s)); }
+    else { cx.fillStyle=PAPER[o.paper]; }
+    cx.fillRect(0,0,w,h);
+
+    /* draw one rotated screen; `color` is a CSS string (constant) or fn(l,sx,sy) */
+    function screen(angleDeg,color,seed){
+      const ang=angleDeg*Math.PI/180, cos=Math.cos(ang), sin=Math.sin(ang);
+      const diag=Math.ceil(Math.hypot(w,h));
+      const rj=mulberry32(seed||0x9E3779B1);
+      const fn= typeof color==='function'? color : null;
+      if(!fn) cx.fillStyle=color;
+      cx.save(); cx.translate(w/2,h/2); cx.rotate(ang); cx.translate(-w/2,-h/2);
+      for(let gy=-diag/2; gy<diag*1.5; gy+=step){
+        for(let gx=-diag/2; gx<diag*1.5; gx+=step){
+          let jx=0,jy=0; if(jit){ jx=(rj()*2-1)*jit; jy=(rj()*2-1)*jit; }   // advance per cell → deterministic
+          const sx=(gx-w/2)*cos-(gy-h/2)*sin + w/2;
+          const sy=(gx-w/2)*sin+(gy-h/2)*cos + h/2;
+          if(sx<0||sx>=w||sy<0||sy>=h) continue;
+          const l=L[(sy|0)*w+(sx|0)];
+          let ink= night? l : 1-l; if(inv) ink=1-ink;
+          if(ink<0.01) continue;
+          const amt=Math.sqrt(Math.max(0,ink))*gain;
+          if(fn) cx.fillStyle=fn(l,sx,sy);
+          drawDot(cx,shape,gx+jx,gy+jy,amt,step);
+        }
       }
+      cx.restore();
     }
-    cx.restore();
+
+    if(mode==='two'){
+      cx.globalCompositeOperation = night? 'screen':'multiply';
+      const off=o.screenOffset!=null?o.screenOffset:30;
+      screen(baseAngle,        rgbCss(accent),  0x1f1f1f);
+      screen(baseAngle+off,    rgbCss(partner), 0x2e2e2e);
+      cx.globalCompositeOperation='source-over';
+    } else if(mode==='gradient'){
+      const A=inkRGB(o.gradA||o.ink), B=inkRGB(o.gradB|| (PARTNER[o.ink]||'blue'));
+      let fn;
+      if((o.gradMode||'tone')==='frame'){
+        const ga=(o.gradAngle!=null?o.gradAngle:90)*Math.PI/180, gc=Math.cos(ga), gs=Math.sin(ga);
+        const D=(w*Math.abs(gc)+h*Math.abs(gs))||1;
+        fn=(l,sx,sy)=>{ let t=0.5+((sx-w/2)*gc+(sy-h/2)*gs)/D; t=t<0?0:t>1?1:t; return rgbCss(lerp(A,B,t)); };
+      } else { fn=(l)=>rgbCss(lerp(A,B,l)); }                              // by tone: shadow→A, light→B
+      screen(baseAngle,fn,0x3a3a3a);
+    } else if(mode==='black'){
+      screen(baseAngle, INK[o.paper], 0x4b4b4b);                          // mono — paper's own ink
+    } else {
+      screen(baseAngle, rgbCss(accent), 0x5c5c5c);                        // single accent ink (default)
+    }
   }
 
   /* 4 · POSTERIZE — hard tonal bands snapped to a palette ramp */
@@ -283,7 +341,9 @@
   function render(cv, name, opts){
     const o=Object.assign({ ink:'pink', paper:'night', contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
       softness:0.12, angle:null, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
-      shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2 }, opts||{});
+      shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2,
+      inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
+      field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0 }, opts||{});
     if(o.balance==null) o.balance=0.5; if(o.shadowTint==null) o.shadowTint=0.18;
     BRIGHT = o.brightness||0;
     PREBLUR = o.blurUnder||0;

@@ -208,6 +208,8 @@ const DEFAULTS = {
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
+             inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
+             field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
 };

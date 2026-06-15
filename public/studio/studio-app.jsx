@@ -161,7 +161,7 @@ const TREATS = [
 const TREAT_PRESETS = {
   duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false },
   offregister:{ contrast:1.25, offset:13,    angle:47,        spread:1.25 },
-  halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle' },
+  halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
   posterize:  { contrast:1.25, bands:4 },
   cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false },
   overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16 }
@@ -212,9 +212,45 @@ function PhotoControls({ el, update }){
         <Slider label="Ink spread" val={el.spread} min={0.8} max={1.8} step={0.02} onChange={v=>update({spread:v})} />
       </React.Fragment>}
       {t==='halftone' && <React.Fragment>
+        <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'},{v:'two',l:'Two-ink'}]} value={el.inkMode||'single'} onChange={v=>update({inkMode:v})} />
+        {(el.inkMode||'single')==='gradient' && <React.Fragment>
+          <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
+          <div className="rs-lab">From <span className="val">{el.gradA||el.ink||'accent'}</span></div>
+          <div className="rs-swatches">
+            <div className={'rs-sw'+(el.gradA==null?' on':'')} title="Main ink" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ gradA:null })} />
+            {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.gradA===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradA:a })} />))}
+          </div>
+          <div className="rs-lab">To <span className="val">{el.gradB||'partner'}</span></div>
+          <div className="rs-swatches">
+            <div className={'rs-sw'+(el.gradB==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ gradB:null })} />
+            {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.gradB===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradB:a })} />))}
+          </div>
+          {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
+        </React.Fragment>}
+        {(el.inkMode||'single')==='two' && <React.Fragment>
+          <div className="rs-lab">Second ink <span className="val">{el.ink2||'auto'}</span></div>
+          <div className="rs-swatches">
+            <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ ink2:null })} />
+            {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />))}
+          </div>
+          <Slider label="Screen offset" val={el.screenOffset!=null?el.screenOffset:30} min={0} max={90} step={1} onChange={v=>update({screenOffset:v})} suffix="°" />
+        </React.Fragment>}
         <Slider label="Dot size" val={el.dot} min={4} max={22} step={1} onChange={v=>update({dot:v})} suffix="px" />
         <Slider label="Screen angle" val={el.angle} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
-        <Chips label="Dot shape" options={[{v:'circle',l:'Dot'},{v:'square',l:'Square'},{v:'line',l:'Line'}]} value={el.shape} onChange={v=>update({shape:v})} />
+        <Chips label="Dot shape" options={[{v:'circle',l:'Dot'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'line',l:'Line'}]} value={el.shape} onChange={v=>update({shape:v})} />
+        <Slider label="Dot gain" val={el.dotGain!=null?el.dotGain:1} min={0.6} max={1.6} step={0.02} onChange={v=>update({dotGain:v})} />
+        <Slider label="Hand-set jitter" val={el.jitter!=null?el.jitter:0} min={0} max={1} step={0.02} onChange={v=>update({jitter:v})} />
+        <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+        <div className="rs-sech">Halftone field</div>
+        <Chips label="Background" options={[{v:'paper',l:'Paper'},{v:'tint',l:'Ink tint'},{v:'ink',l:'Solid ink'}]} value={el.field||'paper'} onChange={v=>update({field:v})} />
+        {el.field && el.field!=='paper' && <React.Fragment>
+          <div className="rs-lab">Field ink <span className="val">{el.fieldInk||'main'}</span></div>
+          <div className="rs-swatches">
+            <div className={'rs-sw'+(el.fieldInk==null?' on':'')} title="Main ink" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ fieldInk:null })} />
+            {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.fieldInk===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ fieldInk:a })} />))}
+          </div>
+          {el.field==='tint' && <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.12} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />}
+        </React.Fragment>}
       </React.Fragment>}
       {t==='posterize' && <Slider label="Bands" val={el.bands} min={2} max={6} step={1} onChange={v=>update({bands:v})} />}
       {t==='cutout' && <React.Fragment>

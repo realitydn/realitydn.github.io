@@ -37,6 +37,9 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       contrast:el.contrast, brightness:el.brightness, dot:el.dot, bands:el.bands, threshold:el.threshold,
       angle:el.angle, softness:el.softness, balance:el.balance, shadowTint:el.shadowTint,
       invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset,
+      inkMode:el.inkMode, gradMode:el.gradMode, gradAngle:el.gradAngle, gradA:el.gradA, gradB:el.gradB,
+      screenOffset:el.screenOffset, field:el.field, fieldInk:el.fieldInk, fieldStrength:el.fieldStrength,
+      dotGain:el.dotGain, jitter:el.jitter,
       blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
     const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });

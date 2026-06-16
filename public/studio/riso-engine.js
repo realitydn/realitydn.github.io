@@ -134,11 +134,16 @@
   }
 
   /* one screen dot at (gx,gy); amt = coverage 0..1 already gained */
-  function drawDot(cx,shape,gx,gy,amt,step){
+  function drawDot(cx,shape,gx,gy,amt,step,pucker){
     if(amt<=0) return;
     if(shape==='line'){ const t=amt*step; cx.fillRect(gx-step/2, gy-t/2, step+1, t); return; }
     if(shape==='square'){ const s=amt*step*1.25; cx.fillRect(gx-s/2,gy-s/2,s,s); return; }
-    if(shape==='diamond'){ const s=amt*step*0.95; if(s<0.4) return; cx.save(); cx.translate(gx,gy); cx.rotate(0.7853981634); cx.fillRect(-s/2,-s/2,s,s); cx.restore(); return; }
+    if(shape==='diamond'){ const r=amt*step*0.82; if(r<0.5) return;       // 4-point pucker — concave star vs a flat square
+      const pk=pucker!=null?pucker:0.35, p=[[0,-r],[r,0],[0,r],[-r,0]];
+      cx.beginPath(); cx.moveTo(gx+p[0][0],gy+p[0][1]);
+      for(let k=0;k<4;k++){ const a=p[k], b=p[(k+1)%4];
+        cx.quadraticCurveTo(gx+(a[0]+b[0])/2*(1-pk), gy+(a[1]+b[1])/2*(1-pk), gx+b[0], gy+b[1]); }
+      cx.closePath(); cx.fill(); return; }
     if(shape==='ring'){ const r=amt*step*0.74; if(r<0.6) return; const lw=Math.max(0.6,r*0.42);
       cx.beginPath(); cx.arc(gx,gy,r,0,7); cx.arc(gx,gy,Math.max(0.05,r-lw),0,7,true); cx.fill('evenodd'); return; }
     const r=amt*step*0.72; if(r<0.4) return; cx.beginPath(); cx.arc(gx,gy,r,0,7); cx.fill();   // circle
@@ -160,6 +165,7 @@
     const gain=o.dotGain!=null?o.dotGain:1;
     const jit=(o.jitter||0)*step*0.5;            // max wobble: half a cell
     const inv=!!o.invert;
+    const pucker=o.pucker!=null?o.pucker:0.35;   // diamond concavity
     const baseAngle=o.angle!=null?o.angle:-20;
     const accent=accentRGB(o), partner=partnerRGB(o), paper=paperRGB(o);
 
@@ -190,7 +196,7 @@
           if(ink<0.01) continue;
           const amt=Math.sqrt(Math.max(0,ink))*gain;
           if(fn) cx.fillStyle=fn(l,sx,sy);
-          drawDot(cx,shape,gx+jx,gy+jy,amt,step);
+          drawDot(cx,shape,gx+jx,gy+jy,amt,step,pucker);
         }
       }
       cx.restore();
@@ -288,7 +294,7 @@
     if(!o.transparent){ cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); }   // logos keep their alpha
     const canFilter = typeof cx.filter==='string';
     if(canFilter){ const b=1+(o.brightness||0), k=o.contrast||1; cx.filter='brightness('+b+') contrast('+k+')'; }
-    drawCover(cx,w,h, o.transparent?'contain':'cover');                        // contain so the whole logo shows
+    drawCover(cx,w,h, o.fit==='contain'?'contain':'cover');                    // logos contain (whole mark, paper around); photos cover
     if(canFilter) cx.filter='none';
     if(PREBLUR>0) blurCanvas(cv, PREBLUR);
   }
@@ -393,8 +399,8 @@
       softness:0.12, angle:null, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
       shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2,
       inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
-      field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
-      spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false }, opts||{});
+      field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
+      spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover' }, opts||{});
     if(o.balance==null) o.balance=0.5; if(o.shadowTint==null) o.shadowTint=0.18;
     BRIGHT = o.brightness||0;
     PREBLUR = o.blurUnder||0;

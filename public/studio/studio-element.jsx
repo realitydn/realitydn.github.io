@@ -68,9 +68,9 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset,
       inkMode:el.inkMode, gradMode:el.gradMode, gradAngle:el.gradAngle, gradA:el.gradA, gradB:el.gradB,
       screenOffset:el.screenOffset, field:el.field, fieldInk:el.fieldInk, fieldStrength:el.fieldStrength,
-      dotGain:el.dotGain, jitter:el.jitter,
+      dotGain:el.dotGain, jitter:el.jitter, pucker:el.pucker,
       spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
-      transparent:el.transparent,
+      transparent:el.transparent, fit:el.fit,
       blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
     const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
@@ -111,12 +111,16 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
 
   const t=seTheme(theme);
   const off=`${-(BLEED_K-1)/2*100}%`, span=`${BLEED_K*100}%`;
-  return <div style={{ width:'100%', height:'100%', position:'relative', boxSizing:'border-box' }}>
+  /* logo shadow: a transparent logo casts off its own shape (drop-shadow on the
+     outer box so it isn't clipped); a paper logo casts off its card edge. */
+  const lsh = el.type==='logo' ? seShadow(el, t, theme) : null;
+  return <div style={{ width:'100%', height:'100%', position:'relative', boxSizing:'border-box',
+      filter: (lsh && el.transparent) ? lsh.filter : undefined }}>
     {selected && <canvas ref={bleedRef} aria-hidden="true" style={{ position:'absolute',
       left:off, top:off, width:span, height:span, opacity:0.22, pointerEvents:'none', zIndex:0 }} />}
     <div style={{ position:'absolute', inset:0, overflow:'hidden', zIndex:1,
       border: el.frame? `3px solid ${t.fg}` : 'none',
-      boxShadow: el.frame? `0 10px 2px ${t.shadow(theme==='night'?0.2:0.16)}` : 'none', boxSizing:'border-box' }}>
+      boxShadow: el.frame? `0 10px 2px ${t.shadow(theme==='night'?0.2:0.16)}` : (lsh && !el.transparent ? lsh.css : 'none'), boxSizing:'border-box' }}>
       <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />
     </div>
   </div>;
@@ -134,6 +138,20 @@ function seResolve(colorKey, fallback){
 function seRGBA(hex, a){
   const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
   return 'rgba('+r+','+g+','+b+','+a+')';
+}
+/* Drop-shadow params from an element's shadow.* props — shared by the weekly
+   combo and logos. 'fg' uses the theme's adaptive press shadow (dark on day,
+   a soft glow on night). Returns null when off. */
+function seShadow(el, t, theme){
+  if(!el.shadowOn) return null;
+  const dist = el.shadowDist!=null?el.shadowDist:9;
+  const ang  = (el.shadowAngle!=null?el.shadowAngle:90)*Math.PI/180;
+  const blur = el.shadowBlur!=null?el.shadowBlur:3;
+  const ck   = el.shadowColor||'fg';
+  const alpha= el.shadowAlpha!=null?el.shadowAlpha:(ck==='fg'?(theme==='night'?0.4:0.22):0.9);
+  const col  = ck==='fg' ? t.shadow(alpha) : seRGBA(ck==='ink'?'#0d0905':ck==='cream'?'#fffbf1':(SE_PAL[ck]||'#0d0905'), alpha);
+  const dx=Math.round(Math.cos(ang)*dist*10)/10, dy=Math.round(Math.sin(ang)*dist*10)/10;
+  return { css:`${dx}px ${dy}px ${blur}px ${col}`, filter:`drop-shadow(${dx}px ${dy}px ${blur}px ${col})` };
 }
 
 /* Solid colour block — a flat ink field. With grain it renders through a
@@ -421,14 +439,15 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const barText = lum < 0.6 ? cream : ink;          // cream on saturated accents, dark on yellow/amber
     const H=el.h, barH=Math.round(H*0.6), badgeD=H, pad=Math.round(el.w*0.05);
     const barF=Math.round(barH*0.32*B), bigF=Math.round(badgeD*0.32*B), smF=Math.round(badgeD*0.10*B);
+    const sh=seShadow(el, t, theme);
     inner = <div style={{ position:'relative', width:'100%', height:'100%', boxSizing:'border-box' }}>
-      <div style={{ position:'absolute', left:0, right:0, top:(H-barH)/2, height:barH, background:accent,
+      <div style={{ position:'absolute', left:0, right:0, top:(H-barH)/2, height:barH, background:accent, boxShadow: sh?sh.css:'none',
         display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 '+pad+'px', boxSizing:'border-box' }}>
         <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:barText, fontSize:barF, letterSpacing:'.08em' }}>{el.price}</span>
         <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:barText, fontSize:barF, letterSpacing:'.08em' }}>{el.time}</span>
       </div>
       <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
-        width:badgeD, height:badgeD, borderRadius:'50%', background:cream, border:Math.max(2,Math.round(badgeD*0.018))+'px solid '+ink, boxSizing:'border-box',
+        width:badgeD, height:badgeD, borderRadius:'50%', background:cream, border:Math.max(2,Math.round(badgeD*0.018))+'px solid '+ink, boxShadow: sh?sh.css:'none', boxSizing:'border-box',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
         {el.every ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:'.14em' }}>{el.every}</span> : null}
         <span style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', color:accent, fontSize:bigF, lineHeight:.9, margin:'0.05em 0' }}>{el.day}</span>

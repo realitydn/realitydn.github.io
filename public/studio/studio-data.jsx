@@ -217,15 +217,16 @@ const DEFAULTS = {
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
   /* Weekly recurring-event combo: an accent bar with the price (left) and time
      (right), and a day-of-week badge centred on top. One draggable unit. */
-  weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg' } },
+  weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg',
+             shadowOn:true, shadowDist:9, shadowAngle:90, shadowBlur:3, shadowAlpha:null, shadowColor:'fg' } },
   block:   { w:540, h:420, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   photo:   { w:760, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
              inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
-             field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
-             spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false,
+             field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
+             spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover',
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
   /* Partner logo — same engine as a photo but untreated by default and with a
@@ -236,8 +237,8 @@ const DEFAULTS = {
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
              inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
-             field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
-             spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone',
+             field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
+             spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', fit:'contain',
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
 };

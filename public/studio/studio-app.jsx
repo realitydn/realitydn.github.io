@@ -133,6 +133,26 @@ const WEIGHTS_MONT = [
 const WEIGHTS_GROT = [
   {v:300,l:'Light'},{v:400,l:'Reg'},{v:500,l:'Med'},{v:600,l:'Semi'},{v:700,l:'Bold'}
 ];
+/* Drop-shadow controls, shared by the weekly combo + logos. */
+function ShadowControls({ el, update, theme }){
+  const on = !!el.shadowOn;
+  const ck = el.shadowColor||'fg';
+  const alphaVal = el.shadowAlpha!=null?el.shadowAlpha:(ck==='fg'?(theme==='night'?0.4:0.22):0.9);
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Shadow</div>
+      <Chips options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={on} onChange={v=>update({shadowOn:v})} />
+      {on && <React.Fragment>
+        <Slider label="Distance" val={el.shadowDist!=null?el.shadowDist:9} min={0} max={60} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
+        <Slider label="Direction" val={el.shadowAngle!=null?el.shadowAngle:90} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
+        <Slider label="Blur" val={el.shadowBlur!=null?el.shadowBlur:3} min={0} max={40} step={1} onChange={v=>update({shadowBlur:v})} suffix="px" />
+        <Slider label="Opacity" val={alphaVal} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
+        <Swatches label="Shadow colour" value={ck} autoTitle="Auto — soft press shadow"
+          onChange={v=>update(v==='fg'?{shadowColor:'fg',shadowAlpha:null}:{shadowColor:v,shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:0.9})} />
+      </React.Fragment>}
+    </React.Fragment>
+  );
+}
 /* Reality-ticket formats — picked from the details panel (not separate
    sidebar items). Each sets the size + what's shown; content is preserved. */
 const TICKET_FORMATS = {
@@ -190,7 +210,7 @@ const TREAT_PRESETS = {
   spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18 },
   none:       { contrast:1.1,  brightness:0 }
 };
-function PhotoControls({ el, update }){
+function PhotoControls({ el, update, theme }){
   const t = el.treatment;
   return (
     <React.Fragment>
@@ -269,6 +289,7 @@ function PhotoControls({ el, update }){
         <Slider label="Dot size" val={el.dot} min={4} max={22} step={1} onChange={v=>update({dot:v})} suffix="px" />
         <Slider label="Screen angle" val={el.angle} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
         <Chips label="Dot shape" options={[{v:'circle',l:'Dot'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'line',l:'Line'}]} value={el.shape} onChange={v=>update({shape:v})} />
+        {el.shape==='diamond' && <Slider label="Pucker" val={el.pucker!=null?el.pucker:0.35} min={0} max={1} step={0.02} onChange={v=>update({pucker:v})} />}
         <Slider label="Dot gain" val={el.dotGain!=null?el.dotGain:1} min={0.6} max={1.6} step={0.02} onChange={v=>update({dotGain:v})} />
         <Slider label="Hand-set jitter" val={el.jitter!=null?el.jitter:0} min={0} max={1} step={0.02} onChange={v=>update({jitter:v})} />
         <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
@@ -315,8 +336,10 @@ function PhotoControls({ el, update }){
 
       <div className="rs-sech">Frame</div>
       <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
+      {el.type==='logo' && <ShadowControls el={el} update={update} theme={theme} />}
 
       <div className="rs-sech">Image in frame</div>
+      {el.type==='logo' && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>The whole logo always shows (contain). Zoom <b>below 1×</b> for more paper space around it.</div>}
       <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
       <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
       <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
@@ -485,7 +508,11 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </div>
         <Field label="Below day" value={el.allYear} onChange={v=>update({allYear:v})} />
         <Swatches label="Accent — bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent. Resize the box to scale it.</div>
+        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent.</div>
+        <div className="rs-sech">Size — grid presets</div>
+        <Chips label="Width" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />
+        <Chips label="Height" options={[{v:162,l:'S'},{v:216,l:'M'},{v:270,l:'L'}]} value={el.h} onChange={v=>update({h:v})} />
+        <ShadowControls el={el} update={update} theme={doc.theme} />
       </React.Fragment>}
       {el.type==='sessions' && <React.Fragment>
         <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
@@ -500,7 +527,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
       </React.Fragment>}
 
-      {(el.type==='photo'||el.type==='logo') && <PhotoControls el={el} update={update} />}
+      {(el.type==='photo'||el.type==='logo') && <PhotoControls el={el} update={update} theme={doc.theme} />}
       {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
 
       {/* ---- style (shared) ---- */}

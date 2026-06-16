@@ -155,7 +155,8 @@ function PhotoUpload({ onPick }){
 }
 const TREATS = [
   {v:'duotone',l:'Duotone'},{v:'offregister',l:'Off-Reg'},{v:'halftone',l:'Halftone'},
-  {v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'overprint',l:'Overprint'}
+  {v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'overprint',l:'Overprint'},
+  {v:'spot',l:'Spot'},{v:'none',l:'None'}
 ];
 /* recommended defaults applied when a treatment is chosen — each looks good out of the box */
 const TREAT_PRESETS = {
@@ -164,7 +165,9 @@ const TREAT_PRESETS = {
   halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
   posterize:  { contrast:1.25, bands:4 },
   cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false },
-  overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16 }
+  overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16 },
+  spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18 },
+  none:       { contrast:1.1,  brightness:0 }
 };
 function PhotoControls({ el, update }){
   const t = el.treatment;
@@ -179,14 +182,16 @@ function PhotoControls({ el, update }){
       <div className="rs-sech">Treatment</div>
       <Chips options={TREATS} value={el.treatment} onChange={v=>update(Object.assign({ treatment:v }, TREAT_PRESETS[v]||{}))} />
 
-      <div className="rs-sech">Main ink</div>
-      <Chips options={[{v:true,l:'Follow poster accent'},{v:false,l:'Custom'}]} value={el.followAccent} onChange={v=>update({ followAccent:v })} />
-      {!el.followAccent &&
-        <div className="rs-swatches">
-          {AP_ACC.map(a=>(
-            <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
-          ))}
-        </div>}
+      {t!=='none' && <React.Fragment>
+        <div className="rs-sech">Main ink</div>
+        <Chips options={[{v:true,l:'Follow poster accent'},{v:false,l:'Custom'}]} value={el.followAccent} onChange={v=>update({ followAccent:v })} />
+        {!el.followAccent &&
+          <div className="rs-swatches">
+            {AP_ACC.map(a=>(
+              <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
+            ))}
+          </div>}
+      </React.Fragment>}
       {(t==='offregister'||t==='overprint') && <React.Fragment>
         <div className="rs-lab">Accent ink <span className="val">{el.ink2||'auto'}</span></div>
         <div className="rs-swatches">
@@ -197,7 +202,7 @@ function PhotoControls({ el, update }){
         </div>
       </React.Fragment>}
 
-      <div className="rs-sech">Press · {TREATS.find(x=>x.v===t).l}</div>
+      <div className="rs-sech">{t==='none'?'Adjust':'Press · '+TREATS.find(x=>x.v===t).l}</div>
       <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
       <Slider label="Contrast" val={el.contrast} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
       <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
@@ -262,6 +267,18 @@ function PhotoControls({ el, update }){
         <Slider label="Offset" val={el.offset} min={0} max={30} step={1} onChange={v=>update({offset:v})} suffix="px" />
         <Slider label="Angle" val={el.angle} min={0} max={360} step={1} onChange={v=>update({angle:v})} suffix="°" />
         <Slider label="Field split" val={el.split} min={0.04} max={0.4} step={0.01} onChange={v=>update({split:v})} />
+      </React.Fragment>}
+      {t==='spot' && <React.Fragment>
+        <Chips label="Backdrop" options={[{v:'duotone',l:'Duotone'},{v:'image',l:'Raw image'}]} value={el.spotBase||'duotone'} onChange={v=>update({spotBase:v})} />
+        <Slider label="Range low" val={el.spotLo!=null?el.spotLo:0.35} min={0} max={1} step={0.01} onChange={v=>update({spotLo:v})} />
+        <Slider label="Range high" val={el.spotHi!=null?el.spotHi:0.65} min={0} max={1} step={0.01} onChange={v=>update({spotHi:v})} />
+        <Slider label="Edge softness" val={el.spotSoft!=null?el.spotSoft:0.08} min={0.002} max={0.4} step={0.01} onChange={v=>update({spotSoft:v})} />
+        <Chips label="Fill" options={[{v:false,l:'In range'},{v:true,l:'Out of range'}]} value={!!el.spotInvert} onChange={v=>update({spotInvert:v})} />
+        {(el.spotBase||'duotone')==='duotone' && <React.Fragment>
+          <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
+          <Slider label="Shadow tint" val={el.shadowTint} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
+        </React.Fragment>}
+        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Tones between <b>low</b> and <b>high</b> flood with the accent ink; everything else shows the backdrop.</div>
       </React.Fragment>}
 
       <div className="rs-sech">Finish</div>
@@ -331,7 +348,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
     );
   }
 
-  const isText = ['title','tagline','when','stamp','host'].indexOf(el.type)>=0;
+  const isText = ['title','tagline','when','stamp','host','info'].indexOf(el.type)>=0;
   const setItems = (items)=>update({ items });
   // Per-type default tracking, so the slider reads true for elements saved
   // before letter-spacing was configurable (matches the renderer's fallback).
@@ -369,6 +386,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* ---- content (shared across formats) ---- */}
       {el.type==='title' && <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />}
       {el.type==='tagline' && <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />}
+      {el.type==='info' && <React.Fragment>
+        <Field label="Info text" value={el.text} onChange={v=>update({text:v})} area />
+        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Markdown: <b>**bold**</b>, <i>*italic*</i>, and lines starting with <b>-</b> become bullets. Blank line = a gap.</div>
+      </React.Fragment>}
       {el.type==='when' && <Field label="When" value={el.text} onChange={v=>update({text:v})} />}
       {el.type==='stamp' && <Field label="Stamp text" value={el.text} onChange={v=>update({text:v})} />}
       {el.type==='host' && <React.Fragment>
@@ -438,13 +459,17 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       <div className="rs-mini" style={{ marginTop:-2 }}>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</div>
       </React.Fragment>}
 
-      {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='stamp') &&
+      {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='stamp'||el.type==='info') &&
         <ScaleControl label="Font size" val={el.fontSize} onChange={v=>update({fontSize:v})} />}
       {isText &&
         <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
       {el.type==='title' && <Chips label="Weight" options={[{v:100,l:'Thin'},{v:500,l:'Med'},{v:800,l:'Heavy'}]} value={el.weight} onChange={v=>update({weight:v})} />}
-      {(el.type==='title'||el.type==='tagline'||el.type==='host') &&
+      {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='info') &&
         <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
+      {el.type==='info' && <React.Fragment>
+        <Chips label="Weight" options={[{v:400,l:'Regular'},{v:500,l:'Medium'},{v:600,l:'Semibold'},{v:700,l:'Bold'}]} value={el.weight||400} onChange={v=>update({weight:v})} />
+        <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />
+      </React.Fragment>}
       {el.type==='title' && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient} onChange={v=>update({orient:v})} />}
 
       {/* ---- title drop shadow (on the letters; legacy default = press shadow
@@ -490,7 +515,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
               <button className="rs-addrow" onClick={()=>resetOverride(el.id)}>↺ Reset to Master</button>
               <div className="rs-mini" style={{ marginTop:6 }}>Layout detached for {activeLabel}. Reset to follow Master again.</div>
             </React.Fragment>
-          : <div className="rs-mini">Following Master. Move, resize or rotate to override just {activeLabel}.</div>}
+          : <div className="rs-mini">Following Master. Move, resize, rotate{el.type==='photo'?', or reframe the photo':''} to override just {activeLabel}.</div>}
       </React.Fragment>}
     </React.Fragment>
   );

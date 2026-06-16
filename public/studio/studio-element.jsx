@@ -10,6 +10,35 @@ const GROT = "'Space Grotesk',sans-serif";
 /* riso image caches (shared across photo elements) */
 const _imgCache = new Map();
 const _sampleCache = {};
+
+/* ---- lightweight markdown for the Info text box ----
+   inline **bold** / *italic* / _italic_, and lines starting with - or • → bullets.
+   Returns React nodes; pure text passes straight through. */
+function mdInline(s, kb){
+  const nodes=[]; const re=/(\*\*([^*]+)\*\*|\*([^*]+)\*|_([^_]+)_)/g; let m,last=0,k=0;
+  while((m=re.exec(s))){
+    if(m.index>last) nodes.push(s.slice(last,m.index));
+    if(m[2]!=null) nodes.push(React.createElement('strong',{key:kb+'b'+(k++)}, m[2]));
+    else nodes.push(React.createElement('em',{key:kb+'i'+(k++)}, m[3]!=null?m[3]:m[4]));
+    last=re.lastIndex;
+  }
+  if(last<s.length) nodes.push(s.slice(last));
+  return nodes.length?nodes:s;
+}
+function renderRich(text){
+  const lines=(text||'').split('\n'); const out=[]; let bullets=null, k=0;
+  const flush=()=>{ if(bullets){ out.push(React.createElement('ul',{key:'ul'+(k++),style:{margin:'0.15em 0 0.15em 1.1em',padding:0}}, bullets)); bullets=null; } };
+  lines.forEach((ln,idx)=>{
+    const b=ln.match(/^\s*[-•]\s+(.*)$/);
+    if(b){ (bullets||(bullets=[])).push(React.createElement('li',{key:'li'+idx,style:{margin:'0.12em 0'}}, mdInline(b[1],idx+'-'))); }
+    else { flush();
+      if(ln.trim()==='') out.push(React.createElement('div',{key:'sp'+idx,style:{height:'0.55em'}}));
+      else out.push(React.createElement('div',{key:'p'+idx}, mdInline(ln,idx+'-')));
+    }
+  });
+  flush();
+  return out;
+}
 function getSample(kind){ kind=kind||'spotlight'; if(!_sampleCache[kind]) _sampleCache[kind]=window.RISO.sampleCanvas(kind,900,1125); return _sampleCache[kind]; }
 
 /* how far the faded overflow preview extends past the frame (1 = none) */
@@ -40,6 +69,7 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       inkMode:el.inkMode, gradMode:el.gradMode, gradAngle:el.gradAngle, gradA:el.gradA, gradB:el.gradB,
       screenOffset:el.screenOffset, field:el.field, fieldInk:el.fieldInk, fieldStrength:el.fieldStrength,
       dotGain:el.dotGain, jitter:el.jitter,
+      spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
       blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
     const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
@@ -238,6 +268,15 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   if(el.type==='tagline'){
     inner = <div style={box({ padding:'14px 24px' })}>
       <div style={{ fontFamily:GROT, fontWeight:el.weight, fontSize:el.fontSize+'px', lineHeight:1.25, letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em', color:textCol, textAlign:el.align }}>{el.text}</div>
+    </div>;
+  }
+  else if(el.type==='info'){
+    inner = <div style={box({ padding:'16px 22px', justifyContent:'flex-start' })}>
+      <div style={{ width:'100%', fontFamily:GROT, fontWeight:el.weight||400, fontSize:el.fontSize+'px',
+        lineHeight:(el.lineHeight!=null?el.lineHeight:1.4), letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em',
+        color:textCol, textAlign:el.align||'left' }}>
+        {renderRich(el.text)}
+      </div>
     </div>;
   }
   else if(el.type==='when'){

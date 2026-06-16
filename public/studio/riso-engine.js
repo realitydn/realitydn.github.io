@@ -279,7 +279,56 @@
     cx.globalCompositeOperation='source-over';
   }
 
-  const TREATMENTS = { duotone, offregister:offRegister, halftone, posterize, cutout, overprint };
+  /* 7 · UNTREATED — the raw photo in full colour. Brightness/contrast still
+       nudge it (via canvas filter), soft-focus + the finish passes still apply.
+       Honours the in-frame pan / zoom / rotate like every other treatment. */
+  function untreated(cv,o){
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h);
+    const canFilter = typeof cx.filter==='string';
+    if(canFilter){ const b=1+(o.brightness||0), k=o.contrast||1; cx.filter='brightness('+b+') contrast('+k+')'; }
+    drawCover(cx,w,h);
+    if(canFilter) cx.filter='none';
+    if(PREBLUR>0) blurCanvas(cv, PREBLUR);
+  }
+
+  /* 8 · SPOT — a luminance band flooded with solid accent, sitting over either
+       a duotone rendering or the raw photo (spotBase). Outside the band you see
+       the backdrop; inside, flat accent — a spot-colour pop.
+       params: spotLo, spotHi (the band), spotSoft (edge), spotInvert, spotBase */
+  function spot(cv,o){
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    const L=lumBuffer(w,h,o.contrast);
+    const night=o.paper==='night';
+    const accent=accentRGB(o);
+    const lo=o.spotLo!=null?o.spotLo:0.35, hi=o.spotHi!=null?o.spotHi:0.65;
+    const soft=Math.max(0.002,o.spotSoft!=null?o.spotSoft:0.08);
+    const base=o.spotBase||'duotone';
+    let img=null;
+    if(base==='image'){                                    // sample the raw photo for the backdrop
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ix=c.getContext('2d',{willReadFrequently:true});
+      ix.fillStyle=PAPER[o.paper]; ix.fillRect(0,0,w,h); drawCover(ix,w,h);
+      if(PREBLUR>0) blurCanvas(c, PREBLUR);
+      img=ix.getImageData(0,0,w,h).data;
+    }
+    /* duotone backdrop endpoints — mirror the duotone treatment's day/night feel */
+    const k=Math.pow(4,((o.balance!=null?o.balance:0.5)-0.5)*2);
+    const dlo = night? paperRGB(o) : lerp(inkBaseRGB(o), accent, (o.shadowTint!=null?o.shadowTint:0.18));
+    const dhi = night? accent : paperRGB(o);
+    const out=cx.createImageData(w,h),d=out.data;
+    for(let p=0,i=0;p<L.length;p++,i+=4){
+      const l=L[p];
+      let m = smooth(lo-soft,lo+soft,l) * (1-smooth(hi-soft,hi+soft,l));   // band membership
+      if(o.spotInvert) m=1-m;
+      const bg = base==='image' ? [img[i],img[i+1],img[i+2]] : lerp(dlo,dhi,Math.pow(l,k));
+      const c=lerp(bg,accent,m);
+      d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
+    }
+    cx.putImageData(out,0,0);
+  }
+
+  const TREATMENTS = { duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot };
 
   /* ============================================================
      FINISH PASSES — blur and grain
@@ -343,7 +392,8 @@
       softness:0.12, angle:null, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
       shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2,
       inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
-      field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0 }, opts||{});
+      field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
+      spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone' }, opts||{});
     if(o.balance==null) o.balance=0.5; if(o.shadowTint==null) o.shadowTint=0.18;
     BRIGHT = o.brightness||0;
     PREBLUR = o.blurUnder||0;

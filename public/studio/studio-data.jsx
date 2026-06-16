@@ -43,7 +43,7 @@ function scaleStep(v, dir){
   i = Math.max(0, Math.min(TYPE_SCALE.length-1, i+dir));
   return TYPE_SCALE[i];
 }
-const LAYOUT_KEYS = ['x','y','w','h','rot','hidden'];
+const LAYOUT_KEYS = ['x','y','w','h','rot','hidden','imgScale','imgX','imgY','imgRot'];
 const MODULE = 108;
 const STEP = 54;
 
@@ -167,6 +167,7 @@ const CATALOG = [
   { group:'Type', items:[
     { type:'title',   label:'Title',    hint:'The big slam' },
     { type:'tagline', label:'Tagline',  hint:'One line under it' },
+    { type:'info',    label:'Info text', hint:'Formattable paragraph' },
     { type:'when',    label:'When chip', hint:'Day · time' },
     { type:'host',    label:'Host',     hint:'Credit — size in panel' },
   ]},
@@ -192,6 +193,7 @@ const DEFAULTS = {
   // nothing shifts until you move the slider. Spread things far apart at will.
   title:   { w:760, h:300, props:{ text:'Event Title', fontSize:140, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.005 } },
   tagline: { w:560, h:80,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
+  info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:24, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
   when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:30, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
   host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0.02 } },
   ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'www.realitydn.com', surface:'paper', showQR:true, color:'fg' } },
@@ -210,6 +212,7 @@ const DEFAULTS = {
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
              inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
              field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
+             spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone',
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
 };

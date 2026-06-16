@@ -65,6 +65,8 @@ function newDoc(startIso){
       wifi:'auto', wifiName:'REALITY', wifiPass:'thankyou', density:'auto' },
     style:{ look:'ledger', theme:'day', inkSaver:false },
     sizing:{},   /* per-channel weekly text sizing: { feed|stories: { base:'auto'|step, perDay:{date:step} } } */
+    cover:{ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' },   /* FB cover: styling + text-size bias, columns, title handling */
+    daily:{ story:0, feed:0 },   /* discrete per-day-card text-size bias (9:16 story / 4:5 feed) */
   };
 }
 
@@ -130,6 +132,8 @@ function normalizeDoc(d){
     Object.keys(s.perDay || {}).forEach(date=>{ if(_inRange.indexOf(date)>=0) perDay[date] = s.perDay[date]|0; });
     doc.sizing[chId] = { base:(s.base==null ? 'auto' : s.base), perDay };
   });
+  doc.cover = Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, (d && d.cover) || {});
+  doc.daily = Object.assign({ story:0, feed:0 }, (d && d.daily) || {});
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
     { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[] }));
   return doc;

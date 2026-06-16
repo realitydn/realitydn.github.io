@@ -197,7 +197,7 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate, 
 }
 
 /* ---------- inspector ---------- */
-function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSize, resetSizes }){
+function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSize, resetSizes, dailyVariant, coverInfo, dailyInfo }){
   function update(patch){
     setDoc(d=>Object.assign({}, d, { events:d.events.map(e=>e.id===sel.id?Object.assign({},e,patch):e) }));
   }
@@ -261,16 +261,33 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
   }
   /* document settings */
   const setStyle = patch => setDoc(d=>Object.assign({}, d, { style:Object.assign({}, d.style, patch) }));
+  const setCover = patch => setDoc(d=>Object.assign({}, d, { cover:Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, d.cover, patch) }));
+  const setDaily = patch => setDoc(d=>Object.assign({}, d, { daily:Object.assign({ story:0, feed:0 }, d.daily, patch) }));
   return (
     <React.Fragment>
-      <div className="ss-sech">Look</div>
+      <div className="ss-sech">Layout</div>
       <div className="ss-chips">
         {window.LOOKS_LIST.map(lk=>(
           <button key={lk.id} className={'ss-chip'+((doc.style.look||'ledger')===lk.id?' on':'')}
             title={lk.hint} onClick={()=>setStyle({ look:lk.id })}>{lk.l}</button>
         ))}
-        <button className="ss-chip dis" disabled title="Special-week display type — Phase 3">Marquee · P3</button>
       </div>
+      <div className="ss-sech">Palette</div>
+      <div className="ss-styles">
+        {window.PALETTES.map(p=>{
+          const on = (doc.style.theme||'day')===p.id;
+          return (
+            <button key={p.id} className={'ss-style'+(on?' on':'')} title={p.note}
+              onClick={()=>setStyle({ theme:p.id })}>
+              <span className="sw" style={{ background:p.sw.bg }}>
+                {p.sw.a.map((c,i)=><i key={i} style={{ background:c }} />)}
+              </span>
+              <span className="nm">{p.name}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="ss-mini" style={{ marginBottom:12 }}>Layout + palette apply to the whole week, every output. Print always renders on white.</div>
       {sizeInfo && sizeInfo.active &&
         <React.Fragment>
           <div className="ss-sech">Text size · {channelId==='stories'?'Stories':'Feed'}</div>
@@ -287,8 +304,55 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
             {sizeInfo.base==='auto' ? <b>Auto.</b> : <b>Custom.</b>} Every day starts at the biggest size that still sits easy in your busiest day. Nudge the whole week here, or any single day in the list on the left. Per-day tweaks reset when you add or remove days.
           </div>
         </React.Fragment>}
-      <SChips label="Theme (digital — print stays day)" options={[{v:'day',l:'Day'},{v:'night',l:'Night'}]}
-        value={doc.style.theme||'day'} onChange={v=>setStyle({ theme:v })} />
+      {channelId==='daily' && dailyVariant!=='cover' &&
+        <React.Fragment>
+          <div className="ss-sech">Daily card · {dailyVariant==='story'?'9:16 Story':'4:5 Feed'}</div>
+          <div className="ss-row">
+            <div className="ss-lab"><span>Text size</span><span>{dailyInfo ? dailyInfo.px+'px' : ''}</span></div>
+            <div className="ss-sizebar">
+              <button className="ss-iconbtn" disabled={dailyInfo && dailyInfo.atMin}
+                title="Smaller" onClick={()=>setDaily({ [dailyVariant]:(((doc.daily&&doc.daily[dailyVariant])|0))-1 })}>−</button>
+              <span className="ss-sizebig">{(((doc.daily&&doc.daily[dailyVariant])|0))===0?'Auto':((doc.daily[dailyVariant]>0?'+':'')+doc.daily[dailyVariant])}</span>
+              <button className="ss-iconbtn" disabled={dailyInfo && dailyInfo.atMax}
+                title="Bigger" onClick={()=>setDaily({ [dailyVariant]:(((doc.daily&&doc.daily[dailyVariant])|0))+1 })}>＋</button>
+              <button className="ss-iconbtn" disabled={(((doc.daily&&doc.daily[dailyVariant])|0))===0}
+                title="Back to auto-fit" onClick={()=>setDaily({ [dailyVariant]:0 })}>Auto</button>
+            </div>
+          </div>
+          <div className="ss-mini" style={{ marginBottom:10 }}>
+            Daily cards size independently of the weekly schedules — the 9:16 story runs large by default. This adjusts only the {dailyVariant==='story'?'9:16 story':'4:5 feed'}.
+          </div>
+        </React.Fragment>}
+      {channelId==='daily' && dailyVariant==='cover' &&
+        <React.Fragment>
+          <div className="ss-sech">FB Cover</div>
+          <div className="ss-lab" style={{ marginBottom:6 }}>Cover style</div>
+          <div className="ss-chips" style={{ marginBottom:12 }}>
+            {window.COVER_STYLES.map(cs=>(
+              <button key={cs.id} className={'ss-chip'+(((doc.cover&&doc.cover.layout)||'banner')===cs.id?' on':'')}
+                onClick={()=>setCover({ layout:cs.id })}>{cs.name}</button>
+            ))}
+          </div>
+          <div className="ss-row">
+            <div className="ss-lab"><span>Text size</span><span>{coverInfo ? coverInfo.px+'px' : ''}</span></div>
+            <div className="ss-sizebar">
+              <button className="ss-iconbtn" disabled={(doc.cover.sizeOffset||0)<=-5}
+                title="Smaller" onClick={()=>setCover({ sizeOffset:(doc.cover.sizeOffset||0)-1 })}>−</button>
+              <span className="ss-sizebig">{(doc.cover.sizeOffset||0)===0?'Auto':((doc.cover.sizeOffset>0?'+':'')+doc.cover.sizeOffset)}</span>
+              <button className="ss-iconbtn" disabled={(doc.cover.sizeOffset||0)>=5}
+                title="Bigger" onClick={()=>setCover({ sizeOffset:(doc.cover.sizeOffset||0)+1 })}>＋</button>
+              <button className="ss-iconbtn" disabled={(doc.cover.sizeOffset||0)===0}
+                title="Back to auto-fit" onClick={()=>setCover({ sizeOffset:0 })}>Auto</button>
+            </div>
+          </div>
+          <SChips label="Columns" options={[{v:'auto',l:'Auto'},{v:1,l:'1'},{v:2,l:'2'}]}
+            value={doc.cover.cols||'auto'} onChange={v=>setCover({ cols:v })} />
+          <SChips label="Long titles" options={[{v:'wrap',l:'Wrap'},{v:'short',l:'Short'},{v:'crop',l:'Crop'}]}
+            value={doc.cover.titles||'wrap'} onChange={v=>setCover({ titles:v })} />
+          <div className="ss-mini" style={{ marginBottom:10 }}>
+            <b>Wrap</b> shows full titles on two lines — nothing is cropped. <b>Short</b> uses each event's short title; <b>Crop</b> is one line with an ellipsis. Size auto-fits the previewed day; nudge it bigger or smaller here.
+          </div>
+        </React.Fragment>}
       <div className="ss-sech">Header</div>
       <SField label="Title" value={doc.header.title}
         onChange={v=>setDoc(d=>Object.assign({}, d, { header:{ title:v } }))} />
@@ -498,6 +562,10 @@ function App(){
   const effDaily = dates.indexOf(dailyDate)>=0 ? dailyDate :
     (dates.filter(d=>a_dayInfo(doc,d).status!=='closed')[0] || dates[0]);
   const size = a_partSize(channelId, dailyVariant);
+  const coverInfo = (channelId==='daily' && dailyVariant==='cover' && window.coverInfo)
+    ? window.coverInfo(doc, effDaily) : null;
+  const dailyInfo = (channelId==='daily' && dailyVariant!=='cover' && window.dailySizing)
+    ? window.dailySizing(doc, dailyVariant, effDaily) : null;
 
   /* fit preview to stage (clamped — tiny panels must never yield ≤0 scale) */
   React.useLayoutEffect(()=>{
@@ -750,7 +818,8 @@ function App(){
                  : <React.Fragment><b>{ch.label}</b> · {ch.sub} · document settings below</React.Fragment>}
           </div>
           <Inspector doc={doc} setDoc={setDoc} sel={sel} setSelId={setSelId} channelId={channelId}
-            sizeInfo={sizeInfo} setBaseSize={setBaseSize} resetSizes={resetSizes} />
+            sizeInfo={sizeInfo} setBaseSize={setBaseSize} resetSizes={resetSizes}
+            dailyVariant={dailyVariant} coverInfo={coverInfo} dailyInfo={dailyInfo} />
         </div>
       </div>
       {importOpen && <ImportModal doc={doc} setDoc={setDoc}

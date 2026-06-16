@@ -12,25 +12,56 @@ const { INK:R_INK, CREAM:R_CREAM, WHITE:R_WHITE, MONT:R_MONT, ALT:R_ALT, GROT:R_
         timeLabel:r_timeLabel, usedLegend:r_usedLegend, partDates:r_partDates,
         Wordmark:RWordmark, SchQR:RQR } = window;
 
-/* ---- themes — Year 2 tokens, Day (ink on cream) / Night (cream on ink) ---- */
+/* ---- stylings — Year 2 token sets. Each renderer reads these generically, so a
+   styling skins every output at once. Print always falls back to day-on-white. ---- */
+const PRESS_INK = { 1:R_INK,2:R_INK,3:R_INK,4:R_INK,5:R_INK,6:R_INK,7:R_INK };
+const PRESS_CREAM = { 1:R_CREAM,2:R_CREAM,3:R_CREAM,4:R_CREAM,5:R_CREAM,6:R_CREAM,7:R_CREAM };
 function themeTokens(theme, printish){
-  if(theme==='night' && !printish){
-    return {
+  if(printish) return {
+    id:'print', bg:R_WHITE, paper:R_CREAM, fg:R_INK,
+    fgStrong:'rgba(13,9,5,.85)', dim:'rgba(13,9,5,.58)', hairline:'rgba(13,9,5,.16)',
+    shadow:'0 8px 2px rgba(13,9,5,.16)', shadowSm:'0 5px 1px rgba(13,9,5,.14)', dc:R_DC, dt:R_DT };
+  switch(theme){
+    case 'night': return {   /* cream on near-black; Wednesday purple lifts after dark */
       id:'night', bg:'#0a0703', paper:'#171109', fg:'#fffbf1',
       fgStrong:'rgba(255,251,241,.88)', dim:'rgba(255,251,241,.6)', hairline:'#3a2c1c',
       shadow:'0 8px 2px rgba(255,251,241,.18)', shadowSm:'0 5px 1px rgba(255,251,241,.15)',
-      dc:Object.assign({}, R_DC, { 3:'#9a4faa' }), dt:R_DT,   /* Wednesday purple lifts after dark */
-    };
+      dc:Object.assign({}, R_DC, { 3:'#9a4faa' }), dt:R_DT };
+    case 'paper': return {   /* warm kraft stock, ink, hard riso-ish drop */
+      id:'paper', bg:'#ebe1c6', paper:'#f4ecd6', fg:R_INK,
+      fgStrong:'rgba(13,9,5,.86)', dim:'rgba(13,9,5,.55)', hairline:'rgba(13,9,5,.2)',
+      shadow:'0 7px 0 rgba(13,9,5,.16)', shadowSm:'0 4px 0 rgba(13,9,5,.14)',
+      dc:R_DC, dt:R_DT };
+    case 'carbon': return {  /* warm charcoal, softer than night */
+      id:'carbon', bg:'#1b1610', paper:'#251d13', fg:'#fdf6e6',
+      fgStrong:'rgba(253,246,230,.88)', dim:'rgba(253,246,230,.56)', hairline:'#473726',
+      shadow:'0 8px 2px rgba(253,246,230,.16)', shadowSm:'0 5px 1px rgba(253,246,230,.14)',
+      dc:Object.assign({}, R_DC, { 3:'#9a4faa' }), dt:R_DT };
+    case 'press': return {   /* one-colour newsprint — mono blocks + a hard offset shadow */
+      id:'press', bg:R_CREAM, paper:R_CREAM, fg:R_INK,
+      fgStrong:'rgba(13,9,5,.85)', dim:'rgba(13,9,5,.55)', hairline:'rgba(13,9,5,.22)',
+      shadow:'4px 4px 0 rgba(13,9,5,.88)', shadowSm:'3px 3px 0 rgba(13,9,5,.85)',
+      dc:PRESS_INK, dt:PRESS_CREAM };
+    default: return {        /* day — ink on cream */
+      id:'day', bg:R_CREAM, paper:R_CREAM, fg:R_INK,
+      fgStrong:'rgba(13,9,5,.85)', dim:'rgba(13,9,5,.58)', hairline:'rgba(13,9,5,.16)',
+      shadow:'0 8px 2px rgba(13,9,5,.16)', shadowSm:'0 5px 1px rgba(13,9,5,.14)',
+      dc:R_DC, dt:R_DT };
   }
-  return {
-    id:'day', bg: printish ? R_WHITE : R_CREAM, paper:R_CREAM, fg:R_INK,
-    fgStrong:'rgba(13,9,5,.85)', dim:'rgba(13,9,5,.58)', hairline:'rgba(13,9,5,.16)',
-    shadow:'0 8px 2px rgba(13,9,5,.16)', shadowSm:'0 5px 1px rgba(13,9,5,.14)',
-    dc:R_DC, dt:R_DT,
-  };
 }
 const ThemeCtx = React.createContext(themeTokens('day'));
 const RED = '#ed2224';
+
+/* ---- palettes — the visual half of a styling, chosen independently of the layout.
+   sw is the picker swatch (paper + three weekday accents). ---- */
+const PALETTES = [
+  { id:'day',    name:'Day',    note:'Ink on cream' },
+  { id:'night',  name:'Night',  note:'Cream on near-black' },
+  { id:'paper',  name:'Paper',  note:'Warm kraft, hard shadow' },
+  { id:'carbon', name:'Carbon', note:'Warm charcoal' },
+  { id:'press',  name:'Press',  note:'One-colour newsprint' },
+].map(p=>{ const T = themeTokens(p.id); return Object.assign({}, p, {
+  sw:{ bg:T.bg, fg:T.fg, a:[T.dc[1], T.dc[4], T.dc[6]] } }); });
 
 /* ---- channel registry ---- */
 const CHANNELS = [
@@ -1010,6 +1041,25 @@ function WACard({ doc, onFitReport }){
 }
 
 /* ---- daily card ---- */
+/* Daily-card text sizing — its OWN ladder (the 9:16 story runs larger than the
+   weekly schedules) with a discrete per-variant bias stored on doc.daily. */
+const DAILY_LAD = { story:[50,46,42,38,35,32,29], feed:[42,39,36,33,30,27,25] };
+function dailySizing(doc, variant, date){
+  const story = (variant||'story')!=='feed';
+  const key = story ? 'story' : 'feed';
+  const v = DAILY_VARIANTS[key];
+  const n = Math.max(1, r_eventsOn(doc, date, 'daily').length);
+  const rowsAvail = v.h - (story?84:72)*2 - (story?420:330) - (story?230:196);
+  const lad = DAILY_LAD[key];
+  const rh = f => f*1.6 + (story?20:14);
+  const fits = (f, m) => n*rh(f) <= rowsAvail*m;
+  let baseIdx=lad.length-1, maxIdx=lad.length-1;
+  for(let i=0;i<lad.length;i++){ if(fits(lad[i],0.9)){ baseIdx=i; break; } }
+  for(let i=0;i<lad.length;i++){ if(fits(lad[i],1.0)){ maxIdx=i; break; } }
+  const off = Math.max(-5, Math.min(5, ((doc.daily && doc.daily[key])|0)));
+  const idx = Math.min(lad.length-1, Math.max(maxIdx, baseIdx - off));
+  return { font:lad[idx], idx, px:Math.round(lad[idx]), atMax: idx<=maxIdx, atMin: idx>=lad.length-1, isAuto: off===0 };
+}
 function DailyCard({ doc, date, variant }){
   const v = DAILY_VARIANTS[variant||'story'];
   const story = (variant||'story')==='story';
@@ -1018,16 +1068,11 @@ function DailyCard({ doc, date, variant }){
   const info = r_dayInfo(doc, date);
   const evs = r_eventsOn(doc, date, 'daily');
   const pad = story ? 84 : 72;
-  const rowsAvail = v.h - pad*2 - (story?420:330) - (story?230:196);
-  const lvl = (()=>{ for(let L=0; L<3; L++){
-      const font = story ? [34,31,29][L] : [29,27,25][L];
-      const rh = font*1.6 + (story?20:14);
-      if(evs.length*rh <= rowsAvail) return L;
-    } return 2; })();
-  const font = story ? [34,31,29][lvl] : [29,27,25][lvl];
+  const D = dailySizing(doc, variant||'story', date);
+  const font = D.font;
   const rowGap = story ? 20 : 14;
   const locLabel = code=>{ const hit = R_LOCS.filter(l=>l.code===code)[0]; return hit ? hit.label : code; };
-  const showChips = lvl===0 && evs.length<=7;
+  const showChips = D.idx<=1 && evs.length<=7;
   return (
     <ThemeCtx.Provider value={T}>
       <div style={{ width:v.w, height:v.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden',
@@ -1097,75 +1142,233 @@ function DailyCard({ doc, date, variant }){
 
 /* ---- FB Page cover photo — landscape single-day board ----
    Full-bleed day-colour header strip (text kept inside the mobile-safe centre),
-   then the day's events in one or two columns, auto-sized to the count. */
+   then the day's events in one or two columns. Titles WRAP to two lines by default
+   so nothing is cropped; the auto-fit shrinks type to suit the day. doc.cover lets
+   the editor bias the size, force the column count, or switch title handling. */
+const COVER_LAD = [14,15,16,17,18,19,20,22,24,26,29,32,36];
+/* event-area sizing for an arbitrary rectangle — wrap-aware, honours doc.cover */
+function coverFit(doc, date, areaW, areaH, maxCols){
+  const evs = r_eventsOn(doc, date, 'daily');
+  const cfg = doc.cover || {};
+  const titles = (cfg.titles==='crop' || cfg.titles==='short') ? cfg.titles : 'wrap';
+  const useShort = titles==='short';
+  const n = evs.length;
+  let cols = (cfg.cols===1 || cfg.cols===2) ? cfg.cols : (areaW>=520 && n>5 ? 2 : 1);
+  cols = Math.max(1, Math.min(cols, maxCols||2, Math.max(1, n)));
+  const colGap = 30, colW = cols===2 ? (areaW-colGap)/2 : areaW;
+  const perCol = Math.max(1, Math.ceil(n/cols));
+  const colItems = []; for(let c=0;c<cols;c++) colItems.push(evs.slice(c*perCol, (c+1)*perCol));
+  function lineCount(ev, f){
+    if(titles==='crop') return 1;
+    const t = (useShort && ev.titleShort) ? ev.titleShort : ev.title;
+    const wf = (ev.emphasis==='bold' || ev.emphasis==='banner') ? 0.6 : 0.55;
+    const timeW = String(ev.start||'').length * f*0.86 * 0.62;
+    const bannerPad = ev.emphasis==='banner' ? f*0.45+4 : 0;
+    const tW = Math.max(22, colW - timeW - f*0.5 - bannerPad);
+    return estW(t, f, wf) > tW ? 2 : 1;
+  }
+  function colHeight(items, f){ const lh=f*1.3, gap=f*0.5; let h=0;
+    items.forEach((ev,i)=>{ h += lh*lineCount(ev,f) + (i<items.length-1?gap:0); }); return h; }
+  const fits = (f, m) => colItems.every(it => colHeight(it,f) <= areaH*m);
+  let baseIdx=0, maxIdx=0;
+  for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],0.94)){ baseIdx=i; break; } }
+  for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],1.0)){ maxIdx=i; break; } }
+  const off = Math.max(-5, Math.min(5, cfg.sizeOffset|0));
+  const idx = Math.max(0, Math.min(baseIdx + off, Math.max(maxIdx, 0)));
+  return { cols, colGap, titles, useShort, colItems, font:COVER_LAD[idx], px:Math.round(COVER_LAD[idx]), isAuto: off===0 };
+}
+/* cover stylings + their event-area rectangle (shared by render + the editor) */
+const COVER_STYLES = [
+  { id:'banner',   name:'Banner' },
+  { id:'sidebar',  name:'Sidebar' },
+  { id:'slice',    name:'Slice' },
+  { id:'halftone', name:'Halftone' },
+  { id:'centered', name:'Centered' },
+];
+function coverArea(layout){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed + 24;
+  switch(layout){
+    case 'sidebar':  return { w:v.w-326-28-sp, h:v.h-22-14-30, cols:1 };
+    case 'centered': return { w:430,           h:160,          cols:1 };
+    case 'slice':    return { w:v.w-430-8-sp,  h:v.h-26-22,    cols:1 };
+    case 'halftone': return { w:v.w-430-6-sp,  h:v.h-26-22,    cols:1 };
+    default:         return { w:v.w-sp*2,      h:v.h-78-18-26, cols:2 };
+  }
+}
+function coverInfo(doc, date){
+  const layout = (doc.cover && doc.cover.layout) || 'banner';
+  const a = coverArea(layout);
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  return { px:fit.px, isAuto:fit.isAuto, layout };
+}
+const COVER_ADDR = 'realitydn.com · 86 Mai Thúc Lân, Đà Nẵng';
+function CoverEvents({ fit, T, w, justify }){
+  const f = fit.font;
+  return (
+    <div style={{ flex:1, minHeight:0, display:'flex', gap:fit.colGap, width:'100%', height:'100%' }}>
+      {fit.colItems.map((items,ci)=>(
+        <div key={ci} style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column',
+          justifyContent: justify || (items.length<=3 ? 'center' : 'space-between'), gap:f*0.5 }}>
+          {items.map(ev=>{
+            const emO = ev.emphasis==='bold' || ev.emphasis==='banner';
+            const title = (fit.useShort && ev.titleShort) ? ev.titleShort : ev.title;
+            const tStyle = { minWidth:0, flex:1, fontFamily:emO?R_MONT:R_GROT, fontWeight:emO?700:600,
+              fontSize:emO?f*0.95:f, textTransform:emO?'uppercase':'none', letterSpacing:emO?'.02em':'0' };
+            if(fit.titles==='crop') Object.assign(tStyle, { whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' });
+            else Object.assign(tStyle, { lineHeight:1.16, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' });
+            return (
+              <div key={ev.id} style={{ display:'flex', alignItems:'baseline', gap:f*0.5, minWidth:0,
+                borderLeft: ev.emphasis==='banner' ? ('4px solid '+T.dc[w]) : 'none', paddingLeft: ev.emphasis==='banner' ? f*0.45 : 0 }}>
+                <span style={{ fontFamily:R_GROT, fontWeight:500, fontSize:f*0.86, color:T.fgStrong, flex:'none', fontVariantNumeric:'tabular-nums' }}>{ev.start}</span>
+                <span style={tStyle}>{title}</span>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+function CoverBody({ doc, date, T, w, fit, justify }){
+  const info = r_dayInfo(doc, date);
+  if(info.status==='closed') return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center',
+    fontFamily:R_MONT, fontWeight:700, fontSize:36, letterSpacing:'.05em', textTransform:'uppercase', color:T.fg }}>{info.note||'CLOSED'}</div>;
+  if(fit.colItems.every(c=>!c.length)) return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
+    fontFamily:R_MONT, fontWeight:600, fontSize:22, letterSpacing:'.08em', textTransform:'uppercase', color:T.dim }}>Open · come hang out</div>;
+  return <CoverEvents fit={fit} T={T} w={w} justify={justify} />;
+}
+function CoverId({ T, w, date, color, dayFs, kFs }){
+  return (
+    <div>
+      <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:kFs||13, letterSpacing:'.2em', textTransform:'uppercase', opacity:.92, color }}>TODAY AT REALITY</div>
+      <div style={{ display:'flex', alignItems:'baseline', gap:14, marginTop:4 }}>
+        <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:dayFs||38, lineHeight:.98, textTransform:'uppercase', color }}>{R_DF[w]}</span>
+        <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:Math.round((dayFs||38)*0.62), lineHeight:1, color }}>{r_dshort(date)}</span>
+      </div>
+    </div>
+  );
+}
+function CoverIdStacked({ w, date, color, dayFs, kFs }){   /* weekday on its own line — fits narrow panels */
+  return (
+    <div>
+      <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:kFs||12, letterSpacing:'.2em', textTransform:'uppercase', opacity:.92, color }}>TODAY AT REALITY</div>
+      <div style={{ fontFamily:R_MONT, fontWeight:800, fontSize:dayFs||30, lineHeight:1, textTransform:'uppercase', marginTop:6, color }}>{R_DF[w]}</div>
+      <div style={{ fontFamily:R_MONT, fontWeight:500, fontSize:Math.round((dayFs||30)*0.62), marginTop:5, color }}>{r_dshort(date)}</div>
+    </div>
+  );
+}
+function CoverFootR({ T, text }){ return <div style={{ flex:'none', marginTop:6, textAlign:'right', fontFamily:R_GROT, fontWeight:500, fontSize:12, color:T.dim }}>{text||COVER_ADDR}</div>; }
+const COVER_SIDE = (doc,date,T,w,fit,padR) => (
+  <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:8 }}><CoverBody doc={doc} date={date} T={T} w={w} fit={fit} /></div>
+);
+/* 1 — Banner: full-bleed colour strip on top, events below */
+function CoverBanner({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, stripH = 78, a = coverArea('banner');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:0, right:0, top:0, height:stripH, background:T.dc[w], color:T.dt[w], boxShadow:T.shadow,
+        display:'flex', alignItems:'center', justifyContent:'space-between', paddingLeft:sp, paddingRight:sp, boxSizing:'border-box' }}>
+        <CoverId T={T} w={w} date={date} color={T.dt[w]} dayFs={40} kFs={14} />
+        <RWordmark tight height={26} color={T.dt[w]} />
+      </div>
+      <div style={{ position:'absolute', left:0, right:0, top:stripH, bottom:0, paddingLeft:sp, paddingRight:sp, paddingTop:18, paddingBottom:8, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex' }}><CoverBody doc={doc} date={date} T={T} w={w} fit={fit} /></div>
+        <CoverFootR T={T} />
+      </div>
+    </React.Fragment>
+  );
+}
+/* 2 — Sidebar: full-height colour panel left, events right */
+function CoverSidebar({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, panel = 326, padR = v.bleed+24, a = coverArea('sidebar');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:panel, background:T.dc[w], color:T.dt[w], boxShadow:T.shadow,
+        display:'flex', flexDirection:'column', justifyContent:'center', paddingLeft:v.bleed+18, paddingRight:20, paddingBottom:40, boxSizing:'border-box' }}>
+        <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={30} kFs={12} />
+      </div>
+      <div style={{ position:'absolute', left:panel, right:0, top:0, bottom:0, paddingLeft:28, paddingRight:padR, paddingTop:20, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
+        {COVER_SIDE(doc,date,T,w,fit)}
+        <CoverFootR T={T} text="realitydn.com" />
+      </div>
+    </React.Fragment>
+  );
+}
+/* 3 — Slice: a day-colour band skewed across the left, events right */
+function CoverSlice({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, padR = v.bleed+24, a = coverArea('slice');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:-110, top:-50, bottom:-50, width:530, background:T.dc[w],
+        transform:'skewX(-7deg)', transformOrigin:'top left', boxShadow:T.shadow }} />
+      <div style={{ position:'absolute', left:v.bleed+8, top:0, bottom:0, width:300, color:T.dt[w],
+        display:'flex', flexDirection:'column', justifyContent:'center', paddingBottom:20, boxSizing:'border-box' }}>
+        <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={37} kFs={12.5} />
+      </div>
+      <div style={{ position:'absolute', left:430, right:0, top:0, bottom:0, paddingLeft:8, paddingRight:padR, paddingTop:26, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
+        {COVER_SIDE(doc,date,T,w,fit)}
+        <CoverFootR T={T} text="realitydn.com" />
+      </div>
+    </React.Fragment>
+  );
+}
+/* 4 — Halftone: solid colour block dissolving into a dot field, events right */
+function CoverHalftone({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, padR = v.bleed+24, solidW = 308, a = coverArea('halftone');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  const acc = T.dc[w];
+  const dots = (size, r) => ({ backgroundImage:'radial-gradient(circle, '+acc+' '+r+'px, transparent '+(r+0.6)+'px)', backgroundSize:size+'px '+size+'px', backgroundPosition:'center' });
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:solidW, background:acc, color:T.dt[w], boxShadow:T.shadowSm,
+        display:'flex', flexDirection:'column', justifyContent:'center', paddingLeft:v.bleed+16, paddingRight:12, paddingBottom:34, boxSizing:'border-box' }}>
+        <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={28} kFs={12} />
+      </div>
+      <div style={Object.assign({ position:'absolute', left:solidW, top:0, bottom:0, width:40 }, dots(11,4.2))} />
+      <div style={Object.assign({ position:'absolute', left:solidW+40, top:0, bottom:0, width:40 }, dots(15,3.3))} />
+      <div style={Object.assign({ position:'absolute', left:solidW+80, top:0, bottom:0, width:42 }, dots(20,2.4))} />
+      <div style={{ position:'absolute', left:430, right:0, top:0, bottom:0, paddingLeft:6, paddingRight:padR, paddingTop:26, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
+        {COVER_SIDE(doc,date,T,w,fit)}
+        <CoverFootR T={T} text="realitydn.com" />
+      </div>
+    </React.Fragment>
+  );
+}
+/* 5 — Centered: everything on the axis, corner-safe */
+function CoverCentered({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('centered');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  return (
+    <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      paddingLeft:sp, paddingRight:sp, paddingTop:18, paddingBottom:18, boxSizing:'border-box' }}>
+      <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:12, letterSpacing:'.3em', color:T.dim, textTransform:'uppercase' }}>TODAY AT REALITY</div>
+      <div style={{ display:'flex', alignItems:'baseline', gap:14, marginTop:4 }}>
+        <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:34, textTransform:'uppercase', color:T.fg }}>{R_DF[w]}</span>
+        <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:24, color:T.dim }}>{r_dshort(date)}</span>
+      </div>
+      <div style={{ width:60, height:4, background:T.dc[w], margin:'9px 0 12px' }} />
+      <div style={{ flex:'none', width:a.w, maxHeight:162, display:'flex' }}>
+        <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
+      </div>
+    </div>
+  );
+}
+const COVER_COMPS = { banner:CoverBanner, sidebar:CoverSidebar, slice:CoverSlice, halftone:CoverHalftone, centered:CoverCentered };
 function CoverCard({ doc, date }){
-  const v = DAILY_VARIANTS.cover;
   const T = themeTokens(doc.style.theme);
   const w = r_wd(date);
-  const info = r_dayInfo(doc, date);
-  const evs = r_eventsOn(doc, date, 'daily');
-  const sidePad = v.bleed + 24;                 /* hold text inside the safe centre */
-  const stripH = 78;
-  const cols = evs.length>5 ? 2 : 1;
-  const perCol = Math.max(1, Math.ceil(evs.length/cols));
-  const rowsAvail = v.h - stripH - 18 - 26;
-  const FONTS = [28,25,22,20,18,16.5,15];
-  let font = FONTS[FONTS.length-1];
-  for(const f of FONTS){ if(perCol*(f*1.5+8) <= rowsAvail){ font = f; break; } }
-  const useShort = cols===2;
-  const colItems = [];
-  for(let c=0;c<cols;c++) colItems.push(evs.slice(c*perCol, (c+1)*perCol));
+  const v = DAILY_VARIANTS.cover;
+  const Comp = COVER_COMPS[(doc.cover && doc.cover.layout) || 'banner'] || CoverBanner;
   return (
     <ThemeCtx.Provider value={T}>
       <div style={{ width:v.w, height:v.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden', boxSizing:'border-box' }}>
-        <div style={{ position:'absolute', left:0, right:0, top:0, height:stripH, background:T.dc[w], color:T.dt[w],
-          boxShadow:T.shadow, display:'flex', alignItems:'center', justifyContent:'space-between',
-          paddingLeft:sidePad, paddingRight:sidePad, boxSizing:'border-box' }}>
-          <div>
-            <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:14, letterSpacing:'.22em',
-              textTransform:'uppercase', opacity:.92 }}>TODAY AT REALITY</div>
-            <div style={{ display:'flex', alignItems:'baseline', gap:16, marginTop:3 }}>
-              <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:40, lineHeight:1,
-                textTransform:'uppercase', letterSpacing:'.01em' }}>{R_DF[w]}</span>
-              <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:26, lineHeight:1 }}>{r_dshort(date)}</span>
-            </div>
-          </div>
-          <RWordmark tight height={26} color={T.dt[w]} />
-        </div>
-        <div style={{ position:'absolute', left:0, right:0, top:stripH, bottom:0,
-          paddingLeft:sidePad, paddingRight:sidePad, paddingTop:18, paddingBottom:8, boxSizing:'border-box',
-          display:'flex', flexDirection:'column' }}>
-          <div style={{ flex:1, minHeight:0, display:'flex', gap:34 }}>
-            {info.status==='closed'
-              ? <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center',
-                  fontFamily:R_MONT, fontWeight:700, fontSize:38, letterSpacing:'.05em', textTransform:'uppercase', color:T.fg }}>{info.note||'CLOSED'}</div>
-              : evs.length===0
-                ? <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
-                    fontFamily:R_MONT, fontWeight:600, fontSize:24, letterSpacing:'.08em', textTransform:'uppercase', color:T.dim }}>Open · come hang out</div>
-                : colItems.map((items,ci)=>(
-                  <div key={ci} style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column',
-                    justifyContent: perCol<=3 ? 'center' : 'space-between', gap:font*0.45 }}>
-                    {items.map(ev=>{
-                      const emO = ev.emphasis==='bold' || ev.emphasis==='banner';
-                      const title = (useShort && ev.titleShort) ? ev.titleShort : ev.title;
-                      return (
-                        <div key={ev.id} style={{ display:'flex', alignItems:'baseline', gap:font*0.5, minWidth:0,
-                          borderLeft: ev.emphasis==='banner' ? ('4px solid '+T.dc[w]) : 'none',
-                          paddingLeft: ev.emphasis==='banner' ? font*0.45 : 0 }}>
-                          <span style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.86, color:T.fgStrong,
-                            flex:'none', fontVariantNumeric:'tabular-nums' }}>{ev.start}</span>
-                          <span style={{ minWidth:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-                            fontFamily:emO?R_MONT:R_GROT, fontWeight:emO?700:600, fontSize:emO?font*0.95:font,
-                            textTransform:emO?'uppercase':'none', letterSpacing:emO?'.02em':'0' }}>{title}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-          </div>
-          <div style={{ flex:'none', marginTop:6, textAlign:'right', fontFamily:R_GROT, fontWeight:500, fontSize:12.5, color:T.dim }}>
-            realitydn.com · 86 Mai Thúc Lân, Đà Nẵng</div>
-        </div>
+        <Comp doc={doc} date={date} T={T} w={w} />
       </div>
     </ThemeCtx.Provider>
   );
@@ -1192,7 +1395,7 @@ function partSize(channelId, dailyVariant){
 }
 
 Object.assign(window, {
-  CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST,
-  computeCapacity, twoColSplit, resolveFit, computeStackSizing,
+  CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST, PALETTES, COVER_STYLES,
+  computeCapacity, twoColSplit, resolveFit, computeStackSizing, coverInfo, dailySizing,
   PartCanvas, partCount, partSize, ArrowChip,
 });

@@ -64,6 +64,7 @@ function newDoc(startIso){
       supportText:'While many of our events are free, we do ask that everyone using the space order something, so that REALITY can continue!',
       wifi:'auto', wifiName:'REALITY', wifiPass:'thankyou', density:'auto' },
     style:{ look:'ledger', theme:'day', inkSaver:false },
+    sizing:{},   /* per-channel weekly text sizing: { feed|stories: { base:'auto'|step, perDay:{date:step} } } */
   };
 }
 
@@ -122,6 +123,13 @@ function normalizeDoc(d){
   doc.style = Object.assign({}, base.style, d && d.style);
   doc.days = (d && d.days) || {};
   doc.splits = ((d && d.splits) || []).filter(s=>rangeDates(doc.range).indexOf(s)>=0);
+  doc.sizing = {};
+  const _inRange = rangeDates(doc.range), _src = (d && d.sizing) || {};
+  ['feed','stories'].forEach(chId=>{
+    const s = _src[chId] || {}, perDay = {};
+    Object.keys(s.perDay || {}).forEach(date=>{ if(_inRange.indexOf(date)>=0) perDay[date] = s.perDay[date]|0; });
+    doc.sizing[chId] = { base:(s.base==null ? 'auto' : s.base), perDay };
+  });
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
     { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[] }));
   return doc;

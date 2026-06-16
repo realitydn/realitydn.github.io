@@ -113,6 +113,10 @@ body{ background:#0e0c09; overflow:hidden; }
 .ss-safezone{ position:absolute; left:0; right:0; pointer-events:none;
   background:repeating-linear-gradient(45deg, rgba(14,12,9,.32) 0 14px, rgba(14,12,9,.44) 14px 28px);
   border-top:1.5px dashed rgba(255,251,241,.5); border-bottom:1.5px dashed rgba(255,251,241,.5); }
+/* vertical bleed bands — FB cover sides cropped on mobile */
+.ss-safezone-v{ position:absolute; top:0; bottom:0; pointer-events:none;
+  background:repeating-linear-gradient(45deg, rgba(14,12,9,.32) 0 14px, rgba(14,12,9,.44) 14px 28px);
+  border-left:1.5px dashed rgba(255,251,241,.5); border-right:1.5px dashed rgba(255,251,241,.5); }
 .ss-capbar{ padding:9px 16px; font-size:12px; border-top:1px solid #2a2318; background:#120e09; color:#9b9079; }
 .ss-capbar.tight{ color:#fdb515; }
 .ss-capbar.over{ color:#ed7a82; }
@@ -148,6 +152,24 @@ select.ss-input{ appearance:auto; }
   background:#241d10; border:1px solid #5a4a1c; color:#fdcf6a; }
 .ss-context.ev{ background:#10200f; border-color:#2e521c; color:#a3d77a; }
 .ss-context b{ font-size:11px; letter-spacing:.04em; }
+
+/* per-day size stepper (day list header) */
+.ss-sizestep{ display:inline-flex; align-items:center; gap:2px; margin-left:7px; flex:none; }
+.ss-sizestep button{ width:17px; height:17px; line-height:1; padding:0; border:1px solid #33291b; border-radius:4px;
+  background:#0e0b07; color:#b6ab97; font-size:12px; cursor:pointer; font-family:var(--ss-mont); }
+.ss-sizestep button:hover:not(:disabled){ border-color:#6f6553; color:#fffbf1; }
+.ss-sizestep button:disabled{ opacity:.3; cursor:default; }
+.ss-sizestep b{ min-width:13px; text-align:center; font-family:var(--ss-mont); font-weight:700; font-size:10px;
+  color:#7d7260; cursor:pointer; font-variant-numeric:tabular-nums; }
+.ss-sizestep b.set{ color:#fdb515; }
+
+/* global text-size bar (inspector) */
+.ss-sizebar{ display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.ss-sizebar .ss-iconbtn{ width:34px; padding:8px 0; justify-content:center; }
+.ss-sizebar .ss-iconbtn:last-child{ width:auto; padding:8px 12px; margin-left:auto; }
+.ss-sizebig{ font-family:var(--ss-mont); font-weight:700; font-size:15px; color:#fffbf1; min-width:36px;
+  text-align:center; font-variant-numeric:tabular-nums; }
+.ss-sizebig small{ font-size:10px; color:#6f6553; font-weight:600; }
 
 /* import modal */
 .ss-overlay{ position:fixed; inset:0; background:rgba(8,6,3,.72); z-index:100;

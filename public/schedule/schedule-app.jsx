@@ -49,7 +49,8 @@ function DayStrip({ doc, setDoc, capacity, selDate, onPickDate }){
   const stripRef = React.useRef(null);
 
   function setRange(start, days){
-    setDoc(d=>a_norm(Object.assign({}, d, { range:{ start, days:Math.max(1, Math.min(10, days)) } })));
+    /* changing the week (or its length) wipes per-day size tweaks back to the auto default */
+    setDoc(d=>a_norm(Object.assign({}, d, { range:{ start, days:Math.max(1, Math.min(10, days)) }, sizing:{} })));
   }
   /* drag a grip: quantize horizontal movement by chip width */
   function gripDrag(e, side){
@@ -109,7 +110,7 @@ function DayStrip({ doc, setDoc, capacity, selDate, onPickDate }){
 }
 
 /* ---------- left: the week as a list ---------- */
-function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate }){
+function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate, sizeInfo, setDaySize }){
   const dates = a_dates(doc.range);
   const [quick, setQuick] = React.useState({});
   const [quickErr, setQuickErr] = React.useState(null);
@@ -155,6 +156,15 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate }
               <span className="nm">{A_DA[w]} <small>{a_dshort(date)}</small></span>
               <span className="ct" style={{ color:CAP_COL[cap]==='#3d3526'?'#6f6553':CAP_COL[cap] }}>
                 {closed ? 'closed' : evs.length+' ev'}</span>
+              {sizeInfo && sizeInfo.active && !closed && sizeInfo.byDate[date] &&
+                (()=>{ const si = sizeInfo.byDate[date]; return (
+                  <span className="ss-sizestep" onClick={e=>e.stopPropagation()}
+                    title={'Text size '+(si.step+1)+'/'+sizeInfo.steps+' · '+si.px+'px'+(si.isAuto?' (auto)':'')+' — click number to reset to auto'}>
+                    <button disabled={si.step<=si.min} onClick={()=>setDaySize(date, Math.max(si.min, si.step-1))}>−</button>
+                    <b className={si.isAuto?'':'set'} onClick={()=>setDaySize(date, null)}>{si.step+1}</b>
+                    <button disabled={si.step>=si.max} onClick={()=>setDaySize(date, Math.min(si.max, si.step+1))}>＋</button>
+                  </span>
+                ); })()}
               <button className={'ss-closebtn'+(closed?' on':'')} title={closed?'Reopen this day':'Mark day closed'}
                 onClick={e=>{ e.stopPropagation(); toggleClosed(date); }}>⊘</button>
             </div>
@@ -187,7 +197,7 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate }
 }
 
 /* ---------- inspector ---------- */
-function Inspector({ doc, setDoc, sel, setSelId, channelId }){
+function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSize, resetSizes }){
   function update(patch){
     setDoc(d=>Object.assign({}, d, { events:d.events.map(e=>e.id===sel.id?Object.assign({},e,patch):e) }));
   }
@@ -261,6 +271,22 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId }){
         ))}
         <button className="ss-chip dis" disabled title="Special-week display type — Phase 3">Marquee · P3</button>
       </div>
+      {sizeInfo && sizeInfo.active &&
+        <React.Fragment>
+          <div className="ss-sech">Text size · {channelId==='stories'?'Stories':'Feed'}</div>
+          <div className="ss-sizebar">
+            <button className="ss-iconbtn" disabled={sizeInfo.baseStep<=0}
+              title="Smaller — whole week" onClick={()=>setBaseSize(Math.max(0, sizeInfo.baseStep-1))}>−</button>
+            <span className="ss-sizebig">{sizeInfo.baseStep+1}<small>/{sizeInfo.steps}</small></span>
+            <button className="ss-iconbtn" disabled={sizeInfo.baseStep>=sizeInfo.uniformMax}
+              title="Bigger — whole week" onClick={()=>setBaseSize(Math.min(sizeInfo.uniformMax, sizeInfo.baseStep+1))}>＋</button>
+            <button className="ss-iconbtn" disabled={!sizeInfo.hasOverrides}
+              title="Back to the auto comfort default" onClick={resetSizes}>Auto</button>
+          </div>
+          <div className="ss-mini" style={{ marginBottom:10 }}>
+            {sizeInfo.base==='auto' ? <b>Auto.</b> : <b>Custom.</b>} Every day starts at the biggest size that still sits easy in your busiest day. Nudge the whole week here, or any single day in the list on the left. Per-day tweaks reset when you add or remove days.
+          </div>
+        </React.Fragment>}
       <SChips label="Theme (digital — print stays day)" options={[{v:'day',l:'Day'},{v:'night',l:'Night'}]}
         value={doc.style.theme||'day'} onChange={v=>setStyle({ theme:v })} />
       <div className="ss-sech">Header</div>
@@ -444,6 +470,22 @@ function App(){
   const dates = a_dates(doc.range);
   const sel = doc.events.filter(e=>e.id===selId)[0] || null;
   const capacity = React.useMemo(()=>a_cap(doc, channelId), [doc, channelId]);
+  /* per-day text sizing view for the current channel (Stories / Feed, stacked looks) */
+  const sizeInfo = React.useMemo(()=>window.computeStackSizing(doc, channelId), [doc, channelId]);
+  const editSizing = React.useCallback((mutate)=>{
+    setDoc(d=>{
+      const sizing = Object.assign({}, d.sizing);
+      const cur = Object.assign({ base:'auto', perDay:{} }, sizing[channelId]);
+      sizing[channelId] = mutate(Object.assign({}, cur, { perDay:Object.assign({}, cur.perDay) }));
+      return Object.assign({}, d, { sizing });
+    });
+  }, [channelId]);
+  const setDaySize = React.useCallback((date, step)=>editSizing(s=>{
+    if(step==null) delete s.perDay[date]; else s.perDay[date] = step;
+    return s;
+  }), [editSizing]);
+  const setBaseSize = React.useCallback(base=>editSizing(s=>{ s.base = base; return s; }), [editSizing]);
+  const resetSizes = React.useCallback(()=>editSizing(()=>({ base:'auto', perDay:{} })), [editSizing]);
   const reportRef = React.useRef(null);
   React.useEffect(()=>{ reportRef.current = null; setFitReport(null); }, [doc, channelId, partIdx, dailyVariant]);
   const onFitReport = React.useCallback(r=>{
@@ -623,6 +665,11 @@ function App(){
           const url = await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant:'story' }, a_ch('daily'));
           zip.file(pngName('daily',0,1,'story',open[i]), url.split(',')[1], { base64:true });
         }
+        for(let i=0;i<open.length;i++){
+          setExportMsg('FB cover ' + (i+1) + '/' + open.length + '…');
+          const url = await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant:'cover' }, a_ch('daily'));
+          zip.file(pngName('daily',0,1,'cover',open[i]), url.split(',')[1], { base64:true });
+        }
         zip.file(base + '.json', JSON.stringify(doc, null, 2));
         zip.file(base + '.csv', a_serCSV(doc));
         setExportMsg('Zipping…');
@@ -641,7 +688,8 @@ function App(){
         onPickDate={d=>{ setSelDate(d); if(channelId==='daily') setDailyDate(d); }} />
       <div className="ss-body">
         <DayList doc={doc} setDoc={setDoc} selId={selId} setSelId={setSelId}
-          capacity={capacity} selDate={selDate} setSelDate={setSelDate} />
+          capacity={capacity} selDate={selDate} setSelDate={setSelDate}
+          sizeInfo={sizeInfo} setDaySize={setDaySize} />
         <div className="ss-stagecol">
           <div className="ss-prevtabs">
             <div className="ss-seg">
@@ -659,8 +707,8 @@ function App(){
                   {dates.map(d=><option key={d} value={d}>{A_DA[a_wd(d)]} {a_dshort(d)}</option>)}
                 </select>
                 <div className="ss-seg">
-                  {['story','feed'].map(v=>(
-                    <button key={v} className={dailyVariant===v?'on':''} onClick={()=>setDailyVariant(v)}>{v==='story'?'9:16':'4:5'}</button>
+                  {['story','feed','cover'].map(v=>(
+                    <button key={v} className={dailyVariant===v?'on':''} onClick={()=>setDailyVariant(v)}>{({story:'9:16',feed:'4:5',cover:'FB Cover'})[v]}</button>
                   ))}
                 </div>
               </React.Fragment>}
@@ -687,6 +735,11 @@ function App(){
                   <div className="ss-safezone" style={{ top:0, height:a_ch('stories').safeTop }} />
                   <div className="ss-safezone" style={{ bottom:0, height:a_ch('stories').safeBottom }} />
                 </React.Fragment>}
+              {channelId==='daily' && dailyVariant==='cover' && size.bleed &&
+                <React.Fragment>
+                  <div className="ss-safezone-v" style={{ left:0, width:size.bleed }} />
+                  <div className="ss-safezone-v" style={{ right:0, width:size.bleed }} />
+                </React.Fragment>}
             </div>
           </div>
           <div className={'ss-capbar '+capMsg.tone}>{capMsg.text}</div>
@@ -696,7 +749,8 @@ function App(){
             {sel ? <React.Fragment><b>Event</b> · edits apply to every channel</React.Fragment>
                  : <React.Fragment><b>{ch.label}</b> · {ch.sub} · document settings below</React.Fragment>}
           </div>
-          <Inspector doc={doc} setDoc={setDoc} sel={sel} setSelId={setSelId} channelId={channelId} />
+          <Inspector doc={doc} setDoc={setDoc} sel={sel} setSelId={setSelId} channelId={channelId}
+            sizeInfo={sizeInfo} setBaseSize={setBaseSize} resetSizes={resetSizes} />
         </div>
       </div>
       {importOpen && <ImportModal doc={doc} setDoc={setDoc}

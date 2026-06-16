@@ -40,7 +40,10 @@ const CHANNELS = [
   { id:'print',   label:'Print',    sub:'A4 PDF',    w:1123, h:794,  kind:'print',    px:3, printish:true },
   { id:'daily',   label:'Daily',    sub:'PER DAY',   w:1080, h:1920, kind:'daily',    px:2 },
 ];
-const DAILY_VARIANTS = { story:{ w:1080, h:1920 }, feed:{ w:1080, h:1350 } };
+const DAILY_VARIANTS = { story:{ w:1080, h:1920 }, feed:{ w:1080, h:1350 },
+  /* FB Page cover photo — landscape single-day. 851×315 is FB's recommended upload;
+     mobile crops the sides, so bleed marks the outer band to keep text out of. */
+  cover:{ w:851, h:315, bleed:106 } };
 function channelById(id){ return CHANNELS.filter(c=>c.id===id)[0]; }
 
 /* ---- looks ---- */
@@ -72,6 +75,26 @@ const gridStripH  = f => f*1.75;
 const gridPad     = f => f*0.55;
 const dayGapFor = (g, look) => look==='stack' ? g.dayGap*0.78 : g.dayGap;
 
+/* ---- per-day text sizing (weekly carousels: Stories + Feed, stacked looks) ----
+   A wider, taller ladder than the auto-fit type levels so entries can read BIG on
+   light days. step 0 = smallest, last = largest. Every day defaults to one uniform
+   "comfort" step — the largest that still sits easy in the most-packed day — and the
+   editor can nudge the whole week or any single day. The picker is capped to what
+   fits, so a bump can never overflow a slide. Grid look + WhatsApp/Print are untouched
+   and keep the classic auto-fit ladder. */
+const ENTRY_LADDER = {
+  stories: { font:[27,30,33,37,41,46,51], lead:[1.30,1.34,1.38,1.42,1.46,1.50,1.54] },
+  feed:    { font:[23,26,29,32,36,40,45], lead:[1.28,1.31,1.34,1.37,1.41,1.45,1.50] },
+};
+const SHORT_STEP = 1;          /* steps ≤ this fall back to short titles when present */
+const SIZE_COMFORT = 0.93;     /* the auto default leaves ~7% air → reads "comfortable" */
+const SIZE_BRIM    = 0.985;    /* manual bumps may fill a slide right to the brim */
+const sizedChannel = ch => ch==='feed' || ch==='stories';
+function ladderLen(ch){ return (ENTRY_LADDER[ch] || ENTRY_LADDER.stories).font.length; }
+function clampStep(ch, s){ return Math.max(0, Math.min(ladderLen(ch)-1, s|0)); }
+function entryFont(ch, look, step){ const L = ENTRY_LADDER[ch] || ENTRY_LADDER.stories; return L.font[clampStep(ch,step)]*lookF(look); }
+function entryLead(ch, step){ const L = ENTRY_LADDER[ch] || ENTRY_LADDER.stories; return L.lead[clampStep(ch,step)]; }
+
 /* ---- text width estimates (px) — calibrated against live Space Grotesk ---- */
 function estW(text, font, factor){ return String(text||'').length * font * (factor||0.53); }
 function codesText(ev){
@@ -87,10 +110,10 @@ function timeTail(ev){
   return null;
 }
 
-/* ---- core day measurement (estimate) ---- */
-function measureDay(doc, date, channel, look, level, rowAreaW){
+/* ---- core day measurement (estimate) — font/lead/useShort explicit so both the
+   auto-fit type ladder and the per-day size ladder measure through one path ---- */
+function measureDayAt(doc, date, channel, look, font, lead, useShort, rowAreaW){
   const g = GEOM[channel];
-  const font = g.font[level]*lookF(look), lead = g.lead[level];
   const rowH = font*lead;
   const info = r_dayInfo(doc, date);
   const evs = r_eventsOn(doc, date, channel);
@@ -99,7 +122,7 @@ function measureDay(doc, date, channel, look, level, rowAreaW){
   if(info.status==='closed'){ rows = rowH*1.25; }
   else evs.forEach(ev=>{
     if(ev.emphasis==='banner'){ rows += rowH*1.75 + font*0.55; return; }
-    const title = (level>=3 && ev.titleShort) ? ev.titleShort : ev.title;
+    const title = (useShort && ev.titleShort) ? ev.titleShort : ev.title;
     const wf = ev.emphasis==='bold' ? 0.68 : 0.55;
     const tail = timeTail(ev);
     const titleW = rowAreaW - tW
@@ -113,6 +136,10 @@ function measureDay(doc, date, channel, look, level, rowAreaW){
   if(look==='ledger') return Math.max(rows, g.block);
   if(look==='stack')  return stackBannerH(font) + font*0.32 + rows;
   return gridStripH(font) + gridPad(font)*2 + rows;   /* grid: cell content height */
+}
+function measureDay(doc, date, channel, look, level, rowAreaW){
+  const g = GEOM[channel];
+  return measureDayAt(doc, date, channel, look, g.font[level]*lookF(look), g.lead[level], level>=3, rowAreaW);
 }
 function rowAreaWidth(channel, look, contentW){
   const g = GEOM[channel];
@@ -193,6 +220,88 @@ function resolveFit(doc, dates, channel, look, geomBox){
   return { level:g.font.length-1, denIdx:denList[denList.length-1], fits:false };
 }
 
+/* ---- per-day size resolution (stacked carousels) ---------------------------- */
+/* geometry of each carousel slide: height left for days after header + footer */
+function partBoxes(doc, channelId){
+  const ch = channelById(channelId), g = GEOM[channelId];
+  const contentW = ch.w - g.pad*2;
+  const legend = r_usedLegend(doc, r_rangeDates(doc.range), channelId);
+  const parts = r_partDates(doc);
+  return parts.map((dates, pi)=>{
+    const isFinal = pi===parts.length-1;
+    const headH = pi===0 ? g.headFullH : g.headSlimH;
+    const boxH = ch.h - (ch.safeTop||0) - (ch.safeBottom||0) - g.pad*2 - headH;
+    const footH = isFinal ? footerEstimate(doc, channelId, legend, 0) : 0;   /* reserve a full footer */
+    return { dates, isFinal, contentW, availH: boxH - footH };
+  });
+}
+function dayStepHeight(doc, date, channel, look, step, rowAreaW){
+  return measureDayAt(doc, date, channel, look, entryFont(channel,look,step), entryLead(channel,step), step<=SHORT_STEP, rowAreaW);
+}
+function stackHeight(doc, box, channel, look, steps){
+  const g = GEOM[channel], gap = dayGapFor(g, look);
+  const raw = rowAreaWidth(channel, look, box.contentW);
+  let total = 0;
+  box.dates.forEach((d,i)=>{ total += dayStepHeight(doc, d, channel, look, steps[i], raw) + (i<box.dates.length-1 ? gap : 0); });
+  return total;
+}
+/* greedy fit: start every day at its wanted step, then trim the tallest until the
+   slide fits — always terminates, and never overflows above the floor */
+function resolveBoxSteps(doc, box, channel, look, wantFn){
+  const steps = box.dates.map(d=>clampStep(channel, wantFn(d)));
+  const limit = box.availH * SIZE_BRIM;
+  for(let guard=0; guard<box.dates.length*ladderLen(channel)+4; guard++){
+    if(stackHeight(doc, box, channel, look, steps) <= limit) break;
+    let mi=-1, mv=-1;
+    steps.forEach((s,i)=>{ if(s>mv){ mv=s; mi=i; } });
+    if(mv<=0) break;                       /* all at floor and still over → genuine overflow */
+    steps[mi] = mv-1;
+  }
+  const out = {}; box.dates.forEach((d,i)=>out[d]=steps[i]); return out;
+}
+function uniformFits(doc, box, channel, look, step, margin){
+  return stackHeight(doc, box, channel, look, box.dates.map(()=>step)) <= box.availH*margin;
+}
+/* largest uniform step where every slide fits at the given margin */
+function uniformStep(doc, boxes, channel, look, margin){
+  for(let s=ladderLen(channel)-1; s>=0; s--){
+    if(boxes.every(box=>uniformFits(doc, box, channel, look, s, margin))) return s;
+  }
+  return 0;
+}
+/* editor view: resolved step + min/max per day, plus the auto base for this channel */
+function computeStackSizing(doc, channelId){
+  if(!sizedChannel(channelId) || lookOf(doc)==='grid') return { active:false, byDate:{} };
+  const look = lookOf(doc);
+  const sz = (doc.sizing && doc.sizing[channelId]) || { base:'auto', perDay:{} };
+  const perDay = sz.perDay || {};
+  const boxes = partBoxes(doc, channelId);
+  const autoBase = uniformStep(doc, boxes, channelId, look, SIZE_COMFORT);
+  const uniformMax = uniformStep(doc, boxes, channelId, look, SIZE_BRIM);
+  const baseStep = (sz.base==='auto' || sz.base==null) ? autoBase : clampStep(channelId, sz.base);
+  const want = d => perDay[d]!=null ? clampStep(channelId, perDay[d]) : baseStep;
+  const last = ladderLen(channelId)-1;
+  const byDate = {};
+  boxes.forEach(box=>{
+    const steps = resolveBoxSteps(doc, box, channelId, look, want);
+    const over = stackHeight(doc, box, channelId, look, box.dates.map(()=>0)) > box.availH;
+    box.dates.forEach(d=>{
+      /* per-day ceiling: lift only this day (others at their wanted step) until the
+         greedy fit would start clawing it back */
+      let max = steps[d];
+      for(let t=steps[d]+1; t<=last; t++){
+        const r = resolveBoxSteps(doc, box, channelId, look, x=> x===d ? t : want(x));
+        if(r[d]===t) max=t; else break;
+      }
+      byDate[d] = { step:steps[d], min:0, max, auto:autoBase, isAuto: perDay[d]==null,
+        over, px: Math.round(entryFont(channelId, look, steps[d])) };
+    });
+  });
+  const hasOverrides = (sz.base!=='auto' && sz.base!=null) || Object.keys(perDay).length>0;
+  return { active:true, byDate, base:(sz.base==null?'auto':sz.base), baseStep, autoBase, uniformMax,
+    steps:ladderLen(channelId), hasOverrides, look };
+}
+
 /* ---- capacity summary for the editor ---- */
 function computeCapacity(doc, channelId){
   const chId = channelId==='daily' ? 'feed' : channelId;
@@ -201,6 +310,21 @@ function computeCapacity(doc, channelId){
   const g = GEOM[ch.id];
   const legend = r_usedLegend(doc, r_rangeDates(doc.range), ch.id);
   const out = { parts:[], byDate:{} };
+  /* stacked Stories / Feed run on the per-day size ladder, not the auto-fit levels */
+  if(sizedChannel(channelId) && look!=='grid'){
+    const sizing = computeStackSizing(doc, channelId);
+    r_partDates(doc).forEach(dates=>{
+      let over=false, tight=false;
+      dates.forEach(d=>{
+        const info = sizing.byDate[d] || { step:0, over:false };
+        out.byDate[d] = info.over ? 'over' : (info.step===0 ? 'tight' : 'ok');
+        if(info.over) over=true;
+        if(info.step===0) tight=true;
+      });
+      out.parts.push({ dates, fits:!over, level: tight?3:0, denIdx:0 });
+    });
+    return out;
+  }
   const mark = (dates, fit)=>{ dates.forEach(d=>{ out.byDate[d] = !fit.fits ? 'over' : (fit.level>=2 ? 'tight' : 'ok'); }); out.parts.push(Object.assign({dates}, fit)); };
   if(ch.kind==='carousel'){
     const parts = r_partDates(doc);
@@ -354,9 +478,9 @@ function HeaderSlim({ doc, channel }){
   );
 }
 
-function EventRow({ ev, font, lead, timeW, level, dayColor, dayText }){
+function EventRow({ ev, font, lead, timeW, useShort, dayColor, dayText }){
   const T = React.useContext(ThemeCtx);
-  const title = (level>=3 && ev.titleShort) ? ev.titleShort : ev.title;
+  const title = (useShort && ev.titleShort) ? ev.titleShort : ev.title;
   const codes = codesText(ev);
   if(ev.emphasis==='banner'){
     return (
@@ -400,13 +524,12 @@ function ClosedNote({ note, font, center }){
 }
 
 /* ---- LEDGER day group: color block rail + rows ---- */
-function LedgerDay({ doc, date, channel, level, contentW }){
+function LedgerDay({ doc, date, channel, font, lead, useShort }){
   const T = React.useContext(ThemeCtx);
   const g = GEOM[channel];
   const w = r_wd(date);
   const info = r_dayInfo(doc, date);
   const evs = r_eventsOn(doc, date, channel);
-  const font = fontFor(channel,'ledger',level), lead = g.lead[level];
   const tW = timeColW(font);
   const size = g.block;
   return (
@@ -421,7 +544,7 @@ function LedgerDay({ doc, date, channel, level, contentW }){
         justifyContent: evs.length<3 && info.status!=='closed' ? 'center' : 'flex-start' }}>
         {info.status==='closed'
           ? <ClosedNote note={info.note} font={font} />
-          : evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} level={level}
+          : evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} useShort={useShort}
               dayColor={T.dc[w]} dayText={T.dt[w]} />)}
       </div>
     </div>
@@ -429,13 +552,12 @@ function LedgerDay({ doc, date, channel, level, contentW }){
 }
 
 /* ---- STACK day group: full-width color banner + rows beneath ---- */
-function StackDay({ doc, date, channel, level, contentW }){
+function StackDay({ doc, date, channel, font, lead, useShort }){
   const T = React.useContext(ThemeCtx);
   const g = GEOM[channel];
   const w = r_wd(date);
   const info = r_dayInfo(doc, date);
   const evs = r_eventsOn(doc, date, channel);
-  const font = fontFor(channel,'stack',level), lead = g.lead[level];
   const tW = timeColW(font);
   const bH = stackBannerH(font);
   return (
@@ -453,7 +575,7 @@ function StackDay({ doc, date, channel, level, contentW }){
       </div>
       {info.status!=='closed' &&
         <div style={{ paddingTop:font*0.32, paddingLeft:font*0.2 }}>
-          {evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} level={level}
+          {evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} useShort={useShort}
             dayColor={T.dc[w]} dayText={T.dt[w]} />)}
         </div>}
     </div>
@@ -495,7 +617,7 @@ function GridCell({ doc, date, channel, level, onOverflow }){
       <div ref={rowsRef} style={{ flex:1, minHeight:0, padding:pad, overflow:'hidden' }}>
         {info.status==='closed'
           ? <ClosedNote note={info.note} font={font} center />
-          : evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} level={level}
+          : evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} useShort={level>=3}
               dayColor={T.dc[w]} dayText={T.dt[w]} />)}
       </div>
       {clipped &&
@@ -525,13 +647,18 @@ function GridMetaCell({ doc, channel, level, legend }){
   );
 }
 
-function DayStack({ doc, dates, channel, look, level, contentW, gap, evenly }){
+function DayStack({ doc, dates, channel, look, sizing, stepDown, gap, evenly }){
   const Day = look==='stack' ? StackDay : LedgerDay;
   return (
     <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column',
       justifyContent: evenly===false ? 'flex-start' : 'space-evenly',
       rowGap: look==='stack' ? gap*0.78 : gap }}>
-      {dates.map(date=><Day key={date} doc={doc} date={date} channel={channel} level={level} contentW={contentW} />)}
+      {dates.map(date=>{
+        const want = (sizing && sizing.byDate[date]) ? sizing.byDate[date].step : 0;
+        const step = Math.max(0, want - (stepDown||0));
+        return <Day key={date} doc={doc} date={date} channel={channel}
+          font={entryFont(channel, look, step)} lead={entryLead(channel, step)} useShort={step<=SHORT_STEP} />;
+      })}
     </div>
   );
 }
@@ -662,17 +789,9 @@ function CarouselPart({ doc, channelId, partIndex, onFitReport }){
   const legend = r_usedLegend(doc, r_rangeDates(doc.range), channelId);
   const headH = isFirst ? g.headFullH : g.headSlimH;
   const boxH = ch.h - safeT - safeB - g.pad*2 - headH;
-  const est = resolveFit(doc, dates, channelId, look, look==='grid'
-    ? { boxH, hasFooter:isFinal, legend, gridCols:gridColsFor(channelId),
-        cellW:(contentW-(gridColsFor(channelId)-1)*gridGapFor(channelId))/gridColsFor(channelId) }
-    : { boxH, boxW:contentW, hasFooter:isFinal, legend });
   const sig = JSON.stringify([doc, channelId, partIndex]);
-  const floorL = g.font.length-1;
-  const maxL = floorL-est.level, maxD = isFinal?2-est.denIdx:0;
-  const [contentRef, bump, poke] = useOverflowBump(sig, maxL, maxD);
-  const { level, denIdx } = applyBump(est, bump, floorL);
-  useFitReport(contentRef, bump, maxL, maxD, level, denIdx, onFitReport);
-  return (
+  /* slide chrome shared by both layout paths; body + footer differ per look */
+  const shell = (ref, body, footer)=>(
     <ThemeCtx.Provider value={T}>
       <div style={{ width:ch.w, height:ch.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden',
         boxSizing:'border-box', paddingTop:safeT+g.pad, paddingBottom:safeB+g.pad,
@@ -680,23 +799,10 @@ function CarouselPart({ doc, channelId, partIndex, onFitReport }){
         <div style={{ height:headH, flex:'none' }}>
           {isFirst ? <HeaderFull doc={doc} channel={channelId} /> : <HeaderSlim doc={doc} channel={channelId} />}
         </div>
-        <div ref={contentRef} style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-          {look==='grid'
-            ? <GridArea doc={doc} dates={dates} channel={channelId} level={level}
-                gap={g.dayGap} legend={legend} onOverflow={poke}
-                withMeta={isFinal && dates.length%2===1} />
-            : <DayStack doc={doc} dates={dates} channel={channelId} look={look} level={level}
-                contentW={contentW} gap={g.dayGap} />}
+        <div ref={ref} style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+          {body}
         </div>
-        {isFinal && !(look==='grid' && dates.length%2===1) &&
-          <CarouselFooter doc={doc} channel={channelId} legend={legend} denIdx={denIdx} />}
-        {isFinal && look==='grid' && dates.length%2===1 &&
-          <div style={{ flex:'none', borderTop:'3px solid '+T.fg, marginTop:g.footPad*0.4, paddingTop:g.footPad*0.6,
-            display:'flex', justifyContent:'center' }}>
-            {doc.footer.supportNote
-              ? <SupportNote plain text={doc.footer.supportText} font={14*(g.fs||1)} maxW={contentW*0.9} />
-              : <MetaLine font={15*(g.fs||1)} />}
-          </div>}
+        {footer}
         {!ch.noArrows && !isFinal &&
           <div style={{ position:'absolute', right:g.pad, bottom:safeB+g.pad*0.65 }}><ArrowChip dir="fwd" size={84} /></div>}
         {!ch.noArrows && isFinal && parts.length>1 &&
@@ -704,14 +810,56 @@ function CarouselPart({ doc, channelId, partIndex, onFitReport }){
       </div>
     </ThemeCtx.Provider>
   );
+
+  if(look==='grid'){
+    const est = resolveFit(doc, dates, channelId, 'grid',
+      { boxH, hasFooter:isFinal, legend, gridCols:gridColsFor(channelId),
+        cellW:(contentW-(gridColsFor(channelId)-1)*gridGapFor(channelId))/gridColsFor(channelId) });
+    const floorL = g.font.length-1;
+    const maxL = floorL-est.level, maxD = isFinal?2-est.denIdx:0;
+    const [contentRef, bump, poke] = useOverflowBump(sig, maxL, maxD);
+    const { level, denIdx } = applyBump(est, bump, floorL);
+    useFitReport(contentRef, bump, maxL, maxD, level, denIdx, onFitReport);
+    const odd = isFinal && dates.length%2===1;
+    return shell(contentRef,
+      <GridArea doc={doc} dates={dates} channel={channelId} level={level}
+        gap={g.dayGap} legend={legend} onOverflow={poke} withMeta={odd} />,
+      isFinal && !odd
+        ? <CarouselFooter doc={doc} channel={channelId} legend={legend} denIdx={denIdx} />
+        : (odd
+          ? <div style={{ flex:'none', borderTop:'3px solid '+T.fg, marginTop:g.footPad*0.4, paddingTop:g.footPad*0.6,
+              display:'flex', justifyContent:'center' }}>
+              {doc.footer.supportNote
+                ? <SupportNote plain text={doc.footer.supportText} font={14*(g.fs||1)} maxW={contentW*0.9} />
+                : <MetaLine font={15*(g.fs||1)} />}
+            </div>
+          : null));
+  }
+
+  /* stacked (ledger / stack) — per-day sizing; measured backstop trims uniformly */
+  const sizing = computeStackSizing(doc, channelId);
+  const wantSteps = dates.map(d=> sizing.byDate[d] ? sizing.byDate[d].step : 0);
+  const maxL = wantSteps.reduce((a,b)=>Math.max(a,b), 0);
+  const boxOver = dates.some(d=> sizing.byDate[d] && sizing.byDate[d].over);
+  const maxD = isFinal ? 2 : 0;
+  const [contentRef, bump, poke] = useOverflowBump(sig, maxL, maxD);
+  const stepDown = Math.min(maxL, bump.l), denIdx = Math.min(2, bump.d);
+  const minStep = wantSteps.length ? Math.min.apply(null, wantSteps) : 0;
+  const tight = boxOver || (minStep - stepDown) <= 0;
+  useFitReport(contentRef, bump, maxL, maxD, tight?3:0, denIdx, onFitReport);
+  return shell(contentRef,
+    <DayStack doc={doc} dates={dates} channel={channelId} look={look}
+      sizing={sizing} stepDown={stepDown} gap={g.dayGap} />,
+    isFinal ? <CarouselFooter doc={doc} channel={channelId} legend={legend} denIdx={denIdx} /> : null);
 }
 
 function ColumnStack({ doc, dates, channelId, look, level, colW, g }){
+  const font = fontFor(channelId, look, level), lead = g.lead[level], useShort = level>=3;
   return (
     <div style={{ width:colW, display:'flex', flexDirection:'column', rowGap:dayGapFor(g, look), minWidth:0 }}>
       {dates.map(date=> look==='stack'
-        ? <StackDay key={date} doc={doc} date={date} channel={channelId} level={level} contentW={colW} />
-        : <LedgerDay key={date} doc={doc} date={date} channel={channelId} level={level} contentW={colW} />)}
+        ? <StackDay key={date} doc={doc} date={date} channel={channelId} font={font} lead={lead} useShort={useShort} />
+        : <LedgerDay key={date} doc={doc} date={date} channel={channelId} font={font} lead={lead} useShort={useShort} />)}
     </div>
   );
 }
@@ -947,11 +1095,89 @@ function DailyCard({ doc, date, variant }){
   );
 }
 
+/* ---- FB Page cover photo — landscape single-day board ----
+   Full-bleed day-colour header strip (text kept inside the mobile-safe centre),
+   then the day's events in one or two columns, auto-sized to the count. */
+function CoverCard({ doc, date }){
+  const v = DAILY_VARIANTS.cover;
+  const T = themeTokens(doc.style.theme);
+  const w = r_wd(date);
+  const info = r_dayInfo(doc, date);
+  const evs = r_eventsOn(doc, date, 'daily');
+  const sidePad = v.bleed + 24;                 /* hold text inside the safe centre */
+  const stripH = 78;
+  const cols = evs.length>5 ? 2 : 1;
+  const perCol = Math.max(1, Math.ceil(evs.length/cols));
+  const rowsAvail = v.h - stripH - 18 - 26;
+  const FONTS = [28,25,22,20,18,16.5,15];
+  let font = FONTS[FONTS.length-1];
+  for(const f of FONTS){ if(perCol*(f*1.5+8) <= rowsAvail){ font = f; break; } }
+  const useShort = cols===2;
+  const colItems = [];
+  for(let c=0;c<cols;c++) colItems.push(evs.slice(c*perCol, (c+1)*perCol));
+  return (
+    <ThemeCtx.Provider value={T}>
+      <div style={{ width:v.w, height:v.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden', boxSizing:'border-box' }}>
+        <div style={{ position:'absolute', left:0, right:0, top:0, height:stripH, background:T.dc[w], color:T.dt[w],
+          boxShadow:T.shadow, display:'flex', alignItems:'center', justifyContent:'space-between',
+          paddingLeft:sidePad, paddingRight:sidePad, boxSizing:'border-box' }}>
+          <div>
+            <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:14, letterSpacing:'.22em',
+              textTransform:'uppercase', opacity:.92 }}>TODAY AT REALITY</div>
+            <div style={{ display:'flex', alignItems:'baseline', gap:16, marginTop:3 }}>
+              <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:40, lineHeight:1,
+                textTransform:'uppercase', letterSpacing:'.01em' }}>{R_DF[w]}</span>
+              <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:26, lineHeight:1 }}>{r_dshort(date)}</span>
+            </div>
+          </div>
+          <RWordmark tight height={26} color={T.dt[w]} />
+        </div>
+        <div style={{ position:'absolute', left:0, right:0, top:stripH, bottom:0,
+          paddingLeft:sidePad, paddingRight:sidePad, paddingTop:18, paddingBottom:8, boxSizing:'border-box',
+          display:'flex', flexDirection:'column' }}>
+          <div style={{ flex:1, minHeight:0, display:'flex', gap:34 }}>
+            {info.status==='closed'
+              ? <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center',
+                  fontFamily:R_MONT, fontWeight:700, fontSize:38, letterSpacing:'.05em', textTransform:'uppercase', color:T.fg }}>{info.note||'CLOSED'}</div>
+              : evs.length===0
+                ? <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:R_MONT, fontWeight:600, fontSize:24, letterSpacing:'.08em', textTransform:'uppercase', color:T.dim }}>Open · come hang out</div>
+                : colItems.map((items,ci)=>(
+                  <div key={ci} style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column',
+                    justifyContent: perCol<=3 ? 'center' : 'space-between', gap:font*0.45 }}>
+                    {items.map(ev=>{
+                      const emO = ev.emphasis==='bold' || ev.emphasis==='banner';
+                      const title = (useShort && ev.titleShort) ? ev.titleShort : ev.title;
+                      return (
+                        <div key={ev.id} style={{ display:'flex', alignItems:'baseline', gap:font*0.5, minWidth:0,
+                          borderLeft: ev.emphasis==='banner' ? ('4px solid '+T.dc[w]) : 'none',
+                          paddingLeft: ev.emphasis==='banner' ? font*0.45 : 0 }}>
+                          <span style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.86, color:T.fgStrong,
+                            flex:'none', fontVariantNumeric:'tabular-nums' }}>{ev.start}</span>
+                          <span style={{ minWidth:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                            fontFamily:emO?R_MONT:R_GROT, fontWeight:emO?700:600, fontSize:emO?font*0.95:font,
+                            textTransform:emO?'uppercase':'none', letterSpacing:emO?'.02em':'0' }}>{title}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+          </div>
+          <div style={{ flex:'none', marginTop:6, textAlign:'right', fontFamily:R_GROT, fontWeight:500, fontSize:12.5, color:T.dim }}>
+            realitydn.com · 86 Mai Thúc Lân, Đà Nẵng</div>
+        </div>
+      </div>
+    </ThemeCtx.Provider>
+  );
+}
+
 /* ---- dispatcher: one part of one channel at native size ---- */
 function PartCanvas({ doc, channelId, partIndex, dailyDate, dailyVariant, onFitReport }){
   if(channelId==='print') return <PrintSheet doc={doc} onFitReport={onFitReport} />;
   if(channelId==='wa') return <WACard doc={doc} onFitReport={onFitReport} />;
-  if(channelId==='daily') return <DailyCard doc={doc} date={dailyDate} variant={dailyVariant} />;
+  if(channelId==='daily') return dailyVariant==='cover'
+    ? <CoverCard doc={doc} date={dailyDate} />
+    : <DailyCard doc={doc} date={dailyDate} variant={dailyVariant} />;
   return <CarouselPart doc={doc} channelId={channelId} partIndex={partIndex||0} onFitReport={onFitReport} />;
 }
 function partCount(doc, channelId){
@@ -967,6 +1193,6 @@ function partSize(channelId, dailyVariant){
 
 Object.assign(window, {
   CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST,
-  computeCapacity, twoColSplit, resolveFit,
+  computeCapacity, twoColSplit, resolveFit, computeStackSizing,
   PartCanvas, partCount, partSize, ArrowChip,
 });

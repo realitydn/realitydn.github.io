@@ -13,7 +13,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 4502;
+// Default 4502 (what "Schedule Studio.bat" expects). Honour PORT when set, so a
+// second instance — e.g. a preview server — can run on an assigned free port
+// without colliding with an already-open Studio.
+const PORT = process.env.PORT || 4502;
 const ROOT = path.resolve(__dirname, '..', 'public', 'schedule');
 const ENTRY = 'index.html';
 

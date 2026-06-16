@@ -71,6 +71,7 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       dotGain:el.dotGain, jitter:el.jitter, pucker:el.pucker,
       spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
       transparent:el.transparent, fit:el.fit,
+      paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null,
       blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
     const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });

@@ -232,7 +232,7 @@ const DEFAULTS = {
   /* Partner logo — same engine as a photo but untreated by default and with a
      transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark
      shows. Treatments still available if you want to riso a logo. */
-  logo:    { w:320, h:180, props:{ treatment:'none', transparent:true, sample:null, src:null,
+  logo:    { w:320, h:180, props:{ treatment:'none', transparent:true, paperFill:'fg', sample:null, src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.1, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',

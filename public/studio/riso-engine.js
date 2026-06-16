@@ -291,7 +291,7 @@
        Honours the in-frame pan / zoom / rotate like every other treatment. */
   function untreated(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    if(!o.transparent){ cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); }   // logos keep their alpha
+    if(!o.transparent){ cx.fillStyle=o.paperFill||PAPER[o.paper]; cx.fillRect(0,0,w,h); }   // logos keep their alpha; paperFill tints the card
     const canFilter = typeof cx.filter==='string';
     if(canFilter){ const b=1+(o.brightness||0), k=o.contrast||1; cx.filter='brightness('+b+') contrast('+k+')'; }
     drawCover(cx,w,h, o.fit==='contain'?'contain':'cover');                    // logos contain (whole mark, paper around); photos cover
@@ -400,7 +400,7 @@
       shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2,
       inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
       field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
-      spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover' }, opts||{});
+      spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover', paperFill:null }, opts||{});
     if(o.balance==null) o.balance=0.5; if(o.shadowTint==null) o.shadowTint=0.18;
     BRIGHT = o.brightness||0;
     PREBLUR = o.blurUnder||0;

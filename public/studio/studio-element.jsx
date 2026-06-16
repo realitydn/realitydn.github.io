@@ -261,9 +261,17 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
                  : seRGBA(ck==='ink'?'#0d0905':ck==='cream'?'#fffbf1':(SE_PAL[ck]||'#0d0905'), alpha);
       tShadow = `${Math.round(Math.cos(ang)*dist*10)/10}px ${Math.round(Math.sin(ang)*dist*10)/10}px ${blur}px ${col}`;
     }
+    /* optional subtitle, stacked inside the title box. Spacing preset sets the
+       gap (relative to the title size, so it stays natural at any scale) or
+       pins the two to the box edges (split). */
+    const hasSub = el.subtitle && String(el.subtitle).trim();
+    const split = el.subLayout==='split';
+    const gapMap = { tight:0.04, snug:0.16, roomy:0.36 };
+    const subGap = (hasSub && !split) ? Math.round(el.fontSize * (gapMap[el.subLayout]!=null?gapMap[el.subLayout]:0.16)) : 0;
+    const colAlign = el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start';
     const container = Object.assign({
-      width:'100%', height:'100%', display:'flex', boxSizing:'border-box',
-      alignItems:'center', justifyContent: el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start'
+      width:'100%', height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box',
+      alignItems: colAlign, justifyContent: split ? 'space-between' : 'center'
     }, bare ? { padding:0 } : Object.assign({ padding:'16px 26px' }, surf));
     inner = (
       <div style={container}>
@@ -276,6 +284,13 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           textShadow: tShadow,
           whiteSpace:'pre-wrap', textWrap:'balance'
         }}>{el.text}</div>
+        {hasSub && <div style={{
+          fontFamily:MONT, fontWeight:el.subWeight||600, textTransform:'uppercase',
+          fontSize:((el.subSize!=null?el.subSize:30)*B)+'px', lineHeight:1.15, marginTop:subGap,
+          letterSpacing:(el.subTracking!=null?el.subTracking:0.02)+'em',
+          color: seResolve(el.subColor!=null?el.subColor:'fg', textCol), textAlign:el.align,
+          whiteSpace:'pre-wrap', textWrap:'balance'
+        }}>{el.subtitle}</div>}
       </div>
     );
     return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>{inner}</Wrap>;
@@ -397,6 +412,28 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:13*B }}>{el.top}</div>
       <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56*B)+'px', lineHeight:.85, color:accentHex }}>{el.big}</div>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:11*B, opacity:.65 }}>{el.sub}</div>
+    </div>;
+  }
+  else if(el.type==='weekly'){
+    /* accent bar (price left · time right) with a white day-badge on top */
+    const accent = accentHex, ink='#0d0905', cream='#fffbf1';
+    const lum = (function(h){ if(!h||h[0]!=='#'||h.length<7) return 0.5; var r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255; return 0.2126*r+0.7152*g+0.0722*b; })(accent);
+    const barText = lum < 0.6 ? cream : ink;          // cream on saturated accents, dark on yellow/amber
+    const H=el.h, barH=Math.round(H*0.6), badgeD=H, pad=Math.round(el.w*0.05);
+    const barF=Math.round(barH*0.32*B), bigF=Math.round(badgeD*0.32*B), smF=Math.round(badgeD*0.10*B);
+    inner = <div style={{ position:'relative', width:'100%', height:'100%', boxSizing:'border-box' }}>
+      <div style={{ position:'absolute', left:0, right:0, top:(H-barH)/2, height:barH, background:accent,
+        display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 '+pad+'px', boxSizing:'border-box' }}>
+        <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:barText, fontSize:barF, letterSpacing:'.08em' }}>{el.price}</span>
+        <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:barText, fontSize:barF, letterSpacing:'.08em' }}>{el.time}</span>
+      </div>
+      <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
+        width:badgeD, height:badgeD, borderRadius:'50%', background:cream, border:Math.max(2,Math.round(badgeD*0.018))+'px solid '+ink, boxSizing:'border-box',
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+        {el.every ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:'.14em' }}>{el.every}</span> : null}
+        <span style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', color:accent, fontSize:bigF, lineHeight:.9, margin:'0.05em 0' }}>{el.day}</span>
+        {el.allYear ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:'.14em' }}>{el.allYear}</span> : null}
+      </div>
     </div>;
   }
 

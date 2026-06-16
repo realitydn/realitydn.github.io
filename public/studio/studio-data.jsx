@@ -185,6 +185,7 @@ const CATALOG = [
     { type:'sessions',label:'Sessions', hint:'Series — paste the list' },
     { type:'specials',label:'Specials', hint:'Drinks + prices' },
     { type:'qr',      label:'QR block', hint:'Scan to site' },
+    { type:'weekly',  label:'Weekly tag', hint:'Price · day · time', wide:true },
   ]},
   { group:'Marks', items:[
     { type:'stamp',   label:'Stamp',    hint:'SOLD OUT / FREE' },
@@ -199,7 +200,8 @@ const CATALOG = [
 const DEFAULTS = {
   // letterSpacing is in em; defaults match each type's prior fixed tracking so
   // nothing shifts until you move the slider. Spread things far apart at will.
-  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:140, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.005 } },
+  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:140, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.005,
+             subtitle:'', subSize:30, subWeight:600, subTracking:0.02, subColor:'fg', subLayout:'snug' } },
   tagline: { w:560, h:80,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
   info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:24, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
   when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:30, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
@@ -213,6 +215,9 @@ const DEFAULTS = {
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
+  /* Weekly recurring-event combo: an accent bar with the price (left) and time
+     (right), and a day-of-week badge centred on top. One draggable unit. */
+  weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg' } },
   block:   { w:540, h:420, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   photo:   { w:760, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,

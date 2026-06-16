@@ -124,6 +124,15 @@ const SURFACES = [
   {v:'solid',l:'Solid'},{v:'paper',l:'Paper'},{v:'accent',l:'Accent'},
   {v:'outline',l:'Outline'},{v:'scrim',l:'Scrim'},{v:'none',l:'None'}
 ];
+/* Type weights. Montserrat (titles/hosts) ships the full 100–900; Space Grotesk
+   (taglines/info) tops out at 700. Short labels keep the chips tidy. */
+const WEIGHTS_MONT = [
+  {v:100,l:'Thin'},{v:300,l:'Light'},{v:400,l:'Reg'},{v:500,l:'Med'},
+  {v:600,l:'Semi'},{v:700,l:'Bold'},{v:800,l:'Heavy'},{v:900,l:'Black'}
+];
+const WEIGHTS_GROT = [
+  {v:300,l:'Light'},{v:400,l:'Reg'},{v:500,l:'Med'},{v:600,l:'Semi'},{v:700,l:'Bold'}
+];
 /* Reality-ticket formats — picked from the details panel (not separate
    sidebar items). Each sets the size + what's shown; content is preserved. */
 const TICKET_FORMATS = {
@@ -405,6 +414,19 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 
       {/* ---- content (shared across formats) ---- */}
       {el.type==='title' && <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />}
+      {el.type==='title' && <React.Fragment>
+        <div className="rs-sech">Subtitle</div>
+        <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
+        {(el.subtitle||'').trim()
+          ? <React.Fragment>
+              <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
+              <ScaleControl label="Subtitle size" val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
+              <Chips label="Subtitle weight" options={WEIGHTS_MONT} value={el.subWeight||600} onChange={v=>update({subWeight:v})} />
+              <Slider label="Subtitle tracking" val={el.subTracking!=null?el.subTracking:0.02} min={-0.05} max={0.6} step={0.005} onChange={v=>update({subTracking:v})} suffix="em" />
+              <Swatches label="Subtitle colour" value={el.subColor!=null?el.subColor:'fg'} onChange={v=>update({subColor:v})} autoTitle="Auto — follows the title" />
+            </React.Fragment>
+          : <div className="rs-mini" style={{ marginTop:-2 }}>Add a line to sit under the title, inside the same box.</div>}
+      </React.Fragment>}
       {el.type==='tagline' && <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />}
       {el.type==='info' && <React.Fragment>
         <Field label="Info text" value={el.text} onChange={v=>update({text:v})} area />
@@ -452,6 +474,19 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </div>
         <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
       </React.Fragment>}
+      {el.type==='weekly' && <React.Fragment>
+        <div className="rs-rowflex">
+          <Field label="Price (left)" value={el.price} onChange={v=>update({price:v})} />
+          <Field label="Time (right)" value={el.time} onChange={v=>update({time:v})} />
+        </div>
+        <div className="rs-rowflex">
+          <Field label="Above day" value={el.every} onChange={v=>update({every:v})} />
+          <Field label="Day" value={el.day} onChange={v=>update({day:v})} />
+        </div>
+        <Field label="Below day" value={el.allYear} onChange={v=>update({allYear:v})} />
+        <Swatches label="Accent — bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent. Resize the box to scale it.</div>
+      </React.Fragment>}
       {el.type==='sessions' && <React.Fragment>
         <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
         <div className="rs-row">
@@ -469,7 +504,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
 
       {/* ---- style (shared) ---- */}
-      {el.type!=='photo' && el.type!=='block' && el.type!=='logo' && <React.Fragment>
+      {el.type!=='photo' && el.type!=='block' && el.type!=='logo' && el.type!=='weekly' && <React.Fragment>
       <div className="rs-sech">Surface</div>
       <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
       <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
@@ -485,11 +520,12 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <ScaleControl label="Font size" val={el.fontSize} onChange={v=>update({fontSize:v})} />}
       {isText &&
         <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
-      {el.type==='title' && <Chips label="Weight" options={[{v:100,l:'Thin'},{v:500,l:'Med'},{v:800,l:'Heavy'}]} value={el.weight} onChange={v=>update({weight:v})} />}
+      {(el.type==='title'||el.type==='host') && <Chips label="Weight" options={WEIGHTS_MONT} value={el.weight} onChange={v=>update({weight:v})} />}
+      {el.type==='tagline' && <Chips label="Weight" options={WEIGHTS_GROT} value={el.weight!=null?el.weight:400} onChange={v=>update({weight:v})} />}
       {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='info') &&
         <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
       {el.type==='info' && <React.Fragment>
-        <Chips label="Weight" options={[{v:400,l:'Regular'},{v:500,l:'Medium'},{v:600,l:'Semibold'},{v:700,l:'Bold'}]} value={el.weight||400} onChange={v=>update({weight:v})} />
+        <Chips label="Weight" options={WEIGHTS_GROT} value={el.weight||400} onChange={v=>update({weight:v})} />
         <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />
       </React.Fragment>}
       {el.type==='title' && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient} onChange={v=>update({orient:v})} />}

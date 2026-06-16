@@ -896,14 +896,28 @@ function App(){
     setSelectedIds([]);
   }
 
-  /* ---- My templates — save / load / delete full poster snapshots ---- */
-  const [userTpls, setUserTpls] = React.useState(loadUserTpls);
-  function persistTpls(next){
-    try{ localStorage.setItem(TPL_KEY, JSON.stringify(next)); }
-    catch(e){ window.alert('Couldn’t save — browser storage is full. Delete an old template (ones with photos are heavy) and try again.'); return false; }
-    setUserTpls(next); return true;
-  }
-  function saveUserTpl(){
+  /* ---- My templates — save / load / delete full poster snapshots.
+     The library lives in IndexedDB (window.RStore) — room for gigabytes, so
+     it no longer hits localStorage's ~5MB wall. On first load it copies any
+     old localStorage library in and keeps that copy untouched as a backup;
+     if IndexedDB is unavailable it falls back to showing the localStorage
+     copy read-only so nothing is ever hidden. ---- */
+  const [userTpls, setUserTpls] = React.useState([]);
+  const [tplReady, setTplReady] = React.useState(false);
+  React.useEffect(()=>{ let live=true; (async()=>{
+    try{
+      const m = await window.RStore.migrate();
+      const all = await window.RStore.tplGetAll();
+      all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+      if(!live) return;
+      setUserTpls(all);
+      if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
+    }catch(e){
+      console.error('[studio] IndexedDB template store unavailable — showing the localStorage copy read-only.', e);
+      if(live) setUserTpls(loadUserTpls());
+    }finally{ if(live) setTplReady(true); }
+  })(); return ()=>{ live=false; }; }, []);
+  async function saveUserTpl(){
     const d = docRef.current;
     if(!d.elements.length){ window.alert('Nothing on the poster to save yet.'); return; }
     const name = (window.prompt('Save this poster as a template called:', d.title || 'My layout') || '').trim();
@@ -913,7 +927,9 @@ function App(){
     const snap = JSON.parse(JSON.stringify({ elements:d.elements, overrides:d.overrides||{},
       masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'' }));
     const t = { id: existing? existing.id : window.uid(), name, savedAt: Date.now(), doc: snap };
-    persistTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
+    try{ await window.RStore.tplPut(t); }
+    catch(e){ console.error(e); window.alert('Couldn’t save the template — the browser blocked writing to storage. Your other templates are unaffected.'); return; }
+    setUserTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
   }
   function applyUserTpl(t){
     if(docRef.current.elements.length &&
@@ -931,10 +947,12 @@ function App(){
       title: snap.title || d.title }));
     setSelectedIds([]);
   }
-  function delUserTpl(id){
+  async function delUserTpl(id){
     const t = userTpls.find(x=>x.id===id);
     if(t && !window.confirm('Delete the template “'+t.name+'”?')) return;
-    persistTpls(userTpls.filter(x=>x.id!==id));
+    try{ await window.RStore.tplDelete(id); }
+    catch(e){ console.error(e); window.alert('Couldn’t delete that template right now — try again.'); return; }
+    setUserTpls(userTpls.filter(x=>x.id!==id));
   }
 
   /* ---- template portability — templates live in this browser's localStorage
@@ -956,7 +974,7 @@ function App(){
   }
   function importUserTpls(file){
     const fr = new FileReader();
-    fr.onload = ()=>{
+    fr.onload = async ()=>{
       let list = null;
       try{
         const data = JSON.parse(fr.result);
@@ -974,10 +992,12 @@ function App(){
         const i = next.findIndex(p=>p.id===t.id || p.name.toLowerCase()===t.name.toLowerCase());
         if(i>=0){ next[i]=t; replaced++; } else next.unshift(t);
       });
-      if(persistTpls(next))
-        window.alert('Imported '+incoming.length+' template'+(incoming.length===1?'':'s')
-          +(replaced? ' — '+replaced+' replaced an existing one':'')
-          +(skipped? ' ('+skipped+' unreadable, skipped)':'')+'.');
+      try{ await window.RStore.tplReplaceAll(next); }
+      catch(e){ console.error(e); window.alert('Couldn’t save the imported templates to storage — nothing was changed.'); return; }
+      setUserTpls(next);
+      window.alert('Imported '+incoming.length+' template'+(incoming.length===1?'':'s')
+        +(replaced? ' — '+replaced+' replaced an existing one':'')
+        +(skipped? ' ('+skipped+' unreadable, skipped)':'')+'.');
     };
     fr.readAsText(file);
   }
@@ -1086,8 +1106,10 @@ function App(){
                     onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
                 </div>
               ))}
-              {userTpls.length===0 &&
+              {tplReady && userTpls.length===0 &&
                 <div className="rs-mini" style={{ margin:'2px 0 6px' }}>None yet — build a poster, then keep it here for next time.</div>}
+              {!tplReady &&
+                <div className="rs-mini" style={{ margin:'2px 0 6px' }}>Loading your templates…</div>}
               <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6 }}>＋ Save current poster as template</button>
               <div className="rs-rowflex" style={{ marginBottom:6 }}>
                 <button className="rs-addrow" onClick={exportUserTpls} title="Download all My templates (photos included) as one .json">⬇ Export all</button>
@@ -1095,7 +1117,7 @@ function App(){
               </div>
               <input ref={tplFileRef} type="file" accept=".json,application/json" style={{ display:'none' }}
                 onChange={e=>{ const f=e.target.files[0]; if(f) importUserTpls(f); e.target.value=''; }} />
-              <div className="rs-mini" style={{ margin:'0 0 12px' }}>Templates live in this browser only — export a .json to carry them to another computer, photos and all.</div>
+              <div className="rs-mini" style={{ margin:'0 0 12px' }}>Saved in this browser (IndexedDB — room for plenty now). Export a .json to back them up or carry them to another computer, photos and all.</div>
               {AP_TPLG.map(grp=>(
                 <React.Fragment key={grp}>
                   <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>{grp}</div>

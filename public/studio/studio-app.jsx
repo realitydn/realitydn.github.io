@@ -335,6 +335,11 @@ function PhotoControls({ el, update, theme }){
       {el.grain>0 && <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />}
       <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Soft focus blurs the photo <b>before</b> the press — it spreads dots and bands. Blur + grain print <b>over</b> the finished image.</div>
 
+      {el.type==='photo' && <React.Fragment>
+        <div className="rs-sech">Background</div>
+        <Chips label="Full bleed" options={[{v:true,l:'Fill format'},{v:false,l:'Free size'}]} value={!!el.bleed} onChange={v=>update({bleed:v})} />
+        {el.bleed && <div className="rs-mini" style={{ marginTop:-2 }}>Fills <b>every format</b> edge-to-edge — no resizing per format. Frame the shot with pan/zoom below.</div>}
+      </React.Fragment>}
       <div className="rs-sech">Frame</div>
       <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
       {el.type==='logo' && <ShadowControls el={el} update={update} theme={theme} />}
@@ -389,6 +394,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           {doc.storyBoost!==false &&
             <Slider label="Scale" val={doc.storyScale||1.3} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
           <div className="rs-mini" style={{ marginTop:2 }}>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</div>
+        </React.Fragment>}
+        {isOutput && doc.activeFormat==='fbcover' && <React.Fragment>
+          <div className="rs-sech">Facebook event cover</div>
+          <div className="rs-mini" style={{ marginTop:2 }}>1.91:1 landscape. Keep the <b>title, date + logo inside the centre safe box</b> — Facebook crops the sides on mobile and the edges on desktop; the outer area is bonus space. A full-bleed photo still fills the frame; the rest of your master is scaled to fit — drag pieces into the safe box to refine.</div>
         </React.Fragment>}
         <div className="rs-sech">Canvas</div>
         <div className="rs-empty">
@@ -637,6 +646,12 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
               {AP_FMT[fmt].label}<small>{AP_FMT[fmt].sub}</small>
             </button>
           ))}
+        </div>
+        <div className="rs-seg xtra"
+          title="Facebook event cover — 1.91:1 landscape. Keep key content in the centre safe box (Facebook crops the sides on mobile, the edges on desktop). On-demand, never part of the Save-All bundle.">
+          <button className={doc.activeFormat==='fbcover'?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:'fbcover'}))}>
+            FB<small>EVENT</small>
+          </button>
         </div>
         <div className="rs-seg xtra"
           title="Extra print view — never part of the Save-All bundle. Save here for a print-resolution A1: 3508px wide (150 dpi), PDF at true 594×841mm.">

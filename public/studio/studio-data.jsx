@@ -30,6 +30,12 @@ const FORMATS = {
   '5x7':  { w:1080, h:1512, label:'5:7', sub:'POSTER' },
   '1x1':  { w:1080, h:1080, label:'1:1', sub:'SQUARE' },
   '9x16': { w:1080, h:1920, label:'9:16', sub:'STORY' },
+  /* Facebook event cover — 1.91:1 landscape (1920×1005 on upload; 2× export
+     ≈ 2160×1130). Facebook crops the sides on mobile and the edges on desktop,
+     so the safe zone is the centre ~62.5% (1200×628 on the real thing). `fit`
+     scales the portrait master down into that zone; full-bleed photos still
+     fill. On-demand like A1 — kept out of the Save-All bundle. */
+  'fbcover': { w:1080, h:565, label:'FB', sub:'EVENT', fit:0.5, safe:{ x:202, y:106, w:676, h:353 } },
   'a4':   { w:1080, h:1527, label:'A4', sub:'PRINT' },
   /* Extra print view — same sheet shape as A4 (all A-series paper is 1:√2),
      but Save captures it at print resolution (3508px = A1 @ 150dpi; PDF at
@@ -89,6 +95,7 @@ function surfaceStyle(surface, theme, accentHex, lift){
 /* centered 1:1 safe square for a format */
 function safeRect(format){
   const f = FORMATS[format];
+  if(f.safe) return f.safe;                 // format-defined zone (e.g. the FB cover centre band)
   const size = Math.min(f.w, f.h);
   return { x:(f.w-size)/2, y:(f.h-size)/2, w:size, h:size };
 }
@@ -227,6 +234,7 @@ const DEFAULTS = {
              inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
              field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
              spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover',
+             bleed:false, bleedBottom:0,
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
   /* Partner logo — same engine as a photo but untreated by default and with a
@@ -286,10 +294,25 @@ function boostForStory(r, k, tf){
 }
 function resolveElements(doc, format){
   const ovs = (doc.overrides && doc.overrides[format]) || {};
-  const boost = (format==='9x16' && doc.storyBoost!==false) ? (doc.storyScale||1.3) : 1;
+  const fmt = FORMATS[format];
+  const mw = FORMATS[doc.masterFormat].w;
+  const story = (format==='9x16' && doc.storyBoost!==false) ? (doc.storyScale||1.3) : 1;
+  const fit = (fmt && fmt.fit) ? fmt.fit : 1;          // landscape covers scale the portrait master down to fit
   return doc.elements.map(el=>{
-    let r = mapElementToFormat(el, doc.masterFormat, format);
-    if(boost!==1) r = boostForStory(r, boost, FORMATS[format]);
+    let r;
+    if(el.bleed && el.type==='photo'){
+      /* full-bleed background: fill the format in every aspect (no manual
+         resize per format). bleedBottom reserves a band for a full-width
+         Reality banner so the image stops at its top edge; landscape covers
+         fill edge-to-edge (their banner placement is bespoke). */
+      const reserve = fit!==1 ? 0 : (el.bleedBottom||0);
+      r = Object.assign({}, el, { x:0, y:0, w:fmt.w, h:fmt.h - reserve });
+    } else {
+      r = mapElementToFormat(el, doc.masterFormat, format);
+      let scale = story!==1 ? story : fit;
+      if(fit!==1 && el.type==='photo' && el.w>=mw*0.98 && el.x<=mw*0.02) scale = 1;   // legacy bleeds (no flag) still fill on covers
+      if(scale!==1) r = boostForStory(r, scale, fmt);
+    }
     const ov = ovs[el.id];
     if(ov) Object.assign(r, ov);
     r._overridden = !!ov;
@@ -314,10 +337,15 @@ const TEMPLATE_GROUPS = ['Talk', 'Series', 'Nightlife'];
 /* Every template opens with a full-bleed background photo (the house style),
    keeps content on a shared left line (x:90 — the Swiss vertical), and the
    Talk/Series families end with a full-width Reality banner filling the bottom
-   (the bookish, serious read). Text over the photo defaults to cream. */
-const BLEED  = () => ({ type:'photo', x:0, y:0, w:1080, h:1350, p:{ frame:false, followAccent:true } });
-const BANNER = () => ({ type:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:false } });
-const TICKET = () => ({ type:'ticket', x:90, y:1150, w:900, h:170, p:{ variant:'standard', surface:'paper', showQR:true } });
+   (the bookish, serious read). Text over the photo defaults to cream.
+
+   BLEED(reserve) fills EVERY format edge-to-edge (bleed:true), so there's no
+   per-format resizing — reserve leaves a bottom band (the banner) untouched.
+   Duotone in the poster accent, slightly darkened, keeps cream text readable. */
+const BLEED  = (reserve, extra) => { const r = reserve==null?270:reserve; return ({ type:'photo', x:0, y:0, w:1080, h:1350-r,
+  p:Object.assign({ bleed:true, bleedBottom:r, treatment:'duotone', followAccent:true, contrast:1.22, brightness:-0.06, frame:false }, extra||{}) }); };
+const BANNER = () => ({ type:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
+const TICKET = () => ({ type:'ticket', x:90, y:1150, w:900, h:170, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
 
 const TEMPLATES = [
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
@@ -343,74 +371,85 @@ const TEMPLATES = [
     { type:'host',  x:90, y:830, w:640, h:100, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:28 } },
     BANNER(),
   ]},
-  { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', els:[
+  { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ when:{ y:700 } } }, els:[
     BLEED(),
     { type:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:190, weight:800, align:'left', surface:'none', color:'cream' } },
-    { type:'when',  x:90, y:930, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
+    { type:'when',  k:'when', x:90, y:930, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
     BANNER(),
   ]},
-  { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', els:[
+  { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ host:{ y:690 } } }, els:[
     BLEED(),
     { type:'when',  x:90, y:540, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
     { type:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:104, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  x:90, y:910, w:640, h:100, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:28 } },
+    { type:'host',  k:'host', x:90, y:910, w:640, h:100, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:28 } },
     BANNER(),
   ]},
   /* ---- SERIES · recurring talks (Day · full-bleed + bottom banner) ---- */
-  { id:'series-badge', name:'Badge', group:'Series', theme:'day', accent:'green', els:[
+  { id:'series-badge', name:'Badge', group:'Series', theme:'day', accent:'green', ov:{ '1x1':{ host:{ y:700 } } }, els:[
     BLEED(),
     { type:'badge', x:760, y:230, w:230, h:230, p:{ top:'EVERY', big:'THU', sub:'weekly' } },
     { type:'title', x:90, y:520, w:900, h:300, p:{ text:'Series\nName', fontSize:108, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'host',  x:90, y:860, w:640, h:100, p:{ kicker:'Hosted by', name:'Host Name', surface:'none', align:'left', color:'cream', fontSize:28 } },
+    { type:'host',  k:'host', x:90, y:860, w:640, h:100, p:{ kicker:'Hosted by', name:'Host Name', surface:'none', align:'left', color:'cream', fontSize:28 } },
     BANNER(),
   ]},
   { id:'series-lineup', name:'Lineup', group:'Series', theme:'day', accent:'blue', els:[
     BLEED(),
     { type:'title',  x:90, y:230, w:900, h:220, p:{ text:'Series Name', fontSize:84, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'lineup', x:90, y:500, w:620, h:420, p:{ heading:'This month', surface:'scrim' } },
+    { type:'lineup', x:90, y:500, w:620, h:420, p:{ heading:'This month', surface:'scrim', items:[{n:'Opening talk',t:'19:00'},{n:'Main session',t:'19:45'},{n:'Q & A',t:'20:45'}] } },
     BANNER(),
   ]},
-  { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', els:[
+  { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } } }, els:[
     BLEED(),
     { type:'title',    x:90, y:200, w:900, h:200, p:{ text:'Series Name', fontSize:84, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'sessions', x:90, y:440, w:720, h:580, p:{ heading:'Next sessions', surface:'scrim' } },
+    { type:'sessions', k:'sessions', x:90, y:440, w:720, h:580, p:{ heading:'Next sessions', surface:'scrim', raw:'01 — Opening Night — 5.6\n02 — Director in Focus — 12.6\n03 — Late Classic — 19.6\n04 — Closing Film — 26.6' } },
     BANNER(),
   ]},
-  { id:'series-min', name:'Minimal', group:'Series', theme:'day', accent:'amber', els:[
+  { id:'series-min', name:'Minimal', group:'Series', theme:'day', accent:'amber', ov:{ '1x1':{ badge:{ y:575 } } }, els:[
     BLEED(),
     { type:'title', x:90, y:360, w:900, h:300, p:{ text:'Series\nName', fontSize:120, align:'left', surface:'none', color:'cream' } },
-    { type:'badge', x:90, y:720, w:230, h:230, p:{ top:'EVERY', big:'THU', sub:'19:00' } },
+    { type:'badge', k:'badge', x:90, y:720, w:230, h:230, p:{ top:'EVERY', big:'THU', sub:'19:00' } },
     BANNER(),
   ]},
   /* ---- NIGHTLIFE (Night · full-bleed + standard ticket) ---- */
   { id:'night-dj', name:'DJ hero', group:'Nightlife', theme:'night', accent:'pink', els:[
-    BLEED(),
+    BLEED(0, { contrast:1.3 }),
     { type:'title', x:90, y:520, w:920, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:150, weight:700, align:'left', surface:'none', color:'cream' } },
     { type:'host',  x:90, y:900, w:560, h:120, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:30 } },
     TICKET(),
   ]},
   { id:'night-lineup', name:'Lineup night', group:'Nightlife', theme:'night', accent:'blue', els:[
-    BLEED(),
+    BLEED(0),
     { type:'title',   x:90, y:240, w:920, h:200, p:{ text:'Club Night', fontSize:92, weight:700, surface:'none', color:'cream' } },
-    { type:'lineup',  x:90, y:470, w:560, h:380, p:{ heading:'Lineup', surface:'scrim' } },
-    { type:'specials',x:680,y:470, w:330, h:320, p:{ surface:'accent' } },
+    { type:'lineup',  x:90, y:470, w:560, h:380, p:{ heading:'Lineup', surface:'scrim', items:[{n:'DJ One',t:'22:00'},{n:'DJ Two',t:'23:30'},{n:'b2b Finale',t:'01:00'}] } },
+    { type:'specials',x:680,y:470, w:330, h:320, p:{ surface:'accent', heading:'All night', items:[{l:'House pour',p:'₫50k'},{l:'Beer + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}] } },
     TICKET(),
   ]},
   { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', els:[
-    BLEED(),
+    BLEED(0, { treatment:'spot', spotBase:'duotone', contrast:1.3 }),
     { type:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:190, weight:800, align:'left', surface:'none', color:'cream' } },
     { type:'when',  x:90, y:960, w:380, h:90, p:{ text:'SAT · 22:00', surface:'accent' } },
     TICKET(),
   ]},
 ];
 function buildTemplate(tpl){
+  const keymap = {};
   const elements = (tpl.els||[]).map(s=>{
     const el = makeElement(s.type, s.x|0, s.y|0);
     if(s.w!=null) el.w=s.w; if(s.h!=null) el.h=s.h;
     if(s.p) Object.assign(el, JSON.parse(JSON.stringify(s.p)));
+    if(s.k) keymap[s.k] = el.id;
     return el;
   });
-  return { elements, masterFormat:'4x5', theme: tpl.theme||'day', accent: tpl.accent||'blue' };
+  /* per-format overrides, authored by element key (`k`) since real ids are
+     generated here. The 4:5 master stays the canonical design; these only
+     nudge a piece where a shorter aspect (1:1) would otherwise clip it. */
+  const overrides = {};
+  if(tpl.ov) Object.keys(tpl.ov).forEach(fmt=>{
+    const fo = {}; const spec = tpl.ov[fmt];
+    Object.keys(spec).forEach(k=>{ if(keymap[k]) fo[keymap[k]] = spec[k]; });
+    if(Object.keys(fo).length) overrides[fmt] = fo;
+  });
+  return { elements, masterFormat:'4x5', theme: tpl.theme||'day', accent: tpl.accent||'blue', overrides };
 }
 
 Object.assign(window, {

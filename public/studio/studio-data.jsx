@@ -31,11 +31,16 @@ const FORMATS = {
   '1x1':  { w:1080, h:1080, label:'1:1', sub:'SQUARE' },
   '9x16': { w:1080, h:1920, label:'9:16', sub:'STORY' },
   /* Facebook event cover — 1.91:1 landscape (1920×1005 on upload; 2× export
-     ≈ 2160×1130). Facebook crops the sides on mobile and the edges on desktop,
-     so the safe zone is the centre ~62.5% (1200×628 on the real thing). `fit`
-     scales the portrait master down into that zone; full-bleed photos still
-     fill. On-demand like A1 — kept out of the Save-All bundle. */
-  'fbcover': { w:1080, h:565, label:'FB', sub:'EVENT', fit:0.5, safe:{ x:202, y:106, w:676, h:353 } },
+     ≈ 2160×1130). Facebook crops this differently per surface: the desktop
+     event page + the page feed show ~the full 1.91:1, but the MOBILE event
+     page crops to a centre ~square (the sides get cut), and feeds shave a
+     little off the top/bottom. The guaranteed-visible area is the INTERSECTION
+     of those crops — a centred, near-square box (564×517 ≈ 1005×920 real), not
+     the old wide 62.5% band (676×353) that let content spill into the mobile
+     side-crop. `fit` scales the portrait master down to centre inside this
+     zone; full-bleed photos still fill the frame. The outer side bands are
+     bonus space for bleed art only. On-demand like A1 — out of the Save-All bundle. */
+  'fbcover': { w:1080, h:565, label:'FB', sub:'EVENT', fit:0.5, safe:{ x:258, y:24, w:564, h:517 } },
   'a4':   { w:1080, h:1527, label:'A4', sub:'PRINT' },
   /* Extra print view — same sheet shape as A4 (all A-series paper is 1:√2),
      but Save captures it at print resolution (3508px = A1 @ 150dpi; PDF at
@@ -276,7 +281,12 @@ function mapElementToFormat(el, masterFormat, format){
     const distBottom = mf.h - (el.y + el.h);
     r.y = tf.h - distBottom - el.h;
   } else {
-    r.y = el.y - ms.y + ts.y;            // x unchanged — column width is constant 1080
+    // Align safe-zone CENTRES (not tops). Identical to top-alignment for every
+    // fit=1 format — their safe square is 1080 tall, same as Master — but it's
+    // what keeps the cluster vertically CENTRED in a shorter safe zone like the
+    // FB cover, where `fit` then scales it about the frame centre. x unchanged:
+    // the column width is a constant 1080 and both zones share centre x = 540.
+    r.y = el.y - (ms.y + ms.h/2) + (ts.y + ts.h/2);
   }
   return r;
 }
@@ -327,7 +337,8 @@ function pointToMaster(type, x, y, masterFormat, format){
   const anchor = (DEFAULTS[type] && DEFAULTS[type].anchor) || 'safe';
   const mf = FORMATS[masterFormat], tf = FORMATS[format];
   if(anchor==='bottom') return { x, y: y - tf.h + mf.h };
-  return { x, y: y - safeRect(format).y + safeRect(masterFormat).y };
+  const ms = safeRect(masterFormat), ts = safeRect(format);   // inverse of mapElementToFormat: align safe-zone centres
+  return { x, y: y - (ts.y + ts.h/2) + (ms.y + ms.h/2) };
 }
 
 /* ============================================================

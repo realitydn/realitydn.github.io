@@ -121,8 +121,12 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
             actually guide placement over imagery; never captured in exports. */}
         {showGrid && !exporting && <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:40,
           backgroundImage:`repeating-linear-gradient(to right, ${t.shadow(.28)} 0 1px, transparent 1px ${SC_MOD}px), repeating-linear-gradient(to bottom, ${t.shadow(.28)} 0 1px, transparent 1px ${SC_MOD}px)` }} />}
+        {/* Safe-zone guide — deliberately NOT the accent (it has to read over a
+            full-bleed photo or an accent fill): a dashed cream stroke sandwiched
+            by a 1px ink outline so it stays legible on light, dark, or busy art. */}
         {!exporting && <div style={{ position:'absolute', left:safe.x, top:safe.y, width:safe.w, height:safe.h,
-          border:`3px solid ${accentHex}`, opacity:.6, pointerEvents:'none', zIndex:40 }} />}
+          border:'2px dashed rgba(255,251,241,.95)', boxShadow:'0 0 0 1px rgba(13,9,5,.55), inset 0 0 0 1px rgba(13,9,5,.55)',
+          pointerEvents:'none', zIndex:40 }} />}
 
         {guides.map((g,i)=> g.axis==='v'
           ? <div key={i} style={{ position:'absolute', left:g.pos-1/scale, top:0, width:2/scale, height:f.h, background:SC_PAL.pink, pointerEvents:'none', zIndex:50 }} />

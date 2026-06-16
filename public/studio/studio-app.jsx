@@ -397,7 +397,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </React.Fragment>}
         {isOutput && doc.activeFormat==='fbcover' && <React.Fragment>
           <div className="rs-sech">Facebook event cover</div>
-          <div className="rs-mini" style={{ marginTop:2 }}>1.91:1 landscape. Keep the <b>title, date + logo inside the centre safe box</b> — Facebook crops the sides on mobile and the edges on desktop; the outer area is bonus space. A full-bleed photo still fills the frame; the rest of your master is scaled to fit — drag pieces into the safe box to refine.</div>
+          <div className="rs-mini" style={{ marginTop:2 }}>1.91:1 landscape. Keep the <b>title, date + logo inside the centre safe box</b> — it's near-square because Facebook crops the cover to a square on the mobile event page (the sides get cut). The outer side bands are bonus space for full-bleed art only. A full-bleed photo still fills the frame; the rest of your master scales in and centres in the box — drag pieces to refine.</div>
         </React.Fragment>}
         <div className="rs-sech">Canvas</div>
         <div className="rs-empty">

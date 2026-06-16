@@ -648,12 +648,6 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           ))}
         </div>
         <div className="rs-seg xtra"
-          title="Facebook event cover — 1.91:1 landscape. Keep key content in the centre safe box (Facebook crops the sides on mobile, the edges on desktop). On-demand, never part of the Save-All bundle.">
-          <button className={doc.activeFormat==='fbcover'?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:'fbcover'}))}>
-            FB<small>EVENT</small>
-          </button>
-        </div>
-        <div className="rs-seg xtra"
           title="Extra print view — never part of the Save-All bundle. Save here for a print-resolution A1: 3508px wide (150 dpi), PDF at true 594×841mm.">
           <button className={doc.activeFormat==='a1'?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:'a1'}))}>
             A1<small>PRINT XL</small>

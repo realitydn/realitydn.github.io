@@ -43,7 +43,7 @@ const FORMATS = {
      the occasional big print, never part of the Save-All bundle. */
   'a1':   { w:1080, h:1527, label:'A1', sub:'PRINT XL' }
 };
-const OUTPUT_FORMATS = ['4x5','5x7','1x1','9x16','a4'];
+const OUTPUT_FORMATS = ['4x5','5x7','1x1','9x16','fbcover','a4'];
 /* modular type scale — font size snaps to these for consistency */
 const TYPE_SCALE = [18,22,26,32,38,46,56,68,82,100,120,144,172,206,248];
 function snapToScale(v){

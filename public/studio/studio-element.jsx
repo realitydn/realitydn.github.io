@@ -439,7 +439,9 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const lum = (function(h){ if(!h||h[0]!=='#'||h.length<7) return 0.5; var r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255; return 0.2126*r+0.7152*g+0.0722*b; })(accent);
     const barText = lum < 0.6 ? cream : ink;          // cream on saturated accents, dark on yellow/amber
     const H=el.h, barH=Math.round(H*0.6), badgeD=H, pad=Math.round(el.w*0.05);
-    const barF=Math.round(barH*0.32*B), bigF=Math.round(badgeD*0.32*B), smF=Math.round(badgeD*0.10*B);
+    /* fonts derive from el.h (which boostForStory already scales per format), so
+       they must NOT also multiply by B — that would scale the text twice. */
+    const barF=Math.round(barH*0.32), bigF=Math.round(badgeD*0.32), smF=Math.round(badgeD*0.10);
     const sh=seShadow(el, t, theme);
     inner = <div style={{ position:'relative', width:'100%', height:'100%', boxSizing:'border-box' }}>
       <div style={{ position:'absolute', left:0, right:0, top:(H-barH)/2, height:barH, background:accent, boxShadow: sh?sh.css:'none',

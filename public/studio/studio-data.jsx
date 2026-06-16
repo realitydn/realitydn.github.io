@@ -17,6 +17,13 @@ const ACCENT_DAYS = {
   yellow:'Sunday', green:'Monday', blue:'Tuesday', purple:'Wednesday',
   pink:'Thursday', red:'Friday', amber:'Saturday'
 };
+/* Mon→Sun order + the inverse of ACCENT_DAYS — drives the day-of-week picker,
+   the ordered accent row, and the Story filename (e.g. purple → "3-Wed"). */
+const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const DAY_ABBR  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ACCENT_BY_DAY = {}; Object.keys(ACCENT_DAYS).forEach(a=>{ ACCENT_BY_DAY[ACCENT_DAYS[a]]=a; });
+const ACCENTS_BY_DAY = DAY_NAMES.map(d=>ACCENT_BY_DAY[d]);   // green,blue,purple,pink,red,amber,yellow
+function accentDay(accent){ const day=ACCENT_DAYS[accent]; if(!day) return null; const i=DAY_NAMES.indexOf(day); return { name:day, abbr:DAY_ABBR[i], n:i+1 }; }
 
 const FORMATS = {
   '4x5':  { w:1080, h:1350, label:'4:5', sub:'FEED' },   /* primary — IG feed + site pipeline */
@@ -185,6 +192,7 @@ const CATALOG = [
   ]},
   { group:'Media', items:[
     { type:'photo',   label:'Photo',    hint:'Riso-treated image', wide:true },
+    { type:'logo',    label:'Partner logo', hint:'PNG with transparency', wide:true },
   ]},
 ];
 
@@ -208,6 +216,18 @@ const DEFAULTS = {
   block:   { w:540, h:420, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   photo:   { w:760, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
+             softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
+             shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
+             inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
+             field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0,
+             spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false,
+             imgScale:1, imgX:0, imgY:0, imgRot:0,
+             blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
+  /* Partner logo — same engine as a photo but untreated by default and with a
+     transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark
+     shows. Treatments still available if you want to riso a logo. */
+  logo:    { w:320, h:180, props:{ treatment:'none', transparent:true, sample:null, src:null,
+             followAccent:true, ink:'pink', ink2:null, contrast:1.1, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
              inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
@@ -243,10 +263,27 @@ function mapElementToFormat(el, masterFormat, format){
   }
   return r;
 }
+/* STORY BOOST — Instagram stories (9:16) read tiny on a phone because the
+   master cluster is authored for the shorter 4:5. When on (default), every
+   element + its font is scaled up about the frame centre so it fills the
+   story; bottom-pinned pieces grow upward from their base. A per-format
+   override still wins, so anything hand-sized in 9:16 keeps its size. */
+function boostForStory(r, k, tf){
+  if(k===1) return r;
+  const cx=tf.w/2, nw=r.w*k, nh=r.h*k;
+  const nx = cx + (r.x + r.w/2 - cx)*k - nw/2;
+  const ny = r.anchor==='bottom' ? (r.y + r.h) - nh : (tf.h/2 + (r.y + r.h/2 - tf.h/2)*k - nh/2);
+  const out = Object.assign({}, r, { x:Math.round(nx), y:Math.round(ny), w:Math.round(nw), h:Math.round(nh) });
+  if(typeof r.fontSize==='number') out.fontSize = Math.round(r.fontSize*k);
+  out._boost = k;   // blocks with fixed internal type read this to scale their text in step
+  return out;
+}
 function resolveElements(doc, format){
   const ovs = (doc.overrides && doc.overrides[format]) || {};
+  const boost = (format==='9x16' && doc.storyBoost!==false) ? (doc.storyScale||1.3) : 1;
   return doc.elements.map(el=>{
-    const r = mapElementToFormat(el, doc.masterFormat, format);
+    let r = mapElementToFormat(el, doc.masterFormat, format);
+    if(boost!==1) r = boostForStory(r, boost, FORMATS[format]);
     const ov = ovs[el.id];
     if(ov) Object.assign(r, ov);
     r._overridden = !!ov;
@@ -371,7 +408,8 @@ function buildTemplate(tpl){
 }
 
 Object.assign(window, {
-  PALETTE, ACCENTS, ACCENT_DAYS, FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
+  PALETTE, ACCENTS, ACCENT_DAYS, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
+  FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
   resolveElements, mapElementToFormat, pointToMaster,

@@ -140,7 +140,11 @@ body{ background:#0e0c09; overflow:hidden; }
   font-size:10px; color:#cbc1ad; border:1px solid #33291b; border-radius:8px; padding:10px 8px; cursor:pointer;
   background:#1b1610; transition:.13s; display:flex; flex-direction:column; align-items:center; gap:5px; }
 .rs-vibe button:hover{ border-color:#6f6553; color:#fffbf1; transform:translateY(-1px); }
+.rs-vibe button.on{ border-color:#fffbf1; color:#fffbf1; background:#241d14; }
 .rs-vibe .dot{ width:30px; height:8px; border-radius:4px; }
+/* weekday picker — colour dot beside the day so the name stays legible */
+.rs-days button{ flex-direction:row; justify-content:flex-start; gap:8px; font-size:11px; padding:9px 10px; }
+.rs-days .dot{ width:14px; height:14px; border-radius:50%; flex:none; }
 
 /* spawn ghost */
 .rs-ghost{ position:fixed; z-index:9999; pointer-events:none; transform:translate(-50%,-50%);

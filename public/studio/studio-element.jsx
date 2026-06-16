@@ -70,12 +70,14 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       screenOffset:el.screenOffset, field:el.field, fieldInk:el.fieldInk, fieldStrength:el.fieldStrength,
       dotGain:el.dotGain, jitter:el.jitter,
       spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
+      transparent:el.transparent,
       blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
     const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
       window.RISO.render(cv, el.treatment, opts); };
     if(el.src){ const c=_imgCache.get(el.src); if(c) draw(c);
       else window.RISO.loadImage(el.src).then(im=>{ _imgCache.set(el.src,im); draw(im); }).catch(()=>draw(getSample(el.sample))); }
+    else if(el.type==='logo'){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); }   // empty logo stays transparent
     else draw(getSample(el.sample));
     return ()=>{ alive=false; };
   });
@@ -190,8 +192,15 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   const accentHex = seResolve(el.fill!=null?el.fill:el.color, posterAccentHex);
   const surf = seSurf(el.surface, theme, accentHex, true);
   const textCol = seResolve(el.textColor!=null?el.textColor:el.color, surf.color);
+  /* host "hosted by" kicker gets its own colour, defaulting to the accent so
+     existing posters are unchanged — its own control, separate from the fill. */
+  const kickerHex = seResolve(el.kickerColor!=null?el.kickerColor:'fg', accentHex);
+  /* 9:16 Story boost: elements with fixed internal type multiply it by B so the
+     text grows in step with the (already-scaled) box. el.fontSize-driven text is
+     scaled upstream in resolveElements, so it never reads B (no double-scale). */
+  const B = el._boost||1;
 
-  if(el.type==='photo'){
+  if(el.type==='photo' || el.type==='logo'){
     const inkKey = el.followAccent ? (posterAccent||'pink') : (el.ink||'pink');
     const pwrap = {
       position:'absolute', left:0, top:0, width:el.w+'px', height:el.h+'px',
@@ -199,7 +208,14 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       transition: dragging ? 'none' : 'transform .16s cubic-bezier(0.2,1.4,0.45,1)',
       cursor: dragging ? 'grabbing' : 'grab', userSelect:'none', touchAction:'none', boxSizing:'border-box'
     };
-    return <Wrap el={el} wrap={pwrap} sel={selected} onDown={onElPointerDown}><PhotoEl el={el} theme={theme} inkKey={inkKey} selected={selected} exporting={exporting} /></Wrap>;
+    const inner = (el.type==='logo' && !el.src && !exporting)
+      ? <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
+          border:`2px dashed ${seTheme(theme).shadow(0.45)}`, borderRadius:8, boxSizing:'border-box', padding:8,
+          fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:12, color:seTheme(theme).shadow(0.7), textAlign:'center' }}>
+          <span>Partner logo</span><span style={{ fontWeight:600, fontSize:10, opacity:.8 }}>upload a PNG →</span>
+        </div>
+      : <PhotoEl el={el} theme={theme} inkKey={inkKey} selected={selected} exporting={exporting} />;
+    return <Wrap el={el} wrap={pwrap} sel={selected} onDown={onElPointerDown}>{inner}</Wrap>;
   }
 
   const wrap = {
@@ -286,7 +302,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='host'){
     inner = <div style={box({ padding:'18px 28px', alignItems: el.align==='left'?'flex-start':el.align==='right'?'flex-end':'center' })}>
-      {el.kicker && <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.2em', fontSize:(el.fontSize*0.38)+'px', color:accentHex, marginBottom:6 }}>{el.kicker}</div>}
+      {el.kicker && <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.2em', fontSize:(el.fontSize*0.38)+'px', color:kickerHex, marginBottom:6 }}>{el.kicker}</div>}
       <div style={{ fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.02)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align }}>{el.name}</div>
     </div>;
   }
@@ -296,32 +312,32 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       // Full-width band — wordmark centred over the address. The serious,
       // bookish bottom for talks.
       inner = <div style={box({ flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:'30px 46px' })}>
-        <WordmarkSVG height={64} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18, textAlign:'center', color:textCol }}>
+        <WordmarkSVG height={64*B} color={textCol} />
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, textAlign:'center', color:textCol }}>
           {el.site}{el.addr? <span style={{ fontWeight:600, opacity:.72 }}>{'  ·  '+el.addr}</span> : null}
         </div>
-        {el.showQR && <div style={{ flex:'none', marginTop:4 }}><SEQR size={92} dark={surf.color} light={qrLight} /></div>}
+        {el.showQR && <div style={{ flex:'none', marginTop:4 }}><SEQR size={92*B} dark={surf.color} light={qrLight} /></div>}
       </div>;
     } else {
-      const wmH = el.variant==='mini'?38 : el.variant==='slim'?44 : 50;
+      const wmH = (el.variant==='mini'?38 : el.variant==='slim'?44 : 50) * B;
       inner = <div style={box({ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:22, padding:'22px 34px' })}>
         <WordmarkSVG height={wmH} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:18, textAlign:'center', lineHeight:1.5, color:textCol }}>
-          {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14, letterSpacing:'.06em' }}>{el.addr}</span> : null}
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:18*B, textAlign:'center', lineHeight:1.5, color:textCol }}>
+          {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14*B, letterSpacing:'.06em' }}>{el.addr}</span> : null}
         </div>
-        {el.showQR && <div style={{ flex:'none' }}><SEQR size={108} dark={surf.color} light={qrLight} /></div>}
+        {el.showQR && <div style={{ flex:'none' }}><SEQR size={108*B} dark={surf.color} light={qrLight} /></div>}
       </div>;
     }
   }
   else if(el.type==='lineup'){
     inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15, color:accentHex, marginBottom:10 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:16,
           borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:'7px 0',
           fontFamily:MONT, fontWeight:700, textTransform:'uppercase' }}>
-          <span style={{ fontSize: i===0?26:21, color: i===0?accentHex:'inherit', letterSpacing:'.01em' }}>{it.n}</span>
-          <span style={{ fontSize:13, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.t}</span>
+          <span style={{ fontSize: (i===0?26:21)*B, color: i===0?accentHex:'inherit', letterSpacing:'.01em' }}>{it.n}</span>
+          <span style={{ fontSize:13*B, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.t}</span>
         </div>
       ))}
     </div>;
@@ -332,12 +348,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        10-line paste both sit nicely; rowSize (S/M/L) overrides the fit. */
     const items = window.parseSessions(el.raw);
     const headH = el.heading ? 28 : 0;
-    const avail = el.h - 36 - headH;
+    const avail = el.h/B - 36 - headH;          // logical height, before the Story boost
     const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
-    const fs = el.rowSize || auto;
+    const fs = (el.rowSize || auto) * B;
     const sub = Math.max(11, Math.round(fs*0.62));
     inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
-      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null}
+      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15*B, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null}
       {items.map((it,i)=>(
         <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
           borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:'7px 0',
@@ -348,15 +364,15 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         </div>
       ))}
       {!items.length && !exporting &&
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14, opacity:.4 }}>Paste the session list in the panel →</div>}
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Paste the session list in the panel →</div>}
     </div>;
   }
   else if(el.type==='specials'){
     inner = <div style={box({ padding:'16px 24px', justifyContent:'flex-start' })}>
-      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:26, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:26*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:'5px 0',
-          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:14, letterSpacing:'.03em' }}>
+          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:14*B, letterSpacing:'.03em' }}>
           <span>{it.l}</span><span style={{ fontWeight:800 }}>{it.p}</span>
         </div>
       ))}
@@ -366,8 +382,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     inner = <div style={box({ flexDirection:'row', alignItems:'center', gap:16, padding:'16px 18px' })}>
       {el.showQR && <SEQR size={Math.min(el.h-32, el.w*0.42)} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.04em', lineHeight:1.15 }}>
-        <div style={{ fontSize:18 }}>{el.label}</div>
-        <div style={{ fontSize:12, color:accentHex, letterSpacing:'.12em', marginTop:5 }}>{el.site}</div>
+        <div style={{ fontSize:18*B }}>{el.label}</div>
+        <div style={{ fontSize:12*B, color:accentHex, letterSpacing:'.12em', marginTop:5 }}>{el.site}</div>
       </div>
     </div>;
   }
@@ -378,9 +394,9 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='badge'){
     inner = <div style={Object.assign(box({ alignItems:'center', padding:0 }), { borderRadius:'50%' })}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:13 }}>{el.top}</div>
-      <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56)+'px', lineHeight:.85, color:accentHex }}>{el.big}</div>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:11, opacity:.65 }}>{el.sub}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:13*B }}>{el.top}</div>
+      <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56*B)+'px', lineHeight:.85, color:accentHex }}>{el.big}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:11*B, opacity:.65 }}>{el.sub}</div>
     </div>;
   }
 

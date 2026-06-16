@@ -3,6 +3,7 @@
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
 const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
+        ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, accentDay:apAccentDay,
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
         TYPE_SCALE:AP_SCALE, StudioCanvas:APCanvas,
@@ -15,7 +16,7 @@ function starterDoc(){
     /* 4:5 (1080×1350) is the primary format — IG feed + the site pipeline */
     activeFormat:'master', masterFormat:'4x5',
     theme:'night', accent:'pink', showGrid:true, snap:true, overrides:{},
-    title:'', exportFormat:'png',
+    title:'', exportFormat:'png', storyBoost:true, storyScale:1.3,
     elements:[
       Object.assign(apMake('photo', 80, 96), { w:920, h:700, treatment:'duotone', frame:false }),
       apMake('when', 360, 280),
@@ -25,7 +26,7 @@ function starterDoc(){
     ]
   };
 }
-function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png'}, d); } }catch(e){} return starterDoc(); }
+function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.3}, d); } }catch(e){} return starterDoc(); }
 
 /* Poster name → filename slug. Vietnamese-safe: đ/Đ are mapped by hand (they
    don't decompose under NFD), the rest of the diacritics strip normally.
@@ -34,6 +35,14 @@ function slugify(s){
   return (s||'').replace(/đ/g,'d').replace(/Đ/g,'D')
     .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'),'')
     .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
+}
+/* Export filename stem per format. The 9:16 Story leads with the accent's
+   weekday (e.g. purple → "3-wed-pulse-sessions") so files sort Mon→Sun and the
+   day is legible on a phone where you post from; every other format keeps
+   "<name>-<format>". */
+function storyStem(fmt, base, accent){
+  if(fmt==='9x16'){ const di = apAccentDay(accent); if(di) return di.n+'-'+di.abbr.toLowerCase()+'-'+base; }
+  return base+'-'+fmt;
 }
 
 /* My-templates store — full poster snapshots (elements, overrides, theme),
@@ -126,13 +135,16 @@ const TICKET_FORMATS = {
 
 /* ---------- photo helpers ---------- */
 /* Read an image File/Blob, downscale to ≤860px on the long edge, and hand back
-   a JPEG data URL. Shared by the upload button and clipboard paste. */
+   a data URL. PNGs keep their alpha (re-encoded as PNG, for partner logos);
+   everything else is JPEG. Shared by the upload button and clipboard paste. */
 function processImageFile(file, onReady){
   if(!file) return;
+  const png = file.type==='image/png';
   const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{
     const max=860, sc=Math.min(1,max/Math.max(im.width,im.height));
     const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
-    c.getContext('2d').drawImage(im,0,0,c.width,c.height); onReady(c.toDataURL('image/jpeg',0.82));
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    onReady(png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg',0.82));
   }; im.src=fr.result; }; fr.readAsDataURL(file);
 }
 /* Pull the first image out of a paste payload (DataTransfer), or null. */
@@ -176,8 +188,13 @@ function PhotoControls({ el, update }){
       <div className="rs-sech">Image</div>
       <PhotoUpload onPick={src=>update({ src })} />
       <div className="rs-mini" style={{ margin:'2px 0 8px' }}>…or copy an image anywhere and paste it here with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
-      <Chips label="Or a sample" options={[{v:'spotlight',l:'DJ'},{v:'crowd',l:'Crowd'},{v:'portrait',l:'Portrait'}]}
-        value={el.src?null:el.sample} onChange={v=>update({ sample:v, src:null })} />
+      {el.type==='logo'
+        ? <React.Fragment>
+            <Chips label="Background" options={[{v:true,l:'Transparent'},{v:false,l:'Paper'}]} value={el.transparent!==false} onChange={v=>update({ transparent:v })} />
+            <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>PNG transparency is kept and the whole mark is shown (contain-fit). Pick a treatment below only if you want to riso it.</div>
+          </React.Fragment>
+        : <Chips label="Or a sample" options={[{v:'spotlight',l:'DJ'},{v:'crowd',l:'Crowd'},{v:'portrait',l:'Portrait'}]}
+            value={el.src?null:el.sample} onChange={v=>update({ sample:v, src:null })} />}
 
       <div className="rs-sech">Treatment</div>
       <Chips options={TREATS} value={el.treatment} onChange={v=>update(Object.assign({ treatment:v }, TREAT_PRESETS[v]||{}))} />
@@ -320,23 +337,26 @@ function BlockControls({ el, doc, update }){
 /* ---------- inspector ---------- */
 function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align }){
   if(!el){
-    const VIBES = [
-      {k:'Community', theme:'day', accent:'blue'},
-      {k:'Sundowner', theme:'day', accent:'amber'},
-      {k:'Nightlife', theme:'night', accent:'pink'},
-      {k:'Big Night', theme:'night', accent:'red'},
-    ];
+    const DAYS = AP_ABYDAY.map((a,i)=>({ n:i+1, abbr:AP_DABBR[i], accent:a }));
     return (
       <React.Fragment>
-        <div className="rs-sech">Vibe — quick set</div>
-        <div className="rs-vibe">
-          {VIBES.map(v=>(
-            <button key={v.k} onClick={()=>setDoc(d=>({...d, theme:v.theme, accent:v.accent}))}>
-              <span className="dot" style={{ background:AP_PAL[v.accent] }} />{v.k}
+        <div className="rs-sech">Day — pick the accent</div>
+        <div className="rs-vibe rs-days">
+          {DAYS.map(d=>(
+            <button key={d.abbr} className={doc.accent===d.accent?'on':''} onClick={()=>setDoc(x=>({...x, accent:d.accent}))}
+              title={d.abbr+'’s colour'}>
+              <span className="dot" style={{ background:AP_PAL[d.accent] }} />{d.n} · {d.abbr}
             </button>
           ))}
         </div>
-        <div className="rs-mini" style={{ marginTop:10 }}>A vibe just sets palette + accent — it never touches your layout.</div>
+        <div className="rs-mini" style={{ marginTop:10 }}>Each weekday has its colour. Picking one sets the poster accent — and names the Story export (e.g. <b>3-Wed-…</b>).</div>
+        {isOutput && doc.activeFormat==='9x16' && <React.Fragment>
+          <div className="rs-sech">Story sizing</div>
+          <Chips options={[{v:true,l:'Boost on'},{v:false,l:'Off'}]} value={doc.storyBoost!==false} onChange={v=>setDoc(d=>({...d, storyBoost:v}))} />
+          {doc.storyBoost!==false &&
+            <Slider label="Scale" val={doc.storyScale||1.3} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
+          <div className="rs-mini" style={{ marginTop:2 }}>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</div>
+        </React.Fragment>}
         <div className="rs-sech">Canvas</div>
         <div className="rs-empty">
           <div className="big">Nothing selected</div>
@@ -445,18 +465,20 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
       </React.Fragment>}
 
-      {el.type==='photo' && <PhotoControls el={el} update={update} />}
+      {(el.type==='photo'||el.type==='logo') && <PhotoControls el={el} update={update} />}
       {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
 
       {/* ---- style (shared) ---- */}
-      {el.type!=='photo' && el.type!=='block' && <React.Fragment>
+      {el.type!=='photo' && el.type!=='block' && el.type!=='logo' && <React.Fragment>
       <div className="rs-sech">Surface</div>
       <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
-      <Swatches label="Text colour" value={el.textColor!=null?el.textColor:el.color}
+      <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
         onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
-      <Swatches label="Fill / accent" value={el.fill!=null?el.fill:el.color}
+      {el.type==='host' && <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'}
+        onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />}
+      <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
         onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-      <div className="rs-mini" style={{ marginTop:-2 }}>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</div>
+      <div className="rs-mini" style={{ marginTop:-2 }}>{el.type==='host' ? <span>Three independent colours: the kicker, the name, and the <b>Accent</b> background.</span> : <span>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</span>}</div>
       </React.Fragment>}
 
       {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='stamp'||el.type==='info') &&
@@ -533,7 +555,7 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
   const kind = doc.exportFormat||'png';
   const scope = isOutput ? AP_FMT[doc.activeFormat].label+' only' : 'All formats';
   const outName = isOutput
-    ? `${slug}-${doc.activeFormat}.${kind}`
+    ? `${storyStem(doc.activeFormat, slug, doc.accent)}.${kind}`
     : (kind==='pdf' ? `${slugify(name)? slug+'-poster' : 'reality-posters'}.pdf`
                     : `${slugify(name)? slug+'-poster' : 'reality-posters'}.zip`);
   return (
@@ -570,11 +592,11 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
       </div>
       <div className="rs-tgroup"><span className="gl">Accent</span>
         <div className="rs-swatches">
-          {AP_ACC.map(a=>(
+          {AP_ABYDAY.map(a=>{ const di=apAccentDay(a); return (
             <div key={a} className={'rs-sw'+(doc.accent===a?' on':'')} style={{ background:AP_PAL[a], width:22, height:22 }}
               onClick={()=>setDoc(d=>({...d, accent:a}))}
-              title={a + (AP_DAYS[a] ? ' — ' + AP_DAYS[a] + '’s colour on the weekly schedule' : '')} />
-          ))}
+              title={(di? di.n+' · '+di.abbr+' — ' : '') + a + (AP_DAYS[a] ? ' (' + AP_DAYS[a] + '’s colour on the weekly schedule)' : '')} />
+          ); })}
         </div>
       </div>
       <div className="spacer" />
@@ -918,7 +940,7 @@ function App(){
       if(doc.activeFormat!=='master'){
         /* single format — exactly the view on screen */
         await new Promise(r=>setTimeout(r, a1Ratio?420:140));   // print-res riso repaints need longer
-        const f=AP_FMT[viewFormat], name=base+'-'+viewFormat;
+        const f=AP_FMT[viewFormat], name=storyStem(viewFormat, base, doc.accent);
         if(kind==='pdf'){
           const url=await capture(f, null, a1Ratio||null);
           /* A1 PDFs are made at real-world size (594×841mm) so a print shop
@@ -953,7 +975,7 @@ function App(){
             pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST');
           } else {
             const url = await capture(f, kind);
-            zip.file(base+'-'+fmt+'.'+kind, url.split(',')[1], { base64:true });
+            zip.file(storyStem(fmt, base, doc.accent)+'.'+kind, url.split(',')[1], { base64:true });
           }
         }
         setDoc(d=>({ ...d, activeFormat:prev }));

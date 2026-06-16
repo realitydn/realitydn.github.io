@@ -56,7 +56,10 @@ function scaleStep(v, dir){
   i = Math.max(0, Math.min(TYPE_SCALE.length-1, i+dir));
   return TYPE_SCALE[i];
 }
-const LAYOUT_KEYS = ['x','y','w','h','rot','hidden','imgScale','imgX','imgY','imgRot'];
+/* keys routed to per-format overrides (vs content, which is shared across every
+   format). Geometry + image framing + text SIZE — so type can be resized per
+   view without touching Master or the other formats. */
+const LAYOUT_KEYS = ['x','y','w','h','rot','hidden','imgScale','imgX','imgY','imgRot','fontSize','subSize'];
 const MODULE = 108;
 const STEP = 54;
 

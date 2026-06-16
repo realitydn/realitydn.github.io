@@ -453,7 +453,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         {(el.subtitle||'').trim()
           ? <React.Fragment>
               <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
-              <ScaleControl label="Subtitle size" val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
+              <ScaleControl label={'Subtitle size'+(isOutput?' · '+activeLabel+' only':'')} val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
               <Chips label="Subtitle weight" options={WEIGHTS_MONT} value={el.subWeight||600} onChange={v=>update({subWeight:v})} />
               <Slider label="Subtitle tracking" val={el.subTracking!=null?el.subTracking:0.02} min={-0.05} max={0.6} step={0.005} onChange={v=>update({subTracking:v})} suffix="em" />
               <Swatches label="Subtitle colour" value={el.subColor!=null?el.subColor:'fg'} onChange={v=>update({subColor:v})} autoTitle="Auto — follows the title" />
@@ -553,8 +553,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       <div className="rs-mini" style={{ marginTop:-2 }}>{el.type==='host' ? <span>Three independent colours: the kicker, the name, and the <b>Accent</b> background.</span> : <span>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</span>}</div>
       </React.Fragment>}
 
-      {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='stamp'||el.type==='info') &&
-        <ScaleControl label="Font size" val={el.fontSize} onChange={v=>update({fontSize:v})} />}
+      {(el.type==='title'||el.type==='tagline'||el.type==='when'||el.type==='host'||el.type==='stamp'||el.type==='info') &&
+        <ScaleControl label={'Font size'+(isOutput?' · '+activeLabel+' only':'')} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
       {isText &&
         <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
       {(el.type==='title'||el.type==='host') && <Chips label="Weight" options={WEIGHTS_MONT} value={el.weight} onChange={v=>update({weight:v})} />}
@@ -610,7 +610,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
               <button className="rs-addrow" onClick={()=>resetOverride(el.id)}>↺ Reset to Master</button>
               <div className="rs-mini" style={{ marginTop:6 }}>Layout detached for {activeLabel}. Reset to follow Master again.</div>
             </React.Fragment>
-          : <div className="rs-mini">Following Master. Move, resize, rotate{el.type==='photo'?', or reframe the photo':''} to override just {activeLabel}.</div>}
+          : <div className="rs-mini">Following Master. Move, resize, rotate{el.type==='photo'?', reframe the photo':''}{isText?', resize text':''} to override just {activeLabel}.</div>}
       </React.Fragment>}
     </React.Fragment>
   );

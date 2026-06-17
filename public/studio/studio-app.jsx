@@ -16,7 +16,7 @@ function starterDoc(){
     /* 4:5 (1080×1350) is the primary format — IG feed + the site pipeline */
     activeFormat:'master', masterFormat:'4x5',
     theme:'night', accent:'pink', showGrid:true, snap:true, overrides:{},
-    title:'', exportFormat:'png', storyBoost:true, storyScale:1.3,
+    title:'', exportFormat:'png', storyBoost:true, storyScale:1.15,
     elements:[
       Object.assign(apMake('photo', 80, 96), { w:920, h:700, treatment:'duotone', frame:false }),
       apMake('when', 360, 280),
@@ -26,7 +26,7 @@ function starterDoc(){
     ]
   };
 }
-function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.3}, d); } }catch(e){} return starterDoc(); }
+function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements){ const doc=Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.15}, d); if(doc.storyScale===1.3) doc.storyScale=1.15; /* old default bled off the story sides; 1.15 keeps the column in-frame */ return doc; } } }catch(e){} return starterDoc(); }
 
 /* Poster name → filename slug. Vietnamese-safe: đ/Đ are mapped by hand (they
    don't decompose under NFD), the rest of the diacritics strip normally.
@@ -445,7 +445,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <div className="rs-sech">Story sizing</div>
           <Chips options={[{v:true,l:'Boost on'},{v:false,l:'Off'}]} value={doc.storyBoost!==false} onChange={v=>setDoc(d=>({...d, storyBoost:v}))} />
           {doc.storyBoost!==false &&
-            <Slider label="Scale" val={doc.storyScale||1.3} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
+            <Slider label="Scale" val={doc.storyScale||1.15} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
           <div className="rs-mini" style={{ marginTop:2 }}>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</div>
         </React.Fragment>}
         {isOutput && doc.activeFormat==='fbcover' && <React.Fragment>

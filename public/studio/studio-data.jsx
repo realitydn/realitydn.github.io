@@ -347,7 +347,7 @@ function resolveElements(doc, format){
   const ovs = (doc.overrides && doc.overrides[format]) || {};
   const fmt = FORMATS[format];
   const mw = FORMATS[doc.masterFormat].w;
-  const story = (format==='9x16' && doc.storyBoost!==false) ? (doc.storyScale||1.3) : 1;
+  const story = (format==='9x16' && doc.storyBoost!==false) ? (doc.storyScale||1.15) : 1;
   const fit = (fmt && fmt.fit) ? fmt.fit : 1;          // landscape covers scale the portrait master down to fit
   return doc.elements.map(el=>{
     let r;
@@ -396,22 +396,22 @@ const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife'];
    Duotone in the poster accent, slightly darkened, keeps cream text readable. */
 const BLEED  = (reserve, extra) => { const r = reserve==null?270:reserve; return ({ type:'photo', x:0, y:0, w:1080, h:1350-r,
   p:Object.assign({ bleed:true, bleedBottom:r, treatment:'duotone', followAccent:true, contrast:1.22, brightness:-0.06, frame:false }, extra||{}) }); };
-const BANNER = () => ({ type:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
-const TICKET = () => ({ type:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
+const BANNER = () => ({ type:'ticket', k:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
+const TICKET = () => ({ type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
 
 const TEMPLATES = [
   /* ---- WEEKLY · recurring events (Day · full-bleed + bottom banner) ---- */
-  { id:'weekly-classic', name:'Classic', group:'Weekly', theme:'day', accent:'blue', els:[
+  { id:'weekly-classic', name:'Classic', group:'Weekly', theme:'day', accent:'blue', ov:{ '1x1':{ weekly:{ y:35 }, title:{ y:285 }, host:{ y:655 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
     BLEED(),
-    { type:'weekly', x:90, y:250, w:900, h:220, p:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'19:00' } },
-    { type:'title',  x:90, y:520, w:900, h:340, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',   x:90, y:900, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    { type:'weekly', k:'weekly', x:90, y:250, w:900, h:220, p:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'19:00' } },
+    { type:'title',  k:'title', x:90, y:520, w:900, h:340, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',   k:'host', x:90, y:900, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   /* ---- SPORTS · match screenings (Night · full-bleed + standard ticket) ---- */
-  { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', els:[
+  { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', ov:{ '1x1':{ matchup:{ y:110, h:700 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
     BLEED(0, { contrast:1.32, brightness:-0.1 }),
-    { type:'matchup', x:90, y:300, w:900, h:760, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'SAT 14 JUN', time:'22:00', textColor:'cream' } },
+    { type:'matchup', k:'matchup', x:90, y:300, w:900, h:760, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'SAT 14 JUN', time:'22:00', textColor:'cream' } },
     TICKET(),
   ]},
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
@@ -437,16 +437,16 @@ const TEMPLATES = [
     { type:'host',  x:90, y:830, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
-  { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ when:{ y:700 } } }, els:[
+  { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ title:{ y:130 }, when:{ y:710 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
     BLEED(),
-    { type:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
+    { type:'title', k:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
     { type:'when',  k:'when', x:90, y:930, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
     BANNER(),
   ]},
-  { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ host:{ y:690 } } }, els:[
+  { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ when:{ y:240 }, title:{ y:360 }, host:{ y:665 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
     BLEED(),
-    { type:'when',  x:90, y:540, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'when',  k:'when', x:90, y:540, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
+    { type:'title', k:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
     { type:'host',  k:'host', x:90, y:910, w:640, h:120, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
@@ -464,7 +464,7 @@ const TEMPLATES = [
     { type:'lineup', x:90, y:500, w:620, h:420, p:{ heading:'This month', surface:'scrim', items:[{n:'Opening talk',t:'19:00'},{n:'Main session',t:'19:45'},{n:'Q & A',t:'20:45'}] } },
     BANNER(),
   ]},
-  { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } } }, els:[
+  { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
     BLEED(),
     { type:'title',    x:90, y:200, w:900, h:200, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
     { type:'sessions', k:'sessions', x:90, y:440, w:720, h:580, p:{ heading:'Next sessions', surface:'scrim', raw:'01 — Opening Night — 5.6\n02 — Director in Focus — 12.6\n03 — Late Classic — 19.6\n04 — Closing Film — 26.6' } },
@@ -477,10 +477,10 @@ const TEMPLATES = [
     BANNER(),
   ]},
   /* ---- NIGHTLIFE (Night · full-bleed + standard ticket) ---- */
-  { id:'night-dj', name:'DJ hero', group:'Nightlife', theme:'night', accent:'pink', els:[
+  { id:'night-dj', name:'DJ hero', group:'Nightlife', theme:'night', accent:'pink', ov:{ '1x1':{ title:{ y:330 }, host:{ y:710 } } }, els:[
     BLEED(0, { contrast:1.3 }),
-    { type:'title', x:90, y:520, w:920, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:144, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  x:90, y:900, w:560, h:120, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
+    { type:'title', k:'title', x:90, y:520, w:920, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:144, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',  k:'host', x:90, y:900, w:560, h:120, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
     TICKET(),
   ]},
   { id:'night-lineup', name:'Lineup night', group:'Nightlife', theme:'night', accent:'blue', els:[
@@ -490,10 +490,10 @@ const TEMPLATES = [
     { type:'specials',x:680,y:470, w:330, h:320, p:{ surface:'accent', heading:'All night', items:[{l:'House pour',p:'₫50k'},{l:'Beer + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}] } },
     TICKET(),
   ]},
-  { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', els:[
+  { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', ov:{ '1x1':{ title:{ y:160 }, when:{ y:745 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
     BLEED(0, { treatment:'spot', spotBase:'duotone', contrast:1.3 }),
-    { type:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
-    { type:'when',  x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },
+    { type:'title', k:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
+    { type:'when',  k:'when', x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },
     TICKET(),
   ]},
 ];

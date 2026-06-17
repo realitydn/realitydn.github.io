@@ -110,6 +110,9 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
         </div>
 
         {elements.map(el=>(
+          /* hidden-in-this-format: ghosted while editing as an aid, but fully
+             dropped from exports (don't bake a 22% element into the image) */
+          (exporting && el.hidden) ? null :
           <div key={el.id} style={ el.hidden ? { opacity:.22, filter:'grayscale(.4)' } : null }>
             <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent}
               selected={el.id===selectedId} dragging={dragRef.current && dragRef.current.id===el.id}

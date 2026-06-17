@@ -401,29 +401,77 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='sessions'){
-    /* Series schedule — rows parsed live from the pasted text (number and date
-       optional per line). Row type auto-fits the box height so a 4-line and a
-       10-line paste both sit nicely; rowSize (S/M/L) overrides the fit. */
-    const items = window.parseSessions(el.raw);
-    const headH = el.heading ? 28 : 0;
-    const avail = el.h/B - 36 - headH;          // logical height, before the Story boost
-    const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
-    const fs = (el.rowSize || auto) * B;
-    const sub = Math.max(11, Math.round(fs*0.62));
-    inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
-      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null}
-      {items.map((it,i)=>(
-        <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
-          borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:(el.rowGap!=null?el.rowGap:7)+'px 0',
-          fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase' }}>
-          {it.num ? <span style={{ flex:'none', fontSize:sub, color:accentHex, letterSpacing:'.08em' }}>{it.num}</span> : null}
-          <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:(el.rowTracking!=null?el.rowTracking:0.01)+'em' }}>{it.title}</span>
-          {it.date ? <span style={{ flex:'none', fontSize:sub, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.date}</span> : null}
-        </div>
-      ))}
-      {!items.length && !exporting &&
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Paste the session list in the panel →</div>}
-    </div>;
+    /* Series / schedule — rows parsed live into typed cells (date·time·num·title
+       + an optional trailing category marker). The layout ADAPTS to richness:
+       a plain "title — date" list stays single-line; once any row carries a time
+       or a category marker the rows go two-line (headline big, date·time·num
+       muted beneath) with colour-coded category dots + a legend. */
+    const rowGap = el.rowGap!=null?el.rowGap:7;
+    const rowWt  = el.rowWeight||700;
+    const rowTr  = (el.rowTracking!=null?el.rowTracking:0.01)+'em';
+    const headFs = (el.headingSize!=null?el.headingSize:15)*B;
+    const items  = window.parseSessions(el.raw);
+    const markers = items.reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
+    const rich = markers.length>0 || items.some(r=>r.time);
+    /* category colour/name: explicit markerKey wins, else a default accent per
+       marker in order of first appearance. */
+    const DEFCAT = ['blue','green','pink','amber','purple','red','yellow'];
+    const catColor = m => { const k=el.markerKey&&el.markerKey[m]; const c=(k&&k.color)||DEFCAT[markers.indexOf(m)%7];
+      return SE_ACC.indexOf(c)>=0 ? SE_PAL[c] : accentHex; };
+    const catName = m => { const k=el.markerKey&&el.markerKey[m]; return (k&&k.name&&k.name.trim()) || m; };
+    const headH = el.heading ? headFs+13 : 0;
+    const legendH = (rich && markers.length) ? 26 : 0;
+    const avail = el.h/B - 32 - headH - legendH;
+    const heading = el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:headFs, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null;
+    const legend = (rich && markers.length) ? <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 18px', marginTop:10 }}>
+      {markers.map(m=>{ const ms=Math.max(8,Math.round((rich?20:18)*B*0.5));
+        return <span key={m} style={{ display:'flex', alignItems:'center', gap:6, fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:Math.max(11,12*B), letterSpacing:'.08em' }}>
+          <span style={{ width:ms, height:ms, borderRadius:'50%', background:catColor(m), flex:'none' }} />{catName(m)}</span>; })}
+    </div> : null;
+
+    if(rich){
+      const auto = Math.max(14, Math.min(40, Math.round((avail/Math.max(1,items.length) - 2*rowGap)/1.55)));
+      const fs = (el.rowSize || auto) * B;
+      const metaFs = Math.max(10, Math.round(fs*0.52));
+      const dot = Math.max(8, Math.round(fs*0.34));
+      inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
+        {heading}
+        {items.map((it,i)=>(
+          <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:Math.round(dot*0.8),
+            borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}22` : 'none', padding:rowGap+'px 0' }}>
+            {markers.length ? <span aria-hidden="true" style={{ width:dot, height:dot, borderRadius:'50%', flex:'none',
+              background: it.marker?catColor(it.marker):'transparent', border: it.marker?'none':`1.5px solid ${seSurf('outline',theme,accentHex).color}55`,
+              marginTop:Math.round(fs*0.26) }} /> : null}
+            <div style={{ flex:'1 1 auto', minWidth:0 }}>
+              <div style={{ fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase', fontSize:fs, lineHeight:1.0, letterSpacing:rowTr }}>{it.title}</div>
+              {(it.date||it.time||it.num) ? <div style={{ fontFamily:MONT, fontWeight:600, textTransform:'uppercase', fontSize:metaFs, letterSpacing:'.06em', opacity:.66, marginTop:Math.round(fs*0.1) }}>
+                {[it.num, it.date, it.time].filter(Boolean).join('  ·  ')}</div> : null}
+            </div>
+          </div>
+        ))}
+        {legend}
+        {!items.length && !exporting &&
+          <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
+      </div>;
+    } else {
+      const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
+      const fs = (el.rowSize || auto) * B;
+      const sub = Math.max(11, Math.round(fs*0.62));
+      inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
+        {heading}
+        {items.map((it,i)=>(
+          <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
+            borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:rowGap+'px 0',
+            fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }}>
+            {it.num ? <span style={{ flex:'none', fontSize:sub, color:accentHex, letterSpacing:'.08em' }}>{it.num}</span> : null}
+            <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:rowTr }}>{it.title}</span>
+            {it.date ? <span style={{ flex:'none', fontSize:sub, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.date}</span> : null}
+          </div>
+        ))}
+        {!items.length && !exporting &&
+          <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
+      </div>;
+    }
   }
   else if(el.type==='specials'){
     /* Item rows auto-fit the box (rowSize 0) or take an S/M/L override — parity

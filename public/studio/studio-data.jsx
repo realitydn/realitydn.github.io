@@ -144,26 +144,41 @@ function safeRect(format){
 let _id = 1;
 function uid(){ return 'e'+(_id++)+'_'+Math.random().toString(36).slice(2,6); }
 
-/* ---- Sessions list parser — one session per line, pasted as-is ----
-   Accepts "001 — Title — 3.6.26", "Title – 10.6", "Title | date", tab-separated
-   columns, or bare titles. Splits on em/en dashes, pipes, tabs, or a SPACED
-   hyphen (so "Check-in" never splits). The leading number and trailing date are
-   both optional per line; anything unrecognised folds back into the title. */
+/* ---- Sessions list parser — one row per line, pasted as-is ----
+   Treats each row as a set of typed cells split on em/en dashes, pipes, tabs,
+   2+ spaces, or a SPACED hyphen (so "Check-in" / "S. Africa" never split), then
+   infers roles instead of assuming a fixed shape:
+     • date  — 3.6.26 · 17.7 · 12/06       • time — 11:00 · 23h59
+     • marker— a trailing symbol (< ~ ^ ●…) that tags the row's CATEGORY
+     • title — the cell with the most letters (the headline / fixture)
+     • num   — whatever's left (a label like "001" or "Trận 20")
+   So "001 — Title — 3.6", "Tunisia vs Japan <", and a 5-column football
+   fixture all parse cleanly. Everything is optional per line. */
 function parseSessions(raw){
-  const NUM  = /^[#№]?\d{1,4}[.):]?$/;                                  // 001 · #3 · 12. · 4)
-  const DATE = /^\d{1,2}[./-]\d{1,2}([./-]\d{2,4})?$/;                  // 3.6.26 · 17.7 · 12/06/2026
+  const DATE = /^\d{1,2}[./-]\d{1,2}([./-]\d{2,4})?$/;
+  const TIME = /^\d{1,2}[:h]\d{2}$/;                       // 11:00 · 23h59
+  const MARK = /^(.*?)\s*([<>~^✦●◆▲★+])$/;                 // one trailing symbol = a category tag
+  const letters = s => (String(s).match(/[A-Za-zÀ-ỹ]/g)||[]).length;
   return (raw||'').split(/\r?\n/).map(line=>{
-    const s = line.trim();
+    let s = line.trim();
     if(!s) return null;
-    const parts = s.split(/\s*[—–|]\s*|\s+-\s+|\t+/).map(p=>p.trim()).filter(Boolean);
-    let num='', date='';
-    if(parts.length>1 && NUM.test(parts[0])) num = parts.shift();
-    if(parts.length>1 && DATE.test(parts[parts.length-1])) date = parts.pop();
-    else if(num && parts.length===1 && DATE.test(parts[0])) date = parts.pop();   // "003 — 17.6.26"
-    // "12. Title" / "3) Title" — numbered without a separator. The dot/paren is
-    // required: a bare leading number stays in the title ("24 Hour Comic").
-    if(!num && parts.length){ const m = parts[0].match(/^(\d{1,4}[.)])\s+(\S.*)$/); if(m){ num=m[1]; parts[0]=m[2]; } }
-    return { num, date, title: parts.join(' — ') };
+    let marker=''; const mm = s.match(MARK); if(mm){ marker = mm[2]; s = mm[1].trim(); }
+    const parts = s.split(/\s*[—–|]\s*|\s+-\s+|\t+|\s{2,}/).map(p=>p.trim()).filter(Boolean);
+    let num='', date='', time=''; const rest=[];
+    parts.forEach(p=>{
+      if(!date && DATE.test(p)) date=p;
+      else if(!time && TIME.test(p)) time=p;
+      else rest.push(p);
+    });
+    let title='';
+    if(rest.length){
+      let bi=0; rest.forEach((p,i)=>{ if(letters(p)>letters(rest[bi])) bi=i; });   // headline = most letters
+      title = rest[bi];
+      num = rest.filter((_,i)=>i!==bi).join(' ');
+    }
+    // "12. Title" / "3) Title" — numbered without a separator (bare numbers stay)
+    if(!num && title){ const m = title.match(/^(\d{1,4}[.)])\s+(\S.*)$/); if(m){ num=m[1]; title=m[2]; } }
+    return { num, date, time, title, marker };
   }).filter(Boolean);
 }
 
@@ -259,7 +274,7 @@ const DEFAULTS = {
   lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
   sessions:{ w:660, h:460, props:{ heading:'Next sessions',
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
-             rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
+             rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, markerKey:{}, surface:'scrim', color:'fg' } },
   specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, rowWeight:700, rowTracking:0.03, rowGap:5, headingSize:26, surface:'accent', color:'fg' } },
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },

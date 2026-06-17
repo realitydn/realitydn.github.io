@@ -680,13 +680,35 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
               placeholder={'001 — Session title — 3.6.26'}
               onChange={e=>update({ raw:e.target.value })} />
           </div>
-          <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste straight from your notes — <b>number — title — date</b> split by dashes, pipes or tabs. Number and date are optional on every line.</div>
+          <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste columns split by <b>tabs, dashes or 2+ spaces</b> — date, time, a label and the fixture, in any order. End a line with a symbol (<b>&lt;</b> <b>~</b> …) to tag its category below.</div>
         </React.Fragment>}
         <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
         <Chips label="Row weight" options={WEIGHTS_MONT} value={el.rowWeight||700} onChange={v=>update({rowWeight:v})} />
         <Slider label="Row tracking" val={el.rowTracking!=null?el.rowTracking:(el.type==='specials'?0.03:0.01)} min={-0.05} max={0.4} step={0.005} suffix="em" onChange={v=>update({rowTracking:v})} />
         <Slider label="Line spacing" val={el.rowGap!=null?el.rowGap:(el.type==='specials'?5:7)} min={0} max={24} step={1} suffix="px" onChange={v=>update({rowGap:v})} />
         <Swatches label="Row text colour" value={el.textColor!=null?el.textColor:el.color} onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
+        {el.type==='sessions' && (()=>{
+          const marks = window.parseSessions(el.raw).reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
+          if(!marks.length) return <div className="rs-mini" style={{ marginTop:6 }}>Tip: end a line with a symbol — <b>&lt;</b>, <b>~</b>, <b>^</b>, <b>●</b> — to tag it. Name + colour the categories here once they appear, and rows get a dot + a legend.</div>;
+          const DEFCAT=['blue','green','pink','amber','purple','red','yellow'];
+          return <React.Fragment>
+            <div className="rs-lab" style={{ marginTop:8 }}>Categories — line-end markers</div>
+            {marks.map(m=>{
+              const k=(el.markerKey&&el.markerKey[m])||{};
+              const setK=(patch)=>update({ markerKey: Object.assign({}, el.markerKey||{}, { [m]: Object.assign({}, k, patch) }) });
+              const cur=k.color||DEFCAT[marks.indexOf(m)%7];
+              return <div key={m} style={{ marginBottom:8 }}>
+                <div className="rs-itemrow">
+                  <span style={{ flex:'none', width:24, textAlign:'center', fontFamily:'Montserrat', fontWeight:800 }}>{m}</span>
+                  <input className="rs-input" placeholder="Name (e.g. Projector)" value={k.name||''} onChange={e=>setK({name:e.target.value})} />
+                </div>
+                <div className="rs-swatches" style={{ marginTop:4 }}>
+                  {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(cur===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>setK({color:a})} />))}
+                </div>
+              </div>;
+            })}
+          </React.Fragment>;
+        })()}
       </React.Fragment>}
     </React.Fragment>
   );

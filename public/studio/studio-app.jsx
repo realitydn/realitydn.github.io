@@ -3,7 +3,7 @@
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
 const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
-        ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, accentDay:apAccentDay,
+        ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, DAY_NAMES:AP_DNAMES, accentDay:apAccentDay,
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
         TYPE_SCALE:AP_SCALE, StudioCanvas:APCanvas,
@@ -755,6 +755,7 @@ function App(){
   const [scale, setScale] = React.useState(0.4);
   const [spawn, setSpawn] = React.useState(null);
   const [tplOpen, setTplOpen] = React.useState(false);
+  const [dayOpen, setDayOpen] = React.useState({});   // My-templates day sub-menus (by accent → weekday)
   const [exporting, setExporting] = React.useState(false);
   const [exportMsg, setExportMsg] = React.useState('');
 
@@ -1143,20 +1144,69 @@ function App(){
               <span>Templates</span><span style={{ fontSize:11, opacity:.6 }}>{tplOpen?'▾':'▸'}</span>
             </div>
             {tplOpen && <React.Fragment>
-              <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>My templates</div>
-              {userTpls.map(t=>(
-                <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
-                  style={{ cursor:'pointer', position:'relative', paddingRight:36 }}>
-                  <span className="ln">{t.name}</span>
-                  <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
-                  <button className="rs-tplx" title="Delete this template"
-                    onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
-                </div>
-              ))}
-              {tplReady && userTpls.length===0 &&
-                <div className="rs-mini" style={{ margin:'2px 0 6px' }}>None yet — build a poster, then keep it here for next time.</div>}
+              <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>My templates · filed by day (accent colour)</div>
               {!tplReady &&
                 <div className="rs-mini" style={{ margin:'2px 0 6px' }}>Loading your templates…</div>}
+              {tplReady && userTpls.length===0 &&
+                <div className="rs-mini" style={{ margin:'2px 0 6px' }}>None yet — build a poster, then keep it here for next time.</div>}
+              {/* A saved preset is filed under the weekday its accent codes for
+                  (green→Mon … yellow→Sun). Each day is its own collapsible menu;
+                  days start open only if they hold something. */}
+              {tplReady && userTpls.length>0 && AP_DNAMES.map((day,di)=>{
+                const dayAccent = AP_ABYDAY[di];
+                const items = userTpls.filter(t=> AP_DAYS[t.doc && t.doc.accent] === day);
+                const isOpen = dayOpen[day]!==undefined ? dayOpen[day] : items.length>0;
+                return (
+                  <React.Fragment key={day}>
+                    <div className="rs-dayhdr" onClick={()=>setDayOpen(o=>({...o, [day]:!isOpen}))}
+                      style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'5px 2px',
+                        userSelect:'none', borderBottom:'1px solid rgba(120,110,90,.12)' }}>
+                      <span style={{ width:11, height:11, borderRadius:'50%', flex:'none', background:AP_PAL[dayAccent], border:'1px solid rgba(0,0,0,.25)' }} />
+                      <span style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:11, letterSpacing:'.09em', textTransform:'uppercase' }}>{AP_DABBR[di]}</span>
+                      <span style={{ fontSize:10, opacity:.45 }}>{day}</span>
+                      <span style={{ marginLeft:'auto', fontFamily:'Montserrat', fontWeight:700, fontSize:10, opacity: items.length?0.6:0.3 }}>{items.length}</span>
+                      <span style={{ fontSize:10, opacity:.55, width:10, textAlign:'center' }}>{isOpen?'▾':'▸'}</span>
+                    </div>
+                    {isOpen && items.map(t=>(
+                      <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
+                        style={{ cursor:'pointer', position:'relative', paddingRight:36, marginLeft:11 }}>
+                        <span className="ln">{t.name}</span>
+                        <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                        <button className="rs-tplx" title="Delete this template"
+                          onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
+                      </div>
+                    ))}
+                    {isOpen && items.length===0 &&
+                      <div className="rs-mini" style={{ margin:'3px 0 5px 19px', opacity:.45 }}>Set a poster’s accent to {dayAccent} to file it here.</div>}
+                  </React.Fragment>
+                );
+              })}
+              {tplReady && userTpls.some(t=> !AP_DAYS[t.doc && t.doc.accent]) && (()=>{
+                const items = userTpls.filter(t=> !AP_DAYS[t.doc && t.doc.accent]);
+                const isOpen = dayOpen._other!==undefined ? dayOpen._other : true;
+                return (
+                  <React.Fragment>
+                    <div className="rs-dayhdr" onClick={()=>setDayOpen(o=>({...o, _other:!isOpen}))}
+                      style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'5px 2px',
+                        userSelect:'none', borderBottom:'1px solid rgba(120,110,90,.12)' }}>
+                      <span style={{ width:11, height:11, borderRadius:'50%', flex:'none', background:'transparent', border:'1px dashed rgba(120,110,90,.7)' }} />
+                      <span style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:11, letterSpacing:'.09em', textTransform:'uppercase' }}>Other</span>
+                      <span style={{ fontSize:10, opacity:.45 }}>no day colour</span>
+                      <span style={{ marginLeft:'auto', fontFamily:'Montserrat', fontWeight:700, fontSize:10, opacity:.6 }}>{items.length}</span>
+                      <span style={{ fontSize:10, opacity:.55, width:10, textAlign:'center' }}>{isOpen?'▾':'▸'}</span>
+                    </div>
+                    {isOpen && items.map(t=>(
+                      <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
+                        style={{ cursor:'pointer', position:'relative', paddingRight:36, marginLeft:11 }}>
+                        <span className="ln">{t.name}</span>
+                        <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                        <button className="rs-tplx" title="Delete this template"
+                          onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
+                      </div>
+                    ))}
+                  </React.Fragment>
+                );
+              })()}
               <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6 }}>＋ Save current poster as template</button>
               <div className="rs-rowflex" style={{ marginBottom:6 }}>
                 <button className="rs-addrow" onClick={exportUserTpls} title="Download all My templates (photos included) as one .json">⬇ Export all</button>

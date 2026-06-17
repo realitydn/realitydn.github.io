@@ -11,6 +11,18 @@ const GROT = "'Space Grotesk',sans-serif";
 const _imgCache = new Map();
 const _sampleCache = {};
 
+/* Largest Montserrat-800 size at which `text` (uppercased) fits `availW`, capped
+   at maxSize. Measured for real (not estimated) so a match-up's two team names
+   share one size and neither spills its box, whatever their length. */
+const _seMeasCtx = (typeof document!=='undefined') ? document.createElement('canvas').getContext('2d') : null;
+function seFitText(text, availW, maxSize){
+  const s = String(text||'').toUpperCase();
+  if(!_seMeasCtx || !s) return maxSize;
+  _seMeasCtx.font = "800 "+maxSize+"px 'Montserrat', Montserrat, sans-serif";
+  const w = _seMeasCtx.measureText(s).width || 1;
+  return w <= availW ? maxSize : Math.max(14, Math.floor(maxSize * availW / w));
+}
+
 /* ---- lightweight markdown for the Info text box ----
    inline **bold** / *italic* / _italic_, and lines starting with - or • → bullets.
    Returns React nodes; pure text passes straight through. */
@@ -472,6 +484,31 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         <span style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', color:accent, fontSize:bigF, lineHeight:.9, margin:'0.05em 0' }}>{el.day}</span>
         {el.allYear ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:'.14em' }}>{el.allYear}</span> : null}
       </div>
+    </div>;
+  }
+
+  else if(el.type==='matchup'){
+    /* Team-vs-team combo: a competition kicker, two team names auto-fitted to a
+       MATCHED size (the longer name governs both, so UAE vs Saudi Arabia still
+       balances), an accent VS coin between, and date · time below. Fonts derive
+       from el.w/el.h (resolveElements already scaled those per format) — so, like
+       weekly, they must NOT also multiply by B. */
+    const H=el.h, W=el.w, pad=Math.round(W*0.06), availW=(W-pad*2)*0.96;
+    const maxTeam=Math.round(H*0.20);
+    const teamSize=Math.max(18, Math.min(maxTeam, seFitText(el.teamA, availW, maxTeam), seFitText(el.teamB, availW, maxTeam)));
+    const compF=Math.round(H*0.055), dtF=Math.round(H*0.072), vsD=Math.round(teamSize*0.92), vsF=Math.round(vsD*0.42), gap=Math.round(H*0.025);
+    const team={ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:teamSize, lineHeight:.9,
+      color:textCol, textAlign:'center', letterSpacing:'.01em', whiteSpace:'nowrap', maxWidth:'100%' };
+    inner = <div style={box({ alignItems:'center', padding:pad+'px' })}>
+      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.24em', fontSize:compF, color:accentHex, textAlign:'center', marginBottom:gap }}>{el.comp}</div> : null}
+      <div style={team}>{el.teamA}</div>
+      <div style={{ width:vsD, height:vsD, borderRadius:'50%', background:accentHex, margin:gap+'px 0', flex:'none',
+        display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:window.contrastInk(accentHex), letterSpacing:'.02em' }}>{el.vs||'VS'}</span>
+      </div>
+      <div style={team}>{el.teamB}</div>
+      {(el.date||el.time) ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:dtF, color:textCol, textAlign:'center', marginTop:gap }}>
+        {el.date}{el.date&&el.time? <span style={{ color:accentHex }}>{'  ·  '}</span> : null}{el.time}</div> : null}
     </div>;
   }
 

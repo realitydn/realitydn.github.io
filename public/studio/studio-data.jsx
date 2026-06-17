@@ -118,7 +118,7 @@ function shadowModel(el, theme){
   const bare = !el.surface || el.surface==='none';
   let dDef, bDef, maxDist, maxBlur, defOn;
   if(filterFam){      dDef=9;  bDef=3; maxDist=60; maxBlur=40; defOn = (type==='weekly'); }
-  else if(bare){      dDef=6;  bDef=1; maxDist=40; maxBlur=24; defOn = (type==='title'); }
+  else if(bare){      dDef=6;  bDef=1; maxDist=40; maxBlur=24; defOn = (type==='title'||type==='matchup'); }
   else {              dDef=10; bDef=2; maxDist=60; maxBlur=40; defOn = true; }
   const on   = el.shadowOn!=null   ? el.shadowOn   : defOn;
   const dist = el.shadowDist!=null  ? el.shadowDist  : dDef;
@@ -234,6 +234,7 @@ const CATALOG = [
     { type:'specials',label:'Specials', hint:'Drinks + prices' },
     { type:'qr',      label:'QR block', hint:'Scan to site' },
     { type:'weekly',  label:'Weekly tag', hint:'Price · day · time', wide:true },
+    { type:'matchup', label:'Matchup',   hint:'Team vs team · time', wide:true },
   ]},
   { group:'Marks', items:[
     { type:'stamp',   label:'Stamp',    hint:'SOLD OUT / FREE' },
@@ -267,6 +268,10 @@ const DEFAULTS = {
      (right), and a day-of-week badge centred on top. One draggable unit. */
   weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg',
              shadowOn:true, shadowDist:9, shadowAngle:90, shadowBlur:3, shadowAlpha:null, shadowColor:'fg' } },
+  /* Match-up combo: competition kicker, two team names auto-fitted to a matched
+     size, an accent VS coin between, date · time below. One draggable unit. */
+  matchup: { w:780, h:680, props:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', vs:'VS',
+             date:'SAT 14 JUN', time:'22:00', surface:'none', color:'fg', fill:'fg' } },
   block:   { w:540, h:420, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   photo:   { w:760, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
@@ -380,7 +385,7 @@ function pointToMaster(type, x, y, masterFormat, format){
    canvas; you then tune from there. Positions keep the key
    content inside the 4:5 safe zone.
    ============================================================ */
-const TEMPLATE_GROUPS = ['Weekly', 'Talk', 'Series', 'Nightlife'];
+const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife'];
 /* Every template opens with a full-bleed background photo (the house style),
    keeps content on a shared left line (x:90 — the Swiss vertical), and the
    Talk/Series families end with a full-width Reality banner filling the bottom
@@ -402,6 +407,12 @@ const TEMPLATES = [
     { type:'title',  x:90, y:520, w:900, h:340, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
     { type:'host',   x:90, y:900, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
+  ]},
+  /* ---- SPORTS · match screenings (Night · full-bleed + standard ticket) ---- */
+  { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', els:[
+    BLEED(0, { contrast:1.32, brightness:-0.1 }),
+    { type:'matchup', x:90, y:300, w:900, h:760, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'SAT 14 JUN', time:'22:00', textColor:'cream' } },
+    TICKET(),
   ]},
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
   { id:'talk-classic', name:'Classic', group:'Talk', theme:'day', accent:'blue', els:[

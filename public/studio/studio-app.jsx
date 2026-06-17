@@ -169,6 +169,7 @@ const TYPE_CAPS = {
   sessions: { rowSize:true, surface:true, shadow:true },
   badge:    { surface:true, shadow:true },
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
+  matchup:  { surface:true, shadow:true },
   block:    { fillOwn:true, shadow:true },
   photo:    { media:true, shadow:true },
   logo:     { media:true, shadow:true },
@@ -571,6 +572,19 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <Field label="Day" value={el.day} onChange={v=>update({day:v})} />
         </div>
         <Field label="Below day" value={el.allYear} onChange={v=>update({allYear:v})} />
+      </React.Fragment>}
+      {el.type==='matchup' && <React.Fragment>
+        <Field label="Competition / round" value={el.comp} onChange={v=>update({comp:v})} />
+        <div className="rs-rowflex">
+          <Field label="Team A" value={el.teamA} onChange={v=>update({teamA:v})} />
+          <Field label="Team B" value={el.teamB} onChange={v=>update({teamB:v})} />
+        </div>
+        <div className="rs-rowflex">
+          <Field label="Date" value={el.date} onChange={v=>update({date:v})} />
+          <Field label="Time" value={el.time} onChange={v=>update({time:v})} />
+        </div>
+        <Field label="Centre mark" value={el.vs} onChange={v=>update({vs:v})} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>Team names auto-fit and stay matched in size. Want flags or crests? Drop in Partner-logo elements over the photo.</div>
       </React.Fragment>}
 
       {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}

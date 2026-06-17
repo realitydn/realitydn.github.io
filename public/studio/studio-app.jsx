@@ -578,8 +578,9 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 
       {/* ============ TYPE (size · weight · spacing · align) ============ */}
       {caps.size && <ScaleControl label={sizeLabel} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
-      {caps.sizePreset && <Chips label="Size preset" options={[{v:'std',l:'Standard'},{v:'compact',l:'Compact'}]}
-        value={(el.fontSize<=34)?'compact':'std'} onChange={v=>update(v==='compact'?{fontSize:28,h:80}:{fontSize:46,h:170})} />}
+      {caps.sizePreset && <Chips label="Size preset" options={[{v:'lg',l:'Large'},{v:'md',l:'Medium'},{v:'sm',l:'Small'}]}
+        value={el.fontSize>=40?'lg':el.fontSize>=30?'md':'sm'}
+        onChange={v=>update(v==='lg'?{fontSize:46,h:170}:v==='md'?{fontSize:32,h:120}:{fontSize:26,h:84})} />}
       {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
       {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
       {caps.lineHeight && <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />}

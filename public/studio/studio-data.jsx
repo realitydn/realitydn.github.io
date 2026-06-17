@@ -248,11 +248,11 @@ const CATALOG = [
 const DEFAULTS = {
   // letterSpacing is in em; defaults match each type's prior fixed tracking so
   // nothing shifts until you move the slider. Spread things far apart at will.
-  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:140, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.005,
-             subtitle:'', subSize:30, subWeight:600, subTracking:0.02, subColor:'fg', subLayout:'snug' } },
+  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:144, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.005,
+             subtitle:'', subSize:32, subWeight:600, subTracking:0.02, subColor:'fg', subLayout:'snug' } },
   tagline: { w:560, h:80,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
-  info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:24, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
-  when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:30, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
+  info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:26, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
+  when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
   host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0.02 } },
   ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'www.realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, surface:'scrim', color:'fg' } },
@@ -380,7 +380,7 @@ function pointToMaster(type, x, y, masterFormat, format){
    canvas; you then tune from there. Positions keep the key
    content inside the 4:5 safe zone.
    ============================================================ */
-const TEMPLATE_GROUPS = ['Talk', 'Series', 'Nightlife'];
+const TEMPLATE_GROUPS = ['Weekly', 'Talk', 'Series', 'Nightlife'];
 /* Every template opens with a full-bleed background photo (the house style),
    keeps content on a shared left line (x:90 — the Swiss vertical), and the
    Talk/Series families end with a full-width Reality banner filling the bottom
@@ -392,62 +392,70 @@ const TEMPLATE_GROUPS = ['Talk', 'Series', 'Nightlife'];
 const BLEED  = (reserve, extra) => { const r = reserve==null?270:reserve; return ({ type:'photo', x:0, y:0, w:1080, h:1350-r,
   p:Object.assign({ bleed:true, bleedBottom:r, treatment:'duotone', followAccent:true, contrast:1.22, brightness:-0.06, frame:false }, extra||{}) }); };
 const BANNER = () => ({ type:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
-const TICKET = () => ({ type:'ticket', x:90, y:1150, w:900, h:170, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
+const TICKET = () => ({ type:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
 
 const TEMPLATES = [
+  /* ---- WEEKLY · recurring events (Day · full-bleed + bottom banner) ---- */
+  { id:'weekly-classic', name:'Classic', group:'Weekly', theme:'day', accent:'blue', els:[
+    BLEED(),
+    { type:'weekly', x:90, y:250, w:900, h:220, p:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'19:00' } },
+    { type:'title',  x:90, y:520, w:900, h:340, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',   x:90, y:900, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    BANNER(),
+  ]},
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
   { id:'talk-classic', name:'Classic', group:'Talk', theme:'day', accent:'blue', els:[
     BLEED(),
     { type:'when',  x:90, y:250, w:360, h:84,  p:{ text:'THU · 19:00', surface:'accent', align:'center' } },
     { type:'title', x:90, y:380, w:900, h:340, p:{ text:'Event\nTitle', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  x:90, y:780, w:640, h:110, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:30 } },
+    { type:'host',  x:90, y:780, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'talk-top', name:'Top + tagline', group:'Talk', theme:'day', accent:'red', els:[
     BLEED(),
-    { type:'title',  x:90, y:200, w:900, h:260, p:{ text:'Event Title', fontSize:96, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'title',  x:90, y:200, w:900, h:260, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
     { type:'tagline',x:90, y:490, w:780, h:80,  p:{ text:'A short line about the talk.', fontSize:22, surface:'none', color:'cream' } },
     { type:'when',   x:90, y:600, w:360, h:84,  p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'host',   x:90, y:740, w:640, h:100, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:28 } },
+    { type:'host',   x:90, y:740, w:640, h:120, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'talk-block', name:'Text block', group:'Talk', theme:'day', accent:'yellow', els:[
     BLEED(),
-    { type:'title', x:90, y:360, w:760, h:300, p:{ text:'Event Title', fontSize:84, weight:700, align:'left', surface:'solid' } },
+    { type:'title', x:90, y:360, w:760, h:300, p:{ text:'Event Title', fontSize:82, weight:700, align:'left', surface:'solid' } },
     { type:'when',  x:90, y:690, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'host',  x:90, y:830, w:640, h:100, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:28 } },
+    { type:'host',  x:90, y:830, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ when:{ y:700 } } }, els:[
     BLEED(),
-    { type:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:190, weight:800, align:'left', surface:'none', color:'cream' } },
+    { type:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
     { type:'when',  k:'when', x:90, y:930, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
     BANNER(),
   ]},
   { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ host:{ y:690 } } }, els:[
     BLEED(),
     { type:'when',  x:90, y:540, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:104, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  k:'host', x:90, y:910, w:640, h:100, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:28 } },
+    { type:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',  k:'host', x:90, y:910, w:640, h:120, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   /* ---- SERIES · recurring talks (Day · full-bleed + bottom banner) ---- */
   { id:'series-badge', name:'Badge', group:'Series', theme:'day', accent:'green', ov:{ '1x1':{ host:{ y:700 } } }, els:[
     BLEED(),
     { type:'badge', x:760, y:230, w:230, h:230, p:{ top:'EVERY', big:'THU', sub:'weekly' } },
-    { type:'title', x:90, y:520, w:900, h:300, p:{ text:'Series\nName', fontSize:108, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'host',  k:'host', x:90, y:860, w:640, h:100, p:{ kicker:'Hosted by', name:'Host Name', surface:'none', align:'left', color:'cream', fontSize:28 } },
+    { type:'title', x:90, y:520, w:900, h:300, p:{ text:'Series\nName', fontSize:100, weight:700, surface:'none', align:'left', color:'cream' } },
+    { type:'host',  k:'host', x:90, y:860, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'series-lineup', name:'Lineup', group:'Series', theme:'day', accent:'blue', els:[
     BLEED(),
-    { type:'title',  x:90, y:230, w:900, h:220, p:{ text:'Series Name', fontSize:84, weight:700, surface:'none', align:'left', color:'cream' } },
+    { type:'title',  x:90, y:230, w:900, h:220, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
     { type:'lineup', x:90, y:500, w:620, h:420, p:{ heading:'This month', surface:'scrim', items:[{n:'Opening talk',t:'19:00'},{n:'Main session',t:'19:45'},{n:'Q & A',t:'20:45'}] } },
     BANNER(),
   ]},
   { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } } }, els:[
     BLEED(),
-    { type:'title',    x:90, y:200, w:900, h:200, p:{ text:'Series Name', fontSize:84, weight:700, surface:'none', align:'left', color:'cream' } },
+    { type:'title',    x:90, y:200, w:900, h:200, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
     { type:'sessions', k:'sessions', x:90, y:440, w:720, h:580, p:{ heading:'Next sessions', surface:'scrim', raw:'01 — Opening Night — 5.6\n02 — Director in Focus — 12.6\n03 — Late Classic — 19.6\n04 — Closing Film — 26.6' } },
     BANNER(),
   ]},
@@ -460,21 +468,21 @@ const TEMPLATES = [
   /* ---- NIGHTLIFE (Night · full-bleed + standard ticket) ---- */
   { id:'night-dj', name:'DJ hero', group:'Nightlife', theme:'night', accent:'pink', els:[
     BLEED(0, { contrast:1.3 }),
-    { type:'title', x:90, y:520, w:920, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:150, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  x:90, y:900, w:560, h:120, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:30 } },
+    { type:'title', x:90, y:520, w:920, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:144, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',  x:90, y:900, w:560, h:120, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
     TICKET(),
   ]},
   { id:'night-lineup', name:'Lineup night', group:'Nightlife', theme:'night', accent:'blue', els:[
     BLEED(0),
-    { type:'title',   x:90, y:240, w:920, h:200, p:{ text:'Club Night', fontSize:92, weight:700, surface:'none', color:'cream' } },
+    { type:'title',   x:90, y:240, w:920, h:200, p:{ text:'Club Night', fontSize:100, weight:700, surface:'none', color:'cream' } },
     { type:'lineup',  x:90, y:470, w:560, h:380, p:{ heading:'Lineup', surface:'scrim', items:[{n:'DJ One',t:'22:00'},{n:'DJ Two',t:'23:30'},{n:'b2b Finale',t:'01:00'}] } },
     { type:'specials',x:680,y:470, w:330, h:320, p:{ surface:'accent', heading:'All night', items:[{l:'House pour',p:'₫50k'},{l:'Beer + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}] } },
     TICKET(),
   ]},
   { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', els:[
     BLEED(0, { treatment:'spot', spotBase:'duotone', contrast:1.3 }),
-    { type:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:190, weight:800, align:'left', surface:'none', color:'cream' } },
-    { type:'when',  x:90, y:960, w:380, h:90, p:{ text:'SAT · 22:00', surface:'accent' } },
+    { type:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
+    { type:'when',  x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },
     TICKET(),
   ]},
 ];

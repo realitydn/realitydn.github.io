@@ -164,9 +164,9 @@ const TYPE_CAPS = {
   host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
   ticket:   { surface:true, shadow:true },
   qr:       { surface:true, shadow:true },
-  lineup:   { rowSize:true, surface:true, shadow:true },
-  specials: { rowSize:true, surface:true, shadow:true },
-  sessions: { rowSize:true, surface:true, shadow:true },
+  lineup:   { list:true, rowSize:true, surface:true, shadow:true },
+  specials: { list:true, rowSize:true, surface:true, shadow:true },
+  sessions: { list:true, rowSize:true, surface:true, shadow:true },
   badge:    { surface:true, shadow:true },
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
   matchup:  { surface:true, shadow:true },
@@ -505,20 +505,74 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <button className="rs-iconbtn rs-del" onClick={del} title="Delete">Delete</button>
       </div>
 
-      {/* ============ CONTENT (shared across formats) ============ */}
-      {el.type==='title' && <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />}
-      {el.type==='tagline' && <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />}
+      {/* ===================== WHOLE ITEM ===================== */}
+      {/* appearance — image / surface / fill of the whole element */}
+      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
+      {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
+      {caps.surface && <React.Fragment>
+        <div className="rs-sech">Surface</div>
+        <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
+        <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
+          onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>Fill colours an <b>Accent</b> surface and the element’s accent highlights (heading, first row…).</div>
+      </React.Fragment>}
+      {el.type==='weekly' && <React.Fragment>
+        <div className="rs-sech">Accent</div>
+        <Swatches label="Bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent.</div>
+      </React.Fragment>}
+
+      {/* effect */}
+      {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
+
+      {/* geometry of the whole box (+ per-format overrides) */}
+      <div className="rs-sech">Transform{isOutput && <span className="rs-ovtag"> · {activeLabel} only</span>}</div>
+      <Chips label="Tilt presets" options={[{v:0,l:'0°'},{v:-3,l:'-3°'},{v:3,l:'+3°'},{v:-6,l:'-6°'},{v:6,l:'+6°'}]} value={el.rot||0} onChange={v=>update({rot:v})} />
+      <Slider label="Rotation" val={el.rot||0} min={-45} max={45} onChange={v=>update({rot:v})} suffix="°" />
+      <Slider label="Width" val={el.w} min={120} max={1080} step={6} onChange={v=>update({w:v})} suffix="px" />
+      {caps.widthPreset && <Chips label="Width presets" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />}
+      {showHeight && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
+      {caps.height && <Chips label="Height presets — match across tags" options={TAG_HEIGHTS} value={el.h} onChange={v=>update({h:v})} />}
+      <Chips label="Anchor (all formats)" options={[{v:'safe',l:'Safe cluster'},{v:'bottom',l:'Pin to base'}]} value={el.anchor||'safe'} onChange={v=>update({anchor:v})} />
+      {isOutput && <React.Fragment>
+        <Chips label={'Visibility · '+activeLabel} options={[{v:false,l:'Shown'},{v:true,l:'Hidden'}]} value={!!el.hidden} onChange={v=>toggleHidden(el.id, v)} />
+        {el._overridden
+          ? <React.Fragment>
+              <button className="rs-addrow" onClick={()=>resetOverride(el.id)}>↺ Reset to Master</button>
+              <div className="rs-mini" style={{ marginTop:6 }}>Layout detached for {activeLabel}. Reset to follow Master again.</div>
+            </React.Fragment>
+          : <div className="rs-mini">Following Master. Move, resize, rotate{el.type==='photo'?', reframe the photo':''}{isText?', resize text':''} to override just {activeLabel}.</div>}
+      </React.Fragment>}
+
+      {/* ===================== MAIN TEXT ===================== */}
+      {/* content (primary text / data) */}
+      {el.type==='title' && <React.Fragment>
+        <div className="rs-sech">Title</div>
+        <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />
+      </React.Fragment>}
+      {el.type==='tagline' && <React.Fragment>
+        <div className="rs-sech">Text</div>
+        <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />
+      </React.Fragment>}
       {el.type==='info' && <React.Fragment>
+        <div className="rs-sech">Text</div>
         <Field label="Info text" value={el.text} onChange={v=>update({text:v})} area />
         <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Markdown: <b>**bold**</b>, <i>*italic*</i>, and lines starting with <b>-</b> become bullets. Blank line = a gap.</div>
       </React.Fragment>}
-      {el.type==='when' && <Field label="When" value={el.text} onChange={v=>update({text:v})} />}
-      {el.type==='stamp' && <Field label="Stamp text" value={el.text} onChange={v=>update({text:v})} />}
+      {el.type==='when' && <React.Fragment>
+        <div className="rs-sech">Text</div>
+        <Field label="When" value={el.text} onChange={v=>update({text:v})} />
+      </React.Fragment>}
+      {el.type==='stamp' && <React.Fragment>
+        <div className="rs-sech">Text</div>
+        <Field label="Stamp text" value={el.text} onChange={v=>update({text:v})} />
+      </React.Fragment>}
       {el.type==='host' && <React.Fragment>
-        <Field label="Kicker (optional)" value={el.kicker} onChange={v=>update({kicker:v})} />
+        <div className="rs-sech">Name</div>
         <Field label="Name" value={el.name} onChange={v=>update({name:v})} />
       </React.Fragment>}
       {el.type==='ticket' && <React.Fragment>
+        <div className="rs-sech">Content</div>
         <Chips label="Format" options={[{v:'banner',l:'Banner'},{v:'standard',l:'Standard'},{v:'slim',l:'Slim'},{v:'mini',l:'Mini'}]}
           value={el.variant||'standard'} onChange={v=>update(TICKET_FORMATS[v])} />
         <div className="rs-mini" style={{ marginBottom:8 }}>Wordmark is the canonical REALITY mark (fixed).</div>
@@ -527,35 +581,12 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Chips label="QR" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]} value={el.showQR} onChange={v=>update({showQR:v})} />
       </React.Fragment>}
       {el.type==='qr' && <React.Fragment>
+        <div className="rs-sech">Content</div>
         <Field label="Label" value={el.label} onChange={v=>update({label:v})} />
         <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
       </React.Fragment>}
-      {(el.type==='lineup'||el.type==='specials') && <React.Fragment>
-        <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
-        <div className="rs-lab">Items</div>
-        {el.items.map((it,i)=>(
-          <div className="rs-itemrow" key={i}>
-            <input className="rs-input" value={el.type==='lineup'?it.n:it.l}
-              onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,n:e.target.value}:{...it,l:e.target.value}; setItems(items); }} />
-            <input className="rs-input" style={{ maxWidth:80 }} value={el.type==='lineup'?it.t:it.p}
-              onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,t:e.target.value}:{...it,p:e.target.value}; setItems(items); }} />
-            <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
-          </div>
-        ))}
-        <button className="rs-addrow" onClick={()=>setItems([...el.items, el.type==='lineup'?{n:'New act',t:'00:00'}:{l:'Item',p:'₫0'}])}>+ Add row</button>
-        <div style={{ height:12 }} />
-      </React.Fragment>}
-      {el.type==='sessions' && <React.Fragment>
-        <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
-        <div className="rs-row">
-          <div className="rs-lab">Sessions — one per line</div>
-          <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
-            placeholder={'001 — Session title — 3.6.26'}
-            onChange={e=>update({ raw:e.target.value })} />
-        </div>
-        <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste straight from your notes — <b>number — title — date</b> split by dashes, pipes or tabs. Number and date are optional on every line.</div>
-      </React.Fragment>}
       {el.type==='badge' && <React.Fragment>
+        <div className="rs-sech">Content</div>
         <div className="rs-rowflex">
           <Field label="Top" value={el.top} onChange={v=>update({top:v})} />
           <Field label="Big" value={el.big} onChange={v=>update({big:v})} />
@@ -563,6 +594,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
       </React.Fragment>}
       {el.type==='weekly' && <React.Fragment>
+        <div className="rs-sech">Content</div>
         <div className="rs-rowflex">
           <Field label="Price (left)" value={el.price} onChange={v=>update({price:v})} />
           <Field label="Time (right)" value={el.time} onChange={v=>update({time:v})} />
@@ -574,6 +606,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Field label="Below day" value={el.allYear} onChange={v=>update({allYear:v})} />
       </React.Fragment>}
       {el.type==='matchup' && <React.Fragment>
+        <div className="rs-sech">Content</div>
         <Field label="Competition / round" value={el.comp} onChange={v=>update({comp:v})} />
         <div className="rs-rowflex">
           <Field label="Team A" value={el.teamA} onChange={v=>update({teamA:v})} />
@@ -586,11 +619,13 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Field label="Centre mark" value={el.vs} onChange={v=>update({vs:v})} />
         <div className="rs-mini" style={{ marginTop:-2 }}>Team names auto-fit and stay matched in size. Want flags or crests? Drop in Partner-logo elements over the photo.</div>
       </React.Fragment>}
+      {caps.list && <React.Fragment>
+        <div className="rs-sech">Heading</div>
+        <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
+        <Slider label="Heading size" val={el.headingSize!=null?el.headingSize:(el.type==='specials'?26:15)} min={11} max={56} step={1} suffix="px" onChange={v=>update({headingSize:v})} />
+      </React.Fragment>}
 
-      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
-      {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
-
-      {/* ============ TYPE (size · weight · spacing · align) ============ */}
+      {/* main-text formatting */}
       {caps.size && <ScaleControl label={sizeLabel} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
       {caps.sizePreset && <Chips label="Size preset" options={[{v:'lg',l:'Large'},{v:'md',l:'Medium'},{v:'sm',l:'Small'}]}
         value={el.fontSize>=40?'lg':el.fontSize>=30?'md':'sm'}
@@ -600,9 +635,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {caps.lineHeight && <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />}
       {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
       {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
-      {caps.rowSize && <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />}
+      {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
+        onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />}
 
-      {/* ============ SUBTITLE (title) ============ */}
+      {/* ===================== SUBTEXT ===================== */}
       {caps.subtitle && <React.Fragment>
         <div className="rs-sech">Subtitle</div>
         <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
@@ -616,48 +652,41 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
             </React.Fragment>
           : <div className="rs-mini" style={{ marginTop:-2 }}>Add a line to sit under the title, inside the same box.</div>}
       </React.Fragment>}
-
-      {/* ============ APPEARANCE (surface + colour) ============ */}
-      {caps.surface && <React.Fragment>
-        <div className="rs-sech">Surface</div>
-        <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
-        <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
-          onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
-        {caps.kickerColor && <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'}
-          onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />}
-        <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
-          onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>{el.type==='host' ? <span>Three independent colours: the kicker, the name, and the <b>Accent</b> background.</span> : <span>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</span>}</div>
+      {el.type==='host' && <React.Fragment>
+        <div className="rs-sech">Kicker</div>
+        <Field label="Kicker (optional)" value={el.kicker} onChange={v=>update({kicker:v})} />
+        <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'} onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
       </React.Fragment>}
-      {el.type==='weekly' && <React.Fragment>
-        <div className="rs-sech">Accent</div>
-        <Swatches label="Bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent.</div>
-      </React.Fragment>}
-
-      {/* ============ SHADOW (unified — every element) ============ */}
-      {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
-
-      {/* ============ TRANSFORM (layout — per-format on an output) ============ */}
-      <div className="rs-sech">Transform{isOutput && <span className="rs-ovtag"> · {activeLabel} only</span>}</div>
-      <Chips label="Tilt presets" options={[{v:0,l:'0°'},{v:-3,l:'-3°'},{v:3,l:'+3°'},{v:-6,l:'-6°'},{v:6,l:'+6°'}]} value={el.rot||0} onChange={v=>update({rot:v})} />
-      <Slider label="Rotation" val={el.rot||0} min={-45} max={45} onChange={v=>update({rot:v})} suffix="°" />
-      <Slider label="Width" val={el.w} min={120} max={1080} step={6} onChange={v=>update({w:v})} suffix="px" />
-      {caps.widthPreset && <Chips label="Width presets" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />}
-      {showHeight && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
-      {caps.height && <Chips label="Height presets — match across tags" options={TAG_HEIGHTS} value={el.h} onChange={v=>update({h:v})} />}
-      <Chips label="Anchor (all formats)" options={[{v:'safe',l:'Safe cluster'},{v:'bottom',l:'Pin to base'}]} value={el.anchor||'safe'} onChange={v=>update({anchor:v})} />
-
-      {/* ============ THIS FORMAT (per-format override) ============ */}
-      {isOutput && <React.Fragment>
-        <div className="rs-sech">This format · {activeLabel}</div>
-        <Chips label="Visibility" options={[{v:false,l:'Shown'},{v:true,l:'Hidden'}]} value={!!el.hidden} onChange={v=>toggleHidden(el.id, v)} />
-        {el._overridden
-          ? <React.Fragment>
-              <button className="rs-addrow" onClick={()=>resetOverride(el.id)}>↺ Reset to Master</button>
-              <div className="rs-mini" style={{ marginTop:6 }}>Layout detached for {activeLabel}. Reset to follow Master again.</div>
-            </React.Fragment>
-          : <div className="rs-mini">Following Master. Move, resize, rotate{el.type==='photo'?', reframe the photo':''}{isText?', resize text':''} to override just {activeLabel}.</div>}
+      {caps.list && <React.Fragment>
+        <div className="rs-sech">Rows</div>
+        {(el.type==='lineup'||el.type==='specials') && <React.Fragment>
+          <div className="rs-lab">Items</div>
+          {el.items.map((it,i)=>(
+            <div className="rs-itemrow" key={i}>
+              <input className="rs-input" value={el.type==='lineup'?it.n:it.l}
+                onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,n:e.target.value}:{...it,l:e.target.value}; setItems(items); }} />
+              <input className="rs-input" style={{ maxWidth:80 }} value={el.type==='lineup'?it.t:it.p}
+                onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,t:e.target.value}:{...it,p:e.target.value}; setItems(items); }} />
+              <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
+            </div>
+          ))}
+          <button className="rs-addrow" onClick={()=>setItems([...el.items, el.type==='lineup'?{n:'New act',t:'00:00'}:{l:'Item',p:'₫0'}])}>+ Add row</button>
+          <div style={{ height:10 }} />
+        </React.Fragment>}
+        {el.type==='sessions' && <React.Fragment>
+          <div className="rs-row">
+            <div className="rs-lab">Sessions — one per line</div>
+            <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
+              placeholder={'001 — Session title — 3.6.26'}
+              onChange={e=>update({ raw:e.target.value })} />
+          </div>
+          <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste straight from your notes — <b>number — title — date</b> split by dashes, pipes or tabs. Number and date are optional on every line.</div>
+        </React.Fragment>}
+        <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
+        <Chips label="Row weight" options={WEIGHTS_MONT} value={el.rowWeight||700} onChange={v=>update({rowWeight:v})} />
+        <Slider label="Row tracking" val={el.rowTracking!=null?el.rowTracking:(el.type==='specials'?0.03:0.01)} min={-0.05} max={0.4} step={0.005} suffix="em" onChange={v=>update({rowTracking:v})} />
+        <Slider label="Line spacing" val={el.rowGap!=null?el.rowGap:(el.type==='specials'?5:7)} min={0} max={24} step={1} suffix="px" onChange={v=>update({rowGap:v})} />
+        <Swatches label="Row text colour" value={el.textColor!=null?el.textColor:el.color} onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
       </React.Fragment>}
     </React.Fragment>
   );

@@ -389,12 +389,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const lpBase = el.rowSize || Math.max(13, Math.min(22, Math.floor(lpAvail/Math.max(1,el.items.length)) - 10));
     const lpName1 = Math.round(lpBase*1.24), lpTime = Math.max(11, Math.round(lpBase*0.62));
     inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:16,
-          borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:'7px 0',
-          fontFamily:MONT, fontWeight:700, textTransform:'uppercase' }}>
-          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:'.01em' }}>{it.n}</span>
+          borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:(el.rowGap!=null?el.rowGap:7)+'px 0',
+          fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase' }}>
+          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:(el.rowTracking!=null?el.rowTracking:0.01)+'em' }}>{it.n}</span>
           <span style={{ fontSize:lpTime*B, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.t}</span>
         </div>
       ))}
@@ -411,13 +411,13 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const fs = (el.rowSize || auto) * B;
     const sub = Math.max(11, Math.round(fs*0.62));
     inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
-      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15*B, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null}
+      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null}
       {items.map((it,i)=>(
         <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
-          borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:'7px 0',
-          fontFamily:MONT, fontWeight:700, textTransform:'uppercase' }}>
+          borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:(el.rowGap!=null?el.rowGap:7)+'px 0',
+          fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase' }}>
           {it.num ? <span style={{ flex:'none', fontSize:sub, color:accentHex, letterSpacing:'.08em' }}>{it.num}</span> : null}
-          <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:'.01em' }}>{it.title}</span>
+          <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:(el.rowTracking!=null?el.rowTracking:0.01)+'em' }}>{it.title}</span>
           {it.date ? <span style={{ flex:'none', fontSize:sub, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.date}</span> : null}
         </div>
       ))}
@@ -431,10 +431,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const spAvail = el.h/B - 32 - (el.heading?34:0);
     const spBase = el.rowSize || Math.max(11, Math.min(15, Math.floor(spAvail/Math.max(1,el.items.length)) - 8));
     inner = <div style={box({ padding:'16px 24px', justifyContent:'flex-start' })}>
-      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:26*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:(el.headingSize!=null?el.headingSize:26)*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
-        <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:'5px 0',
-          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:spBase*B, letterSpacing:'.03em' }}>
+        <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:(el.rowGap!=null?el.rowGap:5)+'px 0',
+          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:spBase*B, letterSpacing:(el.rowTracking!=null?el.rowTracking:0.03)+'em' }}>
           <span>{it.l}</span><span style={{ fontWeight:800 }}>{it.p}</span>
         </div>
       ))}

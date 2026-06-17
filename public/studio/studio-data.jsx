@@ -100,6 +100,39 @@ function surfaceStyle(surface, theme, accentHex, lift){
   }
 }
 
+/* ============================================================
+   ONE SHADOW MODEL for every element. The renderer and the Shadow
+   control both read this, so the two never drift. Resolves the live
+   shadow params from el.shadow*, fills in per-type defaults + slider
+   ranges, and picks the application mode:
+     filter → photo / logo / block / weekly  (drop-shadow on the art)
+     box    → a surfaced text/chip/card       (box-shadow on the card)
+     text   → bare text, no surface           (text-shadow on letters)
+   Defaults reproduce the exact look each element had before it had a
+   control: bare titles + every surfaced card keep their press shadow;
+   bare body text and un-framed photos/blocks start with none.
+   ============================================================ */
+function shadowModel(el, theme){
+  const type = el.type;
+  const filterFam = type==='photo'||type==='logo'||type==='block'||type==='weekly';
+  const bare = !el.surface || el.surface==='none';
+  let dDef, bDef, maxDist, maxBlur, defOn;
+  if(filterFam){      dDef=9;  bDef=3; maxDist=60; maxBlur=40; defOn = (type==='weekly'); }
+  else if(bare){      dDef=6;  bDef=1; maxDist=40; maxBlur=24; defOn = (type==='title'); }
+  else {              dDef=10; bDef=2; maxDist=60; maxBlur=40; defOn = true; }
+  const on   = el.shadowOn!=null   ? el.shadowOn   : defOn;
+  const dist = el.shadowDist!=null  ? el.shadowDist  : dDef;
+  const blur = el.shadowBlur!=null  ? el.shadowBlur  : bDef;
+  const ang  = el.shadowAngle!=null ? el.shadowAngle : 90;
+  const ck   = el.shadowColor || 'fg';
+  const fgAlpha = filterFam ? (theme==='night'?0.40:0.22)
+                : bare      ? (theme==='night'?0.22:0.16)
+                :             (theme==='night'?0.20:0.16);
+  const alpha = el.shadowAlpha!=null ? el.shadowAlpha : (ck==='fg' ? fgAlpha : 0.9);
+  const mode  = filterFam ? 'filter' : (bare ? 'text' : 'box');
+  return { filterFam, bare, mode, on, dist, blur, ang, ck, alpha, dDef, bDef, maxDist, maxBlur, defOn };
+}
+
 /* centered 1:1 safe square for a format */
 function safeRect(format){
   const f = FORMATS[format];
@@ -222,13 +255,13 @@ const DEFAULTS = {
   when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:30, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
   host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0.02 } },
   ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'www.realitydn.com', surface:'paper', showQR:true, color:'fg' } },
-  lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], surface:'scrim', color:'fg' } },
+  lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, surface:'scrim', color:'fg' } },
   sessions:{ w:660, h:460, props:{ heading:'Next sessions',
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
              rowSize:0, surface:'scrim', color:'fg' } },
-  specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], surface:'accent', color:'fg' } },
+  specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, surface:'accent', color:'fg' } },
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
-  stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
+  stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
   /* Weekly recurring-event combo: an accent bar with the price (left) and time
      (right), and a day-of-week badge centred on top. One draggable unit. */
@@ -470,7 +503,7 @@ Object.assign(window, {
   PALETTE, ACCENTS, ACCENT_DAYS, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
-  themeColors, contrastInk, surfaceStyle, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
+  themeColors, contrastInk, surfaceStyle, shadowModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
   resolveElements, mapElementToFormat, pointToMaster,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
 });

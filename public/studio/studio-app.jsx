@@ -133,22 +133,75 @@ const WEIGHTS_MONT = [
 const WEIGHTS_GROT = [
   {v:300,l:'Light'},{v:400,l:'Reg'},{v:500,l:'Med'},{v:600,l:'Semi'},{v:700,l:'Bold'}
 ];
-/* Drop-shadow controls, shared by the weekly combo + logos. */
+/* ============================================================
+   PER-TYPE CAPABILITIES — the single source of truth for which shared
+   dials an element exposes. The Inspector renders a FIXED canonical
+   order of sections (Content → Type → Subtitle → Appearance → Shadow →
+   Transform → This-format) and consults this map to decide what shows,
+   so parity + ordering can't drift as new features land. Bespoke content
+   (text fields, item editors, the photo panel) still lives inline; this
+   governs the shared controls only.
+     text/font  — text element + its weight set ('mont' | 'grot')
+     size·weight·tracking·align·orient·lineHeight — which type dials show
+     sizePreset — host's Standard/Compact quick toggle
+     subtitle   — title's stacked subtitle group
+     tag        — a centred chip (no align; gains a height dial)
+     rowSize    — list block with Auto/S/M/L row sizing
+     surface    — the shared Surface + colour block
+     kickerColor— host's separate "Hosted by" colour
+     fillOwn    — element owns its fill (weekly/block) — skip shared block
+     media      — photo/logo (own panel)
+     shadow     — every element now has a shadow control
+     height     — expose a height dial + the shared tag-height presets
+     widthPreset— weekly's grid width presets
+   ============================================================ */
+const TYPE_CAPS = {
+  title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, subtitle:true, surface:true, shadow:true },
+  tagline:  { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, orient:true, surface:true, shadow:true },
+  info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:true, surface:true, shadow:true },
+  when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
+  stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
+  host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
+  ticket:   { surface:true, shadow:true },
+  qr:       { surface:true, shadow:true },
+  lineup:   { rowSize:true, surface:true, shadow:true },
+  specials: { rowSize:true, surface:true, shadow:true },
+  sessions: { rowSize:true, surface:true, shadow:true },
+  badge:    { surface:true, shadow:true },
+  weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
+  block:    { fillOwn:true, shadow:true },
+  photo:    { media:true, shadow:true },
+  logo:     { media:true, shadow:true },
+};
+const ROW_SIZES = [{v:0,l:'Auto fit'},{v:16,l:'S'},{v:21,l:'M'},{v:26,l:'L'}];
+/* Shared height vocabulary for chip/tag-shaped elements (when · stamp · weekly)
+   so a Weekly tag and a When chip can be dialled to the SAME height and sit in a
+   row at uniform height — no more delicate per-element resizing. */
+const TAG_HEIGHTS = [{v:84,l:'S'},{v:120,l:'M'},{v:162,l:'L'},{v:220,l:'XL'}];
+
+/* One shadow control for every element. Defaults + slider ranges come from the
+   shared window.shadowModel, so what you see matches what renders, and a brand
+   new element's shadow Just Works. Applies as a text-shadow on bare text, a
+   box-shadow on a surfaced card, or a drop-shadow on artwork (photo/logo/block/
+   weekly) — the model picks the mode. */
 function ShadowControls({ el, update, theme }){
-  const on = !!el.shadowOn;
-  const ck = el.shadowColor||'fg';
-  const alphaVal = el.shadowAlpha!=null?el.shadowAlpha:(ck==='fg'?(theme==='night'?0.4:0.22):0.9);
+  const m = window.shadowModel(el, theme);
   return (
     <React.Fragment>
       <div className="rs-sech">Shadow</div>
-      <Chips options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={on} onChange={v=>update({shadowOn:v})} />
-      {on && <React.Fragment>
-        <Slider label="Distance" val={el.shadowDist!=null?el.shadowDist:9} min={0} max={60} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
-        <Slider label="Direction" val={el.shadowAngle!=null?el.shadowAngle:90} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
-        <Slider label="Blur" val={el.shadowBlur!=null?el.shadowBlur:3} min={0} max={40} step={1} onChange={v=>update({shadowBlur:v})} suffix="px" />
-        <Slider label="Opacity" val={alphaVal} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
-        <Swatches label="Shadow colour" value={ck} autoTitle="Auto — soft press shadow"
+      <Chips options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={m.on} onChange={v=>update({shadowOn:v})} />
+      {m.on && <React.Fragment>
+        <Slider label="Distance" val={m.dist} min={0} max={m.maxDist} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
+        <Slider label="Direction" val={m.ang} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
+        <Slider label="Blur" val={m.blur} min={0} max={m.maxBlur} step={1} onChange={v=>update({shadowBlur:v})} suffix="px" />
+        <Slider label="Opacity" val={m.alpha} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
+        <Swatches label="Shadow colour" value={m.ck} autoTitle="Auto — soft press shadow"
           onChange={v=>update(v==='fg'?{shadowColor:'fg',shadowAlpha:null}:{shadowColor:v,shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:0.9})} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>
+          {m.mode==='text'
+            ? <span>Falls on the letters (bare text) — add a surface for a card shadow instead.</span>
+            : <span>Try a hard accent shadow — distance up, blur 0, full opacity. Very riso.</span>}
+        </div>
       </React.Fragment>}
     </React.Fragment>
   );
@@ -342,7 +395,6 @@ function PhotoControls({ el, update, theme }){
       </React.Fragment>}
       <div className="rs-sech">Frame</div>
       <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
-      {el.type==='logo' && <ShadowControls el={el} update={update} theme={theme} />}
 
       <div className="rs-sech">Image in frame</div>
       {el.type==='logo' && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>The whole logo always shows (contain). Zoom <b>below 1×</b> for more paper space around it.</div>}
@@ -410,11 +462,18 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
     );
   }
 
-  const isText = ['title','tagline','when','stamp','host','info'].indexOf(el.type)>=0;
+  const caps = TYPE_CAPS[el.type] || {};
+  const isText = !!caps.text;
   const setItems = (items)=>update({ items });
   // Per-type default tracking, so the slider reads true for elements saved
   // before letter-spacing was configurable (matches the renderer's fallback).
   const lsDefault = el.type==='when'?0.16 : el.type==='host'?0.02 : el.type==='stamp'?0.04 : el.type==='title'?0.005 : 0;
+  const WEIGHTS = caps.font==='grot' ? WEIGHTS_GROT : WEIGHTS_MONT;
+  const defWeight = (AP_DEF[el.type] && AP_DEF[el.type].props.weight) || (caps.font==='grot'?400:700);
+  const sizeLabel = 'Font size'+(isOutput?' · '+activeLabel+' only':'');
+  // Tags get a height dial too (chips auto-centre their text); paragraph text
+  // auto-sizes to its box, so height stays hidden there.
+  const showHeight = !isText || !!caps.tag;
 
   return (
     <React.Fragment>
@@ -445,21 +504,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <button className="rs-iconbtn rs-del" onClick={del} title="Delete">Delete</button>
       </div>
 
-      {/* ---- content (shared across formats) ---- */}
+      {/* ============ CONTENT (shared across formats) ============ */}
       {el.type==='title' && <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />}
-      {el.type==='title' && <React.Fragment>
-        <div className="rs-sech">Subtitle</div>
-        <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
-        {(el.subtitle||'').trim()
-          ? <React.Fragment>
-              <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
-              <ScaleControl label={'Subtitle size'+(isOutput?' · '+activeLabel+' only':'')} val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
-              <Chips label="Subtitle weight" options={WEIGHTS_MONT} value={el.subWeight||600} onChange={v=>update({subWeight:v})} />
-              <Slider label="Subtitle tracking" val={el.subTracking!=null?el.subTracking:0.02} min={-0.05} max={0.6} step={0.005} onChange={v=>update({subTracking:v})} suffix="em" />
-              <Swatches label="Subtitle colour" value={el.subColor!=null?el.subColor:'fg'} onChange={v=>update({subColor:v})} autoTitle="Auto — follows the title" />
-            </React.Fragment>
-          : <div className="rs-mini" style={{ marginTop:-2 }}>Add a line to sit under the title, inside the same box.</div>}
-      </React.Fragment>}
       {el.type==='tagline' && <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />}
       {el.type==='info' && <React.Fragment>
         <Field label="Info text" value={el.text} onChange={v=>update({text:v})} area />
@@ -468,8 +514,6 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {el.type==='when' && <Field label="When" value={el.text} onChange={v=>update({text:v})} />}
       {el.type==='stamp' && <Field label="Stamp text" value={el.text} onChange={v=>update({text:v})} />}
       {el.type==='host' && <React.Fragment>
-        <Chips label="Size" options={[{v:'std',l:'Standard'},{v:'compact',l:'Compact'}]}
-          value={(el.fontSize<=34)?'compact':'std'} onChange={v=>update(v==='compact'?{fontSize:28,h:80}:{fontSize:46,h:170})} />
         <Field label="Kicker (optional)" value={el.kicker} onChange={v=>update({kicker:v})} />
         <Field label="Name" value={el.name} onChange={v=>update({name:v})} />
       </React.Fragment>}
@@ -500,6 +544,16 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <button className="rs-addrow" onClick={()=>setItems([...el.items, el.type==='lineup'?{n:'New act',t:'00:00'}:{l:'Item',p:'₫0'}])}>+ Add row</button>
         <div style={{ height:12 }} />
       </React.Fragment>}
+      {el.type==='sessions' && <React.Fragment>
+        <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
+        <div className="rs-row">
+          <div className="rs-lab">Sessions — one per line</div>
+          <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
+            placeholder={'001 — Session title — 3.6.26'}
+            onChange={e=>update({ raw:e.target.value })} />
+        </div>
+        <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste straight from your notes — <b>number — title — date</b> split by dashes, pipes or tabs. Number and date are optional on every line.</div>
+      </React.Fragment>}
       {el.type==='badge' && <React.Fragment>
         <div className="rs-rowflex">
           <Field label="Top" value={el.top} onChange={v=>update({top:v})} />
@@ -517,91 +571,69 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <Field label="Day" value={el.day} onChange={v=>update({day:v})} />
         </div>
         <Field label="Below day" value={el.allYear} onChange={v=>update({allYear:v})} />
-        <Swatches label="Accent — bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent.</div>
-        <div className="rs-sech">Size — grid presets</div>
-        <Chips label="Width" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />
-        <Chips label="Height" options={[{v:162,l:'S'},{v:216,l:'M'},{v:270,l:'L'}]} value={el.h} onChange={v=>update({h:v})} />
-        <ShadowControls el={el} update={update} theme={doc.theme} />
-      </React.Fragment>}
-      {el.type==='sessions' && <React.Fragment>
-        <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
-        <div className="rs-row">
-          <div className="rs-lab">Sessions — one per line</div>
-          <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
-            placeholder={'001 — Session title — 3.6.26'}
-            onChange={e=>update({ raw:e.target.value })} />
-        </div>
-        <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste straight from your notes — <b>number — title — date</b> split by dashes, pipes or tabs. Number and date are optional on every line.</div>
-        <Chips label="Row size" options={[{v:0,l:'Auto fit'},{v:16,l:'S'},{v:21,l:'M'},{v:26,l:'L'}]}
-          value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
       </React.Fragment>}
 
-      {(el.type==='photo'||el.type==='logo') && <PhotoControls el={el} update={update} theme={doc.theme} />}
+      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
       {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
 
-      {/* ---- style (shared) ---- */}
-      {el.type!=='photo' && el.type!=='block' && el.type!=='logo' && el.type!=='weekly' && <React.Fragment>
-      <div className="rs-sech">Surface</div>
-      <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
-      <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
-        onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
-      {el.type==='host' && <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'}
-        onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />}
-      <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
-        onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-      <div className="rs-mini" style={{ marginTop:-2 }}>{el.type==='host' ? <span>Three independent colours: the kicker, the name, and the <b>Accent</b> background.</span> : <span>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</span>}</div>
+      {/* ============ TYPE (size · weight · spacing · align) ============ */}
+      {caps.size && <ScaleControl label={sizeLabel} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
+      {caps.sizePreset && <Chips label="Size preset" options={[{v:'std',l:'Standard'},{v:'compact',l:'Compact'}]}
+        value={(el.fontSize<=34)?'compact':'std'} onChange={v=>update(v==='compact'?{fontSize:28,h:80}:{fontSize:46,h:170})} />}
+      {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
+      {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
+      {caps.lineHeight && <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />}
+      {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
+      {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
+      {caps.rowSize && <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />}
+
+      {/* ============ SUBTITLE (title) ============ */}
+      {caps.subtitle && <React.Fragment>
+        <div className="rs-sech">Subtitle</div>
+        <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
+        {(el.subtitle||'').trim()
+          ? <React.Fragment>
+              <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
+              <ScaleControl label={'Subtitle size'+(isOutput?' · '+activeLabel+' only':'')} val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
+              <Chips label="Subtitle weight" options={WEIGHTS_MONT} value={el.subWeight||600} onChange={v=>update({subWeight:v})} />
+              <Slider label="Subtitle tracking" val={el.subTracking!=null?el.subTracking:0.02} min={-0.05} max={0.6} step={0.005} onChange={v=>update({subTracking:v})} suffix="em" />
+              <Swatches label="Subtitle colour" value={el.subColor!=null?el.subColor:'fg'} onChange={v=>update({subColor:v})} autoTitle="Auto — follows the title" />
+            </React.Fragment>
+          : <div className="rs-mini" style={{ marginTop:-2 }}>Add a line to sit under the title, inside the same box.</div>}
       </React.Fragment>}
 
-      {(el.type==='title'||el.type==='tagline'||el.type==='when'||el.type==='host'||el.type==='stamp'||el.type==='info') &&
-        <ScaleControl label={'Font size'+(isOutput?' · '+activeLabel+' only':'')} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
-      {isText &&
-        <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
-      {(el.type==='title'||el.type==='host') && <Chips label="Weight" options={WEIGHTS_MONT} value={el.weight} onChange={v=>update({weight:v})} />}
-      {el.type==='tagline' && <Chips label="Weight" options={WEIGHTS_GROT} value={el.weight!=null?el.weight:400} onChange={v=>update({weight:v})} />}
-      {(el.type==='title'||el.type==='tagline'||el.type==='host'||el.type==='info') &&
-        <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
-      {el.type==='info' && <React.Fragment>
-        <Chips label="Weight" options={WEIGHTS_GROT} value={el.weight||400} onChange={v=>update({weight:v})} />
-        <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />
+      {/* ============ APPEARANCE (surface + colour) ============ */}
+      {caps.surface && <React.Fragment>
+        <div className="rs-sech">Surface</div>
+        <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
+        <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
+          onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
+        {caps.kickerColor && <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'}
+          onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />}
+        <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
+          onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>{el.type==='host' ? <span>Three independent colours: the kicker, the name, and the <b>Accent</b> background.</span> : <span>Fill colours an <b>Accent</b> surface and the element’s accent highlights (kicker, heading…).</span>}</div>
       </React.Fragment>}
-      {el.type==='title' && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient} onChange={v=>update({orient:v})} />}
+      {el.type==='weekly' && <React.Fragment>
+        <div className="rs-sech">Accent</div>
+        <Swatches label="Bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent.</div>
+      </React.Fragment>}
 
-      {/* ---- title drop shadow (on the letters; legacy default = press shadow
-              when bare, none when surfaced — same look as before) ---- */}
-      {el.type==='title' && (()=>{
-        const bare = !el.surface || el.surface==='none';
-        const on = el.shadowOn!=null ? el.shadowOn : bare;
-        const ck = el.shadowColor||'fg';
-        const alphaVal = el.shadowAlpha!=null ? el.shadowAlpha : (ck==='fg' ? (doc.theme==='night'?0.22:0.16) : 0.9);
-        return (
-          <React.Fragment>
-            <div className="rs-sech">Shadow</div>
-            <Chips options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={on} onChange={v=>update({shadowOn:v})} />
-            {on && <React.Fragment>
-              <Slider label="Distance" val={el.shadowDist!=null?el.shadowDist:6} min={0} max={40} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
-              <Slider label="Direction" val={el.shadowAngle!=null?el.shadowAngle:90} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
-              <Slider label="Blur" val={el.shadowBlur!=null?el.shadowBlur:1} min={0} max={24} step={1} onChange={v=>update({shadowBlur:v})} suffix="px" />
-              <Slider label="Opacity" val={alphaVal} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
-              <Swatches label="Shadow colour" value={ck} autoTitle="Auto — soft press shadow"
-                onChange={v=>update(v==='fg'
-                  ? { shadowColor:'fg', shadowAlpha:null }
-                  : { shadowColor:v, shadowAlpha: el.shadowAlpha!=null?el.shadowAlpha:0.9 })} />
-              <div className="rs-mini" style={{ marginTop:-2 }}>Try a hard accent shadow — distance up, blur 0, full opacity. Very riso.</div>
-            </React.Fragment>}
-          </React.Fragment>
-        );
-      })()}
+      {/* ============ SHADOW (unified — every element) ============ */}
+      {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
 
-      {/* ---- transform (layout — per-format when on an output) ---- */}
+      {/* ============ TRANSFORM (layout — per-format on an output) ============ */}
       <div className="rs-sech">Transform{isOutput && <span className="rs-ovtag"> · {activeLabel} only</span>}</div>
       <Chips label="Tilt presets" options={[{v:0,l:'0°'},{v:-3,l:'-3°'},{v:3,l:'+3°'},{v:-6,l:'-6°'},{v:6,l:'+6°'}]} value={el.rot||0} onChange={v=>update({rot:v})} />
       <Slider label="Rotation" val={el.rot||0} min={-45} max={45} onChange={v=>update({rot:v})} suffix="°" />
       <Slider label="Width" val={el.w} min={120} max={1080} step={6} onChange={v=>update({w:v})} suffix="px" />
-      {!isText && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
+      {caps.widthPreset && <Chips label="Width presets" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />}
+      {showHeight && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
+      {caps.height && <Chips label="Height presets — match across tags" options={TAG_HEIGHTS} value={el.h} onChange={v=>update({h:v})} />}
       <Chips label="Anchor (all formats)" options={[{v:'safe',l:'Safe cluster'},{v:'bottom',l:'Pin to base'}]} value={el.anchor||'safe'} onChange={v=>update({anchor:v})} />
 
-      {/* ---- per-format override controls ---- */}
+      {/* ============ THIS FORMAT (per-format override) ============ */}
       {isOutput && <React.Fragment>
         <div className="rs-sech">This format · {activeLabel}</div>
         <Chips label="Visibility" options={[{v:false,l:'Shown'},{v:true,l:'Hidden'}]} value={!!el.hidden} onChange={v=>toggleHidden(el.id, v)} />

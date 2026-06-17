@@ -112,9 +112,11 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
 
   const t=seTheme(theme);
   const off=`${-(BLEED_K-1)/2*100}%`, span=`${BLEED_K*100}%`;
-  /* logo shadow: a transparent logo casts off its own shape (drop-shadow on the
-     outer box so it isn't clipped); a paper logo casts off its card edge. */
-  const lsh = el.type==='logo' ? seShadow(el, t, theme) : null;
+  /* photo / logo shadow (off by default; a framed piece keeps its press shadow
+     below regardless): a transparent logo casts off its own shape (drop-shadow
+     on the outer box so it isn't clipped); an opaque photo/paper logo casts off
+     its card edge. */
+  const lsh = (el.type==='logo'||el.type==='photo') ? seShadow(el, theme) : null;
   return <div style={{ width:'100%', height:'100%', position:'relative', boxSizing:'border-box',
       filter: (lsh && el.transparent) ? lsh.filter : undefined }}>
     {selected && <canvas ref={bleedRef} aria-hidden="true" style={{ position:'absolute',
@@ -140,19 +142,24 @@ function seRGBA(hex, a){
   const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
   return 'rgba('+r+','+g+','+b+','+a+')';
 }
-/* Drop-shadow params from an element's shadow.* props — shared by the weekly
-   combo and logos. 'fg' uses the theme's adaptive press shadow (dark on day,
-   a soft glow on night). Returns null when off. */
-function seShadow(el, t, theme){
-  if(!el.shadowOn) return null;
-  const dist = el.shadowDist!=null?el.shadowDist:9;
-  const ang  = (el.shadowAngle!=null?el.shadowAngle:90)*Math.PI/180;
-  const blur = el.shadowBlur!=null?el.shadowBlur:3;
-  const ck   = el.shadowColor||'fg';
-  const alpha= el.shadowAlpha!=null?el.shadowAlpha:(ck==='fg'?(theme==='night'?0.4:0.22):0.9);
-  const col  = ck==='fg' ? t.shadow(alpha) : seRGBA(ck==='ink'?'#0d0905':ck==='cream'?'#fffbf1':(SE_PAL[ck]||'#0d0905'), alpha);
-  const dx=Math.round(Math.cos(ang)*dist*10)/10, dy=Math.round(Math.sin(ang)*dist*10)/10;
-  return { css:`${dx}px ${dy}px ${blur}px ${col}`, filter:`drop-shadow(${dx}px ${dy}px ${blur}px ${col})` };
+/* Build a shadow CSS string ("dx dy blur colour") from a shadowModel — the one
+   place the trig + colour resolution lives. text-shadow, box-shadow and
+   drop-shadow all take this same syntax, so every element shares it. 'fg' uses
+   the theme's adaptive press shadow (dark on day, a soft glow on night).
+   Returns null when the shadow is off. */
+function seShadowCss(m, theme){
+  if(!m || !m.on) return null;
+  const t = seTheme(theme);
+  const ang = m.ang*Math.PI/180;
+  const col = m.ck==='fg' ? t.shadow(m.alpha)
+            : seRGBA(m.ck==='ink'?'#0d0905':m.ck==='cream'?'#fffbf1':(SE_PAL[m.ck]||'#0d0905'), m.alpha);
+  const dx = Math.round(Math.cos(ang)*m.dist*10)/10, dy = Math.round(Math.sin(ang)*m.dist*10)/10;
+  return `${dx}px ${dy}px ${m.blur}px ${col}`;
+}
+/* drop-shadow form for the artwork family (photo / logo / block / weekly). */
+function seShadow(el, theme){
+  const css = seShadowCss(window.shadowModel(el, theme), theme);
+  return css ? { css, filter:`drop-shadow(${css})` } : null;
 }
 
 /* Solid colour block — a flat ink field. With grain it renders through a
@@ -173,10 +180,12 @@ function BlockEl({ el, theme, fillHex, exporting }){
     cx.fillStyle=fillHex; cx.fillRect(0,0,W,H);
     window.RISO.grain(cv, el.grain, el.grainSize!=null?el.grainSize:2);
   });
+  const bsh = seShadow(el, theme);   // off by default; casts off the block shape when on
   return <div style={{ position:'absolute', inset:0, overflow:'hidden',
     opacity: el.opacity!=null?el.opacity:1,
     background: grainy? 'transparent' : fillHex,
-    border: el.outline? `3px solid ${t.fg}` : 'none', boxSizing:'border-box' }}>
+    border: el.outline? `3px solid ${t.fg}` : 'none', boxSizing:'border-box',
+    filter: bsh? bsh.filter : undefined }}>
     {grainy && <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />}
   </div>;
 }
@@ -253,10 +262,19 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       <BlockEl el={el} theme={theme} fillHex={accentHex} exporting={exporting} />
     </Wrap>;
   }
+  /* Unified shadow for the text / surface family (everything below). A bare
+     element shadows its letters (text-shadow, inherited by the children); a
+     surfaced one shadows its card (box-shadow, overriding the surface's default).
+     Defaults reproduce the old press shadow — see shadowModel. */
+  const _sm = window.shadowModel(el, theme);
+  const _shCss = seShadowCss(_sm, theme);
+  const autoBox  = _sm.mode==='box'  ? (_shCss||'none') : 'none';
+  const autoText = _sm.mode==='text' ? (_shCss||'none') : 'none';
+
   const box = (extra)=>Object.assign({
     width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
     display:'flex', flexDirection:'column', justifyContent:'center'
-  }, surf, { color:textCol }, extra);
+  }, surf, { color:textCol, boxShadow:autoBox, textShadow:autoText }, extra);
 
   let inner = null;
 
@@ -264,22 +282,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     // The Surface control now applies to the title too: 'none' = bare floating
     // text (with the drop shadow); any other surface wraps it in that block.
     const bare = !el.surface || el.surface==='none';
-    /* Shadow on the letters themselves. Explicit settings win; docs from before
-       the control keep the legacy behaviour (house press shadow on bare titles,
-       none on surfaced ones). Colour 'fg' = the theme's soft press shadow. */
-    const shOn = el.shadowOn!=null ? el.shadowOn : bare;
-    let tShadow = 'none';
-    if(shOn){
-      const dist = el.shadowDist!=null?el.shadowDist:6;
-      const ang  = (el.shadowAngle!=null?el.shadowAngle:90)*Math.PI/180;
-      const blur = el.shadowBlur!=null?el.shadowBlur:1;
-      const ck   = el.shadowColor||'fg';
-      const alpha= el.shadowAlpha!=null?el.shadowAlpha
-                 : (ck==='fg' ? (theme==='night'?0.22:0.16) : 0.9);
-      const col  = ck==='fg' ? t.shadow(alpha)
-                 : seRGBA(ck==='ink'?'#0d0905':ck==='cream'?'#fffbf1':(SE_PAL[ck]||'#0d0905'), alpha);
-      tShadow = `${Math.round(Math.cos(ang)*dist*10)/10}px ${Math.round(Math.sin(ang)*dist*10)/10}px ${blur}px ${col}`;
-    }
+    /* Shadow comes from the one shadowModel: a bare title shadows its letters
+       (text-shadow), a surfaced one shadows its card (box-shadow, applied on the
+       container below). Defaults match the old behaviour exactly. */
+    const tShadow = autoText;
     /* optional subtitle, stacked inside the title box. Spacing preset sets the
        gap (relative to the title size, so it stays natural at any scale) or
        pins the two to the box edges (split). */
@@ -291,7 +297,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const container = Object.assign({
       width:'100%', height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box',
       alignItems: colAlign, justifyContent: split ? 'space-between' : 'center'
-    }, bare ? { padding:0 } : Object.assign({ padding:'16px 26px' }, surf));
+    }, bare ? { padding:0 } : Object.assign({ padding:'16px 26px' }, surf, { boxShadow:autoBox }));
     inner = (
       <div style={container}>
         <div style={{
@@ -317,7 +323,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
 
   if(el.type==='tagline'){
     inner = <div style={box({ padding:'14px 24px' })}>
-      <div style={{ fontFamily:GROT, fontWeight:el.weight, fontSize:el.fontSize+'px', lineHeight:1.25, letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em', color:textCol, textAlign:el.align }}>{el.text}</div>
+      <div style={{ fontFamily:GROT, fontWeight:el.weight, fontSize:el.fontSize+'px', lineHeight:1.25, letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em', color:textCol, textAlign:el.align,
+        writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='info'){
@@ -331,7 +338,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='when'){
     inner = <div style={box({ padding:'10px 26px', alignItems:'center' })}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.16)+'em', fontSize:el.fontSize+'px', color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
+      <div style={{ fontFamily:MONT, fontWeight:el.weight||700, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.16)+'em', fontSize:el.fontSize+'px', color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='host'){
@@ -364,14 +371,19 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     }
   }
   else if(el.type==='lineup'){
+    /* Row type auto-fits the box (rowSize 0) or takes an S/M/L override — parity
+       with sessions. The headliner (row 0) and the set times derive from it. */
+    const lpAvail = el.h/B - 36 - (el.heading?26:0);
+    const lpBase = el.rowSize || Math.max(13, Math.min(22, Math.floor(lpAvail/Math.max(1,el.items.length)) - 10));
+    const lpName1 = Math.round(lpBase*1.24), lpTime = Math.max(11, Math.round(lpBase*0.62));
     inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:15*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:16,
           borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:'7px 0',
           fontFamily:MONT, fontWeight:700, textTransform:'uppercase' }}>
-          <span style={{ fontSize: (i===0?26:21)*B, color: i===0?accentHex:'inherit', letterSpacing:'.01em' }}>{it.n}</span>
-          <span style={{ fontSize:13*B, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.t}</span>
+          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:'.01em' }}>{it.n}</span>
+          <span style={{ fontSize:lpTime*B, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.t}</span>
         </div>
       ))}
     </div>;
@@ -402,11 +414,15 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='specials'){
+    /* Item rows auto-fit the box (rowSize 0) or take an S/M/L override — parity
+       with sessions/lineup. The heading stays fixed. */
+    const spAvail = el.h/B - 32 - (el.heading?34:0);
+    const spBase = el.rowSize || Math.max(11, Math.min(15, Math.floor(spAvail/Math.max(1,el.items.length)) - 8));
     inner = <div style={box({ padding:'16px 24px', justifyContent:'flex-start' })}>
       <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:26*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:'5px 0',
-          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:14*B, letterSpacing:'.03em' }}>
+          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:spBase*B, letterSpacing:'.03em' }}>
           <span>{it.l}</span><span style={{ fontWeight:800 }}>{it.p}</span>
         </div>
       ))}
@@ -423,7 +439,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='stamp'){
     inner = <div style={box({ alignItems:'center', padding:'8px 16px' })}>
-      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.04)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
+      <div style={{ fontFamily:MONT, fontWeight:el.weight||800, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.04)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='badge'){
@@ -442,7 +458,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     /* fonts derive from el.h (which boostForStory already scales per format), so
        they must NOT also multiply by B — that would scale the text twice. */
     const barF=Math.round(barH*0.32), bigF=Math.round(badgeD*0.32), smF=Math.round(badgeD*0.10);
-    const sh=seShadow(el, t, theme);
+    const sh=seShadow(el, theme);
     inner = <div style={{ position:'relative', width:'100%', height:'100%', boxSizing:'border-box' }}>
       <div style={{ position:'absolute', left:0, right:0, top:(H-barH)/2, height:barH, background:accent, boxShadow: sh?sh.css:'none',
         display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 '+pad+'px', boxSizing:'border-box' }}>

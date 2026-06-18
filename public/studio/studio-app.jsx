@@ -2,7 +2,7 @@
    REALITY POSTER STUDIO — App
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
-const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
+const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:AP_STD, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
         ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, DAY_NAMES:AP_DNAMES, accentDay:apAccentDay,
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
@@ -724,6 +724,7 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
   const commit = ()=> setDoc(d=> d.title===name ? d : ({...d, title:name}));
   const slug = slugify(name) || 'reality-poster';
   const kind = doc.exportFormat||'png';
+  const printDef = (AP_FMT[doc.activeFormat]||{}).print;   // A1 / standee print-res descriptor
   const scope = isOutput ? AP_FMT[doc.activeFormat].label+' only' : 'All formats';
   const outName = isOutput
     ? `${storyStem(doc.activeFormat, slug, doc.accent)}.${kind}`
@@ -751,6 +752,13 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
             A1<small>PRINT XL</small>
           </button>
         </div>
+        <select className={'rs-stsel'+(AP_STD.indexOf(doc.activeFormat)>=0?' on':'')} aria-label="Standee size"
+          value={AP_STD.indexOf(doc.activeFormat)>=0 ? doc.activeFormat : ''}
+          onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
+          title="Standee / roll-up print views (portrait) — never part of the Save-All bundle. Save here for a print-resolution standee: true cm size at 150 dpi, PDF as a real-world mm page a shop runs 1:1.">
+          <option value="">Standee…</option>
+          {AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}
+        </select>
         {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
           title="Clear all overrides for this format">↺ {overrideCount||0}</button>}
       </div>
@@ -783,8 +791,8 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           <option value="pdf">PDF</option>
         </select>
         <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
-          title={(doc.activeFormat==='a1'
-            ? 'Print-resolution A1 — 3508px wide (150 dpi)'+(kind==='pdf'?', a true 594×841mm PDF a shop runs 1:1':'')
+          title={(printDef
+            ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
             : isOutput
               ? 'Export the format you’re viewing'
               : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
@@ -1113,11 +1121,14 @@ function App(){
     const kind = doc.exportFormat || 'png';
     const slug = slugify(titleArg!=null ? titleArg : (doc.title||''));
     const base = slug || 'reality-poster';
-    /* The A1 view captures at print resolution — 3508px wide is true A1 @
-       150dpi. The ratio rides the `exporting` flag as a number so riso photos
-       and grainy blocks repaint 1:1 with the capture grid (no soft upscale). */
-    const a1Ratio = doc.activeFormat==='a1' ? 3508/AP_FMT.a1.w : 0;
-    setSelectedIds([]); setExporting(a1Ratio || true); setExportMsg('Rendering…');
+    /* Print views (A1, standees) carry a `print:{wmm,hmm,dpi}` descriptor and
+       capture at true print resolution — e.g. A1 is 3508px wide (594mm @
+       150dpi), an 80×200 standee 4724px wide. The ratio rides the `exporting`
+       flag as a number so riso photos and grainy blocks repaint 1:1 with the
+       capture grid (no soft upscale). */
+    const printDef = (AP_FMT[doc.activeFormat]||{}).print;
+    const printRatio = printDef ? Math.round(printDef.wmm/25.4*printDef.dpi) / AP_FMT[doc.activeFormat].w : 0;
+    setSelectedIds([]); setExporting(printRatio || true); setExportMsg('Rendering…');
     const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
     const capture = (f, type, ratio)=>{
       const node=canvasRef.current;
@@ -1131,24 +1142,24 @@ function App(){
     try{
       if(doc.activeFormat!=='master'){
         /* single format — exactly the view on screen */
-        await new Promise(r=>setTimeout(r, a1Ratio?420:140));   // print-res riso repaints need longer
+        await new Promise(r=>setTimeout(r, printRatio?420:140));   // print-res riso repaints need longer
         const f=AP_FMT[viewFormat], name=storyStem(viewFormat, base, doc.accent);
         if(kind==='pdf'){
-          const url=await capture(f, null, a1Ratio||null);
-          /* A1 PDFs are made at real-world size (594×841mm) so a print shop
-             runs them 1:1; screen formats keep the px-sized page. */
-          const pdf = a1Ratio
-            ? new JS({ unit:'mm', format:[594,841], orientation:'portrait' })
+          const url=await capture(f, null, printRatio||null);
+          /* Print PDFs (A1, standees) are made at real-world size in mm so a
+             print shop runs them 1:1; screen formats keep the px-sized page. */
+          const pdf = printDef
+            ? new JS({ unit:'mm', format:[printDef.wmm,printDef.hmm], orientation: printDef.wmm>printDef.hmm?'landscape':'portrait' })
             : new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
           /* 'FAST' = lossless FLATE on the embedded raster — without a
              compression arg jsPDF stores it raw and one page tops 20MB.
              FAST over SLOW: same pixels, ~0.7MB larger, no multi-second
              main-thread stall per page (matters for the 5-page master). */
-          if(a1Ratio) pdf.addImage(url,'PNG',0,0,594,841,undefined,'FAST');
+          if(printDef) pdf.addImage(url,'PNG',0,0,printDef.wmm,printDef.hmm,undefined,'FAST');
           else pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST');
           pdf.save(name+'.pdf');
         } else {
-          dl(await capture(f, kind, a1Ratio||null), name+'.'+kind);
+          dl(await capture(f, kind, printRatio||null), name+'.'+kind);
         }
       } else {
         /* Master — every output format: zip of images, or one multi-page PDF */

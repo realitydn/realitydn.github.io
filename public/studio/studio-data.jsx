@@ -43,12 +43,26 @@ const FORMATS = {
   'fbcover': { w:1080, h:565, label:'FB', sub:'EVENT', fit:0.5, safe:{ x:258, y:24, w:564, h:517 } },
   'a4':   { w:1080, h:1527, label:'A4', sub:'PRINT' },
   /* Extra print view — same sheet shape as A4 (all A-series paper is 1:√2),
-     but Save captures it at print resolution (3508px = A1 @ 150dpi; PDF at
-     true 594×841mm). Deliberately NOT in OUTPUT_FORMATS: it's on-demand for
-     the occasional big print, never part of the Save-All bundle. */
-  'a1':   { w:1080, h:1527, label:'A1', sub:'PRINT XL' }
+     but Save captures it at print resolution via the `print` descriptor below
+     (3508px = A1 @ 150dpi; PDF at true 594×841mm). Deliberately NOT in
+     OUTPUT_FORMATS: on-demand for the occasional big print, never in Save-All. */
+  'a1':   { w:1080, h:1527, label:'A1', sub:'PRINT XL', print:{ wmm:594, hmm:841, dpi:150 } },
+  /* Roll-up / standing standee views — Việt Nam's standard standee sizes, all
+     portrait. Like A1 each carries a `print:{wmm,hmm,dpi}` descriptor so Save
+     captures at true print resolution (150 dpi) and the PDF is a real-world mm
+     page a shop runs 1:1. Preview h = 1080 × (cm-h / cm-w) so the on-screen
+     aspect matches the print exactly. On-demand only — kept OUT of
+     OUTPUT_FORMATS so they never join the Save-All bundle. */
+  'st-60x120': { w:1080, h:2160, label:'60×120', sub:'STANDEE', print:{ wmm:600, hmm:1200, dpi:150 } },
+  'st-60x160': { w:1080, h:2880, label:'60×160', sub:'STANDEE', print:{ wmm:600, hmm:1600, dpi:150 } },
+  'st-80x180': { w:1080, h:2430, label:'80×180', sub:'STANDEE', print:{ wmm:800, hmm:1800, dpi:150 } },
+  'st-80x200': { w:1080, h:2700, label:'80×200', sub:'STANDEE', print:{ wmm:800, hmm:2000, dpi:150 } }
 };
 const OUTPUT_FORMATS = ['4x5','5x7','1x1','9x16','fbcover','a4'];
+/* Extra on-demand print views — never in the Save-All bundle. A1 is the single
+   XL sheet (its own toolbar button); these are the roll-up standee family,
+   surfaced through the toolbar's STANDEE picker. */
+const STANDEE_FORMATS = ['st-60x120','st-60x160','st-80x180','st-80x200'];
 /* modular type scale — font size snaps to these for consistency */
 const TYPE_SCALE = [18,22,26,32,38,46,56,68,82,100,120,144,172,206,248];
 function snapToScale(v){
@@ -535,7 +549,7 @@ function buildTemplate(tpl){
 
 Object.assign(window, {
   PALETTE, ACCENTS, ACCENT_DAYS, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
-  FORMATS, OUTPUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
+  FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, shadowModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
   resolveElements, mapElementToFormat, pointToMaster,

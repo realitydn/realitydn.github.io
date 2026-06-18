@@ -173,11 +173,13 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate, 
                   onChange={e=>setNote(date, e.target.value.toUpperCase())} />
               : <React.Fragment>
                   {evs.map(ev=>(
-                    <div key={ev.id} className={'ss-evrow'+(selId===ev.id?' on':'')}
+                    <div key={ev.id} className={'ss-evrow'+(selId===ev.id?' on':'')+(ev._proj?' proj':'')}
                       draggable onDragStart={e=>e.dataTransfer.setData('text/ev', ev.id)}
                       onClick={()=>setSelId(selId===ev.id ? null : ev.id)}>
                       <span className="tm">{ev.start}</span>
                       <span className="tt">{ev.title}</span>
+                      {ev.repeat==='weekly' && <span className="rep"
+                        title={ev._proj?'Repeats weekly (auto — set on an earlier week)':'Repeats weekly'}>↻</span>}
                       {ev.emphasis!=='none' && <span className="em">{ev.emphasis==='banner'?'▮':'B'}</span>}
                     </div>
                   ))}
@@ -213,19 +215,21 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
         <div className="ss-sech">Event</div>
         <div className="ss-actions">
           <button className="ss-iconbtn" onClick={()=>{
-            const c = Object.assign(JSON.parse(JSON.stringify(sel)), { id:a_uid() });
+            const c = Object.assign(JSON.parse(JSON.stringify(sel)), { id:a_uid(), exceptions:[], notionId:null });
             setDoc(d=>Object.assign({}, d, { events:d.events.concat([c]) })); setSelId(c.id);
           }}>Duplicate</button>
           <button className="ss-iconbtn ss-del" onClick={()=>{
             setDoc(d=>Object.assign({}, d, { events:d.events.filter(e=>e.id!==sel.id) })); setSelId(null);
-          }}>Delete</button>
+          }}>{sel.repeat==='weekly'?'Delete series':'Delete'}</button>
         </div>
         <SField label="Title" value={sel.title} onChange={v=>update({ title:v })} area />
         <SField label="Short title (used when space is tight)" value={sel.titleShort||''} ph="optional"
           onChange={v=>update({ titleShort:v||null })} />
         <div className="ss-row">
-          <div className="ss-lab">Day</div>
+          <div className="ss-lab">{sel.repeat==='weekly'?'Weekday (anchor)':'Day'}</div>
           <select className="ss-input" value={sel.date} onChange={e=>update({ date:e.target.value })}>
+            {dates.indexOf(sel.date)<0 &&
+              <option value={sel.date}>{A_DA[a_wd(sel.date)]} {a_dshort(sel.date)} · earlier week</option>}
             {dates.map(d=><option key={d} value={d}>{A_DA[a_wd(d)]} {a_dshort(d)}</option>)}
           </select>
         </div>
@@ -254,6 +258,33 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
           value={sel.emphasis} onChange={v=>update({ emphasis:v })} />
         <SChips label="Hide on" multi options={A_CH.map(c=>({v:c.id,l:c.label}))}
           value={sel.hide||[]} onChange={v=>update({ hide:v })} />
+        <SChips label="Repeat" options={[{v:'none',l:'One-off'},{v:'weekly',l:'↻ Weekly'}]}
+          value={sel.repeat==='weekly'?'weekly':'none'}
+          onChange={v=> v==='weekly' ? update({ repeat:'weekly' })
+            : update({ repeat:null, exceptions:[], repeatUntil:null })} />
+        {sel.repeat==='weekly' && (()=>{
+          const occ = dates.filter(d=>a_wd(d)===a_wd(sel.date) && d>=sel.date)[0] || null;
+          const exc = sel.exceptions||[];
+          const skipped = !!occ && exc.indexOf(occ)>=0;
+          return (
+            <React.Fragment>
+              <div className="ss-mini" style={{ marginTop:-4 }}>
+                Shows on every <b>{window.DAY_FULL[a_wd(sel.date)]}</b> from {a_dshort(sel.date)} onward —
+                in every week you open, on every channel and export. Switch back to One-off to drop all future copies at once.
+              </div>
+              {occ &&
+                <div className="ss-actions" style={{ marginTop:-2 }}>
+                  <button className="ss-iconbtn" onClick={()=>update({ exceptions:
+                    skipped ? exc.filter(d=>d!==occ) : exc.concat([occ]).sort() })}>
+                    {skipped ? '↻ Restore '+a_dshort(occ) : '⊘ Skip the week of '+a_dshort(occ)}
+                  </button>
+                  {exc.length>0 &&
+                    <button className="ss-iconbtn" onClick={()=>update({ exceptions:[] })}>
+                      Clear {exc.length} skip{exc.length===1?'':'s'}</button>}
+                </div>}
+            </React.Fragment>
+          );
+        })()}
         <div className="ss-mini">Banner is the anniversary-party treatment — one per week reads loud.</div>
         <div className="ss-mini" style={{ marginTop:8 }}>Click the row again, press Esc, or click the canvas to deselect. Delete / Backspace removes the event (when not typing in a field).</div>
       </React.Fragment>
@@ -389,12 +420,15 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
       </div>
       <div className="ss-actions">
         <button className="ss-iconbtn" onClick={()=>{
-          if(confirm('Clone this schedule onto the next period? Every event shifts forward '+doc.range.days+' days.')){
+          if(confirm('Move onto the next period? One-off events shift forward '+doc.range.days+' days; weekly events carry over on their own.')){
             setDoc(d=>a_norm(Object.assign({}, d, {
               range:{ start:a_dAdd(d.range.start, d.range.days), days:d.range.days },
               splits:d.splits.map(s=>a_dAdd(s, d.range.days)),
               days:Object.keys(d.days).reduce((o,k)=>{ o[a_dAdd(k, d.range.days)] = d.days[k]; return o; }, {}),
-              events:d.events.map(e=>Object.assign({}, e, { id:a_uid(), date:a_dAdd(e.date, d.range.days), notionId:null })),
+              /* weekly masters stay put — they already project into the new range; only one-offs shift */
+              events:d.events.filter(e=>e.repeat==='weekly').concat(
+                d.events.filter(e=>e.repeat!=='weekly')
+                  .map(e=>Object.assign({}, e, { id:a_uid(), date:a_dAdd(e.date, d.range.days), notionId:null }))),
             })));
           }
         }}>Clone → next {doc.range.days===7?'week':'period'}</button>

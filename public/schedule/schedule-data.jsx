@@ -50,7 +50,8 @@ function suid(){ return 'ev' + (_sid++) + '_' + Math.random().toString(36).slice
 /* ---- document ---- */
 function blankEvent(date){
   return { id:suid(), date, start:'19:00', end:null, title:'New event', titleShort:null,
-           locations:[], flags:{ prereg:false, fee:false }, emphasis:'none', hide:[], notionId:null };
+           locations:[], flags:{ prereg:false, fee:false }, emphasis:'none', hide:[],
+           repeat:null, repeatUntil:null, exceptions:[], notionId:null };
 }
 function newDoc(startIso){
   return {
@@ -78,7 +79,7 @@ function starterDoc(){
   const E = (date, start, end, title, locs, fl, emph, tShort)=>({
     id:suid(), date, start, end:end||null, title, titleShort:tShort||null,
     locations:locs||[], flags:{ prereg:!!(fl&&fl.indexOf('*')>=0), fee:!!(fl&&fl.indexOf('$')>=0) },
-    emphasis:emph||'none', hide:[], notionId:null });
+    emphasis:emph||'none', hide:[], repeat:null, repeatUntil:null, exceptions:[], notionId:null });
   doc.events = [
     E('2026-06-08','17:00',null,  'How to DJ',['2E'],'$'),
     E('2026-06-08','17:00','21:00','Happy Hour: Buy1Get1 Cocktails',[]),
@@ -135,15 +136,32 @@ function normalizeDoc(d){
   doc.cover = Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, (d && d.cover) || {});
   doc.daily = Object.assign({ story:0, feed:0 }, (d && d.daily) || {});
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
-    { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[] }));
+    { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[],
+      repeat:ev.repeat==='weekly'?'weekly':null, exceptions:(ev.exceptions||[]).slice() }));
   return doc;
 }
 
 /* ---- selectors ---- */
 function timeKey(t){ const m = /^(\d{1,2}):(\d{2})$/.exec(t||''); return m ? (+m[1])*60+(+m[2]) : 0; }
+/* A weekly event is stored once (its `date` is the anchor = first occurrence) and
+   *projected* onto every later matching weekday at read time — so it shows up forever,
+   across every navigated week, with no copies stored. `exceptions` skip single weeks.
+   Because this selector is the one funnel every view/export/capacity path uses, the
+   projection lights up the whole tool from here. */
 function eventsOn(doc, date, channel){
+  const wd = dWeekday(date);
   return doc.events
-    .filter(e=>e.date===date && (!channel || (e.hide||[]).indexOf(channel)<0))
+    .filter(e=>{
+      if(channel && (e.hide||[]).indexOf(channel)>=0) return false;
+      if(e.repeat==='weekly')
+        return dWeekday(e.date)===wd && e.date<=date
+          && (!e.repeatUntil || date<=e.repeatUntil)
+          && (e.exceptions||[]).indexOf(date)<0;
+      return e.date===date;
+    })
+    /* virtual occurrence: stamp the display date, keep the master id (so selecting it
+       edits the series), tag _proj so the editor can mark it as an auto-repeat */
+    .map(e=>(e.repeat==='weekly' && e.date!==date) ? Object.assign({}, e, { date, _proj:true }) : e)
     .sort((a,b)=>timeKey(a.start)-timeKey(b.start) || a.title.localeCompare(b.title));
 }
 function dayInfo(doc, date){ return doc.days[date] || { status:'open' }; }
@@ -263,9 +281,9 @@ function parseCSV(text){
   const head = rows[0].map(h=>h.trim().toLowerCase().replace(/\s+/g,'_'));
   const col = name=>head.indexOf(name);
   const iDate=col('date'), iStart=col('start'), iEnd=col('end'), iTitle=col('title'),
-        iShort=col('title_short'), iLoc=col('locations'), iFlags=col('flags'), iEmph=col('emphasis');
+        iShort=col('title_short'), iLoc=col('locations'), iFlags=col('flags'), iEmph=col('emphasis'), iRepeat=col('repeat');
   if(iDate<0 || iTitle<0) return { events:[], errors:['Header must include at least "date" and "title" columns'] };
-  const events = [], errors = [];
+  const events = [], errors = [], seenWeekly = {};
   rows.slice(1).forEach((r, idx)=>{
     const get = i=>(i>=0 && r[i]!=null) ? r[i].trim() : '';
     const date = get(iDate), title = get(iTitle);
@@ -283,18 +301,24 @@ function parseCSV(text){
     const flags = { prereg:/(\*|prereg)/.test(ftxt), fee:/(\$|fee)/.test(ftxt) };
     let emphasis = get(iEmph).toLowerCase();
     emphasis = emphasis==='bold'||emphasis==='banner' ? emphasis : 'none';
+    const repeat = /weekly/i.test(get(iRepeat)) ? 'weekly' : null;
+    if(repeat==='weekly'){   /* a multi-week snapshot lists the same series once per week — collapse to one master */
+      const sig = title.toLowerCase()+'|'+start+'|'+dWeekday(date);
+      if(seenWeekly[sig]) return; seenWeekly[sig] = 1;
+    }
     events.push(Object.assign(blankEvent(date), { start, end, title,
-      titleShort:get(iShort)||null, locations, flags, emphasis }));
+      titleShort:get(iShort)||null, locations, flags, emphasis, repeat }));
   });
   return { events, errors };
 }
 function csvEscape(s){ s = String(s==null?'':s); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 function serializeCSV(doc){
-  const lines = ['date,start,end,title,title_short,locations,flags,emphasis'];
+  const lines = ['date,start,end,title,title_short,locations,flags,emphasis,repeat'];
   rangeDates(doc.range).forEach(date=>eventsOn(doc, date).forEach(ev=>{
     const flags = [ev.flags.prereg?'prereg':null, ev.flags.fee?'fee':null].filter(Boolean).join(' ');
     lines.push([ev.date, ev.start, ev.end||'', csvEscape(ev.title), csvEscape(ev.titleShort||''),
-      (ev.locations||[]).join('/'), flags, ev.emphasis==='none'?'':ev.emphasis].join(','));
+      (ev.locations||[]).join('/'), flags, ev.emphasis==='none'?'':ev.emphasis,
+      ev.repeat==='weekly'?'weekly':''].join(','));
   }));
   return lines.join('\n');
 }

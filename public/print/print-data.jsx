@@ -265,7 +265,7 @@ function makeElement(type, x, y){
    authored at its natural size. Pick one to fill the artboard.
    els entries are terse {type,x,y,w,h,p}; coords in pt.
    ============================================================ */
-const TEMPLATE_GROUPS = ['QR standee', 'Wayfinding', 'Specials', 'Tags & coupons'];
+const TEMPLATE_GROUPS = ['QR standee', 'Wayfinding', 'Specials', 'Merch', 'Tags & coupons'];
 const TEMPLATES = [
   { id:"qr-menu-thin01", name:"Menu — thin 01", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
     {"type":"numeral","x":22,"y":18,"w":130,"h":110,"p":{"text":"01","fontSize":96,"ink":"pink","align":"left","echo":true}},
@@ -668,6 +668,18 @@ const TEMPLATES = [
     {"type":"headline","x":24,"y":58,"w":250,"h":56,"p":{"text":"FRESH\nPOUR","weight":800,"fontSize":40,"ink":"white","leading":0.88,"align":"left"}},
     {"type":"pricelist","x":24,"y":168,"w":250,"h":130,"p":{"heading":"TABLE SPECIALS","items":[{"l":"Cold brew","p":"45k"},{"l":"Citrus soda","p":"40k"},{"l":"Draft beer","p":"45k"}],"dotLeader":true}},
     {"type":"footer","x":24,"y":348,"w":250,"h":60,"p":{"showQR":false}}
+  ]},
+  { id:"merch-tee-flat-price", name:"T-Shirt Price — flat", group:"Merch", size:"a5", orient:"portrait", accent:"red", els:[
+    {"type":"slab","x":0,"y":0,"w":420,"h":160,"p":{"fill":"red","angle":-10,"echo":true}},
+    {"type":"kicker","x":30,"y":40,"w":360,"h":22,"p":{"text":"TAKE ONE HOME","ink":"white","align":"center","tracking":0.26,"fontSize":13}},
+    {"type":"headline","x":30,"y":62,"w":360,"h":82,"p":{"text":"T-SHIRTS","weight":800,"fontSize":62,"ink":"white","align":"center","tracking":0.01}},
+    {"type":"kicker","x":30,"y":176,"w":360,"h":20,"p":{"text":"ONE FLAT PRICE","ink":"red","align":"center","tracking":0.24,"fontSize":13}},
+    {"type":"numeral","x":0,"y":198,"w":420,"h":186,"p":{"text":"300K","weight":100,"fontSize":138,"ink":"ink","echo":true,"echoAccent":"red","align":"center","tracking":0.01}},
+    {"type":"headline","x":30,"y":388,"w":360,"h":38,"p":{"text":"PER SHIRT","weight":700,"fontSize":30,"ink":"ink","align":"center","tracking":0.04}},
+    {"type":"block","x":0,"y":432,"w":420,"h":108,"p":{"fill":"ink"}},
+    {"type":"kicker","x":30,"y":448,"w":360,"h":20,"p":{"text":"AVAILABLE SIZES","ink":"white","align":"center","tracking":0.3,"fontSize":12}},
+    {"type":"headline","x":0,"y":470,"w":420,"h":68,"p":{"text":"S · M · L · XL\n2XL · 3XL · 4XL · 5XL","weight":700,"fontSize":29,"ink":"white","align":"center","leading":1.08,"tracking":0.02}},
+    {"type":"footer","x":30,"y":546,"w":360,"h":48,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]}
 ];
 

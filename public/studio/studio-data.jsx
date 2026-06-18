@@ -47,6 +47,14 @@ const FORMATS = {
      (3508px = A1 @ 150dpi; PDF at true 594×841mm). Deliberately NOT in
      OUTPUT_FORMATS: on-demand for the occasional big print, never in Save-All. */
   'a1':   { w:1080, h:1527, label:'A1', sub:'PRINT XL', print:{ wmm:594, hmm:841, dpi:150 } },
+  /* Small handout / flyer views — same 1:√2 sheet as A4 (so one layout serves
+     A4/A5/A6), but captured at true print size via the `print` descriptor: A5
+     148×210mm, A6 105×148mm, both at 300 dpi (small print wants the higher dpi —
+     A5 ≈ 1748px wide, A6 ≈ 1240px — vs the 150 dpi big-format views). On-demand
+     like A1: kept OUT of OUTPUT_FORMATS, surfaced through the toolbar's HANDOUT
+     picker, never in the Save-All bundle. */
+  'a5':   { w:1080, h:1527, label:'A5', sub:'HANDOUT', print:{ wmm:148, hmm:210, dpi:300 } },
+  'a6':   { w:1080, h:1527, label:'A6', sub:'HANDOUT', print:{ wmm:105, hmm:148, dpi:300 } },
   /* Roll-up / standing standee views — Việt Nam's standard standee sizes, all
      portrait. Like A1 each carries a `print:{wmm,hmm,dpi}` descriptor so Save
      captures at true print resolution (150 dpi) and the PDF is a real-world mm
@@ -63,6 +71,9 @@ const OUTPUT_FORMATS = ['4x5','5x7','1x1','9x16','fbcover','a4'];
    XL sheet (its own toolbar button); these are the roll-up standee family,
    surfaced through the toolbar's STANDEE picker. */
 const STANDEE_FORMATS = ['st-60x120','st-60x160','st-80x180','st-80x200'];
+/* Small print handouts (A5 · A6) — on-demand like the standees, surfaced
+   through their own toolbar picker, kept out of the Save-All bundle. */
+const HANDOUT_FORMATS = ['a5','a6'];
 /* modular type scale — font size snaps to these for consistency */
 const TYPE_SCALE = [18,22,26,32,38,46,56,68,82,100,120,144,172,206,248];
 function snapToScale(v){
@@ -419,7 +430,7 @@ function pointToMaster(type, x, y, masterFormat, format){
    canvas; you then tune from there. Positions keep the key
    content inside the 4:5 safe zone.
    ============================================================ */
-const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Menu'];
+const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Menu', 'Handout'];
 /* Every template opens with a full-bleed background photo (the house style),
    keeps content on a shared left line (x:90 — the Swiss vertical), and the
    Talk/Series families end with a full-width Reality banner filling the bottom
@@ -551,6 +562,22 @@ const TEMPLATES = [
         {l:'Khoai tây / Chips',p:'₫20k'},{l:'Đậu phộng',p:'₫15k'},{l:'Bánh snack',p:'₫15k'} ] } },
     { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'www.realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
+  /* ---- HANDOUT · about-REALITY flyer (Day · single text column). A give-away
+     to sit beside the menu at a stall: the canonical wordmark, a short intro,
+     a one-line-per-day taste of the week (bold day names via the info markdown),
+     then the address + site. Authored at the 4:5 master but its home is the
+     small A-sheets — switch to the A5/A6 HANDOUT view to print. Body copy is the
+     `info` block (Space Grotesk); the section header is an amber Montserrat
+     title. Text-dense by design — at A6 it prints small, A5 reads comfortably. */
+  { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'amber', els:[
+    { type:'wordmark', x:90, y:80, w:460, h:75, p:{ surface:'none', color:'fg' } },
+    { type:'info', x:90, y:200, w:910, h:240, p:{ surface:'none', align:'left', fontSize:25, lineHeight:1.45,
+      text:'REALITY is a bar, café, and community space on three floors at 86 Mai Thúc Lân, Đà Nẵng. Coffee + craft cocktails, and more than 30 public events per week.\n\nOur main mission is to become **the easiest place in Đà Nẵng to make friends**. Everyone is welcome.' } },
+    { type:'title', x:90, y:460, w:910, h:60, p:{ text:'A taste of the week', fontSize:38, weight:700, align:'left', surface:'none', color:'amber', letterSpacing:0.02 } },
+    { type:'info', x:90, y:545, w:910, h:665, p:{ surface:'none', align:'left', fontSize:23, lineHeight:1.42,
+      text:'**Monday** — Board Game Night, 19:00. A ton of games, a full bar, very, very social.\n**Tuesday** — Chess Night, 19:00. All skill levels — newbie to grandmaster — welcomed.\n**Wednesday** — Vietnam Talk, 14:30. A weekly series introducing foreigners to Vietnamese language + culture.\n**Thursday** — Coffee + Conversation, 11:00. Get deep with a new curated subject each week.\n**Friday** — No Mic Open Mic, 19:00. Rooftop acoustic jam.\n**Saturday** — Women’s Circle, 13:00. A women-only space to talk honestly and meet each other.\n**Sunday** — Pub Quiz, 20:00. Come join a team and weaponize your otherwise useless knowledge.\n\n...and literally dozens more events of every kind each week. Come on by!' } },
+    { type:'tagline', x:90, y:1250, w:910, h:50, p:{ text:'86 Mai Thúc Lân, Đà Nẵng · realitydn.com', fontSize:22, weight:500, align:'left', surface:'none', color:'fg' } },
+  ]},
 ];
 function buildTemplate(tpl){
   const keymap = {};
@@ -575,7 +602,7 @@ function buildTemplate(tpl){
 
 Object.assign(window, {
   PALETTE, ACCENTS, ACCENT_DAYS, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
-  FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
+  FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, shadowModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
   resolveElements, mapElementToFormat, pointToMaster,

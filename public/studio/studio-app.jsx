@@ -2,7 +2,7 @@
    REALITY POSTER STUDIO — App
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
-const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:AP_STD, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
+const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:AP_STD, HANDOUT_FORMATS:AP_HND, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
         ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, DAY_NAMES:AP_DNAMES, accentDay:apAccentDay,
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
@@ -763,6 +763,13 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           title="Standee / roll-up print views (portrait) — never part of the Save-All bundle. Save here for a print-resolution standee: true cm size at 150 dpi, PDF as a real-world mm page a shop runs 1:1.">
           <option value="">Standee…</option>
           {AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}
+        </select>
+        <select className={'rs-stsel'+(AP_HND.indexOf(doc.activeFormat)>=0?' on':'')} aria-label="Handout size"
+          value={AP_HND.indexOf(doc.activeFormat)>=0 ? doc.activeFormat : ''}
+          onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
+          title="Small handout / flyer print views — same 1:√2 sheet as A4, captured at true size (A5 148×210mm, A6 105×148mm @ 300 dpi). Never part of the Save-All bundle; the PDF is a real-world mm page a shop runs 1:1.">
+          <option value="">Handout…</option>
+          {AP_HND.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label}</option>))}
         </select>
         {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
           title="Clear all overrides for this format">↺ {overrideCount||0}</button>}

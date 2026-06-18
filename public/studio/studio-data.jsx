@@ -271,6 +271,7 @@ const CATALOG = [
     { type:'ticket',  label:'REALITY ticket', hint:'Banner / sizes in panel', wide:true },
     { type:'lineup',  label:'Lineup',   hint:'Acts + set times' },
     { type:'sessions',label:'Sessions', hint:'Series — paste the list' },
+    { type:'agenda',  label:'Week',     hint:'Colour-coded days', wide:true },
     { type:'specials',label:'Specials', hint:'Drinks + prices' },
     { type:'qr',      label:'QR block', hint:'Scan to site' },
     { type:'weekly',  label:'Weekly tag', hint:'Price · day · time', wide:true },
@@ -302,6 +303,16 @@ const DEFAULTS = {
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
              rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, markerKey:{}, surface:'scrim', color:'fg' } },
   specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, rowWeight:700, rowTracking:0.03, rowGap:5, headingSize:26, surface:'accent', color:'fg' } },
+  /* Colour-coded week — one row per day, each auto-tinted by the weekly-schedule
+     accent (Mon green · Tue blue · Wed purple · Thu pink · Fri red · Sat amber ·
+     Sun yellow). Day chip + event name · time, with an optional description
+     beneath. The heading takes the poster accent. `day` drives the colour (a
+     per-row `accent` override wins); unknown days fall back to the poster accent. */
+  agenda:  { w:910, h:700, props:{ heading:'A taste of the week',
+             items:[{day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
+                    {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture.'},
+                    {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'}],
+             rowSize:22, rowGap:16, headingSize:30, rowTracking:0.01, surface:'none', color:'fg' } },
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
@@ -562,21 +573,29 @@ const TEMPLATES = [
         {l:'Khoai tây / Chips',p:'₫20k'},{l:'Đậu phộng',p:'₫15k'},{l:'Bánh snack',p:'₫15k'} ] } },
     { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'www.realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
-  /* ---- HANDOUT · about-REALITY flyer (Day · single text column). A give-away
-     to sit beside the menu at a stall: the canonical wordmark, a short intro,
-     a one-line-per-day taste of the week (bold day names via the info markdown),
-     then the address + site. Authored at the 4:5 master but its home is the
-     small A-sheets — switch to the A5/A6 HANDOUT view to print. Body copy is the
-     `info` block (Space Grotesk); the section header is an amber Montserrat
-     title. Text-dense by design — at A6 it prints small, A5 reads comfortably. */
-  { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'amber', els:[
-    { type:'wordmark', x:90, y:80, w:460, h:75, p:{ surface:'none', color:'fg' } },
-    { type:'info', x:90, y:200, w:910, h:240, p:{ surface:'none', align:'left', fontSize:25, lineHeight:1.45,
-      text:'REALITY is a bar, café, and community space on three floors at 86 Mai Thúc Lân, Đà Nẵng. Coffee + craft cocktails, and more than 30 public events per week.\n\nOur main mission is to become **the easiest place in Đà Nẵng to make friends**. Everyone is welcome.' } },
-    { type:'title', x:90, y:460, w:910, h:60, p:{ text:'A taste of the week', fontSize:38, weight:700, align:'left', surface:'none', color:'amber', letterSpacing:0.02 } },
-    { type:'info', x:90, y:545, w:910, h:665, p:{ surface:'none', align:'left', fontSize:23, lineHeight:1.42,
-      text:'**Monday** — Board Game Night, 19:00. A ton of games, a full bar, very, very social.\n**Tuesday** — Chess Night, 19:00. All skill levels — newbie to grandmaster — welcomed.\n**Wednesday** — Vietnam Talk, 14:30. A weekly series introducing foreigners to Vietnamese language + culture.\n**Thursday** — Coffee + Conversation, 11:00. Get deep with a new curated subject each week.\n**Friday** — No Mic Open Mic, 19:00. Rooftop acoustic jam.\n**Saturday** — Women’s Circle, 13:00. A women-only space to talk honestly and meet each other.\n**Sunday** — Pub Quiz, 20:00. Come join a team and weaponize your otherwise useless knowledge.\n\n...and literally dozens more events of every kind each week. Come on by!' } },
-    { type:'tagline', x:90, y:1250, w:910, h:50, p:{ text:'86 Mai Thúc Lân, Đà Nẵng · realitydn.com', fontSize:22, weight:500, align:'left', surface:'none', color:'fg' } },
+  /* ---- HANDOUT · about-REALITY flyer (Day · red). A give-away to sit beside the
+     menu at a stall: a wordmark masthead (ink kicker + an accent rule), a short
+     intro with the mission bolded, then the colour-coded WEEK — the `agenda`
+     element tints each day by its weekly-schedule accent automatically (Mon green
+     … Sun yellow) — and the address + site. Authored at the 4:5 master; its home
+     is the small A-sheets, so switch to the A5/A6 HANDOUT view to print. The red
+     rule + agenda heading follow the poster accent; the day chips are the pop. */
+  { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'red', els:[
+    { type:'wordmark', x:90, y:64, w:472, h:77, p:{ surface:'none', color:'fg' } },
+    { type:'title', x:90, y:152, w:910, h:44, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.08 } },
+    { type:'block', x:90, y:206, w:910, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
+    { type:'info', x:90, y:230, w:910, h:170, p:{ surface:'none', align:'left', fontSize:24, lineHeight:1.4,
+      text:'REALITY is a bar, café, and community space on three floors in Đà Nẵng — coffee, craft cocktails, and 30+ events a week. **Our mission: to become the easiest place in Đà Nẵng to make friends.** Everyone is welcome.' } },
+    { type:'agenda', x:90, y:418, w:910, h:772, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0.01, surface:'none', items:[
+        {day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
+        {day:'Tuesday',name:'Chess Night',time:'19:00',desc:'All skill levels — newbie to grandmaster — welcomed.'},
+        {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture, for foreigners.'},
+        {day:'Thursday',name:'Coffee + Conversation',time:'11:00',desc:'Get deep with a new curated subject each week.'},
+        {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'},
+        {day:'Saturday',name:'Women’s Circle',time:'13:00',desc:'A women-only space to talk honestly and meet each other.'},
+        {day:'Sunday',name:'Pub Quiz',time:'20:00',desc:'Bring a team and weaponize your otherwise useless knowledge.'} ] } },
+    { type:'tagline', x:90, y:1200, w:910, h:46, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
+    { type:'tagline', x:90, y:1264, w:910, h:40, p:{ text:'86 Mai Thúc Lân, Đà Nẵng · realitydn.com', fontSize:21, weight:500, align:'left', surface:'none', color:'fg' } },
   ]},
 ];
 function buildTemplate(tpl){
@@ -601,7 +620,7 @@ function buildTemplate(tpl){
 }
 
 Object.assign(window, {
-  PALETTE, ACCENTS, ACCENT_DAYS, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
+  PALETTE, ACCENTS, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, shadowModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,

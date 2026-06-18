@@ -167,6 +167,7 @@ const TYPE_CAPS = {
   lineup:   { list:true, rowSize:true, surface:true, shadow:true },
   specials: { list:true, rowSize:true, surface:true, shadow:true },
   sessions: { list:true, rowSize:true, surface:true, shadow:true },
+  agenda:   { list:true, rowSize:true, surface:true, shadow:true },
   badge:    { surface:true, shadow:true },
   wordmark: { surface:true, shadow:true },
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
@@ -686,6 +687,27 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
               onChange={e=>update({ raw:e.target.value })} />
           </div>
           <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste columns split by <b>tabs, dashes or 2+ spaces</b> — date, time, a label and the fixture, in any order. End a line with a symbol (<b>&lt;</b> <b>~</b> …) to tag its category below.</div>
+        </React.Fragment>}
+        {el.type==='agenda' && <React.Fragment>
+          <div className="rs-lab">Days — colour follows the weekday</div>
+          {el.items.map((it,i)=>(
+            <div key={i} style={{ marginBottom:8, paddingBottom:8, borderBottom:'1px solid rgba(120,110,90,.14)' }}>
+              <div className="rs-itemrow">
+                <input className="rs-input" style={{ maxWidth:104 }} placeholder="Day" value={it.day||''}
+                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,day:e.target.value}; setItems(items); }} />
+                <input className="rs-input" placeholder="Event" value={it.name||''}
+                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,name:e.target.value}; setItems(items); }} />
+                <input className="rs-input" style={{ maxWidth:64 }} placeholder="Time" value={it.time||''}
+                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,time:e.target.value}; setItems(items); }} />
+                <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
+              </div>
+              <input className="rs-input" style={{ marginTop:4, width:'100%' }} placeholder="Description (optional)" value={it.desc||''}
+                onChange={e=>{ const items=el.items.slice(); items[i]={...it,desc:e.target.value}; setItems(items); }} />
+            </div>
+          ))}
+          <button className="rs-addrow" onClick={()=>setItems([...el.items, {day:'Monday',name:'New event',time:'19:00',desc:''}])}>+ Add day</button>
+          <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Each day auto-colours by the weekly schedule — <b>Mon</b> green · <b>Tue</b> blue · <b>Wed</b> purple · <b>Thu</b> pink · <b>Fri</b> red · <b>Sat</b> amber · <b>Sun</b> yellow.</div>
+          <div style={{ height:6 }} />
         </React.Fragment>}
         <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
         <Chips label="Row weight" options={WEIGHTS_MONT} value={el.rowWeight||700} onChange={v=>update({rowWeight:v})} />

@@ -492,6 +492,50 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       ))}
     </div>;
   }
+  else if(el.type==='agenda'){
+    /* Colour-coded week — each row tinted by its day's weekly-schedule accent
+       (Mon green … Sun yellow), via ACCENT_BY_DAY; a per-row `accent` wins, an
+       unknown day falls back to the poster accent. Day chip + name · time over an
+       optional description. Heading takes the poster accent. Fonts ride B like
+       the other list blocks so a 9:16 boost scales the type in step. */
+    const dayNames = window.DAY_NAMES||[], dayAbbr = window.DAY_ABBR||[], byDay = window.ACCENT_BY_DAY||{};
+    const items = el.items||[];
+    const rowGap = el.rowGap!=null?el.rowGap:16;
+    const rowTr  = (el.rowTracking!=null?el.rowTracking:0.01)+'em';
+    const headFs = (el.headingSize!=null?el.headingSize:30)*B;
+    const headLogical = el.heading ? (el.headingSize!=null?el.headingSize:30)+16 : 0;
+    const avail  = el.h/B - 28 - headLogical;
+    const auto   = Math.max(13, Math.min(30, Math.round(avail/Math.max(1,items.length)/2.3)));
+    const nameFs = (el.rowSize||auto)*B;
+    const descFs = Math.max(11, Math.round(nameFs*0.7));
+    const abbrFs = Math.max(11, Math.round(nameFs*0.56));
+    const chipW  = Math.round(nameFs*3.0);
+    const titleCase = d => { const s=String(d||''); return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(); };
+    const dayCol = it => { const a = it.accent || byDay[titleCase(it.day)]; return SE_ACC.indexOf(a)>=0 ? SE_PAL[a] : accentHex; };
+    const dayShort = d => { const i = dayNames.findIndex(n=>n.toLowerCase()===String(d||'').toLowerCase()); return i>=0 ? dayAbbr[i] : String(d||'').slice(0,3).toUpperCase(); };
+    const ruleC = seSurf('outline',theme,accentHex).color;
+    inner = <div style={box({ padding:'14px 22px', justifyContent:'flex-start' })}>
+      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:headFs, color:accentHex, marginBottom:12, lineHeight:.9 }}>{el.heading}</div> : null}
+      {items.map((it,i)=>{
+        const col = dayCol(it);
+        return <div key={i} style={{ display:'flex', alignItems:'stretch', gap:Math.round(14*B),
+          borderTop:i?`1.5px solid ${ruleC}22`:'none', padding:rowGap+'px 0' }}>
+          <div style={{ flex:'none', width:chipW, borderRadius:Math.round(6*B), background:col, alignSelf:'flex-start',
+            display:'flex', alignItems:'center', justifyContent:'center', padding:Math.round(nameFs*0.3)+'px 0',
+            fontFamily:MONT, fontWeight:800, fontSize:abbrFs, letterSpacing:'.08em', color:window.contrastInk(col) }}>{dayShort(it.day)}</div>
+          <div style={{ flex:'1 1 auto', minWidth:0 }}>
+            <div style={{ display:'flex', alignItems:'baseline', gap:Math.round(10*B), flexWrap:'wrap' }}>
+              <span style={{ fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:nameFs, letterSpacing:rowTr, lineHeight:1.04 }}>{it.name}</span>
+              {it.time?<span style={{ fontFamily:MONT, fontWeight:700, fontSize:Math.round(nameFs*0.78), color:col, letterSpacing:'.04em' }}>{it.time}</span>:null}
+            </div>
+            {it.desc?<div style={{ fontFamily:GROT, fontWeight:400, fontSize:descFs, lineHeight:1.3, opacity:.72, marginTop:Math.round(3*B) }}>{it.desc}</div>:null}
+          </div>
+        </div>;
+      })}
+      {!items.length && !exporting &&
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Add days in the panel →</div>}
+    </div>;
+  }
   else if(el.type==='qr'){
     inner = <div style={box({ flexDirection:'row', alignItems:'center', gap:16, padding:'16px 18px' })}>
       {el.showQR && <SEQR size={Math.min(el.h-32, el.w*0.42)} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}

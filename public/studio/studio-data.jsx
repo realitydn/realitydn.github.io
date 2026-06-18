@@ -419,7 +419,7 @@ function pointToMaster(type, x, y, masterFormat, format){
    canvas; you then tune from there. Positions keep the key
    content inside the 4:5 safe zone.
    ============================================================ */
-const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife'];
+const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Menu'];
 /* Every template opens with a full-bleed background photo (the house style),
    keeps content on a shared left line (x:90 — the Swiss vertical), and the
    Talk/Series families end with a full-width Reality banner filling the bottom
@@ -529,6 +529,27 @@ const TEMPLATES = [
     { type:'title', k:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
     { type:'when',  k:'when', x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },
     TICKET(),
+  ]},
+  /* ---- MENU · vended / pop-up stall (Day · clean white cards + colour-block
+     header). Two drink categories as side-by-side cards, the smaller (right)
+     one carrying a Snacks SUB-section beneath it — same card, smaller heading,
+     so it reads as subordinate. Authored to fill the 4:5 master and to print
+     clean at A4 (the intended output). Each specials block sets an explicit
+     rowSize: the auto-fit caps rows tiny (right for a poster callout, far too
+     small when the list IS the poster). Footer ticket carries the mandatory
+     address + a scannable QR. Hide the footer on the square — its centre crop
+     would collide with the long columns; the menu's real home is A4. */
+  { id:'menu-two-cat', name:'Two-category', group:'Menu', theme:'day', accent:'red',
+    ov:{ '1x1':{ ticket:{ hidden:true } } }, els:[
+    { type:'title', k:'title', x:90, y:140, w:900, h:200, p:{ text:'MENU', fontSize:120, weight:800, align:'left', surface:'accent', subtitle:'Drinks & Snacks', subSize:28 } },
+    { type:'specials', k:'alc', x:90, y:380, w:430, h:660, p:{ heading:'Alcoholic', headingSize:28, surface:'paper', rowSize:34, rowGap:24, rowWeight:700, rowTracking:0.02, items:[
+        {l:'Bia Saigon',p:'₫25k'},{l:'Rum & Coke',p:'₫70k'},{l:'Gin Tonic',p:'₫80k'},
+        {l:'House Cocktail',p:'₫90k'},{l:'Wine, glass',p:'₫90k'},{l:'Rượu shot',p:'₫50k'} ] } },
+    { type:'specials', k:'nonalc', x:560, y:380, w:430, h:360, p:{ heading:'Non-Alcoholic', headingSize:28, surface:'paper', rowSize:30, rowGap:18, rowWeight:700, rowTracking:0.02, items:[
+        {l:'Cà phê',p:'₫25k'},{l:'Trà đá',p:'₫10k'},{l:'Soft drink',p:'₫20k'},{l:'Nước suối',p:'₫10k'} ] } },
+    { type:'specials', k:'snacks', x:560, y:770, w:430, h:270, p:{ heading:'Snacks', headingSize:18, surface:'paper', rowSize:26, rowGap:16, rowWeight:700, rowTracking:0.02, items:[
+        {l:'Khoai tây / Chips',p:'₫20k'},{l:'Đậu phộng',p:'₫15k'},{l:'Bánh snack',p:'₫15k'} ] } },
+    { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'www.realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
 ];
 function buildTemplate(tpl){

@@ -128,7 +128,7 @@ function surfaceStyle(surface, theme, accentHex, lift){
    ============================================================ */
 function shadowModel(el, theme){
   const type = el.type;
-  const filterFam = type==='photo'||type==='logo'||type==='block'||type==='weekly';
+  const filterFam = type==='photo'||type==='logo'||type==='block'||type==='weekly'||type==='wordmark';
   const bare = !el.surface || el.surface==='none';
   let dDef, bDef, maxDist, maxBlur, defOn;
   if(filterFam){      dDef=9;  bDef=3; maxDist=60; maxBlur=40; defOn = (type==='weekly'); }
@@ -266,8 +266,9 @@ const CATALOG = [
     { type:'matchup', label:'Matchup',   hint:'Team vs team · time', wide:true },
   ]},
   { group:'Marks', items:[
-    { type:'stamp',   label:'Stamp',    hint:'SOLD OUT / FREE' },
-    { type:'badge',   label:'Badge',    hint:'Every Wed' },
+    { type:'stamp',    label:'Stamp',    hint:'SOLD OUT / FREE' },
+    { type:'badge',    label:'Badge',    hint:'Every Wed' },
+    { type:'wordmark', label:'REALITY wordmark', hint:'Canonical mark · resizable', wide:true },
   ]},
   { group:'Media', items:[
     { type:'photo',   label:'Photo',    hint:'Riso-treated image', wide:true },
@@ -293,6 +294,10 @@ const DEFAULTS = {
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
+  /* Standalone REALITY wordmark — the canonical vector mark as a free,
+     resizable element. Default box is on-aspect (512:84 ≈ 6.1:1); the mark
+     always fits undistorted, so drag any handle to scale. */
+  wordmark:{ w:512, h:84,  props:{ surface:'none', color:'fg' } },
   /* Weekly recurring-event combo: an accent bar with the price (left) and time
      (right), and a day-of-week badge centred on top. One draggable unit. */
   weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg',

@@ -168,6 +168,7 @@ const TYPE_CAPS = {
   specials: { list:true, rowSize:true, surface:true, shadow:true },
   sessions: { list:true, rowSize:true, surface:true, shadow:true },
   badge:    { surface:true, shadow:true },
+  wordmark: { surface:true, shadow:true },
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
   matchup:  { surface:true, shadow:true },
   block:    { fillOwn:true, shadow:true },
@@ -593,6 +594,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </div>
         <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
       </React.Fragment>}
+      {el.type==='wordmark' && <React.Fragment>
+        <div className="rs-sech">Wordmark</div>
+        <div className="rs-mini" style={{ marginBottom:8 }}>The canonical REALITY mark — fixed vector letterforms (Montserrat Alternates A/I/Y). Drag a handle or use Width/Height to resize; it scales crisp and never distorts. Recolour below.</div>
+      </React.Fragment>}
       {el.type==='weekly' && <React.Fragment>
         <div className="rs-sech">Content</div>
         <div className="rs-rowflex">
@@ -635,7 +640,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
       {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
       {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
-      {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
+      {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
         onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />}
 
       {/* ===================== SUBTEXT ===================== */}

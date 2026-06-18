@@ -204,9 +204,13 @@ function BlockEl({ el, theme, fillHex, exporting }){
 
 /* The canonical REALITY wordmark — Montserrat with Alternates A/I/Y, baked
    as vector (same paths as the site Logo). Posters use this, not set-text. */
-function WordmarkSVG({ height, color }){
+function WordmarkSVG({ height, color, fill }){
+  /* `fill` scales the mark to fit its container, preserving aspect — for the
+     standalone resizable Wordmark element. Otherwise it renders at a fixed
+     pixel height (the footer/ticket lockup). */
+  const sz = fill ? { width:'100%', height:'100%', preserveAspectRatio:'xMidYMid meet' } : { height };
   return (
-    <svg viewBox="0 0 512 84" height={height} role="img" aria-label="REALITY" style={{ display:'block' }}>
+    <svg viewBox="0 0 512 84" {...sz} role="img" aria-label="REALITY" style={{ display:'block' }}>
       <g fill={color}>
         <path d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/>
         <path d="M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z"/>
@@ -557,6 +561,25 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       <div style={team}>{el.teamB}</div>
       {(el.date||el.time) ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:dtF, color:textCol, textAlign:'center', marginTop:gap }}>
         {el.date}{el.date&&el.time? <span style={{ color:accentHex }}>{'  ·  '}</span> : null}{el.time}</div> : null}
+    </div>;
+  }
+
+  else if(el.type==='wordmark'){
+    /* The canonical REALITY mark as a standalone, freely-resizable element.
+       Vector (WordmarkSVG) so it stays crisp at any size and fits its box
+       without distorting. Colour + optional surface come from the shared
+       controls; shadow rides the one shadowModel as a drop-shadow on the
+       letters (vector family), so it isn't clipped — overflow stays visible. */
+    const bareWm = !el.surface || el.surface==='none';
+    const wmFilter = (_sm.mode==='filter' && _shCss) ? `drop-shadow(${_shCss})` : 'none';
+    inner = <div style={Object.assign({
+        width:'100%', height:'100%', boxSizing:'border-box', overflow:'visible',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        padding: bareWm ? 0 : '10px 18px'
+      }, surf, { boxShadow:autoBox })}>
+      <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', filter:wmFilter }}>
+        <WordmarkSVG fill color={textCol} />
+      </div>
     </div>;
   }
 

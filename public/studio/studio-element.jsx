@@ -314,7 +314,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       <div style={container}>
         <div style={{
           fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase',
-          fontSize:el.fontSize+'px', lineHeight:.84,
+          fontSize:el.fontSize+'px', lineHeight:(el.lineHeight!=null?el.lineHeight:.84),
           letterSpacing: (el.letterSpacing!=null?el.letterSpacing:(el.weight<300?0.04:0.005))+'em',
           color:textCol, textAlign:el.align,
           writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb',

@@ -156,9 +156,9 @@ const WEIGHTS_GROT = [
      widthPreset— weekly's grid width presets
    ============================================================ */
 const TYPE_CAPS = {
-  title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, subtitle:true, surface:true, shadow:true },
+  title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, lineHeight:{ def:0.84, min:0.7, max:1.5 }, subtitle:true, surface:true, shadow:true },
   tagline:  { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, orient:true, surface:true, shadow:true },
-  info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:true, surface:true, shadow:true },
+  info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:{ def:1.4, min:1, max:2 }, surface:true, shadow:true },
   when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
   stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
   host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
@@ -632,7 +632,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         onChange={v=>update(v==='lg'?{fontSize:46,h:170}:v==='md'?{fontSize:32,h:120}:{fontSize:26,h:84})} />}
       {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
       {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
-      {caps.lineHeight && <Slider label="Line height" val={el.lineHeight!=null?el.lineHeight:1.4} min={1} max={2} step={0.05} onChange={v=>update({lineHeight:v})} />}
+      {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
       {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
       {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}

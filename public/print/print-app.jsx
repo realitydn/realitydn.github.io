@@ -93,8 +93,11 @@ function Swatches({ label, value, onChange, auto, white }){
 const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
-const ECHOABLE = ['headline','numeral','bignum','block','slab'];
-const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','stripes'];
+const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker'];
+const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','stripes','sticker'];
+const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
+const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'}];
+const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Grow out'},{v:'in',l:'Grow in'},{v:'down',l:'Down'},{v:'up',l:'Up'}];
 
 /* ---------- inspector ---------- */
 function Inspector({ el, doc, update, dup, del, layer, clearAll }){
@@ -132,9 +135,23 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
       </React.Fragment>}
       {el.type==='dotfield' && <React.Fragment>
+        <Chips label="Dot shape" options={DOT_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
+        <Chips label="Size ramp" options={DOT_GRADS} value={el.grad||'none'} onChange={v=>update({grad:v})} />
         <Slider label="Dot size" val={el.dot||9} min={2} max={28} step={1} onChange={v=>update({dot:v})} suffix="pt" />
         <Slider label="Gap" val={el.gap!=null?el.gap:6} min={1} max={28} step={1} onChange={v=>update({gap:v})} suffix="pt" />
         <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
+      </React.Fragment>}
+      {el.type==='sticker' && <React.Fragment>
+        <Chips label="Die-cut shape" options={STICKER_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
+        {(el.shape==='rounded'||el.shape==='squircle') &&
+          <Slider label="Corner radius" val={el.radius!=null?el.radius:0.22} min={0.05} max={0.5} step={0.01} onChange={v=>update({radius:v})} />}
+        <Slider label="Keyline ring" val={el.ringW!=null?el.ringW:4} min={0} max={14} step={0.5} onChange={v=>update({ringW:v})} suffix="pt" />
+        <Swatches label="Ring colour" value={el.ring!=null?el.ring:'ink'} onChange={v=>update({ring:v})} white />
+      </React.Fragment>}
+      {el.type==='burst' && <React.Fragment>
+        <Slider label="Rays" val={el.rays||16} min={6} max={48} step={1} onChange={v=>update({rays:v})} />
+        <Slider label="Centre hub" val={el.hub!=null?el.hub:0} min={0} max={0.8} step={0.02} onChange={v=>update({hub:v})} />
+        {(el.hub||0)>0 && <Swatches label="Hub fill" value={el.hubFill||'white'} onChange={v=>update({hubFill:v})} white />}
       </React.Fragment>}
       {el.type==='footer' && <React.Fragment>
         <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
@@ -220,8 +237,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
       <div className="ps-sech">Colour</div>
       {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee'].indexOf(el.type)>=0 &&
         <Swatches label="Ink" value={el.ink!=null?el.ink:'auto'} onChange={v=>update({ink:v})} auto white />}
-      {['block','rule','slab','stripes','dotfield','badge','seal','marquee'].indexOf(el.type)>=0 &&
-        <Swatches label="Fill" value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} white />}
+      {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst'].indexOf(el.type)>=0 &&
+        <Swatches label={el.type==='sticker'?'Bed fill':el.type==='burst'?'Ray colour':'Fill'} value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} white />}
       {['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee'].indexOf(el.type)>=0 &&
         <Chips label="Surface" options={SURFACES} value={el.surface||'none'} onChange={v=>update({surface:v})} />}
 

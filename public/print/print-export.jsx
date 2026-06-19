@@ -109,6 +109,7 @@ function renderElement(page, el, ctx){
      Anchored at the rotated local origin so it rotates about the element
      centre, matching rect()/text — same as the wordmark. */
   function localPath(d, color){ const o=place(0,0); page.drawSvgPath(d, { x:o.x, y:o.y, scale:1, rotate:ROT, color }); }
+  function localPathStroke(d, color, w){ const o=place(0,0); page.drawSvgPath(d, { x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w }); }
 
   const accentHex = isAccent(el.fill) ? window.PALETTE[el.fill] : window.PALETTE[accentName];
   const fillKey = el.fill!=null ? el.fill : accentName;
@@ -220,10 +221,38 @@ function renderElement(page, el, ctx){
   }
   else if(t==='dotfield'){
     if(el.bg && el.bg!=='none') rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() });
-    const d=el.dot||9, gap=el.gap!=null?el.gap:6, step=d+gap, col=colorForKey(fillKey, accentColor(accentName));
-    const cols=Math.max(1,Math.floor((el.w-gap)/step)), rows=Math.max(1,Math.floor((el.h-gap)/step));
-    const ox=(el.w-(cols*step-gap))/2, oy=(el.h-(rows*step-gap))/2;
-    let drawn=0; for(let ry=0;ry<rows;ry++) for(let cx2=0;cx2<cols;cx2++){ if(drawn++>700) break; ellipse(ox+cx2*step+d/2, oy+ry*step+d/2, d/2, d/2, { color:col }); }
+    const col=colorForKey(fillKey, accentColor(accentName)), lay=window.dotFieldLayout(el), shape=lay.shape;
+    lay.dots.forEach(p=>{ const r=p.d/2;
+      if(shape==='square') rect(p.x-r, p.y-r, p.d, p.d, { color:col });
+      else if(shape==='diamond') localPath(`M ${p.x} ${p.y-r} L ${p.x+r} ${p.y} L ${p.x} ${p.y+r} L ${p.x-r} ${p.y} Z`, col);
+      else if(shape==='ring'){ const lw=Math.max(0.5,r*0.5); ellipse(p.x,p.y, Math.max(0.3,r-lw/2), Math.max(0.3,r-lw/2), { borderColor:col, borderWidth:lw }); }
+      else ellipse(p.x, p.y, r, r, { color:col });
+    });
+  }
+  else if(t==='sticker'){
+    const bed=colorForKey(el.fill!=null?el.fill:'white', whiteColor());
+    const ringCol=colorForKey(el.ring!=null?el.ring:'ink', inkColor());
+    const ringW=el.ringW!=null?el.ringW:4, shape=el.shape||'circle', s=window.LIFT[el.lift];
+    if(shape==='circle'){
+      const rx=el.w/2, ry=el.h/2, cxL=el.w/2, cyL=el.h/2;
+      if(s) ellipse(cxL, cyL+s.dy, rx, ry, { color:tintK(s.k) });
+      if(el.echo) ellipse(cxL+(el.echoDx||7), cyL+(el.echoDy||7), rx, ry, { color:echoColor });
+      ellipse(cxL, cyL, rx, ry, { color:bed });
+      if(ringW>0) ellipse(cxL, cyL, Math.max(0.5,rx-ringW/2), Math.max(0.5,ry-ringW/2), { borderColor:ringCol, borderWidth:ringW });
+    } else {
+      const m=Math.min(el.w,el.h), rad= shape==='rect'?0 : m*(el.radius!=null?el.radius:(shape==='squircle'?0.3:0.22));
+      const path=(ox,oy)=>roundedRectPath(ox,oy,el.w,el.h,rad);
+      if(s) localPath(path(0,s.dy), tintK(s.k));
+      if(el.echo) localPath(path(el.echoDx||7, el.echoDy||7), echoColor);
+      localPath(path(0,0), bed);
+      if(ringW>0) localPathStroke(roundedRectPath(ringW/2, ringW/2, el.w-ringW, el.h-ringW, Math.max(0,rad-ringW/2)), ringCol, ringW);
+    }
+  }
+  else if(t==='burst'){
+    const col=colorForKey(fillKey, accentColor(accentName)), b=window.burstRays(el.w, el.h, el.rays||16, 0);
+    b.wedges.forEach(w=> localPath(`M ${w.cx} ${w.cy} L ${w.p0[0]} ${w.p0[1]} L ${w.p1[0]} ${w.p1[1]} Z`, col));
+    const hub=el.hub!=null?el.hub:0;
+    if(hub>0) ellipse(b.cx, b.cy, b.R*hub, b.R*hub, { color: colorForKey(el.hubFill||'white', whiteColor()) });
   }
   else if(t==='rule'){
     const th=Math.max(0.5,el.weight||3), col=colorForKey(el.fill||'ink',inkColor()), my=el.h/2, st=el.style||'solid';
@@ -304,6 +333,18 @@ function arrowPoints(dir, w, h){
   return P.map(([ux,uy])=>{ const x=ux-0.5,y=uy-0.5; return [(x*ca-y*sa+0.5)*w,(x*sa+y*ca+0.5)*h]; });
 }
 function arrowPath(dir,w,h){ const p=arrowPoints(dir,w,h); return 'M '+p.map(q=>q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' L ')+' Z'; }
+
+/* rounded-rectangle SVG path in local (y-down) coords, anchored at (ox,oy).
+   r clamps to half the short side; r=0 → plain rectangle. Quadratic corners. */
+function roundedRectPath(ox,oy,w,h,r){
+  r=Math.max(0,Math.min(r, Math.min(w,h)/2));
+  if(r<=0) return `M ${ox} ${oy} L ${ox+w} ${oy} L ${ox+w} ${oy+h} L ${ox} ${oy+h} Z`;
+  const x=ox,y=oy;
+  return `M ${x+r} ${y} L ${x+w-r} ${y} Q ${x+w} ${y} ${x+w} ${y+r} `
+       + `L ${x+w} ${y+h-r} Q ${x+w} ${y+h} ${x+w-r} ${y+h} `
+       + `L ${x+r} ${y+h} Q ${x} ${y+h} ${x} ${y+h-r} `
+       + `L ${x} ${y+r} Q ${x} ${y} ${x+r} ${y} Z`;
+}
 
 function drawCropMarks(page, B, trimW, trimH, pageH){
   const len=18, gap=6, th=0.5, col=inkColor();

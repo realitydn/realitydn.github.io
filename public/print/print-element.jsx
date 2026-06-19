@@ -6,7 +6,8 @@
    Exports: PrintElement, WordmarkSVG
    ============================================================ */
 const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
-        surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, partnerOf: pePartner, LIFT: PE_LIFT } = window;
+        surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, partnerOf: pePartner, LIFT: PE_LIFT,
+        dotFieldLayout: peDots, burstRays: peBurst } = window;
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
@@ -18,6 +19,22 @@ function peFill(key, accentHex){
 }
 function liftShadow(key){ const s=PE_LIFT[key]; return s ? `0 ${s.dy}px ${Math.max(1,Math.round(s.dy/3))}px rgba(13,9,5,${s.k})` : 'none'; }
 function echoHex(el, docAccent){ const k = el.echoAccent && el.echoAccent!=='auto' ? el.echoAccent : pePartner(docAccent); return peFill(k, PE_PAL[docAccent]); }
+/* one halftone dot as an SVG node — mirrors the PDF drawDot shapes */
+function dotNode(shape, p, col, key){
+  const r=p.d/2;
+  if(shape==='square')  return <rect key={key} x={p.x-r} y={p.y-r} width={p.d} height={p.d} fill={col} />;
+  if(shape==='diamond') return <rect key={key} x={p.x-r} y={p.y-r} width={p.d} height={p.d} fill={col} transform={`rotate(45 ${p.x} ${p.y})`} />;
+  if(shape==='ring'){ const lw=Math.max(0.6,r*0.5); return <circle key={key} cx={p.x} cy={p.y} r={Math.max(0.3,r-lw/2)} fill="none" stroke={col} strokeWidth={lw} />; }
+  return <circle key={key} cx={p.x} cy={p.y} r={r} fill={col} />;
+}
+/* die-cut bed corner radius (CSS) for a sticker shape */
+function stickerRadius(el){
+  const sh=el.shape||'circle', m=Math.min(el.w,el.h);
+  if(sh==='circle')   return '50%';
+  if(sh==='squircle') return Math.round(m*(el.radius!=null?el.radius:0.3))+'px';
+  if(sh==='rounded')  return Math.round(m*(el.radius!=null?el.radius:0.22))+'px';
+  return '0';
+}
 
 function WordmarkSVG({ height, color }){
   return (
@@ -149,8 +166,32 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='dotfield'){
     const col = peFill(el.fill||'amber', accentHex), bg = el.bg==='ink'?PE_INK.rgb:el.bg==='none'?'transparent':PE_WHITE.rgb;
-    const step=(el.dot||9)+(el.gap!=null?el.gap:6);
-    inner = <div style={{ width:'100%', height:'100%', background:bg, backgroundImage:`radial-gradient(${col} ${(el.dot||9)/2}px, transparent ${(el.dot||9)/2+0.5}px)`, backgroundSize:`${step}px ${step}px`, backgroundPosition:'center' }} />;
+    const lay = peDots(el);
+    inner = <div style={{ width:'100%', height:'100%', background:bg, overflow:'hidden' }}>
+      <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
+        {lay.dots.map((p,i)=> dotNode(lay.shape, p, col, i))}
+      </svg>
+    </div>;
+  }
+  else if(t==='sticker'){
+    const bed = peFill(el.fill!=null?el.fill:'white', accentHex);
+    const ringCol = peFill(el.ring!=null?el.ring:'ink', accentHex);
+    const ringW = el.ringW!=null?el.ringW:4, rad = stickerRadius(el);
+    inner = <div style={{ position:'relative', width:'100%', height:'100%' }}>
+      {el.echo && <div aria-hidden="true" style={{ position:'absolute', left:(el.echoDx||7), top:(el.echoDy||7), width:'100%', height:'100%', background:echoHex(el,docAccent), borderRadius:rad }} />}
+      <div style={{ position:'relative', width:'100%', height:'100%', background:bed, borderRadius:rad, border: ringW>0?`${ringW}px solid ${ringCol}`:'none', boxShadow:lift, boxSizing:'border-box' }} />
+    </div>;
+  }
+  else if(t==='burst'){
+    const col = peFill(el.fill||'amber', accentHex);
+    const b = peBurst(el.w, el.h, el.rays||16, 0);
+    const hub = el.hub!=null?el.hub:0, hubFill = peFill(el.hubFill||'white', accentHex);
+    inner = <div style={{ width:'100%', height:'100%', overflow:'hidden' }}>
+      <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
+        {b.wedges.map((w,i)=> <path key={i} d={`M${w.cx} ${w.cy} L${w.p0[0]} ${w.p0[1]} L${w.p1[0]} ${w.p1[1]} Z`} fill={col} />)}
+        {hub>0 && <circle cx={b.cx} cy={b.cy} r={b.R*hub} fill={hubFill} />}
+      </svg>
+    </div>;
   }
   else if(t==='rule'){
     const col = peFill(el.fill||'ink', accentHex), w=Math.max(1,el.weight||3), st=el.style||'solid';

@@ -58,8 +58,15 @@ const SIZES = {
   a3:{ mm:[297,420], label:'A3', sub:'POSTER' },
   a2:{ mm:[420,594], label:'A2', sub:'POSTER' },
   a1:{ mm:[594,841], label:'A1', sub:'STANDEE' },
+  /* square die-cut sticker stock — the trim is square; the visible shape
+     (circle / rounded / squircle) is the `sticker` element drawn inside.
+     Not in GANG (a die-cut printer gangs + cuts them); for DIY sheets use a
+     small A-size + "Gang on A4". */
+  st50: { mm:[50,50],   label:'S50',  sub:'STICKER' },
+  st75: { mm:[75,75],   label:'S75',  sub:'STICKER' },
+  st100:{ mm:[100,100], label:'S100', sub:'STICKER' },
 };
-const SIZE_ORDER = ['a8','a7','a6','a5','a4','a3','a2','a1'];
+const SIZE_ORDER = ['a8','a7','a6','a5','a4','a3','a2','a1','st50','st75','st100'];
 
 /* Physical + working dims for a size at an orientation. Working canvas unit
    IS the point, so wpt/hpt are both the on-screen artboard size and the PDF
@@ -166,6 +173,51 @@ function partnerOf(accent){ return PARTNER[accent] || 'blue'; }
    On the white sheet it prints as a soft K tint. {dy, k} per step. */
 const LIFT = { none:null, light:{dy:4,k:0.08}, default:{dy:8,k:0.12}, heavy:{dy:12,k:0.18} };
 
+/* ---- halftone dot field — shared by the screen + PDF renderers so they
+   match exactly. This is the Poster Studio riso-engine halftone adapted to
+   pure vector: a regular dot grid whose dot SIZE is modulated by a positional
+   ramp (`grad`) standing in for a photo's luminance, plus the same dot SHAPES
+   (circle · square · diamond · ring). Returns dot centres + per-dot diameter. */
+function dotFieldLayout(el){
+  const W=el.w, H=el.h, base=Math.max(2,el.dot||9), gap=el.gap!=null?el.gap:6, step=base+gap;
+  const cols=Math.max(1,Math.floor((W-gap)/step)), rows=Math.max(1,Math.floor((H-gap)/step));
+  const ox=(W-(cols*step-gap))/2 + base/2, oy=(H-(rows*step-gap))/2 + base/2;  // first dot CENTRE
+  const cx=W/2, cy=H/2, maxR=Math.hypot(cx,cy)||1, grad=el.grad||'none';
+  function factor(px,py){
+    const rN = Math.hypot(px-cx,py-cy)/maxR;        // 0 centre … 1 corner
+    switch(grad){
+      case 'out':  return 0.30 + 0.70*rN;           // small centre → big edge
+      case 'in':   return 1.00 - 0.70*rN;           // big centre → small edge
+      case 'down': return 0.30 + 0.70*(py/H);
+      case 'up':   return 1.00 - 0.70*(py/H);
+      default:     return 1;
+    }
+  }
+  const dots=[]; let n=0;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    if(n++>1600) break;
+    const px=ox+c*step, py=oy+r*step, d=Math.max(0.4, base*factor(px,py));
+    dots.push({ x:px, y:py, d });
+  }
+  return { dots, base, step, shape:el.shape||'circle' };
+}
+
+/* ---- sunburst rays — `n` filled wedges within a centred disc, half-slice
+   gaps between them give the classic ray pop. Pure vector; both renderers
+   build the same triangles so screen + PDF match. */
+function burstRays(W,H,rays,spinDeg){
+  const n=Math.max(3, rays|0), R=Math.min(W,H)/2*1.06, cx=W/2, cy=H/2;
+  const spin=(spinDeg||0)*Math.PI/180, slice=Math.PI*2/n;
+  const wedges=[];
+  for(let i=0;i<n;i++){
+    const a0=spin+i*slice, a1=a0+slice/2;           // lit half of each slice
+    wedges.push({ cx, cy,
+      p0:[cx+Math.cos(a0)*R, cy+Math.sin(a0)*R],
+      p1:[cx+Math.cos(a1)*R, cy+Math.sin(a1)*R] });
+  }
+  return { wedges, cx, cy, R };
+}
+
 let _id = 1;
 function uid(){ return 'p'+(_id++)+'_'+Math.random().toString(36).slice(2,6); }
 
@@ -211,8 +263,12 @@ const CATALOG = [
     { type:'block',    label:'Colour block', hint:'Flat field / band' },
     { type:'slab',     label:'Angle slab',   hint:'Geometric blocking' },
     { type:'stripes',  label:'Stripes',      hint:'Silkscreen band' },
-    { type:'dotfield', label:'Dot field',    hint:'Halftone texture' },
+    { type:'dotfield', label:'Halftone',     hint:'Dots · shapes · ramp' },
     { type:'rule',     label:'Rule',         hint:'Divider line' },
+  ]},
+  { group:'Die-cut · stickers', items:[
+    { type:'sticker',  label:'Sticker bed',  hint:'Die-cut shape + keyline' },
+    { type:'burst',    label:'Sunburst',     hint:'Radiating rays' },
   ]},
   { group:'Marks · brand', items:[
     { type:'footer',   label:'REALITY footer', hint:'Mark · address · QR', wide:true },
@@ -243,7 +299,7 @@ const DEFAULTS = {
   block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8 } },
   slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9 } },
   stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5 } },
-  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white' } },
+  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'none' } },
   rule:      { w:260, h:10,  props:{ fill:'ink', weight:3, style:'solid' } },
   footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, surface:'none', rule:true, ink:'ink' } },
   wordmark:  { w:240, h:42,  props:{ ink:'ink' } },
@@ -252,6 +308,12 @@ const DEFAULTS = {
   marquee:   { w:440, h:40,  props:{ text:'REALITY', sep:'★', surface:'solid', fill:'pink', ink:'auto', fontSize:15 } },
   arrow:     { w:170, h:100, props:{ dir:'right', label:'TOILETS', fam:'mont', fontSize:18, ink:'ink', fill:'pink', surface:'none' } },
   contact:   { w:320, h:54,  props:{ site:SITE, addr:ADDR, fam:'mont', fontSize:11, ink:'ink', fill:'pink', surface:'none', align:'left' } },
+  /* die-cut bed: the shaped white/accent ground a sticker sits on, with a
+     contrasting keyline ring (the cut edge). shape: circle|rounded|squircle|rect.
+     radius = corner radius as a fraction of the short side (rounded/squircle). */
+  sticker:   { w:220, h:220, props:{ shape:'circle', fill:'white', ring:'ink', ringW:4, radius:0.22, lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7 } },
+  /* radiating wedges within a centred disc; spin via the rotate handle. */
+  burst:     { w:220, h:220, props:{ fill:'amber', rays:16, hub:0.0, hubFill:'white' } },
 };
 
 function makeElement(type, x, y){
@@ -265,8 +327,75 @@ function makeElement(type, x, y){
    authored at its natural size. Pick one to fill the artboard.
    els entries are terse {type,x,y,w,h,p}; coords in pt.
    ============================================================ */
-const TEMPLATE_GROUPS = ['QR standee', 'Wayfinding', 'Specials', 'Merch', 'Tags & coupons'];
+const TEMPLATE_GROUPS = ['Stickers', 'QR standee', 'Wayfinding', 'Specials', 'Merch', 'Tags & coupons'];
 const TEMPLATES = [
+  /* ---- Stickers (die-cut) — square stock; the `sticker` element is the
+     die-cut bed (shape + keyline ring), content layered on top. ---- */
+  { id:"stk-logo-round-pink", name:"Logo round — pink", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"pink","ring":"ink","ringW":5,"lift":"default"}},
+    {"type":"kicker","x":34,"y":70,"w":146,"h":14,"p":{"text":"ĐÀ NẴNG","ink":"white","align":"center","tracking":0.34,"fontSize":10}},
+    {"type":"wordmark","x":33,"y":92,"w":148,"h":30,"p":{"ink":"white"}},
+    {"type":"kicker","x":34,"y":128,"w":146,"h":14,"p":{"text":"EST. 2024","ink":"white","align":"center","tracking":0.34,"fontSize":10}}
+  ]},
+  { id:"stk-logo-round-paper", name:"Logo round — paper", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"white","ring":"ink","ringW":6,"lift":"default"}},
+    {"type":"kicker","x":34,"y":70,"w":146,"h":14,"p":{"text":"BAR · CAFÉ","ink":"ink","align":"center","tracking":0.3,"fontSize":10}},
+    {"type":"wordmark","x":33,"y":92,"w":148,"h":30,"p":{"ink":"ink"}},
+    {"type":"kicker","x":34,"y":128,"w":146,"h":14,"p":{"text":"REALITYDN.COM","ink":"ink","align":"center","tracking":0.24,"fontSize":9}}
+  ]},
+  { id:"stk-wordmark-mini", name:"Wordmark mini", group:"Stickers", size:"st50", orient:"portrait", accent:"blue", els:[
+    {"type":"sticker","x":6,"y":6,"w":130,"h":130,"p":{"shape":"squircle","fill":"white","ring":"blue","ringW":5,"radius":0.34,"lift":"default"}},
+    {"type":"wordmark","x":20,"y":58,"w":102,"h":24,"p":{"ink":"ink"}}
+  ]},
+  { id:"stk-burst-open", name:"Sunburst — OPEN", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
+    {"type":"burst","x":-8,"y":-8,"w":229,"h":229,"p":{"fill":"red","rays":22,"hub":0.66,"hubFill":"white"}},
+    {"type":"headline","x":36,"y":80,"w":140,"h":44,"p":{"text":"OPEN","fontSize":40,"weight":800,"ink":"red","align":"center"}},
+    {"type":"kicker","x":36,"y":126,"w":140,"h":14,"p":{"text":"COME ON IN","ink":"ink","align":"center","tracking":0.24,"fontSize":9}}
+  ]},
+  { id:"stk-burst-new", name:"Sunburst — NEW", group:"Stickers", size:"st50", orient:"portrait", accent:"yellow", els:[
+    {"type":"burst","x":-6,"y":-6,"w":154,"h":154,"p":{"fill":"yellow","rays":18,"hub":0.52,"hubFill":"white"}},
+    {"type":"headline","x":16,"y":52,"w":110,"h":40,"p":{"text":"NEW","fontSize":34,"weight":800,"ink":"ink","align":"center"}}
+  ]},
+  { id:"stk-qr-round", name:"QR round — scan", group:"Stickers", size:"st75", orient:"portrait", accent:"blue", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":5,"lift":"default"}},
+    {"type":"kicker","x":34,"y":40,"w":146,"h":14,"p":{"text":"SCAN ME","ink":"blue","align":"center","tracking":0.3,"fontSize":11}},
+    {"type":"qr","x":61,"y":62,"w":92,"h":92,"p":{"data":"https://realitydn.com","caption":"","quiet":true}},
+    {"type":"wordmark","x":56,"y":162,"w":100,"h":20,"p":{"ink":"ink"}}
+  ]},
+  { id:"stk-halftone-square", name:"Halftone squircle", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"squircle","fill":"purple","ring":"ink","ringW":4,"radius":0.3,"lift":"default"}},
+    {"type":"dotfield","x":26,"y":26,"w":160,"h":160,"p":{"fill":"white","dot":10,"gap":7,"bg":"none","shape":"diamond","grad":"out"}},
+    {"type":"block","x":18,"y":80,"w":176,"h":54,"p":{"fill":"purple","radius":4}},
+    {"type":"wordmark","x":36,"y":94,"w":140,"h":26,"p":{"ink":"white"}}
+  ]},
+  { id:"stk-danang-round", name:"Đà Nẵng round", group:"Stickers", size:"st50", orient:"portrait", accent:"red", els:[
+    {"type":"sticker","x":6,"y":6,"w":130,"h":130,"p":{"shape":"circle","fill":"red","ring":"ink","ringW":4,"lift":"default"}},
+    {"type":"headline","x":14,"y":40,"w":114,"h":54,"p":{"text":"ĐÀ\nNẴNG","fontSize":29,"weight":800,"ink":"white","align":"center","leading":0.92}},
+    {"type":"kicker","x":12,"y":98,"w":118,"h":12,"p":{"text":"★ REALITYDN.COM ★","ink":"white","align":"center","tracking":0.12,"fontSize":7}}
+  ]},
+  { id:"stk-film-club", name:"Film Club", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"purple","ring":"ink","ringW":5,"lift":"default"}},
+    {"type":"kicker","x":34,"y":50,"w":146,"h":14,"p":{"text":"EVERY WEDNESDAY","ink":"white","align":"center","tracking":0.18,"fontSize":9}},
+    {"type":"headline","x":24,"y":70,"w":166,"h":80,"p":{"text":"FILM\nCLUB","fontSize":48,"weight":800,"ink":"white","align":"center","leading":0.88}},
+    {"type":"kicker","x":34,"y":152,"w":146,"h":14,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"white","align":"center","tracking":0.18,"fontSize":9}}
+  ]},
+  { id:"stk-coaster-blue", name:"Coaster — big round", group:"Stickers", size:"st100", orient:"portrait", accent:"blue", els:[
+    {"type":"sticker","x":8,"y":8,"w":268,"h":268,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":8,"lift":"default"}},
+    {"type":"kicker","x":42,"y":74,"w":200,"h":16,"p":{"text":"GOOD DRINKS · GOOD PEOPLE","ink":"blue","align":"center","tracking":0.12,"fontSize":10}},
+    {"type":"wordmark","x":57,"y":104,"w":170,"h":34,"p":{"ink":"ink"}},
+    {"type":"kicker","x":42,"y":150,"w":200,"h":16,"p":{"text":"86 MAI THÚC LÂN · ĐÀ NẴNG","ink":"ink","align":"center","tracking":0.1,"fontSize":9}},
+    {"type":"seal","x":118,"y":196,"w":48,"h":48,"p":{"top":"ĐÀ NẴNG","big":"★","sub":"SINCE 2024","fill":"blue","ink":"blue"}}
+  ]},
+  { id:"stk-laptop-stay", name:"Laptop — stay awhile", group:"Stickers", size:"a7", orient:"landscape", accent:"amber", els:[
+    {"type":"sticker","x":5,"y":5,"w":288,"h":200,"p":{"shape":"rounded","fill":"amber","ring":"ink","ringW":5,"radius":0.5,"lift":"default"}},
+    {"type":"headline","x":24,"y":44,"w":250,"h":80,"p":{"text":"STAY AWHILE","fontSize":40,"weight":800,"ink":"ink","align":"center","leading":0.92}},
+    {"type":"wordmark","x":98,"y":138,"w":102,"h":22,"p":{"ink":"ink"}}
+  ]},
+  { id:"stk-coffee-square", name:"Coffee squircle", group:"Stickers", size:"st75", orient:"portrait", accent:"green", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"squircle","fill":"white","ring":"green","ringW":5,"radius":0.32,"lift":"default"}},
+    {"type":"headline","x":22,"y":44,"w":170,"h":100,"p":{"text":"GOOD\nCOFFEE","fontSize":40,"weight":800,"ink":"ink","align":"center","leading":0.9,"echo":true,"echoAccent":"green"}},
+    {"type":"kicker","x":22,"y":150,"w":170,"h":14,"p":{"text":"ROASTED IN ĐÀ NẴNG","ink":"green","align":"center","tracking":0.16,"fontSize":9}}
+  ]},
   { id:"qr-menu-thin01", name:"Menu — thin 01", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
     {"type":"numeral","x":22,"y":18,"w":130,"h":110,"p":{"text":"01","fontSize":96,"ink":"pink","align":"left","echo":true}},
     {"type":"kicker","x":150,"y":52,"w":126,"h":20,"p":{"text":"THE MENU","ink":"pink","align":"right","tracking":0.24}},
@@ -698,7 +827,7 @@ Object.assign(window, {
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, WORDMARK_PATH,
-  ADDR, SITE, PARTNER, partnerOf, LIFT,
+  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, burstRays,
   CATALOG, DEFAULTS, makeElement, uid, slugify,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
 });

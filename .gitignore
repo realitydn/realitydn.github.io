@@ -26,3 +26,7 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Claude Code git worktrees — transient; never commit (they land as bare
+# gitlinks with no .gitmodules and break checkout / Cloudflare Pages builds).
+.claude/worktrees/

@@ -218,6 +218,86 @@ function burstRays(W,H,rays,spinDeg){
   return { wedges, cx, cy, R };
 }
 
+/* ---- shared vector geometry — used by BOTH renderers so shapes/beds match
+   exactly. Paths are SVG path strings in LOCAL, y-DOWN element coords (0..w,
+   0..h); pdf-lib's drawSvgPath consumes the same string via localPath(). ---- */
+function roundedRectPath(ox,oy,w,h,r){
+  r=Math.max(0,Math.min(r, Math.min(w,h)/2));
+  if(r<=0) return `M ${ox} ${oy} L ${ox+w} ${oy} L ${ox+w} ${oy+h} L ${ox} ${oy+h} Z`;
+  const x=ox,y=oy;
+  return `M ${x+r} ${y} L ${x+w-r} ${y} Q ${x+w} ${y} ${x+w} ${y+r} `
+       + `L ${x+w} ${y+h-r} Q ${x+w} ${y+h} ${x+w-r} ${y+h} `
+       + `L ${x+r} ${y+h} Q ${x} ${y+h} ${x} ${y+h-r} `
+       + `L ${x} ${y+r} Q ${x} ${y} ${x+r} ${y} Z`;
+}
+function _poly(pts){ return 'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' Z'; }
+function _regPoly(cx,cy,r,n,startDeg){ const p=[]; for(let i=0;i<n;i++){ const a=(startDeg+i*360/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return _poly(p); }
+function _star(cx,cy,R,n,inner,startDeg){ const p=[]; for(let i=0;i<n*2;i++){ const r=i%2?R*inner:R, a=(startDeg+i*180/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return _poly(p); }
+function _scalePath(d,w,h){ let i=0; return d.replace(/-?\d*\.?\d+/g, m=> ((i++%2)===0 ? parseFloat(m)*w : parseFloat(m)*h).toFixed(2) ); }
+/* kind → path for a w×h box. circle/ellipse return null (renderers draw an
+   ellipse). Polygons inscribe in the short-side circle (stay regular); box
+   shapes fill the rectangle. */
+const SHAPE_KINDS=['circle','rounded','squircle','rect','pill','triangle','diamond','pentagon','hexagon','octagon','star5','star6','chevron','cross','banner','shield','arch','heart','blob'];
+function shapePath(kind, w, h){
+  const cx=w/2, cy=h/2, R=Math.min(w,h)/2;
+  switch(kind){
+    case 'circle': case 'ellipse': return null;
+    case 'rect':     return _poly([[0,0],[w,0],[w,h],[0,h]]);
+    case 'rounded':  return roundedRectPath(0,0,w,h,Math.min(w,h)*0.18);
+    case 'squircle': return roundedRectPath(0,0,w,h,Math.min(w,h)*0.32);
+    case 'pill':     return roundedRectPath(0,0,w,h,Math.min(w,h)/2);
+    case 'triangle': return _poly([[cx,0],[w,h],[0,h]]);
+    case 'diamond':  return _poly([[cx,0],[w,cy],[cx,h],[0,cy]]);
+    case 'pentagon': return _regPoly(cx,cy,R,5,-90);
+    case 'hexagon':  return _regPoly(cx,cy,R,6,-90);
+    case 'octagon':  return _regPoly(cx,cy,R,8,-67.5);
+    case 'star5':    return _star(cx,cy,R,5,0.42,-90);
+    case 'star6':    return _star(cx,cy,R,6,0.5,-90);
+    case 'chevron':  return _poly([[0,0],[w*0.62,0],[w,cy],[w*0.62,h],[0,h],[w*0.34,cy]]);
+    case 'cross':    { const ax=w*0.33, ay=h*0.33; return _poly([[ax,0],[w-ax,0],[w-ax,ay],[w,ay],[w,h-ay],[w-ax,h-ay],[w-ax,h],[ax,h],[ax,h-ay],[0,h-ay],[0,ay],[ax,ay]]); }
+    case 'banner':   { const d=Math.min(w*0.12,h*0.5); return _poly([[0,0],[w,0],[w-d,cy],[w,h],[0,h],[d,cy]]); }
+    case 'shield':   return `M 0 0 L ${w} 0 L ${w} ${(h*0.52).toFixed(2)} Q ${w} ${(h*0.92).toFixed(2)} ${cx} ${h} Q 0 ${(h*0.92).toFixed(2)} 0 ${(h*0.52).toFixed(2)} Z`;
+    case 'arch':     { const a=Math.min(w/2,h*0.7).toFixed(2); return `M 0 ${h} L 0 ${a} Q 0 0 ${cx} 0 Q ${w} 0 ${w} ${a} L ${w} ${h} Z`; }
+    case 'heart':    return _scalePath('M 0.5 0.95 C 0.0 0.62 0.05 0.16 0.32 0.16 C 0.44 0.16 0.5 0.30 0.5 0.36 C 0.5 0.30 0.56 0.16 0.68 0.16 C 0.95 0.16 1.0 0.62 0.5 0.95 Z', w, h);
+    case 'blob':     return _scalePath('M 0.50 0.03 C 0.80 0.0 1.0 0.24 0.97 0.52 C 0.94 0.80 0.80 1.0 0.50 0.97 C 0.18 1.0 0.03 0.78 0.05 0.50 C 0.0 0.20 0.20 0.05 0.50 0.03 Z', w, h);
+    default:         return _poly([[0,0],[w,0],[w,h],[0,h]]);
+  }
+}
+
+/* ---- shared text measuring (screen + the in-browser PDF export use the same
+   canvas, so fitted + arc sizes match). ---- */
+let _measCtx=null;
+function _measCanvas(){ if(!_measCtx){ const c=document.createElement('canvas'); _measCtx=c.getContext('2d'); } return _measCtx; }
+function _cssFam(fam){ return fam==='grot'?"'Space Grotesk'":fam==='alt'?"'Montserrat Alternates'":"'Montserrat'"; }
+function measureTextW(str, fam, weight, size, tracking){ const cx=_measCanvas(); cx.font=(weight||700)+' '+size+"px "+_cssFam(fam); const n=Array.from(str||'').length; return cx.measureText(str||'').width + Math.max(0,n-1)*(tracking||0)*size; }
+/* shrink `size` until every line fits maxW — the Poster seFitText idea generalised */
+function fitTextSize(lines, fam, weight, maxW, startSize, tracking){
+  let size=startSize;
+  while(size>6){ let ok=true; for(const ln of lines){ if(measureTextW(ln,fam,weight,size,tracking)>maxW){ ok=false; break; } } if(ok) break; size-=1; }
+  return size;
+}
+/* per-glyph placement of `text` along a circle centred in the box. flip=false
+   → top arc (reads L→R over the top); flip=true → bottom arc (upright along
+   the bottom). deg = upright tangent rotation (screen degrees, y-down). */
+function arcTextLayout(text, w, h, opts){
+  opts=opts||{}; const fontSize=opts.fontSize||24, tracking=opts.tracking||0, flip=!!opts.flip, fam=opts.fam||'mont', weight=opts.weight||700;
+  const chars=Array.from(opts.upper!==false?(text||'').toUpperCase():(text||''));
+  const cx=_measCanvas(); cx.font=weight+' '+fontSize+"px "+_cssFam(fam);
+  const adv=chars.map(c=> cx.measureText(c).width + tracking*fontSize);
+  const total=adv.reduce((a,b)=>a+b,0), ccx=w/2, ccy=h/2;
+  const R=Math.max(8, (opts.radius!=null?opts.radius : Math.min(w,h)/2 - fontSize*0.62) + (opts.radiusAdj||0));
+  const span=total/R, glyphs=[];
+  if(!flip){ let a=-Math.PI/2 - span/2; for(let i=0;i<chars.length;i++){ const da=adv[i]/R, mid=a+da/2; glyphs.push({ch:chars[i], x:ccx+Math.cos(mid)*R, y:ccy+Math.sin(mid)*R, deg:(mid+Math.PI/2)*180/Math.PI}); a+=da; } }
+  else { let a=Math.PI/2 + span/2; for(let i=0;i<chars.length;i++){ const da=adv[i]/R, mid=a-da/2; glyphs.push({ch:chars[i], x:ccx+Math.cos(mid)*R, y:ccy+Math.sin(mid)*R, deg:(mid-Math.PI/2)*180/Math.PI}); a-=da; } }
+  return { glyphs, R, cx:ccx, cy:ccy, fontSize };
+}
+
+/* ---- blend modes — riso overprint. Shared by screen (mix-blend-mode) + the
+   PDF (pdf-lib BlendMode); CSS names map 1:1, the PDF enum is PascalCase. ---- */
+const BLEND_MODES=['normal','multiply','screen','overlay','darken','lighten','hard-light'];
+function blendCss(b){ return (!b||b==='normal')?null:b; }
+function blendPdf(b){ const m={multiply:'Multiply',screen:'Screen',overlay:'Overlay',darken:'Darken',lighten:'Lighten','hard-light':'HardLight'}; return m[b]||null; }
+
 let _id = 1;
 function uid(){ return 'p'+(_id++)+'_'+Math.random().toString(36).slice(2,6); }
 
@@ -253,6 +333,7 @@ const CATALOG = [
     { type:'bignum',   label:'Big value', hint:'Time · price · heavy' },
     { type:'kicker',   label:'Kicker',    hint:'Small wide label' },
     { type:'body',     label:'Body text', hint:'Readable copy' },
+    { type:'arctext',  label:'Arc text',  hint:'Curved around a rim' },
   ]},
   { group:'Lists · QR', items:[
     { type:'pricelist',label:'Price list', hint:'Label + price rows' },
@@ -266,7 +347,8 @@ const CATALOG = [
     { type:'dotfield', label:'Halftone',     hint:'Dots · shapes · ramp' },
     { type:'rule',     label:'Rule',         hint:'Divider line' },
   ]},
-  { group:'Die-cut · stickers', items:[
+  { group:'Shapes · die-cut', items:[
+    { type:'shape',    label:'Shape',        hint:'Polygon / star / blob…' },
     { type:'sticker',  label:'Sticker bed',  hint:'Die-cut shape + keyline' },
     { type:'burst',    label:'Sunburst',     hint:'Radiating rays' },
   ]},
@@ -296,10 +378,10 @@ const DEFAULTS = {
   pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none' } },
   qr:        { w:170, h:210, props:{ data:'https://realitydn.com', caption:'SCAN THE MENU', ecl:'M', surface:'none', ink:'ink', fill:'pink', quiet:true, border:2, lift:'none' } },
   coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'ink', fill:'pink' } },
-  block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8 } },
-  slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9 } },
-  stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5 } },
-  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'none' } },
+  block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
+  slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
+  stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5, blend:'normal' } },
+  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'none', blend:'normal' } },
   rule:      { w:260, h:10,  props:{ fill:'ink', weight:3, style:'solid' } },
   footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, surface:'none', rule:true, ink:'ink' } },
   wordmark:  { w:240, h:42,  props:{ ink:'ink' } },
@@ -311,9 +393,14 @@ const DEFAULTS = {
   /* die-cut bed: the shaped white/accent ground a sticker sits on, with a
      contrasting keyline ring (the cut edge). shape: circle|rounded|squircle|rect.
      radius = corner radius as a fraction of the short side (rounded/squircle). */
-  sticker:   { w:220, h:220, props:{ shape:'circle', fill:'white', ring:'ink', ringW:4, radius:0.22, lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7 } },
+  sticker:   { w:220, h:220, props:{ shape:'circle', fill:'white', ring:'ink', ringW:4, radius:0.22, lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7, blend:'normal' } },
   /* radiating wedges within a centred disc; spin via the rotate handle. */
-  burst:     { w:220, h:220, props:{ fill:'amber', rays:16, hub:0.0, hubFill:'white' } },
+  burst:     { w:220, h:220, props:{ fill:'amber', rays:16, hub:0.0, hubFill:'white', blend:'normal' } },
+  /* flexible vector shape — polygon/star/blob/etc. with an optional keyline
+     stroke (so it doubles as a non-rectangular die-cut bed). */
+  shape:     { w:200, h:200, props:{ kind:'hexagon', fill:'blue', stroke:0, strokeColor:'ink', lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7, blend:'normal' } },
+  /* text set on a circular arc — the round-sticker rim treatment. */
+  arctext:   { w:240, h:240, props:{ text:'REALITY · ĐÀ NẴNG', fam:'mont', weight:700, fontSize:24, tracking:0.08, fill:'ink', flip:false, radiusAdj:0, upper:true } },
 };
 
 function makeElement(type, x, y){
@@ -329,38 +416,88 @@ function makeElement(type, x, y){
    ============================================================ */
 const TEMPLATE_GROUPS = ['Stickers', 'QR standee', 'Wayfinding', 'Specials', 'Merch', 'Tags & coupons'];
 const TEMPLATES = [
-  /* ---- Stickers (die-cut) — square stock; the `sticker` element is the
-     die-cut bed (shape + keyline ring), content layered on top. ---- */
-  { id:"stk-logo-round-pink", name:"Logo round — pink", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
-    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"pink","ring":"ink","ringW":5,"lift":"default"}},
-    {"type":"kicker","x":34,"y":70,"w":146,"h":14,"p":{"text":"ĐÀ NẴNG","ink":"white","align":"center","tracking":0.34,"fontSize":10}},
-    {"type":"wordmark","x":33,"y":92,"w":148,"h":30,"p":{"ink":"white"}},
-    {"type":"kicker","x":34,"y":128,"w":146,"h":14,"p":{"text":"EST. 2024","ink":"white","align":"center","tracking":0.34,"fontSize":10}}
+  /* ---- Stickers (die-cut) — square stock; bold full-colour beds, die-cut
+     shapes (hexagon/shield/star/banner/arch/blob/heart/pill), riso overprint
+     blends, arc-text rims, auto-fit + vertical type. ---- */
+  { id:"stk-stamp-classic", name:"Stamp — classic", group:"Stickers", size:"st100", orient:"portrait", accent:"red", els:[
+    {"type":"sticker","x":8,"y":8,"w":268,"h":268,"p":{"shape":"circle","fill":"white","ring":"red","ringW":8,"lift":"default"}},
+    {"type":"arctext","x":28,"y":28,"w":228,"h":228,"p":{"text":"REALITY · BAR · CAFÉ","fill":"red","fontSize":22,"tracking":0.06}},
+    {"type":"arctext","x":28,"y":28,"w":228,"h":228,"p":{"text":"ĐÀ NẴNG · SINCE 2024","fill":"red","fontSize":18,"tracking":0.06,"flip":true}},
+    {"type":"wordmark","x":66,"y":112,"w":152,"h":36,"p":{"ink":"ink"}},
+    {"type":"shape","x":122,"y":162,"w":38,"h":38,"p":{"kind":"star5","fill":"red"}}
   ]},
-  { id:"stk-logo-round-paper", name:"Logo round — paper", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
+  { id:"stk-logo-bold", name:"Logo round — bold", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"pink","ring":"ink","ringW":6,"lift":"default"}},
+    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"BAR · CAFÉ · COMMUNITY","fill":"white","fontSize":12,"tracking":0.04,"radiusAdj":4}},
+    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"ĐÀ NẴNG · EST 2024","fill":"white","fontSize":12,"tracking":0.04,"flip":true,"radiusAdj":4}},
+    {"type":"wordmark","x":33,"y":92,"w":148,"h":32,"p":{"ink":"white"}}
+  ]},
+  { id:"stk-logo-paper", name:"Logo round — paper", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
     {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"white","ring":"ink","ringW":6,"lift":"default"}},
-    {"type":"kicker","x":34,"y":70,"w":146,"h":14,"p":{"text":"BAR · CAFÉ","ink":"ink","align":"center","tracking":0.3,"fontSize":10}},
-    {"type":"wordmark","x":33,"y":92,"w":148,"h":30,"p":{"ink":"ink"}},
-    {"type":"kicker","x":34,"y":128,"w":146,"h":14,"p":{"text":"REALITYDN.COM","ink":"ink","align":"center","tracking":0.24,"fontSize":9}}
+    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"BAR · CAFÉ · COMMUNITY","fill":"ink","fontSize":12,"tracking":0.04,"radiusAdj":4}},
+    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"ĐÀ NẴNG · EST 2024","fill":"ink","fontSize":12,"tracking":0.04,"flip":true,"radiusAdj":4}},
+    {"type":"wordmark","x":33,"y":90,"w":148,"h":30,"p":{"ink":"ink"}},
+    {"type":"shape","x":96,"y":146,"w":20,"h":20,"p":{"kind":"star5","fill":"pink"}}
   ]},
-  { id:"stk-wordmark-mini", name:"Wordmark mini", group:"Stickers", size:"st50", orient:"portrait", accent:"blue", els:[
-    {"type":"sticker","x":6,"y":6,"w":130,"h":130,"p":{"shape":"squircle","fill":"white","ring":"blue","ringW":5,"radius":0.34,"lift":"default"}},
-    {"type":"wordmark","x":20,"y":58,"w":102,"h":24,"p":{"ink":"ink"}}
+  { id:"stk-hexagon", name:"Hexagon badge", group:"Stickers", size:"st75", orient:"portrait", accent:"blue", els:[
+    {"type":"shape","x":6,"y":6,"w":200,"h":200,"p":{"kind":"hexagon","fill":"blue","stroke":5,"strokeColor":"ink","lift":"default"}},
+    {"type":"kicker","x":40,"y":74,"w":120,"h":12,"p":{"text":"ĐÀ NẴNG","ink":"white","align":"center","tracking":0.3,"fontSize":9}},
+    {"type":"wordmark","x":43,"y":92,"w":114,"h":26,"p":{"ink":"white"}},
+    {"type":"kicker","x":40,"y":126,"w":120,"h":12,"p":{"text":"EST. 2024","ink":"white","align":"center","tracking":0.3,"fontSize":9}}
   ]},
-  { id:"stk-burst-open", name:"Sunburst — OPEN", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
-    {"type":"burst","x":-8,"y":-8,"w":229,"h":229,"p":{"fill":"red","rays":22,"hub":0.66,"hubFill":"white"}},
-    {"type":"headline","x":36,"y":80,"w":140,"h":44,"p":{"text":"OPEN","fontSize":40,"weight":800,"ink":"red","align":"center"}},
-    {"type":"kicker","x":36,"y":126,"w":140,"h":14,"p":{"text":"COME ON IN","ink":"ink","align":"center","tracking":0.24,"fontSize":9}}
+  { id:"stk-shield", name:"Shield crest", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
+    {"type":"shape","x":6,"y":6,"w":200,"h":200,"p":{"kind":"shield","fill":"purple","stroke":5,"strokeColor":"ink","lift":"default"}},
+    {"type":"kicker","x":30,"y":48,"w":140,"h":12,"p":{"text":"ĐÀ NẴNG · EST 2024","ink":"white","align":"center","tracking":0.16,"fontSize":9}},
+    {"type":"wordmark","x":40,"y":72,"w":120,"h":28,"p":{"ink":"white"}},
+    {"type":"shape","x":96,"y":118,"w":22,"h":22,"p":{"kind":"star5","fill":"amber"}}
   ]},
-  { id:"stk-burst-new", name:"Sunburst — NEW", group:"Stickers", size:"st50", orient:"portrait", accent:"yellow", els:[
+  { id:"stk-star", name:"Star die-cut", group:"Stickers", size:"st75", orient:"portrait", accent:"amber", els:[
+    {"type":"shape","x":4,"y":4,"w":205,"h":200,"p":{"kind":"star5","fill":"amber","stroke":4,"strokeColor":"ink","lift":"default"}},
+    {"type":"wordmark","x":52,"y":86,"w":106,"h":24,"p":{"ink":"ink"}}
+  ]},
+  { id:"stk-banner", name:"Ribbon banner", group:"Stickers", size:"a7", orient:"landscape", accent:"red", els:[
+    {"type":"shape","x":10,"y":40,"w":278,"h":130,"p":{"kind":"banner","fill":"red","lift":"default"}},
+    {"type":"wordmark","x":70,"y":78,"w":158,"h":54,"p":{"ink":"white"}}
+  ]},
+  { id:"stk-arch-film", name:"Film Club — arch", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
+    {"type":"shape","x":6,"y":6,"w":200,"h":200,"p":{"kind":"arch","fill":"purple","stroke":4,"strokeColor":"ink","lift":"default"}},
+    {"type":"kicker","x":30,"y":46,"w":140,"h":12,"p":{"text":"EVERY WEDNESDAY","ink":"white","align":"center","tracking":0.2,"fontSize":9}},
+    {"type":"headline","x":24,"y":66,"w":166,"h":82,"p":{"text":"FILM\nCLUB","fontSize":44,"weight":800,"ink":"white","align":"center","leading":0.9}},
+    {"type":"kicker","x":20,"y":160,"w":170,"h":12,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"white","align":"center","tracking":0.16,"fontSize":8}}
+  ]},
+  { id:"stk-blob-vibes", name:"Blob — good vibes", group:"Stickers", size:"st75", orient:"portrait", accent:"green", els:[
+    {"type":"shape","x":6,"y":6,"w":200,"h":200,"p":{"kind":"blob","fill":"green","lift":"default"}},
+    {"type":"headline","x":34,"y":56,"w":132,"h":88,"p":{"text":"GOOD\nVIBES","weight":800,"ink":"white","align":"center","leading":0.9,"fit":true,"fontSize":44}},
+    {"type":"wordmark","x":58,"y":152,"w":96,"h":18,"p":{"ink":"white"}}
+  ]},
+  { id:"stk-heart-danang", name:"Heart — Đà Nẵng", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
+    {"type":"shape","x":10,"y":12,"w":193,"h":186,"p":{"kind":"heart","fill":"red","lift":"default"}},
+    {"type":"headline","x":44,"y":70,"w":125,"h":60,"p":{"text":"ĐÀ\nNẴNG","fontSize":28,"weight":800,"ink":"white","align":"center","leading":0.94}}
+  ]},
+  { id:"stk-overprint", name:"Overprint circles", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
+    {"type":"sticker","x":4,"y":4,"w":205,"h":205,"p":{"shape":"squircle","fill":"white","ring":"ink","ringW":3,"radius":0.28,"lift":"default"}},
+    {"type":"shape","x":26,"y":28,"w":112,"h":112,"p":{"kind":"circle","fill":"pink"}},
+    {"type":"shape","x":73,"y":28,"w":112,"h":112,"p":{"kind":"circle","fill":"blue","blend":"multiply"}},
+    {"type":"wordmark","x":33,"y":158,"w":148,"h":28,"p":{"ink":"ink"}},
+    {"type":"kicker","x":20,"y":192,"w":173,"h":12,"p":{"text":"ĐÀ NẴNG · EST 2024","ink":"ink","align":"center","tracking":0.2,"fontSize":8}}
+  ]},
+  { id:"stk-sunburst-open", name:"Sunburst — OPEN", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
+    {"type":"burst","x":-10,"y":-10,"w":233,"h":233,"p":{"fill":"red","rays":26,"hub":0.62,"hubFill":"white"}},
+    {"type":"headline","x":40,"y":76,"w":140,"h":50,"p":{"text":"OPEN","weight":800,"ink":"red","align":"center","fit":true,"fontSize":48}},
+    {"type":"kicker","x":40,"y":130,"w":140,"h":14,"p":{"text":"COME ON IN","ink":"ink","align":"center","tracking":0.24,"fontSize":9}}
+  ]},
+  { id:"stk-sunburst-sale", name:"Sunburst — 20% off", group:"Stickers", size:"st75", orient:"portrait", accent:"amber", els:[
+    {"type":"burst","x":-10,"y":-10,"w":233,"h":233,"p":{"fill":"amber","rays":22,"hub":0.6,"hubFill":"ink"}},
+    {"type":"headline","x":50,"y":62,"w":120,"h":86,"p":{"text":"20%\nOFF","weight":800,"ink":"white","align":"center","leading":0.9,"fit":true,"fontSize":58}}
+  ]},
+  { id:"stk-sunburst-new", name:"Sunburst — NEW", group:"Stickers", size:"st50", orient:"portrait", accent:"yellow", els:[
     {"type":"burst","x":-6,"y":-6,"w":154,"h":154,"p":{"fill":"yellow","rays":18,"hub":0.52,"hubFill":"white"}},
-    {"type":"headline","x":16,"y":52,"w":110,"h":40,"p":{"text":"NEW","fontSize":34,"weight":800,"ink":"ink","align":"center"}}
+    {"type":"headline","x":16,"y":50,"w":110,"h":42,"p":{"text":"NEW","weight":800,"ink":"ink","align":"center","fit":true,"fontSize":40}}
   ]},
-  { id:"stk-qr-round", name:"QR round — scan", group:"Stickers", size:"st75", orient:"portrait", accent:"blue", els:[
-    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":5,"lift":"default"}},
-    {"type":"kicker","x":34,"y":40,"w":146,"h":14,"p":{"text":"SCAN ME","ink":"blue","align":"center","tracking":0.3,"fontSize":11}},
-    {"type":"qr","x":61,"y":62,"w":92,"h":92,"p":{"data":"https://realitydn.com","caption":"","quiet":true}},
-    {"type":"wordmark","x":56,"y":162,"w":100,"h":20,"p":{"ink":"ink"}}
+  { id:"stk-big-open", name:"Big OPEN — black", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"squircle","fill":"ink","ring":"ink","ringW":0,"radius":0.3,"lift":"default"}},
+    {"type":"headline","x":22,"y":54,"w":166,"h":74,"p":{"text":"OPEN","weight":800,"ink":"white","align":"center","fit":true,"fontSize":80}},
+    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"REALITY · ĐÀ NẴNG","fill":"white","fontSize":11,"tracking":0.05,"flip":true,"radiusAdj":2}}
   ]},
   { id:"stk-halftone-square", name:"Halftone squircle", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
     {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"squircle","fill":"purple","ring":"ink","ringW":4,"radius":0.3,"lift":"default"}},
@@ -368,33 +505,33 @@ const TEMPLATES = [
     {"type":"block","x":18,"y":80,"w":176,"h":54,"p":{"fill":"purple","radius":4}},
     {"type":"wordmark","x":36,"y":94,"w":140,"h":26,"p":{"ink":"white"}}
   ]},
-  { id:"stk-danang-round", name:"Đà Nẵng round", group:"Stickers", size:"st50", orient:"portrait", accent:"red", els:[
-    {"type":"sticker","x":6,"y":6,"w":130,"h":130,"p":{"shape":"circle","fill":"red","ring":"ink","ringW":4,"lift":"default"}},
-    {"type":"headline","x":14,"y":40,"w":114,"h":54,"p":{"text":"ĐÀ\nNẴNG","fontSize":29,"weight":800,"ink":"white","align":"center","leading":0.92}},
-    {"type":"kicker","x":12,"y":98,"w":118,"h":12,"p":{"text":"★ REALITYDN.COM ★","ink":"white","align":"center","tracking":0.12,"fontSize":7}}
-  ]},
-  { id:"stk-film-club", name:"Film Club", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
-    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"purple","ring":"ink","ringW":5,"lift":"default"}},
-    {"type":"kicker","x":34,"y":50,"w":146,"h":14,"p":{"text":"EVERY WEDNESDAY","ink":"white","align":"center","tracking":0.18,"fontSize":9}},
-    {"type":"headline","x":24,"y":70,"w":166,"h":80,"p":{"text":"FILM\nCLUB","fontSize":48,"weight":800,"ink":"white","align":"center","leading":0.88}},
-    {"type":"kicker","x":34,"y":152,"w":146,"h":14,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"white","align":"center","tracking":0.18,"fontSize":9}}
-  ]},
-  { id:"stk-coaster-blue", name:"Coaster — big round", group:"Stickers", size:"st100", orient:"portrait", accent:"blue", els:[
-    {"type":"sticker","x":8,"y":8,"w":268,"h":268,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":8,"lift":"default"}},
-    {"type":"kicker","x":42,"y":74,"w":200,"h":16,"p":{"text":"GOOD DRINKS · GOOD PEOPLE","ink":"blue","align":"center","tracking":0.12,"fontSize":10}},
-    {"type":"wordmark","x":57,"y":104,"w":170,"h":34,"p":{"ink":"ink"}},
-    {"type":"kicker","x":42,"y":150,"w":200,"h":16,"p":{"text":"86 MAI THÚC LÂN · ĐÀ NẴNG","ink":"ink","align":"center","tracking":0.1,"fontSize":9}},
-    {"type":"seal","x":118,"y":196,"w":48,"h":48,"p":{"top":"ĐÀ NẴNG","big":"★","sub":"SINCE 2024","fill":"blue","ink":"blue"}}
-  ]},
-  { id:"stk-laptop-stay", name:"Laptop — stay awhile", group:"Stickers", size:"a7", orient:"landscape", accent:"amber", els:[
-    {"type":"sticker","x":5,"y":5,"w":288,"h":200,"p":{"shape":"rounded","fill":"amber","ring":"ink","ringW":5,"radius":0.5,"lift":"default"}},
-    {"type":"headline","x":24,"y":44,"w":250,"h":80,"p":{"text":"STAY AWHILE","fontSize":40,"weight":800,"ink":"ink","align":"center","leading":0.92}},
-    {"type":"wordmark","x":98,"y":138,"w":102,"h":22,"p":{"ink":"ink"}}
-  ]},
   { id:"stk-coffee-square", name:"Coffee squircle", group:"Stickers", size:"st75", orient:"portrait", accent:"green", els:[
     {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"squircle","fill":"white","ring":"green","ringW":5,"radius":0.32,"lift":"default"}},
     {"type":"headline","x":22,"y":44,"w":170,"h":100,"p":{"text":"GOOD\nCOFFEE","fontSize":40,"weight":800,"ink":"ink","align":"center","leading":0.9,"echo":true,"echoAccent":"green"}},
     {"type":"kicker","x":22,"y":150,"w":170,"h":14,"p":{"text":"ROASTED IN ĐÀ NẴNG","ink":"green","align":"center","tracking":0.16,"fontSize":9}}
+  ]},
+  { id:"stk-qr-round", name:"QR round — scan", group:"Stickers", size:"st75", orient:"portrait", accent:"blue", els:[
+    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":5,"lift":"default"}},
+    {"type":"kicker","x":34,"y":40,"w":146,"h":14,"p":{"text":"SCAN ME","ink":"blue","align":"center","tracking":0.3,"fontSize":11}},
+    {"type":"qr","x":61,"y":62,"w":92,"h":92,"p":{"data":"https://realitydn.com","caption":"","quiet":true}},
+    {"type":"wordmark","x":56,"y":162,"w":100,"h":20,"p":{"ink":"ink"}}
+  ]},
+  { id:"stk-laptop-pill", name:"Laptop — stay awhile", group:"Stickers", size:"a7", orient:"landscape", accent:"amber", els:[
+    {"type":"shape","x":5,"y":8,"w":288,"h":194,"p":{"kind":"pill","fill":"amber","stroke":5,"strokeColor":"ink","lift":"default"}},
+    {"type":"headline","x":34,"y":48,"w":230,"h":70,"p":{"text":"STAY AWHILE","weight":800,"ink":"ink","align":"center","fit":true,"fontSize":52}},
+    {"type":"wordmark","x":99,"y":138,"w":102,"h":22,"p":{"ink":"ink"}}
+  ]},
+  { id:"stk-coaster-blue", name:"Coaster — big round", group:"Stickers", size:"st100", orient:"portrait", accent:"blue", els:[
+    {"type":"sticker","x":8,"y":8,"w":268,"h":268,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":8,"lift":"default"}},
+    {"type":"arctext","x":30,"y":30,"w":224,"h":224,"p":{"text":"GOOD DRINKS · GOOD PEOPLE","fill":"blue","fontSize":18,"tracking":0.03}},
+    {"type":"arctext","x":30,"y":30,"w":224,"h":224,"p":{"text":"MAI THÚC LÂN · ĐÀ NẴNG","fill":"blue","fontSize":14,"tracking":0.03,"flip":true}},
+    {"type":"wordmark","x":61,"y":112,"w":160,"h":36,"p":{"ink":"ink"}},
+    {"type":"shape","x":123,"y":164,"w":38,"h":38,"p":{"kind":"star5","fill":"blue"}}
+  ]},
+  { id:"stk-vertical-bar", name:"Vertical — BAR", group:"Stickers", size:"a7", orient:"portrait", accent:"red", els:[
+    {"type":"sticker","x":6,"y":6,"w":198,"h":286,"p":{"shape":"rounded","fill":"ink","ring":"ink","ringW":0,"radius":0.1,"lift":"default"}},
+    {"type":"headline","x":64,"y":34,"w":82,"h":170,"p":{"text":"BAR","weight":800,"ink":"white","align":"center","orient":"v","fontSize":56}},
+    {"type":"wordmark","x":52,"y":230,"w":106,"h":22,"p":{"ink":"white"}}
   ]},
   { id:"qr-menu-thin01", name:"Menu — thin 01", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
     {"type":"numeral","x":22,"y":18,"w":130,"h":110,"p":{"text":"01","fontSize":96,"ink":"pink","align":"left","echo":true}},
@@ -828,6 +965,8 @@ Object.assign(window, {
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, WORDMARK_PATH,
   ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, burstRays,
+  roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
+  BLEND_MODES, blendCss, blendPdf,
   CATALOG, DEFAULTS, makeElement, uid, slugify,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
 });

@@ -93,11 +93,17 @@ function Swatches({ label, value, onChange, auto, white }){
 const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
-const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker'];
-const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','stripes','sticker'];
+const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker','shape'];
+const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','stripes','sticker','shape'];
 const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
 const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'}];
 const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Grow out'},{v:'in',l:'Grow in'},{v:'down',l:'Down'},{v:'up',l:'Up'}];
+const SHAPE_OPTS = (window.SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).toUpperCase()+k.slice(1)}));
+const BLENDS = [{v:'normal',l:'None'},{v:'multiply',l:'Multiply'},{v:'screen',l:'Screen'},{v:'overlay',l:'Overlay'},{v:'darken',l:'Darken'},{v:'lighten',l:'Lighten'},{v:'hard-light',l:'Hard'}];
+const ORIENTS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}];
+const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee'];
+const FITTABLE = ['headline','numeral','bignum','kicker'];
+const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
 
 /* ---------- inspector ---------- */
 function Inspector({ el, doc, update, dup, del, layer, clearAll }){
@@ -152,6 +158,20 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Slider label="Rays" val={el.rays||16} min={6} max={48} step={1} onChange={v=>update({rays:v})} />
         <Slider label="Centre hub" val={el.hub!=null?el.hub:0} min={0} max={0.8} step={0.02} onChange={v=>update({hub:v})} />
         {(el.hub||0)>0 && <Swatches label="Hub fill" value={el.hubFill||'white'} onChange={v=>update({hubFill:v})} white />}
+      </React.Fragment>}
+      {el.type==='shape' && <React.Fragment>
+        <Chips label="Shape" options={SHAPE_OPTS} value={el.kind||'hexagon'} onChange={v=>update({kind:v})} />
+        <Slider label="Keyline stroke" val={el.stroke||0} min={0} max={16} step={0.5} onChange={v=>update({stroke:v})} suffix="pt" />
+        {(el.stroke||0)>0 && <Swatches label="Stroke colour" value={el.strokeColor||'ink'} onChange={v=>update({strokeColor:v})} white />}
+      </React.Fragment>}
+      {el.type==='arctext' && <React.Fragment>
+        <Field label="Text" value={el.text} onChange={v=>update({text:v})} />
+        <Chips label="Arc" options={[{v:false,l:'Top'},{v:true,l:'Bottom'}]} value={!!el.flip} onChange={v=>update({flip:v})} />
+        <Slider label="Radius nudge" val={el.radiusAdj||0} min={-90} max={90} step={2} onChange={v=>update({radiusAdj:v})} suffix="pt" />
+        <Slider label="Size" val={el.fontSize||24} min={8} max={80} step={1} onChange={v=>update({fontSize:v})} suffix="pt" />
+        <Chips label="Weight" options={[{v:500,l:'Medium'},{v:700,l:'Bold'},{v:800,l:'Heavy'}]} value={el.weight||700} onChange={v=>update({weight:v})} />
+        <Slider label="Letter spacing" val={el.tracking!=null?el.tracking:0.08} min={-0.02} max={0.4} step={0.005} onChange={v=>update({tracking:v})} suffix="em" />
+        <Chips label="Case" options={[{v:true,l:'UPPER'},{v:false,l:'As typed'}]} value={el.upper!==false} onChange={v=>update({upper:v})} />
       </React.Fragment>}
       {el.type==='footer' && <React.Fragment>
         <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
@@ -215,6 +235,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align||'left'} onChange={v=>update({align:v})} />
         <Slider label="Letter spacing" val={el.tracking!=null?el.tracking:0} min={-0.05} max={0.5} step={0.005} onChange={v=>update({tracking:v})} suffix="em" />
         <Chips label="Case" options={[{v:true,l:'UPPER'},{v:false,l:'As typed'}]} value={el.upper!==false} onChange={v=>update({upper:v})} />
+        {FITTABLE.indexOf(el.type)>=0 && <Chips label="Auto-fit width" options={[{v:false,l:'Off'},{v:true,l:'Fit box'}]} value={!!el.fit} onChange={v=>update({fit:v})} />}
+        {ORIENTABLE.indexOf(el.type)>=0 && <Chips label="Orientation" options={ORIENTS} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       </React.Fragment>}
       {el.type==='rule' && <React.Fragment>
         <Slider label="Thickness" val={el.weight||3} min={0.5} max={20} step={0.5} onChange={v=>update({weight:v})} suffix="pt" />
@@ -225,19 +247,20 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Slider label="Ink border" val={el.border||0} min={0} max={6} step={0.5} onChange={v=>update({border:v})} suffix="pt" />
       </React.Fragment>}
 
-      {/* treatment — Year 2 plane shadow + misregistration echo */}
-      {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0) && <div className="ps-sech">Treatment</div>}
+      {/* treatment — Year 2 plane shadow + misregistration echo + riso overprint */}
+      {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0) && <div className="ps-sech">Treatment</div>}
       {LIFTABLE.indexOf(el.type)>=0 && <Chips label="Lift · plane shadow" options={LIFTS} value={el.lift||'none'} onChange={v=>update({lift:v})} />}
       {ECHOABLE.indexOf(el.type)>=0 && <React.Fragment>
         <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
         {el.echo && <Swatches label="Echo colour" value={el.echoAccent||'auto'} onChange={v=>update({echoAccent:v})} auto />}
       </React.Fragment>}
+      {BLENDABLE.indexOf(el.type)>=0 && <Chips label="Blend · overprint" options={BLENDS} value={el.blend||'normal'} onChange={v=>update({blend:v})} />}
 
       {/* colour */}
       <div className="ps-sech">Colour</div>
-      {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee'].indexOf(el.type)>=0 &&
-        <Swatches label="Ink" value={el.ink!=null?el.ink:'auto'} onChange={v=>update({ink:v})} auto white />}
-      {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst'].indexOf(el.type)>=0 &&
+      {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee','arctext'].indexOf(el.type)>=0 &&
+        <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white />}
+      {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst','shape'].indexOf(el.type)>=0 &&
         <Swatches label={el.type==='sticker'?'Bed fill':el.type==='burst'?'Ray colour':'Fill'} value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} white />}
       {['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee'].indexOf(el.type)>=0 &&
         <Chips label="Surface" options={SURFACES} value={el.surface||'none'} onChange={v=>update({surface:v})} />}

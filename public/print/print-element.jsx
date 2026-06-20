@@ -7,7 +7,8 @@
    ============================================================ */
 const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
         surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, partnerOf: pePartner, LIFT: PE_LIFT,
-        dotFieldLayout: peDots, burstRays: peBurst } = window;
+        dotFieldLayout: peDots, burstRays: peBurst, shapePath: peShape, arcTextLayout: peArc,
+        fitTextSize: peFit, blendCss: peBlend } = window;
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
@@ -74,12 +75,20 @@ function ArrowGlyph({ color }){
 }
 const ARROW_ROT = { right:0, down:90, left:180, up:270 };
 
-/* shared text block (optionally with a misregistration echo behind) */
-function TextBlock({ el, textCol, justify, vAlign }){
+/* shared text block (optional misregistration echo, auto-fit, vertical set) */
+function TextBlock({ el, textCol, justify }){
+  const isUpper = el.upper!==false && el.type!=='body';
+  let fs = el.fontSize;
+  if(el.fit){
+    const lines=(el.text||'').split('\n').map(l=>isUpper?l.toUpperCase():l);
+    fs = peFit(lines, el.fam, el.weight, el.w*0.94, Math.min(Math.max(el.h*1.3, el.fontSize), 320), el.tracking||0);
+  }
+  const vertical = el.orient==='v';
   const style = {
-    fontFamily:famCss(el.fam), fontWeight:el.weight, textTransform: el.upper!==false && el.type!=='body' ? 'uppercase':'none',
-    fontSize:el.fontSize+'px', lineHeight: el.leading!=null?el.leading:(el.type==='body'?1.32:0.95),
-    letterSpacing:(el.tracking!=null?el.tracking:0)+'em', textAlign:el.align, whiteSpace:'pre-wrap', width:'100%'
+    fontFamily:famCss(el.fam), fontWeight:el.weight, textTransform: isUpper ? 'uppercase':'none',
+    fontSize:fs+'px', lineHeight: el.leading!=null?el.leading:(el.type==='body'?1.32:0.95),
+    letterSpacing:(el.tracking!=null?el.tracking:0)+'em', textAlign:el.align, whiteSpace:'pre-wrap', width:'100%',
+    writingMode: vertical?'vertical-rl':'horizontal-tb'
   };
   return (
     <div style={{ position:'relative', width:'100%', display:'flex', justifyContent:justify }}>
@@ -103,6 +112,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     transition: dragging ? 'none' : 'transform .14s cubic-bezier(0.2,1.4,0.45,1)',
     cursor: dragging ? 'grabbing' : 'grab', userSelect:'none', touchAction:'none', boxSizing:'border-box'
   };
+  const bm = peBlend(el.blend); if(bm) wrap.mixBlendMode = bm;
   const box = (extra)=>Object.assign({ width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
     display:'flex', flexDirection:'column', justifyContent:'center', boxShadow:lift }, surf, { color:textCol }, extra);
 
@@ -190,6 +200,36 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
         {b.wedges.map((w,i)=> <path key={i} d={`M${w.cx} ${w.cy} L${w.p0[0]} ${w.p0[1]} L${w.p1[0]} ${w.p1[1]} Z`} fill={col} />)}
         {hub>0 && <circle cx={b.cx} cy={b.cy} r={b.R*hub} fill={hubFill} />}
+      </svg>
+    </div>;
+  }
+  else if(t==='shape'){
+    const col = peFill(el.fill!=null?el.fill:'blue', accentHex);
+    const strokeCol = peFill(el.strokeColor||'ink', accentHex), sw = el.stroke||0;
+    const path = peShape(el.kind||'hexagon', el.w, el.h);
+    const liftF = (el.lift && el.lift!=='none') ? `drop-shadow(${liftShadow(el.lift)})` : 'none';
+    const echoCol = echoHex(el, docAccent), edx=el.echoDx||7, edy=el.echoDy||7;
+    const half = sw/2;
+    inner = <div style={{ width:'100%', height:'100%', filter:liftF }}>
+      <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+        {el.echo && (path
+          ? <path d={path} fill={echoCol} transform={`translate(${edx} ${edy})`} />
+          : <ellipse cx={el.w/2+edx} cy={el.h/2+edy} rx={el.w/2} ry={el.h/2} fill={echoCol} />)}
+        {path
+          ? <path d={path} fill={col} stroke={sw>0?strokeCol:'none'} strokeWidth={sw} strokeLinejoin="round" />
+          : <ellipse cx={el.w/2} cy={el.h/2} rx={Math.max(0.5,el.w/2-half)} ry={Math.max(0.5,el.h/2-half)} fill={col} stroke={sw>0?strokeCol:'none'} strokeWidth={sw} />}
+      </svg>
+    </div>;
+  }
+  else if(t==='arctext'){
+    const col = peFill(el.fill||'ink', accentHex);
+    const lay = peArc(el.text, el.w, el.h, { fontSize:el.fontSize, tracking:el.tracking, flip:el.flip, fam:el.fam, weight:el.weight, radiusAdj:el.radiusAdj, upper:el.upper });
+    inner = <div style={{ width:'100%', height:'100%' }}>
+      <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+        {lay.glyphs.map((g,i)=>(
+          <text key={i} transform={`translate(${g.x} ${g.y}) rotate(${g.deg})`} textAnchor="middle" dominantBaseline="central"
+            style={{ fontFamily:famCss(el.fam), fontWeight:el.weight, fontSize:lay.fontSize+'px', fill:col }}>{g.ch}</text>
+        ))}
       </svg>
     </div>;
   }

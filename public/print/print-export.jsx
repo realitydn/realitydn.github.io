@@ -77,6 +77,9 @@ function renderElement(page, el, ctx){
   const r = el.rot||0, rad = r*Math.PI/180, cs=Math.cos(rad), sn=Math.sin(rad);
   const cx = el.w/2, cy = el.h/2;
   const ROT = degrees(-r);
+  /* blend mode (riso overprint) — applied to every draw op for this element */
+  const BM = (el.blend && el.blend!=='normal' && L().BlendMode) ? L().BlendMode[window.blendPdf(el.blend)] : null;
+  const bm = (o)=>{ if(BM) o.blendMode=BM; return o; };
   /* local (lx, top-down ly) → PDF point, rotated about element centre */
   function place(lx, ly){
     const dx=lx-cx, dy=ly-cy;
@@ -86,30 +89,29 @@ function renderElement(page, el, ctx){
   /* rectangle whose visual TOP-LEFT is (lx,lyTop) extending +w,+h down-right */
   function rect(lx, lyTop, w, h, opts){
     const bl = place(lx, lyTop+h);
-    const o = Object.assign({ x:bl.x, y:bl.y, width:w, height:h, rotate:ROT }, opts);
-    page.drawRectangle(o);
+    page.drawRectangle(bm(Object.assign({ x:bl.x, y:bl.y, width:w, height:h, rotate:ROT }, opts)));
   }
   function line(ax, ay, bx, by, thickness, color, dash){
     const p=place(ax,ay), q=place(bx,by);
     const o={ start:{x:p.x,y:p.y}, end:{x:q.x,y:q.y}, thickness, color };
     if(dash) o.dashArray=dash;
-    page.drawLine(o);
+    page.drawLine(bm(o));
   }
   function ellipse(lxC, lyC, rx, ry, opts){
     const c=place(lxC,lyC);
-    page.drawEllipse(Object.assign({ x:c.x, y:c.y, xScale:rx, yScale:ry, rotate:ROT }, opts));
+    page.drawEllipse(bm(Object.assign({ x:c.x, y:c.y, xScale:rx, yScale:ry, rotate:ROT }, opts)));
   }
   function drawLineStr(str, lx, baselineTop, font, size, color, tracking){
     if(!str) return;
-    if(Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,{x:p.x,y:p.y,size,font,color,rotate:ROT}); return; }
+    if(Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); return; }
     let curX=lx;
-    for(const ch of chars(str)){ const p=place(curX,baselineTop); page.drawText(ch,{x:p.x,y:p.y,size,font,color,rotate:ROT}); curX += font.widthOfTextAtSize(ch,size)+tracking*size; }
+    for(const ch of chars(str)){ const p=place(curX,baselineTop); page.drawText(ch,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); curX += font.widthOfTextAtSize(ch,size)+tracking*size; }
   }
-  /* draw an SVG path given in LOCAL element coords (0..w, 0..h, y-down).
-     Anchored at the rotated local origin so it rotates about the element
-     centre, matching rect()/text — same as the wordmark. */
-  function localPath(d, color){ const o=place(0,0); page.drawSvgPath(d, { x:o.x, y:o.y, scale:1, rotate:ROT, color }); }
-  function localPathStroke(d, color, w){ const o=place(0,0); page.drawSvgPath(d, { x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w }); }
+  /* draw an SVG path given in LOCAL element coords (0..w, 0..h, y-down),
+     optionally offset by (ox,oy) local pt. Anchored at the rotated local
+     origin so it rotates about the element centre, matching rect()/text. */
+  function localPath(d, color, ox, oy){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm({ x:o.x, y:o.y, scale:1, rotate:ROT, color })); }
+  function localPathStroke(d, color, w, ox, oy){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm({ x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w })); }
 
   const accentHex = isAccent(el.fill) ? window.PALETTE[el.fill] : window.PALETTE[accentName];
   const fillKey = el.fill!=null ? el.fill : accentName;
@@ -145,16 +147,30 @@ function renderElement(page, el, ctx){
       drawLineStr(ln, lx+(dx||0), top+i*lineH+asc+(dy||0), font, size, color, tracking);
     });
   }
+  /* upright-stacked vertical text — one glyph per row, centred */
+  function drawVerticalText({ str, fam, weight, size, upper, color, pad }){
+    const font=fontFor(fam,weight), gl=(upper?(str||'').toUpperCase():(str||'')).split('').filter(c=>c!=='\n');
+    const lineH=size*1.04, asc=font.heightAtSize(size,{descender:false}), blockH=gl.length*lineH;
+    let top=(el.h-blockH)/2; if(top<pad) top=pad;
+    gl.forEach((ch,i)=>{ if(ch===' ') return; const w=measure(ch,font,size,0); drawLineStr(ch,(el.w-w)/2, top+i*lineH+asc, font, size, color, 0); });
+  }
 
   const t=el.type;
   if(t==='headline'||t==='body'||t==='kicker'||t==='bignum'||t==='numeral'){
     drawSurface();
     const pad=(el.surface&&el.surface!=='none')?12:0;
-    const opts={ str:el.text, fam:el.fam, weight:el.weight, size:el.fontSize, align:el.align||'left',
-      tracking:el.tracking||0, leading:el.leading!=null?el.leading:(t==='body'?1.32:0.95),
-      upper: el.upper!==false && t!=='body', valign:'center', padX:pad, padY:pad, color:textColor };
-    if(el.echo){ textBlock(Object.assign({}, opts, { color:echoColor, dx:(el.echoDx||4), dy:(el.echoDy||4) })); }
-    textBlock(opts);
+    const isUpper=el.upper!==false && t!=='body';
+    let size=el.fontSize;
+    if(el.fit){ const lines=(el.text||'').split('\n').map(l=>isUpper?l.toUpperCase():l);
+      size=window.fitTextSize(lines, el.fam, el.weight, (el.w-pad*2)*0.98, Math.min(Math.max(el.h*1.3, el.fontSize),320), el.tracking||0); }
+    if(el.orient==='v'){ drawVerticalText({ str:el.text, fam:el.fam, weight:el.weight, size, upper:isUpper, color:textColor, pad }); }
+    else {
+      const opts={ str:el.text, fam:el.fam, weight:el.weight, size, align:el.align||'left',
+        tracking:el.tracking||0, leading:el.leading!=null?el.leading:(t==='body'?1.32:0.95),
+        upper:isUpper, valign:'center', padX:pad, padY:pad, color:textColor };
+      if(el.echo){ textBlock(Object.assign({}, opts, { color:echoColor, dx:(el.echoDx||4), dy:(el.echoDy||4) })); }
+      textBlock(opts);
+    }
   }
   else if(t==='pricelist'){
     drawSurface();
@@ -254,6 +270,35 @@ function renderElement(page, el, ctx){
     const hub=el.hub!=null?el.hub:0;
     if(hub>0) ellipse(b.cx, b.cy, b.R*hub, b.R*hub, { color: colorForKey(el.hubFill||'white', whiteColor()) });
   }
+  else if(t==='shape'){
+    const col=colorForKey(el.fill!=null?el.fill:'blue', accentColor(accentName));
+    const strokeCol=colorForKey(el.strokeColor||'ink', inkColor()), sw=el.stroke||0;
+    const path=window.shapePath(el.kind||'hexagon', el.w, el.h), s=window.LIFT[el.lift];
+    if(path){
+      if(s) localPath(path, tintK(s.k), 0, s.dy);
+      if(el.echo) localPath(path, echoColor, el.echoDx||7, el.echoDy||7);
+      localPath(path, col);
+      if(sw>0) localPathStroke(path, strokeCol, sw);
+    } else {
+      const rx=el.w/2, ry=el.h/2, cxL=el.w/2, cyL=el.h/2;
+      if(s) ellipse(cxL, cyL+s.dy, rx, ry, { color:tintK(s.k) });
+      if(el.echo) ellipse(cxL+(el.echoDx||7), cyL+(el.echoDy||7), rx, ry, { color:echoColor });
+      ellipse(cxL, cyL, rx, ry, { color:col });
+      if(sw>0) ellipse(cxL, cyL, Math.max(0.5,rx-sw/2), Math.max(0.5,ry-sw/2), { borderColor:strokeCol, borderWidth:sw });
+    }
+  }
+  else if(t==='arctext'){
+    const col=colorForKey(el.fill||'ink', inkColor()), font=fontFor(el.fam||'mont', el.weight||700);
+    const lay=window.arcTextLayout(el.text, el.w, el.h, { fontSize:el.fontSize, tracking:el.tracking, flip:el.flip, fam:el.fam, weight:el.weight, radiusAdj:el.radiusAdj, upper:el.upper });
+    const co=font.heightAtSize(lay.fontSize,{descender:false})*0.34;   // glyph centre above baseline
+    lay.glyphs.forEach(g=>{
+      if(g.ch===' ') return;
+      const gw=measure(g.ch,font,lay.fontSize,0), C=place(g.x,g.y);
+      const phi=(-(r+g.deg))*Math.PI/180, cosP=Math.cos(phi), sinP=Math.sin(phi);
+      const ox=-gw/2, oy=-co;                                          // centre → baseline-left (PDF y-up)
+      page.drawText(g.ch, bm({ x:C.x+(ox*cosP-oy*sinP), y:C.y+(ox*sinP+oy*cosP), size:lay.fontSize, font, color:col, rotate:degrees(-(r+g.deg)) }));
+    });
+  }
   else if(t==='rule'){
     const th=Math.max(0.5,el.weight||3), col=colorForKey(el.fill||'ink',inkColor()), my=el.h/2, st=el.style||'solid';
     if(st==='double'){ rect(0,my-th,el.w,th*0.5,{color:col}); rect(0,my+th*0.5,el.w,th*0.5,{color:col}); }
@@ -333,18 +378,7 @@ function arrowPoints(dir, w, h){
   return P.map(([ux,uy])=>{ const x=ux-0.5,y=uy-0.5; return [(x*ca-y*sa+0.5)*w,(x*sa+y*ca+0.5)*h]; });
 }
 function arrowPath(dir,w,h){ const p=arrowPoints(dir,w,h); return 'M '+p.map(q=>q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' L ')+' Z'; }
-
-/* rounded-rectangle SVG path in local (y-down) coords, anchored at (ox,oy).
-   r clamps to half the short side; r=0 → plain rectangle. Quadratic corners. */
-function roundedRectPath(ox,oy,w,h,r){
-  r=Math.max(0,Math.min(r, Math.min(w,h)/2));
-  if(r<=0) return `M ${ox} ${oy} L ${ox+w} ${oy} L ${ox+w} ${oy+h} L ${ox} ${oy+h} Z`;
-  const x=ox,y=oy;
-  return `M ${x+r} ${y} L ${x+w-r} ${y} Q ${x+w} ${y} ${x+w} ${y+r} `
-       + `L ${x+w} ${y+h-r} Q ${x+w} ${y+h} ${x+w-r} ${y+h} `
-       + `L ${x+r} ${y+h} Q ${x} ${y+h} ${x} ${y+h-r} `
-       + `L ${x} ${y+r} Q ${x} ${y} ${x+r} ${y} Z`;
-}
+const roundedRectPath = window.roundedRectPath;   // shared geometry lives in print-data.jsx
 
 function drawCropMarks(page, B, trimW, trimH, pageH){
   const len=18, gap=6, th=0.5, col=inkColor();

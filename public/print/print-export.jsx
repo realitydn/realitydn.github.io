@@ -30,6 +30,28 @@ async function embedFonts(pdf){
   return (fam, weight)=> fonts[window.faceFor(fam, weight)];
 }
 
+/* ---- raster (photo) embedding ----
+   The image element is the one non-vector part: render its RISO treatment to a
+   canvas at a size-aware DPI (small pieces 300 · A3-ish 200 · larger 150 — per
+   the print-studio plan), then embed as a JPEG. RGB, not CMYK — fine for a
+   photo; the K-only-text guarantee is unaffected (no rgb() touches the text). */
+function dataURLtoBytes(u){ const b=atob((u.split(',')[1])||''); const a=new Uint8Array(b.length); for(let i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return a; }
+async function rasterizeImage(pdf, el, accentName){
+  if(typeof document==='undefined' || !window.RISO) return null;
+  let img=null;
+  if(el.imgId && window.PrintImg){ img = window.PrintImg.peek(el.imgId) || await window.PrintImg.load(el.imgId).catch(()=>null); }
+  const longMM=Math.max(el.w,el.h)/PT_PER_MM;
+  const dpi = longMM<=210 ? 300 : longMM<=420 ? 200 : 150;
+  let pxW=Math.round(el.w/72*dpi), pxH=Math.round(el.h/72*dpi);
+  const cap=3200, mx=Math.max(pxW,pxH); if(mx>cap){ const k=cap/mx; pxW=Math.round(pxW*k); pxH=Math.round(pxH*k); }
+  const cv=document.createElement('canvas'); cv.width=Math.max(1,pxW); cv.height=Math.max(1,pxH);
+  if(img){ window.RISO.setSource(img);
+    if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale||1, x:el.imgX||0, y:el.imgY||0, rot:el.imgRot||0 });
+    window.RISO.render(cv, el.treatment||'none', window.risoOpts(el, accentName)); }
+  else { const cx=cv.getContext('2d'); cx.fillStyle='#ffffff'; cx.fillRect(0,0,cv.width,cv.height); }
+  return await pdf.embedJpg(dataURLtoBytes(cv.toDataURL('image/jpeg',0.92)));
+}
+
 /* ---- colour ---- */
 function cmykArr(a){ return L().cmyk(a[0],a[1],a[2],a[3]); }
 function inkColor(){ return cmykArr([0,0,0,1]); }
@@ -71,7 +93,7 @@ function wrapText(text, font, size, tracking, maxW){
    is applied per-primitive via place() + the ROT option.
    ============================================================ */
 function renderElement(page, el, ctx){
-  const { B, pageH, fontFor, accentName } = ctx;
+  const { B, pageH, fontFor, accentName, imgMap } = ctx;
   const { degrees } = L();
   const ex = B + el.x, ey = B + el.y;
   const r = el.rot||0, rad = r*Math.PI/180, cs=Math.cos(rad), sn=Math.sin(rad);
@@ -224,16 +246,15 @@ function renderElement(page, el, ctx){
     const quad=(ox,oy)=>{ const a=Math.abs(sh); return sh>=0
       ? `M ${ox+sh} ${oy} L ${ox+el.w} ${oy} L ${ox+el.w-sh} ${oy+el.h} L ${ox} ${oy+el.h} Z`
       : `M ${ox} ${oy} L ${ox+el.w-a} ${oy} L ${ox+el.w} ${oy+el.h} L ${ox+a} ${oy+el.h} Z`; };
+    const sObj=window.LIFT[el.lift];
+    if(sObj) localPath(quad(0, sObj.dy), tintK(sObj.k));          // plane shadow (matches the screen)
     if(el.echo) localPath(quad(el.echoDx||9, el.echoDy||9), echoColor);
     localPath(quad(0,0), colorForKey(fillKey, accentColor(accentName)));
   }
   else if(t==='stripes'){
     if(el.bg && el.bg!=='none') rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() });
-    const n=Math.max(2,el.count||8), band=el.h/n, duty=el.ratio!=null?el.ratio:0.5, col=colorForKey(fillKey, accentColor(accentName));
-    const vertical = el.dir==='v';
-    const span = vertical?el.w:el.h, bw2=span/n;
-    for(let i=0;i<n;i++){ if(i%2) continue; const o=i*bw2, th=bw2*Math.min(1,duty*2);
-      if(vertical) rect(o,0,th,el.h,{color:col}); else rect(0,o,el.w,th,{color:col}); }
+    const col=colorForKey(fillKey, accentColor(accentName)), lay=window.stripeLayout(el);   // clipped polygon bars — matches the screen
+    lay.bands.forEach(b=>{ const d='M '+b.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' Z'; localPath(d, col); });
   }
   else if(t==='dotfield'){
     if(el.bg && el.bg!=='none') rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() });
@@ -242,8 +263,16 @@ function renderElement(page, el, ctx){
       if(shape==='square') rect(p.x-r, p.y-r, p.d, p.d, { color:col });
       else if(shape==='diamond') localPath(`M ${p.x} ${p.y-r} L ${p.x+r} ${p.y} L ${p.x} ${p.y+r} L ${p.x-r} ${p.y} Z`, col);
       else if(shape==='ring'){ const lw=Math.max(0.5,r*0.5); ellipse(p.x,p.y, Math.max(0.3,r-lw/2), Math.max(0.3,r-lw/2), { borderColor:col, borderWidth:lw }); }
+      else if(shape==='plus'){ const tk=Math.max(0.4,p.d*0.34); rect(p.x-r, p.y-tk/2, p.d, tk, {color:col}); rect(p.x-tk/2, p.y-r, tk, p.d, {color:col}); }
       else ellipse(p.x, p.y, r, r, { color:col });
     });
+  }
+  else if(t==='image'){
+    liftRect(0,0,el.w,el.h);                                   // K-tint plane shadow behind the photo
+    const png = imgMap && imgMap[el.id];
+    if(png){ const bl=place(0,el.h); page.drawImage(png, bm({ x:bl.x, y:bl.y, width:el.w, height:el.h, rotate:ROT })); }
+    else rect(0,0,el.w,el.h,{ color:whiteColor(), borderColor:inkColor(), borderWidth:1 });
+    if(el.frame){ rect(0,0,el.w,el.h,{ borderColor:inkColor(), borderWidth:el.frameW||3 }); }
   }
   else if(t==='sticker'){
     const bed=colorForKey(el.fill!=null?el.fill:'white', whiteColor());
@@ -395,7 +424,10 @@ async function buildPiece(doc, { bleed, marks }){
   const pdf=await PDFDocument.create(); const fontFor=await embedFonts(pdf);
   const page=pdf.addPage([pageW,pageH]);
   page.drawRectangle({ x:0,y:0,width:pageW,height:pageH,color:whiteColor() });
-  const ctx={ B, pageH, fontFor, accentName:doc.accent };
+  /* embed photo rasters up front (async) so renderElement can stay synchronous */
+  const imgMap={};
+  for(const el of (doc.elements||[])){ if(el.type==='image'){ try{ const r=await rasterizeImage(pdf, el, doc.accent); if(r) imgMap[el.id]=r; }catch(e){ console.warn('image embed failed', e); } } }
+  const ctx={ B, pageH, fontFor, accentName:doc.accent, imgMap };
   (doc.elements||[]).forEach(el=>{ try{ renderElement(page,el,ctx); }catch(e){ console.warn('el render failed',el&&el.type,e); } });
   if(bleed&&marks) drawCropMarks(page,B,dims.wpt,dims.hpt,pageH);
   return { pdf, dims, B, pageW, pageH };

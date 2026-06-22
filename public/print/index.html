@@ -25,6 +25,11 @@
 <script src="vendor/fontkit.umd.min.js"></script>
 <script src="vendor/qrcode.js"></script>
 
+<!-- Plain JS (no JSX): the riso photo engine + the IndexedDB image store.
+     Loaded before the babel modules so window.RISO / window.PrintImg exist. -->
+<script src="riso-engine.js"></script>
+<script src="print-store.js"></script>
+
 <script type="text/babel" src="print-data.jsx"></script>
 <script type="text/babel" src="print-element.jsx"></script>
 <script type="text/babel" src="print-canvas.jsx"></script>

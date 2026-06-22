@@ -94,16 +94,155 @@ const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
 const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker','shape'];
-const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','stripes','sticker','shape'];
+const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image'];
 const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
-const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'}];
-const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Grow out'},{v:'in',l:'Grow in'},{v:'down',l:'Down'},{v:'up',l:'Up'}];
+const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'plus',l:'Plus'}];
+const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Radial out'},{v:'in',l:'Radial in'},{v:'up',l:'Up'},{v:'down',l:'Down'},{v:'left',l:'Left'},{v:'right',l:'Right'},{v:'diag',l:'Diagonal'},{v:'diag2',l:'Diagonal ↗'},{v:'wave',l:'Wave'},{v:'bloom',l:'Bloom'}];
+const STRIPE_DIRS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'},{v:'diag',l:'Diagonal ↘'},{v:'diag2',l:'Diagonal ↗'}];
 const SHAPE_OPTS = (window.SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).toUpperCase()+k.slice(1)}));
 const BLENDS = [{v:'normal',l:'None'},{v:'multiply',l:'Multiply'},{v:'screen',l:'Screen'},{v:'overlay',l:'Overlay'},{v:'darken',l:'Darken'},{v:'lighten',l:'Lighten'},{v:'hard-light',l:'Hard'}];
 const ORIENTS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}];
-const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee'];
+const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image'];
+const IMG_TREATS = [{v:'none',l:'None'},{v:'duotone',l:'Duotone'},{v:'halftone',l:'Halftone'},{v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'spot',l:'Spot'},{v:'offregister',l:'Off-Reg'},{v:'overprint',l:'Overprint'}];
+const IMG_TREAT_PRESETS = {
+  none:       { contrast:1.1,  brightness:0 },
+  duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false },
+  halftone:   { contrast:1.2,  dot:9, angle:15, shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
+  posterize:  { contrast:1.25, bands:4 },
+  cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false },
+  spot:       { contrast:1.2,  spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18 },
+  offregister:{ contrast:1.25, offset:13, angle:47, spread:1.25 },
+  overprint:  { contrast:1.2,  offset:8,  angle:45, split:0.16 },
+};
 const FITTABLE = ['headline','numeral','bignum','kicker'];
 const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
+
+/* ---------- photo helpers ---------- */
+/* Read an image File/Blob, downscale to ≤2000px on the long edge (≈170–300dpi
+   at print sizes), hand back { data, w, h }. PNG keeps alpha; else JPEG. */
+function processImageFile(file, onReady){
+  if(!file) return;
+  const png = file.type==='image/png';
+  const fr=new FileReader();
+  fr.onload=()=>{ const im=new Image(); im.onload=()=>{
+    const max=2000, sc=Math.min(1, max/Math.max(im.width,im.height));
+    const w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc));
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(im,0,0,w,h);
+    onReady({ data: png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg',0.86), w, h });
+  }; im.src=fr.result; };
+  fr.readAsDataURL(file);
+}
+function imageFromClipboard(cd){
+  if(!cd) return null;
+  const items=cd.items;
+  if(items){ for(let i=0;i<items.length;i++){ const it=items[i]; if(it.kind==='file'&&it.type&&it.type.indexOf('image/')===0) return it.getAsFile(); } }
+  const files=cd.files;
+  if(files){ for(let i=0;i<files.length;i++){ if(files[i].type&&files[i].type.indexOf('image/')===0) return files[i]; } }
+  return null;
+}
+function PhotoUpload({ onFile }){
+  const inp=React.useRef(null);
+  return (<React.Fragment>
+    <button className="ps-addrow" onClick={()=>inp.current.click()}>⬆ Upload / replace image…</button>
+    <input ref={inp} type="file" accept="image/*" style={{ display:'none' }} onChange={e=>{ const f=e.target.files[0]; if(f) onFile(f); e.target.value=''; }} />
+  </React.Fragment>);
+}
+/* accent-only swatch row (optional null = auto/partner, for second inks) */
+function AccentRow({ value, onChange, nullable, nullTitle }){
+  return (<div className="ps-swatches">
+    {nullable && <div className={'ps-sw'+(value==null?' on':'')} title={nullTitle||'Auto'} style={{ background:'linear-gradient(135deg,#111 0 50%,#fff 50% 100%)', border:'1.5px solid #cfc7b6' }} onClick={()=>onChange(null)} />}
+    {AP_ACC.map(a=>(<div key={a} className={'ps-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />))}
+  </div>);
+}
+/* the full riso treatment panel, ported from Poster Studio's PhotoControls
+   (minus the night-theme / logo / sample-image bits — Print is white-paper). */
+function ImageControls({ el, update, onFile }){
+  const t = el.treatment||'none';
+  return (
+    <React.Fragment>
+      <div className="ps-sech">Image</div>
+      <PhotoUpload onFile={onFile} />
+      <div className="ps-mini" style={{ margin:'2px 0 8px' }}>…or copy any image and paste with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
+
+      <div className="ps-sech">Riso treatment</div>
+      <Chips options={IMG_TREATS} value={t} onChange={v=>update(Object.assign({ treatment:v }, IMG_TREAT_PRESETS[v]||{}))} />
+
+      {t!=='none' && <React.Fragment>
+        <Chips label="Main ink" options={[{v:true,l:'Doc accent'},{v:false,l:'Custom'}]} value={el.followAccent!==false} onChange={v=>update({ followAccent:v })} />
+        {el.followAccent===false && <AccentRow value={el.ink} onChange={v=>update({ ink:v })} />}
+      </React.Fragment>}
+
+      <div className="ps-sech">{t==='none'?'Adjust':'Press'}</div>
+      <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
+      <Slider label="Contrast" val={el.contrast!=null?el.contrast:1.1} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
+      <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
+      {t==='duotone' && <React.Fragment>
+        <Slider label="Tone balance" val={el.balance!=null?el.balance:0.5} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
+        <Slider label="Shadow tint" val={el.shadowTint!=null?el.shadowTint:0.18} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
+        <Chips label="Invert" options={[{v:false,l:'Normal'},{v:true,l:'Inverted'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+      </React.Fragment>}
+      {t==='halftone' && <React.Fragment>
+        <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'},{v:'two',l:'Two-ink'}]} value={el.inkMode||'single'} onChange={v=>update({inkMode:v})} />
+        {(el.inkMode||'single')==='gradient' && <React.Fragment>
+          <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
+          <div className="ps-lab">From<span className="val">{el.gradA||'main'}</span></div>
+          <AccentRow value={el.gradA} onChange={v=>update({ gradA:v })} nullable nullTitle="Main ink" />
+          <div className="ps-lab">To<span className="val">{el.gradB||'partner'}</span></div>
+          <AccentRow value={el.gradB} onChange={v=>update({ gradB:v })} nullable nullTitle="Auto — partner" />
+          {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
+        </React.Fragment>}
+        {(el.inkMode||'single')==='two' && <React.Fragment>
+          <div className="ps-lab">Second ink<span className="val">{el.ink2||'auto'}</span></div>
+          <AccentRow value={el.ink2} onChange={v=>update({ ink2:v })} nullable nullTitle="Auto — partner" />
+          <Slider label="Screen offset" val={el.screenOffset!=null?el.screenOffset:30} min={0} max={90} step={1} onChange={v=>update({screenOffset:v})} suffix="°" />
+        </React.Fragment>}
+        <Slider label="Dot size" val={el.dot!=null?el.dot:9} min={4} max={22} step={1} onChange={v=>update({dot:v})} suffix="px" />
+        <Slider label="Screen angle" val={el.angle!=null?el.angle:15} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
+        <Chips label="Dot shape" options={[{v:'circle',l:'Dot'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'line',l:'Line'}]} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
+        <Slider label="Dot gain" val={el.dotGain!=null?el.dotGain:1} min={0.6} max={1.6} step={0.02} onChange={v=>update({dotGain:v})} />
+        <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+      </React.Fragment>}
+      {t==='posterize' && <Slider label="Bands" val={el.bands!=null?el.bands:4} min={2} max={6} step={1} onChange={v=>update({bands:v})} />}
+      {t==='cutout' && <React.Fragment>
+        <Slider label="Threshold" val={el.threshold!=null?el.threshold:0.52} min={0.15} max={0.85} step={0.01} onChange={v=>update({threshold:v})} />
+        <Slider label="Edge softness" val={el.softness!=null?el.softness:0.12} min={0.01} max={0.4} step={0.01} onChange={v=>update({softness:v})} />
+        <Chips label="Invert" options={[{v:false,l:'Subject'},{v:true,l:'Background'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+      </React.Fragment>}
+      {t==='spot' && <React.Fragment>
+        <Chips label="Backdrop" options={[{v:'duotone',l:'Duotone'},{v:'image',l:'Raw image'}]} value={el.spotBase||'duotone'} onChange={v=>update({spotBase:v})} />
+        <Slider label="Range low" val={el.spotLo!=null?el.spotLo:0.35} min={0} max={1} step={0.01} onChange={v=>update({spotLo:v})} />
+        <Slider label="Range high" val={el.spotHi!=null?el.spotHi:0.65} min={0} max={1} step={0.01} onChange={v=>update({spotHi:v})} />
+        <Slider label="Edge softness" val={el.spotSoft!=null?el.spotSoft:0.08} min={0.002} max={0.4} step={0.01} onChange={v=>update({spotSoft:v})} />
+        <Chips label="Fill" options={[{v:false,l:'In range'},{v:true,l:'Out of range'}]} value={!!el.spotInvert} onChange={v=>update({spotInvert:v})} />
+      </React.Fragment>}
+      {(t==='offregister'||t==='overprint') && <React.Fragment>
+        {(t==='offregister'||t==='overprint') && <div className="ps-lab">Second ink<span className="val">{el.ink2||'auto'}</span></div>}
+        <AccentRow value={el.ink2} onChange={v=>update({ ink2:v })} nullable nullTitle="Auto — partner" />
+        <Slider label="Offset" val={el.offset!=null?el.offset:(t==='overprint'?8:13)} min={0} max={40} step={1} onChange={v=>update({offset:v})} suffix="px" />
+        <Slider label="Angle" val={el.angle!=null?el.angle:(t==='overprint'?45:47)} min={0} max={360} step={1} onChange={v=>update({angle:v})} suffix="°" />
+        {t==='offregister' && <Slider label="Ink spread" val={el.spread!=null?el.spread:1.25} min={0.8} max={1.8} step={0.02} onChange={v=>update({spread:v})} />}
+        {t==='overprint' && <Slider label="Field split" val={el.split!=null?el.split:0.16} min={0.04} max={0.4} step={0.01} onChange={v=>update({split:v})} />}
+      </React.Fragment>}
+
+      <div className="ps-sech">Finish</div>
+      <Slider label="Blur" val={el.blurOver!=null?el.blurOver:0} min={0} max={30} step={0.5} onChange={v=>update({blurOver:v})} suffix="px" />
+      <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
+      {(el.grain||0)>0 && <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />}
+
+      <div className="ps-sech">Frame & crop</div>
+      <Chips label="Fit" options={[{v:'cover',l:'Fill'},{v:'contain',l:'Contain'}]} value={el.fit||'cover'} onChange={v=>update({fit:v})} />
+      <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
+      <div className="ps-rowflex">
+        <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
+        <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
+      </div>
+      <Slider label="Image spin" val={el.imgRot!=null?el.imgRot:0} min={-180} max={180} step={1} onChange={v=>update({imgRot:v})} suffix="°" />
+      <Chips label="Keyline frame" options={[{v:false,l:'None'},{v:true,l:'Ink frame'}]} value={!!el.frame} onChange={v=>update({frame:v})} />
+      {el.frame && <Slider label="Frame width" val={el.frameW||3} min={1} max={10} step={0.5} onChange={v=>update({frameW:v})} suffix="pt" />}
+    </React.Fragment>
+  );
+}
 
 /* ---------- inspector ---------- */
 function Inspector({ el, doc, update, dup, del, layer, clearAll }){
@@ -122,6 +261,16 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
   }
   const isText = ['headline','body','kicker','bignum','numeral'].indexOf(el.type)>=0;
   const setItems = (items)=>update({ items });
+  /* upload/replace this image element's picture → IndexedDB; first picture
+     also snaps the box to the photo's aspect ratio. */
+  const onPickImage = (file)=> processImageFile(file, ({data,w,h})=>{
+    if(!window.PrintImg) return;
+    window.PrintImg.add(data, w, h).then(id=>{
+      const patch={ imgId:id };
+      if(!el.imgId && w && h) patch.h = Math.max(20, Math.round(el.w * h/w));
+      update(patch);
+    });
+  });
   return (
     <React.Fragment>
       <div className="ps-sech">{el.type}</div>
@@ -133,16 +282,19 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
       </div>
 
       {isText && <Field label="Text" value={el.text} onChange={v=>update({text:v})} area />}
+      {el.type==='image' && <ImageControls el={el} update={update} onFile={onPickImage} />}
       {el.type==='slab' && <Slider label="Angle" val={el.angle||0} min={-45} max={45} step={1} onChange={v=>update({angle:v})} suffix="°" />}
       {el.type==='stripes' && <React.Fragment>
-        <Chips label="Direction" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.dir||'h'} onChange={v=>update({dir:v})} />
-        <Slider label="Count" val={el.count||8} min={2} max={24} step={1} onChange={v=>update({count:v})} />
-        <Slider label="Thickness" val={el.ratio!=null?el.ratio:0.5} min={0.15} max={0.9} step={0.05} onChange={v=>update({ratio:v})} />
+        <Chips label="Direction" options={STRIPE_DIRS} value={el.dir||'diag'} onChange={v=>update({dir:v})} />
+        <Slider label="Count" val={el.count||8} min={2} max={40} step={1} onChange={v=>update({count:v})} />
+        <Slider label="Thickness" val={el.ratio!=null?el.ratio:0.5} min={0.1} max={0.9} step={0.05} onChange={v=>update({ratio:v})} />
         <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
       </React.Fragment>}
       {el.type==='dotfield' && <React.Fragment>
         <Chips label="Dot shape" options={DOT_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
         <Chips label="Size ramp" options={DOT_GRADS} value={el.grad||'none'} onChange={v=>update({grad:v})} />
+        {(el.grad && el.grad!=='none') && <Slider label="Ramp strength" val={el.ramp!=null?el.ramp:0.8} min={0} max={1} step={0.05} onChange={v=>update({ramp:v})} />}
+        <Slider label="Screen angle" val={el.angle||0} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
         <Slider label="Dot size" val={el.dot||9} min={2} max={28} step={1} onChange={v=>update({dot:v})} suffix="pt" />
         <Slider label="Gap" val={el.gap!=null?el.gap:6} min={1} max={28} step={1} onChange={v=>update({gap:v})} suffix="pt" />
         <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
@@ -256,8 +408,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
       </React.Fragment>}
       {BLENDABLE.indexOf(el.type)>=0 && <Chips label="Blend · overprint" options={BLENDS} value={el.blend||'normal'} onChange={v=>update({blend:v})} />}
 
-      {/* colour */}
-      <div className="ps-sech">Colour</div>
+      {/* colour (image carries its own ink picker in the riso panel) */}
+      {el.type!=='image' && <div className="ps-sech">Colour</div>}
       {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee','arctext'].indexOf(el.type)>=0 &&
         <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white />}
       {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst','shape'].indexOf(el.type)>=0 &&
@@ -377,6 +529,28 @@ function App(){
       setDoc(d=>({ ...d, elements:d.elements.filter(x=>ids.indexOf(x.id)<0) })); setSelectedIds([]);
     }
     window.addEventListener('keydown', onKey); return ()=>window.removeEventListener('keydown', onKey);
+  }, []);
+
+  /* warm the image store, and accept pasted images: replace the selected image
+     element, else drop a fresh image element centred near the top of the sheet */
+  React.useEffect(()=>{ if(window.PrintStore) window.PrintStore.open().catch(()=>{}); }, []);
+  React.useEffect(()=>{
+    function onPaste(e){
+      const file = imageFromClipboard(e.clipboardData); if(!file) return;
+      const ae=document.activeElement; if(ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable)) return;
+      e.preventDefault();
+      processImageFile(file, ({data,w,h})=>{
+        if(!window.PrintImg) return;
+        window.PrintImg.add(data,w,h).then(id=>{
+          const cur=docRef.current, ids=selIdsRef.current, selEl=cur.elements.find(x=>x.id===ids[ids.length-1]);
+          if(selEl && selEl.type==='image'){ updateEl(selEl.id, { imgId:id, h: selEl.imgId?selEl.h:Math.max(20,Math.round(selEl.w*h/w)) }); return; }
+          const dd=apDims(cur.size,cur.orient), elw=Math.min(AP_DEF.image.w, Math.round(dd.wpt-40)), elh=Math.max(20,Math.round(elw*h/w));
+          const ne=apMake('image', Math.round((dd.wpt-elw)/2), 60); ne.w=elw; ne.h=elh; ne.imgId=id;
+          setDoc(x=>({ ...x, elements:[...x.elements, ne] })); setSelectedIds([ne.id]);
+        });
+      });
+    }
+    window.addEventListener('paste', onPaste); return ()=>window.removeEventListener('paste', onPaste);
   }, []);
 
   React.useLayoutEffect(()=>{

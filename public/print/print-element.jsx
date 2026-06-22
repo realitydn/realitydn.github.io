@@ -7,8 +7,8 @@
    ============================================================ */
 const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
         surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, partnerOf: pePartner, LIFT: PE_LIFT,
-        dotFieldLayout: peDots, burstRays: peBurst, shapePath: peShape, arcTextLayout: peArc,
-        fitTextSize: peFit, blendCss: peBlend } = window;
+        dotFieldLayout: peDots, stripeLayout: peStripes, burstRays: peBurst, shapePath: peShape, arcTextLayout: peArc,
+        fitTextSize: peFit, blendCss: peBlend, risoOpts: peRiso } = window;
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
@@ -26,6 +26,7 @@ function dotNode(shape, p, col, key){
   if(shape==='square')  return <rect key={key} x={p.x-r} y={p.y-r} width={p.d} height={p.d} fill={col} />;
   if(shape==='diamond') return <rect key={key} x={p.x-r} y={p.y-r} width={p.d} height={p.d} fill={col} transform={`rotate(45 ${p.x} ${p.y})`} />;
   if(shape==='ring'){ const lw=Math.max(0.6,r*0.5); return <circle key={key} cx={p.x} cy={p.y} r={Math.max(0.3,r-lw/2)} fill="none" stroke={col} strokeWidth={lw} />; }
+  if(shape==='plus'){ const t=Math.max(0.6,p.d*0.34); return <g key={key} fill={col}><rect x={p.x-r} y={p.y-t/2} width={p.d} height={t} /><rect x={p.x-t/2} y={p.y-r} width={t} height={p.d} /></g>; }
   return <circle key={key} cx={p.x} cy={p.y} r={r} fill={col} />;
 }
 /* die-cut bed corner radius (CSS) for a sticker shape */
@@ -98,6 +99,37 @@ function TextBlock({ el, textCol, justify }){
   );
 }
 
+/* raster photo + riso effects — the only non-vector element. Renders the RISO
+   engine to a <canvas> (mirrors Poster Studio's PhotoEl). Pixels resolve from
+   window.PrintImg (in-memory cache → IndexedDB). No image yet → dashed prompt. */
+function ImageEl({ el, docAccent, lift }){
+  const ref = React.useRef(null);
+  const [, bump] = React.useState(0);
+  React.useEffect(()=>{
+    const cv=ref.current; if(!cv) return; let alive=true;
+    const W=Math.min(Math.max(8,Math.round(el.w)),900), H=Math.max(1,Math.round(W*(el.h/Math.max(1,el.w))));
+    cv.width=W; cv.height=H;
+    if(!el.imgId || !window.RISO || !window.PrintImg){ cv.getContext('2d').clearRect(0,0,W,H); return; }
+    const opts=peRiso(el, docAccent);
+    const draw=(src)=>{ if(!alive||!src) return; window.RISO.setSource(src);
+      if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
+      window.RISO.render(cv, el.treatment||'none', opts); };
+    const cached=window.PrintImg.peek(el.imgId);
+    if(cached) draw(cached);
+    else window.PrintImg.load(el.imgId).then(im=>{ if(im&&alive){ draw(im); bump(v=>v+1); } }).catch(()=>{});
+    return ()=>{ alive=false; };
+  });
+  const frame = el.frame ? `${el.frameW||3}px solid ${PE_INK.rgb}` : 'none';
+  return (
+    <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', background:PE_WHITE.rgb, boxShadow:lift, border:frame, boxSizing:'border-box' }}>
+      <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />
+      {!el.imgId && <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, color:'#b9b1a0', fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:11, letterSpacing:'.08em', textTransform:'uppercase', border:'1.5px dashed #d9d2c2', boxSizing:'border-box' }}>
+        <div style={{ fontSize:22, lineHeight:1 }}>⬆</div>Upload an image
+      </div>}
+    </div>
+  );
+}
+
 function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPointerDown }){
   el = Object.assign({}, el, { _docAccent:docAccent });
   const accentHex = peFill(el.fill!=null?el.fill:'pink', docAccentHex);
@@ -158,21 +190,34 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       <div style={{ position:'relative', width:'100%', height:'100%', background:accentHex, borderRadius:(el.radius||0)+'px', border: el.border>0?`${el.border}px solid ${PE_INK.rgb}`:'none', boxShadow:lift, boxSizing:'border-box' }} />
     </div>;
   }
+  else if(t==='image'){
+    inner = <ImageEl el={el} docAccent={docAccent} lift={lift} />;
+  }
   else if(t==='slab'){
+    /* SVG polygon (NOT clip-path + drop-shadow): a filtered/clipped layer
+       rasterises and goes pixelated under rotation — vector polygons stay
+       crisp at any angle, and match the PDF exporter's path exactly. */
     let sh = Math.tan((el.angle||0)*Math.PI/180)*el.h; sh=Math.max(-el.w*0.5,Math.min(el.w*0.5,sh));
     const a=Math.abs(sh);
-    const poly = sh>=0 ? `polygon(${sh/el.w*100}% 0, 100% 0, ${(el.w-sh)/el.w*100}% 100%, 0 100%)`
-                       : `polygon(0 0, ${(el.w-a)/el.w*100}% 0, 100% 100%, ${a/el.w*100}% 100%)`;
-    inner = <div style={{ position:'relative', width:'100%', height:'100%', filter: lift!=='none'?`drop-shadow(${lift})`:'none' }}>
-      {el.echo && <div style={{ position:'absolute', left:(el.echoDx||9), top:(el.echoDy||9), width:'100%', height:'100%', background:echoHex(el,docAccent), clipPath:poly }} />}
-      <div style={{ position:'absolute', inset:0, background:accentHex, clipPath:poly }} />
-    </div>;
+    const pts = sh>=0 ? [[sh,0],[el.w,0],[el.w-sh,el.h],[0,el.h]]
+                      : [[0,0],[el.w-a,0],[el.w,el.h],[a,el.h]];
+    const toStr = (ox,oy)=> pts.map(p=>`${(p[0]+ox).toFixed(2)},${(p[1]+oy).toFixed(2)}`).join(' ');
+    const sObj = PE_LIFT[el.lift];
+    inner = <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+      {sObj && <polygon points={toStr(0,sObj.dy)} fill={`rgba(13,9,5,${sObj.k})`} />}
+      {el.echo && <polygon points={toStr(el.echoDx||9, el.echoDy||9)} fill={echoHex(el,docAccent)} />}
+      <polygon points={toStr(0,0)} fill={accentHex} />
+    </svg>;
   }
   else if(t==='stripes'){
     const col = peFill(el.fill||'red', accentHex), bg = el.bg==='ink'?PE_INK.rgb:el.bg==='none'?'transparent':PE_WHITE.rgb;
-    const n=Math.max(2,el.count||8), band=(el.dir==='v'?el.w:el.h)/n, duty=(el.ratio!=null?el.ratio:0.5);
-    const on=band*Math.min(1,duty*2), grad=`repeating-linear-gradient(${el.dir==='v'?'90deg':'0deg'}, ${col} 0 ${on}px, ${bg} ${on}px ${band}px)`;
-    inner = <div style={{ width:'100%', height:'100%', background:grad, boxShadow:lift }} />;
+    const lay = peStripes(el);   // clipped polygon bars — h/v/diag/diag2, matches the PDF
+    inner = <div style={{ width:'100%', height:'100%', overflow:'hidden' }}>
+      <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
+        {bg!=='transparent' && <rect x={0} y={0} width={el.w} height={el.h} fill={bg} />}
+        {lay.bands.map((b,i)=> <polygon key={i} points={b.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ')} fill={col} />)}
+      </svg>
+    </div>;
   }
   else if(t==='dotfield'){
     const col = peFill(el.fill||'amber', accentHex), bg = el.bg==='ink'?PE_INK.rgb:el.bg==='none'?'transparent':PE_WHITE.rgb;

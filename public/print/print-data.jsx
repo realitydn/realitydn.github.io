@@ -174,32 +174,85 @@ function partnerOf(accent){ return PARTNER[accent] || 'blue'; }
 const LIFT = { none:null, light:{dy:4,k:0.08}, default:{dy:8,k:0.12}, heavy:{dy:12,k:0.18} };
 
 /* ---- halftone dot field — shared by the screen + PDF renderers so they
-   match exactly. This is the Poster Studio riso-engine halftone adapted to
-   pure vector: a regular dot grid whose dot SIZE is modulated by a positional
-   ramp (`grad`) standing in for a photo's luminance, plus the same dot SHAPES
-   (circle · square · diamond · ring). Returns dot centres + per-dot diameter. */
+   match exactly. The Poster Studio riso-engine halftone adapted to pure
+   vector: a dot lattice (optionally rotated to a SCREEN ANGLE — the move that
+   makes it read as halftone rather than a texture swatch) whose dot SIZE is
+   modulated by a positional ramp (`grad`) standing in for a photo's luminance.
+   `ramp` (0..1) sets how hard the size varies. Shapes: circle · square ·
+   diamond · ring · plus. Returns dot centres + per-dot diameter. */
 function dotFieldLayout(el){
   const W=el.w, H=el.h, base=Math.max(2,el.dot||9), gap=el.gap!=null?el.gap:6, step=base+gap;
-  const cols=Math.max(1,Math.floor((W-gap)/step)), rows=Math.max(1,Math.floor((H-gap)/step));
-  const ox=(W-(cols*step-gap))/2 + base/2, oy=(H-(rows*step-gap))/2 + base/2;  // first dot CENTRE
-  const cx=W/2, cy=H/2, maxR=Math.hypot(cx,cy)||1, grad=el.grad||'none';
+  const cx=W/2, cy=H/2, maxR=Math.hypot(cx,cy)||1;
+  const grad=el.grad||'none', ramp=el.ramp!=null?Math.max(0,Math.min(1,el.ramp)):0.8;
+  const ang=(el.angle||0)*Math.PI/180, ca=Math.cos(ang), sa=Math.sin(ang);
+  /* size factor from the chosen ramp (0..1), eased into [1-ramp, 1] */
   function factor(px,py){
-    const rN = Math.hypot(px-cx,py-cy)/maxR;        // 0 centre … 1 corner
+    let v;
     switch(grad){
-      case 'out':  return 0.30 + 0.70*rN;           // small centre → big edge
-      case 'in':   return 1.00 - 0.70*rN;           // big centre → small edge
-      case 'down': return 0.30 + 0.70*(py/H);
-      case 'up':   return 1.00 - 0.70*(py/H);
-      default:     return 1;
+      case 'out':   v=Math.hypot(px-cx,py-cy)/maxR; break;            // small centre → big edge
+      case 'in':    v=1-Math.hypot(px-cx,py-cy)/maxR; break;          // big centre → small edge
+      case 'down':  v=py/H; break;
+      case 'up':    v=1-py/H; break;
+      case 'right': v=px/W; break;
+      case 'left':  v=1-px/W; break;
+      case 'diag':  v=((px/W)+(py/H))/2; break;
+      case 'diag2': v=((px/W)+(1-py/H))/2; break;
+      case 'wave':  v=0.5+0.5*Math.sin((px/W)*Math.PI*4); break;      // vertical ripples
+      case 'bloom': v=0.5+0.5*Math.sin((Math.hypot(px-cx,py-cy)/maxR)*Math.PI*5); break;  // concentric rings
+      default: return 1;
+    }
+    v=v<0?0:v>1?1:v;
+    return (1-ramp) + ramp*v;
+  }
+  /* tile a (rotated) lattice over the box's diagonal extent, keep in-box dots */
+  const ext=Math.ceil(Math.hypot(W,H)/step)+2;
+  const dots=[]; let n=0;
+  for(let r=-ext;r<=ext;r++){ for(let c=-ext;c<=ext;c++){
+    const lx=c*step, ly=r*step;
+    const px=cx + lx*ca - ly*sa, py=cy + lx*sa + ly*ca;
+    if(px<-base || px>W+base || py<-base || py>H+base) continue;
+    if(n++>4000) break;
+    const d=Math.max(0.35, base*factor(px,py));
+    dots.push({ x:px, y:py, d });
+  }}
+  return { dots, base, step, shape:el.shape||'circle', angle:el.angle||0 };
+}
+
+/* ---- silkscreen stripes — colored bars over the box, CLIPPED so diagonals
+   stay inside the rectangle. Shared by both renderers (SVG polygons on screen,
+   drawSvgPath in the PDF) so they match exactly. dir: h|v|diag|diag2.
+   `count` = number of bars · `ratio` = bar width as a fraction of its period.
+   (The old code mapped ratio 0.5 → full band → a solid block; this is the fix.) */
+function _clipHalf(poly, a, b, c){               // keep a*x+b*y+c >= 0 — Sutherland–Hodgman against one edge
+  const out=[], n=poly.length; if(!n) return out;
+  for(let i=0;i<n;i++){
+    const cur=poly[i], prev=poly[(i+n-1)%n];
+    const dCur=a*cur[0]+b*cur[1]+c, dPrev=a*prev[0]+b*prev[1]+c;
+    const inCur=dCur>=0, inPrev=dPrev>=0;
+    if(inCur!==inPrev){ const t=dPrev/(dPrev-dCur); out.push([prev[0]+t*(cur[0]-prev[0]), prev[1]+t*(cur[1]-prev[1])]); }
+    if(inCur) out.push(cur);
+  }
+  return out;
+}
+function stripeLayout(el){
+  const W=el.w, H=el.h, n=Math.max(1, el.count||8);
+  const duty=Math.max(0.05, Math.min(0.95, el.ratio!=null?el.ratio:0.5));
+  const dir=el.dir||'diag', bands=[];
+  if(dir==='h'){ const period=H/n, on=period*duty; for(let i=0;i<n;i++){ const y=i*period; bands.push([[0,y],[W,y],[W,y+on],[0,y+on]]); } }
+  else if(dir==='v'){ const period=W/n, on=period*duty; for(let i=0;i<n;i++){ const x=i*period; bands.push([[x,0],[x+on,0],[x+on,H],[x,H]]); } }
+  else {
+    const sgn=dir==='diag2'?-1:1;                                  // 'diag' ↗ uses x+y · 'diag2' ↘ uses x−y
+    const corners=[[0,0],[W,0],[0,H],[W,H]].map(p=>p[0]+sgn*p[1]);
+    const tMin=Math.min.apply(null,corners), tMax=Math.max.apply(null,corners);
+    const period=(tMax-tMin)/n, on=period*duty, box=[[0,0],[W,0],[W,H],[0,H]];
+    for(let i=0;i<n;i++){
+      const lo=tMin+i*period, hi=lo+on;
+      let p=_clipHalf(box, 1, sgn, -lo);          // x+sgn*y >= lo
+      p=_clipHalf(p, -1, -sgn, hi);               // x+sgn*y <= hi
+      if(p.length>=3) bands.push(p);
     }
   }
-  const dots=[]; let n=0;
-  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-    if(n++>1600) break;
-    const px=ox+c*step, py=oy+r*step, d=Math.max(0.4, base*factor(px,py));
-    dots.push({ x:px, y:py, d });
-  }
-  return { dots, base, step, shape:el.shape||'circle' };
+  return { bands, dir };
 }
 
 /* ---- sunburst rays — `n` filled wedges within a centred disc, half-slice
@@ -298,6 +351,26 @@ const BLEND_MODES=['normal','multiply','screen','overlay','darken','lighten','ha
 function blendCss(b){ return (!b||b==='normal')?null:b; }
 function blendPdf(b){ const m={multiply:'Multiply',screen:'Screen',overlay:'Overlay',darken:'Darken',lighten:'Lighten','hard-light':'HardLight'}; return m[b]||null; }
 
+/* ---- riso photo options — map a photo element's props onto the RISO engine's
+   render opts. Shared by the screen renderer + the PDF rasteriser so the
+   exported image matches the preview exactly. paper is always 'day' (Print's
+   true-white paper); the accent ink follows the doc accent unless overridden. */
+function risoOpts(el, docAccent){
+  const ink = el.followAccent!==false ? docAccent : (el.ink||'pink');
+  return {
+    ink, ink2:el.ink2, paper:'day',
+    contrast:el.contrast, brightness:el.brightness, dot:el.dot, bands:el.bands, threshold:el.threshold,
+    angle:el.angle, softness:el.softness, balance:el.balance, shadowTint:el.shadowTint,
+    invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset,
+    inkMode:el.inkMode, gradMode:el.gradMode, gradAngle:el.gradAngle, gradA:el.gradA, gradB:el.gradB,
+    screenOffset:el.screenOffset, field:el.field, fieldInk:el.fieldInk, fieldStrength:el.fieldStrength,
+    dotGain:el.dotGain, jitter:el.jitter, pucker:el.pucker,
+    spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
+    transparent:false, fit:el.fit||'cover', paperFill:null,
+    blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize
+  };
+}
+
 let _id = 1;
 function uid(){ return 'p'+(_id++)+'_'+Math.random().toString(36).slice(2,6); }
 
@@ -340,6 +413,9 @@ const CATALOG = [
     { type:'qr',       label:'QR standee', hint:'Scan to any link' },
     { type:'coupon',   label:'Coupon',     hint:'Voucher with code', wide:true },
   ]},
+  { group:'Image', items:[
+    { type:'image',    label:'Image',       hint:'Photo + riso effects', wide:true },
+  ]},
   { group:'Blocks · texture', items:[
     { type:'block',    label:'Colour block', hint:'Flat field / band' },
     { type:'slab',     label:'Angle slab',   hint:'Geometric blocking' },
@@ -381,7 +457,18 @@ const DEFAULTS = {
   block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
   slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
   stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5, blend:'normal' } },
-  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'none', blend:'normal' } },
+  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'out', ramp:0.8, angle:0, blend:'normal' } },
+  /* raster photo + riso effects (the only non-vector element) — pixels live in
+     IndexedDB via [[print-store]]; `imgId` references them, the doc stays small.
+     Mirrors Poster Studio's `photo`: full RISO treatment set + finish passes +
+     in-frame pan/zoom. Exports as an embedded RGB raster at size-aware DPI. */
+  image:     { w:300, h:220, props:{ imgId:null, treatment:'none', followAccent:true, ink:'pink', ink2:null,
+               contrast:1.1, brightness:0, dot:9, bands:4, threshold:0.52, softness:0.12, angle:15, balance:0.5, shadowTint:0.18,
+               invert:false, spread:1.25, shape:'circle', split:0.16, offset:13, inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
+               field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
+               spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone',
+               blurUnder:0, blurOver:0, grain:0, grainSize:2,
+               fit:'cover', imgScale:1, imgX:0, imgY:0, imgRot:0, frame:false, frameW:3, lift:'none', blend:'normal' } },
   rule:      { w:260, h:10,  props:{ fill:'ink', weight:3, style:'solid' } },
   footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, surface:'none', rule:true, ink:'ink' } },
   wordmark:  { w:240, h:42,  props:{ ink:'ink' } },
@@ -432,13 +519,6 @@ const TEMPLATES = [
     {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"ĐÀ NẴNG · EST 2024","fill":"white","fontSize":12,"tracking":0.04,"flip":true,"radiusAdj":4}},
     {"type":"wordmark","x":33,"y":92,"w":148,"h":32,"p":{"ink":"white"}}
   ]},
-  { id:"stk-logo-paper", name:"Logo round — paper", group:"Stickers", size:"st75", orient:"portrait", accent:"pink", els:[
-    {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"circle","fill":"white","ring":"ink","ringW":6,"lift":"default"}},
-    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"BAR · CAFÉ · COMMUNITY","fill":"ink","fontSize":12,"tracking":0.04,"radiusAdj":4}},
-    {"type":"arctext","x":18,"y":18,"w":177,"h":177,"p":{"text":"ĐÀ NẴNG · EST 2024","fill":"ink","fontSize":12,"tracking":0.04,"flip":true,"radiusAdj":4}},
-    {"type":"wordmark","x":33,"y":90,"w":148,"h":30,"p":{"ink":"ink"}},
-    {"type":"shape","x":96,"y":146,"w":20,"h":20,"p":{"kind":"star5","fill":"pink"}}
-  ]},
   { id:"stk-hexagon", name:"Hexagon badge", group:"Stickers", size:"st75", orient:"portrait", accent:"blue", els:[
     {"type":"shape","x":6,"y":6,"w":200,"h":200,"p":{"kind":"hexagon","fill":"blue","stroke":5,"strokeColor":"ink","lift":"default"}},
     {"type":"kicker","x":40,"y":74,"w":120,"h":12,"p":{"text":"ĐÀ NẴNG","ink":"white","align":"center","tracking":0.3,"fontSize":9}},
@@ -450,14 +530,6 @@ const TEMPLATES = [
     {"type":"kicker","x":30,"y":48,"w":140,"h":12,"p":{"text":"ĐÀ NẴNG · EST 2024","ink":"white","align":"center","tracking":0.16,"fontSize":9}},
     {"type":"wordmark","x":40,"y":72,"w":120,"h":28,"p":{"ink":"white"}},
     {"type":"shape","x":96,"y":118,"w":22,"h":22,"p":{"kind":"star5","fill":"amber"}}
-  ]},
-  { id:"stk-star", name:"Star die-cut", group:"Stickers", size:"st75", orient:"portrait", accent:"amber", els:[
-    {"type":"shape","x":4,"y":4,"w":205,"h":200,"p":{"kind":"star5","fill":"amber","stroke":4,"strokeColor":"ink","lift":"default"}},
-    {"type":"wordmark","x":52,"y":86,"w":106,"h":24,"p":{"ink":"ink"}}
-  ]},
-  { id:"stk-banner", name:"Ribbon banner", group:"Stickers", size:"a7", orient:"landscape", accent:"red", els:[
-    {"type":"shape","x":10,"y":40,"w":278,"h":130,"p":{"kind":"banner","fill":"red","lift":"default"}},
-    {"type":"wordmark","x":70,"y":78,"w":158,"h":54,"p":{"ink":"white"}}
   ]},
   { id:"stk-arch-film", name:"Film Club — arch", group:"Stickers", size:"st75", orient:"portrait", accent:"purple", els:[
     {"type":"shape","x":6,"y":6,"w":200,"h":200,"p":{"kind":"arch","fill":"purple","stroke":4,"strokeColor":"ink","lift":"default"}},
@@ -481,19 +553,6 @@ const TEMPLATES = [
     {"type":"wordmark","x":33,"y":158,"w":148,"h":28,"p":{"ink":"ink"}},
     {"type":"kicker","x":20,"y":192,"w":173,"h":12,"p":{"text":"ĐÀ NẴNG · EST 2024","ink":"ink","align":"center","tracking":0.2,"fontSize":8}}
   ]},
-  { id:"stk-sunburst-open", name:"Sunburst — OPEN", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
-    {"type":"burst","x":-10,"y":-10,"w":233,"h":233,"p":{"fill":"red","rays":26,"hub":0.62,"hubFill":"white"}},
-    {"type":"headline","x":40,"y":76,"w":140,"h":50,"p":{"text":"OPEN","weight":800,"ink":"red","align":"center","fit":true,"fontSize":48}},
-    {"type":"kicker","x":40,"y":130,"w":140,"h":14,"p":{"text":"COME ON IN","ink":"ink","align":"center","tracking":0.24,"fontSize":9}}
-  ]},
-  { id:"stk-sunburst-sale", name:"Sunburst — 20% off", group:"Stickers", size:"st75", orient:"portrait", accent:"amber", els:[
-    {"type":"burst","x":-10,"y":-10,"w":233,"h":233,"p":{"fill":"amber","rays":22,"hub":0.6,"hubFill":"ink"}},
-    {"type":"headline","x":50,"y":62,"w":120,"h":86,"p":{"text":"20%\nOFF","weight":800,"ink":"white","align":"center","leading":0.9,"fit":true,"fontSize":58}}
-  ]},
-  { id:"stk-sunburst-new", name:"Sunburst — NEW", group:"Stickers", size:"st50", orient:"portrait", accent:"yellow", els:[
-    {"type":"burst","x":-6,"y":-6,"w":154,"h":154,"p":{"fill":"yellow","rays":18,"hub":0.52,"hubFill":"white"}},
-    {"type":"headline","x":16,"y":50,"w":110,"h":42,"p":{"text":"NEW","weight":800,"ink":"ink","align":"center","fit":true,"fontSize":40}}
-  ]},
   { id:"stk-big-open", name:"Big OPEN — black", group:"Stickers", size:"st75", orient:"portrait", accent:"red", els:[
     {"type":"sticker","x":6,"y":6,"w":200,"h":200,"p":{"shape":"squircle","fill":"ink","ring":"ink","ringW":0,"radius":0.3,"lift":"default"}},
     {"type":"headline","x":22,"y":54,"w":166,"h":74,"p":{"text":"OPEN","weight":800,"ink":"white","align":"center","fit":true,"fontSize":80}},
@@ -515,18 +574,6 @@ const TEMPLATES = [
     {"type":"kicker","x":34,"y":40,"w":146,"h":14,"p":{"text":"SCAN ME","ink":"blue","align":"center","tracking":0.3,"fontSize":11}},
     {"type":"qr","x":61,"y":62,"w":92,"h":92,"p":{"data":"https://realitydn.com","caption":"","quiet":true}},
     {"type":"wordmark","x":56,"y":162,"w":100,"h":20,"p":{"ink":"ink"}}
-  ]},
-  { id:"stk-laptop-pill", name:"Laptop — stay awhile", group:"Stickers", size:"a7", orient:"landscape", accent:"amber", els:[
-    {"type":"shape","x":5,"y":8,"w":288,"h":194,"p":{"kind":"pill","fill":"amber","stroke":5,"strokeColor":"ink","lift":"default"}},
-    {"type":"headline","x":34,"y":48,"w":230,"h":70,"p":{"text":"STAY AWHILE","weight":800,"ink":"ink","align":"center","fit":true,"fontSize":52}},
-    {"type":"wordmark","x":99,"y":138,"w":102,"h":22,"p":{"ink":"ink"}}
-  ]},
-  { id:"stk-coaster-blue", name:"Coaster — big round", group:"Stickers", size:"st100", orient:"portrait", accent:"blue", els:[
-    {"type":"sticker","x":8,"y":8,"w":268,"h":268,"p":{"shape":"circle","fill":"white","ring":"blue","ringW":8,"lift":"default"}},
-    {"type":"arctext","x":30,"y":30,"w":224,"h":224,"p":{"text":"GOOD DRINKS · GOOD PEOPLE","fill":"blue","fontSize":18,"tracking":0.03}},
-    {"type":"arctext","x":30,"y":30,"w":224,"h":224,"p":{"text":"MAI THÚC LÂN · ĐÀ NẴNG","fill":"blue","fontSize":14,"tracking":0.03,"flip":true}},
-    {"type":"wordmark","x":61,"y":112,"w":160,"h":36,"p":{"ink":"ink"}},
-    {"type":"shape","x":123,"y":164,"w":38,"h":38,"p":{"kind":"star5","fill":"blue"}}
   ]},
   { id:"stk-vertical-bar", name:"Vertical — BAR", group:"Stickers", size:"a7", orient:"portrait", accent:"red", els:[
     {"type":"sticker","x":6,"y":6,"w":198,"h":286,"p":{"shape":"rounded","fill":"ink","ring":"ink","ringW":0,"radius":0.1,"lift":"default"}},
@@ -964,9 +1011,9 @@ Object.assign(window, {
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, WORDMARK_PATH,
-  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, burstRays,
+  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
-  BLEND_MODES, blendCss, blendPdf,
+  BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
 });

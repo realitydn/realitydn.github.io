@@ -234,6 +234,47 @@
 
     .card-remove:hover { opacity: 1; }
 
+    /* Day-of-week + accent row */
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .day-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.15);
+      flex: none;
+    }
+    .card-day {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 6px;
+      border: 1px solid rgba(26,26,26,0.12);
+      border-radius: var(--radius);
+      background: white;
+      cursor: pointer;
+    }
+    .sw-wrap { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+    .sw {
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 1;
+      color: rgba(26,26,26,0.55);
+      background: #fff;
+    }
+    .sw:hover { opacity: 1; }
+    .sw.sw-auto { background: #fff; border-color: rgba(26,26,26,0.18); font-weight: 700; }
+    .sw.on { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+
     /* Status bar at bottom */
     .status-bar {
       position: fixed;
@@ -348,6 +389,15 @@
   let posters = [];
   let sortable = null;
   let saveTimeout = null;
+
+  // Day ↔ accent scheme — mirror of the LOCKED Poster Studio mapping
+  // (public/studio/studio-data.jsx) and tools/poster-manager/days.js.
+  // Day numbering is Mon=1 … Sun=7.
+  const PALETTE = { blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00', amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224' };
+  const DAY_LABELS  = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];          // 1-indexed
+  const ACCENT_BY_N = ['', 'green', 'blue', 'purple', 'pink', 'red', 'amber', 'yellow']; // 1=Mon … 7=Sun
+  const ACCENT_NAMES = ['green', 'blue', 'purple', 'pink', 'red', 'amber', 'yellow'];   // swatch order = Mon → Sun
+  const effAccent = (p) => p.accent || (p.day ? ACCENT_BY_N[Number(p.day)] : null);
 
   // ---- Init ----
 
@@ -504,6 +554,7 @@
             data-field="alt"
             onchange="onFieldChange(this)"
           >${esc(p.alt || '')}</textarea>
+          <div class="card-meta">${swatchRow(p)}</div>
           <div class="card-actions">
             <span class="card-size">${formatSize(p.size)}</span>
             <button class="card-remove" onclick="removePoster('${esc(p.file)}')" title="Remove">&times;</button>
@@ -544,6 +595,55 @@
     const field = el.dataset.field;
     const value = el.value.trim();
     saveMetadata(file, field, value);
+  }
+
+  // ---- Day-of-week + accent ----
+
+  // Markup for the per-card meta row: an effective-colour dot, a day select, and
+  // an "Auto" chip + 7 accent swatches (Mon→Sun order). Auto = follow the day's
+  // colour; a swatch = explicit override.
+  function swatchRow(p) {
+    const eff = effAccent(p);
+    let opts = `<option value="">— Day</option>`;
+    for (let n = 1; n <= 7; n++) {
+      opts += `<option value="${n}" ${String(p.day || '') === String(n) ? 'selected' : ''}>${DAY_LABELS[n]}</option>`;
+    }
+    let sw = `<button class="sw sw-auto ${!p.accent ? 'on' : ''}" data-accent="" onclick="onAccent('${esc(p.file)}','',this)" title="Auto — follow the day's colour">A</button>`;
+    for (const name of ACCENT_NAMES) {
+      sw += `<button class="sw ${p.accent === name ? 'on' : ''}" data-accent="${name}" style="background:${PALETTE[name]}" onclick="onAccent('${esc(p.file)}','${name}',this)" title="${name}"></button>`;
+    }
+    return `
+      <span class="day-dot" style="background:${eff ? PALETTE[eff] : 'transparent'}"></span>
+      <select class="card-day" data-file="${esc(p.file)}" onchange="onDayChange(this)" title="Day of week — orders the website carousel">${opts}</select>
+      <span class="sw-wrap">${sw}</span>`;
+  }
+
+  function onDayChange(el) {
+    const file = el.dataset.file;
+    const v = el.value;
+    const p = posters.find(x => x.file === file);
+    if (p) p.day = v === '' ? null : Number(v);
+    saveMetadata(file, 'day', v);
+    refreshMeta(el.closest('.card'), p);
+  }
+
+  function onAccent(file, name, btn) {
+    const p = posters.find(x => x.file === file);
+    if (p) p.accent = name || null;
+    saveMetadata(file, 'accent', name);
+    refreshMeta(btn.closest('.card'), p);
+  }
+
+  // Repaint only the meta row in place (no full render → no thumbnail reflow).
+  function refreshMeta(card, p) {
+    if (!card || !p) return;
+    const eff = effAccent(p);
+    const dot = card.querySelector('.day-dot');
+    if (dot) dot.style.background = eff ? PALETTE[eff] : 'transparent';
+    card.querySelectorAll('.sw').forEach(b => {
+      const n = b.dataset.accent || '';
+      b.classList.toggle('on', n ? (p.accent === n) : !p.accent);
+    });
   }
 
   // ---- Drag & drop upload ----

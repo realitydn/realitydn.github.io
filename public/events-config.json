@@ -5,163 +5,209 @@
       "slug": "walkaboutpresence-4x5",
       "webp": "walkaboutpresence-4x5.webp",
       "jpg": "walkaboutpresence-4x5.jpg",
-      "full": "walkaboutpresence-4x5-full.webp"
+      "full": "walkaboutpresence-4x5-full.webp",
+      "day": 7,
+      "accent": "yellow"
     },
     {
       "slug": "pubquiz-4x5",
       "webp": "pubquiz-4x5.webp",
       "jpg": "pubquiz-4x5.jpg",
-      "full": "pubquiz-4x5-full.webp"
+      "full": "pubquiz-4x5-full.webp",
+      "day": 7,
+      "accent": "yellow"
     },
     {
       "slug": "womenofreality-4x5",
       "webp": "womenofreality-4x5.webp",
       "jpg": "womenofreality-4x5.jpg",
-      "full": "womenofreality-4x5-full.webp"
+      "full": "womenofreality-4x5-full.webp",
+      "day": 6,
+      "accent": "amber"
     },
     {
       "slug": "hitster-4x5",
       "webp": "hitster-4x5.webp",
       "jpg": "hitster-4x5.jpg",
-      "full": "hitster-4x5-full.webp"
+      "full": "hitster-4x5-full.webp",
+      "day": 6,
+      "accent": "amber"
     },
     {
       "slug": "filmmakers-4x5",
       "webp": "filmmakers-4x5.webp",
       "jpg": "filmmakers-4x5.jpg",
-      "full": "filmmakers-4x5-full.webp"
+      "full": "filmmakers-4x5-full.webp",
+      "day": 6,
+      "accent": "amber"
     },
     {
       "slug": "nomicopenmic-4x5",
       "webp": "nomicopenmic-4x5.webp",
       "jpg": "nomicopenmic-4x5.jpg",
-      "full": "nomicopenmic-4x5-full.webp"
+      "full": "nomicopenmic-4x5-full.webp",
+      "day": 5,
+      "accent": "red"
     },
     {
       "slug": "languagemixer-4x5",
       "webp": "languagemixer-4x5.webp",
       "jpg": "languagemixer-4x5.jpg",
-      "full": "languagemixer-4x5-full.webp"
+      "full": "languagemixer-4x5-full.webp",
+      "day": 5,
+      "accent": "red"
     },
     {
       "slug": "createincommunity-4x5",
       "webp": "createincommunity-4x5.webp",
       "jpg": "createincommunity-4x5.jpg",
-      "full": "createincommunity-4x5-full.webp"
+      "full": "createincommunity-4x5-full.webp",
+      "day": 5,
+      "accent": "red"
     },
     {
       "slug": "cncfearofburden-4x5",
       "webp": "cncfearofburden-4x5.webp",
       "jpg": "cncfearofburden-4x5.jpg",
-      "full": "cncfearofburden-4x5-full.webp"
+      "full": "cncfearofburden-4x5-full.webp",
+      "day": 4,
+      "accent": "pink"
     },
     {
       "slug": "teenhangout-4x5",
       "webp": "teenhangout-4x5.webp",
       "jpg": "teenhangout-4x5.jpg",
-      "full": "teenhangout-4x5-full.webp"
+      "full": "teenhangout-4x5-full.webp",
+      "day": 4,
+      "accent": "pink"
     },
     {
       "slug": "spillit-4x5",
       "webp": "spillit-4x5.webp",
       "jpg": "spillit-4x5.jpg",
-      "full": "spillit-4x5-full.webp"
+      "full": "spillit-4x5-full.webp",
+      "day": 4,
+      "accent": "pink"
     },
     {
       "slug": "karaoke-4x5",
       "webp": "karaoke-4x5.webp",
       "jpg": "karaoke-4x5.jpg",
-      "full": "karaoke-4x5-full.webp"
+      "full": "karaoke-4x5-full.webp",
+      "day": 4,
+      "accent": "pink"
     },
     {
       "slug": "geoguessr-4x5",
       "webp": "geoguessr-4x5.webp",
       "jpg": "geoguessr-4x5.jpg",
-      "full": "geoguessr-4x5-full.webp"
+      "full": "geoguessr-4x5-full.webp",
+      "day": 4,
+      "accent": "pink"
     },
     {
       "slug": "aimeetup-4x5",
       "webp": "aimeetup-4x5.webp",
       "jpg": "aimeetup-4x5.jpg",
-      "full": "aimeetup-4x5-full.webp"
+      "full": "aimeetup-4x5-full.webp",
+      "day": 4,
+      "accent": "pink"
     },
     {
       "slug": "howtodj-4x5",
       "webp": "howtodj-4x5.webp",
       "jpg": "howtodj-4x5.jpg",
-      "full": "howtodj-4x5-full.webp"
+      "full": "howtodj-4x5-full.webp",
+      "day": 1,
+      "accent": "green"
     },
     {
       "slug": "boardgamemonday-4x5",
       "webp": "boardgamemonday-4x5.webp",
       "jpg": "boardgamemonday-4x5.jpg",
-      "full": "boardgamemonday-4x5-full.webp"
+      "full": "boardgamemonday-4x5-full.webp",
+      "day": 1,
+      "accent": "green"
     },
     {
       "slug": "cantarel-italiano-4x5",
       "webp": "cantarel-italiano-4x5.webp",
       "jpg": "cantarel-italiano-4x5.jpg",
-      "full": "cantarel-italiano-4x5-full.webp"
+      "full": "cantarel-italiano-4x5-full.webp",
+      "day": 3,
+      "accent": "purple"
     },
     {
       "slug": "shortfilmstalk-4x5",
       "webp": "shortfilmstalk-4x5.webp",
       "jpg": "shortfilmstalk-4x5.jpg",
-      "full": "shortfilmstalk-4x5-full.webp"
+      "full": "shortfilmstalk-4x5-full.webp",
+      "day": 3,
+      "accent": "purple"
     },
     {
       "slug": "pulsesessions-4x5",
       "webp": "pulsesessions-4x5.webp",
       "jpg": "pulsesessions-4x5.jpg",
-      "full": "pulsesessions-4x5-full.webp"
+      "full": "pulsesessions-4x5-full.webp",
+      "day": 3,
+      "accent": "purple"
     },
     {
       "slug": "talkcirclestaying-4x5",
       "webp": "talkcirclestaying-4x5.webp",
       "jpg": "talkcirclestaying-4x5.jpg",
-      "full": "talkcirclestaying-4x5-full.webp"
+      "full": "talkcirclestaying-4x5-full.webp",
+      "day": 2,
+      "accent": "blue"
     },
     {
       "slug": "chessnight-4x5",
       "webp": "chessnight-4x5.webp",
       "jpg": "chessnight-4x5.jpg",
-      "full": "chessnight-4x5-full.webp"
+      "full": "chessnight-4x5-full.webp",
+      "day": 2,
+      "accent": "blue"
     },
     {
       "slug": "letstalktaoism-4x5",
       "webp": "letstalktaoism-4x5.webp",
       "jpg": "letstalktaoism-4x5.jpg",
-      "full": "letstalktaoism-4x5-full.webp"
+      "full": "letstalktaoism-4x5-full.webp",
+      "day": 2,
+      "accent": "blue"
     },
     {
       "slug": "frenchsocialclub-4x5",
       "webp": "frenchsocialclub-4x5.webp",
       "jpg": "frenchsocialclub-4x5.jpg",
-      "full": "frenchsocialclub-4x5-full.webp"
+      "full": "frenchsocialclub-4x5-full.webp",
+      "day": 2,
+      "accent": "blue"
     },
     {
       "slug": "fireweekly-4x5",
       "webp": "fireweekly-4x5.webp",
       "jpg": "fireweekly-4x5.jpg",
-      "full": "fireweekly-4x5-full.webp"
-    },
-    {
-      "slug": "bookclubtimewar-4x5",
-      "webp": "bookclubtimewar-4x5.webp",
-      "jpg": "bookclubtimewar-4x5.jpg",
-      "full": "bookclubtimewar-4x5-full.webp"
+      "full": "fireweekly-4x5-full.webp",
+      "day": 2,
+      "accent": "blue"
     },
     {
       "slug": "awarenessitself-4x5",
       "webp": "awarenessitself-4x5.webp",
       "jpg": "awarenessitself-4x5.jpg",
-      "full": "awarenessitself-4x5-full.webp"
+      "full": "awarenessitself-4x5-full.webp",
+      "day": 1,
+      "accent": "blue"
     },
     {
       "slug": "vietnamtalk-4x5",
       "webp": "vietnamtalk-4x5.webp",
       "jpg": "vietnamtalk-4x5.jpg",
-      "full": "vietnamtalk-4x5-full.webp"
+      "full": "vietnamtalk-4x5-full.webp",
+      "day": 3,
+      "accent": "purple"
     },
     {
       "slug": "sign-bogo-happy-hour-cocktails-a4-1",

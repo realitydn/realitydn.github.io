@@ -75,6 +75,10 @@ async function processPosters({ posters, originalsDir, outputDir, configPath }) 
     };
     if (poster.alt) entry.alt = poster.alt;
     if (poster.title) entry.title = poster.title;
+    // day: 1–7 (Mon=1 … Sun=7) drives the carousel's today-first ordering.
+    // accent: palette name, emitted only when overridden (else derive from day).
+    if (poster.day) entry.day = poster.day;
+    if (poster.accent) entry.accent = poster.accent;
     configEntries.push(entry);
   }
 

@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const { processPosters } = require('./process');
+const { parseDayToken } = require('./days');
 
 const app = express();
 const PORT = 4400;
@@ -76,12 +77,10 @@ function syncState() {
   const newEntries = [];
   for (const file of files) {
     if (!existing.has(file)) {
-      newEntries.push({
-        file,
-        alt: '',
-        title: '',
-        slug: path.basename(file, path.extname(file)).toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      });
+      // Auto-tag the weekday + accent from a Studio "3-wed-…-4x5" filename token
+      // (parseDayToken also strips the token from the slug). No token → nulls.
+      const { day, accent, slug } = parseDayToken(path.basename(file, path.extname(file)));
+      newEntries.push({ file, alt: '', title: '', slug, day, accent });
     }
   }
   if (newEntries.length) {
@@ -133,13 +132,17 @@ app.post('/api/posters/reorder', (req, res) => {
 /** Update metadata for a single poster */
 app.post('/api/posters/:file/metadata', (req, res) => {
   const { file } = req.params;
-  const { alt, title, slug } = req.body;
+  const { alt, title, slug, day, accent } = req.body;
   const state = loadState();
   const poster = state.posters.find(p => p.file === file);
   if (!poster) return res.status(404).json({ error: 'Poster not found' });
   if (alt !== undefined) poster.alt = alt;
   if (title !== undefined) poster.title = title;
   if (slug !== undefined) poster.slug = slug;
+  // day: 1–7 (Mon=1 … Sun=7) for carousel ordering, or null to clear.
+  // accent: palette name (override), or null to auto-derive from the day.
+  if (day !== undefined) poster.day = (day === '' || day === null) ? null : Number(day);
+  if (accent !== undefined) poster.accent = accent || null;
   saveState(state);
   res.json({ ok: true, poster });
 });

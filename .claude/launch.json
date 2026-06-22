@@ -33,6 +33,13 @@
       "runtimeArgs": ["tools/serve-print.cjs"],
       "port": 4503,
       "autoPort": true
+    },
+    {
+      "name": "poster-manager",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/poster-manager/server.js"],
+      "port": 4400,
+      "autoPort": true
     }
   ]
 }

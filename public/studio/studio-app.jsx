@@ -36,12 +36,16 @@ function slugify(s){
     .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'),'')
     .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
 }
-/* Export filename stem per format. The 9:16 Story leads with the accent's
-   weekday (e.g. purple → "3-wed-pulse-sessions") so files sort Mon→Sun and the
-   day is legible on a phone where you post from; every other format keeps
-   "<name>-<format>". */
+/* Export filename stem per format. Two formats lead with the accent's weekday
+   (e.g. purple → "3-wed-…") so files sort Mon→Sun and the day is legible:
+     • 9:16 Story — "3-wed-pulse-sessions"        (phone-post naming)
+     • 4:5 Feed   — "3-wed-pulse-sessions-4x5"    (the website carousel pipeline
+                     reads this token in Poster Manager to auto-tag the day)
+   Every other format keeps "<name>-<format>". */
 function storyStem(fmt, base, accent){
-  if(fmt==='9x16'){ const di = apAccentDay(accent); if(di) return di.n+'-'+di.abbr.toLowerCase()+'-'+base; }
+  const di = apAccentDay(accent);
+  if(fmt==='9x16'){ if(di) return di.n+'-'+di.abbr.toLowerCase()+'-'+base; }
+  else if(fmt==='4x5'){ if(di) return di.n+'-'+di.abbr.toLowerCase()+'-'+base+'-'+fmt; }
   return base+'-'+fmt;
 }
 

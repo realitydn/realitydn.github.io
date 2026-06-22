@@ -1,6 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import CardsCarousel from './CardsCarousel';
 
+// Order posters so today's weekday leads and the week rolls forward
+// (Tue → Wed → … → Mon), recomputed each visit. "Today" is Đà Nẵng time
+// (Asia/Ho_Chi_Minh) — that's where the events happen — so the order is the same
+// for a local visitor and a traveller checking from abroad. `day` is 1–7
+// (Mon=1 … Sun=7, from events-config.json); undated posters keep their relative
+// order and fall to the end.
+const DAY_NUM = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+
+function vnToday() {
+  const abbr = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short',
+  }).format(new Date());
+  return DAY_NUM[abbr] || 1;
+}
+
+function orderByDay(list) {
+  const today = vnToday();
+  return list
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => {
+      const ra = a.e.day ? (a.e.day - today + 7) % 7 : 99;
+      const rb = b.e.day ? (b.e.day - today + 7) % 7 : 99;
+      return ra - rb || a.i - b.i; // stable: keep manager order within a day
+    })
+    .map((x) => x.e);
+}
+
 export default function EventsSection({ t }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,9 +58,11 @@ export default function EventsSection({ t }) {
             full,
             alt: obj.alt || obj.title || 'REALITY event poster — Đà Nẵng',
             title: obj.title || null,
+            day: obj.day || null,       // 1–7 (Mon=1) — drives today-first ordering
+            accent: obj.accent || null, // palette name, stored for future theming
           };
         });
-        setEvents(eventList);
+        setEvents(orderByDay(eventList));
         setLoading(false);
       })
       .catch(err => {

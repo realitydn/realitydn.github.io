@@ -1,6 +1,12 @@
 {
   "posters": [
     {
+      "file": "walkaboutpresence-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "walkaboutpresence-4x5"
+    },
+    {
       "file": "pubquiz-4x5.png",
       "alt": "",
       "title": "",
@@ -37,16 +43,16 @@
       "slug": "languagemixer-4x5"
     },
     {
-      "file": "filmclubbeforeidisappear-4x5.png",
-      "alt": "",
-      "title": "",
-      "slug": "filmclubbeforeidisappear-4x5"
-    },
-    {
       "file": "createincommunity-4x5.png",
       "alt": "",
       "title": "",
       "slug": "createincommunity-4x5"
+    },
+    {
+      "file": "cncfearofburden-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "cncfearofburden-4x5"
     },
     {
       "file": "teenhangout-4x5.png",
@@ -79,10 +85,22 @@
       "slug": "aimeetup-4x5"
     },
     {
+      "file": "howtodj-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "howtodj-4x5"
+    },
+    {
       "file": "boardgamemonday-4x5.png",
       "alt": "",
       "title": "",
       "slug": "boardgamemonday-4x5"
+    },
+    {
+      "file": "cantarel-italiano-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "cantarel-italiano-4x5"
     },
     {
       "file": "shortfilmstalk-4x5.png",
@@ -95,6 +113,12 @@
       "alt": "",
       "title": "",
       "slug": "pulsesessions-4x5"
+    },
+    {
+      "file": "talkcirclestaying-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "talkcirclestaying-4x5"
     },
     {
       "file": "chessnight-4x5.png",
@@ -137,12 +161,6 @@
       "alt": "",
       "title": "",
       "slug": "vietnamtalk-4x5"
-    },
-    {
-      "file": "ab-bruno-dj-lessons.jpg",
-      "alt": "",
-      "title": "",
-      "slug": "ab-bruno-dj-lessons"
     },
     {
       "file": "sign-bogo-happy-hour-cocktails-a4-1.jpg",

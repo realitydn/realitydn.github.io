@@ -1,0 +1,89 @@
+<!-- @dsCard group="Posters" name="Poster Grammar" subtitle="A poster = pick a Frame · fill the Parts · set the Dials (seven spectrums: calm community → wild nightlife)" w="1100" h="740" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Poster Grammar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:root{
+  --yellow:#fddf00;--red:#ed2224;--blue:#18a7e0;
+  --pink:#ed1b72;--amber:#fdb515;--green:#43b02a;--purple:#6e3179;
+  --accent:var(--pink);--accent-2:var(--blue);
+  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;
+  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);
+  --hairline:rgba(13,9,5,.16);--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --space-6:24px;--space-7:32px;--space-8:48px;--space-9:64px;--space-10:96px;
+  --screen-pad:var(--space-5);--section-gap:var(--space-4);--card-pad:var(--space-5);
+  --row-y:var(--space-3);--tap-min:var(--space-8);--grid-cols:4;--grid-gutter:var(--space-3);
+  --mont:'Montserrat',sans-serif;--alt:'Montserrat Alternates',sans-serif;--grotesk:'Space Grotesk',sans-serif;
+  --ease-stamp:cubic-bezier(.2,1.4,.45,1);--ease-snap:cubic-bezier(.3,0,.2,1);--ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-tap:120ms;--dur-quick:200ms;--dur-settle:350ms;--dur-enter:700ms;--stagger:90ms;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --purple:#9a4faa;--bg:#0a0703;--surface:#171109;--surface-2:#241a10;
+  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  color-scheme:dark;
+}
+.scope-day{--bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;--fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);--hairline:rgba(13,9,5,.16);--sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);color-scheme:light}
+.scope-night{--bg:#0a0703;--surface:#171109;--surface-2:#241a10;--fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);color-scheme:dark}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+body.dsc{font-family:var(--grotesk);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased;padding:28px}
+.dsc-h{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--fg);padding-bottom:12px;margin-bottom:26px;flex-wrap:wrap}
+.dsc-h .nm{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px}
+.dsc-h .sub{font-family:var(--grotesk);font-weight:400;font-size:13px;color:var(--fg-dim);max-width:64ch}
+.dsc-h .tag{margin-left:auto;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:10px;background:var(--fg);color:var(--bg);padding:6px 11px;align-self:flex-start}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.dual{grid-template-columns:1fr}}
+.pane{background:var(--bg);color:var(--fg);padding:24px;border:2px solid var(--fg);box-shadow:var(--sh-default)}
+.pane>.plabel{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--fg-faint);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.pane>.plabel::before{content:"";width:9px;height:9px;border:2px solid var(--fg);display:inline-block}
+.eyebrow{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.15em;font-size:12px;color:var(--accent);margin:0 0 14px}
+.note{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default);padding:18px 22px;margin-top:22px}
+.note h4{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--accent);margin-bottom:10px}
+.note p{font-size:13.5px;color:var(--fg-dim);margin-bottom:7px}.note p:last-child{margin-bottom:0}
+.note b{color:var(--fg);font-weight:600}
+.wm{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;line-height:.9}
+.stack{display:flex;flex-direction:column;gap:20px}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.lbl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--fg-faint);margin-bottom:10px}
+
+  .layers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+  @media(max-width:760px){.layers{grid-template-columns:1fr}}
+  .layer{border:2px solid var(--fg);box-shadow:var(--sh-light);padding:18px;background:var(--surface)}
+  .layer .n{font-family:var(--mont);font-weight:100;font-size:36px;color:var(--accent);line-height:1;margin-bottom:8px}
+  .layer h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px;margin-bottom:6px}
+  .layer p{font-size:12px;color:var(--fg-dim);line-height:1.5}
+  .parts{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .parts span{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:9px;border:1.5px solid var(--hairline);padding:4px 8px;color:var(--fg-dim)}
+  .parts span.core{border-color:var(--fg);color:var(--fg)}
+  .dials{display:flex;flex-direction:column;gap:11px}
+  .dial{display:grid;grid-template-columns:128px 1fr 128px;gap:14px;align-items:center}
+  .dial .nm{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+  .dial .nm span{color:var(--fg-faint);font-weight:600;margin-right:6px}
+  .dial .lo{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:10px;color:var(--fg-dim);text-align:right}
+  .dial .hi{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:10px;color:var(--accent)}
+  .dial .track{height:6px;background:var(--hairline);position:relative}
+  .dial .track i{position:absolute;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-light)}</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Poster Grammar</span><span class="sub">A poster = pick a Frame · fill the Parts · set the Dials (seven spectrums: calm community → wild nightlife)</span><span class="tag">REALITY · Y2</span></header>
+
+  <div class="layers">
+    <div class="layer"><div class="n">01</div><h5>Frame</h5><p>The archetype skeleton + aspect. Author on the 4:5 / 5:7 master; reflows to 1:1, 9:16, A4 with per-format overrides.</p></div>
+    <div class="layer"><div class="n">02</div><h5>Parts</h5><p>The content blocks that ride the grid — nine always present, the rest drop in as the event needs.<div class="parts"><span class="core">Title</span><span class="core">Tagline</span><span class="core">Host</span><span class="core">When</span><span class="core">Ticket+QR</span><span>Lineup</span><span>Specials</span><span>Tiers</span><span>Stamps</span><span>Sponsors</span></div></p></div>
+    <div class="layer"><div class="n">03</div><h5>Dials</h5><p>Continuous style controls. They slide together from community to nightlife — that single motion makes a quiz and a DJ set feel different on one system.</p></div>
+  </div>
+  <p class="eyebrow">The seven dials</p>
+  <div class="dials">
+    <div class="dial"><span class="lo">Day</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D1</span>Palette</span><i style="left:50%"></i></div><span class="hi">Night</span></div><div class="dial"><span class="lo">Cool</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D2</span>Accent</span><i style="left:45%"></i></div><span class="hi">Hot</span></div><div class="dial"><span class="lo">Square</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D3</span>Tilt</span><i style="left:30%"></i></div><span class="hi">Skewed</span></div><div class="dial"><span class="lo">Centered</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D4</span>Symmetry</span><i style="left:40%"></i></div><span class="hi">Offset</span></div><div class="dial"><span class="lo">Airy</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D5</span>Density</span><i style="left:42%"></i></div><span class="hi">Packed</span></div><div class="dial"><span class="lo">Quiet</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D6</span>Type Weight</span><i style="left:60%"></i></div><span class="hi">Slam</span></div><div class="dial"><span class="lo">Solid</span><div class="track" style="position:relative"><span class="nm" style="position:absolute;left:0;top:-20px"><span>D7</span>Surface</span><i style="left:35%"></i></div><span class="hi">Sheer</span></div>
+  </div>
+  <div class="note" style="margin-top:34px"><h4>Archetypes are coordinates</h4><p><b>Pub Quiz</b> = day · symmetric · solid · blue. <b>Acoustic Sessions</b> = day · symmetric · outline · thin · green. <b>Pulse Sessions</b> = night · offset · misregister · pink. <b>After Dark</b> = night · stagger · scrim · red. Same nine slots, four dial settings.</p></div>
+</body></html>

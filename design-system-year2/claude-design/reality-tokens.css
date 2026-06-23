@@ -1,0 +1,114 @@
+/* ============================================================
+   REALITY DESIGN SYSTEM — Year 2 · Design Tokens
+   Silkscreen / riso DNA · one tokened theme, day + night
+   ------------------------------------------------------------
+   Drop-in CSS custom properties. Framework-agnostic — works in
+   the website, the REALITY App, the sidework app, etc.
+   Theme by setting data-theme="dark" on <html> (default = day).
+   ============================================================ */
+
+:root {
+  /* ---- BRAND PALETTE — 3 majors + 4 minors. LOCKED. ---- */
+  /* MAJOR — working colours, carry attention */
+  --yellow: #fddf00;
+  --red:    #ed2224;
+  --blue:   #18a7e0;
+  /* MINOR — extend the category-coding */
+  --pink:   #ed1b72;
+  --amber:  #fdb515;
+  --green:  #43b02a;
+  --purple: #6e3179;   /* day value; lifts in night, see below */
+
+  /* category accent — swappable per context (party/music/drinks…) */
+  --accent:   var(--pink);   /* poster lead accent          */
+  --accent-2: var(--blue);   /* second misregistration layer */
+
+  /* ---- SURFACES — LIGHT / DAY (default) ---- */
+  --bg:        #fffbf1;            /* page / "paper"              */
+  --surface:   #fffbf1;           /* cards (bordered, same paper) */
+  --surface-2: #fffbf1;
+  --fg:        #0d0905;           /* ink: text, 2px borders, fills */
+  --fg-dim:    rgba(13, 9, 5, .72);
+  --fg-faint:  rgba(13, 9, 5, .45);
+  --hairline:  rgba(13, 9, 5, .16);
+  --on-ink:    #fffbf1;           /* text sitting on an ink fill  */
+
+  /* ---- FLAT DOWN-SHADOWS — ink leaking beneath a lifted edge ---- */
+  --sh-light:   0 4px 1px rgba(13, 9, 5, .08);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
+  --sh-heavy:   0 12px 3px rgba(13, 9, 5, .18);
+
+  /* ---- SPACING — 4px base ramp ---- */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;  --space-5: 20px;
+  --space-6: 24px;  --space-7: 32px;  --space-8: 48px;  --space-9: 64px;  --space-10: 96px;
+
+  /* semantic app-layout tokens — locked "Comfortable" density */
+  --screen-pad:   var(--space-5);  /* 20 · phone screen margin    */
+  --section-gap:  var(--space-4);  /* 16 · between screen blocks  */
+  --card-pad:     var(--space-5);  /* 20 · inside cards           */
+  --row-y:        var(--space-3);  /* 12 · list-row vertical      */
+  --tap-min:      var(--space-8);  /* 48 · touch-target floor     */
+  --grid-cols:    4;               /* phone content columns       */
+  --grid-gutter:  var(--space-3);  /* 12 · column gutter          */
+
+  /* ---- TYPEFACES ---- */
+  --mont:    'Montserrat', sans-serif;             /* UI / display, uppercase wide-tracked */
+  --alt:     'Montserrat Alternates', sans-serif;  /* wordmark only                        */
+  --grotesk: 'Space Grotesk', sans-serif;          /* body                                 */
+
+  /* ---- MOTION — easing curves ---- */
+  --ease-stamp: cubic-bezier(0.2, 1.4, 0.45, 1);   /* overshoot punch        */
+  --ease-snap:  cubic-bezier(0.3, 0, 0.2, 1);      /* quick settle           */
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- MOTION — duration scale ---- */
+  --dur-tap:    120ms;   /* hover lift · button press        */
+  --dur-quick:  200ms;   /* chip / small state change        */
+  --dur-settle: 350ms;   /* theme flip · surface crossfade   */
+  --dur-enter:  700ms;   /* counters · kinetic · big entrance */
+  --stagger:    90ms;    /* delay between sibling entrances  */
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   DARK / NIGHT — "after dark". Purple lifts to glow on the dark.
+   Surfaces flip, text/borders ride --fg, shadows invert to cream.
+   ============================================================ */
+[data-theme="dark"] {
+  --purple:    #9a4faa;          /* lifted from #6e3179 for dark bg */
+
+  --bg:        #0a0703;
+  --surface:   #171109;
+  --surface-2: #241a10;
+  --fg:        #fffbf1;
+  --fg-dim:    rgba(255, 251, 241, .60);
+  --fg-faint:  rgba(255, 251, 241, .32);
+  --hairline:  #3a2c1c;
+  --on-ink:    #fffbf1;
+
+  /* shadows invert: cream light leaking beneath a lifted edge */
+  --sh-light:   0 4px 1px rgba(255, 251, 241, .14);
+  --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
+  --sh-heavy:   0 14px 3px rgba(255, 251, 241, .26);
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------
+   Local theme scopes — render one block in the opposite mode
+   without flipping the whole page (e.g. a Night poster on a Day
+   page). Apply .scope-day / .scope-night to a container.
+   ------------------------------------------------------------ */
+.scope-day {
+  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #fffbf1;
+  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .45); --hairline: rgba(13, 9, 5, .16);
+  --sh-light: 0 4px 1px rgba(13, 9, 5, .08); --sh-default: 0 8px 2px rgba(13, 9, 5, .12); --sh-heavy: 0 12px 3px rgba(13, 9, 5, .18);
+  color-scheme: light;
+}
+.scope-night {
+  --bg: #0a0703; --surface: #171109; --surface-2: #241a10;
+  --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .32); --hairline: #3a2c1c;
+  --sh-light: 0 4px 1px rgba(255, 251, 241, .14); --sh-default: 0 9px 2px rgba(255, 251, 241, .18); --sh-heavy: 0 14px 3px rgba(255, 251, 241, .26);
+  color-scheme: dark;
+}

@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REALITY · Year 2 — Claude Design package</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet"><style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:root{
+  --yellow:#fddf00;--red:#ed2224;--blue:#18a7e0;
+  --pink:#ed1b72;--amber:#fdb515;--green:#43b02a;--purple:#6e3179;
+  --accent:var(--pink);--accent-2:var(--blue);
+  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;
+  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);
+  --hairline:rgba(13,9,5,.16);--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --space-6:24px;--space-7:32px;--space-8:48px;--space-9:64px;--space-10:96px;
+  --screen-pad:var(--space-5);--section-gap:var(--space-4);--card-pad:var(--space-5);
+  --row-y:var(--space-3);--tap-min:var(--space-8);--grid-cols:4;--grid-gutter:var(--space-3);
+  --mont:'Montserrat',sans-serif;--alt:'Montserrat Alternates',sans-serif;--grotesk:'Space Grotesk',sans-serif;
+  --ease-stamp:cubic-bezier(.2,1.4,.45,1);--ease-snap:cubic-bezier(.3,0,.2,1);--ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-tap:120ms;--dur-quick:200ms;--dur-settle:350ms;--dur-enter:700ms;--stagger:90ms;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --purple:#9a4faa;--bg:#0a0703;--surface:#171109;--surface-2:#241a10;
+  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  color-scheme:dark;
+}
+.scope-day{--bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;--fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);--hairline:rgba(13,9,5,.16);--sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);color-scheme:light}
+.scope-night{--bg:#0a0703;--surface:#171109;--surface-2:#241a10;--fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);color-scheme:dark}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+body{font-family:var(--grotesk);background:var(--bg);color:var(--fg);padding:32px;max-width:1320px;margin:0 auto}
+h1{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:48px;margin-bottom:6px}
+.sub{color:var(--fg-dim);margin-bottom:28px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.card{border:2px solid var(--fg);box-shadow:var(--sh-default);background:var(--surface);overflow:hidden}
+.card .frame{height:300px;border-bottom:2px solid var(--fg);overflow:hidden;background:var(--bg)}
+.card iframe{width:200%;height:600px;border:0;transform:scale(.5);transform-origin:top left}
+.card .meta{padding:12px 14px}
+.card .g{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:9px;color:var(--accent)}
+.card .nm{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:14px;margin-top:3px}
+a{color:inherit;text-decoration:none}</style></head><body>
+<h1>Reality</h1><div class="sub">Year 2 Design System — Claude Design package · 22 cards</div>
+<div class="grid">
+<a class="card" href="00-overview.html" target="_blank"><div class="frame"><iframe src="00-overview.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Overview</div><div class="nm">REALITY — Year 2</div></div></a>
+<a class="card" href="10-color.html" target="_blank"><div class="frame"><iframe src="10-color.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Foundations</div><div class="nm">Colour & Palette</div></div></a>
+<a class="card" href="11-surfaces.html" target="_blank"><div class="frame"><iframe src="11-surfaces.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Foundations</div><div class="nm">Surfaces — Day ⇄ Night</div></div></a>
+<a class="card" href="12-typography.html" target="_blank"><div class="frame"><iframe src="12-typography.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Foundations</div><div class="nm">Typography</div></div></a>
+<a class="card" href="13-shadow.html" target="_blank"><div class="frame"><iframe src="13-shadow.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Foundations</div><div class="nm">Shadow — flat riso down-shadow</div></div></a>
+<a class="card" href="14-spacing.html" target="_blank"><div class="frame"><iframe src="14-spacing.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Foundations</div><div class="nm">Spacing & Layout</div></div></a>
+<a class="card" href="15-motion.html" target="_blank"><div class="frame"><iframe src="15-motion.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Foundations</div><div class="nm">Motion</div></div></a>
+<a class="card" href="20-buttons.html" target="_blank"><div class="frame"><iframe src="20-buttons.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Buttons</div></div></a>
+<a class="card" href="21-chips.html" target="_blank"><div class="frame"><iframe src="21-chips.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Chips</div></div></a>
+<a class="card" href="22-fields.html" target="_blank"><div class="frame"><iframe src="22-fields.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Input Fields</div></div></a>
+<a class="card" href="23-cards.html" target="_blank"><div class="frame"><iframe src="23-cards.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Cards</div></div></a>
+<a class="card" href="24-controls.html" target="_blank"><div class="frame"><iframe src="24-controls.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Controls</div></div></a>
+<a class="card" href="25-indicators.html" target="_blank"><div class="frame"><iframe src="25-indicators.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Indicators</div></div></a>
+<a class="card" href="26-feedback.html" target="_blank"><div class="frame"><iframe src="26-feedback.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Toast & Alert</div></div></a>
+<a class="card" href="27-navigation.html" target="_blank"><div class="frame"><iframe src="27-navigation.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Bottom Navigation</div></div></a>
+<a class="card" href="28-leaderboard.html" target="_blank"><div class="frame"><iframe src="28-leaderboard.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Leaderboard</div></div></a>
+<a class="card" href="29-icons.html" target="_blank"><div class="frame"><iframe src="29-icons.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Components</div><div class="nm">Icon Library</div></div></a>
+<a class="card" href="30-wordmark.html" target="_blank"><div class="frame"><iframe src="30-wordmark.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Brand</div><div class="nm">Wordmark & Lettermark</div></div></a>
+<a class="card" href="40-photo.html" target="_blank"><div class="frame"><iframe src="40-photo.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Photo</div><div class="nm">Photo Language</div></div></a>
+<a class="card" href="50-posters.html" target="_blank"><div class="frame"><iframe src="50-posters.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Posters</div><div class="nm">Poster Archetypes</div></div></a>
+<a class="card" href="51-poster-grid.html" target="_blank"><div class="frame"><iframe src="51-poster-grid.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Posters</div><div class="nm">Poster Grid System</div></div></a>
+<a class="card" href="52-poster-grammar.html" target="_blank"><div class="frame"><iframe src="52-poster-grammar.html" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">Posters</div><div class="nm">Poster Grammar</div></div></a>
+</div></body></html>

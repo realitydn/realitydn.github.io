@@ -1,0 +1,105 @@
+{
+  "$description": "REALITY Design System — Year 2. Silkscreen/riso DNA, one tokened theme (day + night). Style-Dictionary-style { value } leaves. Themed tokens carry day + night; everything else is global.",
+  "color": {
+    "brand": {
+      "$description": "Locked silkscreen palette — 3 majors + 4 minors. Do not add or recolor.",
+      "major": {
+        "yellow": { "value": "#fddf00" },
+        "red":    { "value": "#ed2224" },
+        "blue":   { "value": "#18a7e0" }
+      },
+      "minor": {
+        "pink":   { "value": "#ed1b72" },
+        "amber":  { "value": "#fdb515" },
+        "green":  { "value": "#43b02a" },
+        "purple": { "value": "#6e3179", "dark": "#9a4faa", "$comment": "purple lifts to #9a4faa in night theme" }
+      }
+    },
+    "accent": {
+      "$description": "Category accent — swappable per context. Default pink; the poster engine uses two layers for the misregistered echo.",
+      "lead":   { "value": "{color.brand.minor.pink}" },
+      "layer2": { "value": "{color.brand.major.blue}" }
+    },
+    "surface": {
+      "$description": "Semantic surfaces. value = DAY (light, default); dark = NIGHT.",
+      "bg":        { "value": "#fffbf1", "dark": "#0a0703" },
+      "surface":   { "value": "#fffbf1", "dark": "#171109" },
+      "surface-2": { "value": "#fffbf1", "dark": "#241a10" }
+    },
+    "text": {
+      "fg":      { "value": "#0d0905",            "dark": "#fffbf1" },
+      "fg-dim":  { "value": "rgba(13,9,5,0.72)",  "dark": "rgba(255,251,241,0.60)" },
+      "fg-faint":{ "value": "rgba(13,9,5,0.45)",  "dark": "rgba(255,251,241,0.32)" },
+      "on-ink":  { "value": "#fffbf1",            "dark": "#fffbf1", "$comment": "text sitting on an ink fill" }
+    },
+    "line": {
+      "hairline": { "value": "rgba(13,9,5,0.16)", "dark": "#3a2c1c" }
+    }
+  },
+  "shadow": {
+    "$description": "Flat down-shadows — ink leaking beneath a lifted edge. Invert to cream in night.",
+    "light":   { "value": "0 4px 1px rgba(13,9,5,0.08)",  "dark": "0 4px 1px rgba(255,251,241,0.14)" },
+    "default": { "value": "0 8px 2px rgba(13,9,5,0.12)",  "dark": "0 9px 2px rgba(255,251,241,0.18)" },
+    "heavy":   { "value": "0 12px 3px rgba(13,9,5,0.18)", "dark": "0 14px 3px rgba(255,251,241,0.26)" }
+  },
+  "space": {
+    "$description": "4px base ramp.",
+    "1":  { "value": "4px" },
+    "2":  { "value": "8px" },
+    "3":  { "value": "12px" },
+    "4":  { "value": "16px" },
+    "5":  { "value": "20px" },
+    "6":  { "value": "24px" },
+    "7":  { "value": "32px" },
+    "8":  { "value": "48px" },
+    "9":  { "value": "64px" },
+    "10": { "value": "96px" }
+  },
+  "layout": {
+    "$description": "Semantic app-layout tokens — locked 'Comfortable' density.",
+    "screen-pad":  { "value": "{space.5}",  "px": 20, "$comment": "phone screen margin" },
+    "section-gap": { "value": "{space.4}",  "px": 16, "$comment": "between screen blocks" },
+    "card-pad":    { "value": "{space.5}",  "px": 20, "$comment": "inside cards" },
+    "row-y":       { "value": "{space.3}",  "px": 12, "$comment": "list-row vertical" },
+    "tap-min":     { "value": "{space.8}",  "px": 48, "$comment": "touch-target floor" },
+    "grid-cols":   { "value": 4,            "$comment": "phone content columns" },
+    "grid-gutter": { "value": "{space.3}",  "px": 12, "$comment": "column gutter" }
+  },
+  "border": {
+    "$description": "Hard corners everywhere — radius is always 0. Standard stroke is 2px ink; section rules 1.5px; mastheads/footers 3px.",
+    "radius":       { "value": "0px" },
+    "stroke":       { "value": "2px" },
+    "stroke-rule":  { "value": "1.5px" },
+    "stroke-heavy": { "value": "3px" }
+  },
+  "font": {
+    "family": {
+      "mont":    { "value": "Montserrat, sans-serif",            "$comment": "UI + display, uppercase wide-tracked. Weights 100/500/600/700/800." },
+      "alt":     { "value": "Montserrat Alternates, sans-serif", "$comment": "wordmark only. Weight 600." },
+      "grotesk": { "value": "Space Grotesk, sans-serif",         "$comment": "body. Weights 400/500/600." }
+    },
+    "role": {
+      "$description": "Canonical type roles. Sizes use clamp() in CSS; min/max captured here.",
+      "display": { "family": "{font.family.mont}",    "weight": 100, "transform": "uppercase", "letterSpacing": "0.05em", "lineHeight": 1.05, "size": "clamp(40px, 7vw, 82px)" },
+      "h1":      { "family": "{font.family.mont}",    "weight": 700, "transform": "uppercase", "letterSpacing": "0.05em", "lineHeight": 1.1,  "size": "clamp(30px, 4vw, 46px)" },
+      "h2":      { "family": "{font.family.mont}",    "weight": 600, "transform": "uppercase", "letterSpacing": "0.05em", "lineHeight": 1.2,  "size": "24px" },
+      "label":   { "family": "{font.family.mont}",    "weight": 700, "transform": "uppercase", "letterSpacing": "0.15em", "size": "13px", "$comment": "often colored --accent" },
+      "body":    { "family": "{font.family.grotesk}", "weight": 400, "transform": "none",      "letterSpacing": "0",      "lineHeight": 1.7,  "size": "17px" },
+      "wordmark":{ "family": "{font.family.alt}",     "weight": 600, "transform": "uppercase", "letterSpacing": "0.02em", "lineHeight": 0.9 }
+    }
+  },
+  "motion": {
+    "ease": {
+      "stamp": { "value": "cubic-bezier(0.2, 1.4, 0.45, 1)", "$comment": "overshoot punch — stamps, entrances" },
+      "snap":  { "value": "cubic-bezier(0.3, 0, 0.2, 1)",    "$comment": "quick settle" },
+      "out":   { "value": "cubic-bezier(0.16, 1, 0.3, 1)" }
+    },
+    "duration": {
+      "tap":     { "value": "120ms", "$comment": "hover lift · button press" },
+      "quick":   { "value": "200ms", "$comment": "chip / small state change" },
+      "settle":  { "value": "350ms", "$comment": "theme flip · surface crossfade" },
+      "enter":   { "value": "700ms", "$comment": "counters · kinetic · big entrances" },
+      "stagger": { "value": "90ms",  "$comment": "delay between sibling entrances" }
+    }
+  }
+}

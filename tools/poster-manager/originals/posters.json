@@ -1,6 +1,22 @@
 {
   "posters": [
     {
+      "file": "datingredesign-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "datingredesign-4x5",
+      "day": 5,
+      "accent": null
+    },
+    {
+      "file": "tatay-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "tatay-4x5",
+      "day": 5,
+      "accent": null
+    },
+    {
       "file": "walkaboutpresence-4x5.png",
       "alt": "",
       "title": "",
@@ -198,7 +214,7 @@
       "title": "",
       "slug": "awarenessitself-4x5",
       "accent": "blue",
-      "day": 1
+      "day": 2
     },
     {
       "file": "vietnamtalk-4x5.png",

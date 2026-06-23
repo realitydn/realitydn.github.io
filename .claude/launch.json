@@ -40,6 +40,13 @@
       "runtimeArgs": ["tools/poster-manager/server.js"],
       "port": 4400,
       "autoPort": true
+    },
+    {
+      "name": "ds-package",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4510", "--directory", "design-system-year2/claude-design"],
+      "port": 4510,
+      "autoPort": true
     }
   ]
 }

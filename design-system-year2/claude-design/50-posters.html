@@ -1,0 +1,167 @@
+<!-- @dsCard group="Posters" name="Poster Archetypes" subtitle="Four archetypes = four coordinates in the dial space · 5:7 master · full-bleed photo (you supply)" w="1240" h="820" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Poster Archetypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:root{
+  --yellow:#fddf00;--red:#ed2224;--blue:#18a7e0;
+  --pink:#ed1b72;--amber:#fdb515;--green:#43b02a;--purple:#6e3179;
+  --accent:var(--pink);--accent-2:var(--blue);
+  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;
+  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);
+  --hairline:rgba(13,9,5,.16);--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --space-6:24px;--space-7:32px;--space-8:48px;--space-9:64px;--space-10:96px;
+  --screen-pad:var(--space-5);--section-gap:var(--space-4);--card-pad:var(--space-5);
+  --row-y:var(--space-3);--tap-min:var(--space-8);--grid-cols:4;--grid-gutter:var(--space-3);
+  --mont:'Montserrat',sans-serif;--alt:'Montserrat Alternates',sans-serif;--grotesk:'Space Grotesk',sans-serif;
+  --ease-stamp:cubic-bezier(.2,1.4,.45,1);--ease-snap:cubic-bezier(.3,0,.2,1);--ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-tap:120ms;--dur-quick:200ms;--dur-settle:350ms;--dur-enter:700ms;--stagger:90ms;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --purple:#9a4faa;--bg:#0a0703;--surface:#171109;--surface-2:#241a10;
+  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  color-scheme:dark;
+}
+.scope-day{--bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;--fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);--hairline:rgba(13,9,5,.16);--sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);color-scheme:light}
+.scope-night{--bg:#0a0703;--surface:#171109;--surface-2:#241a10;--fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);color-scheme:dark}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+body.dsc{font-family:var(--grotesk);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased;padding:28px}
+.dsc-h{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--fg);padding-bottom:12px;margin-bottom:26px;flex-wrap:wrap}
+.dsc-h .nm{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px}
+.dsc-h .sub{font-family:var(--grotesk);font-weight:400;font-size:13px;color:var(--fg-dim);max-width:64ch}
+.dsc-h .tag{margin-left:auto;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:10px;background:var(--fg);color:var(--bg);padding:6px 11px;align-self:flex-start}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.dual{grid-template-columns:1fr}}
+.pane{background:var(--bg);color:var(--fg);padding:24px;border:2px solid var(--fg);box-shadow:var(--sh-default)}
+.pane>.plabel{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--fg-faint);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.pane>.plabel::before{content:"";width:9px;height:9px;border:2px solid var(--fg);display:inline-block}
+.eyebrow{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.15em;font-size:12px;color:var(--accent);margin:0 0 14px}
+.note{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default);padding:18px 22px;margin-top:22px}
+.note h4{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--accent);margin-bottom:10px}
+.note p{font-size:13.5px;color:var(--fg-dim);margin-bottom:7px}.note p:last-child{margin-bottom:0}
+.note b{color:var(--fg);font-weight:600}
+.wm{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;line-height:.9}
+.stack{display:flex;flex-direction:column;gap:20px}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.lbl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--fg-faint);margin-bottom:10px}
+
+.rail{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+.pcell{width:300px}
+.pcell .pc-cat{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--accent);margin-top:12px}
+.pcell .pc-name{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:15px;margin:3px 0 5px}
+.pcell .pc-note{font-size:12px;color:var(--fg-dim);line-height:1.5}
+.pcell .pc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.pcell .pc-tags span{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-size:8.5px;border:1.5px solid var(--hairline);padding:3px 7px;color:var(--fg-dim)}
+.frame{position:relative;width:300px;height:420px;overflow:hidden;border:2px solid var(--fg);box-shadow:var(--sh-default);background:var(--bg)}
+.poster{position:absolute;top:0;left:0;width:1080px;height:1512px;transform-origin:top left;transform:scale(.27778)}
+.pphoto{position:absolute;inset:0;z-index:0}
+.pphoto.day{background:radial-gradient(130% 90% at 50% 12%,rgba(255,255,255,.18),transparent 58%),radial-gradient(120% 100% at 50% 105%,rgba(13,9,5,.28),transparent 55%),repeating-linear-gradient(54deg,rgba(13,9,5,.05) 0 26px,rgba(13,9,5,.11) 26px 52px);background-color:#9c9488}
+.pphoto.night{background:radial-gradient(130% 90% at 50% 10%,rgba(120,90,160,.30),transparent 55%),radial-gradient(120% 100% at 50% 108%,rgba(0,0,0,.55),transparent 55%),repeating-linear-gradient(54deg,rgba(0,0,0,.24) 0 26px,rgba(0,0,0,.42) 26px 52px);background-color:#221a26}
+.pphoto .ptag{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);font-family:var(--mont);font-weight:700;letter-spacing:.26em;font-size:13px;color:rgba(255,255,255,.42);white-space:nowrap}
+.pcanvas{position:absolute;inset:0;z-index:1}
+.box{border:3px solid currentColor;box-shadow:var(--sh-default)}
+.box.solid{background:var(--fg);color:var(--bg)}
+.box.paper{background:var(--bg);color:var(--fg)}
+.box.accent{background:var(--accent);color:#0d0905;border-color:var(--accent)}
+.box.scrim{background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--fg);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.box.outline{background:transparent;color:var(--fg)}
+.amk{font-family:var(--mont);font-weight:700;text-transform:uppercase}
+.akick{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.2em;font-size:23px}
+.atitle{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.005em;line-height:.86}
+.atitle.thin{font-weight:100;letter-spacing:.04em}
+.atag{font-family:var(--grotesk);line-height:1.3}
+.qr{display:grid;grid-template-columns:repeat(11,1fr);background:currentColor;padding:7px;flex:none}
+.qr i{background:transparent}.qr i.on{background:var(--qr-bg,#fffbf1)}
+.t-qr{width:120px;height:120px}
+.ticket-band{position:absolute;left:0;right:0;bottom:0;z-index:2;border-top:3px solid currentColor;display:flex;align-items:center;justify-content:space-between;gap:22px;padding:26px 54px}
+.ticket-band .tk-word{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:50px;line-height:.78}
+.ticket-band .tk-mid{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:17px;text-align:center;line-height:1.55}
+.ticket-band .tk-mid span{display:block;font-weight:600;letter-spacing:.08em;opacity:.72;font-size:14px}
+.ticket-corner{position:absolute;z-index:2;display:flex;align-items:center;gap:18px;border:3px solid currentColor;box-shadow:var(--sh-heavy);padding:18px 22px}
+.ticket-corner .tk-word{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:38px;line-height:.78}
+.ticket-corner .tk-lines{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;line-height:1.5}
+.ticket-corner .tk-lines span{display:block;font-weight:600;opacity:.72;font-size:12px;letter-spacing:.06em}
+.mreg{position:relative;display:inline-block}
+.mreg .l{display:block;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.005em;line-height:.84;margin:0}
+.mreg .l.under{position:absolute;top:0;left:0}
+.mreg .l.l2{color:var(--accent-2);transform:translate(18px,20px);z-index:1}
+.mreg .l.l1{color:var(--accent);transform:translate(34px,40px);z-index:2}
+.mreg .l.top{position:relative;z-index:3;color:currentColor}
+.flag{display:inline-block;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:3px solid currentColor;box-shadow:var(--sh-default);padding:10px 16px}</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Poster Archetypes</span><span class="sub">Four archetypes = four coordinates in the dial space · 5:7 master · full-bleed photo (you supply)</span><span class="tag">REALITY · Y2</span></header>
+
+  <div class="rail">
+
+    <div class="pcell"><div class="frame"><div class="poster scope-day" style="--accent:var(--blue)">
+      <div class="pphoto day"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+      <div class="pcanvas" style="color:#0d0905">
+        <div class="box solid" style="position:absolute;top:250px;left:50%;transform:translateX(-50%);padding:12px 26px"><span class="amk" style="letter-spacing:.18em;font-size:26px">Wed · 19:30</span></div>
+        <div style="position:absolute;top:350px;left:0;width:100%;text-align:center"><div class="atitle" style="font-size:176px">Pub</div><div class="atitle" style="font-size:176px">Quiz</div></div>
+        <div class="box paper" style="position:absolute;top:712px;left:50%;transform:translateX(-50%);padding:16px 30px"><span class="atag" style="font-size:28px">Six rounds · cold beer · bragging rights</span></div>
+        <div class="box solid" style="position:absolute;top:835px;left:50%;transform:translateX(-50%);padding:20px 34px;text-align:center"><div class="amk" style="color:var(--blue);letter-spacing:.2em;font-size:17px;margin-bottom:6px">Hosted by</div><div class="amk" style="font-size:44px;letter-spacing:.02em">The Quizmaster</div></div>
+      </div>
+      <div class="ticket-band" style="background:#fffbf1;color:#0d0905;--qr-bg:#fffbf1"><span class="tk-word">Reality</span><div class="tk-mid">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></div><div class="qr t-qr"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></div></div>
+    </div></div>
+      <div class="pc-cat">Community · day</div><div class="pc-name">Pub Quiz</div>
+      <div class="pc-note">Symmetric on the spine, calm <b>blue</b>, all solid blocks — the friendly baseline.</div>
+      <div class="pc-tags"><span>Day</span><span>Symmetric</span><span>Solid</span><span>Slam title</span><span>Ticket band</span></div>
+    </div>
+
+    <div class="pcell"><div class="frame"><div class="poster scope-day" style="--accent:var(--green)">
+      <div class="pphoto day"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+      <div class="pcanvas" style="color:#0d0905">
+        <div style="position:absolute;top:262px;left:0;width:100%;text-align:center"><span class="amk" style="letter-spacing:.22em;font-size:25px">Sunday · 17:00 · free</span></div>
+        <div style="position:absolute;top:344px;left:0;width:100%;text-align:center"><div class="atitle thin" style="font-size:140px">Acoustic</div><div class="atitle thin" style="font-size:140px">Sessions</div></div>
+        <div class="box paper" style="position:absolute;top:700px;left:50%;transform:translateX(-50%);padding:16px 30px"><span class="atag" style="font-size:27px">Unplugged on the patio</span></div>
+        <div class="box outline" style="position:absolute;top:822px;left:50%;transform:translateX(-50%);padding:20px 34px;text-align:center;background:rgba(255,251,241,.55)"><div class="amk" style="color:var(--green);letter-spacing:.2em;font-size:17px;margin-bottom:6px">With</div><div class="amk" style="font-size:42px;letter-spacing:.02em">Mai Linh Trio</div></div>
+      </div>
+      <div class="ticket-band" style="background:#fffbf1;color:#0d0905;--qr-bg:#fffbf1"><span class="tk-word">Reality</span><div class="tk-mid">realitydn.com<span>86 Mai Thúc Lân · Đà Nẵng</span></div><div class="qr t-qr"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></div></div>
+    </div></div>
+      <div class="pc-cat">Community · day</div><div class="pc-name">Acoustic Sessions</div>
+      <div class="pc-note">Same grid, but a <b>thin display title</b> + <b>outline box</b> let it breathe — calmer, <b>green</b>.</div>
+      <div class="pc-tags"><span>Day</span><span>Symmetric</span><span>Outline</span><span>Thin title</span><span>Ticket band</span></div>
+    </div>
+
+    <div class="pcell"><div class="frame"><div class="poster scope-night" style="--accent:var(--pink);--accent-2:var(--blue)">
+      <div class="pphoto night"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+      <div class="pcanvas" style="color:#fffbf1">
+        <div style="position:absolute;top:250px;left:96px"><span class="akick" style="color:var(--pink)">Fri · 22:00 — late</span></div>
+        <div class="mreg" style="position:absolute;top:330px;left:90px;font-size:150px;color:#fffbf1"><div class="l under l2">Pulse<br>Sessions</div><div class="l under l1">Pulse<br>Sessions</div><div class="l top">Pulse<br>Sessions</div></div>
+        <div class="flag" style="position:absolute;top:730px;left:96px;color:#0d0905;background:var(--pink);border-color:var(--pink);font-size:21px;transform:rotate(-3deg)">Free before 23:00</div>
+        <div class="box" style="position:absolute;top:840px;right:96px;padding:22px 30px;text-align:right;background:#0a0703;color:#fffbf1"><div class="amk" style="color:var(--pink);letter-spacing:.2em;font-size:16px;margin-bottom:7px">On the decks</div><div class="amk" style="font-size:46px;letter-spacing:.01em;line-height:.95">DJ Milk<br>Hanø · b2b</div></div>
+      </div>
+      <div class="ticket-corner" style="bottom:60px;right:60px;background:#0a0703;color:#fffbf1;--qr-bg:#0a0703"><span class="tk-word">Reality</span><div class="tk-lines">realitydn.com<span>86 Mai Thúc Lân</span></div><div class="qr" style="width:104px;height:104px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></div></div>
+    </div></div>
+      <div class="pc-cat">Nightlife · after dark</div><div class="pc-name">Pulse Sessions</div>
+      <div class="pc-note">Title slams left as a <b>misregistered print</b>, info offsets right, ticket drops to a <b>corner cluster</b>. Loud <b>pink</b>.</div>
+      <div class="pc-tags"><span>Night</span><span>Asymmetric</span><span>Misregister</span><span>Corner ticket</span></div>
+    </div>
+
+    <div class="pcell"><div class="frame"><div class="poster scope-night" style="--accent:var(--red);--accent-2:var(--amber)">
+      <div class="pphoto night"><span class="ptag">▲ YOUR PHOTO — FULL BLEED</span></div>
+      <div class="pcanvas" style="color:#fffbf1">
+        <div style="position:absolute;top:248px;left:96px"><span class="akick" style="color:var(--red)">Sat · 23:00 → 04:00</span></div>
+        <div class="box scrim" style="position:absolute;top:328px;left:80px;width:720px;padding:30px 40px 38px;transform:rotate(-2deg)"><div class="atitle" style="font-size:150px;color:#fffbf1">After<br>Dark</div><div class="atag" style="font-size:26px;color:rgba(255,251,241,.82);margin-top:14px">Residents + guests · 3 floors</div></div>
+        <div class="box accent" style="position:absolute;top:842px;left:96px;padding:22px 32px;transform:rotate(2deg)"><div class="amk" style="color:rgba(13,9,5,.6);letter-spacing:.2em;font-size:16px;margin-bottom:7px">Specials</div><div class="amk" style="font-size:44px;letter-spacing:.01em;line-height:.95">₫50k spirits<br>til 1am</div></div>
+      </div>
+      <div class="ticket-corner" style="bottom:60px;right:60px;background:#0a0703;color:#fffbf1;--qr-bg:#0a0703"><span class="tk-word">Reality</span><div class="tk-lines">realitydn.com<span>86 Mai Thúc Lân</span></div><div class="qr" style="width:104px;height:104px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i></div></div>
+    </div></div>
+      <div class="pc-cat">Nightlife · after dark</div><div class="pc-name">After Dark</div>
+      <div class="pc-note">The wildest read: a <b>translucent scrim</b> floats the title, a rotated <b>red specials box</b> packs extra info.</div>
+      <div class="pc-tags"><span>Night</span><span>Offset stagger</span><span>Scrim</span><span>Specials</span><span>Corner ticket</span></div>
+    </div>
+
+  </div>
+</body></html>

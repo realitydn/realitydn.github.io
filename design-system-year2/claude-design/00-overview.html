@@ -1,0 +1,90 @@
+<!-- @dsCard group="Overview" name="REALITY — Year 2" subtitle="Silkscreen / riso identity · one tokened theme, Day ⇄ Night" w="1100" h="800" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — REALITY — Year 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:root{
+  --yellow:#fddf00;--red:#ed2224;--blue:#18a7e0;
+  --pink:#ed1b72;--amber:#fdb515;--green:#43b02a;--purple:#6e3179;
+  --accent:var(--pink);--accent-2:var(--blue);
+  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;
+  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);
+  --hairline:rgba(13,9,5,.16);--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;
+  --space-6:24px;--space-7:32px;--space-8:48px;--space-9:64px;--space-10:96px;
+  --screen-pad:var(--space-5);--section-gap:var(--space-4);--card-pad:var(--space-5);
+  --row-y:var(--space-3);--tap-min:var(--space-8);--grid-cols:4;--grid-gutter:var(--space-3);
+  --mont:'Montserrat',sans-serif;--alt:'Montserrat Alternates',sans-serif;--grotesk:'Space Grotesk',sans-serif;
+  --ease-stamp:cubic-bezier(.2,1.4,.45,1);--ease-snap:cubic-bezier(.3,0,.2,1);--ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-tap:120ms;--dur-quick:200ms;--dur-settle:350ms;--dur-enter:700ms;--stagger:90ms;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --purple:#9a4faa;--bg:#0a0703;--surface:#171109;--surface-2:#241a10;
+  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  color-scheme:dark;
+}
+.scope-day{--bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;--fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);--hairline:rgba(13,9,5,.16);--sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);color-scheme:light}
+.scope-night{--bg:#0a0703;--surface:#171109;--surface-2:#241a10;--fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;--sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);color-scheme:dark}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+body.dsc{font-family:var(--grotesk);background:var(--bg);color:var(--fg);line-height:1.6;-webkit-font-smoothing:antialiased;padding:28px}
+.dsc-h{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--fg);padding-bottom:12px;margin-bottom:26px;flex-wrap:wrap}
+.dsc-h .nm{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px}
+.dsc-h .sub{font-family:var(--grotesk);font-weight:400;font-size:13px;color:var(--fg-dim);max-width:64ch}
+.dsc-h .tag{margin-left:auto;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:10px;background:var(--fg);color:var(--bg);padding:6px 11px;align-self:flex-start}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.dual{grid-template-columns:1fr}}
+.pane{background:var(--bg);color:var(--fg);padding:24px;border:2px solid var(--fg);box-shadow:var(--sh-default)}
+.pane>.plabel{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--fg-faint);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.pane>.plabel::before{content:"";width:9px;height:9px;border:2px solid var(--fg);display:inline-block}
+.eyebrow{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.15em;font-size:12px;color:var(--accent);margin:0 0 14px}
+.note{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default);padding:18px 22px;margin-top:22px}
+.note h4{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--accent);margin-bottom:10px}
+.note p{font-size:13.5px;color:var(--fg-dim);margin-bottom:7px}.note p:last-child{margin-bottom:0}
+.note b{color:var(--fg);font-weight:600}
+.wm{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;line-height:.9}
+.stack{display:flex;flex-direction:column;gap:20px}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.lbl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--fg-faint);margin-bottom:10px}
+
+  .cover{border:3px solid var(--fg);box-shadow:var(--sh-heavy);padding:44px}
+  .cover .kick{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.18em;font-size:12px;color:var(--accent);margin-bottom:18px}
+  .cover .wmlogo{max-width:520px;margin-bottom:18px}
+  .cover .lede{font-size:16px;color:var(--fg-dim);max-width:66ch}
+  .cover .lede b{color:var(--fg);font-weight:500}
+  .strip{display:flex;height:28px;margin:26px 0;border:2px solid var(--fg);box-shadow:var(--sh-light)}
+  .strip i{flex:1}
+  .dna{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+  @media(max-width:760px){.dna{grid-template-columns:1fr 1fr}}
+  .dna .p{border:2px solid var(--fg);box-shadow:var(--sh-light);padding:18px;background:var(--surface)}
+  .dna .n{font-family:var(--mont);font-weight:100;font-size:40px;line-height:1;color:var(--accent);margin-bottom:8px}
+  .dna h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:13px;margin-bottom:6px}
+  .dna p{font-size:12px;color:var(--fg-dim)}
+  .convs{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .convs span{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10px;border:2px solid var(--fg);padding:7px 11px;box-shadow:var(--sh-light)}</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">REALITY — Year 2</span><span class="sub">Silkscreen / riso identity · one tokened theme, Day ⇄ Night</span><span class="tag">REALITY · Y2</span></header>
+
+  <div class="cover">
+    <div class="kick">Bar · Café · Community — Đà Nẵng, Việt Nam</div>
+    <div class="wmlogo"><svg viewBox="60 6 384 72" role="img" aria-label="REALITY" style="display:block;width:100%;height:auto;color:var(--fg)"><g fill="currentColor"><path d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/><path d="M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z"/><path d="M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z"/><path d="M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z"/><path d="M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z"/><path d="M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z"/><path d="M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z"/></g></svg></div>
+    <p class="lede">The complete Year-2 visual system: <b>foundations</b> (colour, type, spacing, shadow, motion, icons), an <b>app component set</b>, a <b>photo language</b>, and a nightlife <b>poster system</b>. One tokened theme that flips between <b>Day</b> (ink-on-cream) and <b>Night</b> (cream-on-ink). Everything re-skins from <code>--fg</code> / <code>--bg</code> + the accent.</p>
+    <div class="strip"><i style="background:var(--yellow)"></i><i style="background:var(--red)"></i><i style="background:var(--blue)"></i><i style="background:var(--pink)"></i><i style="background:var(--amber)"></i><i style="background:var(--green)"></i><i style="background:var(--purple)"></i></div>
+    <div class="dna">
+      <div class="p"><div class="n">01</div><h5>Ink &amp; paper</h5><p>Two-colour thinking. Cream + ink carry everything; the palette is an accent, not a background.</p></div>
+      <div class="p"><div class="n">02</div><h5>Hard corners</h5><p>No radius, anywhere. Everything is a stamped rectangle.</p></div>
+      <div class="p"><div class="n">03</div><h5>Down-shadow</h5><p>Flat offset shadow — objects sit above the paper. Inverts to cream after dark.</p></div>
+      <div class="p"><div class="n">04</div><h5>Stamp, don't float</h5><p>Motion punches in with overshoot and settles. No slow fades from nowhere.</p></div>
+    </div>
+    <div class="convs"><span>Major colour leads</span><span>Full-bleed photo</span><span>Swiss alignment</span><span>Talk = bottom banner</span><span>Settle, don't snap</span></div>
+  </div>
+</body></html>

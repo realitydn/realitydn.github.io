@@ -234,6 +234,10 @@ const QR = qrCells();
 /* canonical wordmark, inlined from assets/wordmark/reality-wordmark.svg */
 const WORDMARK = `<svg viewBox="60 6 384 72" role="img" aria-label="REALITY" style="display:block;width:100%;height:auto;color:var(--fg)"><g fill="currentColor"><path d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/><path d="M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z"/><path d="M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z"/><path d="M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z"/><path d="M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z"/><path d="M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z"/><path d="M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z"/></g></svg>`;
 
+/* "R" lettermark / favicon, inlined from assets/wordmark/reality-mark-R.svg
+   (the deliberate radius exception — app-icon corners) */
+const RMARK = `<svg viewBox="64 7 62 62" role="img" aria-label="REALITY R mark" style="display:block;width:100%;height:100%"><rect x="64" y="7" width="62" height="62" rx="8" fill="var(--fg)"/><path fill="var(--bg)" d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/></svg>`;
+
 /* ============================================================
    CARDS
    ============================================================ */
@@ -348,14 +352,14 @@ add('12-typography.html', {
   .h2{font-family:var(--mont);font-weight:600;font-size:24px;text-transform:uppercase;letter-spacing:.05em}
   .lab{font-family:var(--mont);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.15em;color:var(--accent)}
   .bd{font-family:var(--grotesk);font-weight:400;font-size:17px;line-height:1.7;color:var(--fg-dim);max-width:60ch}
-  .wd{font-family:var(--alt);font-weight:600;font-size:clamp(36px,5vw,60px);text-transform:uppercase;letter-spacing:.02em}`,
+  .wd{width:100%;max-width:330px}`,
   body: `
   <div class="trow"><div class="tm">Display<br>Montserrat 100<br>clamp 40–82 · .05em</div><div class="d">After Dark</div></div>
   <div class="trow"><div class="tm">H1<br>Montserrat 700<br>clamp 30–46 · .05em</div><div class="h1">Happy Hour</div></div>
   <div class="trow"><div class="tm">H2<br>Montserrat 600<br>24px · .05em</div><div class="h2">This Week at Reality</div></div>
   <div class="trow"><div class="tm">Label / eyebrow<br>Montserrat 700<br>13px · .15em</div><div class="lab">Live Music · Tonight</div></div>
   <div class="trow"><div class="tm">Body<br>Space Grotesk 400<br>17px · lh 1.7</div><div class="bd">Open daily 11:00–02:00 at 86 Mai Thúc Lân. A bar that runs on two colours — cream and ink — and a palette that only ever shows up as an accent.</div></div>
-  <div class="trow"><div class="tm">Wordmark<br>Mont. Alternates 600<br>tracked .1em (baked SVG)</div><div class="wd">Reality</div></div>`
+  <div class="trow"><div class="tm">Wordmark<br>Mont. + Alternates<br>A/I/Y only · baked SVG</div><div class="wd">${WORDMARK}</div></div>`
 });
 
 add('13-shadow.html', {
@@ -686,23 +690,29 @@ add('29-icons.html', {
     <div class="t">${icon('music',{size:46,mode:'solid'})}<span class="cap">Solid</span></div>
     <div class="t">${icon('music',{size:46,mode:'solid',echo:'var(--accent)'})}<span class="cap">Echo</span></div>
     <div class="t">${icon('music',{size:46,mode:'stroke',echo:'var(--accent)'})}<span class="cap">Echo-line</span></div>
-  </div>`
+  </div>
+  <div class="note"><h4>Construction</h4><p>24×24 grid · geometric primitives · <b>2px</b> stroke (2.6px in solid) · <b>square caps, miter joins</b>. Echo offsets the accent pass +1.6 / +1.8px. Resolved per theme — <b>Day = stroke, Night = echo-line</b>.</p></div>`
 });
 
 /* ---------- BRAND ---------- */
 add('30-wordmark.html', {
-  group: 'Brand', name: 'Wordmark & Lettermark', subtitle: 'Montserrat with the Alternates A / I / Y only · Semi-Bold, tracked 0.1em · baked vector',
-  w: 1100, h: 560,
+  group: 'Brand', name: 'Wordmark & Lettermark', subtitle: 'Montserrat with the Alternates A / I / Y only · Semi-Bold, tracked 0.1em · baked vector (ships in /assets)',
+  w: 1100, h: 620,
   css: `
-  .stage{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .stage{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
   @media(max-width:760px){.stage{grid-template-columns:1fr}}
-  .panebox{border:2px solid var(--fg);box-shadow:var(--sh-default);padding:46px 40px;display:flex;align-items:center;justify-content:center}`,
+  .panebox{border:2px solid var(--fg);box-shadow:var(--sh-default);padding:42px 40px;display:flex;align-items:center;justify-content:center;gap:32px}
+  .panebox .rmk{width:84px;height:84px;flex:none}
+  .files{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .files span{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:10px;border:2px solid var(--fg);padding:7px 11px;box-shadow:var(--sh-light)}`,
   body: `
   <div class="stage">
-    <div class="panebox scope-day" style="background:var(--bg)">${WORDMARK}</div>
-    <div class="panebox scope-night" style="background:var(--bg)">${WORDMARK}</div>
+    <div class="panebox scope-day" style="background:var(--bg)"><div style="flex:1">${WORDMARK}</div><span class="rmk">${RMARK}</span></div>
+    <div class="panebox scope-night" style="background:var(--bg)"><div style="flex:1">${WORDMARK}</div><span class="rmk">${RMARK}</span></div>
   </div>
-  <div class="note"><h4>Construction (corrected canon)</h4><p>The canonical wordmark is a <b>baked SVG</b> — Montserrat Semi-Bold, all caps, tracked <b>0.1em</b>, with the Montserrat&nbsp;Alternates forms supplying the <b>A / I / Y only</b> (the R, E, L, T stay Montserrat). You can't get this mixed-font mark from one CSS font-family, so don't re-typeset it. Recolour with <code>fill</code> / <code>currentColor</code>; the favicon is the "R" of that same vector.</p></div>`
+  <div class="note"><h4>Construction (corrected canon)</h4><p>The canonical wordmark is a <b>baked SVG</b> — Montserrat Semi-Bold, all caps, tracked <b>0.1em</b>, with the Montserrat&nbsp;Alternates forms supplying the <b>A / I / Y only</b> (the R, E, L, T stay Montserrat). You can't get this mixed-font mark from one CSS font-family, so <b>don't re-typeset it</b> — use the supplied vector. Recolour with <code>fill</code> / <code>currentColor</code>. The <b>"R" lettermark</b> (favicon) is the same R in a rounded tile — the one deliberate radius exception.</p>
+  <p>Ship-ready files in this package:</p>
+  <div class="files"><span>assets/wordmark/reality-wordmark.svg</span><span>assets/wordmark/reality-mark-R.svg</span><span>assets/qr/reality-qr-ink.svg</span></div></div>`
 });
 
 /* ---------- PHOTO ---------- */
@@ -712,7 +722,7 @@ add('40-photo.html', {
   css: `
   .ph{position:relative;height:230px;border:2px solid var(--fg);box-shadow:var(--sh-default);background:repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 18px,var(--bg) 18px,var(--bg) 36px);display:flex;align-items:center;justify-content:center;overflow:hidden}
   .ph .stripeLabel{font-family:var(--mont);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:13px;background:var(--bg);padding:7px 12px;border:2px solid var(--fg)}
-  .ph .logobox{position:absolute;left:16px;bottom:16px;background:var(--fg);color:var(--on-ink);font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:22px;padding:8px 14px;border:2px solid var(--fg)}
+  .ph .logobox{position:absolute;left:16px;bottom:16px;background:var(--fg);color:var(--bg);font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacing:.02em;font-size:22px;padding:8px 14px;border:2px solid var(--fg)}
   .treats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
   @media(max-width:760px){.treats{grid-template-columns:1fr 1fr}}
   .tr{border:2px solid var(--fg);box-shadow:var(--sh-light);background:var(--surface);padding:12px 14px}
@@ -942,6 +952,18 @@ for (const f of ['reality-tokens.css', 'reality-tokens.json']) {
   if (existsSync(src)) copyFileSync(src, join(OUT, f));
 }
 
+/* ship the real brand assets so Claude Design can place the actual logo + QR */
+const ASSETS = [
+  'assets/wordmark/reality-wordmark.svg',
+  'assets/wordmark/reality-mark-R.svg',
+  'assets/qr/reality-qr-ink.svg',
+  'assets/qr/reality-qr-ink-on-cream.png',
+];
+for (const rel of ASSETS) {
+  const src = join(SRC, rel);
+  if (existsSync(src)) { mkdirSync(dirname(join(OUT, rel)), { recursive: true }); copyFileSync(src, join(OUT, rel)); }
+}
+
 /* local contact-sheet index (not a card) */
 const indexHtml = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REALITY · Year 2 — Claude Design package</title>${FONTS}<style>${TOKENS}
 body{font-family:var(--grotesk);background:var(--bg);color:var(--fg);padding:32px;max-width:1320px;margin:0 auto}
@@ -957,7 +979,7 @@ h1{font-family:var(--alt);font-weight:600;text-transform:uppercase;letter-spacin
 a{color:inherit;text-decoration:none}</style></head><body>
 <h1>Reality</h1><div class="sub">Year 2 Design System — Claude Design package · ${cards.length} cards</div>
 <div class="grid">
-${cards.map(c => { const m = c.html.match(/group="([^"]*)" name="([^"]*)"/); return `<a class="card" href="${c.filename}" target="_blank"><div class="frame"><iframe src="${c.filename}" loading="lazy" scrolling="no"></iframe></div><div class="meta"><div class="g">${m?m[1]:''}</div><div class="nm">${m?m[2]:c.filename}</div></div></a>`; }).join('\n')}
+${cards.map(c => { const m = c.html.match(/group="([^"]*)" name="([^"]*)"/); return `<a class="card" href="${c.filename}" target="_blank"><div class="frame"><iframe src="${c.filename}" scrolling="no"></iframe></div><div class="meta"><div class="g">${m?m[1]:''}</div><div class="nm">${m?m[2]:c.filename}</div></div></a>`; }).join('\n')}
 </div></body></html>`;
 writeFileSync(join(OUT, 'index.html'), indexHtml, 'utf8');
 

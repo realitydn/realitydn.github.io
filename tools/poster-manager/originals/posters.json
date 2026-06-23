@@ -1,6 +1,30 @@
 {
   "posters": [
     {
+      "file": "nutritionfiber-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "nutritionfiber-4x5",
+      "day": 4,
+      "accent": null
+    },
+    {
+      "file": "tosa20buildings-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "tosa20buildings-4x5",
+      "day": 6,
+      "accent": null
+    },
+    {
+      "file": "5-fri-filmclub10thmonth-4x5.png",
+      "alt": "",
+      "title": "",
+      "slug": "filmclub10thmonth-4x5",
+      "day": 5,
+      "accent": "red"
+    },
+    {
       "file": "datingredesign-4x5.png",
       "alt": "",
       "title": "",

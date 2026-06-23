@@ -41,9 +41,14 @@ stylesheet or build step. The only external dependency is Google Fonts
 | `51-poster-grid.html`     | Posters     | Poster Grid System (5:7 · 108px module · ticket variants) |
 | `52-poster-grammar.html`  | Posters     | Poster Grammar (Frame · Parts · the 7 dials) |
 
-Also included: `reality-tokens.css` / `reality-tokens.json` (the framework-agnostic
-token source for wiring into real codebases) and `index.html` (a local contact
-sheet — open it in a browser to see every card at once; it is **not** a card).
+Also included:
+- `reality-tokens.css` / `reality-tokens.json` — the framework-agnostic token source.
+- `assets/` — the **real, ship-ready brand files**: `wordmark/reality-wordmark.svg`
+  (canonical mixed-font mark), `wordmark/reality-mark-R.svg` (the "R" favicon),
+  and `qr/reality-qr-ink.svg` + `qr/reality-qr-ink-on-cream.png` (scannable, encodes
+  `https://realitydn.com`). Use these directly — don't re-typeset the wordmark.
+- `index.html` — a local contact sheet (open in a browser to see every card at once;
+  it is **not** a card).
 
 Most foundation/component cards show **Day and Night side by side** via the
 `.scope-day` / `.scope-night` local theme scopes.

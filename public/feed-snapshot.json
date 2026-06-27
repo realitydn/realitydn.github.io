@@ -1,0 +1,280 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-28T04:25:32+07:00",
+  "venue": {
+    "name": "REALITY",
+    "address": "14 Đống Đa, Đà Nẵng",
+    "tz": "Asia/Ho_Chi_Minh"
+  },
+  "locations": [
+    {
+      "code": "1L",
+      "name_en": "REALITY, 1st Floor Lounge",
+      "name_vi": "REALITY, Sảnh tầng 1",
+      "outdoor": false
+    },
+    {
+      "code": "2L",
+      "name_en": "REALITY, 2nd Floor Lounge",
+      "name_vi": "REALITY, Sảnh tầng 2",
+      "outdoor": false
+    },
+    {
+      "code": "2E",
+      "name_en": "REALITY, 2nd Floor Event Space",
+      "name_vi": "REALITY, Không gian sự kiện tầng 2",
+      "outdoor": false
+    },
+    {
+      "code": "3P",
+      "name_en": "REALITY, 3rd Floor Patio",
+      "name_vi": "REALITY, Sân thượng tầng 3",
+      "outdoor": true
+    }
+  ],
+  "events": [
+    {
+      "id": "seed_pubquiz",
+      "seriesId": "ser_pubquiz",
+      "title_en": "Pub Quiz Night",
+      "title_vi": "Đêm Đố Vui",
+      "description_en": "Our weekly pub quiz — gather a team and test your trivia over drinks. Free to play, prizes for the winners.",
+      "description_vi": "Đêm đố vui hằng tuần — lập đội và thử tài hiểu biết cùng đồ uống. Miễn phí tham gia, có giải cho đội thắng.",
+      "startsAt": "2026-06-28T19:00:00+07:00",
+      "endsAt": "2026-06-28T21:00:00+07:00",
+      "location": {
+        "code": "2E",
+        "name_en": "REALITY, 2nd Floor Event Space",
+        "name_vi": "REALITY, Không gian sự kiện tầng 2",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "quiz",
+        "weekly"
+      ],
+      "sourceUrl": "https://www.facebook.com/realitybarcafedanang/",
+      "posters": {
+        "feed": "/images/events/pubquiz-4x5.jpg",
+        "poster4x5": "/images/events/pubquiz-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_boardgame",
+      "seriesId": "ser_boardgame",
+      "title_en": "Board Game Monday",
+      "title_vi": "Thứ Hai Board Game",
+      "description_en": "Start the week with a stack of board games and friendly faces. All levels welcome.",
+      "description_vi": "Bắt đầu tuần mới với hàng loạt board game và những gương mặt thân thiện. Chào đón mọi trình độ.",
+      "startsAt": "2026-06-29T18:30:00+07:00",
+      "endsAt": "2026-06-29T21:30:00+07:00",
+      "location": {
+        "code": "1L",
+        "name_en": "REALITY, 1st Floor Lounge",
+        "name_vi": "REALITY, Sảnh tầng 1",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "games",
+        "weekly"
+      ],
+      "sourceUrl": null,
+      "posters": {
+        "feed": "/images/events/boardgamemonday-4x5.jpg",
+        "poster4x5": "/images/events/boardgamemonday-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_chess",
+      "seriesId": "ser_chess",
+      "title_en": "Chess Night",
+      "title_vi": "Đêm Cờ Vua",
+      "description_en": "Casual chess for players of every level — drop in for a few games.",
+      "description_vi": "Cờ vua thân thiện cho mọi trình độ — ghé chơi vài ván.",
+      "startsAt": "2026-06-30T19:00:00+07:00",
+      "endsAt": "2026-06-30T21:00:00+07:00",
+      "location": {
+        "code": "1L",
+        "name_en": "REALITY, 1st Floor Lounge",
+        "name_vi": "REALITY, Sảnh tầng 1",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "games",
+        "weekly"
+      ],
+      "sourceUrl": null,
+      "posters": {
+        "feed": "/images/events/chessnight-4x5.jpg",
+        "poster4x5": "/images/events/chessnight-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_languagemixer",
+      "seriesId": "ser_languagemixer",
+      "title_en": "Language Mixer",
+      "title_vi": "Giao Lưu Ngôn Ngữ",
+      "description_en": "Practise English, Vietnamese and more with a friendly international crowd.",
+      "description_vi": "Luyện tiếng Anh, tiếng Việt và nhiều ngôn ngữ khác cùng cộng đồng quốc tế thân thiện.",
+      "startsAt": "2026-07-02T19:00:00+07:00",
+      "endsAt": "2026-07-02T21:00:00+07:00",
+      "location": {
+        "code": "2E",
+        "name_en": "REALITY, 2nd Floor Event Space",
+        "name_vi": "REALITY, Không gian sự kiện tầng 2",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "community",
+        "language",
+        "weekly"
+      ],
+      "sourceUrl": null,
+      "posters": {
+        "feed": "/images/events/languagemixer-4x5.jpg",
+        "poster4x5": "/images/events/languagemixer-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_filmclub",
+      "seriesId": "ser_filmclub",
+      "title_en": "Film Club",
+      "title_vi": "Câu Lạc Bộ Phim",
+      "description_en": "A weekly screening with the Đà Nẵng Film Forum, followed by an open discussion.",
+      "description_vi": "Buổi chiếu phim hằng tuần cùng Đà Nẵng Film Forum, kèm thảo luận mở.",
+      "startsAt": "2026-07-03T19:30:00+07:00",
+      "endsAt": "2026-07-03T22:00:00+07:00",
+      "location": {
+        "code": "2E",
+        "name_en": "REALITY, 2nd Floor Event Space",
+        "name_vi": "REALITY, Không gian sự kiện tầng 2",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "film",
+        "weekly"
+      ],
+      "sourceUrl": "https://www.facebook.com/realitybarcafedanang/",
+      "posters": {
+        "feed": "/images/events/filmclub10thmonth-4x5.jpg",
+        "poster4x5": "/images/events/filmclub10thmonth-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_openmic",
+      "seriesId": "ser_openmic",
+      "title_en": "Open Mic Night",
+      "title_vi": "Đêm Open Mic",
+      "description_en": "Bring a song, a poem, a set — the stage is yours. Sign-ups at the bar.",
+      "description_vi": "Mang đến một bài hát, một bài thơ, một tiết mục — sân khấu là của bạn. Đăng ký tại quầy bar.",
+      "startsAt": "2026-07-03T20:00:00+07:00",
+      "endsAt": "2026-07-03T23:00:00+07:00",
+      "location": {
+        "code": "3P",
+        "name_en": "REALITY, 3rd Floor Patio",
+        "name_vi": "REALITY, Sân thượng tầng 3",
+        "outdoor": true
+      },
+      "host": "REALITY",
+      "tags": [
+        "music",
+        "openmic",
+        "weekly"
+      ],
+      "sourceUrl": null,
+      "posters": {
+        "feed": "/images/events/nomicopenmic-4x5.jpg",
+        "poster4x5": "/images/events/nomicopenmic-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_hitster",
+      "seriesId": "ser_hitster",
+      "title_en": "Hitster Music Game",
+      "title_vi": "Trò Chơi Âm Nhạc Hitster",
+      "description_en": "A fast, fun music-guessing party game. Teams, hits, and bragging rights.",
+      "description_vi": "Trò chơi đoán nhạc nhanh và vui nhộn. Theo đội, đoán hit và giành quyền tự hào.",
+      "startsAt": "2026-07-04T19:00:00+07:00",
+      "endsAt": "2026-07-04T21:00:00+07:00",
+      "location": {
+        "code": "2L",
+        "name_en": "REALITY, 2nd Floor Lounge",
+        "name_vi": "REALITY, Sảnh tầng 2",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "games",
+        "music",
+        "weekly"
+      ],
+      "sourceUrl": null,
+      "posters": {
+        "feed": "/images/events/hitster-4x5.jpg",
+        "poster4x5": "/images/events/hitster-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    },
+    {
+      "id": "seed_womenofreality",
+      "seriesId": null,
+      "title_en": "Women of REALITY Meetup",
+      "title_vi": "Gặp Gỡ Phụ Nữ REALITY",
+      "description_en": "A relaxed afternoon meetup for the women of our community.",
+      "description_vi": "Một buổi chiều thư giãn dành cho cộng đồng phụ nữ của chúng ta.",
+      "startsAt": "2026-07-04T16:00:00+07:00",
+      "endsAt": "2026-07-04T18:00:00+07:00",
+      "location": {
+        "code": "2L",
+        "name_en": "REALITY, 2nd Floor Lounge",
+        "name_vi": "REALITY, Sảnh tầng 2",
+        "outdoor": false
+      },
+      "host": "REALITY",
+      "tags": [
+        "community"
+      ],
+      "sourceUrl": null,
+      "posters": {
+        "feed": "/images/events/womenofreality-4x5.jpg",
+        "poster4x5": "/images/events/womenofreality-4x5.jpg",
+        "square1x1": null,
+        "story": null
+      },
+      "status": "published",
+      "updatedAt": "2026-06-26T04:25:32+07:00"
+    }
+  ],
+  "seed": true
+}

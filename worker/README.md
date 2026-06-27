@@ -1,6 +1,16 @@
 # REALITY Form Handler Worker
 
-A Cloudflare Worker that handles form submissions for the REALITY website, integrating with Notion, Google Sheets, and Resend email.
+> **2026-06 update (WP6 / Events Platform).** Proposals now POST cross-origin
+> from the website directly to the hub at `https://app.realitydn.com/api/proposals`
+> (Plan B), which owns persistence + admin review. The **Notion** and
+> **Google Sheets** writes have been removed from this worker (`notion.js` /
+> `sheets.js` deleted); only the best-effort **Resend** confirmation email
+> remains. This worker is now only a no-op fallback in the proposal path —
+> the sections below that mention Notion/Sheets describe the pre-2026-06
+> design and are kept for history. See `../FORMS-INTEGRATION-PLAN.md`.
+
+A Cloudflare Worker that handles form submissions for the REALITY website. It
+validates the payload and sends a best-effort Resend confirmation email.
 
 ## Overview
 

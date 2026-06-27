@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/fetch-feed.mjs",
     "build": "vite build",
     "build:no-prerender": "SKIP_PRERENDER=1 vite build",
     "preview": "vite preview",
+    "selftest": "node scripts/selftest.mjs",
     "clean": "rm -rf dist node_modules package-lock.json"
   },
   "dependencies": {

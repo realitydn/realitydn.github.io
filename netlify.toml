@@ -2,6 +2,12 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  # Public hub URL for the Events Feed (not a secret). The build-time snapshot
+  # script (scripts/fetch-feed.mjs) and src/data/feed.js both default to this
+  # value, so the build works unset; this just makes the override explicit.
+  VITE_FEED_BASE = "https://app.realitydn.com"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

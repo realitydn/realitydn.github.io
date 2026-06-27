@@ -1,3 +1,7 @@
+// TODO(WP7-followup): retire the Poster Manager once the feed-driven carousel
+// (EventsSection.jsx via useFeed() → the REALITY Events Feed) is verified in prod.
+// As of WP7 the site no longer reads public/events-config.json; this tool is kept
+// only as a fallback during the prod soak.
 const express = require('express');
 const path = require('path');
 const fs = require('fs');

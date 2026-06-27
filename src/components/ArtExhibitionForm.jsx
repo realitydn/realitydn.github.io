@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { URLS } from '../data/translations';
 
-const WORKER_URL = '';
+// Proposals now POST cross-origin to the hub (Plan B). The hub's
+// /api/proposals route CORS-allows realitydn.com and is dormant-safe
+// (no Turnstile secret yet → accepts + flags the submission).
+const HUB = (import.meta.env.VITE_HUB_URL || 'https://app.realitydn.com').replace(/\/$/, '');
+
+// Cloudflare Turnstile. Falsy site key → render nothing and submit with no
+// token; the hub accepts unverified submissions until TURNSTILE_SECRET is set.
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
+const TURNSTILE_API_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
 
 export default function ArtExhibitionForm({ t, onSuccess }) {
   const [step, setStep] = useState(1);
@@ -28,6 +36,19 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
     curatorInfo: '',
     honeypot: '',
   });
+
+  // Load the Turnstile script once, only when a site key is configured.
+  // When no key is set the widget renders nothing and we submit without a
+  // token (the hub accepts unverified submissions in that case).
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+    if (document.querySelector(`script[src="${TURNSTILE_API_SRC}"]`)) return;
+    const script = document.createElement('script');
+    script.src = TURNSTILE_API_SRC;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }, []);
 
   const validateStep = (stepNum) => {
     const newErrors = {};
@@ -129,15 +150,18 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch(`${WORKER_URL}/api/art-exhibition`, {
+      const turnstileToken =
+        (TURNSTILE_SITE_KEY && window.turnstile?.getResponse()) || undefined;
+
+      const response = await fetch(`${HUB}/api/proposals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ kind: 'art', ...formData, turnstileToken }),
       });
 
-      // Guard against the SPA catch-all serving index.html when the worker
-      // route isn't actually wired up — a 200 with text/html would otherwise
-      // look like a successful submit.
+      // Guard against the SPA catch-all serving index.html if a misconfigured
+      // origin ever returns it — a 200 with text/html would otherwise look
+      // like a successful submit.
       const contentType = response.headers.get('content-type') || '';
       const gotJson = contentType.includes('application/json');
 
@@ -579,6 +603,17 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
                   <p className="font-body">{formData.isGroupShow}</p>
                 </div>
               </div>
+
+              {/* Cloudflare Turnstile — renders only when a site key is set.
+                  Without one the widget is absent and the form submits without
+                  a token; the hub accepts unverified submissions until the
+                  TURNSTILE_SECRET is configured server-side. */}
+              {TURNSTILE_SITE_KEY && (
+                <div
+                  className="cf-turnstile"
+                  data-sitekey={TURNSTILE_SITE_KEY}
+                />
+              )}
 
               <div className="flex gap-2">
                 <button

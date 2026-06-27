@@ -1,13 +1,16 @@
 /**
  * Event Proposal form submission handler
+ *
+ * Note (2026-06, WP6): proposals now post cross-origin from the website
+ * directly to the hub (app.realitydn.com /api/proposals), which owns
+ * persistence + review. The Notion and Google Sheets writes were removed.
+ * This handler is retained only as a no-op fallback: it validates the
+ * payload and sends the best-effort Resend confirmation email, so a
+ * same-origin POST (Plan A, if a proxy is ever added) still works.
  */
 
 import { validateEventProposalPayload } from '../utils/validate.js';
-import { createNotionPage, buildEventProposalProperties } from '../services/notion.js';
-import { appendSheetRow, formatEventProposalForSheets } from '../services/sheets.js';
 import { sendConfirmationEmail } from '../services/resend.js';
-
-const EVENT_PROPOSAL_DB_ID = 'aa5974af9aaf48cda868b33b4e8096f6';
 
 export async function handleEventProposal(request, env) {
   try {
@@ -24,16 +27,6 @@ export async function handleEventProposal(request, env) {
       return createErrorResponse(400, 'Validation failed', validationErrors);
     }
 
-    // Create Notion page (primary integration - must succeed)
-    let notionResult;
-    try {
-      const properties = buildEventProposalProperties(body);
-      notionResult = await createNotionPage(env, EVENT_PROPOSAL_DB_ID, properties);
-    } catch (error) {
-      console.error('Critical error: Notion creation failed', error);
-      return createErrorResponse(500, 'Failed to process submission. Please try again.');
-    }
-
     // Send confirmation email (non-critical - best effort)
     const emailResult = await sendConfirmationEmail(env, body.email, 'event-proposal', body).catch(error => {
       console.error('Error sending email:', error);
@@ -41,28 +34,12 @@ export async function handleEventProposal(request, env) {
     });
 
     if (!emailResult.success && !emailResult.skipped) {
-      console.warn('Email notification failed but Notion succeeded:', emailResult.error);
-    }
-
-    // Append to Sheets (non-critical - best effort)
-    let sheetsResult = { success: true };
-    if (env.EVENT_PROPOSAL_SHEET_ID) {
-      const rowData = formatEventProposalForSheets(body);
-      sheetsResult = await appendSheetRow(env, env.EVENT_PROPOSAL_SHEET_ID, 'Form Responses 1', rowData).catch(error => {
-        console.error('Error appending to Sheets:', error);
-        return { success: false, error: error.message };
-      });
-
-      if (!sheetsResult.success && !sheetsResult.skipped) {
-        console.warn('Sheets backup failed but Notion succeeded:', sheetsResult.error);
-      }
+      console.warn('Confirmation email failed:', emailResult.error);
     }
 
     return createSuccessResponse({
       message: 'Event proposal received successfully',
-      submissionId: notionResult.pageId,
-      emailSent: emailResult.success,
-      backupSaved: sheetsResult.success
+      emailSent: emailResult.success
     });
   } catch (error) {
     console.error('Unexpected error in handleEventProposal:', error);

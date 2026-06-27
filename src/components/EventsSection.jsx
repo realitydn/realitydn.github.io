@@ -1,101 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import CardsCarousel from './CardsCarousel';
+import useFeed from '../hooks/useFeed';
+import {
+  dedupeSeries,
+  pickPoster,
+  pickTitle,
+  weekdayFromISO,
+  orderByDay,
+} from '../data/feed-helpers';
 
-// Order posters so today's weekday leads and the week rolls forward
-// (Tue → Wed → … → Mon), recomputed each visit. "Today" is Đà Nẵng time
-// (Asia/Ho_Chi_Minh) — that's where the events happen — so the order is the same
-// for a local visitor and a traveller checking from abroad. `day` is 1–7
-// (Mon=1 … Sun=7, from events-config.json); undated posters keep their relative
-// order and fall to the end.
-const DAY_NUM = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+// EventsSection — the poster carousel. Sourced from the REALITY Events Feed
+// (useFeed) rather than the old public/events-config.json. Recurring series are
+// collapsed to their soonest upcoming instance; one-offs always show. Cards are
+// ordered today-first (by ICT weekday, mirroring the prior behaviour) but the
+// underlying list is built soonest-first so "today" leads with the next real event.
+//
+// This site's language toggle is 'EN' | 'VN' (NOT en/vi); feed-helpers map 'VN' → *_vi.
 
-function vnToday() {
-  const abbr = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short',
-  }).format(new Date());
-  return DAY_NUM[abbr] || 1;
-}
+export default function EventsSection({ t, lang = 'EN' }) {
+  const { events, loading } = useFeed();
 
-function orderByDay(list) {
-  const today = vnToday();
-  return list
-    .map((e, i) => ({ e, i }))
-    .sort((a, b) => {
-      const ra = a.e.day ? (a.e.day - today + 7) % 7 : 99;
-      const rb = b.e.day ? (b.e.day - today + 7) % 7 : 99;
-      return ra - rb || a.i - b.i; // stable: keep manager order within a day
-    })
-    .map((x) => x.e);
-}
+  const cards = useMemo(() => {
+    // De-dup recurring series (soonest instance), then sort by start ascending so
+    // the soonest real event is first; map to the card shape renderEventCard wants,
+    // skipping any event with no usable poster (feed → poster4x5 → skip).
+    const deduped = dedupeSeries(events || [])
+      .slice()
+      .sort((a, b) => Date.parse(a.startsAt || 0) - Date.parse(b.startsAt || 0));
 
-export default function EventsSection({ t }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch the config file. Each entry is either:
-    //   "a.jpg"                                      — bare filename
-    //   { "file": "a.jpg", "alt": "...", "title": "..." }  — richer, preferred
-    fetch('/events-config.json')
-      .then(res => res.json())
-      .then(config => {
-        const eventList = config.events.map((entry, index) => {
-          const obj = typeof entry === 'string' ? { file: entry } : entry;
-
-          // New format from poster-manager: { slug, webp, jpg, full, alt, title }
-          // Legacy format: bare string "a.jpg" or { file: "a.jpg", alt, title }
-          const isNew = !!obj.slug;
-          const img = isNew
-            ? `/images/events/${obj.jpg}`
-            : `/images/events/${obj.file}`;
-          const webp = isNew ? `/images/events/${obj.webp}` : null;
-          const full = isNew ? `/images/events/${obj.full}` : null;
-
-          return {
-            id: `event-${index + 1}`,
-            img,
-            webp,
-            full,
-            alt: obj.alt || obj.title || 'REALITY event poster — Đà Nẵng',
-            title: obj.title || null,
-            day: obj.day || null,       // 1–7 (Mon=1) — drives today-first ordering
-            accent: obj.accent || null, // palette name, stored for future theming
-          };
-        });
-        setEvents(orderByDay(eventList));
-        setLoading(false);
+    const mapped = deduped
+      .map((ev) => {
+        const poster = pickPoster(ev.posters);
+        if (!poster) return null;
+        const title = pickTitle(ev, lang) || null;
+        return {
+          id: ev.id,
+          img: poster,
+          webp: null,
+          full: ev.posters?.poster4x5 || poster,
+          alt: title || 'REALITY event poster — Đà Nẵng',
+          title,
+          day: weekdayFromISO(ev.startsAt), // 1–7 (Mon=1) for today-first ordering
+          startsAt: ev.startsAt,
+        };
       })
-      .catch(err => {
-        console.log('No events config found, falling back to numbered files');
-        loadNumberedEvents();
-      });
-  }, []);
+      .filter(Boolean);
 
-  const loadNumberedEvents = () => {
-    const checkImages = async () => {
-      const checks = await Promise.all(
-        Array.from({ length: 20 }, (_, i) => {
-          const img = new Image();
-          return new Promise((resolve) => {
-            img.onload = () => resolve({ 
-              id: `event-${i + 1}`,
-              img: `/images/events/${i + 1}.jpg`,
-              alt: `Event poster ${i + 1}`,
-              valid: true 
-            });
-            img.onerror = () => resolve({ valid: false });
-            img.src = `/images/events/${i + 1}.jpg`;
-          });
-        })
-      );
-      
-      const valid = checks.filter(e => e.valid);
-      setEvents(valid);
-      setLoading(false);
-    };
-
-    checkImages();
-  };
+    return orderByDay(mapped);
+  }, [events, lang]);
 
   const renderEventCard = (ev) => (
     <button
@@ -161,7 +113,7 @@ export default function EventsSection({ t }) {
     );
   }
 
-  if (events.length === 0) {
+  if (cards.length === 0) {
     return null;
   }
 
@@ -169,7 +121,7 @@ export default function EventsSection({ t }) {
     <>
       <section id="events" className="section max-w-7xl mx-auto px-4">
         <CardsCarousel
-          items={events}
+          items={cards}
           eyebrow={t.use('eventsEyebrow')}
           title={t.use('eventsTitle')}
           renderCard={renderEventCard}

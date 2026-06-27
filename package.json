@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:no-prerender": "SKIP_PRERENDER=1 vite build",
     "preview": "vite preview",
+    "selftest:schedule": "node scripts/selftest-schedule.mjs",
     "clean": "rm -rf dist node_modules package-lock.json"
   },
   "dependencies": {

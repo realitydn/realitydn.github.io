@@ -9,6 +9,7 @@ const { CHANNELS:A_CH, channelById:a_ch, computeCapacity:a_cap, PartCanvas:APart
         rangeDates:a_dates, rangeLabel:a_rangeLabel, dAdd:a_dAdd, dWeekday:a_wd, dShort:a_dshort,
         eventsOn:a_eventsOn, dayInfo:a_dayInfo, blankEvent:a_blank, suid:a_uid,
         parseQuickLine:a_quick, parsePasteBlock:a_paste, parseCSV:a_csv, serializeCSV:a_serCSV,
+        buildDocFromFeed:a_buildFeed,
         normalizeDoc:a_norm, newDoc:a_new, starterDoc:a_starter, loadStoredDoc:a_load, storeDoc:a_store } = window;
 
 const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
@@ -449,18 +450,37 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
 function ImportModal({ doc, setDoc, onClose }){
   const [text, setText] = React.useState('');
   const [mode, setMode] = React.useState('merge');
+  const [feed, setFeed] = React.useState(null);   // null | { loading } | { events, errors } — WP9 feed pull
   const fileRef = React.useRef(null);
   const isCSV = /^[^\n]*\bdate\b[^\n]*\btitle\b/i.test(text.split('\n')[0]||'');
+  const hasCloud = typeof window!=='undefined' && !!window.RCloud;
+  /* Feed-pulled events (when present) supersede the paste/CSV box — they carry
+     the same blankEvent() shape, so the existing merge/replace + range-clamp
+     reuse unchanged. */
   const parsed = React.useMemo(()=>{
+    if(feed && Array.isArray(feed.events)) return { events:feed.events, errors:feed.errors||[], notes:{}, fromFeed:true };
     if(!text.trim()) return { events:[], errors:[], notes:{} };
     if(isCSV){ const r = a_csv(text); return { events:r.events, errors:r.errors, notes:{} }; }
     return a_paste(text, doc);
-  }, [text, doc.range.start, doc.range.days]);
+  }, [text, doc.range.start, doc.range.days, feed]);
+
+  async function pullFromFeed(){
+    if(!window.RCloud){ setFeed({ events:[], errors:['Cloud client unavailable.'] }); return; }
+    setFeed({ loading:true });
+    try{
+      const dates = a_dates(doc.range);
+      const from = dates[0], to = dates[dates.length-1];
+      const fd = await window.RCloud.fetchFeed({ from, to });
+      if(!fd){ setFeed({ events:[], errors:['Feed not available yet.'] }); return; }
+      const built = a_buildFeed(fd, { locations:A_LOCS, range:doc.range, makeId:a_uid });
+      setFeed({ events:built.events, errors:built.errors });
+    }catch(e){ setFeed({ events:[], errors:['Could not load the feed.'] }); }
+  }
 
   function run(){
     const dates = a_dates(doc.range);
     let evs = parsed.events, skipped = 0;
-    if(mode==='replace' && isCSV && evs.length){
+    if(mode==='replace' && isCSV && !parsed.fromFeed && evs.length){
       const ds = evs.map(e=>e.date).sort();
       const span = Math.round((window.dToDate(ds[ds.length-1]) - window.dToDate(ds[0]))/86400000) + 1;
       const range = { start:ds[0], days:Math.max(1, Math.min(10, span)) };
@@ -481,22 +501,27 @@ function ImportModal({ doc, setDoc, onClose }){
   return (
     <div className="ss-overlay" onClick={()=>onClose(null)}>
       <div className="ss-modal" onClick={e=>e.stopPropagation()}>
-        <div className="ss-sech" style={{ marginTop:0 }}>Import — paste a week or a CSV</div>
+        <div className="ss-sech" style={{ marginTop:0 }}>Import — paste a week, a CSV, or pull from the REALITY feed</div>
         <textarea className="ss-area" style={{ minHeight:190 }} autoFocus value={text}
           placeholder={'MON\n17:00: How to DJ 2E $\n19:00 - ALL NIGHT: Board Game Night 1L/2L/2E/3P\nTUE\n…\n\n— or paste / load Schedule Studio CSV v1 —\ndate,start,end,title,title_short,locations,flags,emphasis'}
-          onChange={e=>setText(e.target.value)} />
+          onChange={e=>{ setText(e.target.value); if(feed) setFeed(null); }} />
         <div className="ss-actions" style={{ marginTop:10 }}>
           <button className="ss-iconbtn" onClick={()=>fileRef.current.click()}>Load .csv / .txt file…</button>
+          {hasCloud && <button className="ss-iconbtn" onClick={pullFromFeed}
+            title="Build this range's events from the published REALITY Events Feed (best-effort; no-op if the feed is unavailable)">
+            {feed && feed.loading ? 'Pulling…' : 'Pull from REALITY feed'}</button>}
           <input ref={fileRef} type="file" accept=".csv,.txt,text/csv,text/plain" style={{ display:'none' }}
             onChange={e=>{ const f=e.target.files[0]; if(!f) return;
-              const fr=new FileReader(); fr.onload=()=>setText(String(fr.result)); fr.readAsText(f, 'utf-8'); e.target.value=''; }} />
+              const fr=new FileReader(); fr.onload=()=>{ setFeed(null); setText(String(fr.result)); }; fr.readAsText(f, 'utf-8'); e.target.value=''; }} />
         </div>
-        <SChips label="Mode" options={[{v:'merge',l:'Add to current'},{v:'replace',l:isCSV?'Replace (range follows the file)':'Replace range events'}]}
+        <SChips label="Mode" options={[{v:'merge',l:'Add to current'},{v:'replace',l:(isCSV&&!parsed.fromFeed)?'Replace (range follows the file)':'Replace range events'}]}
           value={mode} onChange={setMode} />
         <div className="ss-mini" style={{ margin:'8px 0' }}>
-          {text.trim()
-            ? <b>{parsed.events.length} event{parsed.events.length===1?'':'s'} parsed{isCSV?' (CSV)':''}{parsed.errors.length?' · '+parsed.errors.length+' problem'+(parsed.errors.length===1?'':'s'):''}</b>
-            : 'Day headers (MON / 8.6 / 2026-06-08) assign the days in paste mode.'}
+          {parsed.fromFeed
+            ? <b>{parsed.events.length} event{parsed.events.length===1?'':'s'} from the feed{parsed.errors.length?' · '+parsed.errors.length+' problem'+(parsed.errors.length===1?'':'s'):''}</b>
+            : text.trim()
+              ? <b>{parsed.events.length} event{parsed.events.length===1?'':'s'} parsed{isCSV?' (CSV)':''}{parsed.errors.length?' · '+parsed.errors.length+' problem'+(parsed.errors.length===1?'':'s'):''}</b>
+              : 'Day headers (MON / 8.6 / 2026-06-08) assign the days in paste mode. Or pull this range straight from the published feed.'}
         </div>
         {parsed.errors.slice(0,5).map((er,i)=><div key={i} className="ss-mini ss-err">{er}</div>)}
         <div className="ss-actions" style={{ marginTop:12 }}>
@@ -510,8 +535,9 @@ function ImportModal({ doc, setDoc, onClose }){
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, count }){
+function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, count, cloudUser, onCloudSignIn, onCloudSignOut }){
   const fileRef = React.useRef(null);
+  const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   return (
     <div className="ss-top">
       <div className="ss-brand">Reality<small>SCHEDULE STUDIO</small></div>
@@ -535,6 +561,15 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, count }
           <button disabled={exporting} onClick={()=>onExport('all')} title="Every channel + dailies + archive, zipped">Everything</button>
         </div>
       </div>
+      {/* WP9: cloud sign-in toggle (drives doc sync + the feed pull). Hidden if
+          RCloud failed to load; best-effort, no-op when the hub is dormant. */}
+      {hasCloud && <div className="ss-tgroup"><span className="gl">Cloud</span>
+        {cloudUser
+          ? <button onClick={onCloudSignOut} className="ss-iconbtn"
+              title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
+          : <button onClick={onCloudSignIn} className="ss-iconbtn"
+              title="Sign in to the REALITY hub to sync this draft and pull from the feed">Sign in</button>}
+      </div>}
       <span className="gl" style={{ fontFamily:'Montserrat', fontWeight:700, letterSpacing:'.1em', fontSize:9, color:'#6f6553' }}>{count} EV</span>
     </div>
   );
@@ -564,6 +599,49 @@ function App(){
   const exportRef = React.useRef(null);
 
   React.useEffect(()=>{ a_store(doc); }, [doc]);
+
+  /* ---- WP9 cloud sync (best-effort; localStorage stays the source of truth) ----
+     Debounced (~2s) push of the working doc to studio_documents (schedule/working)
+     beside the localStorage autosave above. On sign-in, a newer-in-cloud working
+     doc triggers a one-line confirm before replacing. Every RCloud call no-ops
+     when signed-out / hub dormant, so local-only behaviour is unchanged. ---- */
+  const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
+  const docRef = React.useRef(doc); docRef.current = doc;
+  const sessionStartRef = React.useRef(Date.now());
+  const cloudPushRef = React.useRef(null);
+  React.useEffect(()=>{
+    if(!cloudUser || !window.RCloud) return;
+    if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
+    cloudPushRef.current = setTimeout(()=>{
+      try{ window.RCloud.putDoc('schedule','working', (docRef.current.header&&docRef.current.header.title)||'', docRef.current, Date.now()); }catch(e){}
+    }, 2000);
+    return ()=>{ if(cloudPushRef.current) clearTimeout(cloudPushRef.current); };
+  }, [doc, cloudUser]);
+  const cloudPullDoneRef = React.useRef(false);
+  React.useEffect(()=>{
+    if(!cloudUser || !window.RCloud || cloudPullDoneRef.current) return;
+    cloudPullDoneRef.current = true;
+    let live = true;
+    (async()=>{
+      try{
+        const remote = await window.RCloud.getDoc('schedule','working');
+        if(!live || !remote) return;
+        const remoteAt = typeof remote.updatedAt==='number' ? remote.updatedAt : Date.parse(remote.updatedAt||'')||0;
+        let remoteDoc = remote.json;
+        if(typeof remoteDoc==='string'){ try{ remoteDoc = JSON.parse(remoteDoc); }catch(e){ remoteDoc=null; } }
+        if(remoteDoc && remoteDoc.events && remoteAt > sessionStartRef.current){
+          if(window.confirm('A newer Schedule Studio working draft was found in the cloud. Load it? (Replaces what’s on screen.)')){
+            setDoc(a_norm(remoteDoc)); setSelId(null);
+          }
+        }
+      }catch(e){ /* local-only on any failure */ }
+    })();
+    return ()=>{ live=false; };
+  }, [cloudUser]);
+  async function cloudSignIn(){
+    try{ if(!window.RCloud) return; const t = await window.RCloud.signIn(); setCloudUser(t ? (window.RCloud.currentEmail()||'signed in') : null); }catch(e){}
+  }
+  function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){} setCloudUser(null); }
 
   const dates = a_dates(doc.range);
   const sel = doc.events.filter(e=>e.id===selId)[0] || null;
@@ -785,7 +863,8 @@ function App(){
   return (
     <div className="ss-app">
       <Topbar doc={doc} setDoc={setDoc} count={doc.events.length}
-        onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg} />
+        onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg}
+        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} />
       <DayStrip doc={doc} setDoc={setDoc} capacity={capacity} selDate={selDate}
         onPickDate={d=>{ setSelDate(d); if(channelId==='daily') setDailyDate(d); }} />
       <div className="ss-body">

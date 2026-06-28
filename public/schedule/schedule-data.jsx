@@ -323,6 +323,77 @@ function serializeCSV(doc){
   return lines.join('\n');
 }
 
+/* ============================================================
+   WP9 — build schedule rows from the REALITY Events Feed
+   ------------------------------------------------------------
+   Pure mapping (no globals required for the core, no network) so it's
+   node-testable. Each feed instance → a blankEvent()-shaped row. The hub feed
+   already delivers FLAT concrete instances, so we never re-generate recurrence
+   here — `repeat:'weekly'` is set only as an editor hint when a weekly tag or
+   seriesId is present; the anchor `date` is the instance date.
+
+   Time mapping pins the venue TZ (+07:00; Đà Nẵng has no DST): the feed's ISO
+   carries the offset, so we read the local wall HH:MM from the +07:00 form.
+
+   `opts`:
+     locations : LOCATIONS registry (defaults to the module LOCATIONS)
+     range     : { start, days } — events outside the range are dropped
+                 (mirrors ImportModal's range-clamp)
+     makeId    : () => id  (defaults to suid(); pass a stub in tests)
+   Returns { events:[...], errors:[...] }.
+   ------------------------------------------------------------ */
+function ictHHMM(iso){
+  if(!iso || typeof iso!=='string') return null;
+  const m = /T(\d{2}):(\d{2})/.exec(iso);
+  if(/\+07:?00$/.test(iso) && m) return m[1]+':'+m[2];          // explicit ICT wall time
+  const t = Date.parse(iso);
+  if(isNaN(t)) return m ? (m[1]+':'+m[2]) : null;
+  const d = new Date(t + 7*3600*1000);                          // normalise any offset/Z to ICT
+  const pad = n=>(n<10?'0':'')+n;
+  return pad(d.getUTCHours())+':'+pad(d.getUTCMinutes());
+}
+function ictDate(iso){
+  if(!iso || typeof iso!=='string') return null;
+  if(/\+07:?00$/.test(iso)){ const m=/^(\d{4}-\d{2}-\d{2})/.exec(iso); if(m) return m[1]; }
+  const t = Date.parse(iso); if(isNaN(t)){ const m=/^(\d{4}-\d{2}-\d{2})/.exec(iso); return m?m[1]:null; }
+  return new Date(t + 7*3600*1000).toISOString().slice(0,10);
+}
+function buildDocFromFeed(feedOrEvents, opts){
+  opts = opts || {};
+  const locs = opts.locations || (typeof LOCATIONS!=='undefined' ? LOCATIONS : []);
+  const codeSet = {}; (locs||[]).forEach(l=>{ if(l&&l.code) codeSet[String(l.code).toUpperCase()]=l.code; });
+  const mk = opts.makeId || (typeof suid!=='undefined' ? suid : (()=>'ev'+Math.random().toString(36).slice(2,8)));
+  const list = Array.isArray(feedOrEvents) ? feedOrEvents
+             : (feedOrEvents && Array.isArray(feedOrEvents.events) ? feedOrEvents.events : []);
+  const events = [], errors = [];
+  const inRange = (date)=>{
+    if(!opts.range || !opts.range.start || !opts.range.days) return true;
+    if(typeof rangeDates==='undefined') return true;
+    return rangeDates(opts.range).indexOf(date)>=0;
+  };
+  list.forEach(ev=>{
+    try{
+      const date = ictDate(ev.startsAt);
+      if(!date){ errors.push('Event "'+(ev.title_en||ev.id||'?')+'" has no usable start date'); return; }
+      if(!inRange(date)) return;                                 // silently skip out-of-range (caller clamps)
+      const start = ictHHMM(ev.startsAt) || '19:00';
+      const end = ev.endsAt ? ictHHMM(ev.endsAt) : null;
+      const code = ev.location && ev.location.code ? String(ev.location.code).toUpperCase() : null;
+      const mapped = code && codeSet[code] ? codeSet[code] : null;
+      const tags = Array.isArray(ev.tags) ? ev.tags.map(t=>String(t).toLowerCase()) : [];
+      const weekly = tags.indexOf('weekly')>=0 || !!ev.seriesId;
+      events.push({
+        id: mk(), date, start, end, title: ev.title_en || ev.title_vi || 'Untitled event',
+        titleShort: null, locations: mapped ? [mapped] : [],
+        flags:{ prereg:false, fee:false }, emphasis:'none', hide:[],
+        repeat: weekly ? 'weekly' : null, repeatUntil:null, exceptions:[],
+        notionId: ev.id || null,                                 // feed event id → existing hook
+      });
+    }catch(e){ errors.push('Could not map a feed event: '+(e&&e.message)); }
+  });
+  return { events, errors };
+}
+
 /* ---- persistence ---- */
 const SCH_LS = 'reality-schedule-doc-v2';
 function loadStoredDoc(){
@@ -389,6 +460,12 @@ Object.assign(window, {
   suid, blankEvent, newDoc, starterDoc, normalizeDoc,
   timeKey, eventsOn, dayInfo, timeLabel, usedLegend, partDates,
   parseQuickLine, parsePasteBlock, parseCSV, serializeCSV,
+  buildDocFromFeed, ictHHMM, ictDate,
   loadStoredDoc, storeDoc,
   Wordmark, SchQR,
 });
+
+/* CommonJS-style export for the node self-test (scripts/selftest-schedule.mjs),
+   ignored in the browser where `module` is undefined. Kept guarded so it never
+   throws when this file loads as a plain <script>. */
+try{ if(typeof module!=='undefined' && module.exports){ module.exports = { buildDocFromFeed, ictHHMM, ictDate }; } }catch(e){}

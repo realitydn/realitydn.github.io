@@ -1,3 +1,9 @@
+// DEPRECATED (WP9 — Events Platform). Poster publishing now goes through the hub:
+//   POST https://app.realitydn.com/api/events/{id}/posters  (multipart: file, slot)
+// driven from Poster Studio's "Export to event…" affordance (RCloud.putPoster),
+// which re-hosts to R2 and writes the event's poster slots. This local tool is
+// kept (NOT deleted) only as a fallback during the prod soak. Once write-back is
+// proven, a follow-up will remove tools/poster-manager entirely.
 const express = require('express');
 const path = require('path');
 const fs = require('fs');

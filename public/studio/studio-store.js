@@ -51,11 +51,75 @@
   function txDone(t){ return new Promise((res, rej)=>{ t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
   function reqVal(r){ return new Promise((res, rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 
+  /* ---- WP9 best-effort cloud mirror (window.RCloud) -------------------------
+     IndexedDB stays the source of truth. After a successful LOCAL write we
+     fire-and-forget a mirror to the hub: each template is its own doc
+     doc_id='tpl:'+id, studio='poster'. Every call is wrapped so it can NEVER
+     throw into the caller — if RCloud is absent, not signed in, or the hub is
+     dormant, these silently no-op. TODO(WP9): photos are stored inline as data
+     URLs (content-addressing is out of scope) — large photo-heavy templates may
+     hit the hub's ~5MB doc cap (413) and simply stay local; that's acceptable.
+     ------------------------------------------------------------------------ */
+  function _rc(){ return (typeof window!=='undefined' && window.RCloud) ? window.RCloud : null; }
+  function cloudPutTpl(t){
+    try{
+      const rc = _rc();
+      if(!rc || !rc.isSignedIn() || !t || !t.id) return;
+      Promise.resolve(rc.putDoc('poster', 'tpl:'+t.id, t.name||'', t, t.savedAt||Date.now()))
+        .catch(()=>{});
+    }catch(e){}
+  }
+  function cloudDelTpl(id){
+    try{
+      const rc = _rc();
+      if(!rc || !rc.isSignedIn() || !id) return;
+      if(typeof rc.delDoc==='function') Promise.resolve(rc.delDoc('poster','tpl:'+id)).catch(()=>{});
+    }catch(e){}
+  }
+  function cloudPutMany(arr){ (arr||[]).forEach(cloudPutTpl); }
+
+  /* Pull cloud templates and upsert any the local store is missing (by id).
+     Returns the merged, locally-stored list (or the local list unchanged on any
+     failure). Best-effort: never throws, returns local-only when RCloud is
+     absent / signed-out / dormant. */
+  async function cloudPull(){
+    let local = [];
+    try{ local = await tplGetAll(); }catch(e){ local = []; }
+    try{
+      const rc = _rc();
+      if(!rc || !rc.isSignedIn() || typeof rc.listDocs!=='function') return local;
+      const docs = await rc.listDocs('poster');
+      if(!Array.isArray(docs) || !docs.length) return local;
+      const haveIds = {}; local.forEach(t=>{ if(t&&t.id) haveIds[t.id]=1; });
+      const missing = [];
+      docs.forEach(d=>{
+        try{
+          const docId = d && (d.doc_id || d.docId);
+          if(!docId || docId.indexOf('tpl:')!==0) return;
+          const id = docId.slice(4);
+          if(haveIds[id]) return;
+          let tpl = d.json;
+          if(typeof tpl==='string'){ try{ tpl = JSON.parse(tpl); }catch(e2){ tpl=null; } }
+          if(tpl && tpl.doc && Array.isArray(tpl.doc.elements)){
+            if(!tpl.id) tpl.id = id;
+            if(!tpl.savedAt) tpl.savedAt = d.updatedAt ? (Date.parse(d.updatedAt)||Date.now()) : Date.now();
+            missing.push(tpl);
+          }
+        }catch(e3){}
+      });
+      if(missing.length){
+        await tplBulkPut(missing);   // local write only — do NOT re-mirror back up
+        return await tplGetAll();
+      }
+    }catch(e){ /* any failure → local-only */ }
+    return local;
+  }
+
   async function tplGetAll(){ await open(); return reqVal(store(T_STORE, 'readonly').getAll()); }
 
-  async function tplPut(t){ await open(); const s = store(T_STORE, 'readwrite'); s.put(t); return txDone(s.transaction); }
+  async function tplPut(t){ await open(); const s = store(T_STORE, 'readwrite'); s.put(t); await txDone(s.transaction); cloudPutTpl(t); }
 
-  async function tplDelete(id){ await open(); const s = store(T_STORE, 'readwrite'); s.delete(id); return txDone(s.transaction); }
+  async function tplDelete(id){ await open(); const s = store(T_STORE, 'readwrite'); s.delete(id); await txDone(s.transaction); cloudDelTpl(id); }
 
   /* Upsert many in one transaction without clearing — used by migrate() so a
      re-run can never drop records added after the first migration. */
@@ -74,7 +138,8 @@
     const s = store(T_STORE, 'readwrite');
     s.clear();
     (arr||[]).forEach(t=>s.put(t));
-    return txDone(s.transaction);
+    await txDone(s.transaction);
+    cloudPutMany(arr);   // best-effort mirror of the imported set
   }
 
   async function metaGet(k){ await open(); const v = await reqVal(store(M_STORE, 'readonly').get(k)); return v ? v.v : undefined; }
@@ -97,5 +162,5 @@
     return { migrated: arr.length };
   }
 
-  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll, metaGet, metaPut, migrate, LS_TPL_KEY };
+  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll, metaGet, metaPut, migrate, cloudPull, LS_TPL_KEY };
 })();

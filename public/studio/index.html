@@ -24,6 +24,10 @@
 
 <script src="riso-engine.js"></script>
 <script src="studio-store.js"></script>
+<!-- WP9: best-effort cloud sync (window.RCloud). Strictly additive — no-ops
+     when not signed in or the hub is dormant; localStorage/RStore stay the
+     source of truth. Load AFTER studio-store.js, BEFORE the .jsx apps. -->
+<script src="cloud-client.js"></script>
 <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>

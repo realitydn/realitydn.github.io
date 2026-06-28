@@ -746,8 +746,9 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, exporting, exportMsg }){
+function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, onCloudSignIn, onCloudSignOut, onExportToEvent }){
   const isOutput = doc.activeFormat!=='master';
+  const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
      committing per keystroke would re-render the riso canvases on every key. */
   const [name, setName] = React.useState(doc.title||'');
@@ -837,6 +838,20 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           Save Images<small>{scope}</small>
         </button>
       </div>
+      {/* WP9: cloud sync + poster write-back. Hidden entirely if RCloud failed to
+          load; otherwise a sign-in toggle + an "Export to event…" affordance.
+          Sign-in/out and the picker are fully best-effort (no-op when dormant). */}
+      {hasCloud && <div className="rs-tgroup"><span className="gl">Cloud</span>
+        {cloudUser
+          ? <React.Fragment>
+              <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
+                title="Send this poster's 4:5 / 9:16 / 1:1 to an event's poster slots">→ Event</button>
+              <button className="rs-iconbtn" onClick={onCloudSignOut}
+                title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
+            </React.Fragment>
+          : <button className="rs-iconbtn" onClick={onCloudSignIn}
+              title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
+      </div>}
       <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
       <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
       <span className="gl" style={{ fontFamily:'Montserrat', fontWeight:700, letterSpacing:'.1em', fontSize:9, color:'#6f6553' }}>{count} EL</span>
@@ -873,6 +888,61 @@ function App(){
   const docRef = React.useRef(doc); docRef.current = doc;
 
   React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }, [doc]);
+
+  /* ---- WP9 cloud sign-in state (best-effort; localStorage stays the source of
+     truth). `cloudUser` is just for the toolbar label; null = local-only. ---- */
+  const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
+  async function cloudSignIn(){
+    try{
+      if(!window.RCloud) return;
+      const t = await window.RCloud.signIn();
+      setCloudUser(t ? (window.RCloud.currentEmail()||'signed in') : null);
+    }catch(e){ /* never throws into render */ }
+  }
+  function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){} setCloudUser(null); }
+
+  /* ---- WP9 working-doc cloud sync — beside the localStorage autosave above.
+     Debounced ~2s push of the working doc to studio_documents (poster/working).
+     localStorage is the offline source of truth; this is purely additive and
+     fully guarded (RCloud no-ops when signed-out / hub dormant). ---- */
+  const cloudPushRef = React.useRef(null);
+  React.useEffect(()=>{
+    if(!cloudUser || !window.RCloud) return;
+    if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
+    cloudPushRef.current = setTimeout(()=>{
+      try{ window.RCloud.putDoc('poster','working', docRef.current.title||'', docRef.current, Date.now()); }catch(e){}
+    }, 2000);
+    return ()=>{ if(cloudPushRef.current) clearTimeout(cloudPushRef.current); };
+  }, [doc, cloudUser]);
+
+  /* On mount (and on sign-in), if the cloud has a working doc saved AFTER this
+     session loaded the local copy, offer a one-line confirm before replacing
+     (last-write-wins, no merge). We compare against the session start: a cloud
+     doc newer than that came from another device/tab. Guarded so a hub error
+     can't disturb the app. */
+  const sessionStartRef = React.useRef(Date.now());
+  const cloudPullDoneRef = React.useRef(false);
+  React.useEffect(()=>{
+    if(!cloudUser || !window.RCloud || cloudPullDoneRef.current) return;
+    cloudPullDoneRef.current = true;
+    let live = true;
+    (async()=>{
+      try{
+        const remote = await window.RCloud.getDoc('poster','working');
+        if(!live || !remote) return;
+        const remoteAt = typeof remote.updatedAt==='number' ? remote.updatedAt : Date.parse(remote.updatedAt||'')||0;
+        let remoteDoc = remote.json;
+        if(typeof remoteDoc==='string'){ try{ remoteDoc = JSON.parse(remoteDoc); }catch(e){ remoteDoc = null; } }
+        if(remoteDoc && remoteDoc.elements && remoteAt > sessionStartRef.current){
+          if(window.confirm('A newer Poster Studio working draft was found in the cloud. Load it? (Replaces what’s on screen.)')){
+            setDoc(d=>Object.assign({}, d, remoteDoc));
+            setSelectedIds([]);
+          }
+        }
+      }catch(e){ /* local-only on any failure */ }
+    })();
+    return ()=>{ live=false; };
+  }, [cloudUser]);
 
   /* Delete / Backspace removes the selected element(s) — but not while you're
      typing in an inspector field. */
@@ -1052,7 +1122,11 @@ function App(){
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
       const m = await window.RStore.migrate();
-      const all = await window.RStore.tplGetAll();
+      let all = await window.RStore.tplGetAll();
+      /* WP9: best-effort pull of any cloud templates this browser is missing.
+         IndexedDB stays the source of truth — cloudPull never throws and returns
+         the local list unchanged when signed-out / hub dormant. */
+      try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
       all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
       if(!live) return;
       setUserTpls(all);
@@ -1232,10 +1306,79 @@ function App(){
     setExporting(false); setExportMsg('');
   }
 
+  /* ---- WP9 poster write-back — "Export to event…". Renders the studio formats
+     to blobs and POSTs them onto an event's poster slots via RCloud.putPoster
+     (replacing the old Poster Manager publish loop). Format → slot:
+       4x5  → poster4x5
+       9x16 → story
+       1x1  → square1x1
+     ('feed' is the hub's text-less feed render — not produced here; TODO.)
+     Strictly additive: nothing here touches the local export path; all guarded.
+     Photos are embedded inline as data URLs (content-addressing OUT OF SCOPE —
+     TODO(WP9): content-address photos so big posters don't bloat R2). ---- */
+  const EVENT_SLOTS = [
+    { fmt:'4x5',  slot:'poster4x5' },
+    { fmt:'9x16', slot:'story' },
+    { fmt:'1x1',  slot:'square1x1' },
+  ];
+  const [eventPicker, setEventPicker] = React.useState(null);   // null | { open, loading, events, err }
+  async function openEventPicker(){
+    if(!window.RCloud){ return; }
+    if(!window.RCloud.isSignedIn()){
+      await cloudSignIn();
+      if(!window.RCloud.isSignedIn()){ window.alert('Cloud sign-in is needed to export to an event. (Stayed local-only.)'); return; }
+    }
+    setEventPicker({ open:true, loading:true, events:[], err:null });
+    try{
+      const today = new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);   // ICT date
+      const feed = await window.RCloud.fetchFeed({ from: today });
+      const events = (feed && Array.isArray(feed.events)) ? feed.events : [];
+      setEventPicker({ open:true, loading:false, events, err: feed ? null : 'Feed not available yet.' });
+    }catch(e){
+      setEventPicker({ open:true, loading:false, events:[], err:'Could not load the events feed.' });
+    }
+  }
+  async function exportToEvent(eventId){
+    if(exporting || !window.htmlToImage || !window.RCloud) return;
+    setEventPicker(null);
+    const prev = doc.activeFormat;
+    setSelectedIds([]); setExporting(true);
+    const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
+    const toBlob = (f)=>{
+      const node=canvasRef.current;
+      const opts={ width:f.w, height:f.h, pixelRatio:2, cacheBust:true, backgroundColor:bg,
+        style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
+      return window.htmlToImage.toBlob(node, opts);
+    };
+    let ok = 0, failed = 0;
+    try{
+      for(const m of EVENT_SLOTS){
+        setExportMsg('Rendering '+AP_FMT[m.fmt].label+'…');
+        setDoc(d=>({ ...d, activeFormat:m.fmt }));
+        await new Promise(r=>setTimeout(r,380));   // React render + rescale + photo repaint
+        let blob = null;
+        try{ blob = await toBlob(AP_FMT[m.fmt]); }catch(e){ blob = null; }
+        if(!blob){ failed++; continue; }
+        setExportMsg('Uploading '+AP_FMT[m.fmt].label+'…');
+        const res = await window.RCloud.putPoster(eventId, m.slot, blob, 'image/png');
+        if(res && res.ok) ok++; else failed++;
+      }
+      setDoc(d=>({ ...d, activeFormat:prev }));
+      setExportMsg(ok ? ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')) : 'Export to event failed');
+      await new Promise(r=>setTimeout(r, ok?1600:1800));
+    }catch(err){
+      console.error('export-to-event failed', err);
+      setDoc(d=>({ ...d, activeFormat:prev }));
+      setExportMsg('Export to event failed'); await new Promise(r=>setTimeout(r,1600));
+    }
+    setExporting(false); setExportMsg('');
+  }
+
   return (
     <div className="rs-app">
       <Topbar doc={doc} setDoc={setDoc} count={doc.elements.length} overrideCount={overrideCount} resetFormat={resetFormat}
-        onExport={doExport} exporting={exporting} exportMsg={exportMsg} />
+        onExport={doExport} exporting={exporting} exportMsg={exportMsg}
+        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker} />
       <div className="rs-body">
         <div className="rs-lib">
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>
@@ -1361,6 +1504,46 @@ function App(){
       </div>
 
       {spawn && <div className="rs-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}
+
+      {eventPicker && eventPicker.open &&
+        <EventPickerModal picker={eventPicker} onPick={exportToEvent} onClose={()=>setEventPicker(null)} />}
+    </div>
+  );
+}
+
+/* ---- WP9 event picker — lists upcoming events from the REALITY feed so the
+   user can push the current poster's formats onto an event's poster slots.
+   Reuses the studio's overlay/modal CSS atoms; fully additive UI. ---- */
+function EventPickerModal({ picker, onPick, onClose }){
+  return (
+    <div className="rs-overlay" onClick={onClose}
+      style={{ position:'fixed', inset:0, background:'rgba(10,7,3,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
+      <div className="rs-modal" onClick={e=>e.stopPropagation()}
+        style={{ width:420, maxWidth:'92vw', maxHeight:'80vh', overflow:'auto', background:'#fffbf1', color:'#0d0905', borderRadius:10, padding:18, boxShadow:'0 30px 70px rgba(0,0,0,.5)' }}>
+        <div style={{ fontFamily:'Montserrat', fontWeight:800, letterSpacing:'.04em', fontSize:14, marginBottom:4 }}>Export to event</div>
+        <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>
+          Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b> onto the chosen event. The text-less feed image is generated by the hub.
+        </div>
+        {picker.loading && <div style={{ fontSize:12, opacity:.7 }}>Loading upcoming events…</div>}
+        {!picker.loading && picker.err && <div style={{ fontSize:12, color:'#b00' }}>{picker.err}</div>}
+        {!picker.loading && !picker.err && picker.events.length===0 &&
+          <div style={{ fontSize:12, opacity:.7 }}>No upcoming events in the feed.</div>}
+        {!picker.loading && picker.events.map(ev=>{
+          const when = (ev.startsAt||'').slice(0,16).replace('T',' ');
+          return (
+            <div key={ev.id} onClick={()=>onPick(ev.id)}
+              style={{ cursor:'pointer', padding:'8px 10px', borderRadius:6, marginBottom:4, border:'1px solid rgba(120,110,90,.2)' }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.08)'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              <div style={{ fontWeight:700, fontSize:13 }}>{ev.title_en || ev.title_vi || '(untitled)'}</div>
+              <div style={{ fontSize:11, opacity:.6 }}>{when}{ev.location && ev.location.code ? ' · '+ev.location.code : ''}</div>
+            </div>
+          );
+        })}
+        <div style={{ marginTop:12, textAlign:'right' }}>
+          <button className="rs-addrow" onClick={onClose} style={{ display:'inline-block' }}>Cancel</button>
+        </div>
+      </div>
     </div>
   );
 }

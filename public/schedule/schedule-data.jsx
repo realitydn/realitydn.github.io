@@ -385,7 +385,9 @@ function buildDocFromFeed(feedOrEvents, opts){
       events.push({
         id: mk(), date, start, end, title: ev.title_en || ev.title_vi || 'Untitled event',
         titleShort: null, locations: mapped ? [mapped] : [],
-        flags:{ prereg:false, fee:false }, emphasis:'none', hide:[],
+        // map the feed's tags onto the schedule's flags/emphasis ($ = fee, * = prereg)
+        flags:{ prereg: tags.indexOf('prereg')>=0, fee: tags.indexOf('fee')>=0 },
+        emphasis: tags.indexOf('featured')>=0 ? 'banner' : 'none', hide:[],
         repeat: weekly ? 'weekly' : null, repeatUntil:null, exceptions:[],
         notionId: ev.id || null,                                 // feed event id → existing hook
       });
@@ -414,7 +416,10 @@ function mergeFeedIntoDoc(existing, fresh){
   });
   const prevFeed = {}, local = [];
   (existing||[]).forEach(e=>{ if(e && e.notionId) prevFeed[e.notionId] = e; else if(e) local.push(e); });
-  const sig = e=>[e.date,e.start,e.end,e.title,(e.locations||[]).join(','),e.repeat||'',(e.exceptions||[]).join(',')].join('|');
+  // sig includes flags + emphasis so a tag-only change (e.g. a newly-correct $/*)
+  // is detected as an update and actually applied by the auto-pull.
+  const sig = e=>[e.date,e.start,e.end,e.title,(e.locations||[]).join(','),e.repeat||'',(e.exceptions||[]).join(','),
+    (e.flags&&e.flags.fee?'$':'')+(e.flags&&e.flags.prereg?'*':''), e.emphasis||'none'].join('|');
   let added = 0, updated = 0;
   const merged = rows.map(e=>{
     const p = prevFeed[e.notionId];
@@ -431,7 +436,14 @@ function mergeFeedIntoDoc(existing, fresh){
   });
   const newIds = {}; merged.forEach(e=>{ if(e.notionId) newIds[e.notionId] = 1; });
   let removed = 0; Object.keys(prevFeed).forEach(id=>{ if(!newIds[id]) removed++; });
-  return { events: local.concat(merged), added, updated, removed, changed: (added>0 || updated>0 || removed>0) };
+  // drop purely-local rows that DUPLICATE a feed event (same date+start+title) — the
+  // app is the source of truth, so the synced copy wins and the stray local one goes.
+  const fKey = e=>(e.date||'')+'|'+(e.start||'')+'|'+String(e.title||'').trim().toLowerCase();
+  const feedKeys = {}; merged.forEach(e=>{ feedKeys[fKey(e)] = 1; });
+  const localKept = local.filter(e=>!feedKeys[fKey(e)]);
+  const dedup = local.length - localKept.length;
+  return { events: localKept.concat(merged), added, updated, removed, dedup,
+    changed: (added>0 || updated>0 || removed>0 || dedup>0) };
 }
 
 /* ---- persistence ---- */

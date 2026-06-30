@@ -44,11 +44,12 @@ const code =
   extract('ictHHMM') + '\n' +
   extract('ictDate') + '\n' +
   extract('buildDocFromFeed') + '\n' +
-  'globalThis.__exports = { ictHHMM, ictDate, buildDocFromFeed };';
+  extract('mergeFeedIntoDoc') + '\n' +
+  'globalThis.__exports = { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc };';
 const ctx = {};
 vm.createContext(ctx);
 vm.runInContext(code, ctx);
-const { ictHHMM, ictDate, buildDocFromFeed } = ctx.__exports;
+const { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc } = ctx.__exports;
 
 let passed = 0;
 const failures = [];
@@ -136,6 +137,49 @@ eq('missing start date → 1 error', bad.errors.length, 1);
 // range clamp: an event outside the range is dropped.
 const ranged = buildDocFromFeed(feed, { locations: LOCATIONS, makeId: () => 'r', range: { start: '2026-07-01', days: 1 } });
 eq('range clamp keeps only in-range', ranged.events.length, 1);
+
+// ── mergeFeedIntoDoc: idempotent App→Schedule sync (the auto-pull-on-open) ────
+const existing = [
+  // a previously-synced feed row the user dressed up — presentation MUST survive
+  { id: 'a', notionId: 'f1', date: '2026-07-01', start: '18:00', end: null, title: 'Old', locations: ['2E'],
+    flags: {}, emphasis: 'banner', hide: ['print'], repeat: null, repeatUntil: '2026-08-01', exceptions: [], titleShort: 'O' },
+  // a synced row that has VANISHED from the feed (cancelled/out of range) → drops
+  { id: 'b', notionId: 'gone', date: '2026-07-04', start: '10:00', end: null, title: 'Cancelled', locations: [],
+    flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },
+  // a purely-local row (no notionId) → always kept
+  { id: 'c', notionId: null, date: '2026-07-02', start: '12:00', end: null, title: 'Local', locations: [],
+    flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },
+];
+const freshRows = [
+  { id: 'x', notionId: 'f1', date: '2026-07-01', start: '18:30', end: null, title: 'New Title', locations: ['3P'],
+    flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },     // updates f1
+  { id: 'y', notionId: 'f2', date: '2026-07-03', start: '20:00', end: null, title: 'Brand New', locations: ['1L'],
+    flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },     // new
+  // two weekly instances of the SAME series → must collapse to one (no projection stacking)
+  { id: 'w1', notionId: 'wk1', date: '2026-07-01', start: '19:00', end: null, title: 'Quiz', locations: ['2E'],
+    flags: {}, emphasis: 'none', hide: [], repeat: 'weekly', repeatUntil: null, exceptions: [] },
+  { id: 'w2', notionId: 'wk2', date: '2026-07-08', start: '19:00', end: null, title: 'Quiz', locations: ['2E'],
+    flags: {}, emphasis: 'none', hide: [], repeat: 'weekly', repeatUntil: null, exceptions: [] },
+];
+const m = mergeFeedIntoDoc(existing, freshRows);
+eq('merge: added (f2 + 1 collapsed weekly)', m.added, 2);
+eq('merge: updated (f1)', m.updated, 1);
+eq('merge: removed (gone dropped)', m.removed, 1);
+check('merge: changed', m.changed === true);
+check('merge: gone row dropped', !m.events.some(e => e.notionId === 'gone'));
+check('merge: local-only row kept', m.events.some(e => e.notionId == null && e.title === 'Local'));
+check('merge: weekly collapsed to one', m.events.filter(e => e.title === 'Quiz').length === 1);
+const f1 = m.events.find(e => e.notionId === 'f1');
+eq('merge: core updated from feed (title)', f1.title, 'New Title');
+eq('merge: core updated from feed (start)', f1.start, '18:30');
+eq('merge: core updated from feed (locations)', JSON.stringify(f1.locations), JSON.stringify(['3P']));
+eq('merge: preserves titleShort', f1.titleShort, 'O');
+eq('merge: preserves hide', JSON.stringify(f1.hide), JSON.stringify(['print']));
+eq('merge: preserves user emphasis', f1.emphasis, 'banner');
+eq('merge: preserves repeatUntil cap', f1.repeatUntil, '2026-08-01');
+// empty feed never wipes (the caller guards, and a no-change re-run reports changed=false)
+const stable = mergeFeedIntoDoc(m.events, freshRows);
+check('merge: re-run is a no-op (idempotent)', stable.changed === false);
 
 if (failures.length) {
   console.error(`\nselftest-schedule: ${failures.length} FAILED, ${passed} passed`);

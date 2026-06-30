@@ -10,7 +10,7 @@ const SC_MONT = "'Montserrat',sans-serif";
 function scSnap(v, step){ return Math.round(v/step)*step; }
 
 function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
-                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting }){
+                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly }){
   const f = SC_FMT[format];
   const t = scTheme(theme);
   const safe = scSafe(format);
@@ -109,7 +109,9 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
             fontFamily:SC_MONT, fontWeight:700, letterSpacing:'.26em', fontSize:13, color:'rgba(255,255,255,.4)', pointerEvents:'none' }}>▲ DROP YOUR PHOTO — FULL BLEED</div>}
         </div>
 
-        {elements.map(el=>(
+        {/* plateOnly = image-only / text-less export: keep ONLY photo elements
+            (drop all text + design elements) for the clean 'feed' hero image. */}
+        {(plateOnly ? elements.filter(el=>el.type==='photo') : elements).map(el=>(
           /* hidden-in-this-format: ghosted while editing as an aid, but fully
              dropped from exports (don't bake a 22% element into the image) */
           (exporting && el.hidden) ? null :

@@ -9,7 +9,7 @@ const { CHANNELS:A_CH, channelById:a_ch, computeCapacity:a_cap, PartCanvas:APart
         rangeDates:a_dates, rangeLabel:a_rangeLabel, dAdd:a_dAdd, dWeekday:a_wd, dShort:a_dshort,
         eventsOn:a_eventsOn, dayInfo:a_dayInfo, blankEvent:a_blank, suid:a_uid,
         parseQuickLine:a_quick, parsePasteBlock:a_paste, parseCSV:a_csv, serializeCSV:a_serCSV,
-        buildDocFromFeed:a_buildFeed,
+        buildDocFromFeed:a_buildFeed, mergeFeedIntoDoc:a_mergeFeed,
         normalizeDoc:a_norm, newDoc:a_new, starterDoc:a_starter, loadStoredDoc:a_load, storeDoc:a_store } = window;
 
 const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
@@ -638,6 +638,38 @@ function App(){
     })();
     return ()=>{ live=false; };
   }, [cloudUser]);
+
+  /* WP9 delta — automatic App→Schedule sync. On open, pull the published Events
+     Feed for the current range and idempotently merge it in (adds/updates only;
+     preserves local presentation + purely-local rows; never accumulates). The feed
+     is a PUBLIC read, so this needs no sign-in. Best-effort: any failure or an
+     empty feed leaves the doc untouched (no silent deletes). */
+  const [syncNote, setSyncNote] = React.useState(null);
+  const feedPullDoneRef = React.useRef(false);
+  React.useEffect(()=>{
+    if(!window.RCloud || !window.RCloud.fetchFeed || feedPullDoneRef.current) return;
+    feedPullDoneRef.current = true;
+    let live = true;
+    (async()=>{
+      try{
+        const base = docRef.current;
+        const ds = a_dates(base.range);
+        const fd = await window.RCloud.fetchFeed({ from: ds[0], to: ds[ds.length-1] });
+        if(!live || !fd || !Array.isArray(fd.events) || !fd.events.length) return;   // empty/failed → no-op
+        const built = a_buildFeed(fd, { locations:A_LOCS, range:base.range, makeId:a_uid });
+        if(!live || !built || !built.events.length) return;
+        const res = a_mergeFeed(docRef.current.events, built.events);
+        if(!live || !res.changed) return;
+        // re-merge inside the functional update so it composes with the latest doc
+        setDoc(d=>a_norm(Object.assign({}, d, { events:a_mergeFeed(d.events, built.events).events })));
+        const n = res.added + res.updated;
+        setSyncNote(n ? ('Synced from the app · '+n+' new/updated') : 'Synced from the app');
+        setTimeout(()=>{ if(live) setSyncNote(null); }, 6000);
+      }catch(e){ /* local-only on any failure */ }
+    })();
+    return ()=>{ live = false; };
+  }, []);   // once, on open
+
   async function cloudSignIn(){
     try{ if(!window.RCloud) return; const t = await window.RCloud.signIn(); setCloudUser(t ? (window.RCloud.currentEmail()||'signed in') : null); }catch(e){}
   }
@@ -862,6 +894,9 @@ function App(){
   const ch = a_ch(channelId);
   return (
     <div className="ss-app">
+      {syncNote && <div style={{ position:'fixed', top:12, left:'50%', transform:'translateX(-50%)', zIndex:10000,
+        background:'#0d0905', color:'#fffbf1', fontFamily:"'Montserrat',sans-serif", fontWeight:700, fontSize:12,
+        letterSpacing:'.04em', padding:'7px 14px', borderRadius:999, boxShadow:'0 8px 24px rgba(0,0,0,.35)', pointerEvents:'none' }}>{syncNote}</div>}
       <Topbar doc={doc} setDoc={setDoc} count={doc.events.length}
         onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg}
         cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} />

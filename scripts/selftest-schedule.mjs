@@ -138,6 +138,18 @@ eq('missing start date → 1 error', bad.errors.length, 1);
 const ranged = buildDocFromFeed(feed, { locations: LOCATIONS, makeId: () => 'r', range: { start: '2026-07-01', days: 1 } });
 eq('range clamp keeps only in-range', ranged.events.length, 1);
 
+// flags + emphasis map from the feed's tags ($ = fee, * = prereg, featured = banner)
+const tagged = buildDocFromFeed({ events: [
+  { id: 't1', title_en: 'Paid Workshop', startsAt: '2026-07-04T15:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: ['fee', 'prereg'] },
+  { id: 't2', title_en: 'Featured Party', startsAt: '2026-07-05T20:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: ['featured'] },
+  { id: 't3', title_en: 'Plain', startsAt: '2026-07-06T10:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [] },
+] }, { locations: LOCATIONS, makeId: () => 'tg' }).events;
+eq('fee tag → flags.fee', tagged[0].flags.fee, true);
+eq('prereg tag → flags.prereg', tagged[0].flags.prereg, true);
+eq('featured tag → emphasis banner', tagged[1].emphasis, 'banner');
+eq('no tags → flags both false', JSON.stringify(tagged[2].flags), JSON.stringify({ prereg: false, fee: false }));
+eq('no featured → emphasis none', tagged[2].emphasis, 'none');
+
 // ── mergeFeedIntoDoc: idempotent App→Schedule sync (the auto-pull-on-open) ────
 const existing = [
   // a previously-synced feed row the user dressed up — presentation MUST survive
@@ -180,6 +192,28 @@ eq('merge: preserves repeatUntil cap', f1.repeatUntil, '2026-08-01');
 // empty feed never wipes (the caller guards, and a no-change re-run reports changed=false)
 const stable = mergeFeedIntoDoc(m.events, freshRows);
 check('merge: re-run is a no-op (idempotent)', stable.changed === false);
+
+// dedupe: a purely-local row that DUPLICATES a feed event (date+start+title) is dropped
+const dupExisting = [
+  { id: 'L', notionId: null, date: '2026-07-01', start: '19:00', end: null, title: 'Pub Quiz', locations: ['2E'], flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },
+  { id: 'K', notionId: null, date: '2026-07-01', start: '12:00', end: null, title: 'Only Local', locations: [], flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },
+];
+const dupFresh = [
+  { id: 'F', notionId: 'pq', date: '2026-07-01', start: '19:00', end: null, title: 'pub quiz', locations: ['2E'], flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] },
+];
+const dd = mergeFeedIntoDoc(dupExisting, dupFresh);
+eq('dedupe: 1 local duplicate dropped (case-insensitive)', dd.dedup, 1);
+check('dedupe: feed copy kept (notionId pq)', dd.events.some(e => e.notionId === 'pq'));
+check('dedupe: local dup gone', !dd.events.some(e => e.title === 'Pub Quiz' && e.notionId == null));
+check('dedupe: unrelated local kept', dd.events.some(e => e.title === 'Only Local'));
+check('dedupe: changed=true', dd.changed === true);
+
+// sig includes flags: a feed-side $/* change on a matched row registers as an update
+const flagExisting = [{ id: 'g', notionId: 'fe', date: '2026-07-01', start: '19:00', end: null, title: 'X', locations: ['2E'], flags: { fee: false, prereg: false }, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] }];
+const flagFresh = [{ id: 'h', notionId: 'fe', date: '2026-07-01', start: '19:00', end: null, title: 'X', locations: ['2E'], flags: { fee: true, prereg: false }, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] }];
+const fm = mergeFeedIntoDoc(flagExisting, flagFresh);
+eq('flag-only change counts as an update', fm.updated, 1);
+check('flag-only change applies fee', fm.events.find(e => e.notionId === 'fe').flags.fee === true);
 
 if (failures.length) {
   console.error(`\nselftest-schedule: ${failures.length} FAILED, ${passed} passed`);

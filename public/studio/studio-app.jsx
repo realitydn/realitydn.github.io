@@ -772,31 +772,25 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           </button>
         </div>
         <div className="rs-seg">
-          {AP_OUT.map(fmt=>(
+          {AP_OUT.filter(fmt=>fmt!=='a4').map(fmt=>(
             <button key={fmt} className={doc.activeFormat===fmt?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:fmt}))}>
               {AP_FMT[fmt].label}<small>{AP_FMT[fmt].sub}</small>
             </button>
           ))}
         </div>
-        <div className="rs-seg xtra"
-          title="Extra print view — never part of the Save-All bundle. Save here for a print-resolution A1: 3508px wide (150 dpi), PDF at true 594×841mm.">
-          <button className={doc.activeFormat==='a1'?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:'a1'}))}>
-            A1<small>PRINT XL</small>
-          </button>
-        </div>
-        <select className={'rs-stsel'+(AP_STD.indexOf(doc.activeFormat)>=0?' on':'')} aria-label="Standee size"
-          value={AP_STD.indexOf(doc.activeFormat)>=0 ? doc.activeFormat : ''}
+        {/* Print options — A4 / A1 XL / standees / handouts collapsed into one menu
+            to save menubar space. A4 stays in the Save-All bundle; the rest are
+            on-demand print views captured at true print resolution. */}
+        <select className={'rs-stsel'+(['a4','a1'].concat(AP_STD).concat(AP_HND).indexOf(doc.activeFormat)>=0?' on':'')}
+          aria-label="Print options"
+          value={['a4','a1'].concat(AP_STD).concat(AP_HND).indexOf(doc.activeFormat)>=0 ? doc.activeFormat : ''}
           onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
-          title="Standee / roll-up print views (portrait) — never part of the Save-All bundle. Save here for a print-resolution standee: true cm size at 150 dpi, PDF as a real-world mm page a shop runs 1:1.">
-          <option value="">Standee…</option>
-          {AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}
-        </select>
-        <select className={'rs-stsel'+(AP_HND.indexOf(doc.activeFormat)>=0?' on':'')} aria-label="Handout size"
-          value={AP_HND.indexOf(doc.activeFormat)>=0 ? doc.activeFormat : ''}
-          onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
-          title="Small handout / flyer print views — same 1:√2 sheet as A4, captured at true size (A5 148×210mm, A6 105×148mm @ 300 dpi). Never part of the Save-All bundle; the PDF is a real-world mm page a shop runs 1:1.">
-          <option value="">Handout…</option>
-          {AP_HND.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label}</option>))}
+          title="Print outputs — A4, A1 XL, roll-up standees, and handout flyers. A4 rides the Save-All bundle; the rest are on-demand at true print resolution (PDF as a real-world mm page a shop runs 1:1).">
+          <option value="">Print options…</option>
+          <option value="a4">{AP_FMT['a4'].label} · {AP_FMT['a4'].sub}</option>
+          <option value="a1">{AP_FMT['a1'].label} · {AP_FMT['a1'].sub}</option>
+          <optgroup label="Standees">{AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}</optgroup>
+          <optgroup label="Handouts">{AP_HND.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label}</option>))}</optgroup>
         </select>
         {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
           title="Clear all overrides for this format">↺ {overrideCount||0}</button>}
@@ -897,7 +891,15 @@ function App(){
     try{
       if(!window.RCloud) return;
       const t = await window.RCloud.signIn();
-      setCloudUser(t ? (window.RCloud.currentEmail()||'signed in') : null);
+      const email = t ? (window.RCloud.currentEmail()||'signed in') : null;
+      setCloudUser(email);
+      // on connect: migrate THIS browser's templates UP to the account, then pull any
+      // the account has that this browser lacks. Both best-effort; never throw.
+      if(email && window.RStore){
+        try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
+        try{ if(window.RStore.cloudPull){ const all = await window.RStore.cloudPull();
+          if(Array.isArray(all)) setUserTpls(all.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0))); } }catch(e){}
+      }
     }catch(e){ /* never throws into render */ }
   }
   function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){} setCloudUser(null); }
@@ -1124,9 +1126,10 @@ function App(){
     try{
       const m = await window.RStore.migrate();
       let all = await window.RStore.tplGetAll();
-      /* WP9: best-effort pull of any cloud templates this browser is missing.
-         IndexedDB stays the source of truth — cloudPull never throws and returns
-         the local list unchanged when signed-out / hub dormant. */
+      /* WP9: migrate this browser's library UP to the account, then pull any cloud
+         templates this browser is missing. IndexedDB stays the source of truth —
+         both calls never throw and no-op when signed-out / hub dormant. */
+      try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
       try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
       all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
       if(!live) return;

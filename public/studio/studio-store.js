@@ -115,6 +115,19 @@
     return local;
   }
 
+  /* Push EVERY local template UP to the account (best-effort upsert) — the inverse
+     of cloudPull. Used on sign-in / load so a browser's existing library migrates
+     into the account, not only templates saved after signing in. putDoc is an
+     upsert (last-write-wins), so this is idempotent. No-ops when signed-out. */
+  async function cloudPushAll(){
+    try{
+      const rc = _rc();
+      if(!rc || !rc.isSignedIn()) return;
+      let local = []; try{ local = await tplGetAll(); }catch(e){ local = []; }
+      cloudPutMany(local);
+    }catch(e){}
+  }
+
   async function tplGetAll(){ await open(); return reqVal(store(T_STORE, 'readonly').getAll()); }
 
   async function tplPut(t){ await open(); const s = store(T_STORE, 'readwrite'); s.put(t); await txDone(s.transaction); cloudPutTpl(t); }
@@ -162,5 +175,5 @@
     return { migrated: arr.length };
   }
 
-  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll, metaGet, metaPut, migrate, cloudPull, LS_TPL_KEY };
+  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll, metaGet, metaPut, migrate, cloudPull, cloudPushAll, LS_TPL_KEY };
 })();

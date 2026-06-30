@@ -66,7 +66,7 @@ const FORMATS = {
   'st-80x180': { w:1080, h:2430, label:'80×180', sub:'STANDEE', print:{ wmm:800, hmm:1800, dpi:150 } },
   'st-80x200': { w:1080, h:2700, label:'80×200', sub:'STANDEE', print:{ wmm:800, hmm:2000, dpi:150 } }
 };
-const OUTPUT_FORMATS = ['4x5','5x7','1x1','9x16','fbcover','a4'];
+const OUTPUT_FORMATS = ['4x5','1x1','9x16','fbcover','a4'];   // 5x7 removed; a4 stays in Save-All but renders under "Print options", not as an inline tab
 /* Extra on-demand print views — never in the Save-All bundle. A1 is the single
    XL sheet (its own toolbar button); these are the roll-up standee family,
    surfaced through the toolbar's STANDEE picker. */

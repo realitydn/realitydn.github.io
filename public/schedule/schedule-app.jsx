@@ -510,6 +510,14 @@ function ImportModal({ doc, setDoc, onClose }){
           {hasCloud && <button className="ss-iconbtn" onClick={pullFromFeed}
             title="Build this range's events from the published REALITY Events Feed (best-effort; no-op if the feed is unavailable)">
             {feed && feed.loading ? 'Pulling…' : 'Pull from REALITY feed'}</button>}
+          <button className="ss-iconbtn" onClick={()=>{
+              const n = doc.events.filter(e=>!e.notionId).length;
+              if(!n){ window.alert('No un-synced events — everything here came from the REALITY app.'); return; }
+              if(!window.confirm('Remove '+n+' un-synced (local) event'+(n===1?'':'s')+'? Only events synced from the app remain. Anything typed in by hand here is removed.')) return;
+              setDoc(d=>Object.assign({}, d, { events:d.events.filter(e=>e.notionId) }));
+              onClose(null);
+            }}
+            title="Remove events added locally (not from the app), leaving only the app-synced ones — clears stray duplicates">Remove un-synced events</button>
           <input ref={fileRef} type="file" accept=".csv,.txt,text/csv,text/plain" style={{ display:'none' }}
             onChange={e=>{ const f=e.target.files[0]; if(!f) return;
               const fr=new FileReader(); fr.onload=()=>{ setFeed(null); setText(String(fr.result)); }; fr.readAsText(f, 'utf-8'); e.target.value=''; }} />

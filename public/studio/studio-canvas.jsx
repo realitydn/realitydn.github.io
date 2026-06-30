@@ -10,7 +10,8 @@ const SC_MONT = "'Montserrat',sans-serif";
 function scSnap(v, step){ return Math.round(v/step)*step; }
 
 function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
-                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly }){
+                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly,
+                        sliceMode, feedSlice, onSliceChange }){
   const f = SC_FMT[format];
   const t = scTheme(theme);
   const safe = scSafe(format);
@@ -41,6 +42,16 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
   function startResize(e, el){
     e.stopPropagation();
     dragRef.current = { mode:'resize', id:el.id, x:el.x, y:el.y };
+    addListeners();
+  }
+  // Feed-slice band: drag the band (move) or its top/bottom edge (resize). yFrac/hFrac
+  // are fractions of the canvas height, so the slice is format-agnostic.
+  function startSlice(e, mode){
+    e.stopPropagation();
+    const p = toCanvas(e);
+    const y = (feedSlice && feedSlice.yFrac != null ? feedSlice.yFrac : 0.4) * f.h;
+    const h = (feedSlice && feedSlice.hFrac != null ? feedSlice.hFrac : 0.2) * f.h;
+    dragRef.current = { mode:'slice-'+mode, oy:p.y - y, y0:y, h0:h };
     addListeners();
   }
 
@@ -82,6 +93,18 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
       let nw = Math.max(120, p.x - d.x), nh = Math.max(70, p.y - d.y);
       if(snap){ nw = scSnap(nw, SC_STEP); nh = scSnap(nh, SC_STEP); }
       onChange(d.id, { w:Math.round(nw), h:Math.round(nh) });
+    }
+    else if(d.mode==='slice-move'){
+      const ny = Math.max(0, Math.min(f.h - d.h0, p.y - d.oy));
+      onSliceChange && onSliceChange({ yFrac:ny/f.h, hFrac:d.h0/f.h });
+    }
+    else if(d.mode==='slice-top'){
+      const minH = 80, bottom = d.y0 + d.h0, ny = Math.max(0, Math.min(bottom - minH, p.y));
+      onSliceChange && onSliceChange({ yFrac:ny/f.h, hFrac:(bottom - ny)/f.h });
+    }
+    else if(d.mode==='slice-bot'){
+      const minH = 80, nh = Math.max(minH, Math.min(f.h - d.y0, p.y - d.y0));
+      onSliceChange && onSliceChange({ yFrac:d.y0/f.h, hFrac:nh/f.h });
     }
   }
   function onUp(){ dragRef.current = null; setGuides([]); removeListeners(); onCommit && onCommit(); }
@@ -163,6 +186,29 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
               pointerEvents:'auto', cursor:'nwse-resize' }} />
           </div>
         )}
+
+        {/* Feed-slice selector: a draggable horizontal band; the area outside dims.
+            What's inside the band (photos only, no text) becomes the 'feed' export. */}
+        {sliceMode && !exporting && (() => {
+          const sy = (feedSlice && feedSlice.yFrac != null ? feedSlice.yFrac : 0.4) * f.h;
+          const sh = (feedSlice && feedSlice.hFrac != null ? feedSlice.hFrac : 0.2) * f.h;
+          const hh = 20 / scale, lw = 2.5 / scale, dim = 'rgba(13,9,5,.5)';
+          return (
+            <React.Fragment>
+              <div style={{ position:'absolute', left:0, top:0, width:f.w, height:sy, background:dim, pointerEvents:'none', zIndex:58 }} />
+              <div style={{ position:'absolute', left:0, top:sy+sh, width:f.w, height:Math.max(0, f.h-sy-sh), background:dim, pointerEvents:'none', zIndex:58 }} />
+              <div onPointerDown={(e)=>startSlice(e, 'move')} style={{ position:'absolute', left:0, top:sy, width:f.w, height:sh,
+                border:`${lw}px solid ${SC_PAL.pink}`, boxSizing:'border-box', cursor:'grab', pointerEvents:'auto', zIndex:59 }}>
+                <div style={{ position:'absolute', left:8/scale, top:6/scale, fontFamily:SC_MONT, fontWeight:700,
+                  fontSize:13/scale, letterSpacing:'.12em', color:SC_PAL.pink, pointerEvents:'none' }}>FEED SLICE</div>
+              </div>
+              <div onPointerDown={(e)=>startSlice(e, 'top')} title="Drag to set the slice top" style={{ position:'absolute', left:'50%', top:sy,
+                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#fff', border:`${lw}px solid ${SC_PAL.pink}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
+              <div onPointerDown={(e)=>startSlice(e, 'bot')} title="Drag to set the slice bottom" style={{ position:'absolute', left:'50%', top:sy+sh,
+                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#fff', border:`${lw}px solid ${SC_PAL.pink}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
+            </React.Fragment>
+          );
+        })()}
       </div>
     </div>
   );

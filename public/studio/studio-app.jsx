@@ -864,6 +864,8 @@ function App(){
   const [dayOpen, setDayOpen] = React.useState({});   // My-templates day sub-menus (by accent → weekday)
   const [exporting, setExporting] = React.useState(false);
   const [plateOnly, setPlateOnly] = React.useState(false);   // image-only/text-less render for the 'feed' slot
+  const [sliceMode, setSliceMode] = React.useState(false);   // editing the feed-slice band
+  const setFeedSlice = (s)=>setDoc(d=>({ ...d, feedSlice:s }));
   const [exportMsg, setExportMsg] = React.useState('');
 
   /* Shift-click adds/removes; a plain click selects one. */
@@ -1316,8 +1318,8 @@ function App(){
        4x5  → poster4x5   (the designed 4:5 poster)
        9x16 → story
        1x1  → square1x1
-       4x5  → feed        (image-only / text-less plate: photos only, no text or
-                           design — the clean hero image the app + site can reuse)
+       4x5  → feed        (the text-less FEED SLICE: a horizontal band of the image
+                           only — the strip that fills the calendar's "This week" cards)
      Strictly additive: nothing here touches the local export path; all guarded.
      Photos are embedded inline as data URLs (content-addressing OUT OF SCOPE —
      TODO(WP9): content-address photos so big posters don't bloat R2). ---- */
@@ -1356,6 +1358,17 @@ function App(){
         style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
       return window.htmlToImage.toBlob(node, opts);
     };
+    // The feed slice: capture only the chosen band of the 4:5 master — shift the
+    // canvas up by the band's top, capture the band's height. Photo-only via plateOnly,
+    // so the output is a small text-less strip (storage/bandwidth win).
+    const toBlobSlice = ()=>{
+      const node=canvasRef.current, f=AP_FMT['4x5'];
+      const sl=doc.feedSlice||{ yFrac:0.4, hFrac:0.2 };
+      const by=Math.round((sl.yFrac||0)*f.h), bh=Math.max(1, Math.round((sl.hFrac||0.2)*f.h));
+      const opts={ width:f.w, height:bh, pixelRatio:2, cacheBust:true, backgroundColor:bg,
+        style:{ transform:`translateY(${-by}px)`, left:'0px', top:'0px', margin:'0', position:'static' } };
+      return window.htmlToImage.toBlob(node, opts);
+    };
     let ok = 0, failed = 0;
     try{
       for(const m of EVENT_SLOTS){
@@ -1365,7 +1378,7 @@ function App(){
         setDoc(d=>({ ...d, activeFormat:m.fmt }));
         await new Promise(r=>setTimeout(r, m.plate?440:380));   // React render + rescale + photo repaint
         let blob = null;
-        try{ blob = await toBlob(AP_FMT[m.fmt]); }catch(e){ blob = null; }
+        try{ blob = await (m.plate ? toBlobSlice() : toBlob(AP_FMT[m.fmt])); }catch(e){ blob = null; }
         if(m.plate) setPlateOnly(false);
         if(!blob){ failed++; continue; }
         setExportMsg('Uploading '+label+'…');
@@ -1498,7 +1511,8 @@ function App(){
 
         <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent}
           showGrid={doc.showGrid} snap={doc.snap} scale={scale} stageRef={stageRef} canvasRef={canvasRef}
-          selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} exporting={exporting} plateOnly={plateOnly} />
+          selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} exporting={exporting} plateOnly={plateOnly}
+          sliceMode={sliceMode} feedSlice={doc.feedSlice} onSliceChange={setFeedSlice} />
 
         <div className="rs-inspector">
           <div className={'rs-context'+(isOutput?' out':' master')}>
@@ -1510,6 +1524,20 @@ function App(){
             clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel}
             resetOverride={resetOverride} toggleHidden={toggleHidden}
             selCount={selectedIds.length} align={alignSel} />
+          {/* Feed slice — the text-less strip that fills the calendar's "This week"
+              cards. Toggle to drag the band on the poster; sliders for precision. */}
+          <div className="rs-sech" style={{ marginTop:16 }}>Feed slice</div>
+          <div className="rs-mini" style={{ marginBottom:6 }}>The text-less strip used on the calendar’s “This week” cards (a thin band — far smaller than a full poster). Pick which part of the image to use.</div>
+          <button className="rs-addrow" onClick={()=>{ const on=!sliceMode; setSliceMode(on);
+            if(on) setDoc(d=>({ ...d, activeFormat:'master', feedSlice:d.feedSlice||{ yFrac:0.4, hFrac:0.2 } })); }}>
+            {sliceMode ? '✓ Done selecting' : '◧ Select feed slice…'}</button>
+          {sliceMode && <React.Fragment>
+            <Slider label="Top" val={Math.round(((doc.feedSlice&&doc.feedSlice.yFrac)||0.4)*100)} min={0} max={92} step={1}
+              onChange={v=>setFeedSlice({ yFrac:v/100, hFrac:(doc.feedSlice&&doc.feedSlice.hFrac)||0.2 })} suffix="%" />
+            <Slider label="Height" val={Math.round(((doc.feedSlice&&doc.feedSlice.hFrac)||0.2)*100)} min={8} max={60} step={1}
+              onChange={v=>setFeedSlice({ yFrac:(doc.feedSlice&&doc.feedSlice.yFrac)||0.4, hFrac:v/100 })} suffix="%" />
+            <button className="rs-addrow" style={{ marginTop:6 }} onClick={()=>setFeedSlice({ yFrac:0.4, hFrac:0.2 })}>Center · 4:1 band</button>
+          </React.Fragment>}
         </div>
       </div>
 
@@ -1532,7 +1560,7 @@ function EventPickerModal({ picker, onPick, onClose }){
         style={{ width:420, maxWidth:'92vw', maxHeight:'80vh', overflow:'auto', background:'#fffbf1', color:'#0d0905', borderRadius:10, padding:18, boxShadow:'0 30px 70px rgba(0,0,0,.5)' }}>
         <div style={{ fontFamily:'Montserrat', fontWeight:800, letterSpacing:'.04em', fontSize:14, marginBottom:4 }}>Export to event</div>
         <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>
-          Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus an image-only (text-less) plate → <b>feed</b> onto the chosen event.
+          Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus your text-less <b>feed slice</b> → <b>feed</b> onto the chosen event.
         </div>
         {picker.loading && <div style={{ fontSize:12, opacity:.7 }}>Loading upcoming events…</div>}
         {!picker.loading && picker.err && <div style={{ fontSize:12, color:'#b00' }}>{picker.err}</div>}

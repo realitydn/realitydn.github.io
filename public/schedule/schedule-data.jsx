@@ -394,6 +394,46 @@ function buildDocFromFeed(feedOrEvents, opts){
   return { events, errors };
 }
 
+/* Idempotent App→Schedule merge for the auto-pull-on-open. The app is the source
+   of truth, so we REPLACE all feed-sourced rows (notionId set) with the freshly-
+   built feed rows, while (a) keeping purely-local rows (notionId == null), (b)
+   preserving the user's presentation layer (titleShort, non-default emphasis, hide,
+   repeatUntil) by notionId, and (c) collapsing weekly duplicates so weekly
+   projections don't stack. Never accumulates across opens; an event removed in the
+   app (or now out of range) simply drops. Returns { events, added, updated,
+   removed, changed }. Caller no-ops on an empty/failed feed before calling this. */
+function mergeFeedIntoDoc(existing, fresh){
+  const seenWeekly = {}, rows = [];
+  (fresh||[]).forEach(e=>{
+    if(!e) return;
+    if(e.repeat==='weekly'){
+      const k = (e.title||'')+'|'+(e.start||'')+'|'+((e.locations||[]).join(','));
+      if(seenWeekly[k]) return; seenWeekly[k] = 1;
+    }
+    rows.push(e);
+  });
+  const prevFeed = {}, local = [];
+  (existing||[]).forEach(e=>{ if(e && e.notionId) prevFeed[e.notionId] = e; else if(e) local.push(e); });
+  const sig = e=>[e.date,e.start,e.end,e.title,(e.locations||[]).join(','),e.repeat||'',(e.exceptions||[]).join(',')].join('|');
+  let added = 0, updated = 0;
+  const merged = rows.map(e=>{
+    const p = prevFeed[e.notionId];
+    if(!p){ added++; return e; }
+    /* take core fields from the feed; keep the user's presentation choices */
+    const next = Object.assign({}, e, {
+      titleShort: p.titleShort,
+      emphasis: (p.emphasis && p.emphasis!=='none') ? p.emphasis : e.emphasis,
+      hide: p.hide || e.hide,
+      repeatUntil: p.repeatUntil != null ? p.repeatUntil : e.repeatUntil,
+    });
+    if(sig(next) !== sig(p)) updated++;
+    return next;
+  });
+  const newIds = {}; merged.forEach(e=>{ if(e.notionId) newIds[e.notionId] = 1; });
+  let removed = 0; Object.keys(prevFeed).forEach(id=>{ if(!newIds[id]) removed++; });
+  return { events: local.concat(merged), added, updated, removed, changed: (added>0 || updated>0 || removed>0) };
+}
+
 /* ---- persistence ---- */
 const SCH_LS = 'reality-schedule-doc-v2';
 function loadStoredDoc(){
@@ -460,7 +500,7 @@ Object.assign(window, {
   suid, blankEvent, newDoc, starterDoc, normalizeDoc,
   timeKey, eventsOn, dayInfo, timeLabel, usedLegend, partDates,
   parseQuickLine, parsePasteBlock, parseCSV, serializeCSV,
-  buildDocFromFeed, ictHHMM, ictDate,
+  buildDocFromFeed, mergeFeedIntoDoc, ictHHMM, ictDate,
   loadStoredDoc, storeDoc,
   Wordmark, SchQR,
 });
@@ -468,4 +508,4 @@ Object.assign(window, {
 /* CommonJS-style export for the node self-test (scripts/selftest-schedule.mjs),
    ignored in the browser where `module` is undefined. Kept guarded so it never
    throws when this file loads as a plain <script>. */
-try{ if(typeof module!=='undefined' && module.exports){ module.exports = { buildDocFromFeed, ictHHMM, ictDate }; } }catch(e){}
+try{ if(typeof module!=='undefined' && module.exports){ module.exports = { buildDocFromFeed, mergeFeedIntoDoc, ictHHMM, ictDate }; } }catch(e){}

@@ -148,6 +148,16 @@ export default function EventProposalForm({ t, onSuccess }) {
       const turnstileToken =
         (TURNSTILE_SITE_KEY && window.turnstile?.getResponse()) || undefined;
 
+      // Notion-era pipeline stays live as a backup while the hub beds in —
+      // fire-and-forget to the same-origin worker (Notion + Sheets + the Resend
+      // confirmation email). Sent first so a hub outage can't lose the pitch;
+      // only the hub response below drives the success/error UX.
+      fetch('/api/event-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      }).catch(() => {});
+
       const response = await fetch(`${HUB}/api/proposals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

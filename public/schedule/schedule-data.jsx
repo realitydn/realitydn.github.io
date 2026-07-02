@@ -377,7 +377,10 @@ function buildDocFromFeed(feedOrEvents, opts){
       if(!date){ errors.push('Event "'+(ev.title_en||ev.id||'?')+'" has no usable start date'); return; }
       if(!inRange(date)) return;                                 // silently skip out-of-range (caller clamps)
       const start = ictHHMM(ev.startsAt) || '19:00';
-      const end = ev.endsAt ? ictHHMM(ev.endsAt) : null;
+      // End times are deliberately NOT synced from the app — the schedule rarely
+      // shows them. `end` is user-owned here: set one by hand in the Inspector
+      // and the merge below preserves it across re-syncs.
+      const end = null;
       const code = ev.location && ev.location.code ? String(ev.location.code).toUpperCase() : null;
       const mapped = code && codeSet[code] ? codeSet[code] : null;
       const tags = Array.isArray(ev.tags) ? ev.tags.map(t=>String(t).toLowerCase()) : [];
@@ -430,6 +433,9 @@ function mergeFeedIntoDoc(existing, fresh){
       emphasis: (p.emphasis && p.emphasis!=='none') ? p.emphasis : e.emphasis,
       hide: p.hide || e.hide,
       repeatUntil: p.repeatUntil != null ? p.repeatUntil : e.repeatUntil,
+      // end times don't sync from the app (feed rows carry end:null) — a
+      // hand-set end (incl. 'late'/ALL NIGHT) belongs to the user and sticks
+      end: p.end != null ? p.end : e.end,
     });
     if(sig(next) !== sig(p)) updated++;
     return next;

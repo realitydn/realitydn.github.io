@@ -53,6 +53,26 @@ function storyStem(fmt, base, accent){
    saved by name in localStorage, separate from the working doc. */
 function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
 
+/* ---- In-queue helpers ------------------------------------------------------
+   The queue lists app-calendar events that still need a poster. Feed ISO
+   strings are always +07:00 (the hub's ictIso), so date/time read straight off
+   the string — no TZ math in the browser. */
+function feedDate(iso){ return (iso||'').slice(0,10); }                    // YYYY-MM-DD
+function feedTime(iso){ return (iso||'').slice(11,16); }                   // HH:MM
+function feedDayIdx(iso){ const d=feedDate(iso); if(d.length<10) return null;   // 0=Mon..6=Sun
+  const w=new Date(d+'T12:00:00Z').getUTCDay(); return isNaN(w)?null:(w+6)%7; }
+function feedDayLabel(iso){ const d=feedDate(iso); if(d.length<10) return '';   // house style, day-first: 9.7
+  return (+d.slice(8,10))+'.'+(+d.slice(5,7)); }
+/* One queue row per SERIES for weekly events; dismiss/claim key by the series
+   so next week's instance doesn't resurrect a dismissed row. */
+function queueKey(ev){ return (ev && (ev.seriesId || ev.id)) || null; }
+const QUEUE_DISMISS_KEY = 'reality-studio-queue-dismissed-v1';
+function loadQueueDismissed(){ try{ const r=localStorage.getItem(QUEUE_DISMISS_KEY); if(r){ const o=JSON.parse(r); if(o&&typeof o==='object'&&!Array.isArray(o)) return o; } }catch(e){} return {}; }
+function storeQueueDismissed(o){ try{ localStorage.setItem(QUEUE_DISMISS_KEY, JSON.stringify(o)); }catch(e){} }
+/* Title size for a prefilled starter — steps down the type scale as titles get
+   longer, so long event names land inside the Classic layout's box. */
+function queueTitleSize(t){ const n=(t||'').length; return n<=12?120 : n<=22?100 : n<=34?82 : n<=50?68 : 56; }
+
 /* ---------- small controls ---------- */
 function Field({ label, value, onChange, area }){
   return (
@@ -1060,7 +1080,7 @@ function App(){
     setDoc(d=>({ ...d, elements:[...d.elements, c] })); setSelectedIds([c.id]);
   };
   const layer = (dir)=>{ if(!sel) return; setDoc(d=>{ const arr=d.elements.slice(); const i=arr.findIndex(e=>e.id===sel.id); const j=i+dir; if(j<0||j>=arr.length) return d; const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp; return {...d, elements:arr}; }); };
-  const clearAll = ()=>{ if(confirm('Remove all elements from the poster?')){ setDoc(d=>({...d, elements:[], overrides:{}})); setSelectedIds([]); } };
+  const clearAll = ()=>{ if(confirm('Remove all elements from the poster?')){ setDoc(d=>({...d, elements:[], overrides:{}, eventRef:null})); setSelectedIds([]); } };
 
   /* Align the selected boxes to a shared edge/line — the Swiss vertical (and
      horizontal). Operates on the selection's bounding box. */
@@ -1111,10 +1131,44 @@ function App(){
     if(docRef.current.elements.length &&
        !window.confirm('Replace the current poster with the “'+tpl.name+'” layout?')) return;
     const built = apBuildTpl(tpl);
-    setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:{},
-      elements:built.elements, theme:built.theme, accent:built.accent }));
+    /* keep the template's authored per-format nudges (they used to be dropped
+       here), and detach any event link — this is a fresh, unqueued poster */
+    setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
+      elements:built.elements, theme:built.theme, accent:built.accent, eventRef:null }));
     setSelectedIds([]);
   }
+
+  function dismissQueueItem(ev){
+    const k = queueKey(ev); if(!k) return;
+    const next = Object.assign({}, queueDismissed, { [k]: Date.now() });
+    setQueueDismissed(next); storeQueueDismissed(next);
+  }
+
+  /* Click a queue row → the Classic starter prefilled with the event's name,
+     day accent and time, linked to the event (doc.eventRef) so the cloud send
+     offers it first and a template save claims it off the queue. */
+  function applyQueueItem(ev){
+    const title = ev.title_en || ev.title_vi || 'Untitled event';
+    if(docRef.current.elements.length &&
+       !window.confirm('Replace the current poster with a starter for “'+title+'”?')) return;
+    const tpl = (AP_TPL||[]).find(t=>t.id==='talk-classic') || (AP_TPL||[])[0];
+    if(!tpl) return;
+    const built = apBuildTpl(tpl);
+    const di = feedDayIdx(ev.startsAt);
+    const accent = di!=null ? AP_ABYDAY[di] : built.accent;
+    /* weekly series read "THU · 19:00"; one-offs pin the date: "THU 9.7 · 19:00" */
+    const when = ((di!=null?AP_DABBR[di].toUpperCase():'')
+      + (ev.seriesId ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
+    built.elements.forEach(el=>{
+      if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); }
+      if(el.type==='when'){ el.text = when; el.w = 460; }
+    });
+    setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
+      elements:built.elements, theme:built.theme, accent, title,
+      eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt } }));
+    setSelectedIds([]);
+  }
+
 
   /* ---- My templates — save / load / delete full poster snapshots.
      The library lives in IndexedDB (window.RStore) — room for gigabytes, so
@@ -1142,6 +1196,68 @@ function App(){
       if(live) setUserTpls(loadUserTpls());
     }finally{ if(live) setTplReady(true); }
   })(); return ()=>{ live=false; }; }, []);
+
+  /* ---- In queue — app-calendar events that still need a poster ----
+     Anonymous public feed read (no sign-in). An event queues while it has no
+     image in any poster slot, no saved template claiming it (tpl.eventId), and
+     hasn't been dismissed here. Weekly series collapse to their next instance.
+     The fetch is unclamped so the ?event= deep link can find far-out events;
+     the visible queue clamps to the next QUEUE_DAYS days. */
+  const QUEUE_DAYS = 35;
+  const [queueOpen, setQueueOpen] = React.useState(true);
+  const [queueFeed, setQueueFeed] = React.useState(null);   // null=loading | { events, err }
+  const [queueDismissed, setQueueDismissed] = React.useState(loadQueueDismissed);
+  const [queueSent, setQueueSent] = React.useState({});     // keys postered this session
+  React.useEffect(()=>{ let live=true; (async()=>{
+    try{
+      if(!window.RCloud || !window.RCloud.fetchFeed){ setQueueFeed({ events:[], err:'unavailable' }); return; }
+      const from = new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);   // today, ICT
+      const fd = await window.RCloud.fetchFeed({ from });
+      if(!live) return;
+      setQueueFeed(fd && Array.isArray(fd.events) ? { events:fd.events, err:null } : { events:[], err:'unavailable' });
+    }catch(e){ if(live) setQueueFeed({ events:[], err:'unavailable' }); }
+  })(); return ()=>{ live=false; }; }, []);
+
+  const queueItems = React.useMemo(()=>{
+    const evs = (queueFeed && queueFeed.events) || [];
+    if(!evs.length) return [];
+    const claimed = {}; userTpls.forEach(t=>{ if(t && t.eventId) claimed[t.eventId]=1; });
+    const horizon = new Date(Date.now()+7*3600*1000 + QUEUE_DAYS*86400000).toISOString().slice(0,10);
+    const hasPoster = ev=>{ const p=(ev&&ev.posters)||{}; return !!(p.poster4x5||p.feed||p.square1x1||p.story); };
+    const done = ev=>{ const k=queueKey(ev); return hasPoster(ev) || claimed[k] || queueDismissed[k] || queueSent[k]; };
+    const bySeries = {}, out = [];
+    evs.forEach(ev=>{
+      if(!ev || !ev.id || !ev.startsAt) return;
+      if(ev.seriesId){
+        const s = bySeries[ev.seriesId] || (bySeries[ev.seriesId] = { first:null, off:false });
+        if(done(ev)) s.off = true;
+        if(!s.first || ev.startsAt < s.first.startsAt) s.first = ev;
+        return;
+      }
+      if(done(ev) || feedDate(ev.startsAt) > horizon) return;
+      out.push(ev);
+    });
+    Object.keys(bySeries).forEach(k=>{ const s=bySeries[k];
+      if(!s.off && s.first && feedDate(s.first.startsAt) <= horizon) out.push(s.first); });
+    out.sort((a,b)=> a.startsAt < b.startsAt ? -1 : 1);
+    return out;
+  }, [queueFeed, userTpls, queueDismissed, queueSent]);
+
+  /* ?event=<id> deep link (the app's "Open in Poster Studio") — once the feed
+     lands, load that event's starter directly. */
+  const deepLinkDoneRef = React.useRef(false);
+  React.useEffect(()=>{
+    if(deepLinkDoneRef.current || !queueFeed) return;
+    deepLinkDoneRef.current = true;
+    try{
+      const id = new URLSearchParams(window.location.search).get('event');
+      if(!id) return;
+      const ev = (queueFeed.events||[]).find(e=>e.id===id);
+      if(ev) applyQueueItem(ev);
+      else if(queueFeed.err) window.alert('Couldn’t reach the events feed to open that event — check the connection and reload.');
+      else window.alert('That event isn’t in the public feed yet (draft or unpublished) — publish it in the app, then try again.');
+    }catch(e){ /* never disturb the app over a deep link */ }
+  }, [queueFeed]);
   async function saveUserTpl(){
     const d = docRef.current;
     if(!d.elements.length){ window.alert('Nothing on the poster to save yet.'); return; }
@@ -1150,8 +1266,14 @@ function App(){
     const existing = userTpls.find(t=>t.name.toLowerCase()===name.toLowerCase());
     if(existing && !window.confirm('A template called “'+existing.name+'” already exists. Replace it?')) return;
     const snap = JSON.parse(JSON.stringify({ elements:d.elements, overrides:d.overrides||{},
-      masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'' }));
-    const t = { id: existing? existing.id : window.uid(), name, savedAt: Date.now(), doc: snap };
+      masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'',
+      eventRef:d.eventRef||null }));
+    /* eventId claims the queue entry that spawned this poster — saving files the
+       template under its day and takes the event off "In queue". Saving always
+       lands the template in the active library (never straight into Archive). */
+    const t = { id: existing? existing.id : window.uid(), name, savedAt: Date.now(),
+      eventId: (d.eventRef && d.eventRef.key) || (existing && existing.eventId) || null,
+      archived: false, doc: snap };
     try{ await window.RStore.tplPut(t); }
     catch(e){ console.error(e); window.alert('Couldn’t save the template — the browser blocked writing to storage. Your other templates are unaffected.'); return; }
     setUserTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
@@ -1169,8 +1291,21 @@ function App(){
       Object.keys(fo).forEach(id=>{ if(idMap[id]) nfo[idMap[id]]=fo[id]; }); overrides[f]=nfo; });
     setDoc(d=>({ ...d, activeFormat:'master', masterFormat:snap.masterFormat||'4x5',
       elements:snap.elements, overrides, theme:snap.theme, accent:snap.accent,
-      title: snap.title || d.title }));
+      title: snap.title || d.title,
+      /* restore the template's own event link (or none) — never inherit the
+         previous poster's, or the cloud send would offer the wrong event */
+      eventRef: snap.eventRef || null }));
     setSelectedIds([]);
+  }
+  /* Archive / restore — archived templates leave the day-filed library and sit
+     in the collapsible Archive drawer below it. The flag rides the same record
+     (and its cloud mirror), so nothing about storage changes shape. */
+  async function setTplArchived(id, val){
+    const t = userTpls.find(x=>x.id===id); if(!t) return;
+    const next = Object.assign({}, t, { archived: !!val });
+    try{ await window.RStore.tplPut(next); }
+    catch(e){ console.error(e); window.alert('Couldn’t update that template right now — try again.'); return; }
+    setUserTpls(userTpls.map(x=>x.id===id? next : x));
   }
   async function delUserTpl(id){
     const t = userTpls.find(x=>x.id===id);
@@ -1209,6 +1344,7 @@ function App(){
       const incoming = list
         .filter(t=>t && typeof t.name==='string' && t.name.trim() && t.doc && Array.isArray(t.doc.elements))
         .map(t=>({ id: t.id || window.uid(), name: t.name.trim(), savedAt: t.savedAt || Date.now(),
+                   eventId: t.eventId || null, archived: !!t.archived,
                    doc: Object.assign({ masterFormat:'4x5', theme:'day', accent:'blue', overrides:{}, title:'' }, t.doc) }));
       if(!incoming.length){ window.alert('No usable templates in that file.'); return; }
       const skipped = list.length - incoming.length;
@@ -1336,14 +1472,16 @@ function App(){
       await cloudSignIn();
       if(!window.RCloud.isSignedIn()){ window.alert('Cloud sign-in is needed to export to an event. (Stayed local-only.)'); return; }
     }
-    setEventPicker({ open:true, loading:true, events:[], err:null });
+    /* the event this poster was queued for (if any) gets pinned first in the picker */
+    const origin = docRef.current.eventRef || null;
+    setEventPicker({ open:true, loading:true, events:[], err:null, origin });
     try{
       const today = new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);   // ICT date
       const feed = await window.RCloud.fetchFeed({ from: today });
       const events = (feed && Array.isArray(feed.events)) ? feed.events : [];
-      setEventPicker({ open:true, loading:false, events, err: feed ? null : 'Feed not available yet.' });
+      setEventPicker({ open:true, loading:false, events, err: feed ? null : 'Feed not available yet.', origin });
     }catch(e){
-      setEventPicker({ open:true, loading:false, events:[], err:'Could not load the events feed.' });
+      setEventPicker({ open:true, loading:false, events:[], err:'Could not load the events feed.', origin });
     }
   }
   async function exportToEvent(eventId){
@@ -1386,6 +1524,12 @@ function App(){
         if(res && res.ok) ok++; else failed++;
       }
       setDoc(d=>({ ...d, activeFormat:prev }));
+      if(ok){
+        /* the event now has a poster — take it (and its weekly series) off the queue */
+        const hit = ((queueFeed && queueFeed.events) || []).find(e=>e.id===eventId);
+        const k = hit ? queueKey(hit) : eventId;
+        setQueueSent(s=>Object.assign({}, s, { [k]:1 }));
+      }
       setExportMsg(ok ? ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')) : 'Export to event failed');
       await new Promise(r=>setTimeout(r, ok?1600:1800));
     }catch(err){
@@ -1404,6 +1548,40 @@ function App(){
         cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker} />
       <div className="rs-body">
         <div className="rs-lib">
+          {/* ---- In queue — upcoming app events still missing a poster ---- */}
+          <div className="rs-sech" onClick={()=>setQueueOpen(o=>!o)}
+            style={{ cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span>In queue</span>
+            <span style={{ fontSize:11, opacity:.6 }}>
+              {queueItems.length>0 && <b style={{ marginRight:6 }}>{queueItems.length}</b>}{queueOpen?'▾':'▸'}
+            </span>
+          </div>
+          {queueOpen && <React.Fragment>
+            {queueFeed==null &&
+              <div className="rs-mini" style={{ margin:'4px 0 10px' }}>Checking the calendar…</div>}
+            {queueFeed && queueFeed.err &&
+              <div className="rs-mini" style={{ margin:'4px 0 10px' }}>Couldn’t reach the events feed — the queue appears once it loads (check the connection and reload).</div>}
+            {queueFeed && !queueFeed.err && queueItems.length===0 &&
+              <div className="rs-mini" style={{ margin:'4px 0 10px' }}>All caught up — every event in the next {QUEUE_DAYS===35?'5 weeks':QUEUE_DAYS+' days'} has a poster.</div>}
+            {queueItems.map(ev=>{
+              const di = feedDayIdx(ev.startsAt);
+              const accent = di!=null ? AP_ABYDAY[di] : null;
+              return (
+                <div key={ev.id} className="rs-libitem" onClick={()=>applyQueueItem(ev)}
+                  style={{ cursor:'pointer', position:'relative', paddingRight:36 }}>
+                  <span className="ln" style={{ display:'flex', alignItems:'center', gap:7 }}>
+                    {accent && <span style={{ width:9, height:9, borderRadius:'50%', flex:'none', background:AP_PAL[accent], border:'1px solid rgba(0,0,0,.25)' }} />}
+                    <span>{ev.title_en || ev.title_vi || '(untitled)'}</span>
+                  </span>
+                  <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)} · click for a starter</span>
+                  <button className="rs-tplx" title="Dismiss — this event doesn’t need a poster"
+                    onClick={e=>{ e.stopPropagation(); dismissQueueItem(ev); }}>×</button>
+                </div>
+              );
+            })}
+            {queueFeed && !queueFeed.err && queueItems.length>0 &&
+              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter — saving it as a template, or sending the poster to the event, clears it from the queue.</div>}
+          </React.Fragment>}
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>
             <div className="rs-sech" onClick={()=>setTplOpen(o=>!o)}
               style={{ cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -1420,7 +1598,7 @@ function App(){
                   days start open only if they hold something. */}
               {tplReady && userTpls.length>0 && AP_DNAMES.map((day,di)=>{
                 const dayAccent = AP_ABYDAY[di];
-                const items = userTpls.filter(t=> AP_DAYS[t.doc && t.doc.accent] === day);
+                const items = userTpls.filter(t=> !t.archived && AP_DAYS[t.doc && t.doc.accent] === day);
                 const isOpen = dayOpen[day]!==undefined ? dayOpen[day] : items.length>0;
                 return (
                   <React.Fragment key={day}>
@@ -1435,9 +1613,11 @@ function App(){
                     </div>
                     {isOpen && items.map(t=>(
                       <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
-                        style={{ cursor:'pointer', position:'relative', paddingRight:36, marginLeft:11 }}>
+                        style={{ cursor:'pointer', position:'relative', paddingRight:60, marginLeft:11 }}>
                         <span className="ln">{t.name}</span>
                         <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                        <button className="rs-tplx" style={{ right:34, borderColor:'#3a2f1f', color:'#b6ab97' }} title="Archive this template — tuck it into the Archive drawer below"
+                          onClick={e=>{ e.stopPropagation(); setTplArchived(t.id, true); }}>⤓</button>
                         <button className="rs-tplx" title="Delete this template"
                           onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
                       </div>
@@ -1447,8 +1627,8 @@ function App(){
                   </React.Fragment>
                 );
               })}
-              {tplReady && userTpls.some(t=> !AP_DAYS[t.doc && t.doc.accent]) && (()=>{
-                const items = userTpls.filter(t=> !AP_DAYS[t.doc && t.doc.accent]);
+              {tplReady && userTpls.some(t=> !t.archived && !AP_DAYS[t.doc && t.doc.accent]) && (()=>{
+                const items = userTpls.filter(t=> !t.archived && !AP_DAYS[t.doc && t.doc.accent]);
                 const isOpen = dayOpen._other!==undefined ? dayOpen._other : true;
                 return (
                   <React.Fragment>
@@ -1463,9 +1643,11 @@ function App(){
                     </div>
                     {isOpen && items.map(t=>(
                       <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
-                        style={{ cursor:'pointer', position:'relative', paddingRight:36, marginLeft:11 }}>
+                        style={{ cursor:'pointer', position:'relative', paddingRight:60, marginLeft:11 }}>
                         <span className="ln">{t.name}</span>
                         <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                        <button className="rs-tplx" style={{ right:34, borderColor:'#3a2f1f', color:'#b6ab97' }} title="Archive this template — tuck it into the Archive drawer below"
+                          onClick={e=>{ e.stopPropagation(); setTplArchived(t.id, true); }}>⤓</button>
                         <button className="rs-tplx" title="Delete this template"
                           onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
                       </div>
@@ -1473,7 +1655,38 @@ function App(){
                   </React.Fragment>
                 );
               })()}
-              <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6 }}>＋ Save current poster as template</button>
+              {/* ---- Archive — templates tucked out of the day-filed library ---- */}
+              {tplReady && (()=>{
+                const arch = userTpls.filter(t=>t.archived);
+                const isOpen = dayOpen._archive!==undefined ? dayOpen._archive : false;
+                return (
+                  <React.Fragment>
+                    <div className="rs-dayhdr" onClick={()=>setDayOpen(o=>({...o, _archive:!isOpen}))}
+                      style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'5px 2px',
+                        userSelect:'none', borderBottom:'1px solid rgba(120,110,90,.12)' }}>
+                      <span style={{ width:11, height:11, flex:'none', border:'1px solid rgba(120,110,90,.7)', borderRadius:2, background:'transparent' }} />
+                      <span style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:11, letterSpacing:'.09em', textTransform:'uppercase' }}>Archive</span>
+                      <span style={{ fontSize:10, opacity:.45 }}>tucked away</span>
+                      <span style={{ marginLeft:'auto', fontFamily:'Montserrat', fontWeight:700, fontSize:10, opacity: arch.length?0.6:0.3 }}>{arch.length}</span>
+                      <span style={{ fontSize:10, opacity:.55, width:10, textAlign:'center' }}>{isOpen?'▾':'▸'}</span>
+                    </div>
+                    {isOpen && arch.length===0 &&
+                      <div className="rs-mini" style={{ margin:'3px 0 5px 19px', opacity:.45 }}>Nothing archived — the ⤓ on any template tucks it away here.</div>}
+                    {isOpen && arch.map(t=>(
+                      <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
+                        style={{ cursor:'pointer', position:'relative', paddingRight:60, marginLeft:11, opacity:.75 }}>
+                        <span className="ln">{t.name}</span>
+                        <span className="lh">{t.doc.elements.length} parts · archived</span>
+                        <button className="rs-tplx" style={{ right:34, borderColor:'#3a2f1f', color:'#b6ab97' }} title="Restore to My templates"
+                          onClick={e=>{ e.stopPropagation(); setTplArchived(t.id, false); }}>↩</button>
+                        <button className="rs-tplx" title="Delete this template"
+                          onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
+                      </div>
+                    ))}
+                  </React.Fragment>
+                );
+              })()}
+              <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6, marginTop:8 }}>＋ Save current poster as template</button>
               <div className="rs-rowflex" style={{ marginBottom:6 }}>
                 <button className="rs-addrow" onClick={exportUserTpls} title="Download all My templates (photos included) as one .json">⬇ Export all</button>
                 <button className="rs-addrow" onClick={()=>tplFileRef.current.click()} title="Load templates from an exported .json — same names update, new names add">⬆ Import…</button>
@@ -1553,6 +1766,12 @@ function App(){
    user can push the current poster's formats onto an event's poster slots.
    Reuses the studio's overlay/modal CSS atoms; fully additive UI. ---- */
 function EventPickerModal({ picker, onPick, onClose }){
+  /* When the poster came off "In queue" (doc.eventRef), that event is pinned
+     up top as the obvious one-click send; everything else lists below it. */
+  const origin = picker.origin || null;
+  const originEv = origin ? picker.events.find(e=>e.id===origin.id) : null;
+  const rest = origin ? picker.events.filter(e=>e.id!==origin.id) : picker.events;
+  const whenOf = iso => (iso||'').slice(0,16).replace('T',' ');
   return (
     <div className="rs-overlay" onClick={onClose}
       style={{ position:'fixed', inset:0, background:'rgba(10,7,3,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
@@ -1564,17 +1783,31 @@ function EventPickerModal({ picker, onPick, onClose }){
         </div>
         {picker.loading && <div style={{ fontSize:12, opacity:.7 }}>Loading upcoming events…</div>}
         {!picker.loading && picker.err && <div style={{ fontSize:12, color:'#b00' }}>{picker.err}</div>}
-        {!picker.loading && !picker.err && picker.events.length===0 &&
+        {!picker.loading && !picker.err && picker.events.length===0 && !origin &&
           <div style={{ fontSize:12, opacity:.7 }}>No upcoming events in the feed.</div>}
-        {!picker.loading && picker.events.map(ev=>{
-          const when = (ev.startsAt||'').slice(0,16).replace('T',' ');
+        {!picker.loading && origin && (
+          <React.Fragment>
+            <div style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:10, letterSpacing:'.09em', textTransform:'uppercase', opacity:.55, margin:'2px 0 6px' }}>This poster’s event</div>
+            <div onClick={()=>onPick(origin.id)}
+              style={{ cursor:'pointer', padding:'10px 12px', borderRadius:6, marginBottom:10, border:'2px solid #0d0905', background:'rgba(120,110,90,.07)' }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.16)'}
+              onMouseLeave={e=>e.currentTarget.style.background='rgba(120,110,90,.07)'}>
+              <div style={{ fontWeight:800, fontSize:13 }}>{(originEv && (originEv.title_en || originEv.title_vi)) || origin.title || '(untitled)'}</div>
+              <div style={{ fontSize:11, opacity:.6 }}>{whenOf((originEv && originEv.startsAt) || origin.startsAt)}{originEv && originEv.location && originEv.location.code ? ' · '+originEv.location.code : ''}</div>
+              <div style={{ fontSize:11, opacity:.75, marginTop:3 }}>↳ Send here — this poster was queued for this event.</div>
+            </div>
+            {rest.length>0 &&
+              <div style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:10, letterSpacing:'.09em', textTransform:'uppercase', opacity:.55, margin:'2px 0 6px' }}>…or another event</div>}
+          </React.Fragment>
+        )}
+        {!picker.loading && rest.map(ev=>{
           return (
             <div key={ev.id} onClick={()=>onPick(ev.id)}
               style={{ cursor:'pointer', padding:'8px 10px', borderRadius:6, marginBottom:4, border:'1px solid rgba(120,110,90,.2)' }}
               onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.08)'}
               onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
               <div style={{ fontWeight:700, fontSize:13 }}>{ev.title_en || ev.title_vi || '(untitled)'}</div>
-              <div style={{ fontSize:11, opacity:.6 }}>{when}{ev.location && ev.location.code ? ' · '+ev.location.code : ''}</div>
+              <div style={{ fontSize:11, opacity:.6 }}>{whenOf(ev.startsAt)}{ev.location && ev.location.code ? ' · '+ev.location.code : ''}</div>
             </div>
           );
         })}

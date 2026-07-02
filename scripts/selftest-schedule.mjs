@@ -106,7 +106,7 @@ eq('no mapping errors', built.errors.length, 0);
 const quiz = built.events[0];
 eq('title ← title_en', quiz.title, 'Pub Quiz Night');
 eq('start ← startsAt HH:MM (+07:00)', quiz.start, '19:00');
-eq('end ← endsAt HH:MM', quiz.end, '21:00');
+eq('end NOT synced from the app (endsAt ignored)', quiz.end, null);
 eq('location ← [mapped code]', JSON.stringify(quiz.locations), JSON.stringify(['2E']));
 eq('repeat weekly from tag/seriesId', quiz.repeat, 'weekly');
 eq('feed id stamped into notionId', quiz.notionId, 'evt_quiz');
@@ -207,6 +207,13 @@ check('dedupe: feed copy kept (notionId pq)', dd.events.some(e => e.notionId ===
 check('dedupe: local dup gone', !dd.events.some(e => e.title === 'Pub Quiz' && e.notionId == null));
 check('dedupe: unrelated local kept', dd.events.some(e => e.title === 'Only Local'));
 check('dedupe: changed=true', dd.changed === true);
+
+// end is user-owned: a hand-set end (incl. 'late') survives a re-sync whose rows carry end:null
+const endExisting = [{ id: 'e1', notionId: 'hh', date: '2026-07-01', start: '17:00', end: '21:00', title: 'Happy Hour', locations: [], flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] }];
+const endFresh = [{ id: 'e2', notionId: 'hh', date: '2026-07-01', start: '17:00', end: null, title: 'Happy Hour', locations: [], flags: {}, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] }];
+const em = mergeFeedIntoDoc(endExisting, endFresh);
+eq('merge: hand-set end preserved', em.events.find(e => e.notionId === 'hh').end, '21:00');
+check('merge: end preservation is not an update', em.updated === 0 && em.changed === false);
 
 // sig includes flags: a feed-side $/* change on a matched row registers as an update
 const flagExisting = [{ id: 'g', notionId: 'fe', date: '2026-07-01', start: '19:00', end: null, title: 'X', locations: ['2E'], flags: { fee: false, prereg: false }, emphasis: 'none', hide: [], repeat: null, repeatUntil: null, exceptions: [] }];

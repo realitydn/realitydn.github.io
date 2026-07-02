@@ -167,23 +167,29 @@
   }
 
   /* ---- documents API ----------------------------------------------------- */
-  // getDoc(studio, docId) → { studio, doc_id, title, json, updatedAt } | null
+  // getDoc(studio, docId) → { studio, doc_id, title, json, updated_at } | null.
+  // The hub wraps its responses: GET one → { doc }, GET list → { docs } — read
+  // those first (the old .document/.documents keys never existed server-side).
   function getDoc(studio, docId) {
     if (!isSignedIn()) { return Promise.resolve(null); }
     var qs = '?studio=' + encodeURIComponent(studio) + '&doc_id=' + encodeURIComponent(docId);
     return call('GET', '/api/studio/documents' + qs).then(function (r) {
       if (!r || !r.ok || !r.json) return null;
-      return r.json.document || r.json || null;
+      var doc = ('doc' in r.json) ? r.json.doc : (r.json.document || r.json);
+      if (!doc) return null;
+      // normalise the store's updated_at → the updatedAt callers compare on
+      if (doc.updatedAt == null && doc.updated_at != null) doc.updatedAt = doc.updated_at;
+      return doc;
     });
   }
 
-  // listDocs(studio) → array of { doc_id, title, updatedAt, ... } | []
+  // listDocs(studio) → array of { doc_id, title, json, updated_at, ... } | []
   function listDocs(studio) {
     if (!isSignedIn()) { return Promise.resolve([]); }
     var qs = '?studio=' + encodeURIComponent(studio);
     return call('GET', '/api/studio/documents' + qs).then(function (r) {
       if (!r || !r.ok || !r.json) return [];
-      var list = r.json.documents || r.json || [];
+      var list = r.json.docs || r.json.documents || r.json || [];
       return Array.isArray(list) ? list : [];
     });
   }

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import CardsCarousel from './CardsCarousel';
+import EventOverlay from './EventOverlay';
 import useFeed from '../hooks/useFeed';
 import {
   dedupeSeries,
@@ -14,6 +15,9 @@ import {
 // collapsed to their soonest upcoming instance; one-offs always show. Cards are
 // ordered today-first (by ICT weekday, mirroring the prior behaviour) but the
 // underlying list is built soonest-first so "today" leads with the next real event.
+//
+// Tapping a poster opens the EVENT (EventOverlay: poster + details + open-in-app
+// deep link), not just a bigger image — the poster is the door, the event is the room.
 //
 // This site's language toggle is 'EN' | 'VN' (NOT en/vi); feed-helpers map 'VN' → *_vi.
 
@@ -42,6 +46,7 @@ export default function EventsSection({ t, lang = 'EN' }) {
           title,
           day: weekdayFromISO(ev.startsAt), // 1–7 (Mon=1) for today-first ordering
           startsAt: ev.startsAt,
+          event: ev, // the full feed event — the card opens it in the EventOverlay
         };
       })
       .filter(Boolean);
@@ -53,8 +58,8 @@ export default function EventsSection({ t, lang = 'EN' }) {
     <button
       type="button"
       className="card cursor-pointer overflow-hidden block w-full text-left p-0"
-      onClick={() => openLightbox(ev.full || ev.img, ev.alt)}
-      aria-label={ev.title ? `Open poster: ${ev.title}` : 'Open event poster'}
+      onClick={() => setOverlayEvent(ev.event)}
+      aria-label={ev.title ? `Open event: ${ev.title}` : 'Open event'}
     >
       <div className="aspect-[4/5] relative bg-cream">
         <picture>
@@ -74,31 +79,7 @@ export default function EventsSection({ t, lang = 'EN' }) {
     </button>
   );
 
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImg, setLightboxImg] = useState('');
-  const [lightboxAlt, setLightboxAlt] = useState('');
-
-  const openLightbox = (img, alt) => {
-    setLightboxImg(img);
-    setLightboxAlt(alt || 'REALITY event poster');
-    setLightboxOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeLightbox = () => {
-    setLightboxOpen(false);
-    setLightboxImg('');
-    setLightboxAlt('');
-    document.body.style.overflow = '';
-  };
-
-  // Close on Escape — basic keyboard affordance for the lightbox.
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') closeLightbox(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [lightboxOpen]);
+  const [overlayEvent, setOverlayEvent] = useState(null);
 
   if (loading) {
     return (
@@ -128,38 +109,9 @@ export default function EventsSection({ t, lang = 'EN' }) {
         />
       </section>
 
-      {/* Lightbox Modal — paper scrim, stamped frame */}
-      {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            backgroundColor: 'rgb(var(--bg-rgb) / 0.88)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-          }}
-          onClick={closeLightbox}
-        >
-          <button
-            className="absolute top-4 right-4 text-ink hover:opacity-70 transition-opacity p-2"
-            onClick={closeLightbox}
-            aria-label="Close lightbox"
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M6 18L18 6"/>
-            </svg>
-          </button>
-          <div
-            className="max-w-4xl max-h-[90vh] card-static stamp-in overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={lightboxImg}
-              alt={lightboxAlt}
-              className="w-full h-full object-contain"
-            />
-          </div>
-        </div>
-      )}
+      {/* Event overlay — poster + details + open-in-app, same scrim anatomy the
+          old image lightbox used. */}
+      <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </>
   );
 }

@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icons } from './Icons';
 import { URLS, STR } from '../data/translations';
 import { FEED_ICS_URL } from '../data/feed';
 import useFeed from '../hooks/useFeed';
+import EventOverlay from './EventOverlay';
+import GetAppStrip from './GetAppStrip';
 import {
   dateKey,
   fmtTime,
@@ -50,6 +52,9 @@ function WhatsAppCta({ lang }) {
 export default function Calendar({ lang }) {
   const { events, loading, error } = useFeed();
   const C = STR[lang].cal;
+  // The tapped event opens in an overlay ON TOP of the page (EventOverlay) —
+  // visitors peek at an event without losing the menu or their scroll position.
+  const [overlayEvent, setOverlayEvent] = useState(null);
 
   // Build the grouped, today-forward agenda. useFeed already filters to published +
   // not-yet-ended; here we sort by start, window to the horizon, cap the count, and
@@ -144,18 +149,13 @@ export default function Calendar({ lang }) {
                         </span>
                         <span className="flex-1">
                           <span className="text-base md:text-lg text-ink font-body font-medium">
-                            {ev.sourceUrl ? (
-                              <a
-                                href={ev.sourceUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="hover:opacity-70 transition-opacity underline-offset-2 hover:underline"
-                              >
-                                {title}
-                              </a>
-                            ) : (
-                              title
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => setOverlayEvent(ev)}
+                              className="text-left hover:opacity-70 transition-opacity underline-offset-2 hover:underline"
+                            >
+                              {title}
+                            </button>
                           </span>
                           {loc && (
                             <span className="block text-sm text-gray-600 font-body mt-0.5">
@@ -173,7 +173,10 @@ export default function Calendar({ lang }) {
         </div>
       )}
 
+      <GetAppStrip lang={lang} />
       <WhatsAppCta lang={lang} />
+
+      <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </section>
   );
 }

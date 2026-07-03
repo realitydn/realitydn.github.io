@@ -167,6 +167,15 @@ export const STR = {
       today: "Today",
       tomorrow: "Tomorrow",
     },
+    eventOverlay: {
+      openInApp: "Open in the REALITY app",
+      close: "Close",
+    },
+    getApp: {
+      title: "Get the REALITY app",
+      blurb: "The full calendar in your pocket — RSVP, reminders, and what's on tonight.",
+      cta: "Open the app",
+    },
     proposal: {
       eyebrow: "Host with us",
       title: "Work with us",
@@ -560,6 +569,15 @@ export const STR = {
       details: "Chi tiết",
       today: "Hôm nay",
       tomorrow: "Ngày mai",
+    },
+    eventOverlay: {
+      openInApp: "Mở trong app REALITY",
+      close: "Đóng",
+    },
+    getApp: {
+      title: "Tải app REALITY",
+      blurb: "Lịch sự kiện trong túi bạn — RSVP, nhắc lịch và tối nay có gì.",
+      cta: "Mở app",
     },
     proposal: {
       eyebrow: "Tổ chức cùng chúng tôi",

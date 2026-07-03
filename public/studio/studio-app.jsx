@@ -1208,11 +1208,23 @@ function App(){
   const [queueFeed, setQueueFeed] = React.useState(null);   // null=loading | { events, err }
   const [queueDismissed, setQueueDismissed] = React.useState(loadQueueDismissed);
   const [queueSent, setQueueSent] = React.useState({});     // keys postered this session
+  /* One transient blip (weak wifi, the hub mid-redeploy) must not read as "no
+     feed" for the rest of the session — retry a couple of times with a pause
+     before giving up. The picker also gets a manual Retry button. */
+  async function fetchFeedRetry(params, tries){
+    tries = tries || 3;
+    for(let i=0;i<tries;i++){
+      const fd = window.RCloud && window.RCloud.fetchFeed ? await window.RCloud.fetchFeed(params) : null;
+      if(fd && Array.isArray(fd.events)) return fd;
+      if(i < tries-1) await new Promise(r=>setTimeout(r, 1200*(i+1)));
+    }
+    return null;
+  }
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
       if(!window.RCloud || !window.RCloud.fetchFeed){ setQueueFeed({ events:[], err:'unavailable' }); return; }
       const from = new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);   // today, ICT
-      const fd = await window.RCloud.fetchFeed({ from });
+      const fd = await fetchFeedRetry({ from });
       if(!live) return;
       setQueueFeed(fd && Array.isArray(fd.events) ? { events:fd.events, err:null } : { events:[], err:'unavailable' });
     }catch(e){ if(live) setQueueFeed({ events:[], err:'unavailable' }); }
@@ -1477,9 +1489,9 @@ function App(){
     setEventPicker({ open:true, loading:true, events:[], err:null, origin });
     try{
       const today = new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);   // ICT date
-      const feed = await window.RCloud.fetchFeed({ from: today });
+      const feed = await fetchFeedRetry({ from: today });
       const events = (feed && Array.isArray(feed.events)) ? feed.events : [];
-      setEventPicker({ open:true, loading:false, events, err: feed ? null : 'Feed not available yet.', origin });
+      setEventPicker({ open:true, loading:false, events, err: feed ? null : 'Feed not available — the hub may be mid-deploy or the connection blipped.', origin });
     }catch(e){
       setEventPicker({ open:true, loading:false, events:[], err:'Could not load the events feed.', origin });
     }
@@ -1757,7 +1769,7 @@ function App(){
       {spawn && <div className="rs-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}
 
       {eventPicker && eventPicker.open &&
-        <EventPickerModal picker={eventPicker} onPick={exportToEvent} onClose={()=>setEventPicker(null)} />}
+        <EventPickerModal picker={eventPicker} onPick={exportToEvent} onClose={()=>setEventPicker(null)} onRetry={openEventPicker} />}
     </div>
   );
 }
@@ -1765,7 +1777,7 @@ function App(){
 /* ---- WP9 event picker — lists upcoming events from the REALITY feed so the
    user can push the current poster's formats onto an event's poster slots.
    Reuses the studio's overlay/modal CSS atoms; fully additive UI. ---- */
-function EventPickerModal({ picker, onPick, onClose }){
+function EventPickerModal({ picker, onPick, onClose, onRetry }){
   /* When the poster came off "In queue" (doc.eventRef), that event is pinned
      up top as the obvious one-click send; everything else lists below it. */
   const origin = picker.origin || null;
@@ -1782,7 +1794,15 @@ function EventPickerModal({ picker, onPick, onClose }){
           Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus your text-less <b>feed slice</b> → <b>feed</b> onto the chosen event.
         </div>
         {picker.loading && <div style={{ fontSize:12, opacity:.7 }}>Loading upcoming events…</div>}
-        {!picker.loading && picker.err && <div style={{ fontSize:12, color:'#b00' }}>{picker.err}</div>}
+        {!picker.loading && picker.err &&
+          <div style={{ fontSize:12, color:'#b00' }}>
+            {picker.err}
+            {onRetry &&
+              <button onClick={onRetry}
+                style={{ marginLeft:8, padding:'4px 10px', border:'2px solid #0d0905', background:'#fddf00', color:'#0d0905', borderRadius:6, fontFamily:'Montserrat', fontWeight:700, fontSize:11, cursor:'pointer' }}>
+                Retry
+              </button>}
+          </div>}
         {!picker.loading && !picker.err && picker.events.length===0 && !origin &&
           <div style={{ fontSize:12, opacity:.7 }}>No upcoming events in the feed.</div>}
         {!picker.loading && origin && (

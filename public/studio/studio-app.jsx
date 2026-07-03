@@ -1531,8 +1531,23 @@ function App(){
         try{ blob = await (m.plate ? toBlobSlice() : toBlob(AP_FMT[m.fmt])); }catch(e){ blob = null; }
         if(m.plate) setPlateOnly(false);
         if(!blob){ failed++; continue; }
+        /* Downscale the 2x render to its base px and re-encode for upload (WebP;
+           the story slot stays JPEG for Instagram's share intake). The hub feed,
+           the app, and danang.community serve THIS file — full-res PNGs remain in
+           the local Save/export path. On any encode failure the raw render goes
+           up unchanged, exactly as before. */
+        let up = { blob, type: blob.type || 'image/png' };
+        try{
+          if(window.RCloud.optimizeImage){
+            const f = AP_FMT[m.fmt];
+            const sl = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
+            const th = m.plate ? Math.max(1, Math.round((sl.hFrac||0.2)*f.h)) : f.h;
+            up = await window.RCloud.optimizeImage(blob, f.w, th,
+              m.slot==='story' ? { prefer:'image/jpeg' } : undefined);
+          }
+        }catch(e){ /* keep the raw render */ }
         setExportMsg('Uploading '+label+'…');
-        const res = await window.RCloud.putPoster(eventId, m.slot, blob, 'image/png');
+        const res = await window.RCloud.putPoster(eventId, m.slot, up.blob, up.type);
         if(res && res.ok) ok++; else failed++;
       }
       setDoc(d=>({ ...d, activeFormat:prev }));

@@ -247,7 +247,8 @@
       fd = new FormData();
       fd.append('slot', slot);
       var ct = contentType || (blob && blob.type) || 'image/png';
-      var ext = ct.indexOf('jpeg') >= 0 || ct.indexOf('jpg') >= 0 ? 'jpg' : 'png';
+      var ext = ct.indexOf('webp') >= 0 ? 'webp'
+        : (ct.indexOf('jpeg') >= 0 || ct.indexOf('jpg') >= 0 ? 'jpg' : 'png');
       fd.append('file', blob, slot + '.' + ext);
     } catch (e) {
       console.info(LOG, 'putPoster: could not build form data; skipping');
@@ -261,6 +262,57 @@
         return null;
       }
       return r.json;
+    });
+  }
+
+  /* ---- upload-size optimizer ---------------------------------------------- */
+  // optimizeImage(blob, targetW, targetH, opts) → Promise<{ blob, type }>.
+  // Downscales a render (typically the 2x-supersampled export PNG) to
+  // targetW×targetH and re-encodes it for UPLOAD — WebP by default, JPEG when
+  // opts.prefer === 'image/jpeg' (the story slot: Instagram's share intake
+  // doesn't reliably take WebP) or when the browser can't encode WebP (Safari
+  // silently falls back to PNG in toBlob, which we detect by the result type).
+  // The full-res PNG stays local — this only shrinks what we send to the hub.
+  // Never throws; never returns something BIGGER than the input — on any
+  // failure it resolves with the original blob untouched.
+  function optimizeImage(blob, targetW, targetH, opts) {
+    opts = opts || {};
+    var fallback = { blob: blob, type: (blob && blob.type) || 'image/png' };
+    return new Promise(function (resolve) {
+      try {
+        if (!blob || typeof window.createImageBitmap !== 'function') { resolve(fallback); return; }
+        createImageBitmap(blob).then(function (bmp) {
+          try {
+            // never upscale — cap the target at the rendered size
+            var w = Math.max(1, Math.min(Math.round(targetW || bmp.width), bmp.width));
+            var h = Math.max(1, Math.round(targetH ? Math.min(targetH, bmp.height) : bmp.height * (w / bmp.width)));
+            var c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            var ctx = c.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(bmp, 0, 0, w, h);
+            try { bmp.close(); } catch (e0) {}
+            var wantJpeg = opts.prefer === 'image/jpeg';
+            function encodeJpeg() {
+              // renders are opaque (export sets backgroundColor), so JPEG is safe
+              c.toBlob(function (jpg) {
+                if (jpg && jpg.size < blob.size) resolve({ blob: jpg, type: 'image/jpeg' });
+                else resolve(fallback);
+              }, 'image/jpeg', wantJpeg ? 0.9 : 0.85);
+            }
+            if (wantJpeg) { encodeJpeg(); return; }
+            c.toBlob(function (webp) {
+              // Safari has no WebP encoder and hands back PNG — check the type
+              if (webp && webp.type === 'image/webp' && webp.size < blob.size) {
+                resolve({ blob: webp, type: 'image/webp' });
+              } else {
+                encodeJpeg();
+              }
+            }, 'image/webp', 0.82);
+          } catch (e) { resolve(fallback); }
+        }).catch(function () { resolve(fallback); });
+      } catch (e) { resolve(fallback); }
     });
   }
 
@@ -296,6 +348,7 @@
     putDoc: putDoc,
     delDoc: delDoc,
     putPoster: putPoster,
+    optimizeImage: optimizeImage,
     fetchFeed: fetchFeed,
   };
 })();

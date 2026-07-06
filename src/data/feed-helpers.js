@@ -102,19 +102,25 @@ export function dateKey(iso) {
 }
 
 // fmtDayHeading(iso, lang) — a human day heading like "Sat, 28 Jun" (EN) for the
-// agenda group header, rendered in ICT. lang is 'EN' | 'VN'.
+// agenda group header, rendered in ICT. lang is a LANGS code (data/languages.js);
+// day headings localize fully even though event titles only exist in EN/VI.
+const HEADING_LOCALES = {
+  EN: 'en-GB', VN: 'vi-VN', RU: 'ru-RU', UK: 'uk-UA', KO: 'ko-KR', JA: 'ja-JP',
+};
 export function fmtDayHeading(iso, lang = 'EN') {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  const locale = lang === 'VN' ? 'vi-VN' : 'en-GB';
+  const locale = HEADING_LOCALES[lang] || 'en-GB';
   return new Intl.DateTimeFormat(locale, {
     timeZone: ICT, weekday: 'short', day: 'numeric', month: 'short',
   }).format(d);
 }
 
-// pickTitle / pickLocName — this site's toggle is 'EN' | 'VN' (NOT en/vi).
-// Map 'VN' → the *_vi field, falling back to the EN field then a generic label.
+// pickTitle / pickLocName — the feed only carries EN + VI content fields, so
+// 'VN' → *_vi and every other language reads the EN field (deliberate: event
+// titles/descriptions are authored bilingually; RU/UK/KO/JA get EN content
+// with a localized UI around it).
 export function pickTitle(ev, lang) {
   if (!ev) return '';
   return (lang === 'VN' ? ev.title_vi : ev.title_en) || ev.title_en || ev.title_vi || '';

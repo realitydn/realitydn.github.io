@@ -3,26 +3,22 @@ import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
+import LangMenu from './LangMenu';
 import { URLS } from '../data/translations';
+import { pathFor } from '../data/languages';
 
 export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
   const location = useLocation();
   const path = location.pathname;
 
-  // Precompute the twin path in the other language. /foo ↔ /vn/foo, / ↔ /vn.
-  const otherLangPath = lang === 'VN'
-    ? (path === '/vn' ? '/' : path.replace(/^\/vn/, '') || '/')
-    : (path === '/' ? '/vn' : `/vn${path}`);
+  const homeHref = pathFor(lang, '/');
 
   const onLogoClick = (e) => {
-    const home = lang === 'VN' ? '/vn' : '/';
-    if (path === home) {
+    if (path === homeHref) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-
-  const homeHref = lang === 'VN' ? '/vn' : '/';
 
   return (
     <header
@@ -84,16 +80,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             {Icons.facebook()}
             <span className="hidden xl:inline">Facebook</span>
           </a>
-          {/* Language toggle — navigates to the twin route so the URL is the
-              source of truth for language. Crawlers see two indexable pages. */}
-          <Link
-            to={otherLangPath}
-            className="btn-secondary px-3 py-2 text-xs w-[54px] text-center"
-            aria-label={lang === 'EN' ? 'Xem bằng tiếng Việt' : 'View in English'}
-            hrefLang={lang === 'EN' ? 'vi' : 'en'}
-          >
-            {lang === 'EN' ? 'VN' : 'EN'}
-          </Link>
+          <LangMenu lang={lang} />
           <ThemeToggle lang={lang} />
         </div>
 
@@ -113,14 +100,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
           >
             {Icons.instagram()}
           </a>
-          <Link
-            to={otherLangPath}
-            className="btn-secondary px-3 py-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-xs"
-            aria-label={lang === 'EN' ? 'Xem bằng tiếng Việt' : 'View in English'}
-            hrefLang={lang === 'EN' ? 'vi' : 'en'}
-          >
-            {lang === 'EN' ? 'VN' : 'EN'}
-          </Link>
+          <LangMenu lang={lang} compact />
           <button
             onClick={() => setMobileOpen(v => !v)}
             className="btn-secondary p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"

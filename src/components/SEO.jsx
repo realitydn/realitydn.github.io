@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { LANGS, langByCode, pathFor, stripLangPrefix } from '../data/languages';
 
 /**
  * SEO — imperatively syncs per-route meta tags on mount / route change.
@@ -9,11 +10,11 @@ import { useLocation } from 'react-router-dom';
  * The site is a SPA with pre-rendering (see prerender.mjs). Puppeteer captures
  * the DOM after React effects have run, so whatever this component writes into
  * <head> ends up in the static HTML each crawler sees. Every page therefore
- * gets a correct canonical, correct hreflang alternates pointing at its EN and
- * VN twins, and (optionally) its own title + description.
+ * gets a correct canonical, hreflang alternates pointing at all its language
+ * twins (see data/languages.js), and (optionally) its own title + description.
  *
- * Consumers pass `lang` ('EN' | 'VN'). The EN↔VN path pair is derived from the
- * current URL: /foo ↔ /vn/foo, / ↔ /vn.
+ * Consumers pass `lang` (a LANGS code). The twin paths are derived from the
+ * current URL by stripping the language prefix: /vn/foo ↔ /foo ↔ /ru/foo …
  */
 const SITE = 'https://realitydn.com';
 
@@ -55,28 +56,22 @@ export default function SEO({ lang, title, description, noindex = false }) {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Normalize path. Strip trailing slash except for root.
-    const path = pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
+    // The language-free base path for this route ('/', '/event-guidelines', …).
+    const base = stripLangPrefix(pathname);
+    const currentPath = pathFor(lang, base);
 
-    // Derive the EN and VN twins for this route.
-    const enPath = path.startsWith('/vn')
-      ? (path === '/vn' ? '/' : path.slice(3))
-      : path;
-    const vnPath = enPath === '/' ? '/vn' : `/vn${enPath}`;
-
-    const currentPath = lang === 'VN' ? vnPath : enPath;
-
-    // <html lang="..."> — ISO 639-1 code, not the user-facing label.
-    document.documentElement.setAttribute('lang', lang === 'VN' ? 'vi' : 'en');
+    // <html lang="..."> — ISO 639-1 code, not the user-facing label
+    // (Google validates hreflang against ISO 639-1 and rejects "vn").
+    document.documentElement.setAttribute('lang', langByCode(lang).iso);
 
     // Canonical points at this route's own URL.
     upsertLink({ rel: 'canonical' }, SITE + currentPath);
 
-    // hreflang alternates — note we use "vi" (ISO) here even though the UI
-    // label is "VN". Google validates against ISO 639-1 and will reject "vn".
-    upsertLink({ rel: 'alternate', hreflang: 'en' }, SITE + enPath);
-    upsertLink({ rel: 'alternate', hreflang: 'vi' }, SITE + vnPath);
-    upsertLink({ rel: 'alternate', hreflang: 'x-default' }, SITE + enPath);
+    // hreflang alternates — one per language twin, EN as x-default.
+    for (const l of LANGS) {
+      upsertLink({ rel: 'alternate', hreflang: l.iso }, SITE + pathFor(l.code, base));
+    }
+    upsertLink({ rel: 'alternate', hreflang: 'x-default' }, SITE + base);
 
     if (title) {
       document.title = title;

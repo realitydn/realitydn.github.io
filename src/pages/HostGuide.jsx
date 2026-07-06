@@ -2,11 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 import ThemeToggle from '../components/ThemeToggle';
+import LangMenu from '../components/LangMenu';
+import { pathFor } from '../data/languages';
 
 export default function HostGuide({ lang, t }) {
-  const homeHref = lang === 'VN' ? '/vn' : '/';
-  const enHref = '/host-guide';
-  const vnHref = '/vn/host-guide';
+  const homeHref = pathFor(lang, '/');
 
   return (
     <div className="min-h-screen bg-cream">
@@ -17,7 +17,7 @@ export default function HostGuide({ lang, t }) {
             <Link
               to={homeHref}
               className="p-2 -ml-2 hover:bg-ink/5 transition-colors inline-flex items-center"
-              aria-label={lang === 'VN' ? 'Về trang chủ REALITY' : 'Back to REALITY home'}
+              aria-label={t.use('backHome')}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -27,27 +27,8 @@ export default function HostGuide({ lang, t }) {
               <Logo color="var(--fg)" />
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              to={enHref}
-              className={`font-title text-sm tracking-[0.15em] ${
-                lang === 'EN' ? 'text-ink' : 'text-ink/50 hover:text-ink'
-              }`}
-              hrefLang="en"
-              aria-current={lang === 'EN' ? 'page' : undefined}
-            >
-              EN
-            </Link>
-            <Link
-              to={vnHref}
-              className={`font-title text-sm tracking-[0.15em] ${
-                lang === 'VN' ? 'text-ink' : 'text-ink/50 hover:text-ink'
-              }`}
-              hrefLang="vi"
-              aria-current={lang === 'VN' ? 'page' : undefined}
-            >
-              VN
-            </Link>
+          <div className="flex items-center gap-3">
+            <LangMenu lang={lang} />
             <ThemeToggle lang={lang} compact />
           </div>
         </div>

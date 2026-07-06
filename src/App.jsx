@@ -17,43 +17,46 @@ import MenuSchema from "./components/MenuSchema";
 import HostGuide from "./pages/HostGuide";
 import EventGuidelines from "./pages/EventGuidelines";
 import { STR } from "./data/translations";
+import { LANGS, pathFor } from "./data/languages";
 
-// Builds the `t` helper from a language code. Same shape as before; callers
-// use `t.use('path.to.key')`. Falls back to the key string if the lookup fails.
+// Builds the `t` helper from a language code. Callers use `t.use('path.to.key')`.
+// Missing keys fall back to the EN catalogue (the reference copy), then to the
+// key string itself — so an incomplete locale shows English, not key paths.
 function makeT(lang) {
+  const lookup = (root, k) =>
+    k.split('.').reduce((a, c) => (a && a[c] !== undefined ? a[c] : undefined), root);
   return {
-    use: (k) => k.split('.').reduce(
-      (a, c) => (a && a[c] !== undefined ? a[c] : k),
-      STR[lang]
-    )
+    use: (k) => {
+      const v = lookup(STR[lang], k);
+      if (v !== undefined) return v;
+      const en = lookup(STR.EN, k);
+      return en !== undefined ? en : k;
+    },
   };
 }
+
+// Per-page SEO strings live in each locale's `seo` block (locales/*.js).
+const seoOf = (lang) => STR[lang].seo || STR.EN.seo;
 
 function HomePage({ lang }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = makeT(lang);
-
-  const title = lang === 'VN'
-    ? 'REALITY — cà phê / cocktail / cộng đồng'
-    : 'REALITY — coffee / cocktails / community';
-  const description = lang === 'VN'
-    ? 'REALITY — cà phê, cocktail và cộng đồng tại 86 Mai Thúc Lân, Đà Nẵng. Sự kiện, nhạc sống, open mic, triển lãm. Mở cửa mỗi ngày 11:00 – 2:00.'
-    : 'REALITY — coffee, cocktails, and community at 86 Mai Thúc Lân, Đà Nẵng. Events, live music, open mics, art shows, and the easiest place in the city to make friends. Open daily 11 AM – 2 AM.';
+  const seo = seoOf(lang);
 
   return (
     <div className="min-h-screen">
-      <SEO lang={lang} title={title} description={description} />
+      <SEO lang={lang} title={seo.homeTitle} description={seo.homeDescription} />
       <FAQSchema items={[
-        { q: STR[lang].infoHost.welcomeTitle, a: STR[lang].infoHost.welcomeBody },
-        { q: STR[lang].infoHost.rulesTitle, a: STR[lang].infoHost.rules[0] },
-        { q: STR[lang].infoHost.hostTitle, a: STR[lang].infoHost.hostIntro },
+        { q: t.use('infoHost.welcomeTitle'), a: t.use('infoHost.welcomeBody') },
+        { q: t.use('infoHost.rulesTitle'), a: t.use('infoHost.rules')[0] },
+        { q: t.use('infoHost.hostTitle'), a: t.use('infoHost.hostIntro') },
       ]} />
       <MenuSchema lang={lang} />
       <EventsSchema lang={lang} />
       {/* Skip link — first focusable element so keyboard users can jump past
           the header. Visually hidden until focused (see .skip-link in CSS). */}
       <a href="#main-content" className="skip-link">
-        {lang === 'VN' ? 'Bỏ qua đến nội dung' : 'Skip to content'}
+        {t.use('skipLink')}
       </a>
       <ParallaxLayers />
       <div className="relative z-10">
@@ -81,15 +84,15 @@ function HomePage({ lang }) {
 export default function App() {
   return (
     <Routes>
-      {/* English (default, no prefix) */}
-      <Route path="/" element={<HomePage lang="EN" />} />
-      <Route path="/event-guidelines" element={<EventGuidelinesRoute lang="EN" />} />
-      <Route path="/host-guide" element={<HostGuideRoute lang="EN" />} />
-
-      {/* Vietnamese (/vn prefix) */}
-      <Route path="/vn" element={<HomePage lang="VN" />} />
-      <Route path="/vn/event-guidelines" element={<EventGuidelinesRoute lang="VN" />} />
-      <Route path="/vn/host-guide" element={<HostGuideRoute lang="VN" />} />
+      {/* One route trio per language — EN unprefixed, the rest under their
+          prefix (/vn, /ru, /uk, /ko, /ja). See data/languages.js. */}
+      {LANGS.map(({ code }) => (
+        <React.Fragment key={code}>
+          <Route path={pathFor(code, '/')} element={<HomePage lang={code} />} />
+          <Route path={pathFor(code, '/event-guidelines')} element={<EventGuidelinesRoute lang={code} />} />
+          <Route path={pathFor(code, '/host-guide')} element={<HostGuideRoute lang={code} />} />
+        </React.Fragment>
+      ))}
 
       {/* Any unknown path → home. */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -99,15 +102,10 @@ export default function App() {
 
 function EventGuidelinesRoute({ lang }) {
   const t = makeT(lang);
-  const title = lang === 'VN'
-    ? 'Hướng dẫn Sự kiện & Thương hiệu — REALITY'
-    : 'Event & Branding Guidelines — REALITY';
-  const description = lang === 'VN'
-    ? 'Hướng dẫn tổ chức sự kiện tại REALITY Đà Nẵng — quy định chung, sự kiện công khai/riêng tư, và hướng dẫn thương hiệu của chúng tôi.'
-    : 'Guidelines for hosting at REALITY Đà Nẵng — general rules, public and private events, and our branding guidelines.';
+  const seo = seoOf(lang);
   return (
     <>
-      <SEO lang={lang} title={title} description={description} />
+      <SEO lang={lang} title={seo.guidelinesTitle} description={seo.guidelinesDescription} />
       <EventGuidelines lang={lang} t={t} />
     </>
   );
@@ -115,14 +113,11 @@ function EventGuidelinesRoute({ lang }) {
 
 function HostGuideRoute({ lang }) {
   const t = makeT(lang);
-  const title = lang === 'VN' ? 'Hướng dẫn tổ chức — REALITY' : 'Host Guide — REALITY';
-  const description = lang === 'VN'
-    ? 'Hướng dẫn tổ chức sự kiện tại REALITY — đang được cập nhật.'
-    : 'A guide to hosting well at REALITY Đà Nẵng — coming soon.';
+  const seo = seoOf(lang);
   // Stub page — keep it out of the index until there is real content.
   return (
     <>
-      <SEO lang={lang} title={title} description={description} noindex />
+      <SEO lang={lang} title={seo.hostGuideTitle} description={seo.hostGuideDescription} noindex />
       <HostGuide lang={lang} t={t} />
     </>
   );

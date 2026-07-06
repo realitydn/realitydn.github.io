@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { STR } from '../data/translations';
 
 const STORAGE_KEY = 'reality-theme';
 const THEME_COLORS = { day: '#fffbf1', night: '#0a0703' };
@@ -86,9 +87,7 @@ export default function ThemeToggle({ lang = 'EN', compact = false }) {
 
   useEffect(() => () => clearTimeout(settleTimer.current), []);
 
-  const labels = lang === 'VN'
-    ? { group: 'Giao diện', day: 'Ngày', night: 'Đêm' }
-    : { group: 'Theme', day: 'Day', night: 'Night' };
+  const labels = (STR[lang] && STR[lang].theme) || STR.EN.theme;
 
   const seg = (active) =>
     `font-title text-[10px] tracking-[0.12em] transition-colors ${

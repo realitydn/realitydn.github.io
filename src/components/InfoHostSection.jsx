@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { URLS } from '../data/translations';
+import { pathFor } from '../data/languages';
 import EventProposalForm from './EventProposalForm';
 import ArtExhibitionForm from './ArtExhibitionForm';
 import Reveal from './Reveal';
@@ -67,16 +68,12 @@ export default function InfoHostSection({ t, lang }) {
 
   // Public-events copy references the branding + promotion sections, which live
   // on the full Event Guidelines page (not in these panels) — link to them.
-  const guidelinesBase = lang === 'VN' ? '/vn/event-guidelines' : '/event-guidelines';
-  const publicCrossRefs = lang === 'VN'
-    ? [
-        { phrase: 'Cách REALITY có thể Hỗ trợ Quảng bá', to: `${guidelinesBase}#promote` },
-        { phrase: 'hướng dẫn thương hiệu', to: `${guidelinesBase}#branding` },
-      ]
-    : [
-        { phrase: 'How REALITY Can Help with Promotion', to: `${guidelinesBase}#promote` },
-        { phrase: 'brand guidelines', to: `${guidelinesBase}#branding` },
-      ];
+  // The exact phrases per language live in eventGuidelines.crossRefs (locales/*.js).
+  const guidelinesBase = pathFor(lang, '/event-guidelines');
+  const publicCrossRefs = [
+    { phrase: t.use('eventGuidelines.crossRefs.promote'), to: `${guidelinesBase}#promote` },
+    { phrase: t.use('eventGuidelines.crossRefs.branding'), to: `${guidelinesBase}#branding` },
+  ];
   const publicRulesItems = ih('publicRules').map((it) =>
     typeof it === 'string' ? linkifyPhrases(it, publicCrossRefs) : it
   );

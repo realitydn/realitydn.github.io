@@ -20,19 +20,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, 'dist');
 const PORT = 4173;
 
-// Routes to pre-render — add new routes here as you create them.
-// Each EN route has a VN twin under /vn for bilingual SEO. The SEO component
-// writes per-route canonical + hreflang into <head> before Puppeteer captures.
+// Routes to pre-render — every page × every language prefix (this mirrors
+// LANGS in src/data/languages.js; keep the two lists in sync when adding a
+// language or a page). The SEO component writes per-route canonical +
+// hreflang into <head> before Puppeteer captures.
 // /host-guide is still a stub, so noindex is injected at the component level;
 // we skip adding it to the sitemap but do pre-render it so links work.
-const ROUTES = [
-  '/',
-  '/event-guidelines',
-  '/host-guide',
-  '/vn',
-  '/vn/event-guidelines',
-  '/vn/host-guide',
-];
+const LANG_PREFIXES = ['', '/vn', '/ru', '/uk', '/ko', '/ja'];
+const PAGES = ['', '/event-guidelines', '/host-guide'];
+const ROUTES = LANG_PREFIXES.flatMap((prefix) =>
+  PAGES.map((page) => prefix + page || '/')
+);
 
 // Simple static file server for the built dist/
 function startServer() {

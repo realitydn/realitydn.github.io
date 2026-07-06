@@ -13,6 +13,7 @@ import GallerySection from "./components/GallerySection";
 import Footer from "./components/Footer";
 import SEO from "./components/SEO";
 import FAQSchema from "./components/FAQSchema";
+import EventsSchema from "./components/EventsSchema";
 import MenuSchema from "./components/MenuSchema";
 import HostGuide from "./pages/HostGuide";
 import EventGuidelines from "./pages/EventGuidelines";
@@ -49,6 +50,7 @@ function HomePage({ lang }) {
         { q: STR[lang].infoHost.hostTitle, a: STR[lang].infoHost.hostIntro },
       ]} />
       <MenuSchema lang={lang} />
+      <EventsSchema lang={lang} />
       {/* Skip link — first focusable element so keyboard users can jump past
           the header. Visually hidden until focused (see .skip-link in CSS). */}
       <a href="#main-content" className="skip-link">
@@ -64,7 +66,7 @@ function HomePage({ lang }) {
         />
         <main id="main-content" tabIndex={-1}>
           <Hero t={t} />
-          <EventsSection t={t} />
+          <EventsSection t={t} lang={lang} />
           <Calendar lang={lang} />
           <InfoHostSection t={t} lang={lang} />
           <DarkCTA lang={lang} />

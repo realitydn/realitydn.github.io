@@ -155,6 +155,27 @@ export const STR = {
     galleryTitle: "Gallery",
     joinWA: "Join our WhatsApp Community",
     waBlurb: "Know what's happening at REALITY—events, last-minute meetups, and updates.",
+    cal: {
+      eyebrow: "What's on",
+      title: "Upcoming at REALITY",
+      loading: "Loading what's on…",
+      empty: "No events scheduled right now — check our socials for what's on.",
+      errorTitle: "Couldn't load the calendar",
+      errorBody: "Our live calendar is taking a moment. Join the WhatsApp community below for what's on, or add our calendar to yours.",
+      addToCalendar: "Add our calendar to yours",
+      details: "Details",
+      today: "Today",
+      tomorrow: "Tomorrow",
+    },
+    eventOverlay: {
+      openInApp: "Open in the REALITY app",
+      close: "Close",
+    },
+    getApp: {
+      title: "Get the REALITY app",
+      blurb: "The full calendar in your pocket — RSVP, reminders, and what's on tonight.",
+      cta: "Open the app",
+    },
     proposal: {
       eyebrow: "Host with us",
       title: "Work with us",
@@ -537,6 +558,27 @@ export const STR = {
     galleryTitle: "Hình ảnh không gian",
     joinWA: "Tham gia nhóm WhatsApp",
     waBlurb: "Cập nhật sự kiện, meetup và tin tức của REALITY.",
+    cal: {
+      eyebrow: "Sắp diễn ra",
+      title: "Sự kiện tại REALITY",
+      loading: "Đang tải lịch sự kiện…",
+      empty: "Hiện chưa có sự kiện nào — theo dõi mạng xã hội của chúng tôi để cập nhật.",
+      errorTitle: "Không tải được lịch",
+      errorBody: "Lịch trực tiếp đang cần một chút thời gian. Tham gia nhóm WhatsApp bên dưới để cập nhật, hoặc thêm lịch của chúng tôi vào lịch của bạn.",
+      addToCalendar: "Thêm lịch của chúng tôi vào lịch của bạn",
+      details: "Chi tiết",
+      today: "Hôm nay",
+      tomorrow: "Ngày mai",
+    },
+    eventOverlay: {
+      openInApp: "Mở trong app REALITY",
+      close: "Đóng",
+    },
+    getApp: {
+      title: "Tải app REALITY",
+      blurb: "Lịch sự kiện trong túi bạn — RSVP, nhắc lịch và tối nay có gì.",
+      cta: "Mở app",
+    },
     proposal: {
       eyebrow: "Tổ chức cùng chúng tôi",
       title: "Hợp tác với chúng tôi",
@@ -769,7 +811,6 @@ export const URLS = {
   WA: "https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO",
   IG: "https://www.instagram.com/reality.dn/",
   FB: "https://www.facebook.com/realitybarcafedanang/",
-  CAL: "https://calendar.google.com/calendar/embed?src=realitydn%40gmail.com&ctz=Asia%2FHo_Chi_Minh",
   MAP: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1766.9182173001361!2d108.24125224818768!3d16.05241110360417!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY!5e1!3m2!1sen!2s!4v1756275333082!5m2!1sen!2s",
   PDF: "https://realitydn.com/menu-drinks-en.pdf"
 };

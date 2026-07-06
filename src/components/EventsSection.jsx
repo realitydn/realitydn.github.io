@@ -1,108 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import CardsCarousel from './CardsCarousel';
+import EventOverlay from './EventOverlay';
+import useFeed from '../hooks/useFeed';
+import {
+  dedupeSeries,
+  pickPoster,
+  pickTitle,
+  weekdayFromISO,
+  orderByDay,
+} from '../data/feed-helpers';
 
-// Order posters so today's weekday leads and the week rolls forward
-// (Tue → Wed → … → Mon), recomputed each visit. "Today" is Đà Nẵng time
-// (Asia/Ho_Chi_Minh) — that's where the events happen — so the order is the same
-// for a local visitor and a traveller checking from abroad. `day` is 1–7
-// (Mon=1 … Sun=7, from events-config.json); undated posters keep their relative
-// order and fall to the end.
-const DAY_NUM = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+// EventsSection — the poster carousel. Sourced from the REALITY Events Feed
+// (useFeed) rather than the old public/events-config.json. Recurring series are
+// collapsed to their soonest upcoming instance; one-offs always show. Cards are
+// ordered today-first (by ICT weekday, mirroring the prior behaviour) but the
+// underlying list is built soonest-first so "today" leads with the next real event.
+//
+// Tapping a poster opens the EVENT (EventOverlay: poster + details + open-in-app
+// deep link), not just a bigger image — the poster is the door, the event is the room.
+//
+// This site's language toggle is 'EN' | 'VN' (NOT en/vi); feed-helpers map 'VN' → *_vi.
 
-function vnToday() {
-  const abbr = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short',
-  }).format(new Date());
-  return DAY_NUM[abbr] || 1;
-}
+export default function EventsSection({ t, lang = 'EN' }) {
+  const { events, loading } = useFeed();
 
-function orderByDay(list) {
-  const today = vnToday();
-  return list
-    .map((e, i) => ({ e, i }))
-    .sort((a, b) => {
-      const ra = a.e.day ? (a.e.day - today + 7) % 7 : 99;
-      const rb = b.e.day ? (b.e.day - today + 7) % 7 : 99;
-      return ra - rb || a.i - b.i; // stable: keep manager order within a day
-    })
-    .map((x) => x.e);
-}
+  const cards = useMemo(() => {
+    // De-dup recurring series (soonest instance), then sort by start ascending so
+    // the soonest real event is first; map to the card shape renderEventCard wants,
+    // skipping any event with no usable poster (feed → poster4x5 → skip).
+    const deduped = dedupeSeries(events || [])
+      .slice()
+      .sort((a, b) => Date.parse(a.startsAt || 0) - Date.parse(b.startsAt || 0));
 
-export default function EventsSection({ t }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch the config file. Each entry is either:
-    //   "a.jpg"                                      — bare filename
-    //   { "file": "a.jpg", "alt": "...", "title": "..." }  — richer, preferred
-    fetch('/events-config.json')
-      .then(res => res.json())
-      .then(config => {
-        const eventList = config.events.map((entry, index) => {
-          const obj = typeof entry === 'string' ? { file: entry } : entry;
-
-          // New format from poster-manager: { slug, webp, jpg, full, alt, title }
-          // Legacy format: bare string "a.jpg" or { file: "a.jpg", alt, title }
-          const isNew = !!obj.slug;
-          const img = isNew
-            ? `/images/events/${obj.jpg}`
-            : `/images/events/${obj.file}`;
-          const webp = isNew ? `/images/events/${obj.webp}` : null;
-          const full = isNew ? `/images/events/${obj.full}` : null;
-
-          return {
-            id: `event-${index + 1}`,
-            img,
-            webp,
-            full,
-            alt: obj.alt || obj.title || 'REALITY event poster — Đà Nẵng',
-            title: obj.title || null,
-            day: obj.day || null,       // 1–7 (Mon=1) — drives today-first ordering
-            accent: obj.accent || null, // palette name, stored for future theming
-          };
-        });
-        setEvents(orderByDay(eventList));
-        setLoading(false);
+    const mapped = deduped
+      .map((ev) => {
+        const poster = pickPoster(ev.posters);
+        if (!poster) return null;
+        const title = pickTitle(ev, lang) || null;
+        return {
+          id: ev.id,
+          img: poster,
+          webp: null,
+          full: ev.posters?.poster4x5 || poster,
+          alt: title || 'REALITY event poster — Đà Nẵng',
+          title,
+          day: weekdayFromISO(ev.startsAt), // 1–7 (Mon=1) for today-first ordering
+          startsAt: ev.startsAt,
+          event: ev, // the full feed event — the card opens it in the EventOverlay
+        };
       })
-      .catch(err => {
-        console.log('No events config found, falling back to numbered files');
-        loadNumberedEvents();
-      });
-  }, []);
+      .filter(Boolean);
 
-  const loadNumberedEvents = () => {
-    const checkImages = async () => {
-      const checks = await Promise.all(
-        Array.from({ length: 20 }, (_, i) => {
-          const img = new Image();
-          return new Promise((resolve) => {
-            img.onload = () => resolve({ 
-              id: `event-${i + 1}`,
-              img: `/images/events/${i + 1}.jpg`,
-              alt: `Event poster ${i + 1}`,
-              valid: true 
-            });
-            img.onerror = () => resolve({ valid: false });
-            img.src = `/images/events/${i + 1}.jpg`;
-          });
-        })
-      );
-      
-      const valid = checks.filter(e => e.valid);
-      setEvents(valid);
-      setLoading(false);
-    };
-
-    checkImages();
-  };
+    return orderByDay(mapped);
+  }, [events, lang]);
 
   const renderEventCard = (ev) => (
     <button
       type="button"
       className="card cursor-pointer overflow-hidden block w-full text-left p-0"
-      onClick={() => openLightbox(ev.full || ev.img, ev.alt)}
-      aria-label={ev.title ? `Open poster: ${ev.title}` : 'Open event poster'}
+      onClick={() => setOverlayEvent(ev.event)}
+      aria-label={ev.title ? `Open event: ${ev.title}` : 'Open event'}
     >
       <div className="aspect-[4/5] relative bg-cream">
         <picture>
@@ -122,31 +79,7 @@ export default function EventsSection({ t }) {
     </button>
   );
 
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImg, setLightboxImg] = useState('');
-  const [lightboxAlt, setLightboxAlt] = useState('');
-
-  const openLightbox = (img, alt) => {
-    setLightboxImg(img);
-    setLightboxAlt(alt || 'REALITY event poster');
-    setLightboxOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeLightbox = () => {
-    setLightboxOpen(false);
-    setLightboxImg('');
-    setLightboxAlt('');
-    document.body.style.overflow = '';
-  };
-
-  // Close on Escape — basic keyboard affordance for the lightbox.
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') closeLightbox(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [lightboxOpen]);
+  const [overlayEvent, setOverlayEvent] = useState(null);
 
   if (loading) {
     return (
@@ -161,7 +94,7 @@ export default function EventsSection({ t }) {
     );
   }
 
-  if (events.length === 0) {
+  if (cards.length === 0) {
     return null;
   }
 
@@ -169,45 +102,16 @@ export default function EventsSection({ t }) {
     <>
       <section id="events" className="section max-w-7xl mx-auto px-4">
         <CardsCarousel
-          items={events}
+          items={cards}
           eyebrow={t.use('eventsEyebrow')}
           title={t.use('eventsTitle')}
           renderCard={renderEventCard}
         />
       </section>
 
-      {/* Lightbox Modal — paper scrim, stamped frame */}
-      {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            backgroundColor: 'rgb(var(--bg-rgb) / 0.88)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-          }}
-          onClick={closeLightbox}
-        >
-          <button
-            className="absolute top-4 right-4 text-ink hover:opacity-70 transition-opacity p-2"
-            onClick={closeLightbox}
-            aria-label="Close lightbox"
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M6 18L18 6"/>
-            </svg>
-          </button>
-          <div
-            className="max-w-4xl max-h-[90vh] card-static stamp-in overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={lightboxImg}
-              alt={lightboxAlt}
-              className="w-full h-full object-contain"
-            />
-          </div>
-        </div>
-      )}
+      {/* Event overlay — poster + details + open-in-app, same scrim anatomy the
+          old image lightbox used. */}
+      <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </>
   );
 }

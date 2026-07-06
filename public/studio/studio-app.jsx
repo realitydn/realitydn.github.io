@@ -1165,7 +1165,7 @@ function App(){
     });
     setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
       elements:built.elements, theme:built.theme, accent, title,
-      eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt } }));
+      eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt, cost:ev.cost||null } }));
     setSelectedIds([]);
   }
 
@@ -1236,21 +1236,29 @@ function App(){
     const claimed = {}; userTpls.forEach(t=>{ if(t && t.eventId) claimed[t.eventId]=1; });
     const horizon = new Date(Date.now()+7*3600*1000 + QUEUE_DAYS*86400000).toISOString().slice(0,10);
     const hasPoster = ev=>{ const p=(ev&&ev.posters)||{}; return !!(p.poster4x5||p.feed||p.square1x1||p.story); };
-    const done = ev=>{ const k=queueKey(ev); return hasPoster(ev) || claimed[k] || queueDismissed[k] || queueSent[k]; };
+    /* posterStaleAt (hub 0033): the series was RENAMED after this poster was
+       made — the artwork prints the old name. Such events re-queue even though
+       they have a poster; only a dismissal NEWER than the rename (a later
+       rename re-surfaces) or a poster sent this session clears them. */
+    const staleAt = ev=>{ const t=Date.parse((ev&&ev.posterStaleAt)||''); return isNaN(t)?0:t; };
+    const done = ev=>{ const k=queueKey(ev); const st=staleAt(ev);
+      if(st) return !!(queueSent[k] || (queueDismissed[k]||0) > st);
+      return !!(hasPoster(ev) || claimed[k] || queueDismissed[k] || queueSent[k]); };
+    /* One row per series — the earliest ELIGIBLE instance. (Any-eligible-shows,
+       not any-done-hides: after a rename only the stamped instances re-open, and
+       one fresh instance with the old poster must not silence the whole series.) */
     const bySeries = {}, out = [];
     evs.forEach(ev=>{
       if(!ev || !ev.id || !ev.startsAt) return;
+      if(done(ev) || feedDate(ev.startsAt) > horizon) return;
       if(ev.seriesId){
-        const s = bySeries[ev.seriesId] || (bySeries[ev.seriesId] = { first:null, off:false });
-        if(done(ev)) s.off = true;
+        const s = bySeries[ev.seriesId] || (bySeries[ev.seriesId] = { first:null });
         if(!s.first || ev.startsAt < s.first.startsAt) s.first = ev;
         return;
       }
-      if(done(ev) || feedDate(ev.startsAt) > horizon) return;
       out.push(ev);
     });
-    Object.keys(bySeries).forEach(k=>{ const s=bySeries[k];
-      if(!s.off && s.first && feedDate(s.first.startsAt) <= horizon) out.push(s.first); });
+    Object.keys(bySeries).forEach(k=>{ out.push(bySeries[k].first); });
     out.sort((a,b)=> a.startsAt < b.startsAt ? -1 : 1);
     return out;
   }, [queueFeed, userTpls, queueDismissed, queueSent]);
@@ -1593,21 +1601,25 @@ function App(){
             {queueItems.map(ev=>{
               const di = feedDayIdx(ev.startsAt);
               const accent = di!=null ? AP_ABYDAY[di] : null;
+              const stale = !!ev.posterStaleAt;
               return (
                 <div key={ev.id} className="rs-libitem" onClick={()=>applyQueueItem(ev)}
                   style={{ cursor:'pointer', position:'relative', paddingRight:36 }}>
                   <span className="ln" style={{ display:'flex', alignItems:'center', gap:7 }}>
                     {accent && <span style={{ width:9, height:9, borderRadius:'50%', flex:'none', background:AP_PAL[accent], border:'1px solid rgba(0,0,0,.25)' }} />}
                     <span>{ev.title_en || ev.title_vi || '(untitled)'}</span>
+                    {stale && <span title="The series was renamed — its current poster shows the old name."
+                      style={{ fontSize:9, fontWeight:700, letterSpacing:.4, textTransform:'uppercase', padding:'1px 5px', border:'1px solid currentColor', borderRadius:3, opacity:.7, flex:'none' }}>renamed</span>}
                   </span>
-                  <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)} · click for a starter</span>
-                  <button className="rs-tplx" title="Dismiss — this event doesn’t need a poster"
+                  {/* cost rides the feed (hub 0033) so the price makes it onto the poster */}
+                  <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)}{ev.cost?' · '+ev.cost:''} · click for a starter</span>
+                  <button className="rs-tplx" title={stale?'Dismiss — keep the current poster despite the rename':'Dismiss — this event doesn’t need a poster'}
                     onClick={e=>{ e.stopPropagation(); dismissQueueItem(ev); }}>×</button>
                 </div>
               );
             })}
             {queueFeed && !queueFeed.err && queueItems.length>0 &&
-              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter — saving it as a template, or sending the poster to the event, clears it from the queue.</div>}
+              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter — saving it as a template, or sending the poster to the event, clears it from the queue. Renamed series re-appear (“renamed”) until a fresh poster is sent or you dismiss them.</div>}
           </React.Fragment>}
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>
             <div className="rs-sech" onClick={()=>setTplOpen(o=>!o)}

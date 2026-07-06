@@ -21,6 +21,14 @@ import {
   fmtTime,
   dateKey,
 } from '../src/data/feed-helpers.js';
+import {
+  dayClassFromISO,
+  fmtDM,
+  fmtDayDate,
+  splitFeedSite,
+  cfStr,
+  costLabel,
+} from '../src/data/cal-feed.js';
 
 let passed = 0;
 const failures = [];
@@ -113,6 +121,35 @@ eq('pickLocName VN → _vi', pickLocName(loc, 'VN'), 'Không gian sự kiện');
 eq('fmtTime 19:00 +07', fmtTime('2026-06-28T19:00:00+07:00'), '19:00');
 eq('fmtTime crosses midnight Z→ICT', fmtTime('2026-06-28T17:30:00Z'), '00:30');
 eq('dateKey ICT day', dateKey('2026-06-29T00:30:00+07:00'), '2026-06-29');
+
+// ── cal-feed: the feed-widget helpers (day colours, DD.MM labels, split) ─────
+// 2026-06-28 is a Sunday; DD.MM is house style (never month-first).
+eq('dayClassFromISO Sunday', dayClassFromISO('2026-06-28T19:00:00+07:00'), 'd-sun');
+// Midnight boundary: Sunday 17:30Z = Monday 00:30 ICT → Monday's green, not Sunday's.
+eq('dayClassFromISO midnight-boundary ICT', dayClassFromISO('2026-06-28T17:30:00Z'), 'd-mon');
+eq('dayClassFromISO garbage → default', dayClassFromISO('not-a-date'), 'd-thu');
+eq('fmtDM DD.MM', fmtDM('2026-07-07T20:00:00+07:00'), '07.07');
+eq('fmtDayDate EN', fmtDayDate('2026-07-07T20:00:00+07:00', 'EN'), 'TUE 07.07');
+eq('fmtDayDate VN numeric weekday', fmtDayDate('2026-07-07T20:00:00+07:00', 'VN'), 'Thứ 3 07.07');
+// splitFeedSite: with "now" = Wed 2026-07-01 noon ICT, Wed+Thu are soon, Friday
+// is later, and soon leads with the next-to-start regardless of input order.
+const wedNoon = Date.parse('2026-07-01T12:00:00+07:00');
+const split = splitFeedSite(
+  [
+    { id: 'fri', startsAt: '2026-07-03T19:00:00+07:00' },
+    { id: 'thu', startsAt: '2026-07-02T19:00:00+07:00' },
+    { id: 'wed', startsAt: '2026-07-01T19:00:00+07:00' },
+    { id: 'undated', startsAt: null },
+  ],
+  wedNoon,
+);
+eq('splitFeedSite soon = today+tomorrow', split.soon.map((e) => e.id).join(','), 'wed,thu');
+eq('splitFeedSite later sorted, undated last', split.later.map((e) => e.id).join(','), 'fri,undated');
+// costLabel: a priced event prints its price; cost:null is a free event.
+eq('costLabel priced', costLabel({ cost: '100k' }, 'EN'), '100k');
+eq('costLabel free EN', costLabel({ cost: null }, 'EN'), 'Free');
+eq('costLabel free VN', costLabel({ cost: null }, 'VN'), 'Miễn phí');
+eq('cfStr unknown lang falls back to EN', cfStr('DE').upNext, 'Up next');
 
 // ── summary ──────────────────────────────────────────────────────────────────
 if (failures.length) {

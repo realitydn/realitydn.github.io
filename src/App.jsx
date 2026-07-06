@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ParallaxLayers from "./components/ParallaxLayers";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
-import EventsSection from "./components/EventsSection";
 import Calendar from "./components/Calendar";
 import InfoHostSection from "./components/InfoHostSection";
 import DarkCTA from "./components/DarkCTA";
@@ -66,7 +65,6 @@ function HomePage({ lang }) {
         />
         <main id="main-content" tabIndex={-1}>
           <Hero t={t} />
-          <EventsSection t={t} lang={lang} />
           <Calendar lang={lang} />
           <InfoHostSection t={t} lang={lang} />
           <DarkCTA lang={lang} />

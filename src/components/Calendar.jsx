@@ -55,7 +55,9 @@ export default function Calendar({ lang }) {
   const { soon, later } = useMemo(() => splitFeedSite(events || []), [events]);
   const total = soon.length + later.length;
 
-  // One slice band — day-colour plate, info boxes lower-left, cost badge
+  // One slice band — the text-less poster slice fills the card (the hub's
+  // textlessPoster order: feed slice first, designed 4:5 as fallback), solid
+  // day-colour when there's no image yet. Info boxes lower-left, cost badge
   // top-right. The hero variant is taller with bigger type.
   const slice = (ev, hero = false) => {
     const title = pickTitle(ev, lang) || 'REALITY event';
@@ -63,6 +65,7 @@ export default function Calendar({ lang }) {
     const start = fmtTime(ev.startsAt);
     const end = ev.endsAt ? fmtTime(ev.endsAt) : '';
     const meta = [start ? (end ? `${start}–${end}` : start) : '', loc].filter(Boolean).join(' · ');
+    const img = ev.posters?.feed || ev.posters?.poster4x5 || null;
     return (
       <button
         key={ev.id}
@@ -71,6 +74,7 @@ export default function Calendar({ lang }) {
         onClick={() => setOverlayEvent(ev)}
         aria-label={title}
       >
+        {img && <img className="cal-card-img" src={img} alt="" loading="lazy" decoding="async" />}
         <span className="cal-go">{costLabel(ev, lang)}</span>
         <div className="cal-ov">
           <span className="cal-bx cal-bx-d">{fmtDayDate(ev.startsAt, lang)}</span>

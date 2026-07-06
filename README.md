@@ -88,8 +88,7 @@ reality-site/
 ├── package.json
 ├── vite.config.js
 ├── tailwind.config.js
-├── postcss.config.js
-└── netlify.toml
+└── postcss.config.js
 ```
 
 ## User-Provided Assets
@@ -112,7 +111,12 @@ Add event poster images to `/public/images/events/` and update `events-config.js
 
 ## Deployment
 
-Configured for Netlify. Push to connected repo or drag/drop the `dist` folder to Netlify.
+Cloudflare Pages (project `realitydn`). Every push to `main` triggers
+`.github/workflows/deploy.yml`, which runs the full build (including the
+Puppeteer pre-render) and ships `dist/` via `wrangler pages deploy`. There is
+no dashboard-connected build — the GitHub Action is the whole pipeline, so
+build-time env vars (`VITE_*`) belong in the workflow, not a hosting dashboard.
+(The site moved off Netlify in 2026 — see MIGRATION-GUIDE.md.)
 
 ## Notes
 

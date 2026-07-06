@@ -6,12 +6,9 @@
 # the host to serve the pre-rendered HTML for that route if it exists, and
 # otherwise fall through to index.html so React Router can handle it.
 #
-# Both Netlify and Cloudflare Pages honor a `_redirects` file. Pre-rendered
-# routes ship real HTML at /event-guidelines/index.html, /vn/index.html, etc.,
-# so those are served directly — this catch-all only kicks in for routes the
-# crawler-facing prerender didn't cover (mostly fat-finger URLs).
-#
-# Note: netlify.toml has the same catch-all rewrite defined. That one keeps
-# Netlify happy; this file keeps Cloudflare Pages happy. They do not conflict.
+# Cloudflare Pages honors a `_redirects` file. Pre-rendered routes ship real
+# HTML at /event-guidelines/index.html, /vn/index.html, etc., so those are
+# served directly — this catch-all only kicks in for routes the crawler-facing
+# prerender didn't cover (mostly fat-finger URLs).
 
 /*    /index.html   200

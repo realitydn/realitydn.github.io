@@ -2,9 +2,8 @@
 #
 # Why this file exists
 # --------------------
-# Both Netlify and Cloudflare Pages honor a `_headers` file at the site root.
-# It lives in public/ so Vite copies it verbatim into dist/. Keeping a single
-# file means the migration from Netlify to Cloudflare doesn't need a rewrite.
+# Cloudflare Pages honors a `_headers` file at the site root. It lives in
+# public/ so Vite copies it verbatim into dist/.
 #
 # Strategy
 # --------

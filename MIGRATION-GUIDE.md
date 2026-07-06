@@ -1,5 +1,10 @@
 # Migrating REALITY from Netlify → Cloudflare Pages
 
+> **Status: DONE.** The site lives on Cloudflare Pages (project `realitydn`),
+> deployed by `.github/workflows/deploy.yml` on every push to `main`. Netlify
+> is fully retired and `netlify.toml` deleted. This guide is kept as the
+> historical record of the move.
+
 This guide walks you through everything step by step. The code changes are already done — this is all about clicking through dashboards and copying values.
 
 **Time estimate:** ~30 minutes of clicking, then a few hours waiting for DNS to propagate.

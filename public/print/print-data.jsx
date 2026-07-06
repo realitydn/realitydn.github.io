@@ -580,6 +580,38 @@ const TEMPLATES = [
     {"type":"headline","x":64,"y":34,"w":82,"h":170,"p":{"text":"BAR","weight":800,"ink":"white","align":"center","orient":"v","fontSize":56}},
     {"type":"wordmark","x":52,"y":230,"w":106,"h":22,"p":{"ink":"white"}}
   ]},
+  /* ---- Presence QRs — the app's static check-in target (app.realitydn.com/here:
+     joins whatever session is live + marks venue presence; works every night, no
+     reprint). Authored per size — A4 wall sign, A5 standee, A6 table card — so
+     each layout is tuned to its distance-to-reader, not autoscaled. URL is the
+     hub direct (realitydn.com has no /here redirect). ---- */
+  { id:"qr-here-a4", name:"You're here — A4 sign", group:"QR standee", size:"a4", orient:"portrait", accent:"green", els:[
+    {"type":"block","x":0,"y":0,"w":595,"h":300,"p":{"fill":"green","echo":true}},
+    {"type":"kicker","x":44,"y":60,"w":400,"h":24,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"white","align":"left","tracking":0.22}},
+    {"type":"headline","x":44,"y":92,"w":460,"h":180,"p":{"text":"YOU'RE\nHERE","fontSize":96,"align":"left","weight":800,"ink":"white","leading":0.88}},
+    {"type":"numeral","x":44,"y":350,"w":260,"h":180,"p":{"text":"→","fontSize":120,"ink":"green","align":"left"}},
+    {"type":"qr","x":330,"y":340,"w":220,"h":220,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true}},
+    {"type":"body","x":44,"y":600,"w":507,"h":66,"p":{"text":"Scan when you walk in — it checks you in, joins you into tonight's game, and shows everything happening right now. Quét khi bạn đến — check-in và tham gia trò chơi tối nay.","align":"left","fontSize":16,"leading":1.34}},
+    {"type":"rule","x":44,"y":692,"w":507,"h":10,"p":{"weight":3,"fill":"green"}},
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"showQR":false}}
+  ]},
+  { id:"qr-here-a5", name:"Check in — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"green", els:[
+    {"type":"slab","x":0,"y":0,"w":420,"h":200,"p":{"fill":"green","angle":-12,"echo":true}},
+    {"type":"kicker","x":36,"y":52,"w":348,"h":22,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"white","align":"left","tracking":0.2}},
+    {"type":"headline","x":36,"y":76,"w":360,"h":104,"p":{"text":"CHECK\nIN HERE","fontSize":52,"align":"left","weight":800,"ink":"white","leading":0.9}},
+    {"type":"badge","x":296,"y":196,"w":96,"h":96,"p":{"top":"GAME","big":"ON","sub":"TONIGHT","surface":"accent","fill":"green","rot":-8,"lift":"default"}},
+    {"type":"qr","x":130,"y":248,"w":160,"h":160,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true}},
+    {"type":"body","x":36,"y":436,"w":348,"h":56,"p":{"text":"One scan when you arrive: you're checked in and in tonight's game. No app needed. Quét một lần khi đến — check-in và chơi cùng tối nay.","align":"center","fontSize":13,"leading":1.34}},
+    {"type":"footer","x":36,"y":526,"w":348,"h":64,"p":{"showQR":false}}
+  ]},
+  { id:"qr-here-a6", name:"Check in — A6 card", group:"QR standee", size:"a6", orient:"portrait", accent:"green", els:[
+    {"type":"stripes","x":0,"y":0,"w":298,"h":84,"p":{"fill":"green","bg":"white","dir":"v","count":9,"ratio":0.5}},
+    {"type":"kicker","x":24,"y":100,"w":250,"h":20,"p":{"text":"YOU'RE AT REALITY","ink":"green","align":"center","tracking":0.22}},
+    {"type":"headline","x":24,"y":122,"w":250,"h":60,"p":{"text":"SCAN TO\nCHECK IN","fontSize":26,"align":"center","weight":800,"leading":0.92}},
+    {"type":"qr","x":79,"y":196,"w":140,"h":140,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true}},
+    {"type":"body","x":30,"y":344,"w":238,"h":34,"p":{"text":"Join tonight's game & see what's on — no app needed. Quét để check-in và chơi cùng.","align":"center","fontSize":11,"leading":1.3}},
+    {"type":"contact","x":24,"y":386,"w":250,"h":28,"p":{"align":"center"}}
+  ]},
   { id:"qr-menu-thin01", name:"Menu — thin 01", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
     {"type":"numeral","x":22,"y":18,"w":130,"h":110,"p":{"text":"01","fontSize":96,"ink":"pink","align":"left","echo":true}},
     {"type":"kicker","x":150,"y":52,"w":126,"h":20,"p":{"text":"THE MENU","ink":"pink","align":"right","tracking":0.24}},
@@ -631,7 +663,7 @@ const TEMPLATES = [
   { id:"qr-feedback-dot", name:"Feedback dotfield", group:"QR standee", size:"a6", orient:"portrait", accent:"red", els:[
     {"type":"dotfield","x":0,"y":0,"w":298,"h":130,"p":{"fill":"red","dot":10,"gap":7,"bg":"white"}},
     {"type":"headline","x":24,"y":36,"w":250,"h":72,"p":{"text":"TELL US\nHOW WE DID","fontSize":28,"align":"center","weight":800,"ink":"red","leading":0.94}},
-    {"type":"qr","x":79,"y":156,"w":140,"h":140,"p":{"data":"https://realitydn.com/feedback","caption":"","quiet":true}},
+    {"type":"qr","x":79,"y":156,"w":140,"h":140,"p":{"data":"https://app.realitydn.com/feedback","caption":"","quiet":true}},
     {"type":"body","x":30,"y":304,"w":238,"h":36,"p":{"text":"Two minutes, anonymous, read by the whole team.","align":"center","fontSize":11}},
     {"type":"footer","x":24,"y":350,"w":250,"h":60,"p":{"showQR":false}}
   ]},

@@ -28,6 +28,11 @@ const SECTION_PALETTE = [
   'var(--pink)',
 ];
 
+// Site language code → menu-data field suffix (the site says VN, the data says
+// VI; everything else matches). A missing translation falls back to EN.
+const MENU_LANG = { EN: 'EN', VN: 'VI', RU: 'RU', UK: 'UK', KO: 'KO', JA: 'JA' };
+const menuText = (obj, field, lang) => obj[field + (MENU_LANG[lang] || 'EN')] || obj[field + 'EN'];
+
 export default function MenuSection({ lang, t }) {
   const [index, setIndex] = useState(0);
   const panelRef = React.useRef(null);
@@ -104,7 +109,7 @@ export default function MenuSection({ lang, t }) {
                   style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                   aria-hidden="true"
                 />
-                {lang === 'VN' ? c.labelVI : c.labelEN}
+                {menuText(c, 'label', lang)}
               </button>
             ))}
           </nav>
@@ -127,7 +132,7 @@ export default function MenuSection({ lang, t }) {
                     style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                     aria-hidden="true"
                   />
-                  {lang === 'VN' ? c.labelVI : c.labelEN}
+                  {menuText(c, 'label', lang)}
                 </button>
               ))}
             </div>
@@ -157,7 +162,7 @@ export default function MenuSection({ lang, t }) {
                     aria-hidden="true"
                   />
                   <h3 className="h-section text-2xl md:text-3xl">
-                    {lang === 'VN' ? cat.labelVI : cat.labelEN}
+                    {menuText(cat, 'label', lang)}
                   </h3>
                 </header>
 
@@ -171,14 +176,14 @@ export default function MenuSection({ lang, t }) {
                         style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
                         aria-hidden="true"
                       />
-                      {lang === 'VN' ? section.labelVI : section.labelEN}
+                      {menuText(section, 'label', lang)}
                     </h4>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                       {section.items.map((item, idx) => (
                         <li key={idx} className="border-b border-ink/10 pb-2">
                           <div className="flex items-baseline justify-between gap-4">
                             <span className="font-body font-semibold text-[15px] md:text-base">
-                              {lang === 'VN' ? (item.nameVI || item.nameEN) : item.nameEN}
+                              {menuText(item, 'name', lang)}
                             </span>
                             {item.price && (
                               <span className="font-body text-ink tabular-nums font-medium shrink-0">
@@ -188,12 +193,12 @@ export default function MenuSection({ lang, t }) {
                           </div>
                           {(item.tagEN || item.tagVI) && (
                             <div className="text-ink/70 text-sm italic mt-1 font-body">
-                              {lang === 'VN' ? (item.tagVI || item.tagEN) : item.tagEN}
+                              {menuText(item, 'tag', lang)}
                             </div>
                           )}
                           {(item.descEN || item.descVI) && (
                             <div className="text-gray-600 text-sm mt-1 font-body">
-                              {lang === 'VN' ? (item.descVI || item.descEN) : item.descEN}
+                              {menuText(item, 'desc', lang)}
                             </div>
                           )}
                         </li>

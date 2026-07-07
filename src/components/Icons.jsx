@@ -30,6 +30,14 @@ export const Icons = {
     </Svg>
   ),
 
+  // Phone/app glyph — hard corners, a home-indicator bar at the base.
+  app: (c = "currentColor") => (
+    <Svg label="App" color={c}>
+      <rect x="6" y="2" width="12" height="20"/>
+      <path d="M10 18.5h4"/>
+    </Svg>
+  ),
+
   info: (c = "currentColor") => (
     <Svg label="Info" color={c}>
       <rect x="3" y="3" width="18" height="18"/>

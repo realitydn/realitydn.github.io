@@ -48,57 +48,70 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
         </nav>
 
         {/* Desktop Actions — only at lg+ so the md (tablet) viewport uses the
-            compact mobile layout with a hamburger. */}
+            compact mobile layout with a hamburger. The app is now the site's
+            one loud call (red primary, icon + label); the socials ride quietly
+            as icon-only buttons so the bar stays uncrowded. */}
         <div className="hidden lg:flex items-center gap-2">
+          <a
+            href={`${URLS.APP}/?utm_source=website&utm_medium=header`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-primary px-3.5 py-2 flex items-center gap-2 text-xs"
+            aria-label={t.use('getApp.title')}
+          >
+            {Icons.app()}
+            <span>{t.use('getApp.button')}</span>
+          </a>
           <a
             href={URLS.WA}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary px-3 py-2 flex items-center gap-2 text-xs"
+            className="btn-secondary p-2 flex items-center justify-center"
             aria-label="Join WhatsApp"
           >
             {Icons.whatsapp()}
-            <span className="hidden sm:inline">WhatsApp</span>
           </a>
           <a
             href={URLS.IG}
             target="_blank"
             rel="noreferrer"
-            className="btn-secondary px-3 py-2 flex items-center gap-2 text-xs"
+            className="btn-secondary p-2 flex items-center justify-center"
             aria-label="Follow on Instagram"
           >
             {Icons.instagram()}
-            <span className="hidden xl:inline">Instagram</span>
           </a>
           <a
             href={URLS.FB}
             target="_blank"
             rel="noreferrer"
-            className="btn-secondary px-3 py-2 flex items-center gap-2 text-xs"
+            className="btn-secondary p-2 flex items-center justify-center"
             aria-label="Follow on Facebook"
           >
             {Icons.facebook()}
-            <span className="hidden xl:inline">Facebook</span>
           </a>
           <LangMenu lang={lang} />
           <ThemeToggle lang={lang} />
         </div>
 
-        {/* Mobile + tablet actions — shown below lg. Touch targets are 44px+. */}
+        {/* Mobile + tablet actions — shown below lg. Touch targets are 44px+.
+            The app is the primary (red) here too; WhatsApp rides as a quiet
+            icon so the community funnel stays one tap away. */}
         <div className="flex lg:hidden items-center gap-1 sm:gap-2">
           <a
-            href={URLS.WA}
+            href={`${URLS.APP}/?utm_source=website&utm_medium=header_mobile`}
+            target="_blank"
+            rel="noreferrer"
             className="btn-primary p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label={t.use('getApp.title')}
+          >
+            {Icons.app()}
+          </a>
+          <a
+            href={URLS.WA}
+            className="btn-secondary p-3 min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
             aria-label="WhatsApp"
           >
             {Icons.whatsapp()}
-          </a>
-          <a
-            href={URLS.IG}
-            className="btn-secondary p-3 min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
-            aria-label="Instagram"
-          >
-            {Icons.instagram()}
           </a>
           <LangMenu lang={lang} compact />
           <button
@@ -117,6 +130,17 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
       {mobileOpen && (
         <div id="mobile-nav" className="lg:hidden bg-cream" style={{ borderTop: '2px solid var(--fg)' }}>
           <nav className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 gap-3 font-title font-bold text-xs tracking-[0.12em] stamp-stagger">
+            {/* The app CTA leads the mobile menu, full-width and loud. */}
+            <a
+              onClick={() => setMobileOpen(false)}
+              href={`${URLS.APP}/?utm_source=website&utm_medium=header_menu`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary col-span-2 px-4 py-3 flex items-center justify-center gap-2"
+              style={{ '--ri': 0 }}
+            >
+              {Icons.app()} {t.use('getApp.title')}
+            </a>
             <a
               onClick={() => setMobileOpen(false)}
               href="#events"

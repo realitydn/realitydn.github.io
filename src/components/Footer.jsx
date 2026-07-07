@@ -20,10 +20,18 @@ export default function Footer({ lang }) {
           </div>
           <div className="mt-4 flex md:justify-end gap-3 flex-wrap">
             <a
-              href={URLS.WA}
+              href={`${URLS.APP}/?utm_source=website&utm_medium=footer`}
               target="_blank"
               rel="noreferrer"
               className="btn-primary px-5 py-3 text-sm flex items-center gap-2"
+            >
+              {Icons.app()} {STR[lang].getApp.button}
+            </a>
+            <a
+              href={URLS.WA}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary px-5 py-3 text-sm flex items-center gap-2"
             >
               {Icons.whatsapp()} WhatsApp
             </a>

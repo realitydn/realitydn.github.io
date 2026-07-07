@@ -167,7 +167,8 @@ export default {
   "getApp": {
     "title": "REALITY 앱 받기",
     "blurb": "주머니 속 풀 캘린더 — RSVP도, 알림도, 오늘 밤 일정까지.",
-    "cta": "앱 열기"
+    "cta": "앱 열기",
+    "button": "앱 받기"
   },
   "proposal": {
     "eyebrow": "REALITY에서 이벤트를",

@@ -30,10 +30,18 @@ export default function DarkCTA({ lang }) {
         </div>
         <div className="md:col-span-5 flex flex-wrap gap-3 md:justify-end">
           <a
-            href={URLS.WA}
+            href={`${URLS.APP}/?utm_source=website&utm_medium=after_dark`}
             target="_blank"
             rel="noreferrer"
             className="btn-primary px-5 py-3 text-sm flex items-center gap-2"
+          >
+            {Icons.app()} {STR[lang].getApp.button}
+          </a>
+          <a
+            href={URLS.WA}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary px-5 py-3 text-sm flex items-center gap-2"
           >
             {Icons.whatsapp()} WhatsApp
           </a>

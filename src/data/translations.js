@@ -13,6 +13,7 @@ import JA from './locales/ja.js';
 export const STR = { EN, VN, RU, UK, KO, JA };
 
 export const URLS = {
+  APP: "https://app.realitydn.com",
   WA: "https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO",
   IG: "https://www.instagram.com/reality.dn/",
   FB: "https://www.facebook.com/realitybarcafedanang/",

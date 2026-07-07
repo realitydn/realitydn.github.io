@@ -169,7 +169,8 @@ export default {
   "getApp": {
     "title": "Get the REALITY app",
     "blurb": "The full calendar in your pocket — RSVP, reminders, and what's on tonight.",
-    "cta": "Open the app"
+    "cta": "Open the app",
+    "button": "Get the app"
   },
   "proposal": {
     "eyebrow": "Host with us",

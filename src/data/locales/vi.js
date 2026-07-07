@@ -167,7 +167,8 @@ export default {
   "getApp": {
     "title": "Tải app REALITY",
     "blurb": "Lịch sự kiện trong túi bạn — RSVP, nhắc lịch và tối nay có gì.",
-    "cta": "Mở app"
+    "cta": "Mở app",
+    "button": "Tải app"
   },
   "proposal": {
     "eyebrow": "Tổ chức cùng chúng tôi",

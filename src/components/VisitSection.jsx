@@ -21,6 +21,15 @@ export default function VisitSection({ lang, t }) {
             <div className="mt-6 flex flex-wrap gap-3">
               <a
                 className="btn-primary px-5 py-3 text-sm flex items-center gap-2"
+                href={`${URLS.APP}/?utm_source=website&utm_medium=find_us`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={STR[lang].getApp.title}
+              >
+                {Icons.app()} {STR[lang].getApp.button}
+              </a>
+              <a
+                className="btn-secondary px-5 py-3 text-sm flex items-center gap-2"
                 href={URLS.WA}
                 target="_blank"
                 rel="noreferrer"

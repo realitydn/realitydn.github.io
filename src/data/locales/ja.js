@@ -167,7 +167,8 @@ export default {
   "getApp": {
     "title": "REALITYアプリを手に入れよう",
     "blurb": "フルカレンダーをポケットに — RSVPも、リマインダーも、今夜のイベントも。",
-    "cta": "アプリを開く"
+    "cta": "アプリを開く",
+    "button": "アプリを入手"
   },
   "proposal": {
     "eyebrow": "REALITYでイベントを",

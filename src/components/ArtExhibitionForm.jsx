@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { URLS } from '../data/translations';
 
 const WORKER_URL = '';
+// Proposals now POST to the hub — the app's Control Room inbox is the review
+// surface. VITE_HUB_URL overrides for previews; defaults to prod. The Notion
+// worker (WORKER_URL) stays live below as a fire-and-forget backup.
+const HUB = (import.meta.env.VITE_HUB_URL || 'https://app.realitydn.com').replace(/\/$/, '');
 
 export default function ArtExhibitionForm({ t, onSuccess }) {
   const [step, setStep] = useState(1);
@@ -129,10 +133,23 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch(`${WORKER_URL}/api/art-exhibition`, {
+      // Notion-era pipeline stays live as a backup while the hub inbox beds in —
+      // fire-and-forget to the same-origin worker (Notion + Sheets + the Resend
+      // confirmation email). Sent first so a hub outage can't lose the pitch;
+      // only the hub response below drives the success/error UX.
+      fetch(`${WORKER_URL}/api/art-exhibition`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
+      }).catch(() => {});
+
+      // Primary: the Events Platform hub. Its /api/proposals route CORS-allows
+      // realitydn.com and is dormant-safe (accepts + flags unverified until a
+      // Turnstile secret is set). `kind` tags the proposal for the inbox.
+      const response = await fetch(`${HUB}/api/proposals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, kind: 'art' }),
       });
 
       // Guard against the SPA catch-all serving index.html when the worker

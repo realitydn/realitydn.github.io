@@ -1539,8 +1539,10 @@ function App(){
         try{ blob = await (m.plate ? toBlobSlice() : toBlob(AP_FMT[m.fmt])); }catch(e){ blob = null; }
         if(m.plate) setPlateOnly(false);
         if(!blob){ failed++; continue; }
-        /* Downscale the 2x render to its base px and re-encode for upload (WebP;
-           the story slot stays JPEG for Instagram's share intake). The hub feed,
+        /* Downscale the 2x render to its base px and re-encode for upload. WebP by
+           default; story + square1x1 stay JPEG — story for Instagram's share intake,
+           square1x1 because it's the event's OG/social share image and Facebook /
+           Zalo / iMessage render WebP link previews unreliably. The hub feed,
            the app, and danang.community serve THIS file — full-res PNGs remain in
            the local Save/export path. On any encode failure the raw render goes
            up unchanged, exactly as before. */
@@ -1551,7 +1553,7 @@ function App(){
             const sl = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
             const th = m.plate ? Math.max(1, Math.round((sl.hFrac||0.2)*f.h)) : f.h;
             up = await window.RCloud.optimizeImage(blob, f.w, th,
-              m.slot==='story' ? { prefer:'image/jpeg' } : undefined);
+              (m.slot==='story' || m.slot==='square1x1') ? { prefer:'image/jpeg' } : undefined);
           }
         }catch(e){ /* keep the raw render */ }
         setExportMsg('Uploading '+label+'…');

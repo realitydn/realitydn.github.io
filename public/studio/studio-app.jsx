@@ -184,6 +184,7 @@ const TYPE_CAPS = {
   tagline:  { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, orient:true, surface:true, shadow:true },
   info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:{ def:1.4, min:1, max:2 }, surface:true, shadow:true },
   when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
+  cost:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
   stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
   host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
   ticket:   { surface:true, shadow:true },
@@ -494,7 +495,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   const setItems = (items)=>update({ items });
   // Per-type default tracking, so the slider reads true for elements saved
   // before letter-spacing was configurable (matches the renderer's fallback).
-  const lsDefault = el.type==='when'?0.16 : el.type==='host'?0.02 : el.type==='stamp'?0.04 : el.type==='title'?0.005 : 0;
+  const lsDefault = (el.type==='when'||el.type==='cost')?0.16 : el.type==='host'?0.02 : el.type==='stamp'?0.04 : el.type==='title'?0.005 : 0;
   const WEIGHTS = caps.font==='grot' ? WEIGHTS_GROT : WEIGHTS_MONT;
   const defWeight = (AP_DEF[el.type] && AP_DEF[el.type].props.weight) || (caps.font==='grot'?400:700);
   const sizeLabel = 'Font size'+(isOutput?' · '+activeLabel+' only':'');
@@ -588,6 +589,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {el.type==='when' && <React.Fragment>
         <div className="rs-sech">Text</div>
         <Field label="When" value={el.text} onChange={v=>update({text:v})} />
+      </React.Fragment>}
+      {el.type==='cost' && <React.Fragment>
+        <div className="rs-sech">Text</div>
+        <Field label="Cost" value={el.text} onChange={v=>update({text:v})} />
       </React.Fragment>}
       {el.type==='stamp' && <React.Fragment>
         <div className="rs-sech">Text</div>
@@ -1145,8 +1150,8 @@ function App(){
   }
 
   /* Click a queue row → the Classic starter prefilled with the event's name,
-     day accent and time, linked to the event (doc.eventRef) so the cloud send
-     offers it first and a template save claims it off the queue. */
+     day accent, time, host and price, linked to the event (doc.eventRef) so the
+     cloud send offers it first and a template save claims it off the queue. */
   function applyQueueItem(ev){
     const title = ev.title_en || ev.title_vi || 'Untitled event';
     if(docRef.current.elements.length &&
@@ -1159,9 +1164,15 @@ function App(){
     /* weekly series read "THU · 19:00"; one-offs pin the date: "THU 9.7 · 19:00" */
     const when = ((di!=null?AP_DABBR[di].toUpperCase():'')
       + (ev.seriesId ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
+    /* Fill every box the feed can populate: the day·time chip, the host credit,
+       and the price chip. Host keeps the template placeholder when the event has
+       none; cost reads "Free" when the event carries no price (the feed's null
+       cost means free — matching the app's own event page). */
     built.elements.forEach(el=>{
       if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); }
       if(el.type==='when'){ el.text = when; el.w = 460; }
+      if(el.type==='host' && ev.host){ el.name = ev.host; }
+      if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
     });
     setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
       elements:built.elements, theme:built.theme, accent, title,

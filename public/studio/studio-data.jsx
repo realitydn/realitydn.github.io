@@ -264,6 +264,7 @@ const CATALOG = [
     { type:'tagline', label:'Tagline',  hint:'One line under it' },
     { type:'info',    label:'Info text', hint:'Formattable paragraph' },
     { type:'when',    label:'When chip', hint:'Day · time' },
+    { type:'cost',    label:'Cost chip', hint:'Price · e.g. FREE' },
     { type:'host',    label:'Host',     hint:'Credit — size in panel' },
   ]},
   { group:'Blocks', items:[
@@ -296,6 +297,9 @@ const DEFAULTS = {
   tagline: { w:560, h:80,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
   info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:26, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
   when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
+  // Cost chip — the day·time chip's twin (same accent tag), carrying the price.
+  // The calendar handoff fills it from the event's cost ("FREE" when free).
+  cost:    { w:240, h:84,  props:{ text:'FREE', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
   host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0.02 } },
   ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'www.realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
@@ -473,7 +477,8 @@ const TEMPLATES = [
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
   { id:'talk-classic', name:'Classic', group:'Talk', theme:'day', accent:'blue', els:[
     BLEED(),
-    { type:'when',  x:90, y:250, w:360, h:84,  p:{ text:'THU · 19:00', surface:'accent', align:'center' } },
+    { type:'when',  x:90,  y:250, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent', align:'center' } },
+    { type:'cost',  x:580, y:250, w:230, h:84, p:{ text:'FREE', surface:'accent', align:'center' } },
     { type:'title', x:90, y:380, w:900, h:340, p:{ text:'Event\nTitle', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
     { type:'host',  x:90, y:780, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),

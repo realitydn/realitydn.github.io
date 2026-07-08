@@ -352,7 +352,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       </div>
     </div>;
   }
-  else if(el.type==='when'){
+  else if(el.type==='when' || el.type==='cost'){
+    // The cost chip is the day·time chip's twin — same accent tag, price text.
     inner = <div style={box({ padding:'10px 26px', alignItems:'center' })}>
       <div style={{ fontFamily:MONT, fontWeight:el.weight||700, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.16)+'em', fontSize:el.fontSize+'px', color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
     </div>;

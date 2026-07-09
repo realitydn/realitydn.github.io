@@ -598,16 +598,17 @@ section[id], div[id="proposal"] {
 }
 .cal-label::after { content: ""; flex: 1; height: 2px; background: var(--hairline); }
 
-/* Feed cards — solid day-colour bands; info boxes (date · title · meta)
-   overlay the lower-left, the cost badge sits top-right (the app parks its
-   reminder bell there; here that corner is the price's). */
+/* Feed cards — solid day-colour bands framed in a 2px day-of-week border;
+   theme info boxes (date · title · meta) overlay the lower-left, the cost
+   badge sits top-right (the app parks its reminder bell there; here that
+   corner is the price's). */
 .cal-card {
   position: relative;
   display: block;
   width: 100%;
   text-align: left;
   appearance: none;
-  border: 2px solid var(--fg);
+  border: 2px solid var(--day);
   border-radius: 0;
   box-shadow: var(--sh-default);
   background: var(--day);
@@ -639,7 +640,7 @@ section[id], div[id="proposal"] {
   gap: 4px;
   pointer-events: none;
 }
-.cal-bx { background: var(--day); color: var(--on-day); padding: 3px 8px; max-width: 100%; }
+.cal-bx { background: var(--bg); color: var(--fg); padding: 3px 8px; max-width: 100%; }
 .cal-bx-d { font-family: var(--mont); font-weight: 700; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; }
 .cal-bx-t {
   font-family: var(--mont); font-weight: 700; font-size: 14px; line-height: 1.05;
@@ -694,11 +695,12 @@ section[id], div[id="proposal"] {
 @keyframes cal-echo-a-lg { from { transform: translate(5.5px, 7px); } to { transform: translate(8px, 10px); } }
 @keyframes cal-echo-b-lg { from { transform: translate(11px, 13px); } to { transform: translate(16px, 19px); } }
 
-/* Day-colour date tab — the event overlay's header stamp (hub .cal-datetab). */
+/* Date tab — theme fill framed in the weekday colour (matches the feed cards);
+   the event overlay's header stamp (hub .cal-datetab). */
 .cal-datetab {
   display: inline-block;
-  background: var(--day); color: var(--on-day);
-  border: 2px solid var(--fg);
+  background: var(--bg); color: var(--fg);
+  border: 2px solid var(--day);
   padding: 5px 11px;
   font-family: var(--mont); font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.07em; font-size: 12px;

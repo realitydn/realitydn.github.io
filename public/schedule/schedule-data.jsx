@@ -385,11 +385,15 @@ function buildDocFromFeed(feedOrEvents, opts){
       const mapped = code && codeSet[code] ? codeSet[code] : null;
       const tags = Array.isArray(ev.tags) ? ev.tags.map(t=>String(t).toLowerCase()) : [];
       const weekly = tags.indexOf('weekly')>=0 || !!ev.seriesId;
+      // $ (fee) flag: a non-blank `cost` (e.g. "100k") auto-flags, OR an explicit `fee`
+      // tag. `cost` is the app's source of truth for "costs money beyond a purchase"
+      // (null/blank = free), so a priced event flags without a tag added by hand.
+      const hasCost = ev.cost!=null && String(ev.cost).trim()!=='';
       events.push({
         id: mk(), date, start, end, title: ev.title_en || ev.title_vi || 'Untitled event',
         titleShort: null, locations: mapped ? [mapped] : [],
-        // map the feed's tags onto the schedule's flags/emphasis ($ = fee, * = prereg)
-        flags:{ prereg: tags.indexOf('prereg')>=0, fee: tags.indexOf('fee')>=0 },
+        // map the feed onto the schedule's flags/emphasis ($ = fee, * = prereg)
+        flags:{ prereg: tags.indexOf('prereg')>=0, fee: hasCost || tags.indexOf('fee')>=0 },
         emphasis: tags.indexOf('featured')>=0 ? 'banner' : 'none', hide:[],
         repeat: weekly ? 'weekly' : null, repeatUntil:null, exceptions:[],
         notionId: ev.id || null,                                 // feed event id → existing hook

@@ -138,17 +138,27 @@ eq('missing start date → 1 error', bad.errors.length, 1);
 const ranged = buildDocFromFeed(feed, { locations: LOCATIONS, makeId: () => 'r', range: { start: '2026-07-01', days: 1 } });
 eq('range clamp keeps only in-range', ranged.events.length, 1);
 
-// flags + emphasis map from the feed's tags ($ = fee, * = prereg, featured = banner)
+// flags + emphasis map from the feed's tags ($ = fee, * = prereg, featured = banner),
+// and $ ALSO auto-sets from a non-blank `cost` field (no tag needed).
 const tagged = buildDocFromFeed({ events: [
   { id: 't1', title_en: 'Paid Workshop', startsAt: '2026-07-04T15:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: ['fee', 'prereg'] },
   { id: 't2', title_en: 'Featured Party', startsAt: '2026-07-05T20:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: ['featured'] },
   { id: 't3', title_en: 'Plain', startsAt: '2026-07-06T10:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [] },
+  // the Modern Jive case: a non-blank cost but NO fee tag → still $ (auto)
+  { id: 't4', title_en: 'Priced Class', startsAt: '2026-07-07T19:30:00+07:00', endsAt: null, location: { code: '3P' }, tags: [], cost: '100k' },
+  // whitespace-only / null cost is treated as free → no $
+  { id: 't5', title_en: 'Blank Cost', startsAt: '2026-07-08T19:30:00+07:00', endsAt: null, location: { code: '3P' }, tags: [], cost: '   ' },
+  { id: 't6', title_en: 'Null Cost', startsAt: '2026-07-09T19:30:00+07:00', endsAt: null, location: { code: '3P' }, tags: [], cost: null },
 ] }, { locations: LOCATIONS, makeId: () => 'tg' }).events;
 eq('fee tag → flags.fee', tagged[0].flags.fee, true);
 eq('prereg tag → flags.prereg', tagged[0].flags.prereg, true);
 eq('featured tag → emphasis banner', tagged[1].emphasis, 'banner');
-eq('no tags → flags both false', JSON.stringify(tagged[2].flags), JSON.stringify({ prereg: false, fee: false }));
+eq('no tags/cost → flags both false', JSON.stringify(tagged[2].flags), JSON.stringify({ prereg: false, fee: false }));
 eq('no featured → emphasis none', tagged[2].emphasis, 'none');
+eq('non-blank cost → flags.fee (no tag needed)', tagged[3].flags.fee, true);
+eq('non-blank cost does not set prereg', tagged[3].flags.prereg, false);
+eq('whitespace-only cost → flags.fee false', tagged[4].flags.fee, false);
+eq('null cost → flags.fee false', tagged[5].flags.fee, false);
 
 // ── mergeFeedIntoDoc: idempotent App→Schedule sync (the auto-pull-on-open) ────
 const existing = [

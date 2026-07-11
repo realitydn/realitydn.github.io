@@ -74,24 +74,40 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
     const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w),900);
     const H=Math.max(1,Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
+    /* every engine-facing dial rides through by name — undefined props (docs
+       saved before a control existed) fall back to the engine's defaults */
+    const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softness','balance','shadowTint',
+      'invert','spread','shape','split','offset','inkMode','gradMode','gradAngle','gradA','gradB',
+      'screenOffset','field','fieldInk','fieldStrength','dotGain','jitter','pucker',
+      'spotLo','spotHi','spotSoft','spotInvert','spotBase','transparent','fit',
+      'blurUnder','blurOver','grain','grainSize',
+      'saturation','hue','temperature','midInk','hiTint','hiInk','ink3','ghost','glyphChar',
+      'bandInks','bandJitter','cutEdge','cutEdgeInk','cutSlip','cutSlipAngle','fieldTexture',
+      'spotMode','spotHue','spotHueRange','spot2','spot2Lo','spot2Hi','spot2Ink',
+      'ditherMode','ditherScale','hatchSpacing','hatchWeight','hatchCross','hatchWobble',
+      'toner','copyNoise','streaks','generations','contourWeight','contourFill',
+      'edgeDetail','edgeThick','edgeBackdrop','cellSize','mosaicDepth','mosaicGap',
+      'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
+      'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
+      'grainInk','grainBlend','vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
+      'mix2','mix2Mode'];
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
-      contrast:el.contrast, brightness:el.brightness, dot:el.dot, bands:el.bands, threshold:el.threshold,
-      angle:el.angle, softness:el.softness, balance:el.balance, shadowTint:el.shadowTint,
-      invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset,
-      inkMode:el.inkMode, gradMode:el.gradMode, gradAngle:el.gradAngle, gradA:el.gradA, gradB:el.gradB,
-      screenOffset:el.screenOffset, field:el.field, fieldInk:el.fieldInk, fieldStrength:el.fieldStrength,
-      dotGain:el.dotGain, jitter:el.jitter, pucker:el.pucker,
-      spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
-      transparent:el.transparent, fit:el.fit,
-      paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null,
-      blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize };
-    const draw=(src)=>{ if(!alive) return; window.RISO.setSource(src);
+      paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null };
+    OPT_KEYS.forEach(k=>{ opts[k]=el[k]; });
+    const draw=(src,src2)=>{ if(!alive) return;
+      window.RISO.setSource(src);
+      if(window.RISO.setSource2) window.RISO.setSource2(src2||null);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
+      if(window.RISO.setTransform2) window.RISO.setTransform2({ scale:el.img2Scale, x:el.img2X, y:el.img2Y, rot:el.img2Rot });
       window.RISO.render(cv, el.treatment, opts); };
-    if(el.src){ const c=_imgCache.get(el.src); if(c) draw(c);
-      else window.RISO.loadImage(el.src).then(im=>{ _imgCache.set(el.src,im); draw(im); }).catch(()=>draw(getSample(el.sample))); }
-    else if(el.type==='logo'){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); }   // empty logo stays transparent
-    else draw(getSample(el.sample));
+    const getImg=(url)=>{ const c=_imgCache.get(url); if(c) return Promise.resolve(c);
+      return window.RISO.loadImage(url).then(im=>{ _imgCache.set(url,im); return im; }); };
+    const p1 = el.src ? getImg(el.src).catch(()=>getSample(el.sample))
+                      : Promise.resolve(el.type==='logo'? null : getSample(el.sample));
+    const p2 = el.src2 ? getImg(el.src2).catch(()=>null) : Promise.resolve(null);
+    Promise.all([p1,p2]).then(([s1,s2])=>{ if(!alive) return;
+      if(!s1){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }   // empty logo stays transparent
+      draw(s1,s2); });
     return ()=>{ alive=false; };
   });
 
@@ -190,7 +206,7 @@ function BlockEl({ el, theme, fillHex, exporting }){
     cv.width=W; cv.height=H;
     const cx=cv.getContext('2d');
     cx.fillStyle=fillHex; cx.fillRect(0,0,W,H);
-    window.RISO.grain(cv, el.grain, el.grainSize!=null?el.grainSize:2);
+    window.RISO.grain(cv, el.grain, el.grainSize!=null?el.grainSize:2, el.grainInk, el.grainBlend);
   });
   const bsh = seShadow(el, theme);   // off by default; casts off the block shape when on
   return <div style={{ position:'absolute', inset:0, overflow:'hidden',

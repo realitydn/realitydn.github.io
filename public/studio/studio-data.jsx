@@ -342,7 +342,21 @@ const DEFAULTS = {
              spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover',
              bleed:false, bleedBottom:0,
              imgScale:1, imgX:0, imgY:0, imgRot:0,
-             blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
+             blurUnder:0, blurOver:0, grain:0, grainSize:2,
+             /* deepened press + finish stack (engine defaults mirror these) */
+             saturation:1, hue:0, temperature:0,
+             midInk:null, hiTint:0, hiInk:null, ink3:null, ghost:0, glyphChar:'R',
+             bandInks:null, bandJitter:0, cutEdge:0, cutEdgeInk:null, cutSlip:0, cutSlipAngle:45,
+             fieldTexture:0, spotMode:'tone', spotHue:340, spotHueRange:45, spot2:false, spot2Lo:0.7, spot2Hi:0.9, spot2Ink:null,
+             ditherMode:'bayer', ditherScale:3, hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
+             toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
+             contourWeight:2, contourFill:'tint', edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper',
+             cellSize:16, mosaicDepth:4, mosaicGap:0.08,
+             blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
+             blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
+             grainInk:null, grainBlend:'soft',
+             vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
+             src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
   /* Partner logo — same engine as a photo but untreated by default and with a
      transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark
      shows. Treatments still available if you want to riso a logo. */
@@ -354,7 +368,20 @@ const DEFAULTS = {
              field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
              spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', fit:'contain',
              imgScale:1, imgX:0, imgY:0, imgRot:0,
-             blurUnder:0, blurOver:0, grain:0, grainSize:2 } },
+             blurUnder:0, blurOver:0, grain:0, grainSize:2,
+             saturation:1, hue:0, temperature:0,
+             midInk:null, hiTint:0, hiInk:null, ink3:null, ghost:0, glyphChar:'R',
+             bandInks:null, bandJitter:0, cutEdge:0, cutEdgeInk:null, cutSlip:0, cutSlipAngle:45,
+             fieldTexture:0, spotMode:'tone', spotHue:340, spotHueRange:45, spot2:false, spot2Lo:0.7, spot2Hi:0.9, spot2Ink:null,
+             ditherMode:'bayer', ditherScale:3, hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
+             toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
+             contourWeight:2, contourFill:'tint', edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper',
+             cellSize:16, mosaicDepth:4, mosaicGap:0.08,
+             blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
+             blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
+             grainInk:null, grainBlend:'soft',
+             vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
+             src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
 };
 
 function makeElement(type, x, y){

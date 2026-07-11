@@ -87,6 +87,22 @@ body{ background:#0e0c09; overflow:hidden; }
   font-size:9.5px; color:#7d7260; margin:18px 0 10px; }
 .rs-sech:first-child{ margin-top:0; }
 
+/* collapsible inspector sections (photo panel) */
+.rs-fold{ border-top:1px solid #2a2318; }
+.rs-fold:first-child{ border-top:none; }
+.rs-foldhead{ display:flex; align-items:center; gap:7px; width:100%; background:none; border:none;
+  cursor:pointer; padding:11px 0 9px; text-align:left;
+  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+  font-size:10px; color:#b6ab97; transition:.12s; }
+.rs-foldhead:hover{ color:#fffbf1; }
+.rs-foldhead .chev{ color:#7d7260; width:10px; flex:none; font-size:9px; }
+.rs-foldhead .t{ flex:1 1 auto; min-width:0; }
+.rs-foldhead .badge{ flex:none; background:#2a2318; color:#e9ddc5; border-radius:9px;
+  padding:2px 8px; font-size:9px; letter-spacing:.08em; }
+.rs-fold.open .rs-foldhead{ color:#e9ddc5; }
+.rs-foldbody{ padding:2px 0 10px; }
+.rs-foldbody .rs-sech:first-child{ margin-top:0; }
+
 /* library items */
 .rs-libitem{ display:flex; flex-direction:column; gap:2px; padding:11px 12px; margin-bottom:7px;
   border:1px solid #33291b; border-radius:9px; background:#1b1610; cursor:grab; transition:.13s;

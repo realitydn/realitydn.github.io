@@ -1592,6 +1592,25 @@ function App(){
                              board-game-night-poster.zip     (Master, png/jpg)
                              board-game-night-poster.pdf     (Master, pdf — one page per format)
      No name falls back to the old reality-poster-* names. ---- */
+  /* Wait until the on-screen canvas PROVABLY shows `fmt` before capturing: poll
+     the data-fmt commit sentinel, then two rAFs (one fully painted frame), then
+     the old fixed wait as a floor for the async riso photo repaint. A blind fixed
+     wait loses this race on a busy main thread and the capture bakes the PREVIOUS
+     format's layout into the render (the 2026-07 mixed-layout square1x1 bug). */
+  async function settleFormat(fmt, floorMs){
+    const until = performance.now() + 5000;
+    while(performance.now() < until){
+      const node = canvasRef.current;
+      if(node && node.dataset && node.dataset.fmt === fmt) break;
+      await new Promise(r=>setTimeout(r, 40));
+    }
+    /* two rAFs = one fully painted frame — but rAF never fires in a hidden/
+       backgrounded tab, so race it against a timeout or the export hangs */
+    await new Promise(r=>{ let done=false; const fin=()=>{ if(!done){ done=true; r(); } };
+      requestAnimationFrame(()=>requestAnimationFrame(fin)); setTimeout(fin, 300); });
+    await new Promise(r=>setTimeout(r, floorMs));
+  }
+
   async function doExport(titleArg){
     if(exporting || !window.htmlToImage) return;
     const kind = doc.exportFormat || 'png';
@@ -1618,7 +1637,7 @@ function App(){
     try{
       if(doc.activeFormat!=='master'){
         /* single format — exactly the view on screen */
-        await new Promise(r=>setTimeout(r, printRatio?420:140));   // print-res riso repaints need longer
+        await settleFormat(viewFormat, printRatio?420:140);   // print-res riso repaints need longer
         const f=AP_FMT[viewFormat], name=storyStem(viewFormat, base, doc.accent);
         if(kind==='pdf'){
           const url=await capture(f, null, printRatio||null);
@@ -1645,7 +1664,7 @@ function App(){
         for(const fmt of AP_OUT){
           setExportMsg('Rendering '+AP_FMT[fmt].label+'…');
           setDoc(d=>({ ...d, activeFormat:fmt }));
-          await new Promise(r=>setTimeout(r,380));   // React render + rescale + photo repaint
+          await settleFormat(fmt, 380);   // sentinel + painted frame + riso-repaint floor
           const f = AP_FMT[fmt];
           if(kind==='pdf'){
             const url = await capture(f);
@@ -1736,7 +1755,7 @@ function App(){
         setExportMsg('Rendering '+label+'…');
         if(m.plate) setPlateOnly(true);
         setDoc(d=>({ ...d, activeFormat:m.fmt }));
-        await new Promise(r=>setTimeout(r, m.plate?440:380));   // React render + rescale + photo repaint
+        await settleFormat(m.fmt, m.plate?440:380);   // sentinel + painted frame + riso-repaint floor
         let blob = null;
         try{ blob = await (m.plate ? toBlobSlice() : toBlob(AP_FMT[m.fmt])); }catch(e){ blob = null; }
         if(m.plate) setPlateOnly(false);

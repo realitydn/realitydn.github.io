@@ -118,7 +118,9 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
   return (
     <div ref={stageRef} className="rs-stage"
       onPointerDown={(e)=>{ if(e.target===stageRef.current || e.target.dataset.bg) onSelect(null); }}>
-      <div ref={canvasRef} className="rs-canvas"
+      {/* data-fmt = commit sentinel: export loops poll it to know the flip landed
+          before capturing (React stamps it atomically with the element layout) */}
+      <div ref={canvasRef} className="rs-canvas" data-fmt={format}
         style={{ width:f.w, height:f.h, transform:`translate(-50%,-50%) scale(${scale})`,
           left:'50%', top:'50%', position:'absolute',
           background:t.bg, boxShadow:`0 30px 80px rgba(0,0,0,.45)` }}>

@@ -265,7 +265,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const pwrap = {
       position:'absolute', left:0, top:0, width:el.w+'px', height:el.h+'px',
       transform:`translate(${el.x}px,${el.y}px) rotate(${el.rot||0}deg)`, transformOrigin:'center center',
-      transition: dragging ? 'none' : 'transform .16s cubic-bezier(0.2,1.4,0.45,1)',
+      /* NO transition during export: html-to-image reads COMPUTED transforms, and a
+         format-flip capture racing this 160ms glide bakes the PREVIOUS format's
+         positions into the render (the 2026-07 mixed-layout square1x1 bug). */
+      transition: (dragging || exporting) ? 'none' : 'transform .16s cubic-bezier(0.2,1.4,0.45,1)',
       cursor: dragging ? 'grabbing' : 'grab', userSelect:'none', touchAction:'none', boxSizing:'border-box'
     };
     const inner = (el.type==='logo' && !el.src && !exporting)
@@ -283,7 +286,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     width:el.w + 'px', height:el.h + 'px',
     transform:`translate(${el.x}px,${el.y}px) rotate(${el.rot||0}deg)`,
     transformOrigin:'center center',
-    transition: dragging ? 'none' : 'transform .16s cubic-bezier(0.2,1.4,0.45,1)',
+    /* transition off while exporting — same capture-race guard as the photo wrap above */
+    transition: (dragging || exporting) ? 'none' : 'transform .16s cubic-bezier(0.2,1.4,0.45,1)',
     cursor: dragging ? 'grabbing' : 'grab',
     userSelect:'none', WebkitUserSelect:'none', touchAction:'none', boxSizing:'border-box'
   };

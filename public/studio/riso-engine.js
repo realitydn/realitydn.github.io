@@ -559,8 +559,12 @@
     const night=o.paper==='night';
     const inkC=(o.inkMode==='single')? accentRGB(o) : inkBaseRGB(o);
     const papC=paperRGB(o);
-    const rnd=mulberry32(0xC0B1E5);
     const noiseAmt=(o.copyNoise||0)*0.30;
+    /* toner speckle sampled from a fixed design-resolution grid (≈1 design px
+       cells) — a bare per-device-pixel rnd() would render finer on the 2×
+       export than in the 900px preview, breaking WYSIWYG */
+    const gw=520, gh=Math.max(2,Math.round(520*h/w)), nb=new Float32Array(gw*gh);
+    { const rn=mulberry32(0xC0B1E5); for(let q=0;q<nb.length;q++) nb[q]=rn()*2-1; }
     const gens=Math.max(1,Math.min(5,(o.generations|0)||2));
     const toner=o.toner!=null?o.toner:0.55;
     const streaks=o.streaks||0;
@@ -570,9 +574,10 @@
     const cw=0.5-toner*0.22, bias=(toner-0.5)*0.24;  // harder + darker with more toner
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<L.length;p++,i+=4){
-      let l=L[p] + (rnd()*2-1)*noiseAmt;
+      const x=p%w, y=(p/w)|0;
+      let l=L[p] + nb[Math.min(gh-1,(y*gh/h)|0)*gw + Math.min(gw-1,(x*gw/w)|0)]*noiseAmt;
       for(let g=0; g<gens; g++) l=smooth(0.5-cw-bias, 0.5+cw-bias, l);
-      if(sk){ const s=sk[p%w]; l= night? Math.min(1,l+s) : Math.max(0,l-s); }
+      if(sk){ const s=sk[x]; l= night? Math.min(1,l+s) : Math.max(0,l-s); }
       const c= night? lerp(papC,inkC,l) : lerp(inkC,papC,l);
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
     }
@@ -763,7 +768,10 @@
       return;
     }
     if(type==='zoom'){
-      const maxs=1+px/260; if(maxs<=1.002) return;
+      /* scale is a RATIO — it must come from the dimensionless amount, not px
+         (=amt·w/520). Anchored so the frame edge streaks `amt` design-px, so
+         preview (900) and export (2×) zoom identically. */
+      const maxs=1+amt/260; if(maxs<=1.002) return;
       const N=18;
       for(let i=0;i<N;i++){
         const k=1+(i/(N-1))*(maxs-1);

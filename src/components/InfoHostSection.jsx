@@ -241,7 +241,7 @@ export default function InfoHostSection({ t, lang }) {
     }
     const form = type === 'art'
       ? <ArtExhibitionForm t={t} onSuccess={() => handleSuccess('art')} />
-      : <EventProposalForm t={t} onSuccess={() => handleSuccess(flavor)} />;
+      : <EventProposalForm t={t} lang={lang} onSuccess={() => handleSuccess(flavor)} />;
     return <div className="stamp-in">{form}</div>;
   };
 

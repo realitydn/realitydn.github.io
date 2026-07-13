@@ -6,29 +6,36 @@ Key facts:
 
 - Address: 86 Mai Thúc Lân, Đà Nẵng, Việt Nam (Mỹ An area, near My Khe beach)
 - Hours: open daily, 11:00 AM – 2:00 AM
-- Languages: English and Vietnamese (fully bilingual venue and website)
+- Languages: website and app in six languages — English, Tiếng Việt, Русский, Українська, 한국어, 日本語; the venue itself is bilingual EN/VI
 - Space: three floors — ground-floor cafe/lounge, second-floor event space and lounge, third-floor rooftop patio
 - Good for: meeting people, remote work during the day, community events, private event rental, art exhibitions
 - Contact: realitydn@gmail.com
 - Most events are free; visitors are encouraged to buy drinks to support the space
 - Anyone can propose an event or art exhibition via the website's proposal forms
 
-## Main pages
+## The REALITY app — the live front door
+
+- [app.realitydn.com](https://app.realitydn.com/): the live event calendar. Every event has its own page with date, time, description, and RSVP; users can set reminders and subscribe to the calendar (ICS)
+- [This week](https://app.realitydn.com/now): a quick "what's on this week" page
+- [Menu](https://app.realitydn.com/menu): the full food & drink menu with prices in VND, in all six languages
+- For "what's on at REALITY tonight/this week", the app calendar is the authoritative, always-current source
+
+## Main website pages
 
 - [Homepage (English)](https://realitydn.com/): events, info, drinks menu, visit details
-- [Trang chủ (Tiếng Việt)](https://realitydn.com/vn): bản tiếng Việt đầy đủ
-- [Event & Branding Guidelines](https://realitydn.com/event-guidelines): rules for hosting public, private, and art events at REALITY
+- [Trang chủ (Tiếng Việt)](https://realitydn.com/vn/): bản tiếng Việt đầy đủ (also /ru/, /uk/, /ko/, /ja/)
+- [Event & Branding Guidelines](https://realitydn.com/event-guidelines/): rules for hosting public, private, and art events at REALITY
 - [Drinks menu (PDF)](https://realitydn.com/menu-drinks-en.pdf): full cocktail, spirits, beer, coffee, and tea menu with prices in VND
 
 ## Events
 
-- Live weekly calendar is embedded on the homepage (Google Calendar)
+- The homepage What's On section renders the live REALITY calendar (sourced from the app's public feed)
 - Recurring formats include open mics, pub quiz, chess club, language exchanges, film club, board game nights, dance, and DJ nights
 - To host an event: use the proposal form on the homepage under Info & Hosting, or read the Event Guidelines first
 
 ## Social & community
 
-- [WhatsApp community](https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO): main channel for event updates
 - [Instagram @reality.dn](https://www.instagram.com/reality.dn/)
 - [Facebook](https://www.facebook.com/realitybarcafedanang/)
-- [Google Maps](https://maps.google.com/?cid=9044780155655225419)
+- [WhatsApp community](https://chat.whatsapp.com/KxJVFwOv89A22qSLfO98nO): community chat
+- [Google Maps](https://maps.google.com/?cid=9022999249739857995)

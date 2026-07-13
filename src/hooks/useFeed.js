@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FEED_EVENTS_URL } from '../data/feed';
 
-// useFeed — the single data source for Calendar.jsx and EventsSection.jsx.
+// useFeed — the single data source for Calendar.jsx and EventsSchema.jsx.
 //
 // Strategy:
 //   1. On mount, fetch the live feed (cross-origin to app.realitydn.com, CORS-allowed),
@@ -10,6 +10,10 @@ import { FEED_EVENTS_URL } from '../data/feed';
 //      /feed-snapshot.json (always present in dist/ — committed seed is the floor).
 //      This same-origin file is what the Puppeteer prerender resolves, so the static
 //      HTML is never blank.
+//
+// The load is shared at module level: the homepage mounts two consumers (Calendar +
+// EventsSchema), and one network fetch serves both. A failed load clears the slot so
+// a later mount retries instead of caching the error.
 //
 // Returns { events, venue, locations, loading, error, stale }. `events` are filtered
 // defensively to status === 'published' and endsAt >= now (so a stale snapshot never
@@ -44,6 +48,45 @@ function filterEvents(events, now = Date.now()) {
   });
 }
 
+async function fetchFeedDoc() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LIVE_TIMEOUT_MS);
+  let liveError = null;
+  try {
+    const res = await fetch(liveUrl(), {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`feed HTTP ${res.status}`);
+    const doc = await res.json();
+    if (!doc || !Array.isArray(doc.events)) throw new Error('feed missing events[]');
+    return { doc, stale: false };
+  } catch (err) {
+    liveError = err;
+  } finally {
+    clearTimeout(timer);
+  }
+  try {
+    const res = await fetch('/feed-snapshot.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`snapshot HTTP ${res.status}`);
+    const doc = await res.json();
+    return { doc, stale: true };
+  } catch (snapErr) {
+    throw liveError || snapErr;
+  }
+}
+
+let sharedLoad = null;
+function loadFeed() {
+  if (!sharedLoad) {
+    sharedLoad = fetchFeedDoc();
+    sharedLoad.catch(() => {
+      sharedLoad = null;
+    });
+  }
+  return sharedLoad;
+}
+
 export default function useFeed() {
   const [state, setState] = useState({
     events: [],
@@ -57,55 +100,28 @@ export default function useFeed() {
   useEffect(() => {
     let cancelled = false;
 
-    const apply = (doc, { stale }) => {
-      if (cancelled) return;
-      setState({
-        events: filterEvents(doc.events),
-        venue: doc.venue || null,
-        locations: Array.isArray(doc.locations) ? doc.locations : [],
-        loading: false,
-        error: null,
-        stale: stale || doc.stale === true,
-      });
-    };
-
-    const fallbackToSnapshot = async (liveError) => {
-      try {
-        const res = await fetch('/feed-snapshot.json', { cache: 'no-cache' });
-        if (!res.ok) throw new Error(`snapshot HTTP ${res.status}`);
-        const doc = await res.json();
-        apply(doc, { stale: true });
-      } catch (snapErr) {
+    loadFeed()
+      .then(({ doc, stale }) => {
+        if (cancelled) return;
+        setState({
+          events: filterEvents(doc.events),
+          venue: doc.venue || null,
+          locations: Array.isArray(doc.locations) ? doc.locations : [],
+          loading: false,
+          error: null,
+          stale: stale || doc.stale === true,
+        });
+      })
+      .catch((error) => {
         if (cancelled) return;
         setState((s) => ({
           ...s,
           loading: false,
-          error: liveError || snapErr,
+          error,
           stale: true,
         }));
-      }
-    };
+      });
 
-    const run = async () => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), LIVE_TIMEOUT_MS);
-      try {
-        const res = await fetch(liveUrl(), {
-          signal: controller.signal,
-          headers: { Accept: 'application/json' },
-        });
-        if (!res.ok) throw new Error(`feed HTTP ${res.status}`);
-        const doc = await res.json();
-        if (!doc || !Array.isArray(doc.events)) throw new Error('feed missing events[]');
-        apply(doc, { stale: false });
-      } catch (liveError) {
-        await fallbackToSnapshot(liveError);
-      } finally {
-        clearTimeout(timer);
-      }
-    };
-
-    run();
     return () => {
       cancelled = true;
     };

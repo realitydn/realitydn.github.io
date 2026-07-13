@@ -1,6 +1,6 @@
-// Live event posters come from /events-config.json (published by the
-// poster-manager tool) — see EventsSection. This file only holds the
-// gallery of photos from the space.
+// Live events render from the REALITY app feed (useFeed → Calendar.jsx);
+// the old events-config.json/poster-manager pipeline is retired. This file
+// only holds the gallery of photos from the space.
 export const GALLERY = [
   { src: "/images/gallery/a.jpg", alt: "Reality entrance with scooters parked" },
   { src: "/images/gallery/b.jpg", alt: "Bar with illuminated ceiling and shelves" },

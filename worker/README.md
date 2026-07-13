@@ -2,6 +2,12 @@
 
 A Cloudflare Worker that handles form submissions for the REALITY website, integrating with Notion, Google Sheets, and Resend email.
 
+> **Status (2026-07-07): backup lane only.** The website forms now POST to the REALITY app
+> hub first (`app.realitydn.com/api/proposals` → Control Room inbox drives review); this
+> Worker is called fire-and-forget as the Notion/Sheets/Resend backup. Phase 2 of the sunset
+> plan (app repo `docs/WEBSITE_APP_INTEGRATION.md`) drops the Notion/Sheets writes and keeps
+> only the Resend confirmation mailer.
+
 ## Overview
 
 This worker processes two form types:

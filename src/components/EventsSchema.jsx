@@ -33,7 +33,7 @@ export default function EventsSchema({ lang = 'EN', id = 'events-schema' }) {
     }
 
     const placeName = venue?.name || 'REALITY';
-    const placeAddress = venue?.address || '14 Đống Đa, Đà Nẵng';
+    const placeAddress = venue?.address || '86 Mai Thúc Lân, Đà Nẵng';
 
     const items = upcoming.map((ev) => {
       const name = pickTitle(ev, lang) || 'REALITY event';

@@ -41,11 +41,6 @@
 /llms.txt
   Cache-Control: public, max-age=3600
 
-# Events config — read on every homepage visit. Keep it short so adding a
-# new event shows up without waiting for a CDN purge.
-/events-config.json
-  Cache-Control: public, max-age=300, must-revalidate
-
 # Everything else (HTML). Don't cache — pre-rendered HTML must stay current.
 /*
   Cache-Control: public, max-age=0, must-revalidate

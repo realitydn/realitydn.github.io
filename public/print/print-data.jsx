@@ -452,7 +452,7 @@ const DEFAULTS = {
   kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.22, leading:1.1, upper:true } },
   body:      { w:300, h:80,  props:{ text:'Readable body copy goes here. Keep it short and bold.', fam:'grot', weight:400, fontSize:13, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:1.34, upper:false } },
   pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none' } },
-  qr:        { w:170, h:210, props:{ data:'https://realitydn.com', caption:'SCAN THE MENU', ecl:'M', surface:'none', ink:'ink', fill:'pink', quiet:true, border:2, lift:'none' } },
+  qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', surface:'none', ink:'ink', fill:'pink', quiet:true, border:2, lift:'none' } },
   coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'ink', fill:'pink' } },
   block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
   slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
@@ -615,8 +615,8 @@ const TEMPLATES = [
   { id:"qr-menu-thin01", name:"Menu — thin 01", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
     {"type":"numeral","x":22,"y":18,"w":130,"h":110,"p":{"text":"01","fontSize":96,"ink":"pink","align":"left","echo":true}},
     {"type":"kicker","x":150,"y":52,"w":126,"h":20,"p":{"text":"THE MENU","ink":"pink","align":"right","tracking":0.24}},
-    {"type":"headline","x":140,"y":70,"w":136,"h":56,"p":{"text":"SCAN\nTO ORDER","fontSize":21,"align":"right","weight":800,"leading":0.94}},
-    {"type":"qr","x":74,"y":142,"w":150,"h":150,"p":{"data":"https://realitydn.com/menu","caption":"","quiet":true}},
+    {"type":"headline","x":140,"y":70,"w":136,"h":56,"p":{"text":"SCAN\nTHE MENU","fontSize":21,"align":"right","weight":800,"leading":0.94}},
+    {"type":"qr","x":74,"y":142,"w":150,"h":150,"p":{"data":"https://app.realitydn.com/menu","caption":"","quiet":true}},
     {"type":"body","x":30,"y":300,"w":238,"h":40,"p":{"text":"Đồ uống & đồ ăn. Point your camera at the code.","align":"center","fontSize":11}},
     {"type":"footer","x":24,"y":350,"w":250,"h":60,"p":{"showQR":false}}
   ]},
@@ -630,16 +630,16 @@ const TEMPLATES = [
   ]},
   { id:"qr-insta-pink", name:"Follow on Instagram", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
     {"type":"block","x":0,"y":0,"w":298,"h":420,"p":{"fill":"pink"}},
-    {"type":"kicker","x":24,"y":36,"w":250,"h":20,"p":{"text":"@REALITYDN","ink":"white","align":"center","tracking":0.26}},
+    {"type":"kicker","x":24,"y":36,"w":250,"h":20,"p":{"text":"@REALITY.DN","ink":"white","align":"center","tracking":0.26}},
     {"type":"headline","x":24,"y":58,"w":250,"h":88,"p":{"text":"FOLLOW\nALONG","fontSize":40,"align":"center","weight":800,"ink":"white","leading":0.9}},
-    {"type":"qr","x":69,"y":164,"w":160,"h":160,"p":{"data":"https://instagram.com/realitydn","caption":"","quiet":true}},
+    {"type":"qr","x":69,"y":164,"w":160,"h":160,"p":{"data":"https://www.instagram.com/reality.dn/","caption":"","quiet":true}},
     {"type":"body","x":30,"y":332,"w":238,"h":36,"p":{"text":"Events, film nights & what's pouring this week.","align":"center","fontSize":11,"ink":"white"}},
     {"type":"wordmark","x":99,"y":380,"w":100,"h":26,"p":{"ink":"ink"}}
   ]},
   { id:"qr-review-stamp", name:"Google review", group:"QR standee", size:"a6", orient:"portrait", accent:"amber", els:[
     {"type":"headline","x":24,"y":40,"w":250,"h":96,"p":{"text":"LIKED\nYOUR VISIT?","fontSize":33,"align":"center","weight":800,"leading":0.92}},
     {"type":"body","x":30,"y":134,"w":238,"h":36,"p":{"text":"Leave us a review on Google. It really helps.","align":"center","fontSize":12}},
-    {"type":"qr","x":74,"y":180,"w":150,"h":150,"p":{"data":"https://g.page/r/realitydn/review","caption":"","quiet":true}},
+    {"type":"qr","x":74,"y":180,"w":150,"h":150,"p":{"data":"https://search.google.com/local/writereview?placeid=ChIJKbNSTgAXQjERS0BcAQMiOH0","caption":"","quiet":true}},
     {"type":"seal","x":188,"y":28,"w":88,"h":88,"p":{"top":"5 STARS","big":"★","sub":"THANK YOU","fill":"amber","ink":"amber","rot":-8}},
     {"type":"footer","x":24,"y":348,"w":250,"h":60,"p":{"showQR":false}}
   ]},
@@ -655,7 +655,7 @@ const TEMPLATES = [
     {"type":"slab","x":0,"y":0,"w":420,"h":210,"p":{"fill":"purple","angle":-12,"echo":true}},
     {"type":"kicker","x":36,"y":56,"w":348,"h":22,"p":{"text":"FILM CLUB · EVERY WEDNESDAY","ink":"white","align":"left","tracking":0.2}},
     {"type":"headline","x":36,"y":80,"w":360,"h":110,"p":{"text":"RESERVE\nYOUR SEAT","fontSize":52,"align":"left","weight":800,"ink":"white","leading":0.9}},
-    {"type":"qr","x":240,"y":250,"w":150,"h":150,"p":{"data":"https://realitydn.com/events","caption":"","quiet":true}},
+    {"type":"qr","x":240,"y":250,"w":150,"h":150,"p":{"data":"https://app.realitydn.com","caption":"","quiet":true}},
     {"type":"numeral","x":36,"y":250,"w":180,"h":150,"p":{"text":"20:00","fontSize":64,"ink":"purple","align":"left","echo":true}},
     {"type":"body","x":36,"y":420,"w":348,"h":56,"p":{"text":"Free entry, limited seats. Scan to add your name to the list — we'll hold a spot.","align":"left","fontSize":14,"leading":1.34}},
     {"type":"footer","x":36,"y":526,"w":348,"h":64,"p":{}}
@@ -703,7 +703,7 @@ const TEMPLATES = [
     {"type":"block","x":0,"y":0,"w":595,"h":300,"p":{"fill":"red","echo":true}},
     {"type":"kicker","x":44,"y":60,"w":400,"h":24,"p":{"text":"BAR · KITCHEN · COFFEE","ink":"white","align":"left","tracking":0.22}},
     {"type":"headline","x":44,"y":92,"w":420,"h":150,"p":{"text":"THE FULL\nMENU","fontSize":84,"align":"left","weight":800,"ink":"white","leading":0.88}},
-    {"type":"qr","x":350,"y":340,"w":200,"h":200,"p":{"data":"https://realitydn.com/menu","caption":"","quiet":true}},
+    {"type":"qr","x":350,"y":340,"w":200,"h":200,"p":{"data":"https://app.realitydn.com/menu","caption":"","quiet":true}},
     {"type":"numeral","x":44,"y":340,"w":280,"h":170,"p":{"text":"→","fontSize":120,"ink":"red","align":"left"}},
     {"type":"body","x":44,"y":540,"w":460,"h":60,"p":{"text":"Everything we pour and plate, prices in đồng, updated weekly. Point your camera at the code — no app needed.","align":"left","fontSize":16,"leading":1.34}},
     {"type":"rule","x":44,"y":640,"w":507,"h":10,"p":{"weight":3}},

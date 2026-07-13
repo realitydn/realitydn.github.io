@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { URLS } from '../data/translations';
+import { pathFor } from '../data/languages';
 
 const WORKER_URL = '';
 // Proposals now POST to the hub — the app's Control Room inbox is the review
@@ -7,7 +8,7 @@ const WORKER_URL = '';
 // worker (WORKER_URL) stays live below as a fire-and-forget backup.
 const HUB = (import.meta.env.VITE_HUB_URL || 'https://app.realitydn.com').replace(/\/$/, '');
 
-export default function EventProposalForm({ t, onSuccess }) {
+export default function EventProposalForm({ t, lang, onSuccess }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -603,7 +604,12 @@ export default function EventProposalForm({ t, onSuccess }) {
 
               <p className="font-body text-sm text-gray-600 mt-4">
                 {t.use('eventForm.guidelinesPrefix')}{' '}
-                <a href="/event-guidelines" className="font-title underline">
+                <a
+                  href={pathFor(lang, '/event-guidelines')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-title underline"
+                >
                   {t.use('eventForm.guidelinesLink')}
                 </a>
               </p>

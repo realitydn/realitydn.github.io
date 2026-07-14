@@ -584,49 +584,71 @@
     cx.putImageData(out,0,0);
   }
 
+  /* Line-art WYSIWYG: edge/boundary detection reads a PER-PIXEL slope, so on a
+     wider export the same tonal edge spans more pixels, reads weaker, and drops
+     out — the export loses linework the preview showed. The cure is to detect
+     on a FIXED-resolution grid (ADET, = the preview cap) and scale the finished
+     line mask to the output, so preview and every export width trace identical
+     lines. These helpers grow + paint that grid. */
+  const ADET = 900;
+  function detW(w){ return ADET; }
+  function detH(w,h){ return Math.max(2, Math.round(ADET*h/w)); }
+  /* grow a 1-bit mask on a gw×gh grid to radius r (contour of the shape only) */
+  function dilateMask(mask,gw,gh,r){
+    for(let it=1; it<r; it++){
+      const m2=new Uint8Array(mask);
+      for(let y=1;y<gh-1;y++) for(let x=1;x<gw-1;x++){
+        const p=y*gw+x;
+        if(mask[p] && !(mask[p-1]&&mask[p+1]&&mask[p-gw]&&mask[p+gw])){ m2[p-1]=1;m2[p+1]=1;m2[p-gw]=1;m2[p+gw]=1; }
+      }
+      mask=m2;
+    }
+    return mask;
+  }
+  /* paint a 1-bit mask as solid ink on its own transparent gw×gh canvas */
+  function maskCanvas(mask,gw,gh,inkC){
+    const lc=document.createElement('canvas'); lc.width=gw; lc.height=gh;
+    const lx=lc.getContext('2d'), id=lx.createImageData(gw,gh), dd=id.data;
+    for(let p=0,i=0;p<mask.length;p++,i+=4){ if(mask[p]){ dd[i]=inkC[0];dd[i+1]=inkC[1];dd[i+2]=inkC[2];dd[i+3]=255; } }
+    lx.putImageData(id,0,0); return lc;
+  }
+
   /* 12 · CONTOUR — the photo as a topographic map: tonal band boundaries
         traced as ink lines over paper, a faint accent tint, or the full ramp.
         params: bands, contourWeight, contourFill (paper|tint|bands) */
   function contour(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const L=stretch(lumBuffer(w,h,o.contrast*1.1, 2.2));   // pre-smoothed so lines stay clean
     const n=Math.max(2,o.bands|0);
     const accent=accentRGB(o), papC=paperRGB(o);
     const stops = o.paper==='day'
       ? [ inkBaseRGB(o), accent, lerp(accent,papC,0.55), papC ]
       : [ papC, lerp(papC,accent,0.5), accent, lerp(accent,[255,251,241],0.6) ];
-    const idx=new Uint8Array(w*h);
-    for(let p=0;p<L.length;p++) idx[p]=Math.min(n-1,(L[p]*n)|0);
-    /* fill */
+    /* fill at full resolution (smooth ground) */
+    const Lf=stretch(lumBuffer(w,h,o.contrast*1.1, 2.2));   // pre-smoothed so bands stay clean
     const fill=o.contourFill||'tint';
     const out=cx.createImageData(w,h),d=out.data;
-    for(let p=0,i=0;p<L.length;p++,i+=4){
+    for(let p=0,i=0;p<Lf.length;p++,i+=4){
       let c;
-      if(fill==='bands') c=rampSample(stops, n===1?0:idx[p]/(n-1));
-      else if(fill==='tint') c=lerp(papC, accent, 0.06+0.13*(o.paper==='night'? L[p] : 1-L[p]));
+      if(fill==='bands') c=rampSample(stops, n===1?0:Math.min(n-1,(Lf[p]*n)|0)/(n-1));
+      else if(fill==='tint') c=lerp(papC, accent, 0.06+0.13*(o.paper==='night'? Lf[p] : 1-Lf[p]));
       else c=papC;
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
     }
-    /* boundary mask, thickened to the line weight */
-    let mask=new Uint8Array(w*h);
-    for(let y=0;y<h-1;y++) for(let x=0;x<w-1;x++){
-      const p=y*w+x;
-      if(idx[p]!==idx[p+1] || idx[p]!==idx[p+w]) mask[p]=1;
-    }
-    const r=Math.max(1,Math.round((o.contourWeight||2)*(w/520)));
-    for(let it=1; it<r; it++){
-      const m2=new Uint8Array(mask);
-      for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
-        const p=y*w+x;
-        if(mask[p] && !(mask[p-1]&&mask[p+1]&&mask[p-w]&&mask[p+w])){ m2[p-1]=1;m2[p+1]=1;m2[p-w]=1;m2[p+w]=1; }
-      }
-      mask=m2;
-    }
-    const lineC = (fill==='bands')? inkBaseRGB(o) : accent;   // ramp fill wants mono lines
-    for(let p=0,i=0;p<mask.length;p++,i+=4){
-      if(mask[p]){ d[i]=lineC[0];d[i+1]=lineC[1];d[i+2]=lineC[2]; }
-    }
     cx.putImageData(out,0,0);
+    /* boundary lines traced at the fixed detection resolution, scaled to fit */
+    const aw=detW(w), ah=detH(w,h);
+    const La=stretch(lumBuffer(aw,ah,o.contrast*1.1, 2.2));
+    const idx=new Uint8Array(aw*ah);
+    for(let p=0;p<La.length;p++) idx[p]=Math.min(n-1,(La[p]*n)|0);
+    let mask=new Uint8Array(aw*ah);
+    for(let y=0;y<ah-1;y++) for(let x=0;x<aw-1;x++){
+      const p=y*aw+x;
+      if(idx[p]!==idx[p+1] || idx[p]!==idx[p+aw]) mask[p]=1;
+    }
+    mask=dilateMask(mask,aw,ah,Math.max(1,Math.round((o.contourWeight||2)*(aw/520))));
+    const lineC = (fill==='bands')? inkBaseRGB(o) : accent;   // ramp fill wants mono lines
+    cx.imageSmoothingEnabled=true;
+    cx.drawImage(maskCanvas(mask,aw,ah,lineC), 0,0, w,h);
   }
 
   /* 13 · EDGES — ink linework: Sobel edges printed in ink over paper, a pale
@@ -634,41 +656,31 @@
         edgeBackdrop (paper|duotone|image), inkMode */
   function edges(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const L=stretch(lumBuffer(w,h,o.contrast,1.6));
-    /* backdrop */
+    /* backdrop at full resolution (stays crisp) */
     if(o.edgeBackdrop==='image'){ untreated(cv, Object.assign({},o,{transparent:false})); }
     else if(o.edgeBackdrop==='duotone'){
       duotone(cv,o);
       cx.save(); cx.globalAlpha=0.5; cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); cx.restore();   // washed pale so the line does the talking
     }
     else { cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); }
-    /* sobel magnitude → line mask */
+    /* Sobel detection on the fixed grid, scaled to the frame — so preview and
+       every export width trace the SAME lines (a per-pixel Sobel on the wider
+       export reads weaker and drops most of them). */
+    const aw=detW(w), ah=detH(w,h);
+    const L=stretch(lumBuffer(aw,ah,o.contrast,1.6));
     const detail=o.edgeDetail!=null?o.edgeDetail:0.3;
-    const thr=0.9-detail*0.75;
-    let mask=new Uint8Array(w*h);
-    for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
-      const p=y*w+x;
-      const gx=L[p-w+1]+2*L[p+1]+L[p+w+1]-L[p-w-1]-2*L[p-1]-L[p+w-1];
-      const gy=L[p+w-1]+2*L[p+w]+L[p+w+1]-L[p-w-1]-2*L[p-w]-L[p-w+1];
-      if(gx*gx+gy*gy > thr*thr*0.16) mask[p]=1;
+    const thr=0.9-detail*0.75, tt=thr*thr*0.16;
+    let mask=new Uint8Array(aw*ah);
+    for(let y=1;y<ah-1;y++) for(let x=1;x<aw-1;x++){
+      const p=y*aw+x;
+      const gx=L[p-aw+1]+2*L[p+1]+L[p+aw+1]-L[p-aw-1]-2*L[p-1]-L[p+aw-1];
+      const gy=L[p+aw-1]+2*L[p+aw]+L[p+aw+1]-L[p-aw-1]-2*L[p-aw]-L[p-aw+1];
+      if(gx*gx+gy*gy > tt) mask[p]=1;
     }
-    const r=Math.max(1,Math.round((o.edgeThick||2)*(w/520)));
-    for(let it=1; it<r; it++){
-      const m2=new Uint8Array(mask);
-      for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
-        const p=y*w+x;
-        if(mask[p] && !(mask[p-1]&&mask[p+1]&&mask[p-w]&&mask[p+w])){ m2[p-1]=1;m2[p+1]=1;m2[p-w]=1;m2[p+w]=1; }
-      }
-      mask=m2;
-    }
+    mask=dilateMask(mask,aw,ah,Math.max(1,Math.round((o.edgeThick||2)*(aw/520))));
     const inkC=(o.inkMode==='black')? inkBaseRGB(o) : accentRGB(o);
-    const lc=document.createElement('canvas'); lc.width=w; lc.height=h;
-    const lx=lc.getContext('2d'), id=lx.createImageData(w,h), dd=id.data;
-    for(let p=0,i=0;p<mask.length;p++,i+=4){
-      if(mask[p]){ dd[i]=inkC[0];dd[i+1]=inkC[1];dd[i+2]=inkC[2];dd[i+3]=255; }
-    }
-    lx.putImageData(id,0,0);
-    cx.drawImage(lc,0,0);
+    cx.imageSmoothingEnabled=true;
+    cx.drawImage(maskCanvas(mask,aw,ah,inkC), 0,0, w,h);
   }
 
   /* 14 · MOSAIC — chunky tiles snapped to the paper→ink ramp, optional grout.

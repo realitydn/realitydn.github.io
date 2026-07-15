@@ -244,14 +244,18 @@ function renderElement(page, el, ctx){
       let lx=padX;
       if(mode==='bulleted'){ drawLineStr(glyph, padX, baseTop, mf, rs, markerCol, 0); lx=padX+measure(glyph,mf,rs,0)+7; }
       else if(mode==='numbered'){ const num=(i+1)+'.'; drawLineStr(num, padX, baseTop, mf, rs, markerCol, 0); lx=padX+Math.max(measure(num,mf,rs,0), rs*0.9)+7; }
-      drawLineStr(lbl, lx, baseTop, rf, rs, textColor, 0.02);
       if(mode==='prices'){
         const prc=(it.p||'').toUpperCase(), pw=measure(prc,rf,rs,0.02);
+        drawLineStr(lbl, lx, baseTop, rf, rs, textColor, 0.02);
         drawLineStr(prc, el.w-padX-pw, baseTop, rf, rs, textColor, 0.02);
         if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,0.02), x0=lx+lw+6, x1=el.w-padX-pw-6, my=yTop+ra*0.72;
           if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
+        yTop+=rowH;
+      } else {   // bulleted / numbered / plain → wrap long labels (matches the screen, no truncation in print)
+        const availW=Math.max(20, el.w-lx-padX), lineH=rs*1.32, lines=wrapText(lbl, rf, rs, 0.02, availW);
+        lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*lineH, rf, rs, textColor, 0.02));
+        yTop += rowH + (lines.length-1)*lineH;
       }
-      yTop+=rowH;
     });
   }
   else if(t==='qr'){
@@ -283,8 +287,7 @@ function renderElement(page, el, ctx){
       drawLineStr(el.caption.toUpperCase(), (el.w-cw)/2, top+qrSize+(capH+a)/2-2, cf, csz, textColor, 0.14); }
   }
   else if(t==='coupon'){
-    liftRect(0,0,el.w,el.h);
-    rect(0,0,el.w,el.h,{ borderColor:textColor, borderWidth:1.4, borderDashArray:[3,2.5] });
+    drawSurface();   // shared styled border (dashed by default) + lift
     const pad=12;
     const kf=fontFor('mont',700), ks=10, ka=kf.heightAtSize(ks,{descender:false});
     drawLineStr((el.heading||'').toUpperCase(), pad, pad+ka, kf, ks, accentColor(isAccent(fillKey)?fillKey:accentName), 0.22);
@@ -314,20 +317,26 @@ function renderElement(page, el, ctx){
     localPath(quad(0,0), colorForKey(fillKey, accentColor(accentName)));
   }
   else if(t==='stripes'){
-    if(el.bg && el.bg!=='none') rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() });
+    const bgSolid = el.bg && el.bg!=='none';
+    if(bgSolid){ liftRect(0,0,el.w,el.h); rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() }); }
     const col=colorForKey(fillKey, accentColor(accentName)), lay=window.stripeLayout(el);   // clipped polygon bars — matches the screen
-    lay.bands.forEach(b=>{ const d='M '+b.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' Z'; localPath(d, col); });
+    const bandD=(b,dx,dy)=> 'M '+b.map(p=>(p[0]+dx).toFixed(2)+' '+(p[1]+dy).toFixed(2)).join(' L ')+' Z';
+    if(el.echo) lay.bands.forEach(b=> localPath(bandD(b, el.echoDx||9, el.echoDy||9), echoColor));
+    lay.bands.forEach(b=> localPath(bandD(b,0,0), col));
   }
   else if(t==='dotfield'){
-    if(el.bg && el.bg!=='none') rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() });
+    const bgSolid = el.bg && el.bg!=='none';
+    if(bgSolid){ liftRect(0,0,el.w,el.h); rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() }); }
     const col=colorForKey(fillKey, accentColor(accentName)), lay=window.dotFieldLayout(el), shape=lay.shape;
-    lay.dots.forEach(p=>{ const r=p.d/2;
-      if(shape==='square') rect(p.x-r, p.y-r, p.d, p.d, { color:col });
-      else if(shape==='diamond') localPath(`M ${p.x} ${p.y-r} L ${p.x+r} ${p.y} L ${p.x} ${p.y+r} L ${p.x-r} ${p.y} Z`, col);
-      else if(shape==='ring'){ const lw=Math.max(0.5,r*0.5); ellipse(p.x,p.y, Math.max(0.3,r-lw/2), Math.max(0.3,r-lw/2), { borderColor:col, borderWidth:lw }); }
-      else if(shape==='plus'){ const tk=Math.max(0.4,p.d*0.34); rect(p.x-r, p.y-tk/2, p.d, tk, {color:col}); rect(p.x-tk/2, p.y-r, tk, p.d, {color:col}); }
-      else ellipse(p.x, p.y, r, r, { color:col });
+    const drawDots=(c,dx,dy)=> lay.dots.forEach(p=>{ const r=p.d/2, x=p.x+dx, y=p.y+dy;
+      if(shape==='square') rect(x-r, y-r, p.d, p.d, { color:c });
+      else if(shape==='diamond') localPath(`M ${x} ${y-r} L ${x+r} ${y} L ${x} ${y+r} L ${x-r} ${y} Z`, c);
+      else if(shape==='ring'){ const lw=Math.max(0.5,r*0.5); ellipse(x,y, Math.max(0.3,r-lw/2), Math.max(0.3,r-lw/2), { borderColor:c, borderWidth:lw }); }
+      else if(shape==='plus'){ const tk=Math.max(0.4,p.d*0.34); rect(x-r, y-tk/2, p.d, tk, {color:c}); rect(x-tk/2, y-r, tk, p.d, {color:c}); }
+      else ellipse(x, y, r, r, { color:c });
     });
+    if(el.echo) drawDots(echoColor, el.echoDx||8, el.echoDy||8);
+    drawDots(col, 0, 0);
   }
   else if(t==='image'){
     liftRect(0,0,el.w,el.h);                                   // K-tint plane shadow behind the photo
@@ -357,7 +366,9 @@ function renderElement(page, el, ctx){
   }
   else if(t==='burst'){
     const col=colorForKey(fillKey, accentColor(accentName)), b=window.burstRays(el.w, el.h, el.rays||16, 0);
-    b.wedges.forEach(w=> localPath(`M ${w.cx} ${w.cy} L ${w.p0[0]} ${w.p0[1]} L ${w.p1[0]} ${w.p1[1]} Z`, col));
+    const drawW=(c,dx,dy)=> b.wedges.forEach(w=> localPath(`M ${w.cx+dx} ${w.cy+dy} L ${w.p0[0]+dx} ${w.p0[1]+dy} L ${w.p1[0]+dx} ${w.p1[1]+dy} Z`, c));
+    if(el.echo) drawW(echoColor, el.echoDx||7, el.echoDy||7);
+    drawW(col, 0, 0);
     const hub=el.hub!=null?el.hub:0;
     if(hub>0) ellipse(b.cx, b.cy, b.R*hub, b.R*hub, { color: colorForKey(el.hubFill||'white', whiteColor()) });
   }

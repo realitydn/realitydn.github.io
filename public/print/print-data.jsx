@@ -587,11 +587,11 @@ const DEFAULTS = {
   qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', quiet:true,
                moduleStyle:'square', eyeStyle:'square', eye:'auto', logo:'none', logoColor:'auto', echo:false, echoAccent:'auto',
                surface:'none', ink:'ink', fill:'pink', border:2, lift:'none' } },
-  coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'ink', fill:'pink' } },
+  coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'ink', fill:'pink', border:1.4, borderPattern:'dashed', borderColor:'auto', radius:0, lift:'none' } },
   block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
   slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
-  stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5, blend:'normal' } },
-  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'out', ramp:0.8, angle:0, blend:'normal' } },
+  stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
+  dotfield:  { w:200, h:170, props:{ fill:'amber', dot:9, gap:6, bg:'white', shape:'circle', grad:'out', ramp:0.8, angle:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
   /* raster photo + riso effects (the only non-vector element) — pixels live in
      IndexedDB via [[print-store]]; `imgId` references them, the doc stays small.
      Mirrors Poster Studio's `photo`: full RISO treatment set + finish passes +
@@ -616,7 +616,7 @@ const DEFAULTS = {
      radius = corner radius as a fraction of the short side (rounded/squircle). */
   sticker:   { w:220, h:220, props:{ shape:'circle', fill:'white', ring:'ink', ringW:4, radius:0.22, lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7, blend:'normal' } },
   /* radiating wedges within a centred disc; spin via the rotate handle. */
-  burst:     { w:220, h:220, props:{ fill:'amber', rays:16, hub:0.0, hubFill:'white', blend:'normal' } },
+  burst:     { w:220, h:220, props:{ fill:'amber', rays:16, hub:0.0, hubFill:'white', echo:false, echoAccent:'auto', echoDx:7, echoDy:7, blend:'normal' } },
   /* flexible vector shape — polygon/star/blob/etc. with an optional keyline
      stroke (so it doubles as a non-rectangular die-cut bed). */
   shape:     { w:200, h:200, props:{ kind:'hexagon', fill:'blue', stroke:0, strokeColor:'ink', lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7, blend:'normal' } },

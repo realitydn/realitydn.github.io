@@ -93,8 +93,8 @@ function Swatches({ label, value, onChange, auto, white }){
 const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
-const ECHOABLE = ['headline','numeral','bignum','kicker','body','block','slab','sticker','shape','rule'];
-const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image'];
+const ECHOABLE = ['headline','numeral','bignum','kicker','body','block','slab','sticker','shape','rule','stripes','dotfield','burst'];
+const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image','stripes','dotfield'];
 const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
 const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'plus',l:'Plus'}];
 const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Radial out'},{v:'in',l:'Radial in'},{v:'up',l:'Up'},{v:'down',l:'Down'},{v:'left',l:'Left'},{v:'right',l:'Right'},{v:'diag',l:'Diagonal'},{v:'diag2',l:'Diagonal ↗'},{v:'wave',l:'Wave'},{v:'bloom',l:'Bloom'}];
@@ -102,7 +102,9 @@ const STRIPE_DIRS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'},{v:'diag',l:'Di
 const SHAPE_OPTS = (window.SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).toUpperCase()+k.slice(1)}));
 const BLENDS = [{v:'normal',l:'None'},{v:'multiply',l:'Multiply'},{v:'screen',l:'Screen'},{v:'overlay',l:'Overlay'},{v:'darken',l:'Darken'},{v:'lighten',l:'Lighten'},{v:'hard-light',l:'Hard'}];
 const ORIENTS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}];
-const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image'];
+/* blend/overprint is applied universally by both renderers; expose it on every
+   visual element except qr (keep the code clean to scan). */
+const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image','pricelist','coupon','badge','seal','rule','arrow','contact','wordmark','footer','arctext'];
 const IMG_TREATS = [{v:'none',l:'None'},{v:'duotone',l:'Duotone'},{v:'halftone',l:'Halftone'},{v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'spot',l:'Spot'},{v:'offregister',l:'Off-Reg'},{v:'overprint',l:'Overprint'}];
 const IMG_TREAT_PRESETS = {
   none:       { contrast:1.1,  brightness:0 },

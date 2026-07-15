@@ -236,7 +236,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </div>;
   }
   else if(t==='coupon'){
-    inner = <div style={Object.assign(box({ padding:'12px 14px', justifyContent:'space-between' }), { border:`1.4px dashed ${textCol}`, boxShadow:lift })}>
+    inner = <div style={box({ padding:'12px 14px', justifyContent:'space-between' })}>
       <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.22em', fontSize:'10px', color:accentHex }}>{el.heading}</div>
       <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', fontSize:Math.min(el.w*0.12,26)+'px', lineHeight:0.95, color:textCol, whiteSpace:'pre-wrap' }}>{el.big}</div>
       <div style={{ fontFamily:FAM_CSS.grot, fontWeight:400, fontSize:'9px', color:textCol, opacity:.8 }}>{el.terms}</div>
@@ -269,20 +269,23 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </svg>;
   }
   else if(t==='stripes'){
-    const col = peFill(el.fill||'red', accentHex), bg = el.bg==='ink'?PE_INK.rgb:el.bg==='none'?'transparent':PE_WHITE.rgb;
+    const col = peFill(el.fill||'red', accentHex), bgSolid = el.bg && el.bg!=='none', bg = el.bg==='ink'?PE_INK.rgb:PE_WHITE.rgb;
     const lay = peStripes(el);   // clipped polygon bars — h/v/diag/diag2, matches the PDF
-    inner = <div style={{ width:'100%', height:'100%', overflow:'hidden' }}>
+    const bands = (c,k)=> lay.bands.map((b,i)=> <polygon key={k+i} points={b.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ')} fill={c} />);
+    inner = <div style={{ width:'100%', height:'100%', overflow:'hidden', boxShadow: bgSolid?lift:'none' }}>
       <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
-        {bg!=='transparent' && <rect x={0} y={0} width={el.w} height={el.h} fill={bg} />}
-        {lay.bands.map((b,i)=> <polygon key={i} points={b.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ')} fill={col} />)}
+        {bgSolid && <rect x={0} y={0} width={el.w} height={el.h} fill={bg} />}
+        {el.echo && <g transform={`translate(${el.echoDx||9} ${el.echoDy||9})`}>{bands(echoHex(el,docAccent),'e')}</g>}
+        {bands(col,'')}
       </svg>
     </div>;
   }
   else if(t==='dotfield'){
-    const col = peFill(el.fill||'amber', accentHex), bg = el.bg==='ink'?PE_INK.rgb:el.bg==='none'?'transparent':PE_WHITE.rgb;
+    const col = peFill(el.fill||'amber', accentHex), bgSolid = el.bg && el.bg!=='none', bg = el.bg==='ink'?PE_INK.rgb:PE_WHITE.rgb;
     const lay = peDots(el);
-    inner = <div style={{ width:'100%', height:'100%', background:bg, overflow:'hidden' }}>
+    inner = <div style={{ width:'100%', height:'100%', background: bgSolid?bg:'transparent', overflow:'hidden', boxShadow: bgSolid?lift:'none' }}>
       <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
+        {el.echo && <g transform={`translate(${el.echoDx||8} ${el.echoDy||8})`}>{lay.dots.map((p,i)=> dotNode(lay.shape, p, echoHex(el,docAccent), 'e'+i))}</g>}
         {lay.dots.map((p,i)=> dotNode(lay.shape, p, col, i))}
       </svg>
     </div>;
@@ -300,9 +303,11 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const col = peFill(el.fill||'amber', accentHex);
     const b = peBurst(el.w, el.h, el.rays||16, 0);
     const hub = el.hub!=null?el.hub:0, hubFill = peFill(el.hubFill||'white', accentHex);
+    const wedges = (c,dx,dy,k)=> b.wedges.map((w,i)=> <path key={k+i} d={`M${w.cx+dx} ${w.cy+dy} L${w.p0[0]+dx} ${w.p0[1]+dy} L${w.p1[0]+dx} ${w.p1[1]+dy} Z`} fill={c} />);
     inner = <div style={{ width:'100%', height:'100%', overflow:'hidden' }}>
       <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
-        {b.wedges.map((w,i)=> <path key={i} d={`M${w.cx} ${w.cy} L${w.p0[0]} ${w.p0[1]} L${w.p1[0]} ${w.p1[1]} Z`} fill={col} />)}
+        {el.echo && wedges(echoHex(el,docAccent), el.echoDx||7, el.echoDy||7, 'e')}
+        {wedges(col, 0, 0, '')}
         {hub>0 && <circle cx={b.cx} cy={b.cy} r={b.R*hub} fill={hubFill} />}
       </svg>
     </div>;

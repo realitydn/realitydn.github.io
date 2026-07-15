@@ -7,7 +7,7 @@
    ============================================================ */
 const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
         surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, qrGeometry: peGeom, partnerOf: pePartner, LIFT: PE_LIFT,
-        dotFieldLayout: peDots, stripeLayout: peStripes, burstRays: peBurst, shapePath: peShape, arcTextLayout: peArc,
+        dotFieldLayout: peDots, stripeLayout: peStripes, burstRays: peBurst, ruleLayout: peRule, shapePath: peShape, arcTextLayout: peArc,
         fitTextSize: peFit, blendCss: peBlend, risoOpts: peRiso } = window;
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
@@ -311,11 +311,20 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </div>;
   }
   else if(t==='rule'){
-    const col = peFill(el.fill||'ink', accentHex), w=Math.max(1,el.weight||3), st=el.style||'solid';
-    const lineStyle = st==='dashed'?'dashed':st==='dotted'?'dotted':st==='double'?'double':'solid';
-    inner = <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center' }}>
-      <div style={{ width:'100%', height:st==='double'?Math.max(3,w)+'px':w+'px', borderTop:`${w}px ${lineStyle} ${col}`, background: (st==='solid')?col:'transparent' }} />
-    </div>;
+    const col = peFill(el.fill||'ink', accentHex);
+    const lay = peRule(el);
+    const echoCol = el.echo ? echoHex(el, docAccent) : null;
+    const layNodes = (c, dx, dy) => (
+      <g transform={(dx||dy)?`translate(${dx} ${dy})`:undefined}>
+        {lay.strokes.map((s,i)=><polyline key={'s'+i} points={s.pts.map(p=>p[0]+','+p[1]).join(' ')} fill="none" stroke={c} strokeWidth={lay.w} strokeLinecap={lay.cap} strokeLinejoin="miter" />)}
+        {lay.dots.map((d,i)=><circle key={'o'+i} cx={d.x} cy={d.y} r={d.r} fill={c} />)}
+        {lay.fills.map((f,i)=><polygon key={'f'+i} points={f.pts.map(p=>p[0]+','+p[1]).join(' ')} fill={c} />)}
+      </g>
+    );
+    inner = <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+      {echoCol && layNodes(echoCol, el.echoDx||5, el.echoDy||5)}
+      {layNodes(col, 0, 0)}
+    </svg>;
   }
   else if(t==='footer'){
     const ink = peFill(el.ink||'ink', accentHex);

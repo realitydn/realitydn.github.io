@@ -362,11 +362,19 @@ function renderElement(page, el, ctx){
     });
   }
   else if(t==='rule'){
-    const th=Math.max(0.5,el.weight||3), col=colorForKey(el.fill||'ink',inkColor()), my=el.h/2, st=el.style||'solid';
-    if(st==='double'){ rect(0,my-th,el.w,th*0.5,{color:col}); rect(0,my+th*0.5,el.w,th*0.5,{color:col}); }
-    else if(st==='dotted'){ const r2=th/2, gap=th*1.6; for(let x=0;x+th<=el.w;x+=th+gap) ellipse(x+r2,my,r2,r2,{color:col}); }
-    else if(st==='dashed'){ line(0,my,el.w,my,th,col,[th*2.2, th*1.6]); }
-    else rect(0,my-th/2,el.w,th,{color:col});
+    /* one shared layout with the screen (print-data ruleLayout) → identical
+       geometry. strokes = polylines, dots = circles, fills = closed polys. */
+    const col=colorForKey(el.fill||'ink',inkColor()), lay=window.ruleLayout(el);
+    const CAP = L().LineCapStyle ? (lay.cap==='butt'?L().LineCapStyle.Butt:L().LineCapStyle.Round) : null;
+    const polyD = pts => 'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ');
+    const drawLay=(c, dx, dy)=>{
+      const o0=place(0,0), off = pts => pts.map(p=>[p[0]+dx, p[1]+dy]);
+      lay.strokes.forEach(s=>{ const o={ x:o0.x, y:o0.y, scale:1, rotate:ROT, borderColor:c, borderWidth:lay.w }; if(CAP!=null) o.borderLineCap=CAP; page.drawSvgPath(polyD(off(s.pts)), bm(o)); });
+      lay.fills.forEach(f=>{ page.drawSvgPath(polyD(off(f.pts))+' Z', bm({ x:o0.x, y:o0.y, scale:1, rotate:ROT, color:c })); });
+      lay.dots.forEach(d=> ellipse(d.x+dx, d.y+dy, d.r, d.r, { color:c }));
+    };
+    if(el.echo){ const ec = el.echoAccent&&el.echoAccent!=='auto' ? accentColor(el.echoAccent) : accentColor(window.partnerOf(accentName)); drawLay(ec, el.echoDx||5, el.echoDy||5); }
+    drawLay(col, 0, 0);
   }
   else if(t==='footer'){
     if(el.rule!==false) rect(0,0,el.w,2.5,{ color:inkColor() });

@@ -271,6 +271,51 @@ function burstRays(W,H,rays,spinDeg){
   return { wedges, cx, cy, R };
 }
 
+/* ---- rule / divider — the line element as an expressive kit. One shared layout
+   so the screen SVG and the vector PDF draw IDENTICAL geometry (LOCAL coords,
+   y-down, centred on my=h/2). Patterns: solid · dashed · dotted · dashdot ·
+   double · triple · ticks · zigzag · wave · square. Optional terminals
+   (dot/arrow/diamond/star) at either end. Returns everything as point arrays so
+   the misregistration echo is a trivial offset. Reads el.pattern, falling back
+   to the legacy el.style, so existing rules keep working. ---- */
+function ruleLayout(el){
+  const W=Math.max(1,el.w), H=Math.max(1,el.h), w=Math.max(0.5, el.weight||3), my=H/2;
+  const pat=el.pattern||el.style||'solid';
+  const term=el.term||'none', termAt=el.termAt||'end';
+  const tHas=(s)=> term!=='none' && (termAt==='both'||termAt===s);
+  const ts=Math.max(2.5, Math.min(H/2, (w*2.2)*(el.termScale||1)));
+  const extOf = term==='arrow' ? 2*ts : (term==='none'?0:ts);
+  const x0=tHas('start')?extOf:0, x1=W-(tHas('end')?extOf:0), span=Math.max(1, x1-x0);
+  const strokes=[], dots=[], fills=[];
+  const period=Math.max(2, el.spacing!=null?el.spacing : (pat==='dotted'?Math.max(4,w*2.6) : pat==='ticks'?14 : pat==='wave'?28 : pat==='zigzag'?24 : pat==='square'?26 : Math.max(6,w*4)));
+  const amp=Math.max(1, Math.min(H/2 - w/2, el.amp!=null?el.amp : Math.min(H/2 - w/2, 7)));
+
+  if(x1>x0){
+    if(pat==='double'){ const g=el.gap!=null?el.gap:Math.max(2,w*1.7); strokes.push({pts:[[x0,my-g/2],[x1,my-g/2]]},{pts:[[x0,my+g/2],[x1,my+g/2]]}); }
+    else if(pat==='triple'){ const g=el.gap!=null?el.gap:Math.max(2,w*1.7); strokes.push({pts:[[x0,my-g],[x1,my-g]]},{pts:[[x0,my],[x1,my]]},{pts:[[x0,my+g],[x1,my+g]]}); }
+    else if(pat==='dashed'){ const on=period*(el.dashRatio!=null?Math.max(0.1,Math.min(0.9,el.dashRatio)):0.55); for(let x=x0;x<x1-0.01;x+=period) strokes.push({pts:[[x,my],[Math.min(x+on,x1),my]]}); }
+    else if(pat==='dotted'){ const r=Math.max(0.6,(el.dotSize!=null?el.dotSize:w)/2), n=Math.max(1,Math.round(span/period)), st=span/n; for(let i=0;i<=n;i++) dots.push({x:x0+i*st,y:my,r}); }
+    else if(pat==='dashdot'){ const on=period*0.42; for(let x=x0;x<x1-0.01;x+=period){ const xe=Math.min(x+on,x1); strokes.push({pts:[[x,my],[xe,my]]}); const xd=xe+(period-on)/2; if(xd<x1-0.01) dots.push({x:xd,y:my,r:Math.max(0.9,w*0.72)}); } }
+    else if(pat==='ticks'){ strokes.push({pts:[[x0,my],[x1,my]]}); const tl=Math.max(1,el.tickLen!=null?el.tickLen:Math.min(H/2-w/2,6)), dir=el.tickDir||'both', n=Math.max(1,Math.round(span/period)), st=span/n; for(let i=0;i<=n;i++){ const x=x0+i*st, up=dir!=='down'?tl:0, dn=dir!=='up'?tl:0; strokes.push({pts:[[x,my-up],[x,my+dn]]}); } }
+    else if(pat==='zigzag'){ const pts=[[x0,my]]; let i=0; for(let x=x0+period/2;x<x1-0.01;x+=period/2){ pts.push([x, my+(i%2?amp:-amp)]); i++; } pts.push([x1,my]); strokes.push({pts}); }
+    else if(pat==='square'){ let lvl=-amp; const pts=[[x0,my+lvl]]; for(let x=x0+period/2;x<x1-0.01;x+=period/2){ pts.push([x,my+lvl]); lvl=-lvl; pts.push([x,my+lvl]); } pts.push([x1,my+lvl]); strokes.push({pts}); }
+    else if(pat==='wave'){ const steps=Math.max(16,Math.round(span/2)), pts=[]; for(let i=0;i<=steps;i++){ const x=x0+span*i/steps; pts.push([x, my+amp*Math.sin(((x-x0)/period)*Math.PI*2)]); } strokes.push({pts}); }
+    else { strokes.push({pts:[[x0,my],[x1,my]]}); }
+  }
+
+  function addTerm(s){
+    const isStart=s==='start', cx=isStart?x0:x1;
+    if(term==='dot') dots.push({x:cx,y:my,r:ts});
+    else if(term==='diamond') fills.push({pts:[[cx,my-ts],[cx+ts,my],[cx,my+ts],[cx-ts,my]]});
+    else if(term==='star') fills.push({pts:_starPts(cx,my,ts,5,0.42,-90)});
+    else if(term==='arrow'){ const tipX=isStart?0:W, baseX=isStart?2*ts:W-2*ts; fills.push({pts:[[tipX,my],[baseX,my-ts],[baseX,my+ts]]}); }
+  }
+  if(tHas('start')) addTerm('start');
+  if(tHas('end')) addTerm('end');
+
+  return { strokes, dots, fills, w, cap: el.cap==='butt'?'butt':'round' };
+}
+
 /* ---- shared vector geometry — used by BOTH renderers so shapes/beds match
    exactly. Paths are SVG path strings in LOCAL, y-DOWN element coords (0..w,
    0..h); pdf-lib's drawSvgPath consumes the same string via localPath(). ---- */
@@ -285,7 +330,8 @@ function roundedRectPath(ox,oy,w,h,r){
 }
 function _poly(pts){ return 'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' Z'; }
 function _regPoly(cx,cy,r,n,startDeg){ const p=[]; for(let i=0;i<n;i++){ const a=(startDeg+i*360/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return _poly(p); }
-function _star(cx,cy,R,n,inner,startDeg){ const p=[]; for(let i=0;i<n*2;i++){ const r=i%2?R*inner:R, a=(startDeg+i*180/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return _poly(p); }
+function _starPts(cx,cy,R,n,inner,startDeg){ const p=[]; for(let i=0;i<n*2;i++){ const r=i%2?R*inner:R, a=(startDeg+i*180/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return p; }
+function _star(cx,cy,R,n,inner,startDeg){ return _poly(_starPts(cx,cy,R,n,inner,startDeg)); }
 function _scalePath(d,w,h){ let i=0; return d.replace(/-?\d*\.?\d+/g, m=> ((i++%2)===0 ? parseFloat(m)*w : parseFloat(m)*h).toFixed(2) ); }
 /* kind → path for a w×h box. circle/ellipse return null (renderers draw an
    ellipse). Polygons inscribe in the short-side circle (stay regular); box
@@ -546,7 +592,7 @@ const DEFAULTS = {
                spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone',
                blurUnder:0, blurOver:0, grain:0, grainSize:2,
                fit:'cover', imgScale:1, imgX:0, imgY:0, imgRot:0, frame:false, frameW:3, lift:'none', blend:'normal' } },
-  rule:      { w:260, h:10,  props:{ fill:'ink', weight:3, style:'solid' } },
+  rule:      { w:260, h:20,  props:{ fill:'ink', weight:3, pattern:'solid', spacing:12, dashRatio:0.55, amp:7, gap:6, cap:'round', tickLen:6, tickDir:'both', term:'none', termAt:'end', echo:false, echoAccent:'auto' } },
   footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, surface:'none', rule:true, ink:'ink' } },
   wordmark:  { w:240, h:42,  props:{ ink:'ink' } },
   badge:     { w:120, h:120, props:{ top:'EVERY', big:'WED', sub:'ALL YEAR', surface:'accent', fill:'amber', rot:-5, border:2, lift:'default' } },
@@ -1137,7 +1183,7 @@ Object.assign(window, {
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, qrGeometry, starPath, QR_DESTINATIONS, WORDMARK_PATH,
-  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays,
+  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays, ruleLayout,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,

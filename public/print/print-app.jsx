@@ -93,7 +93,7 @@ function Swatches({ label, value, onChange, auto, white }){
 const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
-const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker','shape'];
+const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker','shape','rule'];
 const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image'];
 const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
 const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'plus',l:'Plus'}];
@@ -119,6 +119,8 @@ const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
 const QR_MODULES = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
 const QR_EYES    = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
 const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'}];
+const RULE_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'},{v:'dashdot',l:'Dash-dot'},{v:'double',l:'Double'},{v:'triple',l:'Triple'},{v:'ticks',l:'Ticks'},{v:'zigzag',l:'Zigzag'},{v:'wave',l:'Wave'},{v:'square',l:'Square'}];
+const RULE_TERMS = [{v:'none',l:'None'},{v:'dot',l:'Dot'},{v:'arrow',l:'Arrow'},{v:'diamond',l:'Diamond'},{v:'star',l:'★ Star'}];
 /* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk.
    Anything above ~0.40 is too pale on white to scan reliably; we warn, not block. */
 function qrLum(key){
@@ -430,10 +432,28 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         {FITTABLE.indexOf(el.type)>=0 && <Chips label="Auto-fit width" options={[{v:false,l:'Off'},{v:true,l:'Fit box'}]} value={!!el.fit} onChange={v=>update({fit:v})} />}
         {ORIENTABLE.indexOf(el.type)>=0 && <Chips label="Orientation" options={ORIENTS} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       </React.Fragment>}
-      {el.type==='rule' && <React.Fragment>
-        <Slider label="Thickness" val={el.weight||3} min={0.5} max={20} step={0.5} onChange={v=>update({weight:v})} suffix="pt" />
-        <Chips label="Style" options={[{v:'solid',l:'Solid'},{v:'double',l:'Double'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'}]} value={el.style||'solid'} onChange={v=>update({style:v})} />
-      </React.Fragment>}
+      {el.type==='rule' && (()=>{
+        const pat = el.pattern||el.style||'solid';
+        const spaced = ['dashed','dotted','dashdot','ticks','zigzag','wave','square'].indexOf(pat)>=0;
+        const wavy = ['zigzag','wave','square'].indexOf(pat)>=0;
+        const ampMax = Math.max(4, Math.round(el.h/2 - (el.weight||3)/2));
+        return <React.Fragment>
+          <Chips label="Line pattern" options={RULE_PATTERNS} value={pat} onChange={v=>update({pattern:v, style:undefined})} />
+          <Slider label="Thickness" val={el.weight||3} min={0.5} max={24} step={0.5} onChange={v=>update({weight:v})} suffix="pt" />
+          {spaced && <Slider label="Spacing" val={el.spacing!=null?el.spacing:12} min={3} max={64} step={1} onChange={v=>update({spacing:v})} suffix="pt" />}
+          {pat==='dashed' && <Slider label="Dash ratio" val={el.dashRatio!=null?el.dashRatio:0.55} min={0.1} max={0.9} step={0.05} onChange={v=>update({dashRatio:v})} />}
+          {wavy && <Slider label="Amplitude" val={Math.min(el.amp!=null?el.amp:7, ampMax)} min={1} max={ampMax} step={1} onChange={v=>update({amp:v})} suffix="pt" />}
+          {(pat==='double'||pat==='triple') && <Slider label="Line gap" val={el.gap!=null?el.gap:6} min={1} max={32} step={0.5} onChange={v=>update({gap:v})} suffix="pt" />}
+          {pat==='ticks' && <React.Fragment>
+            <Slider label="Tick length" val={el.tickLen!=null?el.tickLen:6} min={1} max={Math.max(4,Math.round(el.h/2))} step={0.5} onChange={v=>update({tickLen:v})} suffix="pt" />
+            <Chips label="Tick direction" options={[{v:'both',l:'Both'},{v:'up',l:'Up'},{v:'down',l:'Down'}]} value={el.tickDir||'both'} onChange={v=>update({tickDir:v})} />
+          </React.Fragment>}
+          {['solid','dashed','dashdot','ticks','zigzag','wave','square'].indexOf(pat)>=0 &&
+            <Chips label="Line cap" options={[{v:'round',l:'Round'},{v:'butt',l:'Flat'}]} value={el.cap||'round'} onChange={v=>update({cap:v})} />}
+          <Chips label="Ends" options={RULE_TERMS} value={el.term||'none'} onChange={v=>update({term:v})} />
+          {el.term&&el.term!=='none' && <Chips label="Ends at" options={[{v:'end',l:'End'},{v:'start',l:'Start'},{v:'both',l:'Both'}]} value={el.termAt||'end'} onChange={v=>update({termAt:v})} />}
+        </React.Fragment>;
+      })()}
       {el.type==='block' && <React.Fragment>
         <Slider label="Corner radius" val={el.radius||0} min={0} max={40} step={1} onChange={v=>update({radius:v})} suffix="pt" />
         <Slider label="Ink border" val={el.border||0} min={0} max={6} step={0.5} onChange={v=>update({border:v})} suffix="pt" />

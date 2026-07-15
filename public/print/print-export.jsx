@@ -74,7 +74,17 @@ function surfTextFallback(surface, accentName){
 
 /* ---- text layout ---- */
 function chars(s){ return Array.from(s); }
-function measure(str, font, size, tracking){ if(!str) return 0; return font.widthOfTextAtSize(str,size)+Math.max(0,chars(str).length-1)*tracking*size; }
+/* ★ (U+2605) isn't in any embedded face, so as a font glyph it exports as tofu.
+   We draw it as a vector star instead (see drawLineStr); measure it with a
+   matching advance so centring/wrapping stay WYSIWYG with the screen. */
+const STAR_CH = '★';
+function starGlyphW(size){ return size*0.9; }
+function measure(str, font, size, tracking){
+  if(!str) return 0;
+  const cs=chars(str); let w=0;
+  for(const ch of cs) w += ch===STAR_CH ? starGlyphW(size) : font.widthOfTextAtSize(ch,size);
+  return w + Math.max(0,cs.length-1)*tracking*size;
+}
 function wrapText(text, font, size, tracking, maxW){
   const lines=[];
   (text||'').split('\n').forEach(par=>{
@@ -125,9 +135,14 @@ function renderElement(page, el, ctx){
   }
   function drawLineStr(str, lx, baselineTop, font, size, color, tracking){
     if(!str) return;
-    if(Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); return; }
+    /* fast path only when there's no ★ and no tracking; otherwise step per glyph
+       so ★ can be swapped for a vector star (missing from every embedded face). */
+    if(str.indexOf(STAR_CH)<0 && Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); return; }
     let curX=lx;
-    for(const ch of chars(str)){ const p=place(curX,baselineTop); page.drawText(ch,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); curX += font.widthOfTextAtSize(ch,size)+tracking*size; }
+    for(const ch of chars(str)){
+      if(ch===STAR_CH){ const w=starGlyphW(size); localPath(window.starPath(0,0,size*0.38), color, curX+w/2, baselineTop-size*0.35); curX += w+tracking*size; continue; }
+      const p=place(curX,baselineTop); page.drawText(ch,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); curX += font.widthOfTextAtSize(ch,size)+tracking*size;
+    }
   }
   /* draw an SVG path given in LOCAL element coords (0..w, 0..h, y-down),
      optionally offset by (ox,oy) local pt. Anchored at the rotated local
@@ -340,6 +355,7 @@ function renderElement(page, el, ctx){
     lay.glyphs.forEach(g=>{
       if(g.ch===' ') return;
       const gw=measure(g.ch,font,lay.fontSize,0), C=place(g.x,g.y);
+      if(g.ch===STAR_CH){ page.drawSvgPath(window.starPath(0,0,lay.fontSize*0.38), bm({ x:C.x, y:C.y, rotate:degrees(-(r+g.deg)), color:col })); return; }
       const phi=(-(r+g.deg))*Math.PI/180, cosP=Math.cos(phi), sinP=Math.sin(phi);
       const ox=-gw/2, oy=-co;                                          // centre → baseline-left (PDF y-up)
       page.drawText(g.ch, bm({ x:C.x+(ox*cosP-oy*sinP), y:C.y+(ox*sinP+oy*cosP), size:lay.fontSize, font, color:col, rotate:degrees(-(r+g.deg)) }));

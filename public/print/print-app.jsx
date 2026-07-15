@@ -116,6 +116,16 @@ const IMG_TREAT_PRESETS = {
 };
 const FITTABLE = ['headline','numeral','bignum','kicker'];
 const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
+const QR_MODULES = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
+const QR_EYES    = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
+const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'}];
+/* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk.
+   Anything above ~0.40 is too pale on white to scan reliably; we warn, not block. */
+function qrLum(key){
+  const hex = key==='ink'?'#111111' : (key==='white'||key==null||key==='auto')?'#ffffff' : (AP_PAL[key]||'#111111');
+  const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  return 0.2126*r+0.7152*g+0.0722*b;
+}
 
 /* ---------- photo helpers ---------- */
 /* Read an image File/Blob, downscale to ≤2000px on the long edge (≈170–300dpi
@@ -343,12 +353,42 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Field label="Separator" value={el.sep} onChange={v=>update({sep:v})} />
         <Slider label="Size" val={el.fontSize||15} min={8} max={40} step={1} onChange={v=>update({fontSize:v})} suffix="pt" />
       </React.Fragment>}
-      {el.type==='qr' && <React.Fragment>
-        <Field label="Encodes (URL / WiFi / text)" value={el.data} onChange={v=>update({data:v})} area />
-        <Field label="Caption (optional)" value={el.caption} onChange={v=>update({caption:v})} />
-        <Chips label="Error correction" options={[{v:'L',l:'L'},{v:'M',l:'M'},{v:'Q',l:'Q'},{v:'H',l:'H'}]} value={el.ecl||'M'} onChange={v=>update({ecl:v})} />
-        <Chips label="Quiet zone" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.quiet!==false} onChange={v=>update({quiet:v})} />
-      </React.Fragment>}
+      {el.type==='qr' && (()=>{
+        const dests = window.QR_DESTINATIONS||[];
+        const modKey = el.ink!=null?el.ink:'ink';
+        const eyeKey = el.eye&&el.eye!=='auto'?el.eye:modKey;
+        const risky = qrLum(modKey)>0.40 || qrLum(eyeKey)>0.40;
+        const hasLogo = el.logo && el.logo!=='none';
+        return <React.Fragment>
+          <div className="ps-row">
+            <div className="ps-lab">Destination</div>
+            <div className="ps-chips">
+              {dests.map(d=>(
+                <button key={d.id} className={'ps-chip'+(el.data===d.data?' on':'')} title={d.hint}
+                  onClick={()=>update({data:d.data})}>{d.label}</button>
+              ))}
+            </div>
+          </div>
+          <Field label="Encodes (URL / text)" value={el.data} onChange={v=>update({data:v})} area />
+          <Field label="Caption (optional)" value={el.caption} onChange={v=>update({caption:v})} />
+
+          <div className="ps-sech">QR style</div>
+          <Chips label="Module shape" options={QR_MODULES} value={el.moduleStyle||'square'} onChange={v=>update({moduleStyle:v})} />
+          <Chips label="Finder eyes" options={QR_EYES} value={el.eyeStyle||'square'} onChange={v=>update({eyeStyle:v})} />
+          <Swatches label="Eye colour" value={el.eye!=null?el.eye:'auto'} onChange={v=>update({eye:v})} auto white />
+          <Chips label="Centre mark" options={QR_LOGOS} value={el.logo||'none'} onChange={v=>update({logo:v})} />
+          {hasLogo && <Swatches label="Mark colour" value={el.logoColor!=null?el.logoColor:'auto'} onChange={v=>update({logoColor:v})} auto white />}
+          {risky && <div className="ps-warn">Low contrast on white — test-scan before printing, or set the ink to a dark accent (purple · red · pink).</div>}
+
+          <div className="ps-sech">Encode</div>
+          {hasLogo
+            ? <div className="ps-hint">Error correction locked to <b>H</b> — protects the codewords under the centre mark.</div>
+            : <Chips label="Error correction" options={[{v:'L',l:'L'},{v:'M',l:'M'},{v:'Q',l:'Q'},{v:'H',l:'H'}]} value={el.ecl||'M'} onChange={v=>update({ecl:v})} />}
+          <Chips label="Quiet zone" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.quiet!==false} onChange={v=>update({quiet:v})} />
+          <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
+          {el.echo && <Swatches label="Echo colour" value={el.echoAccent||'auto'} onChange={v=>update({echoAccent:v})} auto />}
+        </React.Fragment>;
+      })()}
       {el.type==='coupon' && <React.Fragment>
         <Field label="Kicker" value={el.heading} onChange={v=>update({heading:v})} />
         <Field label="Headline" value={el.big} onChange={v=>update({big:v})} area />

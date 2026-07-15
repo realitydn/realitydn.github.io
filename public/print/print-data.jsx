@@ -396,6 +396,81 @@ function buildQR(text, ecl){
   }catch(e){ return null; }
 }
 
+/* ---- QR destinations — one-tap targets so a standee can be pointed at a real
+   REALITY link without retyping. Values verified from the app / confirmed by
+   Donald; the inspector fills `data` from these, then it's freely editable. ---- */
+const QR_DESTINATIONS = [
+  { id:'website',  label:'Website',   data:'https://realitydn.com',                     hint:'realitydn.com' },
+  { id:'checkin',  label:'Check-in',  data:'https://app.realitydn.com/here',            hint:'Presence · joins tonight’s game' },
+  { id:'menu',     label:'Menu',      data:'https://app.realitydn.com/menu',            hint:'Drinks + food' },
+  { id:'hub',      label:'App hub',   data:'https://app.realitydn.com',                 hint:'Session / programming hub' },
+  { id:'instagram',label:'Instagram', data:'https://instagram.com/reality.dn',          hint:'@reality.dn' },
+  { id:'reviews',  label:'Reviews',   data:'https://maps.app.goo.gl/mRQfWUwx3nXT5vsn7', hint:'Google Maps · leave a ★' },
+];
+
+/* 5-point star as one closed vector path (points up), radius r about (cx,cy).
+   Shared by the screen SVG + the PDF so the centre mark is pixel-identical. */
+function starPath(cx,cy,r){ return _star(cx,cy,r,5,0.42,-90); }
+
+/* ---- QR geometry — the styling brain shared by the screen (SVG) and the PDF
+   (vector), so a stylized code is WYSIWYG. Classifies the module matrix into
+   data cells and the three finder eyes (which are kept structurally whole —
+   solid ring + centre — so any scanner still locks on), applies the chosen
+   module / eye shapes, and reserves an optional centre-logo knockout. Emits
+   renderer-agnostic descriptors in MODULE units (0..tot, quiet zone folded in);
+   each renderer just maps kind→primitive and role→colour. A centre logo forces
+   ECL H so the codewords it covers are always recoverable. ---- */
+function qrGeometry(text, opts){
+  opts = opts||{};
+  const hasLogo = !!opts.logo && opts.logo!=='none';
+  const ecl = hasLogo ? 'H' : (opts.ecl||'M');
+  const m = buildQR(text, ecl); if(!m) return null;
+  const n = m.length;
+  const quiet = opts.quiet!==false ? 4 : 0;
+  const tot = n + quiet*2;
+  const mod = opts.moduleStyle || 'square';
+  const eye = opts.eyeStyle || 'square';
+  const inEye = (r,c)=> (r<7&&c<7) || (r<7&&c>=n-7) || (r>=n-7&&c<7);
+  /* centre knockout — an odd-sized module box so it stays centred on the grid */
+  let logo=null;
+  if(hasLogo){ let s=Math.round(n*0.21); if(s%2===0) s+=1; s=Math.max(5,s);
+    const o=Math.floor((n-s)/2); logo={ r0:o, c0:o, s }; }
+  const inLogo=(r,c)=> logo && r>=logo.r0 && r<logo.r0+logo.s && c>=logo.c0 && c<logo.c0+logo.s;
+
+  const shapes=[];
+  const dataShape=(x,y)=>{
+    if(mod==='dot')     return { kind:'circle',    role:'data', cx:x+0.5, cy:y+0.5, r:0.5 };
+    if(mod==='rounded') return { kind:'roundrect', role:'data', x, y, w:1, h:1, r:0.32 };
+    return { kind:'rect', role:'data', x, y, w:1, h:1 };
+  };
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    if(!m[r][c] || inEye(r,c) || inLogo(r,c)) continue;
+    shapes.push(dataShape(quiet+c, quiet+r));
+  }
+  /* finder eyes: outer ring (7×7) + light knockout (5×5) + inner pip (3×3),
+     three of them. Shapes stacked in order so the ring reads. */
+  /* Every eye keeps a (rounded-)square OUTER frame so the 1:1:3:1:1 finder
+     detection stays rock-solid; the style only varies the corner rounding + the
+     centre pip. A pure-circle outer ring drops the finder corners and fails
+     stricter scanners — so "dot" = rounded frame + a round pip, not a full disc. */
+  const oK = eye==='square' ? 'rect' : 'roundrect';
+  const oR = eye==='square' ? 0 : 1.9;
+  [[0,0],[0,n-7],[n-7,0]].forEach(([r0,c0])=>{
+    const x=quiet+c0, y=quiet+r0;
+    shapes.push({ kind:oK, role:'eye',     x:x,   y:y,   w:7, h:7, r:oR });
+    shapes.push({ kind:oK, role:'eyeHole', x:x+1, y:y+1, w:5, h:5, r:Math.max(0,oR-0.6) });
+    if(eye==='dot') shapes.push({ kind:'circle', role:'eye', cx:x+3.5, cy:y+3.5, r:1.5 });
+    else            shapes.push({ kind:oK, role:'eye', x:x+2, y:y+2, w:3, h:3, r:Math.max(0,oR-1.2) });
+  });
+  /* logo knockout patch (light) — sits above data/eyes to guarantee a clean
+     quiet ring around the mark; the mark itself is drawn from `logo` below. */
+  if(logo){ shapes.push({ kind:'roundrect', role:'logoBg',
+    x:quiet+logo.c0-0.7, y:quiet+logo.r0-0.7, w:logo.s+1.4, h:logo.s+1.4, r:1.4 }); }
+
+  return { n, quiet, tot, shapes, ecl, logoKind: hasLogo ? opts.logo : 'none',
+    logo: logo ? { cx:quiet+logo.c0+logo.s/2, cy:quiet+logo.r0+logo.s/2, s:logo.s } : null };
+}
+
 /* ============================================================
    PARTS CATALOG — draggable components (pt sizing tuned for ~A5)
    ============================================================ */
@@ -452,7 +527,9 @@ const DEFAULTS = {
   kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.22, leading:1.1, upper:true } },
   body:      { w:300, h:80,  props:{ text:'Readable body copy goes here. Keep it short and bold.', fam:'grot', weight:400, fontSize:13, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:1.34, upper:false } },
   pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none' } },
-  qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', surface:'none', ink:'ink', fill:'pink', quiet:true, border:2, lift:'none' } },
+  qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', quiet:true,
+               moduleStyle:'square', eyeStyle:'square', eye:'auto', logo:'none', logoColor:'auto', echo:false, echoAccent:'auto',
+               surface:'none', ink:'ink', fill:'pink', border:2, lift:'none' } },
   coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'ink', fill:'pink' } },
   block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
   slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
@@ -616,9 +693,26 @@ const TEMPLATES = [
     {"type":"numeral","x":22,"y":18,"w":130,"h":110,"p":{"text":"01","fontSize":96,"ink":"pink","align":"left","echo":true}},
     {"type":"kicker","x":150,"y":52,"w":126,"h":20,"p":{"text":"THE MENU","ink":"pink","align":"right","tracking":0.24}},
     {"type":"headline","x":140,"y":70,"w":136,"h":56,"p":{"text":"SCAN\nTHE MENU","fontSize":21,"align":"right","weight":800,"leading":0.94}},
-    {"type":"qr","x":74,"y":142,"w":150,"h":150,"p":{"data":"https://app.realitydn.com/menu","caption":"","quiet":true}},
+    {"type":"qr","x":74,"y":142,"w":150,"h":150,"p":{"data":"https://app.realitydn.com/menu","caption":"","moduleStyle":"dot","eyeStyle":"rounded","ink":"ink","quiet":true}},
     {"type":"body","x":30,"y":300,"w":238,"h":40,"p":{"text":"Đồ uống & đồ ăn. Point your camera at the code.","align":"center","fontSize":11}},
     {"type":"footer","x":24,"y":350,"w":250,"h":60,"p":{"showQR":false}}
+  ]},
+  /* ---- stylized showcases — the new module/eye/mark/echo options. Centre mark
+     forces ECL H automatically; every one stays dark-on-white to scan. ---- */
+  { id:"qr-site-star", name:"Website — centre ★", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
+    {"type":"kicker","x":24,"y":42,"w":250,"h":20,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"pink","align":"center","tracking":0.24,"fontSize":11}},
+    {"type":"headline","x":24,"y":64,"w":250,"h":44,"p":{"text":"WHAT'S ON","fontSize":34,"align":"center","weight":800,"ink":"ink"}},
+    {"type":"qr","x":59,"y":132,"w":180,"h":180,"p":{"data":"https://realitydn.com","caption":"REALITYDN.COM","moduleStyle":"rounded","eyeStyle":"rounded","ink":"ink","logo":"star","logoColor":"pink","quiet":true}},
+    {"type":"body","x":30,"y":336,"w":238,"h":32,"p":{"text":"Events, menu & everything happening this week.","align":"center","fontSize":11,"leading":1.3}},
+    {"type":"contact","x":24,"y":378,"w":250,"h":28,"p":{"align":"center"}}
+  ]},
+  { id:"qr-hub-echo", name:"App hub — riso echo", group:"QR standee", size:"a6", orient:"portrait", accent:"blue", els:[
+    {"type":"block","x":0,"y":0,"w":298,"h":96,"p":{"fill":"blue","echo":true,"echoAccent":"pink"}},
+    {"type":"kicker","x":24,"y":30,"w":250,"h":18,"p":{"text":"TONIGHT AT REALITY","ink":"white","align":"center","tracking":0.22}},
+    {"type":"headline","x":24,"y":50,"w":250,"h":34,"p":{"text":"WHAT'S LIVE","fontSize":28,"align":"center","weight":800,"ink":"white"}},
+    {"type":"qr","x":64,"y":132,"w":170,"h":170,"p":{"data":"https://app.realitydn.com","caption":"","moduleStyle":"square","eyeStyle":"rounded","ink":"ink","echo":true,"echoAccent":"pink","quiet":true}},
+    {"type":"body","x":30,"y":316,"w":238,"h":40,"p":{"text":"Games, music & the night's programming — live. Xem chương trình tối nay.","align":"center","fontSize":11,"leading":1.3}},
+    {"type":"contact","x":24,"y":366,"w":250,"h":28,"p":{"align":"center"}}
   ]},
   { id:"qr-wifi-slab", name:"WiFi slab", group:"QR standee", size:"a6", orient:"portrait", accent:"blue", els:[
     {"type":"slab","x":0,"y":0,"w":298,"h":150,"p":{"fill":"blue","angle":-10,"echo":true}},
@@ -632,14 +726,14 @@ const TEMPLATES = [
     {"type":"block","x":0,"y":0,"w":298,"h":420,"p":{"fill":"pink"}},
     {"type":"kicker","x":24,"y":36,"w":250,"h":20,"p":{"text":"@REALITY.DN","ink":"white","align":"center","tracking":0.26}},
     {"type":"headline","x":24,"y":58,"w":250,"h":88,"p":{"text":"FOLLOW\nALONG","fontSize":40,"align":"center","weight":800,"ink":"white","leading":0.9}},
-    {"type":"qr","x":69,"y":164,"w":160,"h":160,"p":{"data":"https://www.instagram.com/reality.dn/","caption":"","quiet":true}},
+    {"type":"qr","x":69,"y":164,"w":160,"h":160,"p":{"data":"https://www.instagram.com/reality.dn/","caption":"","moduleStyle":"rounded","eyeStyle":"rounded","eye":"pink","ink":"ink","quiet":true}},
     {"type":"body","x":30,"y":332,"w":238,"h":36,"p":{"text":"Events, film nights & what's pouring this week.","align":"center","fontSize":11,"ink":"white"}},
     {"type":"wordmark","x":99,"y":380,"w":100,"h":26,"p":{"ink":"ink"}}
   ]},
   { id:"qr-review-stamp", name:"Google review", group:"QR standee", size:"a6", orient:"portrait", accent:"amber", els:[
     {"type":"headline","x":24,"y":40,"w":250,"h":96,"p":{"text":"LIKED\nYOUR VISIT?","fontSize":33,"align":"center","weight":800,"leading":0.92}},
     {"type":"body","x":30,"y":134,"w":238,"h":36,"p":{"text":"Leave us a review on Google. It really helps.","align":"center","fontSize":12}},
-    {"type":"qr","x":74,"y":180,"w":150,"h":150,"p":{"data":"https://search.google.com/local/writereview?placeid=ChIJKbNSTgAXQjERS0BcAQMiOH0","caption":"","quiet":true}},
+    {"type":"qr","x":74,"y":180,"w":150,"h":150,"p":{"data":"https://maps.app.goo.gl/mRQfWUwx3nXT5vsn7","caption":"","moduleStyle":"rounded","eyeStyle":"rounded","logo":"star","logoColor":"amber","ink":"ink","quiet":true}},
     {"type":"seal","x":188,"y":28,"w":88,"h":88,"p":{"top":"5 STARS","big":"★","sub":"THANK YOU","fill":"amber","ink":"amber","rot":-8}},
     {"type":"footer","x":24,"y":348,"w":250,"h":60,"p":{"showQR":false}}
   ]},
@@ -1042,7 +1136,7 @@ Object.assign(window, {
   PALETTE, PALETTE_CMYK, INK, WHITE, ACCENTS,
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
-  contrastInk, surfaceStyle, resolveInk, buildQR, WORDMARK_PATH,
+  contrastInk, surfaceStyle, resolveInk, buildQR, qrGeometry, starPath, QR_DESTINATIONS, WORDMARK_PATH,
   ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,

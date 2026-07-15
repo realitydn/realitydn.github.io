@@ -6,7 +6,7 @@
    Exports: PrintElement, WordmarkSVG
    ============================================================ */
 const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
-        surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, partnerOf: pePartner, LIFT: PE_LIFT,
+        surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, qrGeometry: peGeom, partnerOf: pePartner, LIFT: PE_LIFT,
         dotFieldLayout: peDots, stripeLayout: peStripes, burstRays: peBurst, shapePath: peShape, arcTextLayout: peArc,
         fitTextSize: peFit, blendCss: peBlend, risoOpts: peRiso } = window;
 
@@ -55,16 +55,37 @@ function WordmarkSVG({ height, color }){
 }
 window.WordmarkSVG = WordmarkSVG;
 
-function QRView({ data, ecl, dark, light, quiet }){
-  const m = React.useMemo(()=> peQR(data, ecl), [data, ecl]);
-  if(!m) return <div style={{ width:'100%', height:'100%', background:light, display:'flex', alignItems:'center', justifyContent:'center', color:dark, fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:11 }}>QR</div>;
-  const n = m.length, q = quiet!==false ? 4 : 0, tot = n + q*2;
+/* one QR shape descriptor → SVG node (mirrors the PDF drawQrShape). Coords are
+   in MODULE units; the <svg> viewBox scales them to the box. Colour by role. */
+function qrShapeSvg(s, i, cols){
+  const fill = cols[s.role] || cols.data;
+  if(!fill || fill==='transparent') return null;
+  if(s.kind==='circle')    return <circle key={i} cx={s.cx} cy={s.cy} r={s.r} fill={fill} />;
+  if(s.kind==='roundrect') return <path key={i} d={window.roundedRectPath(s.x, s.y, s.w, s.h, s.r)} fill={fill} />;
+  /* square data module — a hair of overlap kills anti-alias seams between cells */
+  return <rect key={i} x={s.x} y={s.y} width={s.w+0.03} height={s.h+0.03} fill={fill} />;
+}
+/* Stylized QR — screen SVG built from the shared geometry so it matches the PDF
+   exactly. `eye`/`logoColor` arrive pre-resolved to hex (or fall back to dark).
+   ghost = the misregistration echo pass: one flat colour, holes/logo dropped so
+   only an offset silhouette shows behind the real code (which stays intact). */
+function QRView({ data, ecl, dark, light, quiet, moduleStyle, eyeStyle, eye, logo, logoColor, bg, ghost }){
+  const g = React.useMemo(()=> peGeom(data, { ecl, quiet, moduleStyle, eyeStyle, logo }),
+    [data, ecl, quiet, moduleStyle, eyeStyle, logo]);
+  const lite = light || PE_WHITE.rgb;
+  if(!g) return <div style={{ width:'100%', height:'100%', background:lite, display:'flex', alignItems:'center', justifyContent:'center', color:dark, fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:11 }}>QR</div>;
+  const hole = ghost ? 'transparent' : lite;
+  const cols = { data:dark, eye: ghost ? dark : (eye||dark), eyeHole:hole, logoBg:hole };
+  const lc = logoColor || cols.eye;
   return (
-    <div style={{ width:'100%', height:'100%', background:light, padding:`${(q/tot)*100}%`, boxSizing:'border-box' }}>
-      <div style={{ width:'100%', height:'100%', display:'grid', gridTemplateColumns:`repeat(${n},1fr)`, gridTemplateRows:`repeat(${n},1fr)` }}>
-        {m.flatMap((row,y)=>row.map((c,x)=> <div key={x+'-'+y} style={{ background: c?dark:light }} />))}
-      </div>
-    </div>
+    <svg viewBox={`0 0 ${g.tot} ${g.tot}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet"
+         shapeRendering="geometricPrecision" style={{ display:'block', background: bg!=null?bg:lite }}>
+      {g.shapes.map((s,i)=> qrShapeSvg(s, i, cols))}
+      {!ghost && g.logo && g.logoKind!=='none' && <React.Fragment>
+        <circle cx={g.logo.cx} cy={g.logo.cy} r={g.logo.s*0.42} fill={lc} />
+        {g.logoKind==='star' && <path d={window.starPath(g.logo.cx, g.logo.cy, g.logo.s*0.30)} fill={lite} />}
+      </React.Fragment>}
+    </svg>
   );
 }
 function ArrowGlyph({ color }){
@@ -169,10 +190,21 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </div>;
   }
   else if(t==='qr'){
-    const light = surf.background==='transparent' ? PE_WHITE.rgb : surf.background;
+    const light = PE_WHITE.rgb;   /* QR modules always ride on white (paper) so they scan; `surface` frames it */
+    const eyeCol = peInk(el.eye||'auto', textCol);
+    const logoCol = peInk(el.logoColor||'auto', eyeCol);
     const cap = el.caption, qrSize = cap ? Math.min(el.w, el.h-28) : Math.min(el.w, el.h);
+    const echoCol = el.echo ? echoHex(el, docAccent) : null;
+    const qStyle = { moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo };
     inner = <div style={box({ alignItems:'center', justifyContent:'center', gap:8, padding:0 })}>
-      <div style={{ width:qrSize, height:qrSize }}><QRView data={el.data} ecl={el.ecl} dark={textCol} light={light} quiet={el.quiet} /></div>
+      <div style={{ position:'relative', width:qrSize, height:qrSize }}>
+        {echoCol && <div style={{ position:'absolute', inset:0, transform:`translate(${el.echoDx||6}px, ${el.echoDy||6}px)` }}>
+          <QRView data={el.data} ecl={el.ecl} dark={echoCol} light={light} quiet={el.quiet} {...qStyle} bg="transparent" ghost />
+        </div>}
+        <div style={{ position:'absolute', inset:0 }}>
+          <QRView data={el.data} ecl={el.ecl} dark={textCol} light={light} quiet={el.quiet} {...qStyle} eye={eyeCol} logoColor={logoCol} />
+        </div>
+      </div>
       {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.14em', fontSize:'12px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
     </div>;
   }

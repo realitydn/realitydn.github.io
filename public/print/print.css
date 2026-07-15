@@ -113,6 +113,12 @@ body{ background:#0e0c09; overflow:hidden; }
 .ps-chip:hover{ border-color:#6f6553; color:#fffbf1; }
 .ps-chip.on{ background:#ed1b72; color:#0d0905; border-color:#ed1b72; }
 
+/* QR scannability warning + inline hint */
+.ps-warn{ font-family:var(--ps-grot); font-size:11px; line-height:1.4; color:#1c1403;
+  background:#fddf00; border-radius:6px; padding:8px 10px; margin:-4px 0 13px; }
+.ps-hint{ font-family:var(--ps-grot); font-size:11px; line-height:1.4; color:#b6ab97; margin:0 0 13px; }
+.ps-hint b{ color:#fffbf1; font-weight:700; }
+
 .ps-swatches{ display:flex; flex-wrap:wrap; gap:6px; }
 .ps-sw{ width:26px; height:26px; border-radius:6px; border:2px solid #2a2318; cursor:pointer; transition:.12s; }
 .ps-sw:hover{ transform:scale(1.1); }

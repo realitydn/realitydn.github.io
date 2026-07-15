@@ -212,12 +212,29 @@ function renderElement(page, el, ctx){
   }
   else if(t==='qr'){
     drawSurface();
-    const m=window.buildQR(el.data,el.ecl), pad=(el.surface&&el.surface!=='none')?10:0;
+    const pad=(el.surface&&el.surface!=='none')?10:0;
     const capH=el.caption?18:0, qrSize=Math.min(el.w-pad*2,el.h-pad*2-capH), blockH=qrSize+capH;
     const top=(el.h-blockH)/2, qx=(el.w-qrSize)/2;
-    rect(qx, top, qrSize, qrSize, { color:whiteColor() });
-    if(m){ const quiet=el.quiet!==false?4:0, n=m.length, tot=n+quiet*2, ms=qrSize/tot;
-      for(let rr=0;rr<n;rr++) for(let cc=0;cc<n;cc++) if(m[rr][cc]) rect(qx+(cc+quiet)*ms, top+(rr+quiet)*ms, ms+0.3, ms+0.3, { color:inkColor() }); }
+    /* shared geometry → the SAME shape descriptors the screen SVG draws, so the
+       stylized code is WYSIWYG down to the module. */
+    const g=window.qrGeometry(el.data, { ecl:el.ecl, quiet:el.quiet, moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo });
+    const dataCol=textColor, eyeCol=colorForKey(el.eye, textColor), logoCol=colorForKey(el.logoColor, eyeCol), lightCol=whiteColor();
+    const realCol=(role)=> role==='eye'?eyeCol : (role==='eyeHole'||role==='logoBg')?lightCol : dataCol;
+    const ghostCol=(role)=> (role==='eyeHole'||role==='logoBg')?null : (el.echoAccent&&el.echoAccent!=='auto'?accentColor(el.echoAccent):accentColor(window.partnerOf(accentName)));
+    if(g){
+      const ms=qrSize/g.tot;
+      const draw=(s, bx, by, col)=>{ if(!col) return;
+        if(s.kind==='circle') ellipse(bx+s.cx*ms, by+s.cy*ms, s.r*ms, s.r*ms, { color:col });
+        else if(s.kind==='roundrect') localPath(window.roundedRectPath(bx+s.x*ms, by+s.y*ms, s.w*ms, s.h*ms, s.r*ms), col, 0, 0);
+        else rect(bx+s.x*ms, by+s.y*ms, ms+0.3, ms+0.3, { color:col }); };
+      if(el.echo){ const bx=qx+(el.echoDx||6), by=top+(el.echoDy||6); g.shapes.forEach(s=> draw(s, bx, by, ghostCol(s.role))); }
+      rect(qx, top, qrSize, qrSize, { color:lightCol });
+      g.shapes.forEach(s=> draw(s, qx, top, realCol(s.role)));
+      if(g.logo && g.logoKind!=='none'){
+        ellipse(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.42*ms, g.logo.s*0.42*ms, { color:logoCol });
+        if(g.logoKind==='star') localPath(window.starPath(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.30*ms), lightCol, 0, 0);
+      }
+    } else { rect(qx, top, qrSize, qrSize, { color:lightCol }); }
     if(el.caption){ const cf=fontFor('mont',700), csz=11, a=cf.heightAtSize(csz,{descender:false}), cw=measure(el.caption.toUpperCase(),cf,csz,0.14);
       drawLineStr(el.caption.toUpperCase(), (el.w-cw)/2, top+qrSize+(capH+a)/2-2, cf, csz, textColor, 0.14); }
   }

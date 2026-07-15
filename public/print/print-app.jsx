@@ -93,7 +93,7 @@ function Swatches({ label, value, onChange, auto, white }){
 const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
-const ECHOABLE = ['headline','numeral','bignum','block','slab','sticker','shape','rule'];
+const ECHOABLE = ['headline','numeral','bignum','kicker','body','block','slab','sticker','shape','rule'];
 const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image'];
 const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
 const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'plus',l:'Plus'}];
@@ -121,6 +121,10 @@ const QR_EYES    = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l
 const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'}];
 const RULE_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'},{v:'dashdot',l:'Dash-dot'},{v:'double',l:'Double'},{v:'triple',l:'Triple'},{v:'ticks',l:'Ticks'},{v:'zigzag',l:'Zigzag'},{v:'wave',l:'Wave'},{v:'square',l:'Square'}];
 const RULE_TERMS = [{v:'none',l:'None'},{v:'dot',l:'Dot'},{v:'arrow',l:'Arrow'},{v:'diamond',l:'Diamond'},{v:'star',l:'★ Star'}];
+const BORDER_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'},{v:'dashdot',l:'Dash-dot'}];
+const SURFACED_BOX = ['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee','arrow'];
+const LIST_STYLES = [{v:'prices',l:'Prices'},{v:'bulleted',l:'Bulleted'},{v:'numbered',l:'Numbered'},{v:'plain',l:'Plain'}];
+const LIST_MARKERS = [{v:'•',l:'•'},{v:'–',l:'–'},{v:'→',l:'→'},{v:'★',l:'★'}];
 /* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk.
    Anything above ~0.40 is too pale on white to scan reliably; we warn, not block. */
 function qrLum(key){
@@ -397,20 +401,23 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Field label="Terms" value={el.terms} onChange={v=>update({terms:v})} />
         <Field label="Code" value={el.code} onChange={v=>update({code:v})} mono />
       </React.Fragment>}
-      {el.type==='pricelist' && <React.Fragment>
+      {el.type==='pricelist' && (()=>{ const mode=el.listStyle||'prices'; return <React.Fragment>
+        <Chips label="List style" options={LIST_STYLES} value={mode} onChange={v=>update({listStyle:v})} />
         <Field label="Heading (optional)" value={el.heading} onChange={v=>update({heading:v})} />
         <div className="ps-lab">Rows</div>
         {(el.items||[]).map((it,i)=>(
           <div className="ps-itemrow" key={i}>
             <input className="ps-input" value={it.l} onChange={e=>{ const items=el.items.slice(); items[i]={...it,l:e.target.value}; setItems(items); }} />
-            <input className="ps-input" style={{ maxWidth:78 }} value={it.p} onChange={e=>{ const items=el.items.slice(); items[i]={...it,p:e.target.value}; setItems(items); }} />
+            {mode==='prices' && <input className="ps-input" style={{ maxWidth:78 }} value={it.p} onChange={e=>{ const items=el.items.slice(); items[i]={...it,p:e.target.value}; setItems(items); }} />}
             <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
           </div>
         ))}
-        <button className="ps-addrow" onClick={()=>setItems([...(el.items||[]), {l:'Item',p:'0k'}])}>+ Add row</button>
-        <Chips label="Dot leader" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.dotLeader!==false} onChange={v=>update({dotLeader:v})} />
+        <button className="ps-addrow" onClick={()=>setItems([...(el.items||[]), mode==='prices'?{l:'Item',p:'0k'}:{l:'Item',p:''}])}>+ Add row</button>
+        {mode==='prices' && <Chips label="Dot leader" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.dotLeader!==false} onChange={v=>update({dotLeader:v})} />}
+        {mode==='bulleted' && <Chips label="Bullet" options={LIST_MARKERS} value={el.marker||'•'} onChange={v=>update({marker:v})} />}
+        {(mode==='bulleted'||mode==='numbered') && <Swatches label="Marker colour" value={el.markerColor!=null?el.markerColor:'auto'} onChange={v=>update({markerColor:v})} auto white />}
         <div style={{ height:8 }} />
-      </React.Fragment>}
+      </React.Fragment>; })()}
       {el.type==='arrow' && <React.Fragment>
         <Chips label="Direction" options={[{v:'up',l:'↑'},{v:'right',l:'→'},{v:'down',l:'↓'},{v:'left',l:'←'}]} value={el.dir||'right'} onChange={v=>update({dir:v})} />
         <Field label="Label (optional)" value={el.label} onChange={v=>update({label:v})} />
@@ -454,10 +461,6 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
           {el.term&&el.term!=='none' && <Chips label="Ends at" options={[{v:'end',l:'End'},{v:'start',l:'Start'},{v:'both',l:'Both'}]} value={el.termAt||'end'} onChange={v=>update({termAt:v})} />}
         </React.Fragment>;
       })()}
-      {el.type==='block' && <React.Fragment>
-        <Slider label="Corner radius" val={el.radius||0} min={0} max={40} step={1} onChange={v=>update({radius:v})} suffix="pt" />
-        <Slider label="Ink border" val={el.border||0} min={0} max={6} step={0.5} onChange={v=>update({border:v})} suffix="pt" />
-      </React.Fragment>}
 
       {/* treatment — Year 2 plane shadow + misregistration echo + riso overprint */}
       {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0) && <div className="ps-sech">Treatment</div>}
@@ -474,8 +477,24 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
         <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white />}
       {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst','shape'].indexOf(el.type)>=0 &&
         <Swatches label={el.type==='sticker'?'Bed fill':el.type==='burst'?'Ray colour':'Fill'} value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} white />}
-      {['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee'].indexOf(el.type)>=0 &&
+      {['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee','arrow'].indexOf(el.type)>=0 &&
         <Chips label="Surface" options={SURFACES} value={el.surface||'none'} onChange={v=>update({surface:v})} />}
+      {['headline','numeral','bignum','kicker','pricelist','qr','coupon','arrow'].indexOf(el.type)>=0 && el.surface==='accent' &&
+        <Swatches label="Surface accent" value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} />}
+
+      {/* border — styled box outline (shared: width · pattern · colour · radius) */}
+      {(el.type==='block' || (SURFACED_BOX.indexOf(el.type)>=0 && el.surface && el.surface!=='none')) && (()=>{
+        const bw = el.border!=null?el.border:(el.type==='block'?0:2);
+        return <React.Fragment>
+          <div className="ps-sech">Border</div>
+          <Slider label="Border width" val={bw} min={0} max={12} step={0.5} onChange={v=>update({border:v})} suffix="pt" />
+          {bw>0 && <React.Fragment>
+            <Chips label="Border pattern" options={BORDER_PATTERNS} value={el.borderPattern||'solid'} onChange={v=>update({borderPattern:v})} />
+            <Swatches label="Border colour" value={el.borderColor!=null?el.borderColor:'auto'} onChange={v=>update({borderColor:v})} auto white />
+          </React.Fragment>}
+          <Slider label="Corner radius" val={el.radius||0} min={0} max={60} step={1} onChange={v=>update({radius:v})} suffix="pt" />
+        </React.Fragment>;
+      })()}
 
       {/* size + position */}
       <div className="ps-sech">Box</div>

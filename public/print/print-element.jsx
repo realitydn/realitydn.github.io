@@ -151,11 +151,33 @@ function ImageEl({ el, docAccent, lift }){
   );
 }
 
+/* Styled box border as an SVG overlay — strokes the SAME roundedRectPath the PDF
+   exporter uses, with the shared borderDash, so a dashed/dotted/dash-dot border
+   is WYSIWYG (dash phase lands identically at the corners). Sits in the position
+   wrapper (not the overflow-hidden box) so the stroke isn't clipped. */
+function borderOverlay(W, H, bw, color, pattern, radius){
+  if(!(bw>0) || !color) return null;
+  const bd = window.borderDash(pattern||'solid', bw), ins = bw/2;
+  const d = window.roundedRectPath(ins, ins, Math.max(0,W-bw), Math.max(0,H-bw), Math.max(0,(radius||0)-ins));
+  return (
+    <svg style={{ position:'absolute', left:0, top:0, width:'100%', height:'100%', pointerEvents:'none', overflow:'visible' }}
+         viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+      <path d={d} fill="none" stroke={color} strokeWidth={bw}
+        strokeDasharray={bd.dash?bd.dash.join(' '):undefined} strokeLinecap={bd.cap} strokeLinejoin="miter" />
+    </svg>
+  );
+}
 function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPointerDown }){
   el = Object.assign({}, el, { _docAccent:docAccent });
   const accentHex = peFill(el.fill!=null?el.fill:'pink', docAccentHex);
   const surf = peSurf(el.surface||'none', accentHex);
-  if(surf.border && el.border!=null && (el.surface&&el.surface!=='none')) surf.border = `${el.border}px solid ${surf.background==='transparent'?PE_INK.rgb:(el.surface==='accent'?accentHex:PE_INK.rgb)}`;
+  /* borders are painted by the shared SVG overlay (colour · pattern · radius);
+     keep a transparent CSS border so the box model / spacing is unchanged. */
+  const _surfaced = ['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee','arrow'].indexOf(el.type)>=0 && el.surface && el.surface!=='none';
+  const _borderW = _surfaced ? (el.border!=null?el.border:2) : (el.type==='block' ? (el.border||0) : 0);
+  const _borderCol = (el.borderColor && el.borderColor!=='auto') ? peFill(el.borderColor, accentHex)
+                     : (el.type==='block' ? PE_INK.rgb : (el.surface==='accent'?accentHex:PE_INK.rgb));
+  if(_surfaced) surf.border = `${_borderW}px solid transparent`;
   const textCol = peInk(el.ink!=null?el.ink:'auto', surf.color);
   const lift = liftShadow(el.lift);
 
@@ -166,7 +188,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     cursor: dragging ? 'grabbing' : 'grab', userSelect:'none', touchAction:'none', boxSizing:'border-box'
   };
   const bm = peBlend(el.blend); if(bm) wrap.mixBlendMode = bm;
-  const box = (extra)=>Object.assign({ width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
+  const box = (extra)=>Object.assign({ width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden', borderRadius:(el.radius||0)+'px',
     display:'flex', flexDirection:'column', justifyContent:'center', boxShadow:lift }, surf, { color:textCol }, extra);
 
   let inner = null;
@@ -178,13 +200,18 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     inner = <div style={box({ alignItems:justify, padding:pad })}><TextBlock el={el} textCol={textCol} justify={justify} /></div>;
   }
   else if(t==='pricelist'){
+    const mode = el.listStyle || 'prices';
+    const markerCol = peInk(el.markerColor||'auto', accentHex);
+    const glyph = el.marker || '•';
     inner = <div style={box({ padding: el.surface&&el.surface!=='none'?'12px 14px':'4px 2px', justifyContent:'flex-start' })}>
       {el.heading ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.04em', fontSize:Math.min(el.fontSize||20,22)+'px', color:accentHex, marginBottom:8, lineHeight:1 }}>{el.heading}</div> : null}
       {(el.items||[]).map((it,i)=>(
         <div key={i} style={{ display:'flex', alignItems:'baseline', gap:8, padding:'4px 0', color:textCol, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', fontSize:'13px', letterSpacing:'.02em' }}>
-          <span style={{ flex:'none' }}>{it.l}</span>
-          {el.dotLeader!==false && <span style={{ flex:'1 1 auto', borderBottom:`1.5px dotted ${textCol}`, opacity:.5, transform:'translateY(-3px)' }} />}
-          <span style={{ flex:'none', fontWeight:800 }}>{it.p}</span>
+          {mode==='bulleted' && <span style={{ flex:'none', color:markerCol, fontWeight:800 }}>{glyph}</span>}
+          {mode==='numbered' && <span style={{ flex:'none', color:markerCol, fontWeight:800, minWidth:'1.5em' }}>{i+1}.</span>}
+          <span style={{ flex: mode==='prices'?'none':'1 1 auto' }}>{it.l}</span>
+          {mode==='prices' && el.dotLeader!==false && <span style={{ flex:'1 1 auto', borderBottom:`1.5px dotted ${textCol}`, opacity:.5, transform:'translateY(-3px)' }} />}
+          {mode==='prices' && <span style={{ flex:'none', fontWeight:800 }}>{it.p}</span>}
         </div>
       ))}
     </div>;
@@ -218,8 +245,8 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='block'){
     inner = <div style={{ position:'relative', width:'100%', height:'100%' }}>
-      {el.echo && <div style={{ position:'absolute', left:(el.echoDx||8), top:(el.echoDy||8), width:'100%', height:'100%', background:echoHex(el,docAccent) }} />}
-      <div style={{ position:'relative', width:'100%', height:'100%', background:accentHex, borderRadius:(el.radius||0)+'px', border: el.border>0?`${el.border}px solid ${PE_INK.rgb}`:'none', boxShadow:lift, boxSizing:'border-box' }} />
+      {el.echo && <div style={{ position:'absolute', left:(el.echoDx||8), top:(el.echoDy||8), width:'100%', height:'100%', background:echoHex(el,docAccent), borderRadius:(el.radius||0)+'px' }} />}
+      <div style={{ position:'relative', width:'100%', height:'100%', background:accentHex, borderRadius:(el.radius||0)+'px', boxShadow:lift, boxSizing:'border-box' }} />
     </div>;
   }
   else if(t==='image'){
@@ -376,7 +403,8 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </div>;
   }
 
-  return <div data-elid={el.id} style={wrap} onPointerDown={(e)=>onElPointerDown(e, el)}>{inner}</div>;
+  const borderNode = _borderW>0 ? borderOverlay(el.w, el.h, _borderW, _borderCol, el.borderPattern||'solid', el.radius||0) : null;
+  return <div data-elid={el.id} style={wrap} onPointerDown={(e)=>onElPointerDown(e, el)}>{inner}{borderNode}</div>;
 }
 
 window.PrintElement = PrintElement;

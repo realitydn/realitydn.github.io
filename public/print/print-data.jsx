@@ -328,6 +328,17 @@ function roundedRectPath(ox,oy,w,h,r){
        + `L ${x+r} ${y+h} Q ${x} ${y+h} ${x} ${y+h-r} `
        + `L ${x} ${y+r} Q ${x} ${y} ${x+r} ${y} Z`;
 }
+/* ---- border style → dash array + cap. Shared by the screen border overlay and
+   the PDF stroke so a dashed/dotted/dash-dot box border is WYSIWYG. Both stroke
+   the SAME roundedRectPath, so the dash phase lands identically at the corners.
+   Values scale with the stroke width so the rhythm holds at any weight. ---- */
+function borderDash(pattern, w){
+  w=Math.max(0.5, w||1);
+  if(pattern==='dashed')  return { dash:[w*2.6, w*1.9], cap:'butt'  };
+  if(pattern==='dotted')  return { dash:[0.01,  w*2.0], cap:'round' };
+  if(pattern==='dashdot') return { dash:[w*2.8, w*1.7, 0.01, w*1.7], cap:'round' };
+  return { dash:null, cap:'butt' };   // solid
+}
 function _poly(pts){ return 'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' Z'; }
 function _regPoly(cx,cy,r,n,startDeg){ const p=[]; for(let i=0;i<n;i++){ const a=(startDeg+i*360/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return _poly(p); }
 function _starPts(cx,cy,R,n,inner,startDeg){ const p=[]; for(let i=0;i<n*2;i++){ const r=i%2?R*inner:R, a=(startDeg+i*180/n)*Math.PI/180; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); } return p; }
@@ -572,7 +583,7 @@ const DEFAULTS = {
   bignum:    { w:220, h:120, props:{ text:'4–7', fam:'mont', weight:800, fontSize:90, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:0.9, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
   kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.22, leading:1.1, upper:true } },
   body:      { w:300, h:80,  props:{ text:'Readable body copy goes here. Keep it short and bold.', fam:'grot', weight:400, fontSize:13, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:1.34, upper:false } },
-  pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none' } },
+  pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', listStyle:'prices', marker:'•', markerColor:'auto', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none' } },
   qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', quiet:true,
                moduleStyle:'square', eyeStyle:'square', eye:'auto', logo:'none', logoColor:'auto', echo:false, echoAccent:'auto',
                surface:'none', ink:'ink', fill:'pink', border:2, lift:'none' } },
@@ -1183,7 +1194,7 @@ Object.assign(window, {
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, qrGeometry, starPath, QR_DESTINATIONS, WORDMARK_PATH,
-  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays, ruleLayout,
+  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays, ruleLayout, borderDash,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,

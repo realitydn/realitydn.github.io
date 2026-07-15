@@ -66,9 +66,12 @@ function colorForKey(key, fallback){
   if(isAccent(key)) return accentColor(key);
   return inkColor();
 }
-function surfTextFallback(surface, accentName){
+/* auto text colour on a surfaced box — contrast is judged against the box's OWN
+   fill accent (accentHex), not the doc accent, so it matches the screen when the
+   surface accent is customised. */
+function surfTextFallback(surface, accentHex){
   if(surface==='solid') return whiteColor();
-  if(surface==='accent'){ return window.contrastInk(window.PALETTE[accentName])==='#ffffff' ? whiteColor() : inkColor(); }
+  if(surface==='accent') return window.contrastInk(accentHex)==='#ffffff' ? whiteColor() : inkColor();
   return inkColor();
 }
 
@@ -152,7 +155,7 @@ function renderElement(page, el, ctx){
 
   const accentHex = isAccent(el.fill) ? window.PALETTE[el.fill] : window.PALETTE[accentName];
   const fillKey = el.fill!=null ? el.fill : accentName;
-  const textFallback = surfTextFallback(el.surface, accentName);
+  const textFallback = surfTextFallback(el.surface, accentHex);
   const textColor = colorForKey(el.ink!=null?el.ink:'auto', textFallback);
   const echoColor = el.echoAccent && el.echoAccent!=='auto' ? colorForKey(el.echoAccent) : accentColor(window.partnerOf(accentName));
 
@@ -160,16 +163,32 @@ function renderElement(page, el, ctx){
     const s = window.LIFT[el.lift]; if(!s) return;
     rect(lx, lyTop+s.dy, w, h, { color:tintK(s.k) });
   }
+  /* shared box fill + styled border (color · pattern · radius) — same geometry as
+     the screen border overlay via roundedRectPath, so dashes land identically. */
+  function fillBox(color, radius){
+    if((radius||0)>0) localPath(window.roundedRectPath(0,0,el.w,el.h,Math.min(radius,Math.min(el.w,el.h)/2)), color, 0, 0);
+    else rect(0,0,el.w,el.h,{ color });
+  }
+  function strokeBox(bw, color, pattern, radius){
+    if(!(bw>0)) return;
+    const bd=window.borderDash(pattern||'solid', bw), ins=bw/2;
+    const d=window.roundedRectPath(ins, ins, Math.max(0,el.w-bw), Math.max(0,el.h-bw), Math.max(0,(radius||0)-ins));
+    const o0=place(0,0), o={ x:o0.x, y:o0.y, scale:1, rotate:ROT, borderColor:color, borderWidth:bw };
+    if(bd.dash) o.borderDashArray=bd.dash;
+    if(L().LineCapStyle) o.borderLineCap = bd.cap==='round'?L().LineCapStyle.Round:L().LineCapStyle.Butt;
+    page.drawSvgPath(d, bm(o));
+  }
   function drawSurface(){
     const s=el.surface; if(!s||s==='none') return;
-    let fill=null, border=inkColor(), bw=el.border!=null?el.border:2;
-    if(s==='solid'){ fill=inkColor(); border=inkColor(); }
-    else if(s==='accent'){ fill=accentColor(fillKey); border=inkColor(); }
-    else if(s==='paper'){ fill=whiteColor(); border=inkColor(); }
-    else if(s==='outline'){ fill=null; border=inkColor(); }
+    const bw=el.border!=null?el.border:2, radius=el.radius||0;
+    let fill=null;
+    if(s==='solid') fill=inkColor();
+    else if(s==='accent') fill=accentColor(fillKey);
+    else if(s==='paper') fill=whiteColor();
     liftRect(0,0,el.w,el.h);
-    const o={}; if(fill) o.color=fill; if(bw>0){ o.borderColor=border; o.borderWidth=bw; }
-    rect(0,0,el.w,el.h,o);
+    if(fill) fillBox(fill, radius);
+    const bcol = (el.borderColor && el.borderColor!=='auto') ? colorForKey(el.borderColor) : (s==='accent'?accentColor(fillKey):inkColor());
+    strokeBox(bw, bcol, el.borderPattern, radius);
   }
 
   /* multi-line text block; valign centre/top; optional offset (echo) */
@@ -211,17 +230,27 @@ function renderElement(page, el, ctx){
   }
   else if(t==='pricelist'){
     drawSurface();
+    const mode=el.listStyle||'prices';
     let yTop=(el.surface&&el.surface!=='none')?12:6;
     const padX=(el.surface&&el.surface!=='none')?12:2;
+    const listAccent=accentColor(isAccent(fillKey)?fillKey:accentName);
     if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
-      drawLineStr(el.heading.toUpperCase(), padX, yTop+a, hf, hs, accentColor(isAccent(fillKey)?fillKey:accentName), 0.04); yTop+=hs*1.1+8; }
-    const rf=fontFor('mont',700), rs=13, ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.7;
-    (el.items||[]).forEach(it=>{
-      const baseTop=yTop+ra, lbl=(it.l||'').toUpperCase(), prc=(it.p||'').toUpperCase();
-      drawLineStr(lbl, padX, baseTop, rf, rs, textColor, 0.02);
-      const pw=measure(prc,rf,rs,0.02); drawLineStr(prc, el.w-padX-pw, baseTop, rf, rs, textColor, 0.02);
-      if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,0.02), x0=padX+lw+6, x1=el.w-padX-pw-6, my=yTop+ra*0.72;
-        if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
+      drawLineStr(el.heading.toUpperCase(), padX, yTop+a, hf, hs, listAccent, 0.04); yTop+=hs*1.1+8; }
+    const rf=fontFor('mont',700), mf=fontFor('mont',800), rs=13, ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.7;
+    const markerCol = (el.markerColor&&el.markerColor!=='auto') ? colorForKey(el.markerColor) : listAccent;
+    const glyph = el.marker || '•';
+    (el.items||[]).forEach((it,i)=>{
+      const baseTop=yTop+ra, lbl=(it.l||'').toUpperCase();
+      let lx=padX;
+      if(mode==='bulleted'){ drawLineStr(glyph, padX, baseTop, mf, rs, markerCol, 0); lx=padX+measure(glyph,mf,rs,0)+7; }
+      else if(mode==='numbered'){ const num=(i+1)+'.'; drawLineStr(num, padX, baseTop, mf, rs, markerCol, 0); lx=padX+Math.max(measure(num,mf,rs,0), rs*0.9)+7; }
+      drawLineStr(lbl, lx, baseTop, rf, rs, textColor, 0.02);
+      if(mode==='prices'){
+        const prc=(it.p||'').toUpperCase(), pw=measure(prc,rf,rs,0.02);
+        drawLineStr(prc, el.w-padX-pw, baseTop, rf, rs, textColor, 0.02);
+        if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,0.02), x0=lx+lw+6, x1=el.w-padX-pw-6, my=yTop+ra*0.72;
+          if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
+      }
       yTop+=rowH;
     });
   }
@@ -266,11 +295,12 @@ function renderElement(page, el, ctx){
       rect(pad, chipTop, chipW, chipH, { color:textColor }); drawLineStr(el.code, pad+7, chipTop+(chipH-csz)/2+ca, cf, csz, whiteColor(), 0.1); }
   }
   else if(t==='block'){
+    const radius=el.radius||0;
     liftRect(0,0,el.w,el.h);
-    if(el.echo) rect(el.echoDx||8, el.echoDy||8, el.w, el.h, { color:echoColor });
-    const o={ color:colorForKey(fillKey, accentColor(accentName)) };
-    if(el.border>0){ o.borderColor=inkColor(); o.borderWidth=el.border; }
-    rect(0,0,el.w,el.h,o);
+    if(el.echo){ if(radius>0) localPath(window.roundedRectPath(el.echoDx||8, el.echoDy||8, el.w, el.h, radius), echoColor, 0, 0); else rect(el.echoDx||8, el.echoDy||8, el.w, el.h, { color:echoColor }); }
+    fillBox(colorForKey(fillKey, accentColor(accentName)), radius);
+    const bcol = (el.borderColor && el.borderColor!=='auto') ? colorForKey(el.borderColor) : inkColor();
+    strokeBox(el.border, bcol, el.borderPattern, radius);
   }
   else if(t==='slab'){
     /* sheared geometric colour block (hard-edge plane, 15–45°) */
@@ -428,6 +458,7 @@ function renderElement(page, el, ctx){
     drawLineStr(str, 6, baseTop, f, s, textColor, 0.1);
   }
   else if(t==='arrow'){
+    drawSurface();
     const labelH=el.label?24:0, aH=el.h-labelH;
     localPath(arrowPath(el.dir||'right', el.w, aH), colorForKey(el.ink||'ink',accentColor(accentName)));
     if(el.label){ const f=fontFor('mont',800), s=el.fontSize||18, a=f.heightAtSize(s,{descender:false}), w=measure(el.label.toUpperCase(),f,s,0.06); drawLineStr(el.label.toUpperCase(), (el.w-w)/2, aH+(labelH+a)/2-2, f, s, textColor, 0.06); }

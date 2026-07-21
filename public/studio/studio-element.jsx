@@ -89,7 +89,8 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       'edgeDetail','edgeThick','edgeBackdrop','cellSize','mosaicDepth','mosaicGap',
       'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
       'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
-      'grainInk','grainBlend','vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
+      'grainInk','grainBlend','finBright','finContrast','finSat',
+      'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
       'mix2','mix2Mode'];
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
       paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null };

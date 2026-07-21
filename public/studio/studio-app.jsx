@@ -364,7 +364,8 @@ function PhotoControls({ el, update, theme }){
   const t = el.treatment;
   const tDef = TREATS.find(x=>x.v===t);
   const pressLabel = tDef? tDef.l : t;
-  const finishCount = [el.blurOver>0, el.grain>0, el.vignette>0, el.paperTex>0, el.inkBleed>0, el.dust>0, el.misprint>0].filter(Boolean).length;
+  const finishCount = [el.blurOver>0, el.grain>0, el.vignette>0, el.paperTex>0, el.inkBleed>0, el.dust>0, el.misprint>0,
+                       !!el.finBright, el.finContrast!=null&&el.finContrast!==1, el.finSat!=null&&el.finSat!==1].filter(Boolean).length;
   const nBands = Math.max(2, (el.bands|0)||4);
   const setBandInk = (i,v)=>{ const arr=[]; for(let b=0;b<nBands;b++) arr.push((el.bandInks&&el.bandInks[b])||null); arr[i]=v; update({ bandInks:arr }); };
   return (
@@ -588,6 +589,13 @@ function PhotoControls({ el, update, theme }){
       </Fold>
 
       <Fold id="ph-finish" title="Finish" badge={finishCount? String(finishCount) : null}>
+        <div className="rs-sech">Tone</div>
+        <Slider label="Brightness" val={el.finBright!=null?el.finBright:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({finBright:v})} />
+        <Slider label="Contrast" val={el.finContrast!=null?el.finContrast:1} min={0.5} max={2} step={0.02} onChange={v=>update({finContrast:v})} />
+        <Slider label="Saturation" val={el.finSat!=null?el.finSat:1} min={0} max={2} step={0.02} onChange={v=>update({finSat:v})} />
+        <button className="rs-addrow" onClick={()=>update({finBright:0, finContrast:1, finSat:1})}>↺ Reset tone</button>
+        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Grades the <b>printed</b> ink — <b>Adjust &amp; focus</b> changes what the press sees instead. Unlike that pass, saturation here works under every treatment: pull it to 0 to grey off a duotone, push it up to make one ink shout.</div>
+        <div className="rs-sech">Press artifacts</div>
         <BlurControls el={el} update={update} prefix="blurOver" label="Blur" max={30} />
         <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
         {el.grain>0 && <React.Fragment>

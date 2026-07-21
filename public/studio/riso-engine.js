@@ -905,6 +905,24 @@
   }
 
   /* ---- the rest of the finish stack ---- */
+  /* post-press grade — brightness / contrast / saturation over the FINISHED
+     print. Unlike the Adjust pass (which changes what the press *sees*) this
+     pushes the ink as it landed, so a halftone or duotone can be punched or
+     faded without re-screening it. Runs first in the stack, so the artifact
+     passes below stay true to the paper. */
+  function finishTone(cv,o){
+    const b=o.finBright||0, c=o.finContrast!=null?o.finContrast:1, s=o.finSat!=null?o.finSat:1;
+    if(Math.abs(b)<0.002 && Math.abs(c-1)<0.005 && Math.abs(s-1)<0.005) return;
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    if(typeof cx.filter!=='string') return;            // no canvas filters — skip
+    const t=document.createElement('canvas'); t.width=w; t.height=h;
+    t.getContext('2d').drawImage(cv,0,0);
+    cx.save();
+    cx.clearRect(0,0,w,h);
+    cx.filter='brightness('+(1+b)+') contrast('+c+') saturate('+s+')';
+    cx.drawImage(t,0,0);
+    cx.restore();
+  }
   /* darken (edge-of-print) falloff; soft = how gradual the roll-off is */
   function vignette(cv, amount, soft){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
@@ -1012,6 +1030,7 @@
     blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
     /* finish stack */
     grainInk:null, grainBlend:'soft',
+    finBright:0, finContrast:1, finSat:1,
     vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
     /* second exposure */
     mix2:0, mix2Mode:'screen'
@@ -1033,6 +1052,7 @@
     applyBlur(cv, { amount:o.blurOver||0, type:o.blurOverType, angle:o.blurOverAngle,
                     x:o.blurOverX, y:o.blurOverY, pos:o.blurOverPos, width:o.blurOverWidth });
     const guard = o.transparent? alphaMaskGuard(cv) : null;
+    finishTone(cv,o);
     if(o.inkBleed>0) inkBleed(cv,o);
     if(o.grain>0) grain(cv, o.grain, o.grainSize!=null?o.grainSize:2, o.grainInk, o.grainBlend);
     if(o.paperTex>0) paperTexture(cv, o.paperTex);

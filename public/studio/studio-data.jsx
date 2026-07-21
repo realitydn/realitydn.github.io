@@ -354,7 +354,7 @@ const DEFAULTS = {
              cellSize:16, mosaicDepth:4, mosaicGap:0.08,
              blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
-             grainInk:null, grainBlend:'soft',
+             grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
              src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
   /* Partner logo — same engine as a photo but untreated by default and with a
@@ -379,7 +379,7 @@ const DEFAULTS = {
              cellSize:16, mosaicDepth:4, mosaicGap:0.08,
              blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
-             grainInk:null, grainBlend:'soft',
+             grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
              src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
 };

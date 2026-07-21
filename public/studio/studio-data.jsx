@@ -159,22 +159,44 @@ function shadowModel(el, theme){
 }
 
 /* ============================================================
-   TEXT INSET — the Align control's companion. Every aligned element
-   carries a baked-in horizontal padding; this surfaces it as the
-   slider's DEFAULT, so the number you read is the gap you get and 0
-   means flush to the box edge. Only left/right alignment can move —
-   a centred line is symmetric by definition, so the control hides
-   itself there. Renderer and control both read this, so the two
-   never drift.
+   TEXT ALIGN + INSET — one model behind the Align control and every
+   element that draws text. Two jobs:
+
+   `align` — the effective alignment. Each type declares the alignment
+   it has always rendered at, so an element saved before this control
+   existed keeps its look AND shows the right chip selected.
+
+   `def`/`val` — the inset: how far the text sits from the edge it is
+   aligned to. Defaults to that type's baked-in horizontal padding, so
+   the number you read is the gap you get and 0 means flush to the box
+   edge. Only left/right can move — a centred line is symmetric by
+   definition — so the control hides itself on centre.
+
+   Renderer and control both read this, so the two never drift.
    ============================================================ */
-const TEXT_PAD = { title:26, tagline:24, info:22, host:28, stamp:16 };
+const TEXT_ALIGN_DEF = {
+  title:'left', tagline:'left', info:'left', lineup:'left', sessions:'left',
+  specials:'left', agenda:'left', qr:'left',
+  when:'center', cost:'center', stamp:'center', host:'center',
+  badge:'center', matchup:'center', ticket:'center'
+};
+/* baked-in horizontal padding per type — the honest default for the inset */
+const TEXT_PAD = {
+  title:26, tagline:24, info:22, when:26, cost:26, host:28, stamp:16,
+  lineup:24, sessions:24, specials:24, agenda:22, qr:18, badge:0
+};
 function textInsetModel(el){
   const bare = !el.surface || el.surface==='none';
-  /* a bare title has no card to pad against — its letters already start at
-     the box edge, so 0 is the honest default there */
-  const def  = (el.type==='title' && bare) ? 0 : (TEXT_PAD[el.type] || 0);
-  const side = el.align==='left' ? 'left' : el.align==='right' ? 'right' : null;
-  return { def, side, applies: side!=null,
+  let def;
+  /* a bare title has no card to pad against — its letters already start at the
+     box edge, so 0 is honest there. Ticket and matchup size their own padding. */
+  if(el.type==='title')        def = bare ? 0 : 26;
+  else if(el.type==='ticket')  def = el.variant==='banner' ? 46 : 34;
+  else if(el.type==='matchup') def = Math.round((el.w||600)*0.06);
+  else                         def = TEXT_PAD[el.type] || 0;
+  const align = el.align || TEXT_ALIGN_DEF[el.type] || 'left';
+  const side  = align==='left' ? 'left' : align==='right' ? 'right' : null;
+  return { def, side, align, applies: side!=null,
            val: el.textInset!=null ? el.textInset : def,
            max: Math.max(60, Math.round((el.w||400)*0.4)) };
 }

@@ -201,6 +201,18 @@ function sePad(el, vert){
   const r = m.side==='right' ? m.val : m.def;
   return { padding: vert+'px '+r+'px '+vert+'px '+l+'px' };
 }
+/* Cross-axis for a COLUMN container whose children shrink-wrap (a badge's
+   stacked lines, matchup's team names, the ticket banner): textAlign alone
+   can't move those, they need alignItems to follow the text. */
+function seColAlign(el){
+  const a = window.textInsetModel(el).align;
+  return a==='left' ? 'flex-start' : a==='right' ? 'flex-end' : 'center';
+}
+/* Main-axis for a ROW container (qr) — there, horizontal is justifyContent. */
+function seRowAlign(el){
+  const a = window.textInsetModel(el).align;
+  return a==='left' ? 'flex-start' : a==='right' ? 'flex-end' : 'center';
+}
 /* drop-shadow form for the artwork family (photo / logo / block / weekly). */
 function seShadow(el, theme){
   const css = seShadowCss(window.shadowModel(el, theme), theme);
@@ -324,10 +336,14 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   const autoBox  = _sm.mode==='box'  ? (_shCss||'none') : 'none';
   const autoText = _sm.mode==='text' ? (_shCss||'none') : 'none';
 
+  /* textAlign rides the container for every text element — it inherits, so a
+     heading, a chip line or a list row all follow one dial. Two-column rows
+     (name…time) are flex, so they keep their columns by design. */
   const box = (extra)=>Object.assign({
     width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
     display:'flex', flexDirection:'column', justifyContent:'center'
-  }, surf, { color:textCol, boxShadow:autoBox, textShadow:autoText }, extra);
+  }, surf, { color:textCol, boxShadow:autoBox, textShadow:autoText },
+     { textAlign: window.textInsetModel(el).align }, extra);
 
   let inner = null;
 
@@ -391,8 +407,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='when' || el.type==='cost'){
     // The cost chip is the day·time chip's twin — same accent tag, price text.
-    inner = <div style={box({ padding:'10px 26px', alignItems:'center' })}>
-      <div style={{ fontFamily:MONT, fontWeight:el.weight||700, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.16)+'em', fontSize:el.fontSize+'px', color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
+    inner = <div style={box(Object.assign({ alignItems:'center' }, sePad(el, 10)))}>
+      <div style={{ fontFamily:MONT, fontWeight:el.weight||700, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.16)+'em', fontSize:el.fontSize+'px', color:textCol, width:'100%' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='host'){
@@ -406,18 +422,18 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     if(el.variant==='banner'){
       // Full-width band — wordmark centred over the address. The serious,
       // bookish bottom for talks.
-      inner = <div style={box({ flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:'30px 46px' })}>
+      inner = <div style={box(Object.assign({ flexDirection:'column', alignItems:seColAlign(el), justifyContent:'center', gap:16 }, sePad(el, 30)))}>
         <WordmarkSVG height={64*B} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, textAlign:'center', color:textCol }}>
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, color:textCol }}>
           {el.site}{el.addr? <span style={{ fontWeight:600, opacity:.72 }}>{'  ·  '+el.addr}</span> : null}
         </div>
         {el.showQR && <div style={{ flex:'none', marginTop:4 }}><SEQR size={92*B} dark={surf.color} light={qrLight} /></div>}
       </div>;
     } else {
       const wmH = (el.variant==='mini'?38 : el.variant==='slim'?44 : 50) * B;
-      inner = <div style={box({ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:22, padding:'22px 34px' })}>
+      inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:22 }, sePad(el, 22)))}>
         <WordmarkSVG height={wmH} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:18*B, textAlign:'center', lineHeight:1.5, color:textCol }}>
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:18*B, lineHeight:1.5, color:textCol }}>
           {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14*B, letterSpacing:'.06em' }}>{el.addr}</span> : null}
         </div>
         {el.showQR && <div style={{ flex:'none' }}><SEQR size={108*B} dark={surf.color} light={qrLight} /></div>}
@@ -430,7 +446,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const lpAvail = el.h/B - 36 - (el.heading?26:0);
     const lpBase = el.rowSize || Math.max(13, Math.min(22, Math.floor(lpAvail/Math.max(1,el.items.length)) - 10));
     const lpName1 = Math.round(lpBase*1.24), lpTime = Math.max(11, Math.round(lpBase*0.62));
-    inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
+    inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:16,
@@ -476,7 +492,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       const fs = (el.rowSize || auto) * B;
       const metaFs = Math.max(10, Math.round(fs*0.52));
       const dot = Math.max(8, Math.round(fs*0.34));
-      inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
+      inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
         {heading}
         {items.map((it,i)=>(
           <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:Math.round(dot*0.8),
@@ -499,7 +515,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
       const fs = (el.rowSize || auto) * B;
       const sub = Math.max(11, Math.round(fs*0.62));
-      inner = <div style={box({ padding:'18px 24px', justifyContent:'flex-start' })}>
+      inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
         {heading}
         {items.map((it,i)=>(
           <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
@@ -520,7 +536,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        with sessions/lineup. The heading stays fixed. */
     const spAvail = el.h/B - 32 - (el.heading?34:0);
     const spBase = el.rowSize || Math.max(11, Math.min(15, Math.floor(spAvail/Math.max(1,el.items.length)) - 8));
-    inner = <div style={box({ padding:'16px 24px', justifyContent:'flex-start' })}>
+    inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 16)))}>
       <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:(el.headingSize!=null?el.headingSize:26)*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:(el.rowGap!=null?el.rowGap:5)+'px 0',
@@ -552,7 +568,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const dayCol = it => { const a = it.accent || byDay[titleCase(it.day)]; return SE_ACC.indexOf(a)>=0 ? SE_PAL[a] : accentHex; };
     const dayShort = d => { const i = dayNames.findIndex(n=>n.toLowerCase()===String(d||'').toLowerCase()); return i>=0 ? dayAbbr[i] : String(d||'').slice(0,3).toUpperCase(); };
     const ruleC = seSurf('outline',theme,accentHex).color;
-    inner = <div style={box({ padding:'14px 22px', justifyContent:'flex-start' })}>
+    inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 14)))}>
       {el.heading ? <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:headFs, color:accentHex, marginBottom:12, lineHeight:.9 }}>{el.heading}</div> : null}
       {items.map((it,i)=>{
         const col = dayCol(it);
@@ -575,7 +591,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='qr'){
-    inner = <div style={box({ flexDirection:'row', alignItems:'center', gap:16, padding:'16px 18px' })}>
+    inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, 16)))}>
       {el.showQR && <SEQR size={Math.min(el.h-32, el.w*0.42)} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.04em', lineHeight:1.15 }}>
         <div style={{ fontSize:18*B }}>{el.label}</div>
@@ -589,7 +605,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='badge'){
-    inner = <div style={Object.assign(box({ alignItems:'center', padding:0 }), { borderRadius:'50%' })}>
+    inner = <div style={Object.assign(box(Object.assign({ alignItems:seColAlign(el) }, sePad(el, 0))), { borderRadius:'50%' })}>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:13*B }}>{el.top}</div>
       <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56*B)+'px', lineHeight:.85, color:accentHex }}>{el.big}</div>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:11*B, opacity:.65 }}>{el.sub}</div>
@@ -632,16 +648,16 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const teamSize=Math.max(18, Math.min(maxTeam, seFitText(el.teamA, availW, maxTeam), seFitText(el.teamB, availW, maxTeam)));
     const compF=Math.round(H*0.055), dtF=Math.round(H*0.072), vsD=Math.round(teamSize*0.92), vsF=Math.round(vsD*0.42), gap=Math.round(H*0.025);
     const team={ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:teamSize, lineHeight:.9,
-      color:textCol, textAlign:'center', letterSpacing:'.01em', whiteSpace:'nowrap', maxWidth:'100%' };
-    inner = <div style={box({ alignItems:'center', padding:pad+'px' })}>
-      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.24em', fontSize:compF, color:accentHex, textAlign:'center', marginBottom:gap }}>{el.comp}</div> : null}
+      color:textCol, letterSpacing:'.01em', whiteSpace:'nowrap', maxWidth:'100%' };
+    inner = <div style={box(Object.assign({ alignItems:seColAlign(el) }, sePad(el, pad)))}>
+      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.24em', fontSize:compF, color:accentHex, marginBottom:gap }}>{el.comp}</div> : null}
       <div style={team}>{el.teamA}</div>
       <div style={{ width:vsD, height:vsD, borderRadius:'50%', background:accentHex, margin:gap+'px 0', flex:'none',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
         <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:window.contrastInk(accentHex), letterSpacing:'.02em' }}>{el.vs||'VS'}</span>
       </div>
       <div style={team}>{el.teamB}</div>
-      {(el.date||el.time) ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:dtF, color:textCol, textAlign:'center', marginTop:gap }}>
+      {(el.date||el.time) ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:dtF, color:textCol, marginTop:gap }}>
         {el.date}{el.date&&el.time? <span style={{ color:accentHex }}>{'  ·  '}</span> : null}{el.time}</div> : null}
     </div>;
   }

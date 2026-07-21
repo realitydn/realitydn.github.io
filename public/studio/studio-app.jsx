@@ -183,20 +183,20 @@ const TYPE_CAPS = {
   title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, lineHeight:{ def:0.84, min:0.7, max:1.5 }, subtitle:true, surface:true, shadow:true },
   tagline:  { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, orient:true, surface:true, shadow:true },
   info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:{ def:1.4, min:1, max:2 }, surface:true, shadow:true },
-  when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
-  cost:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
+  when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
+  cost:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
-  ticket:   { surface:true, shadow:true },
-  qr:       { surface:true, shadow:true },
-  lineup:   { list:true, rowSize:true, surface:true, shadow:true },
-  specials: { list:true, rowSize:true, surface:true, shadow:true },
-  sessions: { list:true, rowSize:true, surface:true, shadow:true },
-  agenda:   { list:true, rowSize:true, surface:true, shadow:true },
-  badge:    { surface:true, shadow:true },
+  ticket:   { align:true, surface:true, shadow:true },
+  qr:       { align:true, surface:true, shadow:true },
+  lineup:   { list:true, rowSize:true, align:true, surface:true, shadow:true },
+  specials: { list:true, rowSize:true, align:true, surface:true, shadow:true },
+  sessions: { list:true, rowSize:true, align:true, surface:true, shadow:true },
+  agenda:   { list:true, rowSize:true, align:true, surface:true, shadow:true },
+  badge:    { align:true, surface:true, shadow:true },
   wordmark: { surface:true, shadow:true },
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
-  matchup:  { surface:true, shadow:true },
+  matchup:  { align:true, surface:true, shadow:true },
   block:    { fillOwn:true, shadow:true },
   photo:    { media:true, shadow:true },
   logo:     { media:true, shadow:true },
@@ -870,10 +870,14 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
       {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
       {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
-      {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
+      {/* the text types already sit under their own Text/Name section; the list
+          and composite blocks don't, so give the dial a home of its own */}
+      {caps.align && !caps.size && <div className="rs-sech">Alignment</div>}
+      {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={inset.align} onChange={v=>update({align:v})} />}
       {caps.align && inset.applies &&
         <Slider label={'Edge offset · from the '+inset.side} val={inset.val} min={0} max={inset.max} step={1}
           onChange={v=>update({textInset:v})} suffix="px" />}
+      {caps.align && caps.list && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Aligns the heading and row text. Two-column rows (name · time) keep their columns — that spread is the layout.</div>}
       {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
         onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />}

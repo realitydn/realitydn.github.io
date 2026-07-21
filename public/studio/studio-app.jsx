@@ -185,7 +185,7 @@ const TYPE_CAPS = {
   info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:{ def:1.4, min:1, max:2 }, surface:true, shadow:true },
   when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
   cost:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
-  stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, surface:true, shadow:true, height:true },
+  stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
   ticket:   { surface:true, shadow:true },
   qr:       { surface:true, shadow:true },
@@ -695,6 +695,9 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   // Per-type default tracking, so the slider reads true for elements saved
   // before letter-spacing was configurable (matches the renderer's fallback).
   const lsDefault = (el.type==='when'||el.type==='cost')?0.16 : el.type==='host'?0.02 : el.type==='stamp'?0.04 : el.type==='title'?0.005 : 0;
+  // Companion to Align: how far off the aligned edge the text sits. Defaults to
+  // the type's baked-in padding, so 0 reads as (and is) flush to the box edge.
+  const inset = window.textInsetModel(el);
   const WEIGHTS = caps.font==='grot' ? WEIGHTS_GROT : WEIGHTS_MONT;
   const defWeight = (AP_DEF[el.type] && AP_DEF[el.type].props.weight) || (caps.font==='grot'?400:700);
   const sizeLabel = 'Font size'+(isOutput?' · '+activeLabel+' only':'');
@@ -868,6 +871,9 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
       {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
       {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align} onChange={v=>update({align:v})} />}
+      {caps.align && inset.applies &&
+        <Slider label={'Edge offset · from the '+inset.side} val={inset.val} min={0} max={inset.max} step={1}
+          onChange={v=>update({textInset:v})} suffix="px" />}
       {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
         onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />}

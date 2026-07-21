@@ -158,6 +158,27 @@ function shadowModel(el, theme){
   return { filterFam, bare, mode, on, dist, blur, ang, ck, alpha, dDef, bDef, maxDist, maxBlur, defOn };
 }
 
+/* ============================================================
+   TEXT INSET — the Align control's companion. Every aligned element
+   carries a baked-in horizontal padding; this surfaces it as the
+   slider's DEFAULT, so the number you read is the gap you get and 0
+   means flush to the box edge. Only left/right alignment can move —
+   a centred line is symmetric by definition, so the control hides
+   itself there. Renderer and control both read this, so the two
+   never drift.
+   ============================================================ */
+const TEXT_PAD = { title:26, tagline:24, info:22, host:28, stamp:16 };
+function textInsetModel(el){
+  const bare = !el.surface || el.surface==='none';
+  /* a bare title has no card to pad against — its letters already start at
+     the box edge, so 0 is the honest default there */
+  const def  = (el.type==='title' && bare) ? 0 : (TEXT_PAD[el.type] || 0);
+  const side = el.align==='left' ? 'left' : el.align==='right' ? 'right' : null;
+  return { def, side, applies: side!=null,
+           val: el.textInset!=null ? el.textInset : def,
+           max: Math.max(60, Math.round((el.w||400)*0.4)) };
+}
+
 /* centered 1:1 safe square for a format */
 function safeRect(format){
   const f = FORMATS[format];
@@ -318,7 +339,7 @@ const DEFAULTS = {
                     {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'}],
              rowSize:22, rowGap:16, headingSize:30, rowTracking:0.01, surface:'none', color:'fg' } },
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
-  stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04 } },
+  stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04, align:'center' } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
   /* Standalone REALITY wordmark — the canonical vector mark as a free,
      resizable element. Default box is on-aspect (512:84 ≈ 6.1:1); the mark
@@ -655,7 +676,7 @@ Object.assign(window, {
   PALETTE, ACCENTS, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
-  themeColors, contrastInk, surfaceStyle, shadowModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
+  themeColors, contrastInk, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
   resolveElements, mapElementToFormat, pointToMaster,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
 });

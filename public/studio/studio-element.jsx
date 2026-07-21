@@ -185,6 +185,22 @@ function seShadowCss(m, theme){
   const dx = Math.round(Math.cos(ang)*m.dist*10)/10, dy = Math.round(Math.sin(ang)*m.dist*10)/10;
   return `${dx}px ${dy}px ${m.blur}px ${col}`;
 }
+/* The Align control's companion: how far the text sits from the edge it is
+   aligned to. `vert` is the type's own vertical padding — pass it in and this
+   returns the element's COMPLETE padding, replacing the shorthand it used to
+   hard-code.
+   One shorthand, never a longhand beside it. React only re-applies style keys
+   that changed, so any shorthand/longhand pair silently desyncs: drop the
+   longhand (align left→right) and React clears paddingLeft to '' without
+   re-applying the unchanged shorthand, collapsing that side to 0; change the
+   shorthand (surface none→solid) and it clobbers the longhand that didn't
+   change. Emitting one always-complete string sidesteps both. */
+function sePad(el, vert){
+  const m = window.textInsetModel(el);
+  const l = m.side==='left'  ? m.val : m.def;
+  const r = m.side==='right' ? m.val : m.def;
+  return { padding: vert+'px '+r+'px '+vert+'px '+l+'px' };
+}
 /* drop-shadow form for the artwork family (photo / logo / block / weekly). */
 function seShadow(el, theme){
   const css = seShadowCss(window.shadowModel(el, theme), theme);
@@ -334,7 +350,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const container = Object.assign({
       width:'100%', height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box',
       alignItems: colAlign, justifyContent: split ? 'space-between' : 'center'
-    }, bare ? { padding:0 } : Object.assign({ padding:'16px 26px' }, surf, { boxShadow:autoBox }));
+    }, bare ? {} : Object.assign({}, surf, { boxShadow:autoBox }), sePad(el, bare?0:16));
     inner = (
       <div style={container}>
         <div style={{
@@ -359,13 +375,13 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
 
   if(el.type==='tagline'){
-    inner = <div style={box({ padding:'14px 24px' })}>
+    inner = <div style={box(sePad(el, 14))}>
       <div style={{ fontFamily:GROT, fontWeight:el.weight, fontSize:el.fontSize+'px', lineHeight:1.25, letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em', color:textCol, textAlign:el.align,
         writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='info'){
-    inner = <div style={box({ padding:'16px 22px', justifyContent:'flex-start' })}>
+    inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 16)))}>
       <div style={{ width:'100%', fontFamily:GROT, fontWeight:el.weight||400, fontSize:el.fontSize+'px',
         lineHeight:(el.lineHeight!=null?el.lineHeight:1.4), letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em',
         color:textCol, textAlign:el.align||'left' }}>
@@ -380,7 +396,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='host'){
-    inner = <div style={box({ padding:'18px 28px', alignItems: el.align==='left'?'flex-start':el.align==='right'?'flex-end':'center' })}>
+    inner = <div style={box(Object.assign({ alignItems: el.align==='left'?'flex-start':el.align==='right'?'flex-end':'center' }, sePad(el, 18)))}>
       {el.kicker && <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.2em', fontSize:(el.fontSize*0.38)+'px', color:kickerHex, marginBottom:6 }}>{el.kicker}</div>}
       <div style={{ fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.02)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align }}>{el.name}</div>
     </div>;
@@ -568,8 +584,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='stamp'){
-    inner = <div style={box({ alignItems:'center', padding:'8px 16px' })}>
-      <div style={{ fontFamily:MONT, fontWeight:el.weight||800, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.04)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:'center', width:'100%' }}>{el.text}</div>
+    inner = <div style={box(Object.assign({ alignItems:'center' }, sePad(el, 8)))}>
+      <div style={{ fontFamily:MONT, fontWeight:el.weight||800, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.04)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align||'center', width:'100%' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='badge'){

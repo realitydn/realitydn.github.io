@@ -274,7 +274,9 @@ function renderElement(page, el, ctx){
       const draw=(s, bx, by, col)=>{ if(!col) return;
         if(s.kind==='circle') ellipse(bx+s.cx*ms, by+s.cy*ms, s.r*ms, s.r*ms, { color:col });
         else if(s.kind==='roundrect') localPath(window.roundedRectPath(bx+s.x*ms, by+s.y*ms, s.w*ms, s.h*ms, s.r*ms), col, 0, 0);
-        else rect(bx+s.x*ms, by+s.y*ms, ms+0.3, ms+0.3, { color:col }); };
+        /* honour the shape's own w/h — square eye frames are 7/5/3 modules, not 1.
+           (+0.3pt overdraw kills hairline seams between cells, same as the screen's +0.03u) */
+        else rect(bx+s.x*ms, by+s.y*ms, s.w*ms+0.3, s.h*ms+0.3, { color:col }); };
       if(el.echo){ const bx=qx+(el.echoDx||6), by=top+(el.echoDy||6); g.shapes.forEach(s=> draw(s, bx, by, ghostCol(s.role))); }
       rect(qx, top, qrSize, qrSize, { color:lightCol });
       g.shapes.forEach(s=> draw(s, qx, top, realCol(s.role)));

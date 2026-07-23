@@ -26,7 +26,7 @@ function starterDoc(){
     ]
   };
 }
-function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements){ const doc=Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.15}, d); if(doc.storyScale===1.3) doc.storyScale=1.15; /* old default bled off the story sides; 1.15 keeps the column in-frame */ return doc; } } }catch(e){} return starterDoc(); }
+function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements){ const doc=Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.15}, d); if(doc.storyScale===1.3) doc.storyScale=1.15; /* old default bled off the story sides; 1.15 keeps the column in-frame */ if(doc.activeFormat!=='master' && !AP_FMT[doc.activeFormat]) doc.activeFormat='master'; /* retired view (e.g. the old FB cover) saved as active → back to Master */ return doc; } } }catch(e){} return starterDoc(); }
 
 /* Poster name → filename slug. Vietnamese-safe: đ/Đ are mapped by hand (they
    don't decompose under NFD), the rest of the diacritics strip normally.
@@ -673,10 +673,6 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           {doc.storyBoost!==false &&
             <Slider label="Scale" val={doc.storyScale||1.15} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
           <div className="rs-mini" style={{ marginTop:2 }}>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</div>
-        </React.Fragment>}
-        {isOutput && doc.activeFormat==='fbcover' && <React.Fragment>
-          <div className="rs-sech">Facebook event cover</div>
-          <div className="rs-mini" style={{ marginTop:2 }}>1.91:1 landscape. Keep the <b>title, date + logo inside the centre safe box</b> — it's near-square because Facebook crops the cover to a square on the mobile event page (the sides get cut). The outer side bands are bonus space for full-bleed art only. A full-bleed photo still fills the frame; the rest of your master scales in and centres in the box — drag pieces to refine.</div>
         </React.Fragment>}
         <div className="rs-sech">Canvas</div>
         <div className="rs-empty">

@@ -30,17 +30,6 @@ const FORMATS = {
   '5x7':  { w:1080, h:1512, label:'5:7', sub:'POSTER' },
   '1x1':  { w:1080, h:1080, label:'1:1', sub:'SQUARE' },
   '9x16': { w:1080, h:1920, label:'9:16', sub:'STORY' },
-  /* Facebook event cover — 1.91:1 landscape (1920×1005 on upload; 2× export
-     ≈ 2160×1130). Facebook crops this differently per surface: the desktop
-     event page + the page feed show ~the full 1.91:1, but the MOBILE event
-     page crops to a centre ~square (the sides get cut), and feeds shave a
-     little off the top/bottom. The guaranteed-visible area is the INTERSECTION
-     of those crops — a centred, near-square box (564×517 ≈ 1005×920 real), not
-     the old wide 62.5% band (676×353) that let content spill into the mobile
-     side-crop. `fit` scales the portrait master down to centre inside this
-     zone; full-bleed photos still fill the frame. The outer side bands are
-     bonus space for bleed art only. On-demand like A1 — out of the Save-All bundle. */
-  'fbcover': { w:1080, h:565, label:'FB', sub:'EVENT', fit:0.5, safe:{ x:258, y:24, w:564, h:517 } },
   'a4':   { w:1080, h:1527, label:'A4', sub:'PRINT' },
   /* Extra print view — same sheet shape as A4 (all A-series paper is 1:√2),
      but Save captures it at print resolution via the `print` descriptor below
@@ -66,7 +55,7 @@ const FORMATS = {
   'st-80x180': { w:1080, h:2430, label:'80×180', sub:'STANDEE', print:{ wmm:800, hmm:1800, dpi:150 } },
   'st-80x200': { w:1080, h:2700, label:'80×200', sub:'STANDEE', print:{ wmm:800, hmm:2000, dpi:150 } }
 };
-const OUTPUT_FORMATS = ['4x5','1x1','9x16','fbcover','a4'];   // 5x7 removed; a4 stays in Save-All but renders under "Print options", not as an inline tab
+const OUTPUT_FORMATS = ['4x5','1x1','9x16','a4'];   // 5x7 + FB cover removed (4:5 serves FB events); a4 stays in Save-All but renders under "Print options", not as an inline tab
 /* Extra on-demand print views — never in the Save-All bundle. A1 is the single
    XL sheet (its own toolbar button); these are the roll-up standee family,
    surfaced through the toolbar's STANDEE picker. */
@@ -204,7 +193,6 @@ function textInsetModel(el){
 /* centered 1:1 safe square for a format */
 function safeRect(format){
   const f = FORMATS[format];
-  if(f.safe) return f.safe;                 // format-defined zone (e.g. the FB cover centre band)
   const size = Math.min(f.w, f.h);
   return { x:(f.w-size)/2, y:(f.h-size)/2, w:size, h:size };
 }
@@ -449,11 +437,10 @@ function mapElementToFormat(el, masterFormat, format){
     const distBottom = mf.h - (el.y + el.h);
     r.y = tf.h - distBottom - el.h;
   } else {
-    // Align safe-zone CENTRES (not tops). Identical to top-alignment for every
-    // fit=1 format — their safe square is 1080 tall, same as Master — but it's
-    // what keeps the cluster vertically CENTRED in a shorter safe zone like the
-    // FB cover, where `fit` then scales it about the frame centre. x unchanged:
-    // the column width is a constant 1080 and both zones share centre x = 540.
+    // Align safe-zone CENTRES (not tops). Every current format's safe square is
+    // 1080 tall — same as Master — so this equals top-alignment today, but it's
+    // the form that stays correct if a short/landscape format ever returns.
+    // x unchanged: the column width is a constant 1080, centre x = 540 in both.
     r.y = el.y - (ms.y + ms.h/2) + (ts.y + ts.h/2);
   }
   return r;
@@ -476,23 +463,17 @@ function boostForStory(r, k, tf){
 function resolveElements(doc, format){
   const ovs = (doc.overrides && doc.overrides[format]) || {};
   const fmt = FORMATS[format];
-  const mw = FORMATS[doc.masterFormat].w;
   const story = (format==='9x16' && doc.storyBoost!==false) ? (doc.storyScale||1.15) : 1;
-  const fit = (fmt && fmt.fit) ? fmt.fit : 1;          // landscape covers scale the portrait master down to fit
   return doc.elements.map(el=>{
     let r;
     if(el.bleed && el.type==='photo'){
       /* full-bleed background: fill the format in every aspect (no manual
          resize per format). bleedBottom reserves a band for a full-width
-         Reality banner so the image stops at its top edge; landscape covers
-         fill edge-to-edge (their banner placement is bespoke). */
-      const reserve = fit!==1 ? 0 : (el.bleedBottom||0);
-      r = Object.assign({}, el, { x:0, y:0, w:fmt.w, h:fmt.h - reserve });
+         Reality banner so the image stops at its top edge. */
+      r = Object.assign({}, el, { x:0, y:0, w:fmt.w, h:fmt.h - (el.bleedBottom||0) });
     } else {
       r = mapElementToFormat(el, doc.masterFormat, format);
-      let scale = story!==1 ? story : fit;
-      if(fit!==1 && el.type==='photo' && el.w>=mw*0.98 && el.x<=mw*0.02) scale = 1;   // legacy bleeds (no flag) still fill on covers
-      if(scale!==1) r = boostForStory(r, scale, fmt);
+      if(story!==1) r = boostForStory(r, story, fmt);
     }
     const ov = ovs[el.id];
     if(ov) Object.assign(r, ov);
@@ -531,7 +512,7 @@ const TICKET = () => ({ type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p
 
 const TEMPLATES = [
   /* ---- WEEKLY · recurring events (Day · full-bleed + bottom banner) ---- */
-  { id:'weekly-classic', name:'Classic', group:'Weekly', theme:'day', accent:'blue', ov:{ '1x1':{ weekly:{ y:35 }, title:{ y:285 }, host:{ y:655 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
+  { id:'weekly-classic', name:'Classic', group:'Weekly', theme:'day', accent:'blue', ov:{ '1x1':{ weekly:{ y:35 }, title:{ y:285 }, host:{ y:655 } } }, els:[
     BLEED(),
     { type:'weekly', k:'weekly', x:90, y:250, w:900, h:220, p:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'19:00' } },
     { type:'title',  k:'title', x:90, y:520, w:900, h:340, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
@@ -539,7 +520,7 @@ const TEMPLATES = [
     BANNER(),
   ]},
   /* ---- SPORTS · match screenings (Night · full-bleed + standard ticket) ---- */
-  { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', ov:{ '1x1':{ matchup:{ y:110, h:700 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
+  { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', ov:{ '1x1':{ matchup:{ y:110, h:700 } } }, els:[
     BLEED(0, { contrast:1.32, brightness:-0.1 }),
     { type:'matchup', k:'matchup', x:90, y:300, w:900, h:760, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'SAT 14 JUN', time:'22:00', textColor:'cream' } },
     TICKET(),
@@ -568,13 +549,13 @@ const TEMPLATES = [
     { type:'host',  x:90, y:830, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
-  { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ title:{ y:130 }, when:{ y:710 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
+  { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ title:{ y:130 }, when:{ y:710 } } }, els:[
     BLEED(),
     { type:'title', k:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
     { type:'when',  k:'when', x:90, y:930, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
     BANNER(),
   ]},
-  { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ when:{ y:240 }, title:{ y:360 }, host:{ y:665 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
+  { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ when:{ y:240 }, title:{ y:360 }, host:{ y:665 } } }, els:[
     BLEED(),
     { type:'when',  k:'when', x:90, y:540, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
     { type:'title', k:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
@@ -595,7 +576,7 @@ const TEMPLATES = [
     { type:'lineup', x:90, y:500, w:620, h:420, p:{ heading:'This month', surface:'scrim', items:[{n:'Opening talk',t:'19:00'},{n:'Main session',t:'19:45'},{n:'Q & A',t:'20:45'}] } },
     BANNER(),
   ]},
-  { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
+  { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } } }, els:[
     BLEED(),
     { type:'title',    x:90, y:200, w:900, h:200, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
     { type:'sessions', k:'sessions', x:90, y:440, w:720, h:580, p:{ heading:'Next sessions', surface:'scrim', raw:'01 — Opening Night — 5.6\n02 — Director in Focus — 12.6\n03 — Late Classic — 19.6\n04 — Closing Film — 26.6' } },
@@ -621,7 +602,7 @@ const TEMPLATES = [
     { type:'specials',x:680,y:470, w:330, h:320, p:{ surface:'accent', heading:'All night', items:[{l:'House pour',p:'₫50k'},{l:'Beer + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}] } },
     TICKET(),
   ]},
-  { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', ov:{ '1x1':{ title:{ y:160 }, when:{ y:745 } }, 'fbcover':{ ticket:{ hidden:true } } }, els:[
+  { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', ov:{ '1x1':{ title:{ y:160 }, when:{ y:745 } } }, els:[
     BLEED(0, { treatment:'spot', spotBase:'duotone', contrast:1.3 }),
     { type:'title', k:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
     { type:'when',  k:'when', x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },

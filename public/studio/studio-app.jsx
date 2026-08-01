@@ -1452,10 +1452,11 @@ function App(){
     const claimed = {}; userTpls.forEach(t=>{ if(t && t.eventId) claimed[t.eventId]=1; });
     const horizon = new Date(Date.now()+7*3600*1000 + QUEUE_DAYS*86400000).toISOString().slice(0,10);
     const hasPoster = ev=>{ const p=(ev&&ev.posters)||{}; return !!(p.poster4x5||p.feed||p.square1x1||p.story); };
-    /* posterStaleAt (hub 0033): the series was RENAMED after this poster was
-       made — the artwork prints the old name. Such events re-queue even though
-       they have a poster; only a dismissal NEWER than the rename (a later
-       rename re-surfaces) or a poster sent this session clears them. */
+    /* posterStaleAt (hub 0033): something the ARTWORK prints changed after this
+       poster was made — the name, the host, the price, or the day/time — so the
+       poster now advertises the old one. Such events re-queue even though they
+       have a poster; only a dismissal NEWER than the change (a later change
+       re-surfaces) or a poster sent this session clears them. */
     const staleAt = ev=>{ const t=Date.parse((ev&&ev.posterStaleAt)||''); return isNaN(t)?0:t; };
     const done = ev=>{ const k=queueKey(ev); const st=staleAt(ev);
       if(st) return !!(queueSent[k] || (queueDismissed[k]||0) > st);
@@ -1845,8 +1846,8 @@ function App(){
                   <span className="ln" style={{ display:'flex', alignItems:'center', gap:7 }}>
                     {accent && <span style={{ width:9, height:9, borderRadius:'50%', flex:'none', background:AP_PAL[accent], border:'1px solid rgba(0,0,0,.25)' }} />}
                     <span>{ev.title_en || ev.title_vi || '(untitled)'}</span>
-                    {stale && <span title="The series was renamed — its current poster shows the old name."
-                      style={{ fontSize:9, fontWeight:700, letterSpacing:.4, textTransform:'uppercase', padding:'1px 5px', border:'1px solid currentColor', borderRadius:3, opacity:.7, flex:'none' }}>renamed</span>}
+                    {stale && <span title="The name, host, price or day/time changed after this poster was made — the artwork still shows the old one."
+                      style={{ fontSize:9, fontWeight:700, letterSpacing:.4, textTransform:'uppercase', padding:'1px 5px', border:'1px solid currentColor', borderRadius:3, opacity:.7, flex:'none' }}>out of date</span>}
                   </span>
                   {/* cost rides the feed (hub 0033) so the price makes it onto the poster */}
                   <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)}{ev.cost?' · '+ev.cost:''} · click for a starter</span>
@@ -1856,7 +1857,7 @@ function App(){
               );
             })}
             {queueFeed && !queueFeed.err && queueItems.length>0 &&
-              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter — saving it as a template, or sending the poster to the event, clears it from the queue. Renamed series re-appear (“renamed”) until a fresh poster is sent or you dismiss them.</div>}
+              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter — saving it as a template, or sending the poster to the event, clears it from the queue. Events whose name, host, price or day/time changed after the poster was made re-appear (“out of date”) until a fresh poster is sent or you dismiss them.</div>}
           </React.Fragment>}
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>
             <div className="rs-sech" onClick={()=>setTplOpen(o=>!o)}

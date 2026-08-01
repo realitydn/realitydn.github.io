@@ -1742,6 +1742,9 @@ function App(){
   }
   async function exportToEvent(eventId){
     if(exporting || !window.htmlToImage || !window.RCloud) return;
+    /* grab the picker's feed rows before closing it — the post-send message needs
+       to know whether the target belongs to a series */
+    const pickedFrom = (eventPicker && eventPicker.events) || [];
     setEventPicker(null);
     const prev = doc.activeFormat;
     setSelectedIds([]); setExporting(true);
@@ -1763,7 +1766,7 @@ function App(){
         style:{ transform:`translateY(${-by}px)`, left:'0px', top:'0px', margin:'0', position:'static' } };
       return window.htmlToImage.toBlob(node, opts);
     };
-    let ok = 0, failed = 0;
+    let ok = 0, failed = 0, wideHits = 0;
     try{
       for(const m of EVENT_SLOTS){
         const label = m.plate ? 'image-only' : AP_FMT[m.fmt].label;
@@ -1794,7 +1797,7 @@ function App(){
         }catch(e){ /* keep the raw render */ }
         setExportMsg('Uploading '+label+'…');
         const res = await window.RCloud.putPoster(eventId, m.slot, up.blob, up.type);
-        if(res && res.ok) ok++; else failed++;
+        if(res && res.ok){ ok++; if(res.seriesWide) wideHits++; } else failed++;
       }
       setDoc(d=>({ ...d, activeFormat:prev }));
       if(ok){
@@ -1803,8 +1806,19 @@ function App(){
         const k = hit ? queueKey(hit) : eventId;
         setQueueSent(s=>Object.assign({}, s, { [k]:1 }));
       }
-      setExportMsg(ok ? ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')) : 'Export to event failed');
-      await new Promise(r=>setTimeout(r, ok?1600:1800));
+      /* A send onto a series instance normally stamps the whole series (the hub
+         answers seriesWide). It DOESN'T when that instance is hand-edited — a
+         detached date keeps its own artwork, so the other dates quietly keep the
+         old poster. Say so, or it reads as "the update didn't work". */
+      const target = pickedFrom.find(e=>e.id===eventId)
+        || ((queueFeed && queueFeed.events) || []).find(e=>e.id===eventId);
+      const oneDateOnly = ok>0 && wideHits===0 && !!(target && target.seriesId);
+      setExportMsg(ok
+        ? (oneDateOnly
+            ? 'Sent to THIS DATE only — the rest of the series keeps its old poster'
+            : ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')))
+        : 'Export to event failed');
+      await new Promise(r=>setTimeout(r, ok?(oneDateOnly?3400:1600):1800));
     }catch(err){
       console.error('export-to-event failed', err);
       setPlateOnly(false);
@@ -2044,9 +2058,16 @@ function App(){
    Reuses the studio's overlay/modal CSS atoms; fully additive UI. ---- */
 function EventPickerModal({ picker, onPick, onClose, onRetry }){
   /* When the poster came off "In queue" (doc.eventRef), that event is pinned
-     up top as the obvious one-click send; everything else lists below it. */
-  const origin = picker.origin || null;
-  const originEv = origin ? picker.events.find(e=>e.id===origin.id) : null;
+     up top as the obvious one-click send; everything else lists below it.
+     ONLY when the ref still names a live upcoming event: a saved template keeps
+     the eventRef it was made with, so a weekly series' template can point at an
+     instance from months ago. Pinning that sent Modern Jive's new poster to its
+     14.07 date — long past, and detached, so the send touched that one row and
+     the series kept the old artwork. The feed is loaded `from: today`, so
+     "not in picker.events" is exactly "past or gone". */
+  const originRef = picker.origin || null;
+  const originEv = originRef ? picker.events.find(e=>e.id===originRef.id) : null;
+  const origin = originEv ? originRef : null;
   const rest = origin ? picker.events.filter(e=>e.id!==origin.id) : picker.events;
   const whenOf = iso => (iso||'').slice(0,16).replace('T',' ');
   return (

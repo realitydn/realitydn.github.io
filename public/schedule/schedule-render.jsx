@@ -143,11 +143,13 @@ function timeTail(ev){
 
 /* ---- core day measurement (estimate) — font/lead/useShort explicit so both the
    auto-fit type ladder and the per-day size ladder measure through one path ---- */
-function measureDayAt(doc, date, channel, look, font, lead, useShort, rowAreaW){
+/* evsOverride renders only part of a day — set when a heavy day is continued
+   across a two-column break (see bestSplit). null = the whole day. */
+function measureDayAt(doc, date, channel, look, font, lead, useShort, rowAreaW, evsOverride){
   const g = GEOM[channel];
   const rowH = font*lead;
   const info = r_dayInfo(doc, date);
-  const evs = r_eventsOn(doc, date, channel);
+  const evs = evsOverride || r_eventsOn(doc, date, channel);
   const tW = timeColW(font);
   let rows = 0;
   if(info.status==='closed'){ rows = rowH*1.25; }
@@ -168,9 +170,9 @@ function measureDayAt(doc, date, channel, look, font, lead, useShort, rowAreaW){
   if(look==='stack')  return stackBannerH(font) + font*0.32 + rows;
   return gridStripH(font) + gridPad(font)*2 + rows;   /* grid: cell content height */
 }
-function measureDay(doc, date, channel, look, level, rowAreaW){
+function measureDay(doc, date, channel, look, level, rowAreaW, evsOverride){
   const g = GEOM[channel];
-  return measureDayAt(doc, date, channel, look, g.font[level]*lookF(look), g.lead[level], level>=3, rowAreaW);
+  return measureDayAt(doc, date, channel, look, g.font[level]*lookF(look), g.lead[level], level>=3, rowAreaW, evsOverride);
 }
 function rowAreaWidth(channel, look, contentW){
   const g = GEOM[channel];
@@ -237,11 +239,12 @@ function resolveFit(doc, dates, channel, look, geomBox){
         const cellH = (availH - (rowsN-1)*gridGapFor(channel)) / rowsN;
         const r = fitGridDates(doc, dates, channel, L, geomBox.cellW, cellH);
         if(r.ok) return { level:L, denIdx:den, fits:true, availH, cellH };
-      } else if(geomBox.colsList){
-        for(const cols of geomBox.colsList){
-          const colOK = cols.every(col=>!col.length || fitStackedDates(doc, col, channel, look, L, geomBox.colW) <= availH);
-          if(colOK) return { level:L, denIdx:den, fits:true, availH, colsUsed:cols };
-        }
+      } else if(geomBox.twoCol){
+        /* re-balance at every level: a bigger type may only fit one split, a
+           smaller one may fit several — take the evenest that clears the box */
+        const cols = bestSplit(doc, channel, look, L, geomBox.colW);
+        const colOK = cols.every(col=>!col.length || fitSegments(doc, col, channel, look, L, geomBox.colW) <= availH);
+        if(colOK) return { level:L, denIdx:den, fits:true, availH, colsUsed:cols };
       } else {
         if(fitStackedDates(doc, dates, channel, look, L, geomBox.boxW) <= availH)
           return { level:L, denIdx:den, fits:true, availH };
@@ -380,40 +383,78 @@ function computeCapacity(doc, channelId){
     } else {
       const colW = (contentW - g.colGap)/2;
       mark(dates, resolveFit(doc, dates, ch.id, look,
-        { boxH, hasFooter:true, legend, colsList:colVariants(doc, ch.id), colW }));
+        { boxH, hasFooter:true, legend, twoCol:true, colW }));
     }
   }
   return out;
 }
 
-/* two-column splits for print / WA: prefer the carousel split, fall back to a
-   balanced split when the carousel's heavy side won't fit the column */
-function balancedSplit(doc, channelId){
-  const dates = r_rangeDates(doc.range);
-  if(dates.length<=3) return [dates, []];
-  /* pick the boundary that minimises the HEAVIER column (rows + per-day overhead) */
-  const w = dates.map(d=>Math.max(1, r_eventsOn(doc, d, channelId).length) + 0.8);
-  let best = 0, bestMax = Infinity;
-  for(let i=0;i<dates.length-1;i++){
-    const left = w.slice(0,i+1).reduce((a,b)=>a+b,0);
-    const right = w.slice(i+1).reduce((a,b)=>a+b,0);
-    const m = Math.max(left, right);
-    if(m < bestMax){ bestMax = m; best = i; }
-  }
-  return [dates.slice(0,best+1), dates.slice(best+1)];
+/* ---- two-column splits for print / WA ---------------------------------------
+   A column is a list of SEGMENTS. A segment is a whole day, or — when one heavy
+   day is a big share of the week — a slice of one day's events, continued across
+   the break with the day block repeated and marked CONT.
+   Balancing on MEASURED heights (not event counts) is what makes this honest:
+   a banner row, a two-line title and a CLOSED day all cost heights that a count
+   can't see, and in Ledger every day owes the block floor whether it holds one
+   event or five. */
+function seg(date, evs, cut){ return { date, evs:evs||null, cut:cut||null }; }
+const MIN_SLICE = 2;        /* never orphan fewer than this many rows either side */
+const SLICE_GAIN = 0.08;    /* slice only if it beats the best clean break by 8% of the column */
+
+function fitSegments(doc, segs, channel, look, level, colW){
+  const g = GEOM[channel];
+  const raw = rowAreaWidth(channel, look, colW);
+  const gap = dayGapFor(g, look);
+  let total = 0;
+  segs.forEach((s,i)=>{
+    total += measureDay(doc, s.date, channel, look, level, raw, s.evs) + (i<segs.length-1 ? gap : 0);
+  });
+  return total;
 }
-function twoColSplit(doc, channelId){
-  const dates = r_rangeDates(doc.range);
-  if(dates.length<=3) return [dates, []];
-  let idx = -1;
-  if(doc.splits.length){ idx = dates.indexOf(doc.splits[0]); }
-  if(idx<0 || idx>=dates.length-1) return balancedSplit(doc, channelId);
-  return [dates.slice(0,idx+1), dates.slice(idx+1)];
+/* every legal break: after day i (clean), or inside day i after k of its events */
+function breakPoints(doc, dates, channelId){
+  const pts = [];
+  for(let i=0;i<dates.length-1;i++) pts.push({ i, k:null });
+  dates.forEach((d,i)=>{
+    if(r_dayInfo(doc, d).status==='closed') return;      /* a closed day is one row — never sliced */
+    const n = r_eventsOn(doc, d, channelId).length;
+    for(let k=MIN_SLICE; k<=n-MIN_SLICE; k++) pts.push({ i, k });
+  });
+  return pts;
 }
-function colVariants(doc, channelId){
-  const a = twoColSplit(doc, channelId);
-  const b = balancedSplit(doc, channelId);
-  return (a[0].length===b[0].length) ? [a] : [a, b];
+function segmentsAt(doc, dates, channelId, pt){
+  const A = [], B = [];
+  dates.forEach((d,i)=>{
+    if(pt.k==null){ (i<=pt.i ? A : B).push(seg(d)); return; }
+    if(i < pt.i){ A.push(seg(d)); return; }
+    if(i > pt.i){ B.push(seg(d)); return; }
+    const evs = r_eventsOn(doc, d, channelId);
+    A.push(seg(d, evs.slice(0, pt.k), 'head'));
+    B.push(seg(d, evs.slice(pt.k), 'tail'));
+  });
+  return [A, B];
+}
+/* the break that leaves the two columns most even at this type level */
+function bestSplit(doc, channelId, look, level, colW){
+  const dates = r_rangeDates(doc.range);
+  if(dates.length<=1) return [dates.map(d=>seg(d)), []];
+  const tallest = pt=>{
+    const cols = segmentsAt(doc, dates, channelId, pt);
+    if(!cols[0].length || !cols[1].length) return null;
+    return { cols, tall:Math.max(fitSegments(doc, cols[0], channelId, look, level, colW),
+                                 fitSegments(doc, cols[1], channelId, look, level, colW)) };
+  };
+  let clean = null, sliced = null;
+  breakPoints(doc, dates, channelId).forEach(pt=>{
+    const r = tallest(pt); if(!r) return;
+    const slot = pt.k==null ? 'clean' : 'sliced';
+    const cur = slot==='clean' ? clean : sliced;
+    if(!cur || r.tall < cur.tall){ if(slot==='clean') clean = r; else sliced = r; }
+  });
+  if(!clean) return sliced ? sliced.cols : [dates.map(d=>seg(d)), []];
+  /* a clean day boundary always wins unless slicing is a real improvement */
+  const gain = SLICE_GAIN * Math.max(clean.tall, 1);
+  return (sliced && sliced.tall < clean.tall - gain) ? sliced.cols : clean.cols;
 }
 
 /* ---- measured overflow bump: estimate missed → tighten live ---- */
@@ -554,13 +595,15 @@ function ClosedNote({ note, font, center }){
   );
 }
 
-/* ---- LEDGER day group: color block rail + rows ---- */
-function LedgerDay({ doc, date, channel, font, lead, useShort }){
+/* ---- LEDGER day group: color block rail + rows ----
+   evs/cut are set only when a two-column break falls inside this day: 'head' is
+   the part before the break, 'tail' the part carried into the next column. */
+function LedgerDay({ doc, date, channel, font, lead, useShort, evs:evsOverride, cut }){
   const T = React.useContext(ThemeCtx);
   const g = GEOM[channel];
   const w = r_wd(date);
   const info = r_dayInfo(doc, date);
-  const evs = r_eventsOn(doc, date, channel);
+  const evs = evsOverride || r_eventsOn(doc, date, channel);
   const tW = timeColW(font);
   const size = g.block;
   return (
@@ -570,6 +613,8 @@ function LedgerDay({ doc, date, channel, font, lead, useShort }){
         justifyContent:'center', paddingLeft:size*0.13, boxSizing:'border-box' }}>
         <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:size*0.30, lineHeight:1, letterSpacing:'.01em' }}>{R_DA[w]}</div>
         <div style={{ fontFamily:R_MONT, fontWeight:500, fontSize:size*0.18, marginTop:size*0.07 }}>{r_dshort(date)}</div>
+        {cut && <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:size*0.125, letterSpacing:'.1em',
+          marginTop:size*0.055, opacity:.82 }}>{cut==='head' ? 'CONT. →' : 'CONT.'}</div>}
       </div>
       <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column',
         justifyContent: evs.length<3 && info.status!=='closed' ? 'center' : 'flex-start' }}>
@@ -583,12 +628,12 @@ function LedgerDay({ doc, date, channel, font, lead, useShort }){
 }
 
 /* ---- STACK day group: full-width color banner + rows beneath ---- */
-function StackDay({ doc, date, channel, font, lead, useShort }){
+function StackDay({ doc, date, channel, font, lead, useShort, evs:evsOverride, cut }){
   const T = React.useContext(ThemeCtx);
   const g = GEOM[channel];
   const w = r_wd(date);
   const info = r_dayInfo(doc, date);
-  const evs = r_eventsOn(doc, date, channel);
+  const evs = evsOverride || r_eventsOn(doc, date, channel);
   const tW = timeColW(font);
   const bH = stackBannerH(font);
   return (
@@ -602,7 +647,8 @@ function StackDay({ doc, date, channel, font, lead, useShort }){
         {info.status==='closed'
           ? <span style={{ fontFamily:R_MONT, fontWeight:600, fontSize:font*0.78, letterSpacing:'.08em' }}>{info.note||'CLOSED'}</span>
           : <span style={{ fontFamily:R_MONT, fontWeight:600, fontSize:font*0.72, letterSpacing:'.14em', opacity:.8 }}>
-              {evs.length ? String(evs.length).padStart(2,'0')+' EVENTS' : ''}</span>}
+              {cut ? (cut==='head' ? 'CONT. →' : 'CONT.')
+                   : (evs.length ? String(evs.length).padStart(2,'0')+' EVENTS' : '')}</span>}
       </div>
       {info.status!=='closed' &&
         <div style={{ paddingTop:font*0.32, paddingLeft:font*0.2 }}>
@@ -884,13 +930,13 @@ function CarouselPart({ doc, channelId, partIndex, onFitReport }){
     isFinal ? <CarouselFooter doc={doc} channel={channelId} legend={legend} denIdx={denIdx} /> : null);
 }
 
-function ColumnStack({ doc, dates, channelId, look, level, colW, g }){
+function ColumnStack({ doc, segs, channelId, look, level, colW, g }){
   const font = fontFor(channelId, look, level), lead = g.lead[level], useShort = level>=3;
   return (
     <div style={{ width:colW, display:'flex', flexDirection:'column', rowGap:dayGapFor(g, look), minWidth:0 }}>
-      {dates.map(date=> look==='stack'
-        ? <StackDay key={date} doc={doc} date={date} channel={channelId} font={font} lead={lead} useShort={useShort} />
-        : <LedgerDay key={date} doc={doc} date={date} channel={channelId} font={font} lead={lead} useShort={useShort} />)}
+      {segs.map((s,i)=> look==='stack'
+        ? <StackDay key={s.date+'-'+i} doc={doc} date={s.date} evs={s.evs} cut={s.cut} channel={channelId} font={font} lead={lead} useShort={useShort} />
+        : <LedgerDay key={s.date+'-'+i} doc={doc} date={s.date} evs={s.evs} cut={s.cut} channel={channelId} font={font} lead={lead} useShort={useShort} />)}
     </div>
   );
 }
@@ -950,8 +996,8 @@ function PrintSheet({ doc, onFitReport }){
   } else {
     colW = (contentW - g.colGap)/2;
     est = resolveFit(doc, dates, 'print', look,
-      { boxH, hasFooter:true, legend, colsList:colVariants(doc, 'print'), colW });
-    cols = est.colsUsed || twoColSplit(doc, 'print');
+      { boxH, hasFooter:true, legend, twoCol:true, colW });
+    cols = est.colsUsed || bestSplit(doc, 'print', look, g.font.length-1, colW);
   }
   const sig = JSON.stringify([doc, 'print']);
   const floorL = g.font.length-1;
@@ -972,8 +1018,8 @@ function PrintSheet({ doc, onFitReport }){
                 gap={g.dayGap*0.8} legend={legend} onOverflow={poke}
                 withMeta={dates.length%2===1} />
             : <div style={{ flex:1, minHeight:0, display:'flex', gap:g.colGap }}>
-                <ColumnStack doc={doc} dates={cols[0]} channelId="print" look={look} level={level} colW={colW} g={g} />
-                {cols[1].length ? <ColumnStack doc={doc} dates={cols[1]} channelId="print" look={look} level={level} colW={colW} g={g} /> : null}
+                <ColumnStack doc={doc} segs={cols[0]} channelId="print" look={look} level={level} colW={colW} g={g} />
+                {cols[1].length ? <ColumnStack doc={doc} segs={cols[1]} channelId="print" look={look} level={level} colW={colW} g={g} /> : null}
               </div>}
         </div>
         <PrintFooter doc={doc} legend={legend} denIdx={look==='grid' && dates.length%2===1 ? Math.max(denIdx,1) : denIdx} T={T} />
@@ -997,8 +1043,8 @@ function WACard({ doc, onFitReport }){
   } else {
     colW = (contentW - g.colGap)/2;
     est = resolveFit(doc, dates, 'wa', look,
-      { boxH, hasFooter:true, legend, colsList:colVariants(doc, 'wa'), colW });
-    cols = est.colsUsed || twoColSplit(doc, 'wa');
+      { boxH, hasFooter:true, legend, twoCol:true, colW });
+    cols = est.colsUsed || bestSplit(doc, 'wa', look, g.font.length-1, colW);
   }
   const sig = JSON.stringify([doc, 'wa']);
   const floorL = g.font.length-1;
@@ -1019,8 +1065,8 @@ function WACard({ doc, onFitReport }){
                 gap={g.dayGap*0.8} legend={legend} onOverflow={poke}
                 withMeta={dates.length%2===1} />
             : <div style={{ flex:1, minHeight:0, display:'flex', gap:g.colGap }}>
-                <ColumnStack doc={doc} dates={cols[0]} channelId="wa" look={look} level={level} colW={colW} g={g} />
-                {cols[1].length ? <ColumnStack doc={doc} dates={cols[1]} channelId="wa" look={look} level={level} colW={colW} g={g} /> : null}
+                <ColumnStack doc={doc} segs={cols[0]} channelId="wa" look={look} level={level} colW={colW} g={g} />
+                {cols[1].length ? <ColumnStack doc={doc} segs={cols[1]} channelId="wa" look={look} level={level} colW={colW} g={g} /> : null}
               </div>}
         </div>
         {look!=='grid' &&
@@ -1396,6 +1442,6 @@ function partSize(channelId, dailyVariant){
 
 Object.assign(window, {
   CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST, PALETTES, COVER_STYLES,
-  computeCapacity, twoColSplit, resolveFit, computeStackSizing, coverInfo, dailySizing,
+  computeCapacity, bestSplit, resolveFit, computeStackSizing, coverInfo, dailySizing,
   PartCanvas, partCount, partSize, ArrowChip,
 });

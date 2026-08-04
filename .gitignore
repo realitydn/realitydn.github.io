@@ -4,6 +4,24 @@ node_modules/
 # Build output
 dist/
 
+# Studio JSX compiled by scripts/build-studios.mjs (prebuild). Listed one by
+# one on purpose: these folders also hold hand-written .js (riso-engine.js,
+# studio-store.js, cloud-client.js, print-store.js, vendor/*) that MUST stay
+# tracked, so a blanket public/*/*.js would delete real source from the repo.
+# The .jsx beside each of these is the file you edit.
+public/studio/studio-data.js
+public/studio/studio-element.js
+public/studio/studio-canvas.js
+public/studio/studio-app.js
+public/schedule/schedule-data.js
+public/schedule/schedule-render.js
+public/schedule/schedule-app.js
+public/print/print-data.js
+public/print/print-element.js
+public/print/print-canvas.js
+public/print/print-export.js
+public/print/print-app.js
+
 # Vite's transient config-loader artifacts (left behind if a build is killed)
 vite.config.js.timestamp-*.mjs
 

@@ -10,6 +10,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { serveCompiledJsx } = require('./studio-jsx.cjs');
 
 // Default 4503 (what "Print Studio.bat" expects). Honour PORT when set so a
 // preview server can run on an assigned free port without colliding.
@@ -53,6 +54,10 @@ const server = http.createServer((req, res) => {
     res.writeHead(403);
     return res.end('Forbidden');
   }
+
+  // index.html asks for .js; the app files are .jsx on disk. Compile on demand
+  // so editing a .jsx and hitting refresh is all it takes — no build step.
+  if (serveCompiledJsx(filePath, res)) return;
 
   fs.readFile(filePath, (err, data) => {
     if (err) {

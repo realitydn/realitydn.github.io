@@ -33,6 +33,13 @@
 /apple-touch-icon.png
   Cache-Control: public, max-age=604800
 
+# Internal staff drafts. Unlisted pages carry a hard noindex at the edge as well
+# as in the document — a meta tag alone loses to a link shared into a crawler's
+# path. Also absent from sitemap.xml and Disallowed in robots.txt.
+/sidework-points/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: public, max-age=0, must-revalidate
+
 # Sitemap + robots + llms.txt — check every hour so updates propagate quickly.
 /sitemap.xml
   Cache-Control: public, max-age=3600

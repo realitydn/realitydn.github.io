@@ -1,6 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /src/
+# Internal staff drafts — unlisted, kept out of the sitemap and the nav too.
+Disallow: /sidework-points/
 
 # AI assistants and their crawlers are explicitly welcome — REALITY wants to
 # be discoverable and quotable. A structured summary lives at /llms.txt.

@@ -80,47 +80,90 @@ async function prerender() {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
+  // Each route renders in isolation. Previously a single failure threw out of
+  // the loop, so every route after it silently never shipped — one slow page
+  // could cost the other fourteen.
+  const failed = [];
+
   for (const route of ROUTES) {
-    const page = await browser.newPage();
     const url = `http://localhost:${PORT}${route}`;
-
-    // The static capture is always Day (cream) — the canonical first
-    // impression for crawlers and first paint. Without this, a machine whose
-    // headless Chrome reports prefers-color-scheme: dark would bake
-    // data-theme="dark" into the shipped HTML. Real visitors still get Night
-    // via the inline theme bootstrap (saved preference / OS setting).
-    await page.emulateMediaFeatures([
-      { name: 'prefers-color-scheme', value: 'light' },
-    ]);
-
     console.log(`  → Rendering ${route}`);
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 });
 
-    // Wait a beat for any React effects to settle
-    await new Promise((r) => setTimeout(r, 500));
+    // Two attempts. A first-pass timeout is nearly always a slow upstream
+    // asset (posters), not a broken page, so the retry gets a longer budget
+    // rather than failing the route outright.
+    let saved = false;
+    for (const [attempt, timeout] of [[1, 20000], [2, 60000]]) {
+      const page = await browser.newPage();
+      try {
+        // The static capture is always Day (cream) — the canonical first
+        // impression for crawlers and first paint. Without this, a machine
+        // whose headless Chrome reports prefers-color-scheme: dark would bake
+        // data-theme="dark" into the shipped HTML. Real visitors still get
+        // Night via the inline theme bootstrap (saved preference / OS setting).
+        await page.emulateMediaFeatures([
+          { name: 'prefers-color-scheme', value: 'light' },
+        ]);
 
-    const html = await page.content();
+        await page.goto(url, { waitUntil: 'networkidle0', timeout });
 
-    // Write the rendered HTML to the right place in dist/
-    const outPath = route === '/'
-      ? join(DIST, 'index.html')
-      : join(DIST, route, 'index.html');
+        // Wait a beat for any React effects to settle
+        await new Promise((r) => setTimeout(r, 500));
 
-    const outDir = dirname(outPath);
-    if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+        const html = await page.content();
 
-    writeFileSync(outPath, html, 'utf-8');
-    console.log(`    ✓ Saved ${outPath.replace(DIST, 'dist')}`);
+        // Write the rendered HTML to the right place in dist/
+        const outPath = route === '/'
+          ? join(DIST, 'index.html')
+          : join(DIST, route, 'index.html');
 
-    await page.close();
+        const outDir = dirname(outPath);
+        if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+
+        writeFileSync(outPath, html, 'utf-8');
+        console.log(`    ✓ Saved ${outPath.replace(DIST, 'dist')}`);
+        saved = true;
+      } catch (err) {
+        console.warn(`    ! attempt ${attempt} failed after ${timeout}ms — ${err.message}`);
+      } finally {
+        await page.close().catch(() => {});
+      }
+      if (saved) break;
+    }
+
+    if (!saved) failed.push(route);
   }
 
   await browser.close();
   server.close();
+
+  if (failed.length) {
+    // Loud on purpose. A missing route does NOT 404: public/_redirects has a
+    // `/* /index.html 200` catch-all, so an unrendered /vn quietly serves the
+    // English homepage with a 200. Nothing alarms, nothing errors — the only
+    // symptom is crawlers indexing the wrong language. That silence is why
+    // this used to exit 0 and ship a partial site looking perfectly healthy.
+    console.error(`\n❌ ${failed.length} of ${ROUTES.length} routes did not pre-render:\n`);
+    for (const r of failed) console.error(`     ✗ ${r || '/'}`);
+    console.error(
+      '\n   These would deploy as the English homepage (200, no 404) and be\n' +
+      '   indexed as such. Refusing to ship a partial pre-render.\n' +
+      '   Set ALLOW_PARTIAL_PRERENDER=1 to deploy anyway.\n'
+    );
+    return failed;
+  }
+
   console.log('\n✅ Pre-rendering complete.\n');
+  return [];
 }
 
-prerender().catch((err) => {
-  console.error('Pre-rendering failed:', err);
-  process.exit(0); // Non-fatal — SPA still works without pre-rendered HTML
-});
+prerender()
+  .then((failed) => {
+    if (failed.length && !process.env.ALLOW_PARTIAL_PRERENDER) process.exit(1);
+  })
+  .catch((err) => {
+    // Reaching here means the run itself broke (browser/server), not a single
+    // route — dist/ has no reliable pre-render at all, so don't ship it.
+    console.error('\n❌ Pre-rendering aborted:', err);
+    if (!process.env.ALLOW_PARTIAL_PRERENDER) process.exit(1);
+  });

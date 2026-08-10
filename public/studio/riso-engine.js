@@ -615,7 +615,11 @@
 
   /* 12 · CONTOUR — the photo as a topographic map: tonal band boundaries
         traced as ink lines over paper, a faint accent tint, or the full ramp.
-        params: bands, contourWeight, contourFill (paper|tint|bands) */
+        params: bands, contourWeight, contourFill (paper|tint|bands)
+          contourSmooth — pre-blur (design px) melting detail into clean loops
+          contourTint   — strength of the accent tint under the 'tint' fill
+          contourLine (auto|ink|black) / contourInk — what the lines print in
+          contourSlip / contourSlipAngle — linework off-register from the fill */
   function contour(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const n=Math.max(2,o.bands|0);
@@ -623,21 +627,23 @@
     const stops = o.paper==='day'
       ? [ inkBaseRGB(o), accent, lerp(accent,papC,0.55), papC ]
       : [ papC, lerp(papC,accent,0.5), accent, lerp(accent,[255,251,241],0.6) ];
+    const smoothPx = o.contourSmooth!=null ? o.contourSmooth : 2.2;
     /* fill at full resolution (smooth ground) */
-    const Lf=stretch(lumBuffer(w,h,o.contrast*1.1, 2.2));   // pre-smoothed so bands stay clean
+    const Lf=stretch(lumBuffer(w,h,o.contrast*1.1, smoothPx));   // pre-smoothed so bands stay clean
     const fill=o.contourFill||'tint';
+    const tintHi=o.contourTint!=null?o.contourTint:0.19, tintLo=tintHi*0.32;
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<Lf.length;p++,i+=4){
       let c;
       if(fill==='bands') c=rampSample(stops, n===1?0:Math.min(n-1,(Lf[p]*n)|0)/(n-1));
-      else if(fill==='tint') c=lerp(papC, accent, 0.06+0.13*(o.paper==='night'? Lf[p] : 1-Lf[p]));
+      else if(fill==='tint') c=lerp(papC, accent, tintLo+(tintHi-tintLo)*(o.paper==='night'? Lf[p] : 1-Lf[p]));
       else c=papC;
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
     }
     cx.putImageData(out,0,0);
     /* boundary lines traced at the fixed detection resolution, scaled to fit */
     const aw=detW(w), ah=detH(w,h);
-    const La=stretch(lumBuffer(aw,ah,o.contrast*1.1, 2.2));
+    const La=stretch(lumBuffer(aw,ah,o.contrast*1.1, smoothPx));
     const idx=new Uint8Array(aw*ah);
     for(let p=0;p<La.length;p++) idx[p]=Math.min(n-1,(La[p]*n)|0);
     let mask=new Uint8Array(aw*ah);
@@ -646,28 +652,67 @@
       if(idx[p]!==idx[p+1] || idx[p]!==idx[p+aw]) mask[p]=1;
     }
     mask=dilateMask(mask,aw,ah,Math.max(1,Math.round((o.contourWeight||2)*(aw/520))));
-    const lineC = (fill==='bands')? inkBaseRGB(o) : accent;   // ramp fill wants mono lines
+    const lineMode=o.contourLine||'auto';
+    const lineC = lineMode==='black' ? inkBaseRGB(o)
+                : lineMode==='ink'   ? inkRGB(o.contourInk||o.ink)
+                : (fill==='bands')? inkBaseRGB(o) : accent;   // auto: ramp fill wants mono lines
+    /* the linework can slip off-register from the fills — same grammar as the
+       cutout's outline slip (design px on the 520 grid) */
+    const sa=(o.contourSlipAngle!=null?o.contourSlipAngle:45)*Math.PI/180, sm=(o.contourSlip||0)*(w/520);
     cx.imageSmoothingEnabled=true;
-    cx.drawImage(maskCanvas(mask,aw,ah,lineC), 0,0, w,h);
+    cx.drawImage(maskCanvas(mask,aw,ah,lineC), Math.round(Math.cos(sa)*sm), Math.round(Math.sin(sa)*sm), w,h);
   }
 
-  /* 13 · EDGES — ink linework: Sobel edges printed in ink over paper, a pale
-        duotone, or the raw photo. params: edgeDetail, edgeThick,
-        edgeBackdrop (paper|duotone|image), inkMode */
+  /* drop 4-connected mask blobs smaller than minPx cells — sweeps the salt
+     noise Sobel leaves on skin and sky; pushed hard it keeps only the major
+     lines. Runs pre-dilate on the fixed detection grid, so one threshold
+     means the same clean-up at every export width. */
+  function despeckleMask(mask,gw,gh,minPx){
+    const N=gw*gh, seen=new Uint8Array(N), stack=new Int32Array(N), comp=new Int32Array(N);
+    const out=new Uint8Array(N);
+    for(let p0=0;p0<N;p0++){
+      if(!mask[p0]||seen[p0]) continue;
+      let top=0,cn=0; seen[p0]=1; stack[top++]=p0;
+      while(top){
+        const p=stack[--top]; comp[cn++]=p;
+        const x=p%gw;
+        if(x>0    && mask[p-1]  && !seen[p-1]){  seen[p-1]=1;  stack[top++]=p-1; }
+        if(x<gw-1 && mask[p+1]  && !seen[p+1]){  seen[p+1]=1;  stack[top++]=p+1; }
+        if(p>=gw  && mask[p-gw] && !seen[p-gw]){ seen[p-gw]=1; stack[top++]=p-gw; }
+        if(p<N-gw && mask[p+gw] && !seen[p+gw]){ seen[p+gw]=1; stack[top++]=p+gw; }
+      }
+      if(cn>=minPx){ for(let i=0;i<cn;i++) out[comp[i]]=1; }
+    }
+    return out;
+  }
+
+  /* 13 · EDGES — ink linework: Sobel edges printed in ink over paper, a solid
+        ink field, a pale duotone, or the raw photo.
+        params: edgeDetail, edgeThick, edgeBackdrop (paper|ink|duotone|image), inkMode
+          edgeInk    — the line ink (default: the main ink)
+          fieldInk   — 'ink' backdrop colour; its lines knock out in paper
+          edgeWash   — paper wash over duotone/image (null = 0.5 duotone, 0 image)
+          edgeSmooth — pre-blur before detection: fewer, more confident lines
+          edgeClean  — sweep specks smaller than this many detection cells
+          edgeEcho / edgeEchoAngle / edgeEchoInk — double-strike: the same
+          linework re-struck off-register in a second ink under the main pass */
   function edges(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    const backdrop=o.edgeBackdrop||'paper';
+    const wash=o.edgeWash!=null?o.edgeWash:(backdrop==='duotone'?0.5:0);
     /* backdrop at full resolution (stays crisp) */
-    if(o.edgeBackdrop==='image'){ untreated(cv, Object.assign({},o,{transparent:false})); }
-    else if(o.edgeBackdrop==='duotone'){
-      duotone(cv,o);
-      cx.save(); cx.globalAlpha=0.5; cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); cx.restore();   // washed pale so the line does the talking
-    }
+    if(backdrop==='image'){ untreated(cv, Object.assign({},o,{transparent:false})); }
+    else if(backdrop==='duotone'){ duotone(cv,o); }
+    else if(backdrop==='ink'){ cx.fillStyle=rgbCss(inkRGB(o.fieldInk||o.ink)); cx.fillRect(0,0,w,h); }
     else { cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); }
+    if(wash>0 && (backdrop==='duotone'||backdrop==='image')){
+      cx.save(); cx.globalAlpha=wash; cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); cx.restore();   // washed pale so the line does the talking
+    }
     /* Sobel detection on the fixed grid, scaled to the frame — so preview and
        every export width trace the SAME lines (a per-pixel Sobel on the wider
        export reads weaker and drops most of them). */
     const aw=detW(w), ah=detH(w,h);
-    const L=stretch(lumBuffer(aw,ah,o.contrast,1.6));
+    const L=stretch(lumBuffer(aw,ah,o.contrast, o.edgeSmooth!=null?o.edgeSmooth:1.6));
     const detail=o.edgeDetail!=null?o.edgeDetail:0.3;
     const thr=0.9-detail*0.75, tt=thr*thr*0.16;
     let mask=new Uint8Array(aw*ah);
@@ -677,9 +722,17 @@
       const gy=L[p+aw-1]+2*L[p+aw]+L[p+aw+1]-L[p-aw-1]-2*L[p-aw]-L[p-aw+1];
       if(gx*gx+gy*gy > tt) mask[p]=1;
     }
+    if((o.edgeClean|0)>=2) mask=despeckleMask(mask,aw,ah,o.edgeClean|0);
     mask=dilateMask(mask,aw,ah,Math.max(1,Math.round((o.edgeThick||2)*(aw/520))));
-    const inkC=(o.inkMode==='black')? inkBaseRGB(o) : accentRGB(o);
+    const inkC = backdrop==='ink' ? paperRGB(o)
+               : (o.inkMode==='black')? inkBaseRGB(o) : inkRGB(o.edgeInk||o.ink);
     cx.imageSmoothingEnabled=true;
+    const em=(o.edgeEcho||0)*(w/520);
+    if(em>0){
+      const ea=(o.edgeEchoAngle!=null?o.edgeEchoAngle:45)*Math.PI/180;
+      const echoC=inkRGB(o.edgeEchoInk||PARTNER[o.ink]||'blue');
+      cx.drawImage(maskCanvas(mask,aw,ah,echoC), Math.round(Math.cos(ea)*em), Math.round(Math.sin(ea)*em), w,h);
+    }
     cx.drawImage(maskCanvas(mask,aw,ah,inkC), 0,0, w,h);
   }
 
@@ -1022,8 +1075,10 @@
     ditherMode:'bayer', ditherScale:3,
     hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
     toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
-    contourWeight:2, contourFill:'tint',
-    edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper',
+    contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19,
+    contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45,
+    edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0,
+    edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
     cellSize:16, mosaicDepth:4, mosaicGap:0.08,
     /* typed blur, both stages */
     blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,

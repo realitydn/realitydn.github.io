@@ -293,8 +293,8 @@ const TREAT_PRESETS = {
   dither:     { contrast:1.25, ditherMode:'bayer', ditherScale:3, invert:false, inkMode:'single' },
   hatch:      { contrast:1.25, hatchSpacing:9, angle:-22, hatchWeight:1, hatchCross:false, hatchWobble:0.15, inkMode:'single' },
   photocopy:  { contrast:1.15, toner:0.55, copyNoise:0.35, streaks:0.25, generations:2, inkMode:'black' },
-  contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint' },
-  edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single' },
+  contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45 },
+  edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, fieldInk:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null },
   mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08 },
   none:       { contrast:1.1,  brightness:0 }
 };
@@ -559,15 +559,36 @@ function PhotoControls({ el, update, theme }){
           <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Each generation is a re-copy — harder blacks, blown highlights.</div>
         </React.Fragment>}
         {t==='contour' && <React.Fragment>
-          <Slider label="Bands" val={el.bands} min={2} max={8} step={1} onChange={v=>update({bands:v})} />
-          <Slider label="Line weight" val={el.contourWeight!=null?el.contourWeight:2} min={1} max={4} step={0.5} onChange={v=>update({contourWeight:v})} />
+          <Slider label="Bands" val={el.bands} min={2} max={12} step={1} onChange={v=>update({bands:v})} />
+          <Slider label="Smoothing" val={el.contourSmooth!=null?el.contourSmooth:2.2} min={0} max={10} step={0.2} onChange={v=>update({contourSmooth:v})} />
+          <Slider label="Line weight" val={el.contourWeight!=null?el.contourWeight:2} min={1} max={6} step={0.5} onChange={v=>update({contourWeight:v})} />
           <Chips label="Fill" options={[{v:'paper',l:'Paper'},{v:'tint',l:'Tint'},{v:'bands',l:'Full ramp'}]} value={el.contourFill||'tint'} onChange={v=>update({contourFill:v})} />
+          {(el.contourFill||'tint')==='tint' && <Slider label="Tint strength" val={el.contourTint!=null?el.contourTint:0.19} min={0.05} max={0.6} step={0.01} onChange={v=>update({contourTint:v})} />}
+          <Chips label="Lines" options={[{v:'auto',l:'Auto'},{v:'ink',l:'Ink colour'},{v:'black',l:'Mono'}]} value={el.contourLine||'auto'} onChange={v=>update({contourLine:v})} />
+          {el.contourLine==='ink' && <InkRow label="Line ink" value={el.contourInk} onChange={v=>update({contourInk:v})} autoTitle="Main ink" />}
+          <Slider label="Line slip" val={el.contourSlip!=null?el.contourSlip:0} min={0} max={20} step={0.5} onChange={v=>update({contourSlip:v})} suffix="px" />
+          {el.contourSlip>0 && <Slider label="Slip angle" val={el.contourSlipAngle!=null?el.contourSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({contourSlipAngle:v})} suffix="°" />}
+          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Smoothing melts detail into clean topographic loops — push it up for a weather-map read. Slip prints the linework off-register from the fills.</div>
         </React.Fragment>}
         {t==='edges' && <React.Fragment>
-          <Chips label="Backdrop" options={[{v:'paper',l:'Paper'},{v:'duotone',l:'Pale duotone'},{v:'image',l:'Raw image'}]} value={el.edgeBackdrop||'paper'} onChange={v=>update({edgeBackdrop:v})} />
+          <Chips label="Backdrop" options={[{v:'paper',l:'Paper'},{v:'ink',l:'Ink field'},{v:'duotone',l:'Pale duotone'},{v:'image',l:'Raw image'}]} value={el.edgeBackdrop||'paper'} onChange={v=>update({edgeBackdrop:v})} />
+          {el.edgeBackdrop==='ink' && <InkRow label="Field ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Main ink" />}
+          {(el.edgeBackdrop==='duotone'||el.edgeBackdrop==='image') &&
+            <Slider label="Paper wash" val={el.edgeWash!=null?el.edgeWash:(el.edgeBackdrop==='duotone'?0.5:0)} min={0} max={0.9} step={0.02} onChange={v=>update({edgeWash:v})} />}
           <Slider label="Detail" val={el.edgeDetail!=null?el.edgeDetail:0.3} min={0} max={1} step={0.02} onChange={v=>update({edgeDetail:v})} />
-          <Slider label="Line weight" val={el.edgeThick!=null?el.edgeThick:2} min={1} max={4} step={0.5} onChange={v=>update({edgeThick:v})} />
-          <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
+          <Slider label="Simplify" val={el.edgeSmooth!=null?el.edgeSmooth:1.6} min={0} max={8} step={0.1} onChange={v=>update({edgeSmooth:v})} />
+          <Slider label="De-speckle" val={el.edgeClean!=null?el.edgeClean:0} min={0} max={200} step={2} onChange={v=>update({edgeClean:v})} />
+          <Slider label="Line weight" val={el.edgeThick!=null?el.edgeThick:2} min={1} max={6} step={0.5} onChange={v=>update({edgeThick:v})} />
+          {el.edgeBackdrop!=='ink' && <React.Fragment>
+            <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
+            {el.inkMode!=='black' && <InkRow label="Line ink" value={el.edgeInk} onChange={v=>update({edgeInk:v})} autoTitle="Main ink" />}
+          </React.Fragment>}
+          <Slider label="Echo" val={el.edgeEcho!=null?el.edgeEcho:0} min={0} max={20} step={0.5} onChange={v=>update({edgeEcho:v})} suffix="px" />
+          {el.edgeEcho>0 && <React.Fragment>
+            <InkRow label="Echo ink" value={el.edgeEchoInk} onChange={v=>update({edgeEchoInk:v})} autoTitle="Auto — warm/cool partner" />
+            <Slider label="Echo angle" val={el.edgeEchoAngle!=null?el.edgeEchoAngle:45} min={0} max={360} step={5} onChange={v=>update({edgeEchoAngle:v})} suffix="°" />
+          </React.Fragment>}
+          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust. Echo re-strikes the linework off-register in a second ink.</div>
         </React.Fragment>}
         {t==='mosaic' && <React.Fragment>
           <Slider label="Tile size" val={el.cellSize!=null?el.cellSize:16} min={6} max={40} step={1} onChange={v=>update({cellSize:v})} suffix="px" />

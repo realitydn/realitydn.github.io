@@ -290,12 +290,12 @@ const TREAT_PRESETS = {
   cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false, cutEdge:0, cutSlip:0 },
   overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0 },
   spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18, spotMode:'tone', spot2:false },
-  dither:     { contrast:1.25, ditherMode:'bayer', ditherScale:3, invert:false, inkMode:'single' },
+  dither:     { contrast:1.25, ditherMode:'bayer', ditherScale:3, ditherAngle:0, invert:false, inkMode:'single', gradMode:'tone', gradA:null, gradB:null, gradAngle:90, field:'paper', fieldInk:null, fieldStrength:0.12 },
   hatch:      { contrast:1.25, hatchSpacing:9, angle:-22, hatchWeight:1, hatchCross:false, hatchWobble:0.15, inkMode:'single' },
   photocopy:  { contrast:1.15, toner:0.55, copyNoise:0.35, streaks:0.25, generations:2, inkMode:'black' },
   contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45 },
   edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, fieldInk:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null },
-  mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08 },
+  mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper' },
   none:       { contrast:1.1,  brightness:0 }
 };
 /* ---------- collapsible sidebar section (open state remembered per session) ---------- */
@@ -368,6 +368,9 @@ function PhotoControls({ el, update, theme }){
                        !!el.finBright, el.finContrast!=null&&el.finContrast!==1, el.finSat!=null&&el.finSat!==1].filter(Boolean).length;
   const nBands = Math.max(2, (el.bands|0)||4);
   const setBandInk = (i,v)=>{ const arr=[]; for(let b=0;b<nBands;b++) arr.push((el.bandInks&&el.bandInks[b])||null); arr[i]=v; update({ bandInks:arr }); };
+  /* mosaic shares bandInks with posterize (same dark→light order), sized by its depth */
+  const nMosaic = Math.max(2, Math.min(6, (el.mosaicDepth|0)||4));
+  const setMosaicInk = (i,v)=>{ const arr=[]; for(let b=0;b<nMosaic;b++) arr.push((el.bandInks&&el.bandInks[b])||null); arr[i]=v; update({ bandInks:arr }); };
   return (
     <React.Fragment>
       <Fold id="ph-img" title="Image" open>
@@ -537,10 +540,23 @@ function PhotoControls({ el, update, theme }){
           </React.Fragment>}
         </React.Fragment>}
         {t==='dither' && <React.Fragment>
-          <Chips label="Pattern" options={[{v:'bayer',l:'Bayer'},{v:'noise',l:'Noise'},{v:'diffusion',l:'Diffusion'}]} value={el.ditherMode||'bayer'} onChange={v=>update({ditherMode:v})} />
-          <Slider label="Cell size" val={el.ditherScale!=null?el.ditherScale:3} min={1} max={8} step={0.5} onChange={v=>update({ditherScale:v})} suffix="px" />
-          <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
+          <Chips label="Pattern" options={[{v:'bayer',l:'Bayer'},{v:'cluster',l:'Cluster dot'},{v:'lines',l:'Scanlines'},{v:'noise',l:'Noise'},{v:'diffusion',l:'Diffusion'}]} value={el.ditherMode||'bayer'} onChange={v=>update({ditherMode:v})} />
+          <Slider label="Cell size" val={el.ditherScale!=null?el.ditherScale:3} min={1} max={12} step={0.5} onChange={v=>update({ditherScale:v})} suffix="px" />
+          {(el.ditherMode==null||el.ditherMode==='bayer'||el.ditherMode==='cluster'||el.ditherMode==='lines') &&
+            <Slider label="Screen angle" val={el.ditherAngle!=null?el.ditherAngle:0} min={-90} max={90} step={1} onChange={v=>update({ditherAngle:v})} suffix="°" />}
+          <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'}]} value={el.inkMode==='black'?'black':el.inkMode==='gradient'?'gradient':'single'} onChange={v=>update({inkMode:v})} />
+          {el.inkMode==='gradient' && <React.Fragment>
+            <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
+            <InkRow label="From" value={el.gradA} onChange={v=>update({gradA:v})} autoTitle="Main ink" />
+            <InkRow label="To" value={el.gradB} onChange={v=>update({gradB:v})} autoTitle="Auto — warm/cool partner" />
+            {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
+          </React.Fragment>}
           <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+          <Chips label="Background" options={[{v:'paper',l:'Paper'},{v:'tint',l:'Ink tint'},{v:'ink',l:'Solid ink'}]} value={el.field||'paper'} onChange={v=>update({field:v})} />
+          {el.field && el.field!=='paper' && <React.Fragment>
+            <InkRow label="Field ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Main ink" />
+            {el.field==='tint' && <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.12} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />}
+          </React.Fragment>}
         </React.Fragment>}
         {t==='hatch' && <React.Fragment>
           <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
@@ -591,9 +607,20 @@ function PhotoControls({ el, update, theme }){
           <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust. Echo re-strikes the linework off-register in a second ink.</div>
         </React.Fragment>}
         {t==='mosaic' && <React.Fragment>
-          <Slider label="Tile size" val={el.cellSize!=null?el.cellSize:16} min={6} max={40} step={1} onChange={v=>update({cellSize:v})} suffix="px" />
+          <Slider label="Tile size" val={el.cellSize!=null?el.cellSize:16} min={4} max={48} step={1} onChange={v=>update({cellSize:v})} suffix="px" />
           <Slider label="Depth" val={el.mosaicDepth!=null?el.mosaicDepth:4} min={2} max={6} step={1} onChange={v=>update({mosaicDepth:v})} />
+          <Chips label="Tile shape" options={[{v:'square',l:'Square'},{v:'round',l:'Round'},{v:'diamond',l:'Diamond'}]} value={el.mosaicShape||'square'} onChange={v=>update({mosaicShape:v})} />
+          <Chips label="Bond" options={[{v:'grid',l:'Grid'},{v:'brick',l:'Brick'}]} value={el.mosaicBond||'grid'} onChange={v=>update({mosaicBond:v})} />
+          <Slider label="Hand-laid jitter" val={el.mosaicJitter!=null?el.mosaicJitter:0} min={0} max={1} step={0.02} onChange={v=>update({mosaicJitter:v})} />
           <Slider label="Grout" val={el.mosaicGap!=null?el.mosaicGap:0.08} min={0} max={0.3} step={0.01} onChange={v=>update({mosaicGap:v})} />
+          {((el.mosaicGap==null?0.08:el.mosaicGap)>0 || (el.mosaicShape&&el.mosaicShape!=='square')) &&
+            <Chips label="Grout colour" options={[{v:'paper',l:'Paper'},{v:'black',l:'Mono'},{v:'accent',l:'Accent'}]} value={el.mosaicGrout||'paper'} onChange={v=>update({mosaicGrout:v})} />}
+          <Chips label="Tile colours" options={[{v:false,l:'Auto ramp'},{v:true,l:'Custom'}]} value={!!el.bandInks}
+            onChange={v=>{ if(!v){ update({ bandInks:null }); } else { const arr=[]; for(let b=0;b<nMosaic;b++) arr.push(null); update({ bandInks:arr }); } }} />
+          {el.bandInks && Array.from({length:nMosaic}).map((_,i)=>(
+            <InkRow key={i} label={'Tile '+(i+1)+(i===0?' · dark':i===nMosaic-1?' · light':'')} value={el.bandInks[i]||null} onChange={v=>setMosaicInk(i,v)} autoTitle="Auto — ramp colour" />
+          ))}
+          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Round and diamond tiles show the grout between them even at 0 — pick a mono grout for a stained-glass read.</div>
         </React.Fragment>}
       </Fold>
 

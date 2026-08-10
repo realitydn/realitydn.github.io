@@ -89,6 +89,7 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       'contourSmooth','contourTint','contourLine','contourInk','contourSlip','contourSlipAngle',
       'edgeDetail','edgeThick','edgeBackdrop','edgeSmooth','edgeClean','edgeInk','edgeWash',
       'edgeEcho','edgeEchoAngle','edgeEchoInk','cellSize','mosaicDepth','mosaicGap',
+      'ditherAngle','mosaicShape','mosaicBond','mosaicJitter','mosaicGrout',
       'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
       'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
       'grainInk','grainBlend','finBright','finContrast','finSat',

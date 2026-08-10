@@ -455,9 +455,13 @@
   }
 
   /* 9 · DITHER — 1-bit zine screen. Tone is decided on a coarse grid (bayer
-       matrix, seeded noise, or serpentine error-diffusion) and upscaled hard,
-       so the cells stay square. params: ditherMode, ditherScale, invert,
-       inkMode ('single' accent | 'black' mono) */
+       matrix, clustered dot, scanlines, seeded noise, or serpentine
+       error-diffusion) and upscaled hard, so the cells stay square.
+       params: ditherMode (bayer|cluster|lines|noise|diffusion), ditherScale
+         ditherAngle — rotates the ordered lattices (bayer / cluster / lines)
+         invert, inkMode ('single' accent | 'black' mono | 'gradient' —
+         gradA→gradB by gradMode tone|frame, gradAngle)
+         field: paper | tint | ink (+ fieldInk, fieldStrength) — the ground */
   const BAYER8=[ [0,32,8,40,2,34,10,42],[48,16,56,24,50,18,58,26],[12,44,4,36,14,46,6,38],
     [60,28,52,20,62,30,54,22],[3,35,11,43,1,33,9,41],[51,19,59,27,49,17,57,25],
     [15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21] ];
@@ -468,7 +472,12 @@
     const L=stretch(lumBuffer(rw,rh,o.contrast));
     const night=o.paper==='night';
     const inkC=(o.inkMode==='black')? inkBaseRGB(o) : accentRGB(o);
-    const papC=paperRGB(o);
+    /* the ground the screen prints over — paper, an ink tint, or solid ink */
+    const fieldInkC = o.fieldInk? inkRGB(o.fieldInk) : accentRGB(o);
+    let papC;
+    if(o.field==='ink') papC=fieldInkC;
+    else if(o.field==='tint'){ const s=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12)); papC=lerp(paperRGB(o),fieldInkC,s); }
+    else papC=paperRGB(o);
     const mode=o.ditherMode||'bayer';
     const inked=new Uint8Array(rw*rh);
     if(mode==='diffusion'){
@@ -490,18 +499,46 @@
       }
     } else {
       const rnd=mulberry32(0xD17E4);
+      const ang=(o.ditherAngle||0)*Math.PI/180, ca=Math.cos(ang), sa=Math.sin(ang);
       for(let y=0;y<rh;y++) for(let x=0;x<rw;x++){
         const p=y*rw+x;
-        const t= mode==='noise'? rnd() : (BAYER8[y&7][x&7]+0.5)/64;
+        let t;
+        if(mode==='noise') t=rnd();
+        else {
+          const rx= ca*x+sa*y, ry= -sa*x+ca*y;            // rotate the ordered lattice
+          if(mode==='cluster'){
+            const P=8, fx=rx-Math.floor(rx/P)*P-P/2, fy=ry-Math.floor(ry/P)*P-P/2;
+            t=Math.max(0.02, 1-Math.hypot(fx,fy)/(P*0.62));   // round dots grow from cell centres
+          } else if(mode==='lines'){
+            const P=4, f=ry-Math.floor(ry/P)*P;
+            t=1-Math.abs(f/P*2-1);                            // stripes thicken with tone
+          } else {
+            t=(BAYER8[((Math.round(ry)%8)+8)%8][((Math.round(rx)%8)+8)%8]+0.5)/64;
+          }
+        }
         const q= L[p]<t? 0:1;
         inked[p]= night? q : 1-q;
       }
+    }
+    /* gradient inking — the printed cells ramp A→B by tone or across the frame */
+    const grad = o.inkMode==='gradient';
+    let gA,gB,gFrame=false,gc=0,gs=0,gD=1;
+    if(grad){
+      gA=inkRGB(o.gradA||o.ink); gB=inkRGB(o.gradB||PARTNER[o.ink]||'blue');
+      gFrame=(o.gradMode||'tone')==='frame';
+      if(gFrame){ const ga=(o.gradAngle!=null?o.gradAngle:90)*Math.PI/180; gc=Math.cos(ga); gs=Math.sin(ga); gD=(rw*Math.abs(gc)+rh*Math.abs(gs))||1; }
     }
     const sm=document.createElement('canvas'); sm.width=rw; sm.height=rh;
     const sx=sm.getContext('2d'), id=sx.createImageData(rw,rh), d=id.data;
     for(let p=0,i=0;p<rw*rh;p++,i+=4){
       let on=inked[p]; if(o.invert) on=1-on;
-      const c= on? inkC : papC;
+      let c;
+      if(!on) c=papC;
+      else if(grad){
+        if(gFrame){ const x=p%rw, y=(p/rw)|0; let tt=0.5+((x-rw/2)*gc+(y-rh/2)*gs)/gD; tt=tt<0?0:tt>1?1:tt; c=lerp(gA,gB,tt); }
+        else c=lerp(gA,gB,L[p]);
+      }
+      else c=inkC;
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
     }
     sx.putImageData(id,0,0);
@@ -737,7 +774,11 @@
   }
 
   /* 14 · MOSAIC — chunky tiles snapped to the paper→ink ramp, optional grout.
-        params: cellSize, mosaicDepth, mosaicGap */
+        params: cellSize, mosaicDepth, mosaicGap
+          mosaicShape (square|round|diamond) · mosaicBond (grid|brick)
+          mosaicJitter — hand-laid wobble (seeded, repeats exactly)
+          mosaicGrout (paper|black|accent) — the ground between tiles
+          bandInks — per-depth ink override (array, dark→light; null = ramp) */
   function mosaic(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const cell=Math.max(3,(o.cellSize||16)*(w/520));
@@ -748,13 +789,30 @@
     const stops = o.paper==='day'
       ? [ inkBaseRGB(o), accent, lerp(accent,papC,0.55), papC ]
       : [ papC, lerp(papC,accent,0.5), accent, lerp(accent,[255,251,241],0.6) ];
-    cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h);
+    const cols=[]; for(let b=0;b<n;b++){ const key=o.bandInks&&o.bandInks[b];
+      cols.push((key&&PAL[key])? inkRGB(key) : rampSample(stops, n===1?0:b/(n-1))); }
+    const grout=o.mosaicGrout||'paper';
+    cx.fillStyle = grout==='black'? rgbCss(inkBaseRGB(o)) : grout==='accent'? rgbCss(accent) : PAPER[o.paper];
+    cx.fillRect(0,0,w,h);
     const gap=Math.min(0.45,o.mosaicGap||0)*Math.min(w/rw,h/rh);
     const cw2=w/rw, ch2=h/rh;
-    for(let y=0;y<rh;y++) for(let x=0;x<rw;x++){
-      const band=Math.min(n-1,(L[y*rw+x]*n)|0);
-      cx.fillStyle=rgbCss(rampSample(stops, n===1?0:band/(n-1)));
-      cx.fillRect(x*cw2+gap/2, y*ch2+gap/2, cw2-gap, ch2-gap);
+    const shape=o.mosaicShape||'square';
+    const brick=o.mosaicBond==='brick';
+    const jit=Math.max(0,Math.min(1,o.mosaicJitter||0));
+    const rj=mulberry32(0x7E55E);
+    for(let y=0;y<rh;y++){
+      const off= (brick && (y&1))? 0.5 : 0;               // brick rows shift half a tile
+      for(let x=(off? -1:0);x<rw;x++){
+        const sxi=Math.max(0,Math.min(rw-1, off? x+1 : x));   // sample at the tile centre
+        const band=Math.min(n-1,(L[y*rw+sxi]*n)|0);
+        let px=(x+off)*cw2+gap/2, py=y*ch2+gap/2;
+        const tw=cw2-gap, th=ch2-gap;
+        if(jit>0){ px+=(rj()-0.5)*jit*cw2*0.5; py+=(rj()-0.5)*jit*ch2*0.5; }
+        cx.fillStyle=rgbCss(cols[band]);
+        if(shape==='round'){ cx.beginPath(); cx.ellipse(px+tw/2,py+th/2,tw/2,th/2,0,0,6.2832); cx.fill(); }
+        else if(shape==='diamond'){ cx.beginPath(); cx.moveTo(px+tw/2,py); cx.lineTo(px+tw,py+th/2); cx.lineTo(px+tw/2,py+th); cx.lineTo(px,py+th/2); cx.closePath(); cx.fill(); }
+        else cx.fillRect(px,py,tw,th);
+      }
     }
   }
 
@@ -1072,7 +1130,7 @@
     fieldTexture:0,
     spotMode:'tone', spotHue:340, spotHueRange:45, spot2:false, spot2Lo:0.7, spot2Hi:0.9, spot2Ink:null,
     /* new treatments */
-    ditherMode:'bayer', ditherScale:3,
+    ditherMode:'bayer', ditherScale:3, ditherAngle:0,
     hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
     toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
     contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19,
@@ -1080,6 +1138,7 @@
     edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0,
     edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
     cellSize:16, mosaicDepth:4, mosaicGap:0.08,
+    mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
     /* typed blur, both stages */
     blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
     blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,

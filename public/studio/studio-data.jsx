@@ -7,9 +7,14 @@
 
 const PALETTE = {
   blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
-  amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224'
+  amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224',
+  /* the two neutrals — valid anywhere an ink key is stored (engine PAL mirrors this) */
+  ink:'#0d0905', cream:'#fffbf1'
 };
 const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
+/* what ink swatch pickers offer: the seven accents plus the neutrals.
+   ACCENTS stays the day-coding seven — don't fold these in there. */
+const INK_CHOICES = ACCENTS.concat(['ink','cream']);
 /* Weekday each accent codes for on schedule surfaces (Year 2 scheme, shifted
    June 2026) — surfaced as tooltips on the poster-accent picker so an event
    poster can match its day. Amber is the schedule's "orange". */
@@ -375,14 +380,16 @@ const DEFAULTS = {
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2,
              /* deepened press + finish stack (engine defaults mirror these) */
-             saturation:1, hue:0, temperature:0,
+             saturation:1, hue:0, temperature:0, toneSmooth:0,
              midInk:null, hiTint:0, hiInk:null, ink3:null, ghost:0, glyphChar:'R',
              bandInks:null, bandJitter:0, cutEdge:0, cutEdgeInk:null, cutSlip:0, cutSlipAngle:45,
              fieldTexture:0, spotMode:'tone', spotHue:340, spotHueRange:45, spot2:false, spot2Lo:0.7, spot2Hi:0.9, spot2Ink:null,
              ditherMode:'bayer', ditherScale:3, ditherAngle:0, hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
              toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
              contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45,
+             contourEcho:0, contourEchoAngle:45, contourEchoInk:null,
              edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
+             edgeSlip:0, edgeSlipAngle:45,
              cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
              blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
@@ -401,14 +408,16 @@ const DEFAULTS = {
              spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', fit:'contain',
              imgScale:1, imgX:0, imgY:0, imgRot:0,
              blurUnder:0, blurOver:0, grain:0, grainSize:2,
-             saturation:1, hue:0, temperature:0,
+             saturation:1, hue:0, temperature:0, toneSmooth:0,
              midInk:null, hiTint:0, hiInk:null, ink3:null, ghost:0, glyphChar:'R',
              bandInks:null, bandJitter:0, cutEdge:0, cutEdgeInk:null, cutSlip:0, cutSlipAngle:45,
              fieldTexture:0, spotMode:'tone', spotHue:340, spotHueRange:45, spot2:false, spot2Lo:0.7, spot2Hi:0.9, spot2Ink:null,
              ditherMode:'bayer', ditherScale:3, ditherAngle:0, hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
              toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
              contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45,
+             contourEcho:0, contourEchoAngle:45, contourEchoInk:null,
              edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
+             edgeSlip:0, edgeSlipAngle:45,
              cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
              blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
@@ -678,7 +687,7 @@ function buildTemplate(tpl){
 }
 
 Object.assign(window, {
-  PALETTE, ACCENTS, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
+  PALETTE, ACCENTS, INK_CHOICES, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,

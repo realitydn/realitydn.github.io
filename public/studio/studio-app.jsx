@@ -2,7 +2,7 @@
    REALITY POSTER STUDIO — App
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
-const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:AP_STD, HANDOUT_FORMATS:AP_HND, PALETTE:AP_PAL, ACCENTS:AP_ACC, ACCENT_DAYS:AP_DAYS,
+const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:AP_STD, HANDOUT_FORMATS:AP_HND, PALETTE:AP_PAL, ACCENTS:AP_ACC, INK_CHOICES:AP_INKS, ACCENT_DAYS:AP_DAYS,
         ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, DAY_NAMES:AP_DNAMES, accentDay:apAccentDay,
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
@@ -286,15 +286,15 @@ const TREAT_PRESETS = {
   duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false, midInk:null, hiTint:0 },
   offregister:{ contrast:1.25, offset:13,    angle:47,        spread:1.25, ink3:null, ghost:0 },
   halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
-  posterize:  { contrast:1.25, bands:4, bandJitter:0 },
-  cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false, cutEdge:0, cutSlip:0 },
-  overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0 },
-  spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18, spotMode:'tone', spot2:false },
+  posterize:  { contrast:1.25, bands:4, bandJitter:0, toneSmooth:0 },
+  cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false, cutEdge:0, cutSlip:0, toneSmooth:0 },
+  overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0, toneSmooth:0 },
+  spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18, spotMode:'tone', spot2:false, toneSmooth:0 },
   dither:     { contrast:1.25, ditherMode:'bayer', ditherScale:3, ditherAngle:0, invert:false, inkMode:'single', gradMode:'tone', gradA:null, gradB:null, gradAngle:90, field:'paper', fieldInk:null, fieldStrength:0.12 },
-  hatch:      { contrast:1.25, hatchSpacing:9, angle:-22, hatchWeight:1, hatchCross:false, hatchWobble:0.15, inkMode:'single' },
-  photocopy:  { contrast:1.15, toner:0.55, copyNoise:0.35, streaks:0.25, generations:2, inkMode:'black' },
-  contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45 },
-  edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, fieldInk:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null },
+  hatch:      { contrast:1.25, hatchSpacing:9, angle:-22, hatchWeight:1, hatchCross:false, hatchWobble:0.15, inkMode:'single', toneSmooth:0, gradMode:'tone', gradA:null, gradB:null, gradAngle:90, field:'paper', fieldInk:null, fieldStrength:0.12 },
+  photocopy:  { contrast:1.15, toner:0.55, copyNoise:0.35, streaks:0.25, generations:2, inkMode:'black', field:'paper', fieldInk:null, fieldStrength:0.18 },
+  contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45, contourEcho:0, contourEchoAngle:45, contourEchoInk:null },
+  edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, fieldInk:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null, edgeSlip:0, edgeSlipAngle:45 },
   mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper' },
   none:       { contrast:1.1,  brightness:0 }
 };
@@ -313,6 +313,8 @@ function Fold({ id, title, open, badge, children }){
     </div>
   );
 }
+/* tooltip label for an ink key — the neutrals get their brand names */
+const inkTitle = a => a==='ink' ? 'Ink' : a==='cream' ? 'Cream' : a;
 /* an ink swatch row with a leading Auto/Off slot (null) */
 function InkRow({ label, value, onChange, autoTitle }){
   return (
@@ -320,8 +322,8 @@ function InkRow({ label, value, onChange, autoTitle }){
       <div className="rs-lab">{label} <span className="val">{value||'auto'}</span></div>
       <div className="rs-swatches">
         <div className={'rs-sw'+(value==null?' on':'')} title={autoTitle||'Auto'} style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>onChange(null)} />
-        {AP_ACC.map(a=>(
-          <div key={a} className={'rs-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />
+        {AP_INKS.map(a=>(
+          <div key={a} className={'rs-sw'+(value===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />
         ))}
       </div>
     </React.Fragment>
@@ -408,8 +410,8 @@ function PhotoControls({ el, update, theme }){
           <Chips options={[{v:true,l:'Follow poster accent'},{v:false,l:'Custom'}]} value={el.followAccent} onChange={v=>update({ followAccent:v })} />
           {!el.followAccent &&
             <div className="rs-swatches">
-              {AP_ACC.map(a=>(
-                <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
+              {AP_INKS.map(a=>(
+                <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
               ))}
             </div>}
         </React.Fragment>}
@@ -417,8 +419,8 @@ function PhotoControls({ el, update, theme }){
           <div className="rs-lab">Accent ink <span className="val">{el.ink2||'auto'}</span></div>
           <div className="rs-swatches">
             <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ ink2:null })} />
-            {AP_ACC.map(a=>(
-              <div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />
+            {AP_INKS.map(a=>(
+              <div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />
             ))}
           </div>
         </React.Fragment>}
@@ -448,12 +450,12 @@ function PhotoControls({ el, update, theme }){
             <div className="rs-lab">From <span className="val">{el.gradA||el.ink||'accent'}</span></div>
             <div className="rs-swatches">
               <div className={'rs-sw'+(el.gradA==null?' on':'')} title="Main ink" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ gradA:null })} />
-              {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.gradA===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradA:a })} />))}
+              {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.gradA===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradA:a })} />))}
             </div>
             <div className="rs-lab">To <span className="val">{el.gradB||'partner'}</span></div>
             <div className="rs-swatches">
               <div className={'rs-sw'+(el.gradB==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ gradB:null })} />
-              {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.gradB===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradB:a })} />))}
+              {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.gradB===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradB:a })} />))}
             </div>
             {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
           </React.Fragment>}
@@ -461,7 +463,7 @@ function PhotoControls({ el, update, theme }){
             <div className="rs-lab">Second ink <span className="val">{el.ink2||'auto'}</span></div>
             <div className="rs-swatches">
               <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ ink2:null })} />
-              {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />))}
+              {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />))}
             </div>
             <Slider label="Screen offset" val={el.screenOffset!=null?el.screenOffset:30} min={0} max={90} step={1} onChange={v=>update({screenOffset:v})} suffix="°" />
           </React.Fragment>}
@@ -479,13 +481,14 @@ function PhotoControls({ el, update, theme }){
             <div className="rs-lab">Field ink <span className="val">{el.fieldInk||'main'}</span></div>
             <div className="rs-swatches">
               <div className={'rs-sw'+(el.fieldInk==null?' on':'')} title="Main ink" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ fieldInk:null })} />
-              {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(el.fieldInk===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>update({ fieldInk:a })} />))}
+              {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.fieldInk===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ fieldInk:a })} />))}
             </div>
             {el.field==='tint' && <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.12} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />}
           </React.Fragment>}
         </React.Fragment>}
         {t==='posterize' && <React.Fragment>
           <Slider label="Bands" val={el.bands} min={2} max={6} step={1} onChange={v=>update({bands:v})} />
+          <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
           <Slider label="Torn edges" val={el.bandJitter!=null?el.bandJitter:0} min={0} max={1} step={0.02} onChange={v=>update({bandJitter:v})} />
           <Chips label="Band colours" options={[{v:false,l:'Auto ramp'},{v:true,l:'Custom'}]} value={!!el.bandInks}
             onChange={v=>{ if(!v){ update({ bandInks:null }); } else { const arr=[]; for(let b=0;b<nBands;b++) arr.push(null); update({ bandInks:arr }); } }} />
@@ -496,6 +499,7 @@ function PhotoControls({ el, update, theme }){
         {t==='cutout' && <React.Fragment>
           <Slider label="Threshold" val={el.threshold} min={0.15} max={0.85} step={0.01} onChange={v=>update({threshold:v})} />
           <Slider label="Edge softness" val={el.softness} min={0.01} max={0.4} step={0.01} onChange={v=>update({softness:v})} />
+          <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
           <Chips label="Invert" options={[{v:false,l:'Subject'},{v:true,l:'Background'}]} value={el.invert} onChange={v=>update({invert:v})} />
           <Slider label="Outline" val={el.cutEdge!=null?el.cutEdge:0} min={0} max={0.2} step={0.005} onChange={v=>update({cutEdge:v})} />
           {el.cutEdge>0 && <React.Fragment>
@@ -508,6 +512,7 @@ function PhotoControls({ el, update, theme }){
           <Slider label="Offset" val={el.offset} min={0} max={30} step={1} onChange={v=>update({offset:v})} suffix="px" />
           <Slider label="Angle" val={el.angle} min={0} max={360} step={1} onChange={v=>update({angle:v})} suffix="°" />
           <Slider label="Field split" val={el.split} min={0.04} max={0.4} step={0.01} onChange={v=>update({split:v})} />
+          <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
           <InkRow label="Third ink" value={el.ink3} onChange={v=>update({ink3:v})} autoTitle="Off — two fields" />
           <Slider label="Ink texture" val={el.fieldTexture!=null?el.fieldTexture:0} min={0} max={1} step={0.02} onChange={v=>update({fieldTexture:v})} />
         </React.Fragment>}
@@ -525,6 +530,7 @@ function PhotoControls({ el, update, theme }){
                 <Slider label="Range high" val={el.spotHi!=null?el.spotHi:0.65} min={0} max={1} step={0.01} onChange={v=>update({spotHi:v})} />
               </React.Fragment>}
           <Slider label="Edge softness" val={el.spotSoft!=null?el.spotSoft:0.08} min={0.002} max={0.4} step={0.01} onChange={v=>update({spotSoft:v})} />
+          <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
           <Chips label="Fill" options={[{v:false,l:'In range'},{v:true,l:'Out of range'}]} value={!!el.spotInvert} onChange={v=>update({spotInvert:v})} />
           {(el.spotMode||'tone')==='tone' && <React.Fragment>
             <Chips label="Second band" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.spot2} onChange={v=>update({spot2:v})} />
@@ -559,12 +565,24 @@ function PhotoControls({ el, update, theme }){
           </React.Fragment>}
         </React.Fragment>}
         {t==='hatch' && <React.Fragment>
-          <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
+          <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'}]} value={el.inkMode==='black'?'black':el.inkMode==='gradient'?'gradient':'single'} onChange={v=>update({inkMode:v})} />
+          {el.inkMode==='gradient' && <React.Fragment>
+            <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
+            <InkRow label="From" value={el.gradA} onChange={v=>update({gradA:v})} autoTitle="Main ink" />
+            <InkRow label="To" value={el.gradB} onChange={v=>update({gradB:v})} autoTitle="Auto — warm/cool partner" />
+            {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
+          </React.Fragment>}
           <Slider label="Spacing" val={el.hatchSpacing!=null?el.hatchSpacing:9} min={4} max={20} step={0.5} onChange={v=>update({hatchSpacing:v})} suffix="px" />
           <Slider label="Angle" val={el.angle!=null?el.angle:-22} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
           <Slider label="Stroke weight" val={el.hatchWeight!=null?el.hatchWeight:1} min={0.5} max={1.5} step={0.02} onChange={v=>update({hatchWeight:v})} />
           <Chips label="Cross-hatch" options={[{v:false,l:'Off'},{v:true,l:'In the shadows'}]} value={!!el.hatchCross} onChange={v=>update({hatchCross:v})} />
           <Slider label="Wobble" val={el.hatchWobble!=null?el.hatchWobble:0.15} min={0} max={1} step={0.02} onChange={v=>update({hatchWobble:v})} />
+          <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
+          <Chips label="Background" options={[{v:'paper',l:'Paper'},{v:'tint',l:'Ink tint'},{v:'ink',l:'Solid ink'}]} value={el.field||'paper'} onChange={v=>update({field:v})} />
+          {el.field && el.field!=='paper' && <React.Fragment>
+            <InkRow label="Field ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Main ink" />
+            {el.field==='tint' && <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.12} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />}
+          </React.Fragment>}
         </React.Fragment>}
         {t==='photocopy' && <React.Fragment>
           <Chips label="Inking" options={[{v:'black',l:'Toner'},{v:'single',l:'Ink'}]} value={el.inkMode==='single'?'single':'black'} onChange={v=>update({inkMode:v})} />
@@ -572,7 +590,12 @@ function PhotoControls({ el, update, theme }){
           <Slider label="Copy noise" val={el.copyNoise!=null?el.copyNoise:0.35} min={0} max={1} step={0.02} onChange={v=>update({copyNoise:v})} />
           <Slider label="Streaks" val={el.streaks!=null?el.streaks:0.25} min={0} max={1} step={0.02} onChange={v=>update({streaks:v})} />
           <Slider label="Generations" val={el.generations!=null?el.generations:2} min={1} max={5} step={1} onChange={v=>update({generations:v})} />
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Each generation is a re-copy — harder blacks, blown highlights.</div>
+          <Chips label="Paper" options={[{v:'paper',l:'Plain'},{v:'tint',l:'Tinted stock'}]} value={el.field==='tint'?'tint':'paper'} onChange={v=>update({field:v})} />
+          {el.field==='tint' && <React.Fragment>
+            <InkRow label="Stock ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Main ink" />
+            <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.18} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />
+          </React.Fragment>}
+          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Each generation is a re-copy — harder blacks, blown highlights. Tinted stock runs the toner on coloured paper.</div>
         </React.Fragment>}
         {t==='contour' && <React.Fragment>
           <Slider label="Bands" val={el.bands} min={2} max={12} step={1} onChange={v=>update({bands:v})} />
@@ -580,11 +603,23 @@ function PhotoControls({ el, update, theme }){
           <Slider label="Line weight" val={el.contourWeight!=null?el.contourWeight:2} min={1} max={6} step={0.5} onChange={v=>update({contourWeight:v})} />
           <Chips label="Fill" options={[{v:'paper',l:'Paper'},{v:'tint',l:'Tint'},{v:'bands',l:'Full ramp'}]} value={el.contourFill||'tint'} onChange={v=>update({contourFill:v})} />
           {(el.contourFill||'tint')==='tint' && <Slider label="Tint strength" val={el.contourTint!=null?el.contourTint:0.19} min={0.05} max={0.6} step={0.01} onChange={v=>update({contourTint:v})} />}
+          {(el.contourFill||'tint')==='bands' && <React.Fragment>
+            <Chips label="Band colours" options={[{v:false,l:'Auto ramp'},{v:true,l:'Custom'}]} value={!!el.bandInks}
+              onChange={v=>{ if(!v){ update({ bandInks:null }); } else { const arr=[]; for(let b=0;b<nBands;b++) arr.push(null); update({ bandInks:arr }); } }} />
+            {el.bandInks && Array.from({length:nBands}).map((_,i)=>(
+              <InkRow key={i} label={'Band '+(i+1)+(i===0?' · dark':i===nBands-1?' · light':'')} value={el.bandInks[i]||null} onChange={v=>setBandInk(i,v)} autoTitle="Auto — ramp colour" />
+            ))}
+          </React.Fragment>}
           <Chips label="Lines" options={[{v:'auto',l:'Auto'},{v:'ink',l:'Ink colour'},{v:'black',l:'Mono'}]} value={el.contourLine||'auto'} onChange={v=>update({contourLine:v})} />
           {el.contourLine==='ink' && <InkRow label="Line ink" value={el.contourInk} onChange={v=>update({contourInk:v})} autoTitle="Main ink" />}
           <Slider label="Line slip" val={el.contourSlip!=null?el.contourSlip:0} min={0} max={20} step={0.5} onChange={v=>update({contourSlip:v})} suffix="px" />
           {el.contourSlip>0 && <Slider label="Slip angle" val={el.contourSlipAngle!=null?el.contourSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({contourSlipAngle:v})} suffix="°" />}
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Smoothing melts detail into clean topographic loops — push it up for a weather-map read. Slip prints the linework off-register from the fills.</div>
+          <Slider label="Echo" val={el.contourEcho!=null?el.contourEcho:0} min={0} max={20} step={0.5} onChange={v=>update({contourEcho:v})} suffix="px" />
+          {el.contourEcho>0 && <React.Fragment>
+            <InkRow label="Echo ink" value={el.contourEchoInk} onChange={v=>update({contourEchoInk:v})} autoTitle="Auto — warm/cool partner" />
+            <Slider label="Echo angle" val={el.contourEchoAngle!=null?el.contourEchoAngle:45} min={0} max={360} step={5} onChange={v=>update({contourEchoAngle:v})} suffix="°" />
+          </React.Fragment>}
+          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Smoothing melts detail into clean topographic loops — push it up for a weather-map read. Slip prints the linework off-register from the fills; echo re-strikes it in a second ink.</div>
         </React.Fragment>}
         {t==='edges' && <React.Fragment>
           <Chips label="Backdrop" options={[{v:'paper',l:'Paper'},{v:'ink',l:'Ink field'},{v:'duotone',l:'Pale duotone'},{v:'image',l:'Raw image'}]} value={el.edgeBackdrop||'paper'} onChange={v=>update({edgeBackdrop:v})} />
@@ -599,6 +634,8 @@ function PhotoControls({ el, update, theme }){
             <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
             {el.inkMode!=='black' && <InkRow label="Line ink" value={el.edgeInk} onChange={v=>update({edgeInk:v})} autoTitle="Main ink" />}
           </React.Fragment>}
+          <Slider label="Line slip" val={el.edgeSlip!=null?el.edgeSlip:0} min={0} max={20} step={0.5} onChange={v=>update({edgeSlip:v})} suffix="px" />
+          {el.edgeSlip>0 && <Slider label="Slip angle" val={el.edgeSlipAngle!=null?el.edgeSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({edgeSlipAngle:v})} suffix="°" />}
           <Slider label="Echo" val={el.edgeEcho!=null?el.edgeEcho:0} min={0} max={20} step={0.5} onChange={v=>update({edgeEcho:v})} suffix="px" />
           {el.edgeEcho>0 && <React.Fragment>
             <InkRow label="Echo ink" value={el.edgeEchoInk} onChange={v=>update({edgeEchoInk:v})} autoTitle="Auto — warm/cool partner" />
@@ -1012,7 +1049,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
                   <input className="rs-input" placeholder="Name (e.g. Projector)" value={k.name||''} onChange={e=>setK({name:e.target.value})} />
                 </div>
                 <div className="rs-swatches" style={{ marginTop:4 }}>
-                  {AP_ACC.map(a=>(<div key={a} className={'rs-sw'+(cur===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>setK({color:a})} />))}
+                  {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(cur===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>setK({color:a})} />))}
                 </div>
               </div>;
             })}

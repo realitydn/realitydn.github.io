@@ -9,7 +9,9 @@
   /* ---- locked palette (mirror of the system tokens) ---- */
   const PAL = {
     blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
-    amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224'
+    amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224',
+    /* the two neutrals — pickable anywhere an ink key is stored */
+    ink:'#0d0905', cream:'#fffbf1'
   };
   const PAPER = { day:'#fffbf1', night:'#0a0703' };
   const INK   = { day:'#0d0905', night:'#fffbf1' };
@@ -290,7 +292,7 @@
        bandInks   — per-band ink override (array, dark→light; null = ramp)
        bandJitter — seeded blotch noise on the thresholds: torn, hand-pulled edges */
   function posterize(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=lumBuffer(w,h,o.contrast*1.1);
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=lumBuffer(w,h,o.contrast*1.1,(o.toneSmooth||0));
     const n=Math.max(2,o.bands|0);
     stretch(L); // histogram stretch so bands always read regardless of image key
     const stops = o.paper==='day'
@@ -315,7 +317,7 @@
        cutEdge / cutEdgeInk — an outline traced along the cut, in a third ink
        cutSlip / cutSlipAngle — the outline slips off-register from the fill */
   function cutout(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.25));
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.25,(o.toneSmooth||0)));
     const field=accentRGB(o);
     const ink = o.paper==='day'? hex2rgb('#0d0905') : hex2rgb('#fffbf1');
     const thr=o.threshold!=null?o.threshold:0.52, soft=Math.max(0.005,o.softness!=null?o.softness:0.12);
@@ -345,7 +347,7 @@
        ink3 — optional third field at the midtone, quarter-turn offset
        fieldTexture — seeded blotch noise thins the ink coverage (roller texture) */
   function overprint(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.15));
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.15,(o.toneSmooth||0)));
     const night=o.paper==='night';
     const A=accentRGB(o), B=partnerRGB(o);
     const mag=(o.offset!=null?o.offset:8)*(w/520);
@@ -405,7 +407,7 @@
        params: spotLo, spotHi (the band), spotSoft (edge), spotInvert, spotBase */
   function spot(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const L=lumBuffer(w,h,o.contrast);
+    const L=lumBuffer(w,h,o.contrast,(o.toneSmooth||0));
     const night=o.paper==='night';
     const accent=accentRGB(o);
     const lo=o.spotLo!=null?o.spotLo:0.35, hi=o.spotHi!=null?o.spotHi:0.65;
@@ -548,15 +550,31 @@
   /* 10 · HATCH — engraving: parallel strokes whose weight carries the tone;
         an optional cross pass builds up in the shadows; wobble bends the line
         like a hand-pulled burin. params: hatchSpacing, angle, hatchWeight,
-        hatchCross, hatchWobble, inkMode */
+        hatchCross, hatchWobble, toneSmooth,
+        inkMode ('single' | 'black' | 'gradient' — gradA→gradB by gradMode
+        tone|frame, gradAngle),
+        field: paper | tint | ink (+ fieldInk, fieldStrength) — the ground */
   function hatch(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const L=lumBuffer(w,h,o.contrast);
+    const L=lumBuffer(w,h,o.contrast,(o.toneSmooth||0));
     const night=o.paper==='night';
     const step=Math.max(3,(o.hatchSpacing||9))*(w/520);
     const wgt=o.hatchWeight!=null?o.hatchWeight:1;
     const wob=(o.hatchWobble||0)*step*0.45;
-    cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h);
+    /* the ground the strokes print over — paper, an ink tint, or solid ink */
+    const fieldInkC = o.fieldInk? inkRGB(o.fieldInk) : accentRGB(o);
+    if(o.field==='ink'){ cx.fillStyle=rgbCss(fieldInkC); }
+    else if(o.field==='tint'){ const fs=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12)); cx.fillStyle=rgbCss(lerp(paperRGB(o),fieldInkC,fs)); }
+    else { cx.fillStyle=PAPER[o.paper]; }
+    cx.fillRect(0,0,w,h);
+    /* gradient inking — stroke colour ramps A→B by tone or across the frame */
+    const grad = o.inkMode==='gradient';
+    let gA,gB,gFrame=false,gc=0,gsn=0,gD=1;
+    if(grad){
+      gA=inkRGB(o.gradA||o.ink); gB=inkRGB(o.gradB||PARTNER[o.ink]||'blue');
+      gFrame=(o.gradMode||'tone')==='frame';
+      if(gFrame){ const ga=(o.gradAngle!=null?o.gradAngle:90)*Math.PI/180; gc=Math.cos(ga); gsn=Math.sin(ga); gD=(w*Math.abs(gc)+h*Math.abs(gsn))||1; }
+    }
     cx.fillStyle=(o.inkMode==='black')? INK[o.paper] : rgbCss(accentRGB(o));
     const sub=Math.max(1.2, step*0.22);
     const baseAng=o.angle!=null?o.angle:-22;
@@ -578,6 +596,12 @@
           if(ink<0.02) continue;
           const t=Math.min(step*0.92, Math.pow(ink,0.85)*step*wgt);
           if(t<0.35) continue;
+          if(grad){
+            let tt;
+            if(gFrame){ tt=0.5+((sxp-w/2)*gc+(syp-h/2)*gsn)/gD; tt=tt<0?0:tt>1?1:tt; }
+            else tt=l;
+            cx.fillStyle=rgbCss(lerp(gA,gB,tt));
+          }
           cx.fillRect(gx, yy-t/2, sub+0.6, t);
         }
       }
@@ -589,13 +613,20 @@
 
   /* 11 · PHOTOCOPY — toner-crushed mono: noise, then an s-curve crush per
         generation (each recopy harder), then roller streaks down the page.
-        params: toner, copyNoise, streaks, generations, inkMode */
+        params: toner, copyNoise, streaks, generations, inkMode
+          field 'tint' + fieldInk/fieldStrength — run the toner on coloured stock */
   function photocopy(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const L=stretch(lumBuffer(w,h,o.contrast));
     const night=o.paper==='night';
     const inkC=(o.inkMode==='single')? accentRGB(o) : inkBaseRGB(o);
-    const papC=paperRGB(o);
+    /* tinted copy stock — the page the toner crushes onto */
+    let papC=paperRGB(o);
+    if(o.field==='tint'){
+      const fieldInkC=o.fieldInk? inkRGB(o.fieldInk) : accentRGB(o);
+      const fs=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12));
+      papC=lerp(papC,fieldInkC,fs);
+    }
     const noiseAmt=(o.copyNoise||0)*0.30;
     /* toner speckle sampled from a fixed design-resolution grid (≈1 design px
        cells) — a bare per-device-pixel rnd() would render finer on the 2×
@@ -656,7 +687,9 @@
           contourSmooth — pre-blur (design px) melting detail into clean loops
           contourTint   — strength of the accent tint under the 'tint' fill
           contourLine (auto|ink|black) / contourInk — what the lines print in
-          contourSlip / contourSlipAngle — linework off-register from the fill */
+          contourSlip / contourSlipAngle — linework off-register from the fill
+          contourEcho / contourEchoAngle / contourEchoInk — double-strike
+          bandInks — per-band ink override for the 'bands' fill (dark→light) */
   function contour(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const n=Math.max(2,o.bands|0);
@@ -669,10 +702,13 @@
     const Lf=stretch(lumBuffer(w,h,o.contrast*1.1, smoothPx));   // pre-smoothed so bands stay clean
     const fill=o.contourFill||'tint';
     const tintHi=o.contourTint!=null?o.contourTint:0.19, tintLo=tintHi*0.32;
+    /* the ramp fill honours posterize's per-band ink overrides (dark→light) */
+    const cols=[]; if(fill==='bands'){ for(let b=0;b<n;b++){ const key=o.bandInks&&o.bandInks[b];
+      cols.push((key&&PAL[key])? inkRGB(key) : rampSample(stops, n===1?0:b/(n-1))); } }
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<Lf.length;p++,i+=4){
       let c;
-      if(fill==='bands') c=rampSample(stops, n===1?0:Math.min(n-1,(Lf[p]*n)|0)/(n-1));
+      if(fill==='bands') c=cols[Math.min(n-1,(Lf[p]*n)|0)];
       else if(fill==='tint') c=lerp(papC, accent, tintLo+(tintHi-tintLo)*(o.paper==='night'? Lf[p] : 1-Lf[p]));
       else c=papC;
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
@@ -696,8 +732,16 @@
     /* the linework can slip off-register from the fills — same grammar as the
        cutout's outline slip (design px on the 520 grid) */
     const sa=(o.contourSlipAngle!=null?o.contourSlipAngle:45)*Math.PI/180, sm=(o.contourSlip||0)*(w/520);
+    const sdx=Math.round(Math.cos(sa)*sm), sdy=Math.round(Math.sin(sa)*sm);
     cx.imageSmoothingEnabled=true;
-    cx.drawImage(maskCanvas(mask,aw,ah,lineC), Math.round(Math.cos(sa)*sm), Math.round(Math.sin(sa)*sm), w,h);
+    /* echo — Outline's double-strike, offset relative to the (slipped) lines */
+    const em=(o.contourEcho||0)*(w/520);
+    if(em>0){
+      const ea=(o.contourEchoAngle!=null?o.contourEchoAngle:45)*Math.PI/180;
+      const echoC=inkRGB(o.contourEchoInk||PARTNER[o.ink]||'blue');
+      cx.drawImage(maskCanvas(mask,aw,ah,echoC), sdx+Math.round(Math.cos(ea)*em), sdy+Math.round(Math.sin(ea)*em), w,h);
+    }
+    cx.drawImage(maskCanvas(mask,aw,ah,lineC), sdx, sdy, w,h);
   }
 
   /* drop 4-connected mask blobs smaller than minPx cells — sweeps the salt
@@ -732,7 +776,8 @@
           edgeSmooth — pre-blur before detection: fewer, more confident lines
           edgeClean  — sweep specks smaller than this many detection cells
           edgeEcho / edgeEchoAngle / edgeEchoInk — double-strike: the same
-          linework re-struck off-register in a second ink under the main pass */
+          linework re-struck off-register in a second ink under the main pass
+          edgeSlip / edgeSlipAngle — the whole linework slips off the backdrop */
   function edges(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const backdrop=o.edgeBackdrop||'paper';
@@ -764,13 +809,16 @@
     const inkC = backdrop==='ink' ? paperRGB(o)
                : (o.inkMode==='black')? inkBaseRGB(o) : inkRGB(o.edgeInk||o.ink);
     cx.imageSmoothingEnabled=true;
+    /* the whole linework can slip off-register from the backdrop (echo rides along) */
+    const sa=(o.edgeSlipAngle!=null?o.edgeSlipAngle:45)*Math.PI/180, sm=(o.edgeSlip||0)*(w/520);
+    const sdx=Math.round(Math.cos(sa)*sm), sdy=Math.round(Math.sin(sa)*sm);
     const em=(o.edgeEcho||0)*(w/520);
     if(em>0){
       const ea=(o.edgeEchoAngle!=null?o.edgeEchoAngle:45)*Math.PI/180;
       const echoC=inkRGB(o.edgeEchoInk||PARTNER[o.ink]||'blue');
-      cx.drawImage(maskCanvas(mask,aw,ah,echoC), Math.round(Math.cos(ea)*em), Math.round(Math.sin(ea)*em), w,h);
+      cx.drawImage(maskCanvas(mask,aw,ah,echoC), sdx+Math.round(Math.cos(ea)*em), sdy+Math.round(Math.sin(ea)*em), w,h);
     }
-    cx.drawImage(maskCanvas(mask,aw,ah,inkC), 0,0, w,h);
+    cx.drawImage(maskCanvas(mask,aw,ah,inkC), sdx, sdy, w,h);
   }
 
   /* 14 · MOSAIC — chunky tiles snapped to the paper→ink ramp, optional grout.
@@ -1122,7 +1170,7 @@
     field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, pucker:0.35,
     spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotInvert:false, spotBase:'duotone', transparent:false, fit:'cover', paperFill:null,
     /* deepened treatments */
-    saturation:1, hue:0, temperature:0,
+    saturation:1, hue:0, temperature:0, toneSmooth:0,
     midInk:null, hiTint:0, hiInk:null,
     ink3:null, ghost:0, glyphChar:'R',
     bandInks:null, bandJitter:0,
@@ -1135,8 +1183,10 @@
     toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
     contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19,
     contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45,
+    contourEcho:0, contourEchoAngle:45, contourEchoInk:null,
     edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0,
     edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
+    edgeSlip:0, edgeSlipAngle:45,
     cellSize:16, mosaicDepth:4, mosaicGap:0.08,
     mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
     /* typed blur, both stages */

@@ -90,6 +90,7 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       'edgeDetail','edgeThick','edgeBackdrop','edgeSmooth','edgeClean','edgeInk','edgeWash',
       'edgeEcho','edgeEchoAngle','edgeEchoInk','cellSize','mosaicDepth','mosaicGap',
       'ditherAngle','mosaicShape','mosaicBond','mosaicJitter','mosaicGrout',
+      'toneSmooth','contourEcho','contourEchoAngle','contourEchoInk','edgeSlip','edgeSlipAngle',
       'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
       'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
       'grainInk','grainBlend','finBright','finContrast','finSat',
@@ -478,7 +479,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        marker in order of first appearance. */
     const DEFCAT = ['blue','green','pink','amber','purple','red','yellow'];
     const catColor = m => { const k=el.markerKey&&el.markerKey[m]; const c=(k&&k.color)||DEFCAT[markers.indexOf(m)%7];
-      return SE_ACC.indexOf(c)>=0 ? SE_PAL[c] : accentHex; };
+      return SE_PAL[c] ? SE_PAL[c] : accentHex; };   // any palette key incl. ink/cream neutrals
     const catName = m => { const k=el.markerKey&&el.markerKey[m]; return (k&&k.name&&k.name.trim()) || m; };
     const headH = el.heading ? headFs+13 : 0;
     const legendH = (rich && markers.length) ? 26 : 0;

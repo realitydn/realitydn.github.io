@@ -29,10 +29,12 @@
 <script src="vendor/fontkit.umd.min.js"></script>
 <script src="vendor/qrcode.js"></script>
 
-<!-- Plain JS (no JSX): the riso photo engine + the IndexedDB image store.
-     Loaded before the app modules so window.RISO / window.PrintImg exist. -->
+<!-- Plain JS (no JSX): the riso photo engine, the IndexedDB image store and
+     the Year 2 icon glyph data. Loaded before the app modules so
+     window.RISO / window.PrintImg / window.ICON_GLYPHS exist. -->
 <script src="riso-engine.js"></script>
 <script src="print-store.js"></script>
+<script src="print-icons.js"></script>
 
 <!-- Precompiled from the sibling .jsx by scripts/build-studios.mjs. Edit the
      .jsx — the local launcher transpiles it on the fly, the build emits these. -->

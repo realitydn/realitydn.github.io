@@ -1,12 +1,14 @@
 /* ============================================================
    REALITY PRINT STUDIO — App
    One A-size document, vector CMYK PDF out, gang-on-A4.
+   Year 2 pass: layout grid + snapping, undo/redo, zoom, Fold
+   inspector in one canonical order, template previews.
    ============================================================ */
 const { CATALOG:AP_CAT, DEFAULTS:AP_DEF, PALETTE:AP_PAL, ACCENTS:AP_ACC,
         SIZES:AP_SZ, SIZE_ORDER:AP_ORD, GANG:AP_GANG, sizeDims:apDims, PT_PER_MM:AP_PPM,
         TYPE_SCALE:AP_SCALE, snapToScale:apSnap, scaleStep:apStep,
         makeElement:apMake, uid:apUid, slugify:apSlug,
-        PrintCanvas:APCanvas, TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl } = window;
+        PrintCanvas:APCanvas, PrintElement:APElement, TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl } = window;
 const LS_KEY = 'reality-print-doc-v1';
 const TPL_KEY = 'reality-print-templates-v1';
 
@@ -14,6 +16,7 @@ function starterDoc(){
   return {
     size:'a5', orient:'portrait', accent:'pink',
     showGrid:false, showBleed:true, snap:true, bleed:true, marks:true,
+    marginMm:6, grid:{ cols:0, rows:0, gutter:12 },
     title:'', elements:[
       Object.assign(apMake('kicker', 34, 40),  { w:360, text:'REALITY · ĐÀ NẴNG', align:'center', ink:'pink', tracking:0.26 }),
       Object.assign(apMake('headline', 30, 74),{ w:360, h:96, text:'INFO SIGN', fontSize:46, align:'center' }),
@@ -90,11 +93,41 @@ function Swatches({ label, value, onChange, auto, white }){
     </div>
   );
 }
+/* numeric field — the precise cousin of the position sliders */
+function NumField({ label, value, onChange, min, step }){
+  const [txt, setTxt] = React.useState(null);
+  const shown = txt!=null ? txt : String(value!=null?value:0);
+  const commit = (s)=>{ const v=parseFloat(s); if(!isNaN(v)) onChange(min!=null?Math.max(min,v):v); setTxt(null); };
+  return (
+    <label className="ps-num">
+      <span>{label}</span>
+      <input type="number" step={step||1} value={shown}
+        onChange={e=>{ setTxt(e.target.value); const v=parseFloat(e.target.value); if(!isNaN(v)) onChange(min!=null?Math.max(min,v):v); }}
+        onBlur={e=>commit(e.target.value)}
+        onKeyDown={e=>{ if(e.key==='Enter'){ commit(e.currentTarget.value); e.currentTarget.blur(); } }} />
+    </label>
+  );
+}
+/* ---------- collapsible inspector section (open state kept per session) ---------- */
+const _foldOpen = {};
+function Fold({ id, title, open, badge, children }){
+  const [isOpen,setOpen] = React.useState(_foldOpen[id]!=null ? _foldOpen[id] : !!open);
+  const toggle=()=>{ _foldOpen[id]=!isOpen; setOpen(!isOpen); };
+  return (
+    <div className={'ps-fold'+(isOpen?' open':'')}>
+      <button type="button" className="ps-foldhead" onClick={toggle}>
+        <span className="chev">{isOpen?'▾':'▸'}</span><span className="t">{title}</span>
+        {(badge!=null && badge!=='') ? <span className="badge">{badge}</span> : null}
+      </button>
+      {isOpen && <div className="ps-foldbody">{children}</div>}
+    </div>
+  );
+}
 const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
-const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'}];
-const ECHOABLE = ['headline','numeral','bignum','kicker','body','block','slab','sticker','shape','rule','stripes','dotfield','burst'];
-const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image','stripes','dotfield'];
+const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'},{v:'custom',l:'Custom'}];
+const ECHOABLE = ['headline','numeral','bignum','kicker','body','block','slab','sticker','shape','rule','stripes','dotfield','burst','icon'];
+const LIFTABLE = ['headline','numeral','bignum','block','slab','pricelist','qr','badge','coupon','footer','marquee','sticker','shape','image','stripes','dotfield','icon'];
 const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'squircle',l:'Squircle'},{v:'rect',l:'Square'}];
 const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'plus',l:'Plus'}];
 const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Radial out'},{v:'in',l:'Radial in'},{v:'up',l:'Up'},{v:'down',l:'Down'},{v:'left',l:'Left'},{v:'right',l:'Right'},{v:'diag',l:'Diagonal'},{v:'diag2',l:'Diagonal ↗'},{v:'wave',l:'Wave'},{v:'bloom',l:'Bloom'}];
@@ -102,9 +135,7 @@ const STRIPE_DIRS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'},{v:'diag',l:'Di
 const SHAPE_OPTS = (window.SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).toUpperCase()+k.slice(1)}));
 const BLENDS = [{v:'normal',l:'None'},{v:'multiply',l:'Multiply'},{v:'screen',l:'Screen'},{v:'overlay',l:'Overlay'},{v:'darken',l:'Darken'},{v:'lighten',l:'Lighten'},{v:'hard-light',l:'Hard'}];
 const ORIENTS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}];
-/* blend/overprint is applied universally by both renderers; expose it on every
-   visual element except qr (keep the code clean to scan). */
-const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image','pricelist','coupon','badge','seal','rule','arrow','contact','wordmark','footer','arctext'];
+const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image','pricelist','coupon','badge','seal','rule','arrow','contact','wordmark','footer','arctext','icon','punchgrid'];
 const IMG_TREATS = [{v:'none',l:'None'},{v:'duotone',l:'Duotone'},{v:'halftone',l:'Halftone'},{v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'spot',l:'Spot'},{v:'offregister',l:'Off-Reg'},{v:'overprint',l:'Overprint'}];
 const IMG_TREAT_PRESETS = {
   none:       { contrast:1.1,  brightness:0 },
@@ -127,8 +158,8 @@ const BORDER_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotte
 const SURFACED_BOX = ['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee','arrow'];
 const LIST_STYLES = [{v:'prices',l:'Prices'},{v:'bulleted',l:'Bulleted'},{v:'numbered',l:'Numbered'},{v:'plain',l:'Plain'}];
 const LIST_MARKERS = [{v:'•',l:'•'},{v:'–',l:'–'},{v:'→',l:'→'},{v:'★',l:'★'}];
-/* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk.
-   Anything above ~0.40 is too pale on white to scan reliably; we warn, not block. */
+const PUNCH_CELLS = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'star',l:'Star'}];
+/* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk. */
 function qrLum(key){
   const hex = key==='ink'?'#111111' : (key==='white'||key==null||key==='auto')?'#ffffff' : (AP_PAL[key]||'#111111');
   const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
@@ -136,8 +167,6 @@ function qrLum(key){
 }
 
 /* ---------- photo helpers ---------- */
-/* Read an image File/Blob, downscale to ≤2000px on the long edge (≈170–300dpi
-   at print sizes), hand back { data, w, h }. PNG keeps alpha; else JPEG. */
 function processImageFile(file, onReady){
   if(!file) return;
   const png = file.type==='image/png';
@@ -173,114 +202,285 @@ function AccentRow({ value, onChange, nullable, nullTitle }){
     {AP_ACC.map(a=>(<div key={a} className={'ps-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />))}
   </div>);
 }
-/* the full riso treatment panel, ported from Poster Studio's PhotoControls
-   (minus the night-theme / logo / sample-image bits — Print is white-paper). */
+/* the full riso treatment panel, in Folds (ported from Poster Studio) */
 function ImageControls({ el, update, onFile }){
   const t = el.treatment||'none';
   return (
     <React.Fragment>
-      <div className="ps-sech">Image</div>
-      <PhotoUpload onFile={onFile} />
-      <div className="ps-mini" style={{ margin:'2px 0 8px' }}>…or copy any image and paste with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
+      <Fold id="im-img" title="Image" open>
+        <PhotoUpload onFile={onFile} />
+        <div className="ps-mini" style={{ margin:'2px 0 8px' }}>…or copy any image and paste with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
+        <Chips label="Fit" options={[{v:'cover',l:'Fill'},{v:'contain',l:'Contain'}]} value={el.fit||'cover'} onChange={v=>update({fit:v})} />
+        <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
+        <div className="ps-rowflex">
+          <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
+          <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
+        </div>
+        <Slider label="Image spin" val={el.imgRot!=null?el.imgRot:0} min={-180} max={180} step={1} onChange={v=>update({imgRot:v})} suffix="°" />
+        <Chips label="Keyline frame" options={[{v:false,l:'None'},{v:true,l:'Ink frame'}]} value={!!el.frame} onChange={v=>update({frame:v})} />
+        {el.frame && <Slider label="Frame width" val={el.frameW||3} min={1} max={10} step={0.5} onChange={v=>update({frameW:v})} suffix="pt" />}
+      </Fold>
 
-      <div className="ps-sech">Riso treatment</div>
-      <Chips options={IMG_TREATS} value={t} onChange={v=>update(Object.assign({ treatment:v }, IMG_TREAT_PRESETS[v]||{}))} />
-
-      {t!=='none' && <React.Fragment>
-        <Chips label="Main ink" options={[{v:true,l:'Doc accent'},{v:false,l:'Custom'}]} value={el.followAccent!==false} onChange={v=>update({ followAccent:v })} />
-        {el.followAccent===false && <AccentRow value={el.ink} onChange={v=>update({ ink:v })} />}
-      </React.Fragment>}
-
-      <div className="ps-sech">{t==='none'?'Adjust':'Press'}</div>
-      <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
-      <Slider label="Contrast" val={el.contrast!=null?el.contrast:1.1} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
-      <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
-      {t==='duotone' && <React.Fragment>
-        <Slider label="Tone balance" val={el.balance!=null?el.balance:0.5} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
-        <Slider label="Shadow tint" val={el.shadowTint!=null?el.shadowTint:0.18} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
-        <Chips label="Invert" options={[{v:false,l:'Normal'},{v:true,l:'Inverted'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
-      </React.Fragment>}
-      {t==='halftone' && <React.Fragment>
-        <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'},{v:'two',l:'Two-ink'}]} value={el.inkMode||'single'} onChange={v=>update({inkMode:v})} />
-        {(el.inkMode||'single')==='gradient' && <React.Fragment>
-          <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
-          <div className="ps-lab">From<span className="val">{el.gradA||'main'}</span></div>
-          <AccentRow value={el.gradA} onChange={v=>update({ gradA:v })} nullable nullTitle="Main ink" />
-          <div className="ps-lab">To<span className="val">{el.gradB||'partner'}</span></div>
-          <AccentRow value={el.gradB} onChange={v=>update({ gradB:v })} nullable nullTitle="Auto — partner" />
-          {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
+      <Fold id="im-treat" title={'Riso treatment · '+(IMG_TREATS.find(x=>x.v===t)||{l:t}).l} open>
+        <Chips options={IMG_TREATS} value={t} onChange={v=>update(Object.assign({ treatment:v }, IMG_TREAT_PRESETS[v]||{}))} />
+        {t!=='none' && <React.Fragment>
+          <Chips label="Main ink" options={[{v:true,l:'Doc accent'},{v:false,l:'Custom'}]} value={el.followAccent!==false} onChange={v=>update({ followAccent:v })} />
+          {el.followAccent===false && <AccentRow value={el.ink} onChange={v=>update({ ink:v })} />}
         </React.Fragment>}
-        {(el.inkMode||'single')==='two' && <React.Fragment>
+
+        <div className="ps-sech">{t==='none'?'Adjust':'Press'}</div>
+        <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
+        <Slider label="Contrast" val={el.contrast!=null?el.contrast:1.1} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
+        <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
+        {t==='duotone' && <React.Fragment>
+          <Slider label="Tone balance" val={el.balance!=null?el.balance:0.5} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
+          <Slider label="Shadow tint" val={el.shadowTint!=null?el.shadowTint:0.18} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
+          <Chips label="Invert" options={[{v:false,l:'Normal'},{v:true,l:'Inverted'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+        </React.Fragment>}
+        {t==='halftone' && <React.Fragment>
+          <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'},{v:'two',l:'Two-ink'}]} value={el.inkMode||'single'} onChange={v=>update({inkMode:v})} />
+          {(el.inkMode||'single')==='gradient' && <React.Fragment>
+            <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
+            <div className="ps-lab">From<span className="val">{el.gradA||'main'}</span></div>
+            <AccentRow value={el.gradA} onChange={v=>update({ gradA:v })} nullable nullTitle="Main ink" />
+            <div className="ps-lab">To<span className="val">{el.gradB||'partner'}</span></div>
+            <AccentRow value={el.gradB} onChange={v=>update({ gradB:v })} nullable nullTitle="Auto — partner" />
+            {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
+          </React.Fragment>}
+          {(el.inkMode||'single')==='two' && <React.Fragment>
+            <div className="ps-lab">Second ink<span className="val">{el.ink2||'auto'}</span></div>
+            <AccentRow value={el.ink2} onChange={v=>update({ ink2:v })} nullable nullTitle="Auto — partner" />
+            <Slider label="Screen offset" val={el.screenOffset!=null?el.screenOffset:30} min={0} max={90} step={1} onChange={v=>update({screenOffset:v})} suffix="°" />
+          </React.Fragment>}
+          <Slider label="Dot size" val={el.dot!=null?el.dot:9} min={4} max={22} step={1} onChange={v=>update({dot:v})} suffix="px" />
+          <Slider label="Screen angle" val={el.angle!=null?el.angle:15} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
+          <Chips label="Dot shape" options={[{v:'circle',l:'Dot'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'line',l:'Line'}]} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
+          <Slider label="Dot gain" val={el.dotGain!=null?el.dotGain:1} min={0.6} max={1.6} step={0.02} onChange={v=>update({dotGain:v})} />
+          <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+        </React.Fragment>}
+        {t==='posterize' && <Slider label="Bands" val={el.bands!=null?el.bands:4} min={2} max={6} step={1} onChange={v=>update({bands:v})} />}
+        {t==='cutout' && <React.Fragment>
+          <Slider label="Threshold" val={el.threshold!=null?el.threshold:0.52} min={0.15} max={0.85} step={0.01} onChange={v=>update({threshold:v})} />
+          <Slider label="Edge softness" val={el.softness!=null?el.softness:0.12} min={0.01} max={0.4} step={0.01} onChange={v=>update({softness:v})} />
+          <Chips label="Invert" options={[{v:false,l:'Subject'},{v:true,l:'Background'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+        </React.Fragment>}
+        {t==='spot' && <React.Fragment>
+          <Chips label="Backdrop" options={[{v:'duotone',l:'Duotone'},{v:'image',l:'Raw image'}]} value={el.spotBase||'duotone'} onChange={v=>update({spotBase:v})} />
+          <Slider label="Range low" val={el.spotLo!=null?el.spotLo:0.35} min={0} max={1} step={0.01} onChange={v=>update({spotLo:v})} />
+          <Slider label="Range high" val={el.spotHi!=null?el.spotHi:0.65} min={0} max={1} step={0.01} onChange={v=>update({spotHi:v})} />
+          <Slider label="Edge softness" val={el.spotSoft!=null?el.spotSoft:0.08} min={0.002} max={0.4} step={0.01} onChange={v=>update({spotSoft:v})} />
+          <Chips label="Fill" options={[{v:false,l:'In range'},{v:true,l:'Out of range'}]} value={!!el.spotInvert} onChange={v=>update({spotInvert:v})} />
+        </React.Fragment>}
+        {(t==='offregister'||t==='overprint') && <React.Fragment>
           <div className="ps-lab">Second ink<span className="val">{el.ink2||'auto'}</span></div>
           <AccentRow value={el.ink2} onChange={v=>update({ ink2:v })} nullable nullTitle="Auto — partner" />
-          <Slider label="Screen offset" val={el.screenOffset!=null?el.screenOffset:30} min={0} max={90} step={1} onChange={v=>update({screenOffset:v})} suffix="°" />
+          <Slider label="Offset" val={el.offset!=null?el.offset:(t==='overprint'?8:13)} min={0} max={40} step={1} onChange={v=>update({offset:v})} suffix="px" />
+          <Slider label="Angle" val={el.angle!=null?el.angle:(t==='overprint'?45:47)} min={0} max={360} step={1} onChange={v=>update({angle:v})} suffix="°" />
+          {t==='offregister' && <Slider label="Ink spread" val={el.spread!=null?el.spread:1.25} min={0.8} max={1.8} step={0.02} onChange={v=>update({spread:v})} />}
+          {t==='overprint' && <Slider label="Field split" val={el.split!=null?el.split:0.16} min={0.04} max={0.4} step={0.01} onChange={v=>update({split:v})} />}
         </React.Fragment>}
-        <Slider label="Dot size" val={el.dot!=null?el.dot:9} min={4} max={22} step={1} onChange={v=>update({dot:v})} suffix="px" />
-        <Slider label="Screen angle" val={el.angle!=null?el.angle:15} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
-        <Chips label="Dot shape" options={[{v:'circle',l:'Dot'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'line',l:'Line'}]} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
-        <Slider label="Dot gain" val={el.dotGain!=null?el.dotGain:1} min={0.6} max={1.6} step={0.02} onChange={v=>update({dotGain:v})} />
-        <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
-      </React.Fragment>}
-      {t==='posterize' && <Slider label="Bands" val={el.bands!=null?el.bands:4} min={2} max={6} step={1} onChange={v=>update({bands:v})} />}
-      {t==='cutout' && <React.Fragment>
-        <Slider label="Threshold" val={el.threshold!=null?el.threshold:0.52} min={0.15} max={0.85} step={0.01} onChange={v=>update({threshold:v})} />
-        <Slider label="Edge softness" val={el.softness!=null?el.softness:0.12} min={0.01} max={0.4} step={0.01} onChange={v=>update({softness:v})} />
-        <Chips label="Invert" options={[{v:false,l:'Subject'},{v:true,l:'Background'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
-      </React.Fragment>}
-      {t==='spot' && <React.Fragment>
-        <Chips label="Backdrop" options={[{v:'duotone',l:'Duotone'},{v:'image',l:'Raw image'}]} value={el.spotBase||'duotone'} onChange={v=>update({spotBase:v})} />
-        <Slider label="Range low" val={el.spotLo!=null?el.spotLo:0.35} min={0} max={1} step={0.01} onChange={v=>update({spotLo:v})} />
-        <Slider label="Range high" val={el.spotHi!=null?el.spotHi:0.65} min={0} max={1} step={0.01} onChange={v=>update({spotHi:v})} />
-        <Slider label="Edge softness" val={el.spotSoft!=null?el.spotSoft:0.08} min={0.002} max={0.4} step={0.01} onChange={v=>update({spotSoft:v})} />
-        <Chips label="Fill" options={[{v:false,l:'In range'},{v:true,l:'Out of range'}]} value={!!el.spotInvert} onChange={v=>update({spotInvert:v})} />
-      </React.Fragment>}
-      {(t==='offregister'||t==='overprint') && <React.Fragment>
-        {(t==='offregister'||t==='overprint') && <div className="ps-lab">Second ink<span className="val">{el.ink2||'auto'}</span></div>}
-        <AccentRow value={el.ink2} onChange={v=>update({ ink2:v })} nullable nullTitle="Auto — partner" />
-        <Slider label="Offset" val={el.offset!=null?el.offset:(t==='overprint'?8:13)} min={0} max={40} step={1} onChange={v=>update({offset:v})} suffix="px" />
-        <Slider label="Angle" val={el.angle!=null?el.angle:(t==='overprint'?45:47)} min={0} max={360} step={1} onChange={v=>update({angle:v})} suffix="°" />
-        {t==='offregister' && <Slider label="Ink spread" val={el.spread!=null?el.spread:1.25} min={0.8} max={1.8} step={0.02} onChange={v=>update({spread:v})} />}
-        {t==='overprint' && <Slider label="Field split" val={el.split!=null?el.split:0.16} min={0.04} max={0.4} step={0.01} onChange={v=>update({split:v})} />}
-      </React.Fragment>}
+      </Fold>
 
-      <div className="ps-sech">Finish</div>
-      <Slider label="Blur" val={el.blurOver!=null?el.blurOver:0} min={0} max={30} step={0.5} onChange={v=>update({blurOver:v})} suffix="px" />
-      <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
-      {(el.grain||0)>0 && <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />}
-
-      <div className="ps-sech">Frame & crop</div>
-      <Chips label="Fit" options={[{v:'cover',l:'Fill'},{v:'contain',l:'Contain'}]} value={el.fit||'cover'} onChange={v=>update({fit:v})} />
-      <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
-      <div className="ps-rowflex">
-        <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
-        <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
-      </div>
-      <Slider label="Image spin" val={el.imgRot!=null?el.imgRot:0} min={-180} max={180} step={1} onChange={v=>update({imgRot:v})} suffix="°" />
-      <Chips label="Keyline frame" options={[{v:false,l:'None'},{v:true,l:'Ink frame'}]} value={!!el.frame} onChange={v=>update({frame:v})} />
-      {el.frame && <Slider label="Frame width" val={el.frameW||3} min={1} max={10} step={0.5} onChange={v=>update({frameW:v})} suffix="pt" />}
+      <Fold id="im-finish" title="Finish" badge={(el.blurOver>0||el.grain>0)?'on':null}>
+        <Slider label="Blur" val={el.blurOver!=null?el.blurOver:0} min={0} max={30} step={0.5} onChange={v=>update({blurOver:v})} suffix="px" />
+        <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
+        {(el.grain||0)>0 && <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />}
+      </Fold>
     </React.Fragment>
   );
 }
 
-/* ---------- inspector ---------- */
-function Inspector({ el, doc, update, dup, del, layer, clearAll }){
-  if(!el){
-    return (
-      <React.Fragment>
-        <div className="ps-sech">Canvas</div>
-        <div className="ps-empty">
-          <div className="big">Nothing selected</div>
-          <p>Drag a part from the left, or click one to edit it. Everything prints as crisp vector — text on the black plate only.</p>
+/* ---------- icon picker — the Year 2 glyph set, searchable ---------- */
+function IconGlyphSvg({ kind, size }){
+  const g = (window.ICON_GLYPHS||{})[kind]; if(!g) return null;
+  return (
+    <svg viewBox="0 0 24 24" width={size||22} height={size||22} style={{ display:'block' }}>
+      {g.map((p,i)=>{
+        const stroke = !!p.linear || p.t==='line';
+        const sp = stroke ? { fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinejoin:'miter', strokeLinecap:'square' }
+                          : { fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinejoin:'miter', strokeLinecap:'square' };
+        if(p.t==='rect')    return <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} {...sp} />;
+        if(p.t==='line')    return <line key={i} x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2} {...sp} />;
+        if(p.t==='ellipse') return <ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} {...sp} />;
+        if(p.t==='poly')    return <polygon key={i} points={p.points} {...sp} />;
+        if(p.t==='path')    return <path key={i} d={p.d} {...sp} />;
+        return null;
+      })}
+    </svg>
+  );
+}
+function IconPicker({ el, update }){
+  const [q, setQ] = React.useState('');
+  const labels = window.ICON_LABELS||{};
+  const cats = window.ICON_CATEGORIES||[];
+  const core = window.ICON_CORE||[];
+  const query = q.trim().toLowerCase();
+  const match = (k)=> !query || k.indexOf(query)>=0 || (labels[k]||'').toLowerCase().indexOf(query)>=0;
+  const grid = (keys)=>(
+    <div className="ps-icongrid">
+      {keys.filter(match).map(k=>(
+        <button key={k} className={'ps-icb'+(el.kind===k?' on':'')} title={labels[k]||k} onClick={()=>update({ kind:k })}>
+          <IconGlyphSvg kind={k} />
+        </button>
+      ))}
+    </div>
+  );
+  return (
+    <React.Fragment>
+      <div className="ps-row">
+        <div className="ps-lab">Glyph<span className="val">{labels[el.kind]||el.kind}</span></div>
+        <input className="ps-input" placeholder="Search icons…" value={q} onChange={e=>setQ(e.target.value)} spellCheck={false} />
+      </div>
+      {query
+        ? grid(Object.keys(window.ICON_GLYPHS||{}))
+        : <React.Fragment>
+            <div className="ps-mini" style={{ margin:'0 0 4px' }}>Core</div>
+            {grid(core)}
+            {cats.map(c=>(
+              <React.Fragment key={c.group}>
+                <div className="ps-mini" style={{ margin:'8px 0 4px' }}>{c.group}</div>
+                {grid(c.items)}
+              </React.Fragment>
+            ))}
+          </React.Fragment>}
+      <div style={{ height:8 }} />
+      <Chips label="Style" options={[{v:false,l:'Stroke'},{v:true,l:'Solid'}]} value={!!el.solid} onChange={v=>update({solid:v})} />
+      <Slider label="Stroke weight" val={el.strokeScale!=null?el.strokeScale:1} min={0.5} max={2} step={0.05} onChange={v=>update({strokeScale:v})} suffix="×" />
+    </React.Fragment>
+  );
+}
+
+/* ---------- shadow — the Year 2 plane, preset or dialled ---------- */
+function ShadowControls({ el, update }){
+  const key = el.lift||'none';
+  return (
+    <React.Fragment>
+      <Chips label="Lift · plane shadow" options={LIFTS} value={key} onChange={v=>update({lift:v})} />
+      {key==='custom' && <React.Fragment>
+        <Slider label="Distance" val={el.shadowDist!=null?el.shadowDist:8} min={0} max={40} step={1} onChange={v=>update({shadowDist:v})} suffix="pt" />
+        <Slider label="Direction" val={el.shadowAngle!=null?el.shadowAngle:90} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
+        <div className="ps-lab">Shadow ink<span className="val">{el.shadowColor||'soft K'}</span></div>
+        <div className="ps-swatches">
+          <div className={'ps-sw'+((el.shadowColor||'k')==='k'?' on':'')} title="Soft press tint (K)"
+            style={{ background:'linear-gradient(135deg,#777 0 50%,#ddd 50% 100%)', border:'1.5px solid #cfc7b6' }}
+            onClick={()=>update({shadowColor:'k', shadowAlpha:null})} />
+          <div className={'ps-sw'+(el.shadowColor==='ink'?' on':'')} title="Ink" style={{ background:'#111111' }}
+            onClick={()=>update({shadowColor:'ink', shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:1})} />
+          {AP_ACC.map(a=>(
+            <div key={a} className={'ps-sw'+(el.shadowColor===a?' on':'')} title={a} style={{ background:AP_PAL[a] }}
+              onClick={()=>update({shadowColor:a, shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:1})} />
+          ))}
         </div>
-        <div className="ps-mini" style={{ textAlign:'center', marginBottom:12 }}>{doc.elements.length} part{doc.elements.length===1?'':'s'} placed</div>
-        <button className="ps-iconbtn ps-del" style={{ width:'100%', justifyContent:'center' }} onClick={clearAll}>Clear sheet</button>
-      </React.Fragment>
-    );
-  }
+        <Slider label="Opacity" val={el.shadowAlpha!=null?el.shadowAlpha:((el.shadowColor||'k')==='k'?0.12:1)} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
+        <div className="ps-mini" style={{ marginTop:-2 }}>Hard accent shadow — distance up, full opacity. Very riso. Soft K prints as a grey tint on the black plate.</div>
+      </React.Fragment>}
+    </React.Fragment>
+  );
+}
+
+/* ---------- template thumbnail — a real mini render of the layout ---------- */
+function TplThumb({ built, w }){
+  const dd = apDims(built.size, built.orient);
+  const tw = w||100, sc = tw/dd.wpt, th = Math.round(dd.hpt*sc);
+  const noop = ()=>{};
+  return (
+    <div className="ps-thumbbox" style={{ width:tw, height:th }}>
+      <div style={{ width:dd.wpt, height:dd.hpt, transform:`scale(${sc})`, transformOrigin:'0 0',
+        background:'#ffffff', position:'relative', overflow:'hidden', pointerEvents:'none' }}>
+        {built.elements.map(el=>(
+          <APElement key={el.id} el={el} docAccentHex={AP_PAL[built.accent]||AP_PAL.pink} docAccent={built.accent}
+            selected={false} dragging={false} onElPointerDown={noop} />
+        ))}
+      </div>
+    </div>
+  );
+}
+function TplCard({ tpl, onApply }){
+  const built = React.useMemo(()=>apBuildTpl(tpl), [tpl]);
+  return (
+    <div className="ps-tplcard" onClick={onApply} title={tpl.name}>
+      <TplThumb built={built} w={100} />
+      <span className="tn">{tpl.name}</span>
+      <span className="ts">{AP_SZ[tpl.size].label}{tpl.orient==='landscape'?' ⬓':''}</span>
+    </div>
+  );
+}
+
+/* ---------- align / distribute bar (multi-select) ---------- */
+function AlignBar({ count, align, distribute }){
+  return (
+    <React.Fragment>
+      <div className="ps-sech">{count} selected</div>
+      <div className="ps-actions">
+        <button className="ps-iconbtn" onClick={()=>align('x','left')} title="Align left edges">⇤</button>
+        <button className="ps-iconbtn" onClick={()=>align('x','center')} title="Align horizontal centres">↔</button>
+        <button className="ps-iconbtn" onClick={()=>align('x','right')} title="Align right edges">⇥</button>
+        <button className="ps-iconbtn" onClick={()=>align('y','top')} title="Align top edges">⤒</button>
+        <button className="ps-iconbtn" onClick={()=>align('y','middle')} title="Align vertical centres">↕</button>
+        <button className="ps-iconbtn" onClick={()=>align('y','bottom')} title="Align bottom edges">⤓</button>
+      </div>
+      {count>=3 && <div className="ps-actions">
+        <button className="ps-iconbtn" style={{ flex:1 }} onClick={()=>distribute('x')} title="Equal horizontal gaps">Distribute ↔</button>
+        <button className="ps-iconbtn" style={{ flex:1 }} onClick={()=>distribute('y')} title="Equal vertical gaps">Distribute ↕</button>
+      </div>}
+      <div className="ps-mini" style={{ marginBottom:10 }}>Shift-click adds to the selection. Drag any selected part to move the whole set.</div>
+    </React.Fragment>
+  );
+}
+
+/* ---------- sheet panel — the document, when nothing is selected ---------- */
+function SheetPanel({ doc, setDoc, dims, clearAll }){
+  const grid = doc.grid||{ cols:0, rows:0, gutter:12 };
+  const setGrid = (patch)=> setDoc(d=>({ ...d, grid:Object.assign({ cols:0, rows:0, gutter:12 }, d.grid, patch) }));
+  return (
+    <React.Fragment>
+      <div className="ps-sech">Sheet</div>
+      <div className="ps-mini" style={{ marginBottom:10 }}>
+        <b>{AP_SZ[doc.size].label} {doc.orient}</b> · {dims.wmm}×{dims.hmm} mm · trim + 3 mm bleed.
+        Everything prints as crisp vector — text rides the black plate only.
+      </div>
+      <Slider label="Safe margin" val={doc.marginMm!=null?doc.marginMm:6} min={0} max={24} step={0.5}
+        onChange={v=>setDoc(d=>({ ...d, marginMm:v }))} suffix="mm" />
+
+      <div className="ps-sech">Layout grid</div>
+      <Chips label="Columns" options={[{v:0,l:'Off'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},{v:6,l:'6'}]}
+        value={grid.cols||0} onChange={v=>setGrid({ cols:v })} />
+      <Chips label="Rows" options={[{v:0,l:'Off'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},{v:5,l:'5'},{v:6,l:'6'}]}
+        value={grid.rows||0} onChange={v=>setGrid({ rows:v })} />
+      {(grid.cols>0||grid.rows>0) && <Slider label="Gutter" val={grid.gutter!=null?grid.gutter:12} min={4} max={40} step={1}
+        onChange={v=>setGrid({ gutter:v })} suffix="pt" />}
+      <div className="ps-mini" style={{ marginBottom:10 }}>
+        Boxes snap to every column and row edge while you drag — the Swiss backbone.
+        Toggle <b>Grid</b> in the top bar to see it.
+      </div>
+
+      <div className="ps-sech">Shortcuts</div>
+      <div className="ps-mini" style={{ marginBottom:12 }}>
+        <b>Ctrl-Z</b> undo · <b>Ctrl-⇧-Z</b> redo · <b>Ctrl-D</b> duplicate · <b>Ctrl-A</b> select all ·
+        arrows nudge 1pt (<b>⇧</b> 10) · <b>Ctrl-scroll</b> zoom · <b>⇧-click</b> multi-select · <b>⇧-drag corner</b> keeps aspect.
+      </div>
+
+      <div className="ps-empty" style={{ paddingTop:4 }}>
+        <div className="big">{doc.elements.length} part{doc.elements.length===1?'':'s'} on the sheet</div>
+        <p>Click any part to edit it, or drag new ones from the library.</p>
+      </div>
+      <button className="ps-iconbtn ps-del" style={{ width:'100%', justifyContent:'center' }} onClick={clearAll}>Clear sheet</button>
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   INSPECTOR — one canonical order for every element:
+   Actions → Content → Type → Colour & surface → Treatment →
+   Border → Arrange. Capability arrays (ECHOABLE / LIFTABLE /
+   BLENDABLE / SURFACED_BOX / FITTABLE / ORIENTABLE) decide what
+   shows, so parity can't drift between element types.
+   ============================================================ */
+function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, selCount, align, distribute }){
+  if(!el) return <SheetPanel doc={doc} setDoc={setDoc} dims={dims} clearAll={clearAll} />;
+
   const isText = ['headline','body','kicker','bignum','numeral'].indexOf(el.type)>=0;
   const setItems = (items)=>update({ items });
-  /* upload/replace this image element's picture → IndexedDB; first picture
-     also snaps the box to the photo's aspect ratio. */
   const onPickImage = (file)=> processImageFile(file, ({data,w,h})=>{
     if(!window.PrintImg) return;
     window.PrintImg.add(data, w, h).then(id=>{
@@ -289,229 +489,306 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll }){
       update(patch);
     });
   });
+  const gridS = window.gridSpec(doc, dims);
+
+  /* ---- bespoke content per type ---- */
+  let content = null;
+  if(isText) content = <Field label="Text" value={el.text} onChange={v=>update({text:v})} area />;
+  else if(el.type==='image') content = <ImageControls el={el} update={update} onFile={onPickImage} />;
+  else if(el.type==='icon') content = <IconPicker el={el} update={update} />;
+  else if(el.type==='punchgrid') content = (
+    <React.Fragment>
+      <div className="ps-rowflex">
+        <Slider label="Columns" val={el.cols||5} min={2} max={10} step={1} onChange={v=>update({cols:v})} />
+        <Slider label="Rows" val={el.rows||2} min={1} max={5} step={1} onChange={v=>update({rows:v})} />
+      </div>
+      <Chips label="Cell" options={PUNCH_CELLS} value={el.cell||'circle'} onChange={v=>update({cell:v})} />
+      <Slider label="Gap" val={el.gap!=null?el.gap:8} min={2} max={24} step={1} onChange={v=>update({gap:v})} suffix="pt" />
+      <Slider label="Cell stroke" val={el.stroke!=null?el.stroke:1.5} min={0.5} max={5} step={0.25} onChange={v=>update({stroke:v})} suffix="pt" />
+      <Chips label="Numbers" options={[{v:true,l:'Shown'},{v:false,l:'Hidden'}]} value={el.numbered!==false} onChange={v=>update({numbered:v})} />
+      <Chips label="Bonus last cell" options={[{v:true,l:'Filled'},{v:false,l:'Plain'}]} value={!!el.bonus} onChange={v=>update({bonus:v})} />
+      {el.bonus && <React.Fragment>
+        <Field label="Bonus label" value={el.bonusLabel} onChange={v=>update({bonusLabel:v})} />
+        <Swatches label="Bonus fill" value={el.bonusFill||'pink'} onChange={v=>update({bonusFill:v})} white />
+      </React.Fragment>}
+    </React.Fragment>
+  );
+  else if(el.type==='slab') content = <Slider label="Angle" val={el.angle||0} min={-45} max={45} step={1} onChange={v=>update({angle:v})} suffix="°" />;
+  else if(el.type==='stripes') content = (
+    <React.Fragment>
+      <Chips label="Direction" options={STRIPE_DIRS} value={el.dir||'diag'} onChange={v=>update({dir:v})} />
+      <Slider label="Count" val={el.count||8} min={2} max={40} step={1} onChange={v=>update({count:v})} />
+      <Slider label="Thickness" val={el.ratio!=null?el.ratio:0.5} min={0.1} max={0.9} step={0.05} onChange={v=>update({ratio:v})} />
+      <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
+    </React.Fragment>
+  );
+  else if(el.type==='dotfield') content = (
+    <React.Fragment>
+      <Chips label="Dot shape" options={DOT_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
+      <Chips label="Size ramp" options={DOT_GRADS} value={el.grad||'none'} onChange={v=>update({grad:v})} />
+      {(el.grad && el.grad!=='none') && <Slider label="Ramp strength" val={el.ramp!=null?el.ramp:0.8} min={0} max={1} step={0.05} onChange={v=>update({ramp:v})} />}
+      <Slider label="Screen angle" val={el.angle||0} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
+      <Slider label="Dot size" val={el.dot||9} min={2} max={28} step={1} onChange={v=>update({dot:v})} suffix="pt" />
+      <Slider label="Gap" val={el.gap!=null?el.gap:6} min={1} max={28} step={1} onChange={v=>update({gap:v})} suffix="pt" />
+      <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
+    </React.Fragment>
+  );
+  else if(el.type==='sticker') content = (
+    <React.Fragment>
+      <Chips label="Die-cut shape" options={STICKER_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
+      {(el.shape==='rounded'||el.shape==='squircle') &&
+        <Slider label="Corner radius" val={el.radius!=null?el.radius:0.22} min={0.05} max={0.5} step={0.01} onChange={v=>update({radius:v})} />}
+      <Slider label="Keyline ring" val={el.ringW!=null?el.ringW:4} min={0} max={14} step={0.5} onChange={v=>update({ringW:v})} suffix="pt" />
+      <Swatches label="Ring colour" value={el.ring!=null?el.ring:'ink'} onChange={v=>update({ring:v})} white />
+    </React.Fragment>
+  );
+  else if(el.type==='burst') content = (
+    <React.Fragment>
+      <Slider label="Rays" val={el.rays||16} min={6} max={48} step={1} onChange={v=>update({rays:v})} />
+      <Slider label="Centre hub" val={el.hub!=null?el.hub:0} min={0} max={0.8} step={0.02} onChange={v=>update({hub:v})} />
+      {(el.hub||0)>0 && <Swatches label="Hub fill" value={el.hubFill||'white'} onChange={v=>update({hubFill:v})} white />}
+    </React.Fragment>
+  );
+  else if(el.type==='shape') content = (
+    <React.Fragment>
+      <Chips label="Shape" options={SHAPE_OPTS} value={el.kind||'hexagon'} onChange={v=>update({kind:v})} />
+      <Slider label="Keyline stroke" val={el.stroke||0} min={0} max={16} step={0.5} onChange={v=>update({stroke:v})} suffix="pt" />
+      {(el.stroke||0)>0 && <Swatches label="Stroke colour" value={el.strokeColor||'ink'} onChange={v=>update({strokeColor:v})} white />}
+    </React.Fragment>
+  );
+  else if(el.type==='arctext') content = (
+    <React.Fragment>
+      <Field label="Text" value={el.text} onChange={v=>update({text:v})} />
+      <Chips label="Arc" options={[{v:false,l:'Top'},{v:true,l:'Bottom'}]} value={!!el.flip} onChange={v=>update({flip:v})} />
+      <Slider label="Radius nudge" val={el.radiusAdj||0} min={-90} max={90} step={2} onChange={v=>update({radiusAdj:v})} suffix="pt" />
+      <Slider label="Size" val={el.fontSize||24} min={8} max={80} step={1} onChange={v=>update({fontSize:v})} suffix="pt" />
+      <Chips label="Weight" options={[{v:500,l:'Medium'},{v:700,l:'Bold'},{v:800,l:'Heavy'}]} value={el.weight||700} onChange={v=>update({weight:v})} />
+      <Slider label="Letter spacing" val={el.tracking!=null?el.tracking:0.08} min={-0.02} max={0.4} step={0.005} onChange={v=>update({tracking:v})} suffix="em" />
+      <Chips label="Case" options={[{v:true,l:'UPPER'},{v:false,l:'As typed'}]} value={el.upper!==false} onChange={v=>update({upper:v})} />
+    </React.Fragment>
+  );
+  else if(el.type==='footer') content = (
+    <React.Fragment>
+      <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
+      <Field label="Address" value={el.addr} onChange={v=>update({addr:v})} />
+      <Field label="QR encodes" value={el.qrData} onChange={v=>update({qrData:v})} />
+      <Chips label="QR" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]} value={el.showQR!==false} onChange={v=>update({showQR:v})} />
+      <Chips label="Top rule" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.rule!==false} onChange={v=>update({rule:v})} />
+    </React.Fragment>
+  );
+  else if(el.type==='badge'||el.type==='seal') content = (
+    <React.Fragment>
+      <Field label="Top" value={el.top} onChange={v=>update({top:v})} />
+      <Field label="Big" value={el.big} onChange={v=>update({big:v})} />
+      <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
+      <Slider label="Rotate" val={el.rot||0} min={-20} max={20} step={1} onChange={v=>update({rot:v})} suffix="°" />
+    </React.Fragment>
+  );
+  else if(el.type==='marquee') content = (
+    <React.Fragment>
+      <Field label="Word" value={el.text} onChange={v=>update({text:v})} />
+      <Field label="Separator" value={el.sep} onChange={v=>update({sep:v})} />
+      <Slider label="Size" val={el.fontSize||15} min={8} max={40} step={1} onChange={v=>update({fontSize:v})} suffix="pt" />
+    </React.Fragment>
+  );
+  else if(el.type==='qr') content = (()=>{
+    const dests = window.QR_DESTINATIONS||[];
+    const modKey = el.ink!=null?el.ink:'ink';
+    const eyeKey = el.eye&&el.eye!=='auto'?el.eye:modKey;
+    const risky = qrLum(modKey)>0.40 || qrLum(eyeKey)>0.40;
+    const hasLogo = el.logo && el.logo!=='none';
+    return <React.Fragment>
+      <div className="ps-row">
+        <div className="ps-lab">Destination</div>
+        <div className="ps-chips">
+          {dests.map(d=>(
+            <button key={d.id} className={'ps-chip'+(el.data===d.data?' on':'')} title={d.hint}
+              onClick={()=>update({data:d.data})}>{d.label}</button>
+          ))}
+        </div>
+      </div>
+      <Field label="Encodes (URL / text)" value={el.data} onChange={v=>update({data:v})} area />
+      <Field label="Caption (optional)" value={el.caption} onChange={v=>update({caption:v})} />
+
+      <div className="ps-sech">QR style</div>
+      <Chips label="Module shape" options={QR_MODULES} value={el.moduleStyle||'square'} onChange={v=>update({moduleStyle:v})} />
+      <Chips label="Finder eyes" options={QR_EYES} value={el.eyeStyle||'square'} onChange={v=>update({eyeStyle:v})} />
+      <Swatches label="Eye colour" value={el.eye!=null?el.eye:'auto'} onChange={v=>update({eye:v})} auto white />
+      <Chips label="Centre mark" options={QR_LOGOS} value={el.logo||'none'} onChange={v=>update({logo:v})} />
+      {hasLogo && <Swatches label="Mark colour" value={el.logoColor!=null?el.logoColor:'auto'} onChange={v=>update({logoColor:v})} auto white />}
+      {risky && <div className="ps-warn">Low contrast on white — test-scan before printing, or set the ink to a dark accent (purple · red · pink).</div>}
+
+      <div className="ps-sech">Encode</div>
+      {hasLogo
+        ? <div className="ps-hint">Error correction locked to <b>H</b> — protects the codewords under the centre mark.</div>
+        : <Chips label="Error correction" options={[{v:'L',l:'L'},{v:'M',l:'M'},{v:'Q',l:'Q'},{v:'H',l:'H'}]} value={el.ecl||'M'} onChange={v=>update({ecl:v})} />}
+      <Chips label="Quiet zone" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.quiet!==false} onChange={v=>update({quiet:v})} />
+      <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
+      {el.echo && <Swatches label="Echo colour" value={el.echoAccent||'auto'} onChange={v=>update({echoAccent:v})} auto />}
+    </React.Fragment>;
+  })();
+  else if(el.type==='coupon') content = (
+    <React.Fragment>
+      <Field label="Kicker" value={el.heading} onChange={v=>update({heading:v})} />
+      <Field label="Headline" value={el.big} onChange={v=>update({big:v})} area />
+      <Field label="Terms" value={el.terms} onChange={v=>update({terms:v})} />
+      <Field label="Code" value={el.code} onChange={v=>update({code:v})} mono />
+    </React.Fragment>
+  );
+  else if(el.type==='pricelist') content = (()=>{ const mode=el.listStyle||'prices'; return <React.Fragment>
+    <Chips label="List style" options={LIST_STYLES} value={mode} onChange={v=>update({listStyle:v})} />
+    <Field label="Heading (optional)" value={el.heading} onChange={v=>update({heading:v})} />
+    <div className="ps-lab">Rows</div>
+    {(el.items||[]).map((it,i)=>(
+      <div className="ps-itemrow" key={i}>
+        <input className="ps-input" value={it.l} onChange={e=>{ const items=el.items.slice(); items[i]={...it,l:e.target.value}; setItems(items); }} />
+        {mode==='prices' && <input className="ps-input" style={{ maxWidth:78 }} value={it.p} onChange={e=>{ const items=el.items.slice(); items[i]={...it,p:e.target.value}; setItems(items); }} />}
+        <button title="Move up" onClick={()=>{ if(i===0) return; const items=el.items.slice(); const t=items[i-1]; items[i-1]=items[i]; items[i]=t; setItems(items); }}>↑</button>
+        <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
+      </div>
+    ))}
+    <button className="ps-addrow" onClick={()=>setItems([...(el.items||[]), mode==='prices'?{l:'Item',p:'0k'}:{l:'Item',p:''}])}>+ Add row</button>
+    <div style={{ height:8 }} />
+    <Chips label="Columns" options={[{v:1,l:'1'},{v:2,l:'2'}]} value={el.cols||1} onChange={v=>update({cols:v})} />
+    <Chips label="Row size" options={[{v:'s',l:'S'},{v:'m',l:'M'},{v:'l',l:'L'},{v:'xl',l:'XL'}]} value={el.rowSize||'m'} onChange={v=>update({rowSize:v})} />
+    {mode==='prices' && <Chips label="Dot leader" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.dotLeader!==false} onChange={v=>update({dotLeader:v})} />}
+    {mode==='bulleted' && <Chips label="Bullet" options={LIST_MARKERS} value={el.marker||'•'} onChange={v=>update({marker:v})} />}
+    {(mode==='bulleted'||mode==='numbered') && <Swatches label="Marker colour" value={el.markerColor!=null?el.markerColor:'auto'} onChange={v=>update({markerColor:v})} auto white />}
+    {el.heading ? <Swatches label="Heading colour" value={el.headingColor!=null?el.headingColor:'auto'} onChange={v=>update({headingColor:v})} auto white /> : null}
+  </React.Fragment>; })();
+  else if(el.type==='arrow') content = (
+    <React.Fragment>
+      <Chips label="Direction" options={[{v:'up',l:'↑'},{v:'right',l:'→'},{v:'down',l:'↓'},{v:'left',l:'←'}]} value={el.dir||'right'} onChange={v=>update({dir:v})} />
+      <Field label="Label (optional)" value={el.label} onChange={v=>update({label:v})} />
+    </React.Fragment>
+  );
+  else if(el.type==='contact') content = (
+    <React.Fragment>
+      <Field label="Site / line 1" value={el.site} onChange={v=>update({site:v})} />
+      <Field label="Address / line 2" value={el.addr} onChange={v=>update({addr:v})} />
+      <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'}]} value={el.align||'left'} onChange={v=>update({align:v})} />
+    </React.Fragment>
+  );
+  else if(el.type==='rule') content = (()=>{
+    const pat = el.pattern||el.style||'solid';
+    const spaced = ['dashed','dotted','dashdot','ticks','zigzag','wave','square'].indexOf(pat)>=0;
+    const wavy = ['zigzag','wave','square'].indexOf(pat)>=0;
+    const ampMax = Math.max(4, Math.round(el.h/2 - (el.weight||3)/2));
+    return <React.Fragment>
+      <Chips label="Line pattern" options={RULE_PATTERNS} value={pat} onChange={v=>update({pattern:v, style:undefined})} />
+      <Slider label="Thickness" val={el.weight||3} min={0.5} max={24} step={0.5} onChange={v=>update({weight:v})} suffix="pt" />
+      {spaced && <Slider label="Spacing" val={el.spacing!=null?el.spacing:12} min={3} max={64} step={1} onChange={v=>update({spacing:v})} suffix="pt" />}
+      {pat==='dashed' && <Slider label="Dash ratio" val={el.dashRatio!=null?el.dashRatio:0.55} min={0.1} max={0.9} step={0.05} onChange={v=>update({dashRatio:v})} />}
+      {wavy && <Slider label="Amplitude" val={Math.min(el.amp!=null?el.amp:7, ampMax)} min={1} max={ampMax} step={1} onChange={v=>update({amp:v})} suffix="pt" />}
+      {(pat==='double'||pat==='triple') && <Slider label="Line gap" val={el.gap!=null?el.gap:6} min={1} max={32} step={0.5} onChange={v=>update({gap:v})} suffix="pt" />}
+      {pat==='ticks' && <React.Fragment>
+        <Slider label="Tick length" val={el.tickLen!=null?el.tickLen:6} min={1} max={Math.max(4,Math.round(el.h/2))} step={0.5} onChange={v=>update({tickLen:v})} suffix="pt" />
+        <Chips label="Tick direction" options={[{v:'both',l:'Both'},{v:'up',l:'Up'},{v:'down',l:'Down'}]} value={el.tickDir||'both'} onChange={v=>update({tickDir:v})} />
+      </React.Fragment>}
+      {['solid','dashed','dashdot','ticks','zigzag','wave','square'].indexOf(pat)>=0 &&
+        <Chips label="Line cap" options={[{v:'round',l:'Round'},{v:'butt',l:'Flat'}]} value={el.cap||'round'} onChange={v=>update({cap:v})} />}
+      <Chips label="Ends" options={RULE_TERMS} value={el.term||'none'} onChange={v=>update({term:v})} />
+      {el.term&&el.term!=='none' && <Chips label="Ends at" options={[{v:'end',l:'End'},{v:'start',l:'Start'},{v:'both',l:'Both'}]} value={el.termAt||'end'} onChange={v=>update({termAt:v})} />}
+    </React.Fragment>;
+  })();
+  else if(el.type==='wordmark') content = <div className="ps-mini" style={{ marginBottom:8 }}>The canonical REALITY vector — Montserrat with the Alternates A·I·Y. Colour below.</div>;
+
+  const showColour = el.type!=='image';
+  const showBorder = (el.type==='block' || (SURFACED_BOX.indexOf(el.type)>=0 && el.surface && el.surface!=='none'));
+
   return (
     <React.Fragment>
-      <div className="ps-sech">{el.type}</div>
+      <div className="ps-sech ps-seltype">{el.type}</div>
       <div className="ps-actions">
         <button className="ps-iconbtn" onClick={()=>layer(1)} title="Bring forward">▲</button>
         <button className="ps-iconbtn" onClick={()=>layer(-1)} title="Send back">▼</button>
         <button className="ps-iconbtn" onClick={dup}>Duplicate</button>
         <button className="ps-iconbtn ps-del" onClick={del}>Delete</button>
       </div>
+      {selCount>=2 && <AlignBar count={selCount} align={align} distribute={distribute} />}
 
-      {isText && <Field label="Text" value={el.text} onChange={v=>update({text:v})} area />}
-      {el.type==='image' && <ImageControls el={el} update={update} onFile={onPickImage} />}
-      {el.type==='slab' && <Slider label="Angle" val={el.angle||0} min={-45} max={45} step={1} onChange={v=>update({angle:v})} suffix="°" />}
-      {el.type==='stripes' && <React.Fragment>
-        <Chips label="Direction" options={STRIPE_DIRS} value={el.dir||'diag'} onChange={v=>update({dir:v})} />
-        <Slider label="Count" val={el.count||8} min={2} max={40} step={1} onChange={v=>update({count:v})} />
-        <Slider label="Thickness" val={el.ratio!=null?el.ratio:0.5} min={0.1} max={0.9} step={0.05} onChange={v=>update({ratio:v})} />
-        <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
-      </React.Fragment>}
-      {el.type==='dotfield' && <React.Fragment>
-        <Chips label="Dot shape" options={DOT_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
-        <Chips label="Size ramp" options={DOT_GRADS} value={el.grad||'none'} onChange={v=>update({grad:v})} />
-        {(el.grad && el.grad!=='none') && <Slider label="Ramp strength" val={el.ramp!=null?el.ramp:0.8} min={0} max={1} step={0.05} onChange={v=>update({ramp:v})} />}
-        <Slider label="Screen angle" val={el.angle||0} min={-90} max={90} step={1} onChange={v=>update({angle:v})} suffix="°" />
-        <Slider label="Dot size" val={el.dot||9} min={2} max={28} step={1} onChange={v=>update({dot:v})} suffix="pt" />
-        <Slider label="Gap" val={el.gap!=null?el.gap:6} min={1} max={28} step={1} onChange={v=>update({gap:v})} suffix="pt" />
-        <Chips label="Ground" options={[{v:'white',l:'White'},{v:'ink',l:'Ink'},{v:'none',l:'None'}]} value={el.bg||'white'} onChange={v=>update({bg:v})} />
-      </React.Fragment>}
-      {el.type==='sticker' && <React.Fragment>
-        <Chips label="Die-cut shape" options={STICKER_SHAPES} value={el.shape||'circle'} onChange={v=>update({shape:v})} />
-        {(el.shape==='rounded'||el.shape==='squircle') &&
-          <Slider label="Corner radius" val={el.radius!=null?el.radius:0.22} min={0.05} max={0.5} step={0.01} onChange={v=>update({radius:v})} />}
-        <Slider label="Keyline ring" val={el.ringW!=null?el.ringW:4} min={0} max={14} step={0.5} onChange={v=>update({ringW:v})} suffix="pt" />
-        <Swatches label="Ring colour" value={el.ring!=null?el.ring:'ink'} onChange={v=>update({ring:v})} white />
-      </React.Fragment>}
-      {el.type==='burst' && <React.Fragment>
-        <Slider label="Rays" val={el.rays||16} min={6} max={48} step={1} onChange={v=>update({rays:v})} />
-        <Slider label="Centre hub" val={el.hub!=null?el.hub:0} min={0} max={0.8} step={0.02} onChange={v=>update({hub:v})} />
-        {(el.hub||0)>0 && <Swatches label="Hub fill" value={el.hubFill||'white'} onChange={v=>update({hubFill:v})} white />}
-      </React.Fragment>}
-      {el.type==='shape' && <React.Fragment>
-        <Chips label="Shape" options={SHAPE_OPTS} value={el.kind||'hexagon'} onChange={v=>update({kind:v})} />
-        <Slider label="Keyline stroke" val={el.stroke||0} min={0} max={16} step={0.5} onChange={v=>update({stroke:v})} suffix="pt" />
-        {(el.stroke||0)>0 && <Swatches label="Stroke colour" value={el.strokeColor||'ink'} onChange={v=>update({strokeColor:v})} white />}
-      </React.Fragment>}
-      {el.type==='arctext' && <React.Fragment>
-        <Field label="Text" value={el.text} onChange={v=>update({text:v})} />
-        <Chips label="Arc" options={[{v:false,l:'Top'},{v:true,l:'Bottom'}]} value={!!el.flip} onChange={v=>update({flip:v})} />
-        <Slider label="Radius nudge" val={el.radiusAdj||0} min={-90} max={90} step={2} onChange={v=>update({radiusAdj:v})} suffix="pt" />
-        <Slider label="Size" val={el.fontSize||24} min={8} max={80} step={1} onChange={v=>update({fontSize:v})} suffix="pt" />
-        <Chips label="Weight" options={[{v:500,l:'Medium'},{v:700,l:'Bold'},{v:800,l:'Heavy'}]} value={el.weight||700} onChange={v=>update({weight:v})} />
-        <Slider label="Letter spacing" val={el.tracking!=null?el.tracking:0.08} min={-0.02} max={0.4} step={0.005} onChange={v=>update({tracking:v})} suffix="em" />
-        <Chips label="Case" options={[{v:true,l:'UPPER'},{v:false,l:'As typed'}]} value={el.upper!==false} onChange={v=>update({upper:v})} />
-      </React.Fragment>}
-      {el.type==='footer' && <React.Fragment>
-        <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
-        <Field label="Address" value={el.addr} onChange={v=>update({addr:v})} />
-        <Field label="QR encodes" value={el.qrData} onChange={v=>update({qrData:v})} />
-        <Chips label="QR" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]} value={el.showQR!==false} onChange={v=>update({showQR:v})} />
-        <Chips label="Top rule" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.rule!==false} onChange={v=>update({rule:v})} />
-      </React.Fragment>}
-      {(el.type==='badge'||el.type==='seal') && <React.Fragment>
-        <Field label="Top" value={el.top} onChange={v=>update({top:v})} />
-        <Field label="Big" value={el.big} onChange={v=>update({big:v})} />
-        <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
-        <Slider label="Rotate" val={el.rot||0} min={-20} max={20} step={1} onChange={v=>update({rot:v})} suffix="°" />
-      </React.Fragment>}
-      {el.type==='marquee' && <React.Fragment>
-        <Field label="Word" value={el.text} onChange={v=>update({text:v})} />
-        <Field label="Separator" value={el.sep} onChange={v=>update({sep:v})} />
-        <Slider label="Size" val={el.fontSize||15} min={8} max={40} step={1} onChange={v=>update({fontSize:v})} suffix="pt" />
-      </React.Fragment>}
-      {el.type==='qr' && (()=>{
-        const dests = window.QR_DESTINATIONS||[];
-        const modKey = el.ink!=null?el.ink:'ink';
-        const eyeKey = el.eye&&el.eye!=='auto'?el.eye:modKey;
-        const risky = qrLum(modKey)>0.40 || qrLum(eyeKey)>0.40;
-        const hasLogo = el.logo && el.logo!=='none';
-        return <React.Fragment>
-          <div className="ps-row">
-            <div className="ps-lab">Destination</div>
-            <div className="ps-chips">
-              {dests.map(d=>(
-                <button key={d.id} className={'ps-chip'+(el.data===d.data?' on':'')} title={d.hint}
-                  onClick={()=>update({data:d.data})}>{d.label}</button>
-              ))}
-            </div>
-          </div>
-          <Field label="Encodes (URL / text)" value={el.data} onChange={v=>update({data:v})} area />
-          <Field label="Caption (optional)" value={el.caption} onChange={v=>update({caption:v})} />
+      {content && (el.type==='image'
+        ? content   /* the photo panel brings its own Folds */
+        : <Fold id={'c-'+el.type} title="Content" open>{content}</Fold>)}
 
-          <div className="ps-sech">QR style</div>
-          <Chips label="Module shape" options={QR_MODULES} value={el.moduleStyle||'square'} onChange={v=>update({moduleStyle:v})} />
-          <Chips label="Finder eyes" options={QR_EYES} value={el.eyeStyle||'square'} onChange={v=>update({eyeStyle:v})} />
-          <Swatches label="Eye colour" value={el.eye!=null?el.eye:'auto'} onChange={v=>update({eye:v})} auto white />
-          <Chips label="Centre mark" options={QR_LOGOS} value={el.logo||'none'} onChange={v=>update({logo:v})} />
-          {hasLogo && <Swatches label="Mark colour" value={el.logoColor!=null?el.logoColor:'auto'} onChange={v=>update({logoColor:v})} auto white />}
-          {risky && <div className="ps-warn">Low contrast on white — test-scan before printing, or set the ink to a dark accent (purple · red · pink).</div>}
-
-          <div className="ps-sech">Encode</div>
-          {hasLogo
-            ? <div className="ps-hint">Error correction locked to <b>H</b> — protects the codewords under the centre mark.</div>
-            : <Chips label="Error correction" options={[{v:'L',l:'L'},{v:'M',l:'M'},{v:'Q',l:'Q'},{v:'H',l:'H'}]} value={el.ecl||'M'} onChange={v=>update({ecl:v})} />}
-          <Chips label="Quiet zone" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.quiet!==false} onChange={v=>update({quiet:v})} />
-          <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
-          {el.echo && <Swatches label="Echo colour" value={el.echoAccent||'auto'} onChange={v=>update({echoAccent:v})} auto />}
-        </React.Fragment>;
-      })()}
-      {el.type==='coupon' && <React.Fragment>
-        <Field label="Kicker" value={el.heading} onChange={v=>update({heading:v})} />
-        <Field label="Headline" value={el.big} onChange={v=>update({big:v})} area />
-        <Field label="Terms" value={el.terms} onChange={v=>update({terms:v})} />
-        <Field label="Code" value={el.code} onChange={v=>update({code:v})} mono />
-      </React.Fragment>}
-      {el.type==='pricelist' && (()=>{ const mode=el.listStyle||'prices'; return <React.Fragment>
-        <Chips label="List style" options={LIST_STYLES} value={mode} onChange={v=>update({listStyle:v})} />
-        <Field label="Heading (optional)" value={el.heading} onChange={v=>update({heading:v})} />
-        <div className="ps-lab">Rows</div>
-        {(el.items||[]).map((it,i)=>(
-          <div className="ps-itemrow" key={i}>
-            <input className="ps-input" value={it.l} onChange={e=>{ const items=el.items.slice(); items[i]={...it,l:e.target.value}; setItems(items); }} />
-            {mode==='prices' && <input className="ps-input" style={{ maxWidth:78 }} value={it.p} onChange={e=>{ const items=el.items.slice(); items[i]={...it,p:e.target.value}; setItems(items); }} />}
-            <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
-          </div>
-        ))}
-        <button className="ps-addrow" onClick={()=>setItems([...(el.items||[]), mode==='prices'?{l:'Item',p:'0k'}:{l:'Item',p:''}])}>+ Add row</button>
-        {mode==='prices' && <Chips label="Dot leader" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.dotLeader!==false} onChange={v=>update({dotLeader:v})} />}
-        {mode==='bulleted' && <Chips label="Bullet" options={LIST_MARKERS} value={el.marker||'•'} onChange={v=>update({marker:v})} />}
-        {(mode==='bulleted'||mode==='numbered') && <Swatches label="Marker colour" value={el.markerColor!=null?el.markerColor:'auto'} onChange={v=>update({markerColor:v})} auto white />}
-        <div style={{ height:8 }} />
-      </React.Fragment>; })()}
-      {el.type==='arrow' && <React.Fragment>
-        <Chips label="Direction" options={[{v:'up',l:'↑'},{v:'right',l:'→'},{v:'down',l:'↓'},{v:'left',l:'←'}]} value={el.dir||'right'} onChange={v=>update({dir:v})} />
-        <Field label="Label (optional)" value={el.label} onChange={v=>update({label:v})} />
-      </React.Fragment>}
-      {el.type==='contact' && <React.Fragment>
-        <Field label="Site / line 1" value={el.site} onChange={v=>update({site:v})} />
-        <Field label="Address / line 2" value={el.addr} onChange={v=>update({addr:v})} />
-        <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'}]} value={el.align||'left'} onChange={v=>update({align:v})} />
-      </React.Fragment>}
-
-      {/* type / style */}
-      {isText && <React.Fragment>
+      {isText && <Fold id="f-type" title="Type" open>
         <ScaleControl label="Size" val={el.fontSize} onChange={v=>update({fontSize:v})} />
         <Chips label="Typeface" options={FAMS} value={el.fam||'mont'} onChange={v=>update({fam:v})} />
-        {el.fam!=='grot' && <Chips label="Weight" options={[{v:100,l:'Thin'},{v:500,l:'Medium'},{v:700,l:'Bold'},{v:800,l:'Heavy'}]} value={el.weight||800} onChange={v=>update({weight:v})} />}
+        {el.fam==='grot'
+          ? <Chips label="Weight" options={[{v:400,l:'Regular'},{v:500,l:'Medium'}]} value={el.weight||400} onChange={v=>update({weight:v})} />
+          : el.fam!=='alt' && <Chips label="Weight" options={[{v:100,l:'Thin'},{v:500,l:'Medium'},{v:700,l:'Bold'},{v:800,l:'Heavy'}]} value={el.weight||800} onChange={v=>update({weight:v})} />}
         <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={el.align||'left'} onChange={v=>update({align:v})} />
         <Slider label="Letter spacing" val={el.tracking!=null?el.tracking:0} min={-0.05} max={0.5} step={0.005} onChange={v=>update({tracking:v})} suffix="em" />
+        <Slider label="Line height" val={el.leading!=null?el.leading:(el.type==='body'?1.32:0.95)} min={0.7} max={2} step={0.02} onChange={v=>update({leading:v})} />
         <Chips label="Case" options={[{v:true,l:'UPPER'},{v:false,l:'As typed'}]} value={el.upper!==false} onChange={v=>update({upper:v})} />
         {FITTABLE.indexOf(el.type)>=0 && <Chips label="Auto-fit width" options={[{v:false,l:'Off'},{v:true,l:'Fit box'}]} value={!!el.fit} onChange={v=>update({fit:v})} />}
         {ORIENTABLE.indexOf(el.type)>=0 && <Chips label="Orientation" options={ORIENTS} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
-      </React.Fragment>}
-      {el.type==='rule' && (()=>{
-        const pat = el.pattern||el.style||'solid';
-        const spaced = ['dashed','dotted','dashdot','ticks','zigzag','wave','square'].indexOf(pat)>=0;
-        const wavy = ['zigzag','wave','square'].indexOf(pat)>=0;
-        const ampMax = Math.max(4, Math.round(el.h/2 - (el.weight||3)/2));
-        return <React.Fragment>
-          <Chips label="Line pattern" options={RULE_PATTERNS} value={pat} onChange={v=>update({pattern:v, style:undefined})} />
-          <Slider label="Thickness" val={el.weight||3} min={0.5} max={24} step={0.5} onChange={v=>update({weight:v})} suffix="pt" />
-          {spaced && <Slider label="Spacing" val={el.spacing!=null?el.spacing:12} min={3} max={64} step={1} onChange={v=>update({spacing:v})} suffix="pt" />}
-          {pat==='dashed' && <Slider label="Dash ratio" val={el.dashRatio!=null?el.dashRatio:0.55} min={0.1} max={0.9} step={0.05} onChange={v=>update({dashRatio:v})} />}
-          {wavy && <Slider label="Amplitude" val={Math.min(el.amp!=null?el.amp:7, ampMax)} min={1} max={ampMax} step={1} onChange={v=>update({amp:v})} suffix="pt" />}
-          {(pat==='double'||pat==='triple') && <Slider label="Line gap" val={el.gap!=null?el.gap:6} min={1} max={32} step={0.5} onChange={v=>update({gap:v})} suffix="pt" />}
-          {pat==='ticks' && <React.Fragment>
-            <Slider label="Tick length" val={el.tickLen!=null?el.tickLen:6} min={1} max={Math.max(4,Math.round(el.h/2))} step={0.5} onChange={v=>update({tickLen:v})} suffix="pt" />
-            <Chips label="Tick direction" options={[{v:'both',l:'Both'},{v:'up',l:'Up'},{v:'down',l:'Down'}]} value={el.tickDir||'both'} onChange={v=>update({tickDir:v})} />
+      </Fold>}
+
+      {showColour && <Fold id="f-colour" title="Colour & surface" open>
+        {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee','arctext','icon','punchgrid'].indexOf(el.type)>=0 &&
+          <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white />}
+        {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst','shape'].indexOf(el.type)>=0 &&
+          <Swatches label={el.type==='sticker'?'Bed fill':el.type==='burst'?'Ray colour':'Fill'} value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} white />}
+        {SURFACED_BOX.indexOf(el.type)>=0 &&
+          <Chips label="Surface" options={SURFACES} value={el.surface||'none'} onChange={v=>update({surface:v})} />}
+        {['headline','numeral','bignum','kicker','pricelist','qr','coupon','arrow'].indexOf(el.type)>=0 && el.surface==='accent' &&
+          <Swatches label="Surface accent" value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} />}
+      </Fold>}
+
+      {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0) &&
+        <Fold id="f-treat" title="Treatment" badge={(el.lift&&el.lift!=='none')||el.echo||(el.blend&&el.blend!=='normal')?'on':null}>
+          {LIFTABLE.indexOf(el.type)>=0 && <ShadowControls el={el} update={update} />}
+          {ECHOABLE.indexOf(el.type)>=0 && <React.Fragment>
+            <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
+            {el.echo && <React.Fragment>
+              <Swatches label="Echo colour" value={el.echoAccent||'auto'} onChange={v=>update({echoAccent:v})} auto />
+              <div className="ps-rowflex">
+                <Slider label="Echo X" val={el.echoDx!=null?el.echoDx:4} min={-24} max={24} step={1} onChange={v=>update({echoDx:v})} suffix="pt" />
+                <Slider label="Echo Y" val={el.echoDy!=null?el.echoDy:4} min={-24} max={24} step={1} onChange={v=>update({echoDy:v})} suffix="pt" />
+              </div>
+            </React.Fragment>}
           </React.Fragment>}
-          {['solid','dashed','dashdot','ticks','zigzag','wave','square'].indexOf(pat)>=0 &&
-            <Chips label="Line cap" options={[{v:'round',l:'Round'},{v:'butt',l:'Flat'}]} value={el.cap||'round'} onChange={v=>update({cap:v})} />}
-          <Chips label="Ends" options={RULE_TERMS} value={el.term||'none'} onChange={v=>update({term:v})} />
-          {el.term&&el.term!=='none' && <Chips label="Ends at" options={[{v:'end',l:'End'},{v:'start',l:'Start'},{v:'both',l:'Both'}]} value={el.termAt||'end'} onChange={v=>update({termAt:v})} />}
-        </React.Fragment>;
-      })()}
+          {BLENDABLE.indexOf(el.type)>=0 && <Chips label="Blend · overprint" options={BLENDS} value={el.blend||'normal'} onChange={v=>update({blend:v})} />}
+        </Fold>}
 
-      {/* treatment — Year 2 plane shadow + misregistration echo + riso overprint */}
-      {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0) && <div className="ps-sech">Treatment</div>}
-      {LIFTABLE.indexOf(el.type)>=0 && <Chips label="Lift · plane shadow" options={LIFTS} value={el.lift||'none'} onChange={v=>update({lift:v})} />}
-      {ECHOABLE.indexOf(el.type)>=0 && <React.Fragment>
-        <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
-        {el.echo && <Swatches label="Echo colour" value={el.echoAccent||'auto'} onChange={v=>update({echoAccent:v})} auto />}
-      </React.Fragment>}
-      {BLENDABLE.indexOf(el.type)>=0 && <Chips label="Blend · overprint" options={BLENDS} value={el.blend||'normal'} onChange={v=>update({blend:v})} />}
-
-      {/* colour (image carries its own ink picker in the riso panel) */}
-      {el.type!=='image' && <div className="ps-sech">Colour</div>}
-      {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee','arctext'].indexOf(el.type)>=0 &&
-        <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white />}
-      {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst','shape'].indexOf(el.type)>=0 &&
-        <Swatches label={el.type==='sticker'?'Bed fill':el.type==='burst'?'Ray colour':'Fill'} value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} white />}
-      {['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee','arrow'].indexOf(el.type)>=0 &&
-        <Chips label="Surface" options={SURFACES} value={el.surface||'none'} onChange={v=>update({surface:v})} />}
-      {['headline','numeral','bignum','kicker','pricelist','qr','coupon','arrow'].indexOf(el.type)>=0 && el.surface==='accent' &&
-        <Swatches label="Surface accent" value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} />}
-
-      {/* border — styled box outline (shared: width · pattern · colour · radius) */}
-      {(el.type==='block' || (SURFACED_BOX.indexOf(el.type)>=0 && el.surface && el.surface!=='none')) && (()=>{
+      {showBorder && (()=>{
         const bw = el.border!=null?el.border:(el.type==='block'?0:2);
-        return <React.Fragment>
-          <div className="ps-sech">Border</div>
+        return <Fold id="f-border" title="Border" badge={bw>0?bw+'pt':null}>
           <Slider label="Border width" val={bw} min={0} max={12} step={0.5} onChange={v=>update({border:v})} suffix="pt" />
           {bw>0 && <React.Fragment>
             <Chips label="Border pattern" options={BORDER_PATTERNS} value={el.borderPattern||'solid'} onChange={v=>update({borderPattern:v})} />
             <Swatches label="Border colour" value={el.borderColor!=null?el.borderColor:'auto'} onChange={v=>update({borderColor:v})} auto white />
           </React.Fragment>}
           <Slider label="Corner radius" val={el.radius||0} min={0} max={60} step={1} onChange={v=>update({radius:v})} suffix="pt" />
-        </React.Fragment>;
+        </Fold>;
       })()}
 
-      {/* size + position */}
-      <div className="ps-sech">Box</div>
-      <Slider label="Width" val={el.w} min={16} max={Math.round(apDims(doc.size,doc.orient).wpt)} step={2} onChange={v=>update({w:v})} suffix="pt" />
-      <Slider label="Height" val={el.h} min={10} max={Math.round(apDims(doc.size,doc.orient).hpt)} step={2} onChange={v=>update({h:v})} suffix="pt" />
-      <div className="ps-rowflex">
-        <Slider label="X" val={el.x} min={-40} max={Math.round(apDims(doc.size,doc.orient).wpt)} step={1} onChange={v=>update({x:v})} suffix="" />
-        <Slider label="Y" val={el.y} min={-40} max={Math.round(apDims(doc.size,doc.orient).hpt)} step={1} onChange={v=>update({y:v})} suffix="" />
-      </div>
+      <Fold id="f-arrange" title="Arrange" open>
+        <div className="ps-numgrid">
+          <NumField label="X" value={el.x} onChange={v=>update({x:Math.round(v)})} />
+          <NumField label="Y" value={el.y} onChange={v=>update({y:Math.round(v)})} />
+          <NumField label="W" value={el.w} min={8} onChange={v=>update({w:Math.round(v)})} />
+          <NumField label="H" value={el.h} min={6} onChange={v=>update({h:Math.round(v)})} />
+          <NumField label="Rot°" value={el.rot||0} onChange={v=>update({rot:Math.round(v)})} />
+        </div>
+        <div className="ps-actions" style={{ marginTop:8 }}>
+          <button className="ps-iconbtn" style={{ flex:1 }} title="Fit width to the safe margins"
+            onClick={()=>update({ x:Math.round(gridS.m), w:Math.round(dims.wpt-gridS.m*2) })}>Margins</button>
+          <button className="ps-iconbtn" style={{ flex:1 }} title="Full bleed width"
+            onClick={()=>update({ x:0, w:Math.round(dims.wpt) })}>Bleed W</button>
+          <button className="ps-iconbtn" style={{ flex:1 }} title="Centre horizontally"
+            onClick={()=>update({ x:Math.round((dims.wpt-el.w)/2) })}>Centre H</button>
+          <button className="ps-iconbtn" style={{ flex:1 }} title="Centre vertically"
+            onClick={()=>update({ y:Math.round((dims.hpt-el.h)/2) })}>Centre V</button>
+        </div>
+      </Fold>
     </React.Fragment>
   );
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg }){
+function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct, onZoomFit, onZoomStep, canUndo, canRedo, onUndo, onRedo }){
   const [name, setName] = React.useState(doc.title||'');
   React.useEffect(()=>{ setName(doc.title||''); }, [doc.title]);
   const commit = ()=> setDoc(d=> d.title===name ? d : ({...d, title:name}));
@@ -546,6 +823,20 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg }){
         </div>
       </div>
 
+      <div className="ps-tgroup"><span className="gl">History</span>
+        <div className="ps-seg">
+          <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
+          <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
+        </div>
+      </div>
+      <div className="ps-tgroup"><span className="gl">Zoom</span>
+        <div className="ps-seg">
+          <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
+          <button onClick={onZoomFit} title="Fit the sheet">{zoomPct}</button>
+          <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
+        </div>
+      </div>
+
       <div className="spacer" />
 
       <div className="ps-tgroup"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('Export · '+dims.wmm+'×'+dims.hmm+'mm')}</span>
@@ -563,8 +854,8 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg }){
       </div>
 
       <button className={'ps-iconbtn'+(doc.showBleed?' on':'')} onClick={()=>setDoc(d=>({...d,showBleed:!d.showBleed}))} title="Show bleed + crop marks">Bleed</button>
-      <button className={'ps-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
-      <button className={'ps-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
+      <button className={'ps-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))} title="Show the layout grid">Grid</button>
+      <button className={'ps-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))} title="Snap to grid + guides">Snap</button>
     </div>
   );
 }
@@ -574,46 +865,103 @@ function App(){
   const [doc, setDoc] = React.useState(loadDoc);
   const [selectedIds, setSelectedIds] = React.useState([]);
   const selectedId = selectedIds.length ? selectedIds[selectedIds.length-1] : null;
-  const [scale, setScale] = React.useState(0.5);
+  const [fitScale, setFitScale] = React.useState(0.5);
+  const [zoom, setZoom] = React.useState(null);           // null = fit
   const [spawn, setSpawn] = React.useState(null);
-  /* library sections — all start COLLAPSED (the menu was overwhelming); a
-     section key maps to true once the user opens it. */
   const [openSecs, setOpenSecs] = React.useState({});
   const toggleSec = (k)=> setOpenSecs(s=>({ ...s, [k]:!s[k] }));
   const [exporting, setExporting] = React.useState(false);
   const [exportMsg, setExportMsg] = React.useState('');
   const [userTpls, setUserTpls] = React.useState(loadUserTpls);
+  const [histVer, setHistVer] = React.useState(0);
 
   const stageRef = React.useRef(null);
   const canvasRef = React.useRef(null);
-  const scaleRef = React.useRef(scale); scaleRef.current = scale;
   const docRef = React.useRef(doc); docRef.current = doc;
   const dims = apDims(doc.size, doc.orient);
+  const scale = zoom!=null ? zoom : fitScale;
+  const scaleRef = React.useRef(scale); scaleRef.current = scale;
+  const fitRef = React.useRef(fitScale); fitRef.current = fitScale;
+  const zoomRef = React.useRef(zoom); zoomRef.current = zoom;
 
   React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }, [doc]);
   React.useEffect(()=>{ if(window.PrintExport) window.PrintExport.ready().catch(()=>{}); }, []);
+
+  /* ---- history — one entry per quiet burst of edits (350ms), max 80 ---- */
+  const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });
+  React.useEffect(()=>{
+    const h = hist.current;
+    if(h.skip){ h.skip=false; h.prev=doc; return; }
+    if(h.prev==null){ h.prev=doc; return; }
+    if(h.pending==null) h.pending=h.prev;
+    h.prev=doc;
+    clearTimeout(h.timer);
+    h.timer=setTimeout(()=>{
+      h.past.push(h.pending); if(h.past.length>80) h.past.shift();
+      h.future=[]; h.pending=null; setHistVer(v=>v+1);
+    }, 350);
+  }, [doc]);
+  const undo = React.useCallback(()=>{
+    const h = hist.current;
+    clearTimeout(h.timer);
+    if(h.pending!=null){ h.past.push(h.pending); h.pending=null; h.future=[]; }
+    const prev = h.past.pop(); if(!prev) return;
+    h.future.push(docRef.current); h.skip=true;
+    setDoc(prev); setHistVer(v=>v+1);
+    setSelectedIds(ids=>ids.filter(id=>prev.elements.some(e=>e.id===id)));
+  }, []);
+  const redo = React.useCallback(()=>{
+    const h = hist.current;
+    const nxt = h.future.pop(); if(!nxt) return;
+    h.past.push(docRef.current); h.skip=true;
+    setDoc(nxt); setHistVer(v=>v+1);
+    setSelectedIds(ids=>ids.filter(id=>nxt.elements.some(e=>e.id===id)));
+  }, []);
 
   function select(id, additive){
     if(id==null){ setSelectedIds([]); return; }
     setSelectedIds(prev => additive ? (prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]) : (prev.length===1&&prev[0]===id?prev:[id]));
   }
 
-  /* delete key */
+  /* ---- keyboard: delete, undo/redo, duplicate, select-all, nudge, esc ---- */
   const selIdsRef = React.useRef(selectedIds); selIdsRef.current = selectedIds;
   React.useEffect(()=>{
     function onKey(e){
-      if(e.key!=='Delete' && e.key!=='Backspace') return;
-      const ids = selIdsRef.current; if(!ids.length) return;
       const ae = document.activeElement;
-      if(ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable)) return;
-      e.preventDefault();
-      setDoc(d=>({ ...d, elements:d.elements.filter(x=>ids.indexOf(x.id)<0) })); setSelectedIds([]);
+      const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable);
+      const mod = e.ctrlKey||e.metaKey;
+      if(mod && (e.key==='z'||e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
+      if(mod && (e.key==='y'||e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
+      if(typing) return;
+      const ids = selIdsRef.current;
+      if(mod && (e.key==='a'||e.key==='A')){ e.preventDefault(); setSelectedIds(docRef.current.elements.map(x=>x.id)); return; }
+      if(mod && (e.key==='d'||e.key==='D')){ e.preventDefault();
+        if(!ids.length) return;
+        const cur=docRef.current; const copies=[];
+        ids.forEach(id=>{ const src=cur.elements.find(x=>x.id===id); if(src){ const c=Object.assign(JSON.parse(JSON.stringify(src)),{id:apUid(), x:src.x+12, y:src.y+12}); copies.push(c); } });
+        if(copies.length){ setDoc(d=>({ ...d, elements:[...d.elements, ...copies] })); setSelectedIds(copies.map(c=>c.id)); }
+        return; }
+      if(e.key==='Escape'){ setSelectedIds([]); return; }
+      if(e.key==='Delete'||e.key==='Backspace'){
+        if(!ids.length) return;
+        e.preventDefault();
+        setDoc(d=>({ ...d, elements:d.elements.filter(x=>ids.indexOf(x.id)<0) })); setSelectedIds([]);
+        return;
+      }
+      if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
+        if(!ids.length) return;
+        e.preventDefault();
+        const st = e.shiftKey?10:1;
+        const dx = e.key==='ArrowLeft'?-st : e.key==='ArrowRight'?st : 0;
+        const dy = e.key==='ArrowUp'?-st : e.key==='ArrowDown'?st : 0;
+        setDoc(d=>({ ...d, elements:d.elements.map(x=> ids.indexOf(x.id)>=0 ? {...x, x:x.x+dx, y:x.y+dy} : x) }));
+        return;
+      }
     }
     window.addEventListener('keydown', onKey); return ()=>window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [undo, redo]);
 
-  /* warm the image store, and accept pasted images: replace the selected image
-     element, else drop a fresh image element centred near the top of the sheet */
+  /* warm the image store, and accept pasted images */
   React.useEffect(()=>{ if(window.PrintStore) window.PrintStore.open().catch(()=>{}); }, []);
   React.useEffect(()=>{
     function onPaste(e){
@@ -636,7 +984,7 @@ function App(){
 
   React.useLayoutEffect(()=>{
     function recompute(){ const s=stageRef.current; if(!s) return; const pad=110;
-      setScale(Math.min((s.clientWidth-pad)/dims.wpt, (s.clientHeight-pad)/dims.hpt)); }
+      setFitScale(Math.max(0.05, Math.min((s.clientWidth-pad)/dims.wpt, (s.clientHeight-pad)/dims.hpt))); }
     recompute();
     const ro = new ResizeObserver(recompute); if(stageRef.current) ro.observe(stageRef.current);
     return ()=>ro.disconnect();
@@ -645,11 +993,42 @@ function App(){
   const sel = doc.elements.find(e=>e.id===selectedId) || null;
 
   function updateEl(id, patch){ setDoc(d=>({ ...d, elements:d.elements.map(e=>e.id===id?{...e,...patch}:e) })); }
+  function updateMany(patches){ setDoc(d=>({ ...d, elements:d.elements.map(e=> patches[e.id] ? {...e, ...patches[e.id]} : e) })); }
   const update = (patch)=> sel && updateEl(sel.id, patch);
   const del = ()=>{ const ids=selectedIds; if(!ids.length) return; setDoc(d=>({...d, elements:d.elements.filter(e=>ids.indexOf(e.id)<0)})); setSelectedIds([]); };
   const dup = ()=>{ if(!sel) return; const c=Object.assign(JSON.parse(JSON.stringify(sel)),{id:apUid(), x:sel.x+12, y:sel.y+12}); setDoc(d=>({...d, elements:[...d.elements, c]})); setSelectedIds([c.id]); };
   const layer = (dir)=>{ if(!sel) return; setDoc(d=>{ const arr=d.elements.slice(); const i=arr.findIndex(e=>e.id===sel.id); const j=i+dir; if(j<0||j>=arr.length) return d; const t=arr[i]; arr[i]=arr[j]; arr[j]=t; return {...d, elements:arr}; }); };
   const clearAll = ()=>{ if(confirm('Remove all parts from the sheet?')){ setDoc(d=>({...d, elements:[]})); setSelectedIds([]); } };
+
+  /* align + distribute the multi-selection */
+  function alignSel(axis, mode){
+    const items = selectedIds.map(id=>doc.elements.find(e=>e.id===id)).filter(Boolean);
+    if(items.length<2) return;
+    const x0=Math.min(...items.map(e=>e.x)), x1=Math.max(...items.map(e=>e.x+e.w));
+    const y0=Math.min(...items.map(e=>e.y)), y1=Math.max(...items.map(e=>e.y+e.h));
+    const patches={};
+    items.forEach(e=>{
+      if(axis==='x'){ const nx = mode==='left'? x0 : mode==='right'? x1-e.w : (x0+x1)/2 - e.w/2; patches[e.id]={ x:Math.round(nx) }; }
+      else { const ny = mode==='top'? y0 : mode==='bottom'? y1-e.h : (y0+y1)/2 - e.h/2; patches[e.id]={ y:Math.round(ny) }; }
+    });
+    updateMany(patches);
+  }
+  function distributeSel(axis){
+    const items = selectedIds.map(id=>doc.elements.find(e=>e.id===id)).filter(Boolean);
+    if(items.length<3) return;
+    const sorted = items.slice().sort((a,b)=> axis==='x' ? a.x-b.x : a.y-b.y);
+    const lo = axis==='x' ? Math.min(...items.map(e=>e.x)) : Math.min(...items.map(e=>e.y));
+    const hi = axis==='x' ? Math.max(...items.map(e=>e.x+e.w)) : Math.max(...items.map(e=>e.y+e.h));
+    const sum = sorted.reduce((a,e)=> a + (axis==='x'?e.w:e.h), 0);
+    const gap = ((hi-lo) - sum) / (sorted.length-1);
+    let cur = lo;
+    const patches={};
+    sorted.forEach(e=>{
+      patches[e.id] = axis==='x' ? { x:Math.round(cur) } : { y:Math.round(cur) };
+      cur += (axis==='x'?e.w:e.h) + gap;
+    });
+    updateMany(patches);
+  }
 
   /* resize the document to a new A-size: scale every part in place */
   function onResize(newSize){
@@ -662,7 +1041,26 @@ function App(){
       }));
       return {...d, size:newSize, elements};
     });
+    setZoom(null);
   }
+
+  /* zoom controls */
+  const ZOOMS = [0.1,0.15,0.25,0.35,0.5,0.65,0.8,1,1.25,1.5,2,3,4];
+  const onZoomFit = ()=> setZoom(null);
+  const onZoomStep = (dir)=> setZoom(z=>{
+    const cur = z!=null?z:fitRef.current;
+    let i = 0; for(let k=0;k<ZOOMS.length;k++){ if(Math.abs(ZOOMS[k]-cur)<Math.abs(ZOOMS[i]-cur)) i=k; }
+    if(ZOOMS[i]<=cur && dir>0) i++; else if(ZOOMS[i]>=cur && dir<0) i--;
+    i = Math.max(0, Math.min(ZOOMS.length-1, dir>0?Math.max(i, 0):i));
+    return ZOOMS[Math.max(0, Math.min(ZOOMS.length-1, i))];
+  });
+  const onZoomWheel = React.useCallback((deltaY)=>{
+    setZoom(z=>{
+      const cur = z!=null?z:fitRef.current;
+      return Math.max(0.08, Math.min(4, cur*Math.exp(-deltaY*0.0012)));
+    });
+  }, []);
+  const zoomPct = Math.round(scale*100)+'%';
 
   /* spawn-drag from library */
   function startSpawn(e, item){
@@ -687,7 +1085,7 @@ function App(){
   function applyTemplate(tpl){
     if(docRef.current.elements.length && !window.confirm('Replace the current sheet with the “'+tpl.name+'” layout?')) return;
     const b = apBuildTpl(tpl);
-    setDoc(d=>({ ...d, size:b.size, orient:b.orient, accent:b.accent, elements:b.elements })); setSelectedIds([]);
+    setDoc(d=>({ ...d, size:b.size, orient:b.orient, accent:b.accent, elements:b.elements })); setSelectedIds([]); setZoom(null);
   }
   function saveUserTpl(){
     const d=docRef.current; if(!d.elements.length){ window.alert('Nothing on the sheet to save yet.'); return; }
@@ -701,7 +1099,7 @@ function App(){
   function applyUserTpl(t){
     if(docRef.current.elements.length && !window.confirm('Replace the current sheet with “'+t.name+'”?')) return;
     const snap=JSON.parse(JSON.stringify(t.doc)); snap.elements.forEach(e=>{ e.id=apUid(); });
-    setDoc(d=>({ ...d, size:snap.size, orient:snap.orient, accent:snap.accent, elements:snap.elements })); setSelectedIds([]);
+    setDoc(d=>({ ...d, size:snap.size, orient:snap.orient, accent:snap.accent, elements:snap.elements })); setSelectedIds([]); setZoom(null);
   }
   function delUserTpl(id){ const next=userTpls.filter(x=>x.id!==id); try{ localStorage.setItem(TPL_KEY, JSON.stringify(next)); }catch(e){} setUserTpls(next); }
 
@@ -731,9 +1129,14 @@ function App(){
     setExporting(false); setExportMsg('');
   }
 
+  const gridS = window.gridSpec(doc, dims);
+  const h = hist.current;
+
   return (
     <div className="ps-app">
-      <Topbar doc={doc} setDoc={setDoc} onResize={onResize} onExport={onExport} exporting={exporting} exportMsg={exportMsg} />
+      <Topbar doc={doc} setDoc={setDoc} onResize={onResize} onExport={onExport} exporting={exporting} exportMsg={exportMsg}
+        zoomPct={zoomPct} onZoomFit={onZoomFit} onZoomStep={onZoomStep}
+        canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo} />
       <div className="ps-body">
         <div className="ps-lib">
           <div className="ps-libtitle">Templates</div>
@@ -744,11 +1147,9 @@ function App(){
                 <button className={'ps-sec'+(open?' open':'')} onClick={()=>toggleSec(k)}>
                   <span className="caret">{open?'▾':'▸'}</span><span className="t">{grp}</span><span className="n">{items.length}</span>
                 </button>
-                {open && items.map(tp=>(
-                  <div key={tp.id} className="ps-libitem" onClick={()=>applyTemplate(tp)}>
-                    <span className="ln">{tp.name}</span><span className="lh">{AP_SZ[tp.size].label} · {tp.orient}</span>
-                  </div>
-                ))}
+                {open && <div className="ps-tplgrid">
+                  {items.map(tp=><TplCard key={tp.id} tpl={tp} onApply={()=>applyTemplate(tp)} />)}
+                </div>}
               </React.Fragment>
             );
           })}
@@ -758,12 +1159,16 @@ function App(){
                 <span className="caret">{open?'▾':'▸'}</span><span className="t">My templates</span><span className="n">{userTpls.length}</span>
               </button>
               {open && <React.Fragment>
-                {userTpls.map(t=>(
-                  <div key={t.id} className="ps-libitem" onClick={()=>applyUserTpl(t)} style={{ position:'relative', paddingRight:34 }}>
-                    <span className="ln">{t.name}</span><span className="lh">{t.doc.elements.length} parts · {AP_SZ[t.doc.size].label}</span>
-                    <button className="ps-tplx" onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
-                  </div>
-                ))}
+                <div className="ps-tplgrid">
+                  {userTpls.map(t=>(
+                    <div key={t.id} className="ps-tplcard" onClick={()=>applyUserTpl(t)} title={t.name} style={{ position:'relative' }}>
+                      <TplThumb built={{ size:t.doc.size, orient:t.doc.orient, accent:t.doc.accent, elements:t.doc.elements }} w={100} />
+                      <span className="tn">{t.name}</span>
+                      <span className="ts">{AP_SZ[t.doc.size].label} · {t.doc.elements.length} parts</span>
+                      <button className="ps-tplx" onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
+                    </div>
+                  ))}
+                </div>
                 <button className="ps-addrow" onClick={saveUserTpl} style={{ marginBottom:6 }}>＋ Save current sheet</button>
               </React.Fragment>}
             </React.Fragment>
@@ -788,12 +1193,14 @@ function App(){
         </div>
 
         <APCanvas elements={doc.elements} wpt={dims.wpt} hpt={dims.hpt} accent={doc.accent}
-          marginPt={6*AP_PPM} bleedPt={3*AP_PPM} showGrid={doc.showGrid} showBleed={doc.showBleed} snap={doc.snap}
+          grid={gridS} bleedPt={3*AP_PPM} showGrid={doc.showGrid} showBleed={doc.showBleed} snap={doc.snap}
           scale={scale} stageRef={stageRef} canvasRef={canvasRef}
-          selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} />
+          selectedId={selectedId} selectedIds={selectedIds} onSelect={select}
+          onChange={updateEl} onChangeMany={updateMany} onCommit={()=>{}} onZoomWheel={onZoomWheel} />
 
         <div className="ps-inspector">
-          <Inspector el={sel} doc={doc} update={update} dup={dup} del={del} layer={layer} clearAll={clearAll} />
+          <Inspector el={sel} doc={doc} dims={dims} update={update} dup={dup} del={del} layer={layer}
+            clearAll={clearAll} setDoc={setDoc} selCount={selectedIds.length} align={alignSel} distribute={distributeSel} />
         </div>
       </div>
       {spawn && <div className="ps-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}

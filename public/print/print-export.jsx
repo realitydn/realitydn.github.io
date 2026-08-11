@@ -126,10 +126,11 @@ function renderElement(page, el, ctx){
     const bl = place(lx, lyTop+h);
     page.drawRectangle(bm(Object.assign({ x:bl.x, y:bl.y, width:w, height:h, rotate:ROT }, opts)));
   }
-  function line(ax, ay, bx, by, thickness, color, dash){
+  function line(ax, ay, bx, by, thickness, color, dash, opacity){
     const p=place(ax,ay), q=place(bx,by);
     const o={ start:{x:p.x,y:p.y}, end:{x:q.x,y:q.y}, thickness, color };
     if(dash) o.dashArray=dash;
+    if(opacity!=null) o.opacity=opacity;
     page.drawLine(bm(o));
   }
   function ellipse(lxC, lyC, rx, ry, opts){
@@ -150,8 +151,8 @@ function renderElement(page, el, ctx){
   /* draw an SVG path given in LOCAL element coords (0..w, 0..h, y-down),
      optionally offset by (ox,oy) local pt. Anchored at the rotated local
      origin so it rotates about the element centre, matching rect()/text. */
-  function localPath(d, color, ox, oy){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm({ x:o.x, y:o.y, scale:1, rotate:ROT, color })); }
-  function localPathStroke(d, color, w, ox, oy){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm({ x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w })); }
+  function localPath(d, color, ox, oy, extra){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm(Object.assign({ x:o.x, y:o.y, scale:1, rotate:ROT, color }, extra||{}))); }
+  function localPathStroke(d, color, w, ox, oy, extra){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm(Object.assign({ x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w }, extra||{}))); }
 
   const accentHex = isAccent(el.fill) ? window.PALETTE[el.fill] : window.PALETTE[accentName];
   const fillKey = el.fill!=null ? el.fill : accentName;
@@ -159,9 +160,18 @@ function renderElement(page, el, ctx){
   const textColor = colorForKey(el.ink!=null?el.ink:'auto', textFallback);
   const echoColor = el.echoAccent && el.echoAccent!=='auto' ? colorForKey(el.echoAccent) : accentColor(window.partnerOf(accentName));
 
+  /* plane shadow from the shared spec — dx/dy offset, K-tint or accent ink.
+     K rides the black plate as a tint; accents get an opacity graphics state
+     (default alpha 1 = the hard riso shadow). */
+  const shSpec = window.shadowSpec(el);
+  function shadowOpts(){
+    if(!shSpec) return null;
+    return shSpec.color==='k' ? { color:tintK(shSpec.alpha) }
+      : (shSpec.alpha<1 ? { color:colorForKey(shSpec.color), opacity:shSpec.alpha } : { color:colorForKey(shSpec.color) });
+  }
   function liftRect(lx,lyTop,w,h){
-    const s = window.LIFT[el.lift]; if(!s) return;
-    rect(lx, lyTop+s.dy, w, h, { color:tintK(s.k) });
+    if(!shSpec) return;
+    rect(lx+shSpec.dx, lyTop+shSpec.dy, w, h, shadowOpts());
   }
   /* shared box fill + styled border (color · pattern · radius) — same geometry as
      the screen border overlay via roundedRectPath, so dashes land identically. */
@@ -234,27 +244,82 @@ function renderElement(page, el, ctx){
     let yTop=(el.surface&&el.surface!=='none')?12:6;
     const padX=(el.surface&&el.surface!=='none')?12:2;
     const listAccent=accentColor(isAccent(fillKey)?fillKey:accentName);
+    const headCol=(el.headingColor&&el.headingColor!=='auto')?colorForKey(el.headingColor):listAccent;
     if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
-      drawLineStr(el.heading.toUpperCase(), padX, yTop+a, hf, hs, listAccent, 0.04); yTop+=hs*1.1+8; }
-    const rf=fontFor('mont',700), mf=fontFor('mont',800), rs=13, ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.7;
+      drawLineStr(el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, 0.04); yTop+=hs*1.1+8; }
+    const rs=window.listRowFont(el);
+    const rf=fontFor('mont',700), mf=fontFor('mont',800), ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.8;
     const markerCol = (el.markerColor&&el.markerColor!=='auto') ? colorForKey(el.markerColor) : listAccent;
     const glyph = el.marker || '•';
-    (el.items||[]).forEach((it,i)=>{
-      const baseTop=yTop+ra, lbl=(it.l||'').toUpperCase();
-      let lx=padX;
-      if(mode==='bulleted'){ drawLineStr(glyph, padX, baseTop, mf, rs, markerCol, 0); lx=padX+measure(glyph,mf,rs,0)+7; }
-      else if(mode==='numbered'){ const num=(i+1)+'.'; drawLineStr(num, padX, baseTop, mf, rs, markerCol, 0); lx=padX+Math.max(measure(num,mf,rs,0), rs*0.9)+7; }
-      if(mode==='prices'){
-        const prc=(it.p||'').toUpperCase(), pw=measure(prc,rf,rs,0.02);
-        drawLineStr(lbl, lx, baseTop, rf, rs, textColor, 0.02);
-        drawLineStr(prc, el.w-padX-pw, baseTop, rf, rs, textColor, 0.02);
-        if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,0.02), x0=lx+lw+6, x1=el.w-padX-pw-6, my=yTop+ra*0.72;
-          if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
-        yTop+=rowH;
-      } else {   // bulleted / numbered / plain → wrap long labels (matches the screen, no truncation in print)
-        const availW=Math.max(20, el.w-lx-padX), lineH=rs*1.32, lines=wrapText(lbl, rf, rs, 0.02, availW);
-        lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*lineH, rf, rs, textColor, 0.02));
-        yTop += rowH + (lines.length-1)*lineH;
+    /* 1–2(–3) balanced columns, reading DOWN each column — same split as the screen */
+    const colsArr=window.listSplit(el.items, el.cols||1), nCols=Math.max(1,colsArr.length), colGap=18;
+    const colW=(el.w-padX*2-(nCols-1)*colGap)/nCols;
+    let idx=0;
+    colsArr.forEach((arr,c)=>{
+      const cx0=padX+c*(colW+colGap);
+      let y=yTop;
+      arr.forEach((it)=>{
+        const i=idx++;
+        const baseTop=y+ra+rs*0.3, lbl=(it.l||'').toUpperCase();
+        let lx=cx0;
+        if(mode==='bulleted'){ drawLineStr(glyph, cx0, baseTop, mf, rs, markerCol, 0); lx=cx0+measure(glyph,mf,rs,0)+7; }
+        else if(mode==='numbered'){ const num=(i+1)+'.'; drawLineStr(num, cx0, baseTop, mf, rs, markerCol, 0); lx=cx0+Math.max(measure(num,mf,rs,0), rs*0.9)+7; }
+        if(mode==='prices'){
+          const prc=(it.p||'').toUpperCase(), pw=measure(prc,rf,rs,0.02);
+          drawLineStr(lbl, lx, baseTop, rf, rs, textColor, 0.02);
+          drawLineStr(prc, cx0+colW-pw, baseTop, rf, rs, textColor, 0.02);
+          if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,0.02), x0=lx+lw+6, x1=cx0+colW-pw-6, my=y+rs*0.3+ra*0.72;
+            if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
+          y+=rowH;
+        } else {   // bulleted / numbered / plain → wrap long labels within the column
+          const availW=Math.max(20, cx0+colW-lx), lineH=rs*1.32, lines=wrapText(lbl, rf, rs, 0.02, availW);
+          lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*lineH, rf, rs, textColor, 0.02));
+          y += rowH + (lines.length-1)*lineH;
+        }
+      });
+    });
+  }
+  else if(t==='icon'){
+    const lay=window.iconLayout(el);
+    if(lay){
+      const col=colorForKey(el.ink!=null?el.ink:'ink', inkColor());
+      const drawPrims=(c, dx, dy, alpha)=>{
+        const fx = alpha!=null&&alpha<1 ? { opacity:alpha, borderOpacity:alpha } : null;
+        lay.prims.forEach(p=>{
+          if(p.t==='rect'){ const o=p.stroke?{borderColor:c,borderWidth:lay.sw}:{color:c}; if(fx) Object.assign(o,fx); rect(p.x+dx,p.y+dy,p.w,p.h,o); }
+          else if(p.t==='line'){ line(p.x1+dx,p.y1+dy,p.x2+dx,p.y2+dy, lay.sw, c, null, alpha); }
+          else if(p.t==='ellipse'){ const o=p.stroke?{borderColor:c,borderWidth:lay.sw}:{color:c}; if(fx) Object.assign(o,fx); ellipse(p.cx+dx,p.cy+dy,p.rx,p.ry,o); }
+          else if(p.t==='poly'){ const d='M '+p.pts.map(q=>q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' L ')+' Z';
+            p.stroke? localPathStroke(d,c,lay.sw,dx,dy,fx) : localPath(d,c,dx,dy,fx); }
+          else if(p.t==='path'){ p.stroke? localPathStroke(p.d,c,lay.sw,dx,dy,fx) : localPath(p.d,c,dx,dy,fx); }
+        });
+      };
+      if(shSpec) drawPrims(shSpec.color==='k'?tintK(shSpec.alpha):colorForKey(shSpec.color), shSpec.dx, shSpec.dy, shSpec.color==='k'?null:shSpec.alpha);
+      if(el.echo) drawPrims(echoColor, el.echoDx||5, el.echoDy||5, null);
+      drawPrims(col, 0, 0, null);
+    }
+  }
+  else if(t==='punchgrid'){
+    const lay=window.punchLayout(el);
+    const col=colorForKey(el.ink!=null?el.ink:'ink', inkColor());
+    const bonusKey=el.bonusFill||'pink';
+    const bonusCol=colorForKey(bonusKey, accentColor(accentName));
+    const bonusHex= isAccent(bonusKey)?window.PALETTE[bonusKey] : bonusKey==='ink'?'#111111' : bonusKey==='white'?'#ffffff' : window.PALETTE[accentName];
+    lay.cells.forEach(c=>{
+      const last=c.n===lay.total, isBonus=el.bonus&&last, rr=c.d/2-lay.stroke/2;
+      if(lay.shape==='square'){ if(isBonus) rect(c.cx-rr,c.cy-rr,rr*2,rr*2,{color:bonusCol}); rect(c.cx-rr,c.cy-rr,rr*2,rr*2,{borderColor:col,borderWidth:lay.stroke}); }
+      else if(lay.shape==='star'){ const d=window.starPath(c.cx,c.cy,rr*1.05); if(isBonus) localPath(d,bonusCol); localPathStroke(d,col,lay.stroke); }
+      else { if(isBonus) ellipse(c.cx,c.cy,rr,rr,{color:bonusCol}); ellipse(c.cx,c.cy,rr,rr,{borderColor:col,borderWidth:lay.stroke}); }
+      if(isBonus){
+        const lbl=el.bonusLabel||'★', f=fontFor('mont',800), s=c.d*0.42;
+        const tcol=window.contrastInk(bonusHex)==='#ffffff'?whiteColor():inkColor();
+        const w=measure(lbl,f,s,0), a=f.heightAtSize(s,{descender:false});
+        drawLineStr(lbl, c.cx-w/2, c.cy+a*0.36, f, s, tcol, 0);
+      } else if(el.numbered){
+        const f=fontFor('mont',700), s=Math.max(6,c.d*0.3), num=String(c.n);
+        const w=measure(num,f,s,0), a=f.heightAtSize(s,{descender:false});
+        const p=place(c.cx-w/2, c.cy+a*0.36);
+        page.drawText(num, bm({ x:p.x, y:p.y, size:s, font:f, color:col, rotate:ROT, opacity:0.55 }));
       }
     });
   }
@@ -313,8 +378,7 @@ function renderElement(page, el, ctx){
     const quad=(ox,oy)=>{ const a=Math.abs(sh); return sh>=0
       ? `M ${ox+sh} ${oy} L ${ox+el.w} ${oy} L ${ox+el.w-sh} ${oy+el.h} L ${ox} ${oy+el.h} Z`
       : `M ${ox} ${oy} L ${ox+el.w-a} ${oy} L ${ox+el.w} ${oy+el.h} L ${ox+a} ${oy+el.h} Z`; };
-    const sObj=window.LIFT[el.lift];
-    if(sObj) localPath(quad(0, sObj.dy), tintK(sObj.k));          // plane shadow (matches the screen)
+    if(shSpec){ const so=shadowOpts(); localPath(quad(shSpec.dx, shSpec.dy), so.color, 0, 0, so.opacity!=null?{opacity:so.opacity}:null); }
     if(el.echo) localPath(quad(el.echoDx||9, el.echoDy||9), echoColor);
     localPath(quad(0,0), colorForKey(fillKey, accentColor(accentName)));
   }
@@ -350,17 +414,17 @@ function renderElement(page, el, ctx){
   else if(t==='sticker'){
     const bed=colorForKey(el.fill!=null?el.fill:'white', whiteColor());
     const ringCol=colorForKey(el.ring!=null?el.ring:'ink', inkColor());
-    const ringW=el.ringW!=null?el.ringW:4, shape=el.shape||'circle', s=window.LIFT[el.lift];
+    const ringW=el.ringW!=null?el.ringW:4, shape=el.shape||'circle';
     if(shape==='circle'){
       const rx=el.w/2, ry=el.h/2, cxL=el.w/2, cyL=el.h/2;
-      if(s) ellipse(cxL, cyL+s.dy, rx, ry, { color:tintK(s.k) });
+      if(shSpec) ellipse(cxL+shSpec.dx, cyL+shSpec.dy, rx, ry, shadowOpts());
       if(el.echo) ellipse(cxL+(el.echoDx||7), cyL+(el.echoDy||7), rx, ry, { color:echoColor });
       ellipse(cxL, cyL, rx, ry, { color:bed });
       if(ringW>0) ellipse(cxL, cyL, Math.max(0.5,rx-ringW/2), Math.max(0.5,ry-ringW/2), { borderColor:ringCol, borderWidth:ringW });
     } else {
       const m=Math.min(el.w,el.h), rad= shape==='rect'?0 : m*(el.radius!=null?el.radius:(shape==='squircle'?0.3:0.22));
       const path=(ox,oy)=>roundedRectPath(ox,oy,el.w,el.h,rad);
-      if(s) localPath(path(0,s.dy), tintK(s.k));
+      if(shSpec){ const so=shadowOpts(); localPath(path(shSpec.dx, shSpec.dy), so.color, 0, 0, so.opacity!=null?{opacity:so.opacity}:null); }
       if(el.echo) localPath(path(el.echoDx||7, el.echoDy||7), echoColor);
       localPath(path(0,0), bed);
       if(ringW>0) localPathStroke(roundedRectPath(ringW/2, ringW/2, el.w-ringW, el.h-ringW, Math.max(0,rad-ringW/2)), ringCol, ringW);
@@ -377,15 +441,15 @@ function renderElement(page, el, ctx){
   else if(t==='shape'){
     const col=colorForKey(el.fill!=null?el.fill:'blue', accentColor(accentName));
     const strokeCol=colorForKey(el.strokeColor||'ink', inkColor()), sw=el.stroke||0;
-    const path=window.shapePath(el.kind||'hexagon', el.w, el.h), s=window.LIFT[el.lift];
+    const path=window.shapePath(el.kind||'hexagon', el.w, el.h);
     if(path){
-      if(s) localPath(path, tintK(s.k), 0, s.dy);
+      if(shSpec){ const so=shadowOpts(); localPath(path, so.color, shSpec.dx, shSpec.dy, so.opacity!=null?{opacity:so.opacity}:null); }
       if(el.echo) localPath(path, echoColor, el.echoDx||7, el.echoDy||7);
       localPath(path, col);
       if(sw>0) localPathStroke(path, strokeCol, sw);
     } else {
       const rx=el.w/2, ry=el.h/2, cxL=el.w/2, cyL=el.h/2;
-      if(s) ellipse(cxL, cyL+s.dy, rx, ry, { color:tintK(s.k) });
+      if(shSpec) ellipse(cxL+shSpec.dx, cyL+shSpec.dy, rx, ry, shadowOpts());
       if(el.echo) ellipse(cxL+(el.echoDx||7), cyL+(el.echoDy||7), rx, ry, { color:echoColor });
       ellipse(cxL, cyL, rx, ry, { color:col });
       if(sw>0) ellipse(cxL, cyL, Math.max(0.5,rx-sw/2), Math.max(0.5,ry-sw/2), { borderColor:strokeCol, borderWidth:sw });

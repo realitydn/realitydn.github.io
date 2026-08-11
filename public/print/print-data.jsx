@@ -173,6 +173,73 @@ function partnerOf(accent){ return PARTNER[accent] || 'blue'; }
    On the white sheet it prints as a soft K tint. {dy, k} per step. */
 const LIFT = { none:null, light:{dy:4,k:0.08}, default:{dy:8,k:0.12}, heavy:{dy:12,k:0.18} };
 
+/* Generalised plane shadow — the Poster Studio shadow model, print-grade.
+   Presets stay the flat straight-down K-tint above; lift:'custom' opens the
+   dials: shadowDist (pt) · shadowAngle (deg, 90 = straight down) · shadowColor
+   ('k' soft press tint | 'ink' | any accent — the hard riso shadow) ·
+   shadowAlpha (0..1). Always FLAT (zero blur): a vector offset both renderers
+   can draw identically — blur would force rasterising the whole sheet.
+   Returns { dx, dy, color, alpha } (color 'k'|'ink'|'white'|accent) or null. */
+function shadowSpec(el){
+  const key = el.lift||'none';
+  if(key==='custom'){
+    const dist = el.shadowDist!=null?el.shadowDist:8;
+    if(!(dist>0)) return null;
+    const ang = (el.shadowAngle!=null?el.shadowAngle:90)*Math.PI/180;
+    const color = el.shadowColor||'k';
+    const alpha = el.shadowAlpha!=null?el.shadowAlpha:(color==='k'?0.12:1);
+    return { dx:Math.round(Math.cos(ang)*dist*100)/100, dy:Math.round(Math.sin(ang)*dist*100)/100, color, alpha };
+  }
+  const s = LIFT[key];
+  return s ? { dx:0, dy:s.dy, color:'k', alpha:s.k } : null;
+}
+/* screen CSS colour for a shadow spec (the PDF resolves it to CMYK itself) */
+function shadowCss(spec){
+  if(!spec) return null;
+  let rgb;
+  if(spec.color==='k') rgb = 'rgba(13,9,5,'+spec.alpha+')';
+  else {
+    const hex = spec.color==='ink' ? INK.rgb : spec.color==='white' ? WHITE.rgb : (PALETTE[spec.color]||INK.rgb);
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    rgb = 'rgba('+r+','+g+','+b+','+spec.alpha+')';
+  }
+  return spec.dx+'px '+spec.dy+'px 0 '+rgb;
+}
+
+/* ---- layout grid — margins + columns/rows with gutters -------------------
+   The Swiss backbone: doc.marginMm sets the safe margin; doc.grid holds
+   { cols, rows, gutter } (0 = off). Returns snap targets (xs/ys — every
+   column/row EDGE plus the margins and centre) and the column/row boxes for
+   the canvas overlay. Both the canvas snapper and the overlay read this, so
+   what you see is exactly what you snap to. */
+function gridSpec(doc, dims){
+  const m = (doc.marginMm!=null?doc.marginMm:6)*PT_PER_MM;
+  const g = doc.grid||{};
+  const cols = Math.max(0, g.cols|0), rows = Math.max(0, g.rows|0);
+  const gut = g.gutter!=null?g.gutter:12;
+  const innerW = dims.wpt-m*2, innerH = dims.hpt-m*2;
+  const xs = [m, dims.wpt/2, dims.wpt-m];
+  const ys = [m, dims.hpt/2, dims.hpt-m];
+  const colBoxes = [], rowBoxes = [];
+  if(cols>1 && innerW>cols*8){
+    const cw = (innerW-(cols-1)*gut)/cols;
+    for(let i=0;i<cols;i++){
+      const x0 = m+i*(cw+gut);
+      colBoxes.push([x0, x0+cw]);
+      if(i>0){ xs.push(x0-gut); } xs.push(x0); xs.push(x0+cw);
+    }
+  }
+  if(rows>1 && innerH>rows*8){
+    const rh = (innerH-(rows-1)*gut)/rows;
+    for(let i=0;i<rows;i++){
+      const y0 = m+i*(rh+gut);
+      rowBoxes.push([y0, y0+rh]);
+      if(i>0){ ys.push(y0-gut); } ys.push(y0); ys.push(y0+rh);
+    }
+  }
+  return { m, cols, rows, gutter:gut, xs, ys, colBoxes, rowBoxes, innerW, innerH };
+}
+
 /* ---- halftone dot field — shared by the screen + PDF renderers so they
    match exactly. The Poster Studio riso-engine halftone adapted to pure
    vector: a dot lattice (optionally rotated to a SCREEN ANGLE — the move that
@@ -374,6 +441,91 @@ function shapePath(kind, w, h){
   }
 }
 
+/* ---- icon geometry — the Year 2 glyph set (print-icons.js), fitted to a box.
+   Glyphs are 24×24 primitive lists; we centre a uniform scale into the element
+   and hand both renderers the SAME scaled primitives, so screen SVG and PDF
+   vector match. Stroke width scales with the glyph (a 200pt icon keeps its
+   visual 2px-at-24 weight). `solid` fills the non-linear primitives. */
+function iconLayout(el){
+  const g = (window.ICON_GLYPHS||{})[el.kind] || null;
+  if(!g) return null;
+  const s = Math.min(el.w, el.h)/24;
+  const ox = (el.w-24*s)/2, oy = (el.h-24*s)/2;
+  const sw = 2*(el.strokeScale!=null?el.strokeScale:1)*s;
+  const prims = g.map(p=>{
+    const stroke = !!p.linear || p.t==='line' || !el.solid;
+    if(p.t==='rect')    return { t:'rect', x:ox+p.x*s, y:oy+p.y*s, w:p.w*s, h:p.h*s, stroke };
+    if(p.t==='line')    return { t:'line', x1:ox+p.x1*s, y1:oy+p.y1*s, x2:ox+p.x2*s, y2:oy+p.y2*s, stroke:true };
+    if(p.t==='ellipse') return { t:'ellipse', cx:ox+p.cx*s, cy:oy+p.cy*s, rx:p.rx*s, ry:p.ry*s, stroke };
+    if(p.t==='poly'){
+      const pts = p.points.trim().split(/[\s,]+/).map(Number);
+      const out=[]; for(let i=0;i<pts.length;i+=2) out.push([ox+pts[i]*s, oy+pts[i+1]*s]);
+      return { t:'poly', pts:out, stroke };
+    }
+    if(p.t==='path')    return { t:'path', d:_scaleSvgPath(p.d, s, ox, oy), stroke };
+    return null;
+  }).filter(Boolean);
+  return { prims, sw, s };
+}
+/* uniform-scale + translate every coordinate in a simple SVG path string.
+   Handles the command set the icon glyphs actually use (M L H V C Q T A Z,
+   absolute + relative). Arc flags are passed through untouched. */
+function _scaleSvgPath(d, s, ox, oy){
+  let out='', i=0;
+  const toks = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e-?\d+)?/g)||[];
+  let cmd='';
+  while(i<toks.length){
+    const t=toks[i];
+    if(/[a-zA-Z]/.test(t)){ cmd=t; out+=(out?' ':'')+t; i++; continue; }
+    const rel = cmd===cmd.toLowerCase() && cmd!=='z';
+    const C = cmd.toUpperCase();
+    let nums;
+    if(C==='H'||C==='V'){ nums=[parseFloat(toks[i])]; i+=1; }
+    else if(C==='A'){ nums=toks.slice(i,i+7).map(parseFloat); i+=7; }
+    else if(C==='C'){ nums=toks.slice(i,i+6).map(parseFloat); i+=6; }
+    else if(C==='S'||C==='Q'){ nums=toks.slice(i,i+4).map(parseFloat); i+=4; }
+    else { nums=toks.slice(i,i+2).map(parseFloat); i+=2; }   // M L T
+    let scaled;
+    if(C==='A'){
+      scaled=[nums[0]*s, nums[1]*s, nums[2], nums[3], nums[4],
+              rel?nums[5]*s:nums[5]*s+ox, rel?nums[6]*s:nums[6]*s+oy];
+    } else if(C==='H'){ scaled=[rel?nums[0]*s:nums[0]*s+ox]; }
+    else if(C==='V'){ scaled=[rel?nums[0]*s:nums[0]*s+oy]; }
+    else { scaled=nums.map((n,j)=> rel? n*s : (j%2===0? n*s+ox : n*s+oy)); }
+    out += ' '+scaled.map(n=>+n.toFixed(3)).join(' ');
+  }
+  return out;
+}
+
+/* ---- punch card grid — the loyalty-stamp lattice. cols×rows cells, each an
+   outlined circle/square/star; optional numbering; optional filled bonus on
+   the LAST cell (the "10th one free"). One layout for both renderers. */
+function punchLayout(el){
+  const cols=Math.max(1, el.cols|0||5), rows=Math.max(1, el.rows|0||2);
+  const gap=el.gap!=null?el.gap:8;
+  const cw=(el.w-(cols-1)*gap)/cols, ch=(el.h-(rows-1)*gap)/rows;
+  const d=Math.max(6, Math.min(cw, ch));
+  const ox=(el.w-(cols*cw+(cols-1)*gap))/2, oy=(el.h-(rows*ch+(rows-1)*gap))/2;
+  const cells=[]; let n=0;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    n++;
+    cells.push({ cx:ox+c*(cw+gap)+cw/2, cy:oy+r*(ch+gap)+ch/2, d, n });
+  }
+  return { cells, d, total:n, stroke:el.stroke!=null?el.stroke:1.5, shape:el.cell||'circle' };
+}
+
+/* balanced column split for the price list (reading DOWN each column) */
+function listSplit(items, cols){
+  items = items||[]; cols = Math.max(1, Math.min(3, cols|0||1));
+  if(cols===1) return [items];
+  const per = Math.ceil(items.length/cols), out=[];
+  for(let i=0;i<cols;i++) out.push(items.slice(i*per, (i+1)*per));
+  return out.filter(a=>a.length);
+}
+/* price-list row sizing — one vocabulary both renderers read */
+const LIST_ROW_SIZES = { s:11, m:13, l:16, xl:20 };
+function listRowFont(el){ return LIST_ROW_SIZES[el.rowSize||'m'] || 13; }
+
 /* ---- shared text measuring (screen + the in-browser PDF export use the same
    canvas, so fitted + arc sizes match). ---- */
 let _measCtx=null;
@@ -541,12 +693,14 @@ const CATALOG = [
     { type:'arctext',  label:'Arc text',  hint:'Curved around a rim' },
   ]},
   { group:'Lists · QR', items:[
-    { type:'pricelist',label:'Price list', hint:'Label + price rows' },
+    { type:'pricelist',label:'Price list', hint:'Menu rows · 1–2 columns' },
     { type:'qr',       label:'QR standee', hint:'Scan to any link' },
     { type:'coupon',   label:'Coupon',     hint:'Voucher with code', wide:true },
+    { type:'punchgrid',label:'Punch card', hint:'Loyalty stamp grid' },
   ]},
-  { group:'Image', items:[
+  { group:'Image · icons', items:[
     { type:'image',    label:'Image',       hint:'Photo + riso effects', wide:true },
+    { type:'icon',     label:'Icon',        hint:'Year 2 glyph set · vector' },
   ]},
   { group:'Blocks · texture', items:[
     { type:'block',    label:'Colour block', hint:'Flat field / band' },
@@ -583,7 +737,7 @@ const DEFAULTS = {
   bignum:    { w:220, h:120, props:{ text:'4–7', fam:'mont', weight:800, fontSize:90, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:0.9, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
   kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.22, leading:1.1, upper:true } },
   body:      { w:300, h:80,  props:{ text:'Readable body copy goes here. Keep it short and bold.', fam:'grot', weight:400, fontSize:13, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:1.34, upper:false } },
-  pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', listStyle:'prices', marker:'•', markerColor:'auto', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none' } },
+  pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', listStyle:'prices', marker:'•', markerColor:'auto', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none', cols:1, rowSize:'m', headingColor:'auto' } },
   qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', quiet:true,
                moduleStyle:'square', eyeStyle:'square', eye:'auto', logo:'none', logoColor:'auto', echo:false, echoAccent:'auto',
                surface:'none', ink:'ink', fill:'pink', border:2, lift:'none' } },
@@ -622,6 +776,11 @@ const DEFAULTS = {
   shape:     { w:200, h:200, props:{ kind:'hexagon', fill:'blue', stroke:0, strokeColor:'ink', lift:'none', echo:false, echoAccent:'auto', echoDx:7, echoDy:7, blend:'normal' } },
   /* text set on a circular arc — the round-sticker rim treatment. */
   arctext:   { w:240, h:240, props:{ text:'REALITY · ĐÀ NẴNG', fam:'mont', weight:700, fontSize:24, tracking:0.08, fill:'ink', flip:false, radiusAdj:0, upper:true } },
+  /* Year 2 geometric glyph — 24×24 primitives scaled to the box, drawn as true
+     vector strokes in the PDF. `solid` fills the closed primitives. */
+  icon:      { w:110, h:110, props:{ kind:'drink', ink:'ink', solid:false, strokeScale:1, echo:false, echoAccent:'auto', echoDx:5, echoDy:5, lift:'none', blend:'normal' } },
+  /* loyalty punch grid — outlined stamp cells; bonus fills the last cell */
+  punchgrid: { w:260, h:96,  props:{ cols:5, rows:2, cell:'circle', gap:8, stroke:1.5, ink:'ink', numbered:true, bonus:true, bonusFill:'pink', bonusLabel:'★', blend:'normal' } },
 };
 
 function makeElement(type, x, y){
@@ -635,7 +794,7 @@ function makeElement(type, x, y){
    authored at its natural size. Pick one to fill the artboard.
    els entries are terse {type,x,y,w,h,p}; coords in pt.
    ============================================================ */
-const TEMPLATE_GROUPS = ['Stickers', 'QR standee', 'Wayfinding', 'Specials', 'Merch', 'Tags & coupons'];
+const TEMPLATE_GROUPS = ['Stickers', 'QR standee', 'Wayfinding', 'Menus', 'Specials', 'Merch', 'Tags & coupons'];
 const TEMPLATES = [
   /* ---- Stickers (die-cut) — square stock; bold full-colour beds, die-cut
      shapes (hexagon/shield/star/banner/arch/blob/heart/pill), riso overprint
@@ -1095,9 +1254,18 @@ const TEMPLATES = [
   ]},
   { id:"stamp-card-ten", name:"Coffee Stamp Card", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"green", els:[
     {"type":"block","x":0,"y":0,"w":298,"h":60,"p":{"fill":"green"}},
-    {"type":"headline","x":22,"y":18,"w":254,"h":30,"p":{"text":"STAMP CARD","weight":800,"fontSize":26,"ink":"white","align":"left","tracking":0.04}},
-    {"type":"dotfield","x":22,"y":78,"w":254,"h":72,"p":{"fill":"green","dot":12,"gap":8,"bg":"white"}},
-    {"type":"body","x":22,"y":158,"w":254,"h":30,"p":{"text":"Ten coffees, the tenth on us. One stamp per cup.","fontSize":11,"align":"left"}},
+    {"type":"headline","x":22,"y":18,"w":200,"h":30,"p":{"text":"STAMP CARD","weight":800,"fontSize":26,"ink":"white","align":"left","tracking":0.04}},
+    {"type":"icon","x":244,"y":13,"w":34,"h":34,"p":{"kind":"coffee","ink":"white"}},
+    {"type":"punchgrid","x":22,"y":76,"w":254,"h":76,"p":{"cols":5,"rows":2,"cell":"circle","gap":8,"stroke":1.5,"ink":"ink","numbered":true,"bonus":true,"bonusFill":"green","bonusLabel":"★"}},
+    {"type":"body","x":22,"y":160,"w":254,"h":28,"p":{"text":"Ten coffees, the tenth on us. One stamp per cup.","fontSize":11,"align":"left"}},
+    {"type":"contact","x":22,"y":192,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+  ]},
+  { id:"loyalty-draft-punch", name:"Draft Club Punch", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"amber", els:[
+    {"type":"stripes","x":0,"y":0,"w":298,"h":54,"p":{"fill":"amber","bg":"white","dir":"v","count":11,"ratio":0.5}},
+    {"type":"headline","x":22,"y":16,"w":200,"h":28,"p":{"text":"DRAFT CLUB","weight":800,"fontSize":24,"ink":"ink","align":"left","surface":"paper","border":0}},
+    {"type":"icon","x":246,"y":10,"w":36,"h":36,"p":{"kind":"pint","ink":"ink"}},
+    {"type":"punchgrid","x":22,"y":70,"w":254,"h":44,"p":{"cols":6,"rows":1,"cell":"star","gap":9,"stroke":1.4,"ink":"ink","numbered":false,"bonus":true,"bonusFill":"amber","bonusLabel":"★"}},
+    {"type":"coupon","x":22,"y":124,"w":254,"h":62,"p":{"heading":"SIX POURS","big":"SEVENTH FREE","terms":"Draft only. One stamp per visit.","code":"","surface":"outline","border":1.4,"borderPattern":"dashed"}},
     {"type":"contact","x":22,"y":192,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"two-for-one-coupon", name:"Two For One", group:"Tags & coupons", size:"a8", orient:"landscape", accent:"pink", els:[
@@ -1165,6 +1333,89 @@ const TEMPLATES = [
     {"type":"pricelist","x":24,"y":168,"w":250,"h":130,"p":{"heading":"TABLE SPECIALS","items":[{"l":"Cold brew","p":"45k"},{"l":"Citrus soda","p":"40k"},{"l":"Draft beer","p":"45k"}],"dotLeader":true}},
     {"type":"footer","x":24,"y":348,"w":250,"h":60,"p":{"showQR":false}}
   ]},
+  /* ---- Menus — the daily workhorses. Built on the layout grid (margins at
+     6mm), two-column price lists, category icons, custom riso shadows. ---- */
+  { id:"menu-drinks-a4", name:"Drinks Menu — board", group:"Menus", size:"a4", orient:"portrait", accent:"pink", els:[
+    {"type":"kicker","x":44,"y":42,"w":507,"h":20,"p":{"text":"REALITY · BAR · CAFÉ · ĐÀ NẴNG","ink":"pink","align":"center","tracking":0.26}},
+    {"type":"headline","x":44,"y":66,"w":507,"h":74,"p":{"text":"THE MENU","weight":800,"fontSize":58,"align":"center","echo":true,"echoAccent":"pink","echoDx":3,"echoDy":3}},
+    {"type":"rule","x":44,"y":150,"w":507,"h":12,"p":{"weight":3,"fill":"ink","pattern":"solid"}},
+    {"type":"pricelist","x":44,"y":178,"w":507,"h":150,"p":{"heading":"COCKTAILS","cols":2,"rowSize":"m","items":[
+      {"l":"Gin tonic","p":"85k"},{"l":"Negroni","p":"110k"},{"l":"Whisky sour","p":"105k"},
+      {"l":"Yuzu gimlet","p":"95k"},{"l":"Espresso martini","p":"110k"},{"l":"Long Island","p":"120k"}],"dotLeader":true}},
+    {"type":"pricelist","x":44,"y":344,"w":507,"h":120,"p":{"heading":"BEER & CIDER","cols":2,"rowSize":"m","items":[
+      {"l":"Draft lager","p":"45k"},{"l":"Draft IPA","p":"55k"},{"l":"Cider bottle","p":"60k"},{"l":"Stout can","p":"65k"}],"dotLeader":true}},
+    {"type":"pricelist","x":44,"y":484,"w":507,"h":120,"p":{"heading":"NO & LOW","cols":2,"rowSize":"m","items":[
+      {"l":"Soda chanh","p":"40k"},{"l":"Cold brew tonic","p":"50k"},{"l":"Kombucha","p":"55k"},{"l":"Juice of the day","p":"45k"}],"dotLeader":true}},
+    {"type":"marquee","x":0,"y":636,"w":595,"h":36,"p":{"text":"HAPPY HOUR 16–19","sep":"★","surface":"solid","fill":"pink","fontSize":14}},
+    {"type":"body","x":44,"y":688,"w":507,"h":30,"p":{"text":"Prices in nghìn đồng. Ask the bar what's fresh — hỏi quầy bar món hôm nay.","align":"center","fontSize":12}},
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"showQR":true}}
+  ]},
+  { id:"menu-coffee-a5", name:"Cà Phê — coffee card", group:"Menus", size:"a5", orient:"portrait", accent:"green", els:[
+    {"type":"icon","x":178,"y":34,"w":64,"h":64,"p":{"kind":"coffee","ink":"green","echo":true,"echoAccent":"auto","echoDx":3,"echoDy":3}},
+    {"type":"kicker","x":30,"y":106,"w":360,"h":20,"p":{"text":"ROASTED IN ĐÀ NẴNG","ink":"green","align":"center","tracking":0.26}},
+    {"type":"headline","x":30,"y":128,"w":360,"h":56,"p":{"text":"CÀ PHÊ","weight":800,"fontSize":46,"align":"center"}},
+    {"type":"rule","x":120,"y":196,"w":180,"h":10,"p":{"weight":2.5,"fill":"green","pattern":"solid","term":"dot","termAt":"both"}},
+    {"type":"pricelist","x":60,"y":222,"w":300,"h":230,"p":{"heading":"","cols":1,"rowSize":"l","items":[
+      {"l":"Cà phê đen","p":"30k"},{"l":"Cà phê sữa đá","p":"35k"},{"l":"Bạc xỉu","p":"40k"},
+      {"l":"Americano","p":"40k"},{"l":"Latte","p":"45k"},{"l":"Cold brew","p":"45k"}],"dotLeader":true}},
+    {"type":"body","x":30,"y":462,"w":360,"h":30,"p":{"text":"Oat milk +10k · decaf on request · đá riêng nếu bạn thích.","align":"center","fontSize":11}},
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"showQR":false}}
+  ]},
+  { id:"menu-happyhour-a3", name:"Happy Hour — big board", group:"Menus", size:"a3", orient:"portrait", accent:"yellow", els:[
+    {"type":"block","x":0,"y":0,"w":842,"h":330,"p":{"fill":"yellow","echo":true,"echoAccent":"pink","echoDx":10,"echoDy":10}},
+    {"type":"kicker","x":62,"y":66,"w":700,"h":26,"p":{"text":"EVERY DAY · MỖI NGÀY · 16:00 → 19:00","ink":"ink","tracking":0.24,"fontSize":15}},
+    {"type":"headline","x":62,"y":102,"w":718,"h":190,"p":{"text":"HAPPY\nHOUR","weight":800,"fontSize":110,"ink":"ink","leading":0.86}},
+    {"type":"numeral","x":440,"y":360,"w":340,"h":150,"p":{"text":"−25%","weight":100,"fontSize":92,"ink":"pink","echo":true,"echoAccent":"yellow","align":"right"}},
+    {"type":"pricelist","x":62,"y":380,"w":430,"h":330,"p":{"heading":"WHILE IT LASTS","cols":1,"rowSize":"xl","items":[
+      {"l":"House pours","p":"40k"},{"l":"Draft lager","p":"35k"},{"l":"Highballs","p":"50k"},
+      {"l":"House wine","p":"50k"},{"l":"Spritz","p":"60k"}],"dotLeader":true}},
+    {"type":"rule","x":62,"y":740,"w":718,"h":12,"p":{"weight":4,"fill":"yellow","pattern":"solid"}},
+    {"type":"body","x":62,"y":772,"w":718,"h":40,"p":{"text":"Bar rail only. No stacking with other deals — đừng tham lam nhé.","fontSize":17,"leading":1.4}},
+    {"type":"badge","x":600,"y":830,"w":170,"h":170,"p":{"top":"3 HOURS","big":"DAILY","sub":"16–19","surface":"accent","fill":"pink","rot":-7,"lift":"default"}},
+    {"type":"marquee","x":0,"y":1040,"w":842,"h":44,"p":{"text":"GIỜ VÀNG","sep":"★","surface":"solid","fill":"ink","fontSize":17}},
+    {"type":"footer","x":62,"y":1104,"w":718,"h":74,"p":{"showQR":true}}
+  ]},
+  { id:"menu-kitchen-a4", name:"Kitchen — specials sheet", group:"Menus", size:"a4", orient:"portrait", accent:"red", els:[
+    {"type":"slab","x":0,"y":0,"w":595,"h":200,"p":{"fill":"red","angle":-10,"echo":true}},
+    {"type":"kicker","x":44,"y":52,"w":460,"h":22,"p":{"text":"FROM THE KITCHEN · MÓN BẾP","ink":"white","tracking":0.22}},
+    {"type":"headline","x":44,"y":80,"w":507,"h":90,"p":{"text":"EAT\nSOMETHING","weight":800,"fontSize":46,"ink":"white","leading":0.9}},
+    {"type":"pricelist","x":44,"y":238,"w":507,"h":260,"p":{"heading":"ALWAYS ON","cols":1,"rowSize":"l","items":[
+      {"l":"Bánh mì chảo","p":"65k"},{"l":"Smash burger","p":"95k"},{"l":"Wings — fish sauce glaze","p":"85k"},
+      {"l":"Fries + green chilli mayo","p":"45k"},{"l":"Grilled cheese","p":"60k"}],"dotLeader":true}},
+    {"type":"icon","x":44,"y":520,"w":42,"h":42,"p":{"kind":"leaf","ink":"green"}},
+    {"type":"body","x":98,"y":526,"w":420,"h":34,"p":{"text":"Vegetarian swaps on anything — just ask. Đồ chay đổi được, cứ hỏi.","fontSize":13,"leading":1.35}},
+    {"type":"rule","x":44,"y":580,"w":507,"h":10,"p":{"weight":3,"fill":"red","pattern":"dashed"}},
+    {"type":"pricelist","x":44,"y":606,"w":507,"h":90,"p":{"heading":"TODAY ONLY","cols":1,"rowSize":"l","items":[
+      {"l":"Ask the pass — món hôm nay","p":"??k"}],"dotLeader":true,"headingColor":"red"}},
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"showQR":false}}
+  ]},
+  { id:"menu-table-a6", name:"Table Menu — card", group:"Menus", size:"a6", orient:"portrait", accent:"blue", els:[
+    {"type":"block","x":0,"y":0,"w":298,"h":64,"p":{"fill":"blue"}},
+    {"type":"headline","x":24,"y":18,"w":180,"h":32,"p":{"text":"MENU","weight":800,"fontSize":28,"ink":"white","align":"left"}},
+    {"type":"icon","x":238,"y":12,"w":40,"h":40,"p":{"kind":"drink","ink":"white"}},
+    {"type":"pricelist","x":24,"y":84,"w":250,"h":150,"p":{"heading":"DRINK","cols":1,"rowSize":"s","items":[
+      {"l":"Draft beer","p":"45k"},{"l":"House pour","p":"50k"},{"l":"Gin tonic","p":"85k"},
+      {"l":"Soda chanh","p":"40k"},{"l":"Cà phê sữa","p":"35k"}],"dotLeader":true}},
+    {"type":"pricelist","x":24,"y":244,"w":250,"h":100,"p":{"heading":"EAT","cols":1,"rowSize":"s","items":[
+      {"l":"Fries","p":"45k"},{"l":"Wings","p":"85k"},{"l":"Burger","p":"95k"}],"dotLeader":true}},
+    {"type":"qr","x":196,"y":330,"w":78,"h":78,"p":{"data":"https://app.realitydn.com/menu","caption":"","quiet":true}},
+    {"type":"body","x":24,"y":352,"w":160,"h":40,"p":{"text":"Full menu + prices on the code →","fontSize":10,"leading":1.3}},
+    {"type":"contact","x":24,"y":396,"w":250,"h":16,"p":{"align":"left"}}
+  ]},
+  { id:"menu-backbar-a4l", name:"Back-Bar — landscape", group:"Menus", size:"a4", orient:"landscape", accent:"purple", els:[
+    {"type":"block","x":0,"y":0,"w":250,"h":595,"p":{"fill":"purple","echo":true,"echoDx":8,"echoDy":8}},
+    {"type":"kicker","x":40,"y":60,"w":180,"h":20,"p":{"text":"REALITY BAR","ink":"white","tracking":0.24}},
+    {"type":"headline","x":36,"y":90,"w":180,"h":250,"p":{"text":"THE\nRAIL","weight":800,"fontSize":64,"ink":"white","leading":0.88}},
+    {"type":"icon","x":40,"y":360,"w":54,"h":54,"p":{"kind":"rocks","ink":"white"}},
+    {"type":"wordmark","x":40,"y":500,"w":170,"h":34,"p":{"ink":"white"}},
+    {"type":"pricelist","x":300,"y":56,"w":500,"h":210,"p":{"heading":"SPIRITS · 45ML","cols":2,"rowSize":"m","items":[
+      {"l":"House gin","p":"50k"},{"l":"House rum","p":"50k"},{"l":"House whisky","p":"55k"},
+      {"l":"House vodka","p":"50k"},{"l":"Mezcal","p":"90k"},{"l":"Nice whisky","p":"from 90k"}],"dotLeader":true}},
+    {"type":"pricelist","x":300,"y":290,"w":500,"h":170,"p":{"heading":"WITH A MIXER","cols":2,"rowSize":"m","items":[
+      {"l":"+ Tonic","p":"15k"},{"l":"+ Soda","p":"10k"},{"l":"+ Cola","p":"15k"},{"l":"+ Ginger ale","p":"15k"}],"dotLeader":true}},
+    {"type":"rule","x":300,"y":478,"w":500,"h":10,"p":{"weight":3,"fill":"purple"}},
+    {"type":"contact","x":300,"y":540,"w":500,"h":28,"p":{"align":"left"}}
+  ]},
   { id:"merch-tee-flat-price", name:"T-Shirt Price — flat", group:"Merch", size:"a5", orient:"portrait", accent:"red", els:[
     {"type":"slab","x":0,"y":0,"w":420,"h":160,"p":{"fill":"red","angle":-10,"echo":true}},
     {"type":"kicker","x":30,"y":40,"w":360,"h":22,"p":{"text":"TAKE ONE HOME","ink":"white","align":"center","tracking":0.26,"fontSize":13}},
@@ -1176,6 +1427,70 @@ const TEMPLATES = [
     {"type":"kicker","x":30,"y":448,"w":360,"h":20,"p":{"text":"AVAILABLE SIZES","ink":"white","align":"center","tracking":0.3,"fontSize":12}},
     {"type":"headline","x":0,"y":470,"w":420,"h":68,"p":{"text":"S · M · L · XL\n2XL · 3XL · 4XL · 5XL","weight":700,"fontSize":29,"ink":"white","align":"center","leading":1.08,"tracking":0.02}},
     {"type":"footer","x":30,"y":546,"w":360,"h":48,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+  ]},
+  { id:"merch-table-a4", name:"Merch Table — all prices", group:"Merch", size:"a4", orient:"portrait", accent:"pink", els:[
+    {"type":"stripes","x":0,"y":0,"w":595,"h":90,"p":{"fill":"pink","bg":"white","dir":"v","count":13,"ratio":0.5}},
+    {"type":"kicker","x":44,"y":112,"w":507,"h":22,"p":{"text":"TAKE REALITY HOME · MANG VỀ NHÀ","ink":"pink","align":"center","tracking":0.22}},
+    {"type":"headline","x":44,"y":138,"w":507,"h":70,"p":{"text":"THE MERCH","weight":800,"fontSize":54,"align":"center","echo":true,"echoDx":3,"echoDy":3}},
+    {"type":"icon","x":150,"y":230,"w":56,"h":56,"p":{"kind":"sparkle","ink":"pink"}},
+    {"type":"icon","x":270,"y":230,"w":56,"h":56,"p":{"kind":"heart","ink":"red"}},
+    {"type":"icon","x":390,"y":230,"w":56,"h":56,"p":{"kind":"music","ink":"blue"}},
+    {"type":"pricelist","x":110,"y":320,"w":375,"h":220,"p":{"heading":"","cols":1,"rowSize":"xl","items":[
+      {"l":"T-shirt","p":"300k"},{"l":"Tote bag","p":"250k"},{"l":"Cap","p":"200k"},
+      {"l":"Sticker pack","p":"25k"},{"l":"Lighter","p":"15k"}],"dotLeader":true}},
+    {"type":"rule","x":44,"y":560,"w":507,"h":10,"p":{"weight":3,"fill":"pink","pattern":"solid"}},
+    {"type":"body","x":44,"y":586,"w":507,"h":40,"p":{"text":"Every đồng goes back into the space. Ask at the bar — hỏi ở quầy bar.","align":"center","fontSize":13,"leading":1.35}},
+    {"type":"badge","x":440,"y":216,"w":110,"h":110,"p":{"top":"SUPPORT","big":"★","sub":"THE SPACE","surface":"accent","fill":"yellow","rot":8,"lift":"default"}},
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"showQR":true}}
+  ]},
+  { id:"merch-tote-a5", name:"Tote — one price", group:"Merch", size:"a5", orient:"portrait", accent:"green", els:[
+    {"type":"block","x":0,"y":0,"w":420,"h":150,"p":{"fill":"green","echo":true,"echoDx":7,"echoDy":7}},
+    {"type":"kicker","x":30,"y":42,"w":360,"h":20,"p":{"text":"HEAVY CANVAS · SCREEN-PRINTED","ink":"white","align":"center","tracking":0.2}},
+    {"type":"headline","x":30,"y":66,"w":360,"h":60,"p":{"text":"THE TOTE","weight":800,"fontSize":46,"ink":"white","align":"center"}},
+    {"type":"numeral","x":30,"y":190,"w":360,"h":170,"p":{"text":"250K","weight":100,"fontSize":140,"ink":"green","echo":true,"align":"center"}},
+    {"type":"body","x":60,"y":380,"w":300,"h":54,"p":{"text":"Carries books, beer, bánh mì. The wordmark in one colour, printed here in Đà Nẵng.","align":"center","fontSize":13,"leading":1.4}},
+    {"type":"icon","x":186,"y":446,"w":48,"h":48,"p":{"kind":"leaf","ink":"green","echo":true,"echoDx":3,"echoDy":3}},
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"showQR":false}}
+  ]},
+  { id:"merch-stickers-a6", name:"Sticker Pack — card", group:"Merch", size:"a6", orient:"portrait", accent:"purple", els:[
+    {"type":"dotfield","x":0,"y":0,"w":298,"h":100,"p":{"fill":"purple","dot":9,"gap":6,"bg":"white","grad":"down","ramp":0.7}},
+    {"type":"headline","x":24,"y":116,"w":250,"h":80,"p":{"text":"STICKER\nPACK","weight":800,"fontSize":36,"align":"center","leading":0.9,"echo":true,"echoAccent":"purple","echoDx":3,"echoDy":3}},
+    {"type":"shape","x":52,"y":210,"w":56,"h":56,"p":{"kind":"star5","fill":"purple","lift":"custom","shadowDist":6,"shadowAngle":90,"shadowColor":"pink","shadowAlpha":1}},
+    {"type":"shape","x":121,"y":210,"w":56,"h":56,"p":{"kind":"heart","fill":"red","lift":"custom","shadowDist":6,"shadowAngle":90,"shadowColor":"blue","shadowAlpha":1}},
+    {"type":"shape","x":190,"y":210,"w":56,"h":56,"p":{"kind":"blob","fill":"green","lift":"custom","shadowDist":6,"shadowAngle":90,"shadowColor":"purple","shadowAlpha":1}},
+    {"type":"numeral","x":24,"y":278,"w":250,"h":76,"p":{"text":"25K","weight":100,"fontSize":66,"ink":"purple","echo":true,"align":"center"}},
+    {"type":"body","x":24,"y":350,"w":250,"h":24,"p":{"text":"Five designs a pack. Waterproof-ish.","align":"center","fontSize":11}},
+    {"type":"contact","x":24,"y":378,"w":250,"h":30,"p":{"align":"center"}}
+  ]},
+  { id:"way-table-number", name:"Table Number", group:"Wayfinding", size:"a7", orient:"portrait", accent:"blue", els:[
+    {"type":"kicker","x":18,"y":28,"w":174,"h":16,"p":{"text":"TABLE · BÀN","ink":"blue","align":"center","tracking":0.3}},
+    {"type":"numeral","x":18,"y":52,"w":174,"h":150,"p":{"text":"04","weight":100,"fontSize":130,"ink":"ink","echo":true,"align":"center"}},
+    {"type":"rule","x":48,"y":214,"w":114,"h":8,"p":{"weight":2.5,"fill":"blue","term":"dot","termAt":"both"}},
+    {"type":"body","x":18,"y":232,"w":174,"h":30,"p":{"text":"Order at the bar with your table number.","align":"center","fontSize":10,"leading":1.3}},
+    {"type":"contact","x":18,"y":270,"w":174,"h":16,"p":{"site":"www.realitydn.com","addr":"","align":"center"}}
+  ]},
+  { id:"way-whats-where", name:"What's Where — directory", group:"Wayfinding", size:"a4", orient:"portrait", accent:"blue", els:[
+    {"type":"kicker","x":44,"y":48,"w":507,"h":22,"p":{"text":"REALITY · 86 MAI THÚC LÂN","ink":"blue","tracking":0.24}},
+    {"type":"headline","x":44,"y":74,"w":507,"h":70,"p":{"text":"WHAT'S WHERE","weight":800,"fontSize":50,"echo":true,"echoDx":3,"echoDy":3}},
+    {"type":"rule","x":44,"y":158,"w":507,"h":10,"p":{"weight":3,"fill":"blue"}},
+    {"type":"icon","x":44,"y":196,"w":54,"h":54,"p":{"kind":"coffee","ink":"green"}},
+    {"type":"headline","x":118,"y":204,"w":320,"h":40,"p":{"text":"CAFÉ + KITCHEN","weight":700,"fontSize":24}},
+    {"type":"kicker","x":460,"y":214,"w":91,"h":18,"p":{"text":"GROUND","ink":"green","align":"right","tracking":0.18}},
+    {"type":"icon","x":44,"y":276,"w":54,"h":54,"p":{"kind":"drink","ink":"pink"}},
+    {"type":"headline","x":118,"y":284,"w":320,"h":40,"p":{"text":"THE BAR","weight":700,"fontSize":24}},
+    {"type":"kicker","x":460,"y":294,"w":91,"h":18,"p":{"text":"GROUND","ink":"pink","align":"right","tracking":0.18}},
+    {"type":"icon","x":44,"y":356,"w":54,"h":54,"p":{"kind":"music","ink":"blue"}},
+    {"type":"headline","x":118,"y":364,"w":320,"h":40,"p":{"text":"LIVE ROOM","weight":700,"fontSize":24}},
+    {"type":"kicker","x":460,"y":374,"w":91,"h":18,"p":{"text":"UPSTAIRS","ink":"blue","align":"right","tracking":0.18}},
+    {"type":"icon","x":44,"y":436,"w":54,"h":54,"p":{"kind":"group","ink":"purple"}},
+    {"type":"headline","x":118,"y":444,"w":320,"h":40,"p":{"text":"COMMUNITY TABLE","weight":700,"fontSize":24}},
+    {"type":"kicker","x":460,"y":454,"w":91,"h":18,"p":{"text":"UPSTAIRS","ink":"purple","align":"right","tracking":0.18}},
+    {"type":"icon","x":44,"y":516,"w":54,"h":54,"p":{"kind":"meditate","ink":"amber"}},
+    {"type":"headline","x":118,"y":524,"w":320,"h":40,"p":{"text":"ROOFTOP","weight":700,"fontSize":24}},
+    {"type":"kicker","x":460,"y":534,"w":91,"h":18,"p":{"text":"TOP","ink":"amber","align":"right","tracking":0.18}},
+    {"type":"rule","x":44,"y":600,"w":507,"h":10,"p":{"weight":3,"fill":"blue","pattern":"dashed"}},
+    {"type":"body","x":44,"y":626,"w":507,"h":34,"p":{"text":"Lost? Ask anyone in a REALITY tee. Lạc đường? Cứ hỏi nhân viên nhé.","fontSize":13,"leading":1.35}},
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"showQR":true}}
   ]}
 ];
 
@@ -1194,7 +1509,9 @@ Object.assign(window, {
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, qrGeometry, starPath, QR_DESTINATIONS, WORDMARK_PATH,
-  ADDR, SITE, PARTNER, partnerOf, LIFT, dotFieldLayout, stripeLayout, burstRays, ruleLayout, borderDash,
+  ADDR, SITE, PARTNER, partnerOf, LIFT, shadowSpec, shadowCss, gridSpec,
+  dotFieldLayout, stripeLayout, burstRays, ruleLayout, borderDash,
+  iconLayout, punchLayout, listSplit, LIST_ROW_SIZES, listRowFont,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,

@@ -12,13 +12,22 @@ const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
+const contrastFor = (hex)=> window.contrastInk(hex);
 function peFill(key, accentHex){
   if(key==='ink') return PE_INK.rgb;
   if(key==='white') return PE_WHITE.rgb;
   if(PE_ACC.indexOf(key)>=0) return PE_PAL[key];
   return accentHex;
 }
-function liftShadow(key){ const s=PE_LIFT[key]; return s ? `0 ${s.dy}px ${Math.max(1,Math.round(s.dy/3))}px rgba(13,9,5,${s.k})` : 'none'; }
+/* plane shadow via the shared spec (print-data shadowSpec) — flat vector
+   offset, preset K-tint or the custom dial set, identical in the PDF. */
+function elShadow(el){ return window.shadowCss(window.shadowSpec(el)) || 'none'; }
+function shadowColRgba(spec){
+  if(!spec) return null;
+  if(spec.color==='k') return `rgba(13,9,5,${spec.alpha})`;
+  const hex = spec.color==='ink'?PE_INK.rgb : spec.color==='white'?PE_WHITE.rgb : (PE_PAL[spec.color]||PE_INK.rgb);
+  return `rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${spec.alpha})`;
+}
 function echoHex(el, docAccent){ const k = el.echoAccent && el.echoAccent!=='auto' ? el.echoAccent : pePartner(docAccent); return peFill(k, PE_PAL[docAccent]); }
 /* one halftone dot as an SVG node — mirrors the PDF drawDot shapes */
 function dotNode(shape, p, col, key){
@@ -179,7 +188,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
                      : (el.type==='block' ? PE_INK.rgb : (el.surface==='accent'?accentHex:PE_INK.rgb));
   if(_surfaced) surf.border = `${_borderW}px solid transparent`;
   const textCol = peInk(el.ink!=null?el.ink:'auto', surf.color);
-  const lift = liftShadow(el.lift);
+  const lift = elShadow(el);
 
   const wrap = {
     position:'absolute', left:0, top:0, width:el.w+'px', height:el.h+'px',
@@ -202,19 +211,71 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   else if(t==='pricelist'){
     const mode = el.listStyle || 'prices';
     const markerCol = peInk(el.markerColor||'auto', accentHex);
+    const headCol = peInk(el.headingColor||'auto', accentHex);
     const glyph = el.marker || '•';
+    const rs = window.listRowFont(el);
+    const colsArr = window.listSplit(el.items, el.cols||1);
+    let idx = 0;
+    const renderRows = (arr)=> arr.map((it)=>{ const i=idx++;
+      return <div key={i} style={{ display:'flex', alignItems:'baseline', gap:8, padding:(rs*0.3)+'px 0', color:textCol, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', fontSize:rs+'px', letterSpacing:'.02em' }}>
+        {mode==='bulleted' && <span style={{ flex:'none', color:markerCol, fontWeight:800 }}>{glyph}</span>}
+        {mode==='numbered' && <span style={{ flex:'none', color:markerCol, fontWeight:800, minWidth:'1.5em' }}>{i+1}.</span>}
+        <span style={{ flex: mode==='prices'?'none':'1 1 auto' }}>{it.l}</span>
+        {mode==='prices' && el.dotLeader!==false && <span style={{ flex:'1 1 auto', borderBottom:`1.5px dotted ${textCol}`, opacity:.5, transform:'translateY(-3px)' }} />}
+        {mode==='prices' && <span style={{ flex:'none', fontWeight:800 }}>{it.p}</span>}
+      </div>;
+    });
     inner = <div style={box({ padding: el.surface&&el.surface!=='none'?'12px 14px':'4px 2px', justifyContent:'flex-start' })}>
-      {el.heading ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.04em', fontSize:Math.min(el.fontSize||20,22)+'px', color:accentHex, marginBottom:8, lineHeight:1 }}>{el.heading}</div> : null}
-      {(el.items||[]).map((it,i)=>(
-        <div key={i} style={{ display:'flex', alignItems:'baseline', gap:8, padding:'4px 0', color:textCol, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', fontSize:'13px', letterSpacing:'.02em' }}>
-          {mode==='bulleted' && <span style={{ flex:'none', color:markerCol, fontWeight:800 }}>{glyph}</span>}
-          {mode==='numbered' && <span style={{ flex:'none', color:markerCol, fontWeight:800, minWidth:'1.5em' }}>{i+1}.</span>}
-          <span style={{ flex: mode==='prices'?'none':'1 1 auto' }}>{it.l}</span>
-          {mode==='prices' && el.dotLeader!==false && <span style={{ flex:'1 1 auto', borderBottom:`1.5px dotted ${textCol}`, opacity:.5, transform:'translateY(-3px)' }} />}
-          {mode==='prices' && <span style={{ flex:'none', fontWeight:800 }}>{it.p}</span>}
-        </div>
-      ))}
+      {el.heading ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.04em', fontSize:Math.min(el.fontSize||20,22)+'px', color:headCol, marginBottom:8, lineHeight:1 }}>{el.heading}</div> : null}
+      {colsArr.length<=1
+        ? renderRows(colsArr[0]||[])
+        : <div style={{ display:'flex', gap:18, alignItems:'flex-start' }}>
+            {colsArr.map((arr,c)=><div key={c} style={{ flex:'1 1 0', minWidth:0 }}>{renderRows(arr)}</div>)}
+          </div>}
     </div>;
+  }
+  else if(t==='icon'){
+    const col = peFill(el.ink!=null?el.ink:'ink', accentHex);
+    const lay = window.iconLayout(el);
+    const _sh = elShadow(el);
+    const prim = (p,i,c)=>{
+      const sp = p.stroke ? { fill:'none', stroke:c, strokeWidth:lay.sw, strokeLinejoin:'miter', strokeLinecap:'square' } : { fill:c, stroke:'none' };
+      if(p.t==='rect')    return <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} {...sp} />;
+      if(p.t==='line')    return <line key={i} x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2} {...sp} />;
+      if(p.t==='ellipse') return <ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} {...sp} />;
+      if(p.t==='poly')    return <polygon key={i} points={p.pts.map(q=>q[0]+','+q[1]).join(' ')} {...sp} />;
+      if(p.t==='path')    return <path key={i} d={p.d} {...sp} />;
+      return null;
+    };
+    inner = <div style={{ width:'100%', height:'100%', filter:_sh!=='none'?`drop-shadow(${_sh})`:'none' }}>
+      {lay && <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+        {el.echo && <g transform={`translate(${el.echoDx||5} ${el.echoDy||5})`}>{lay.prims.map((p,i)=>prim(p,'e'+i,echoHex(el,docAccent)))}</g>}
+        {lay.prims.map((p,i)=>prim(p,i,col))}
+      </svg>}
+    </div>;
+  }
+  else if(t==='punchgrid'){
+    const col = peFill(el.ink!=null?el.ink:'ink', accentHex);
+    const bonusCol = peFill(el.bonusFill||'pink', accentHex);
+    const lay = window.punchLayout(el);
+    const numSize = Math.max(6, lay.d*0.3);
+    inner = <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+      {lay.cells.map((c,i)=>{
+        const last = c.n===lay.total, isBonus = el.bonus && last;
+        const r = c.d/2 - lay.stroke/2;
+        const cell = lay.shape==='square'
+          ? <rect x={c.cx-r} y={c.cy-r} width={r*2} height={r*2} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} />
+          : lay.shape==='star'
+          ? <path d={window.starPath(c.cx, c.cy, r*1.05)} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} strokeLinejoin="miter" />
+          : <circle cx={c.cx} cy={c.cy} r={r} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} />;
+        return <g key={i}>
+          {cell}
+          {isBonus
+            ? <text x={c.cx} y={c.cy} textAnchor="middle" dominantBaseline="central" style={{ fontFamily:FAM_CSS.mont, fontWeight:800, fontSize:(lay.d*0.42)+'px', fill:contrastFor(bonusCol) }}>{el.bonusLabel||'★'}</text>
+            : (el.numbered && <text x={c.cx} y={c.cy} textAnchor="middle" dominantBaseline="central" style={{ fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:numSize+'px', fill:col, opacity:.55 }}>{c.n}</text>)}
+        </g>;
+      })}
+    </svg>;
   }
   else if(t==='qr'){
     const light = PE_WHITE.rgb;   /* QR modules always ride on white (paper) so they scan; `surface` frames it */
@@ -261,9 +322,9 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const pts = sh>=0 ? [[sh,0],[el.w,0],[el.w-sh,el.h],[0,el.h]]
                       : [[0,0],[el.w-a,0],[el.w,el.h],[a,el.h]];
     const toStr = (ox,oy)=> pts.map(p=>`${(p[0]+ox).toFixed(2)},${(p[1]+oy).toFixed(2)}`).join(' ');
-    const sObj = PE_LIFT[el.lift];
+    const sSpec = window.shadowSpec(el);
     inner = <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
-      {sObj && <polygon points={toStr(0,sObj.dy)} fill={`rgba(13,9,5,${sObj.k})`} />}
+      {sSpec && <polygon points={toStr(sSpec.dx,sSpec.dy)} fill={shadowColRgba(sSpec)} />}
       {el.echo && <polygon points={toStr(el.echoDx||9, el.echoDy||9)} fill={echoHex(el,docAccent)} />}
       <polygon points={toStr(0,0)} fill={accentHex} />
     </svg>;
@@ -316,7 +377,8 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const col = peFill(el.fill!=null?el.fill:'blue', accentHex);
     const strokeCol = peFill(el.strokeColor||'ink', accentHex), sw = el.stroke||0;
     const path = peShape(el.kind||'hexagon', el.w, el.h);
-    const liftF = (el.lift && el.lift!=='none') ? `drop-shadow(${liftShadow(el.lift)})` : 'none';
+    const _sh = elShadow(el);
+    const liftF = _sh!=='none' ? `drop-shadow(${_sh})` : 'none';
     const echoCol = echoHex(el, docAccent), edx=el.echoDx||7, edy=el.echoDy||7;
     const half = sw/2;
     inner = <div style={{ width:'100%', height:'100%', filter:liftF }}>
@@ -390,8 +452,10 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   else if(t==='marquee'){
     const sep = ' '+(el.sep||'★')+' ', unit = (el.text||'REALITY').toUpperCase()+sep;
     const reps = Math.max(3, Math.ceil(el.w/Math.max(40,(el.fontSize||15)*6)));
-    inner = <div style={box({ alignItems:'center', justifyContent:'flex-start', padding:'0 6px' })}>
-      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.1em', fontSize:(el.fontSize||15)+'px', color:textCol, whiteSpace:'nowrap', overflow:'hidden' }}>{unit.repeat(reps)}</div>
+    /* strip pinned LEFT (alignItems on the column cross-axis) so the screen
+       matches the PDF, which draws the repeat from x=6. */
+    inner = <div style={box({ alignItems:'flex-start', justifyContent:'center', padding:'0 6px' })}>
+      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.1em', fontSize:(el.fontSize||15)+'px', color:textCol, whiteSpace:'nowrap', overflow:'hidden', maxWidth:'100%' }}>{unit.repeat(reps)}</div>
     </div>;
   }
   else if(t==='arrow'){

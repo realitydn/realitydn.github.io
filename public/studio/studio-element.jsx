@@ -60,6 +60,35 @@ function getSample(kind){ kind=kind||'spotlight'; if(!_sampleCache[kind]) _sampl
 /* how far the faded overflow preview extends past the frame (1 = none) */
 const BLEED_K = 1.7;
 
+/* Every engine-facing dial, by name — undefined props (docs saved before a
+   control existed) fall back to the engine's defaults. Module scope, because
+   it's also what the riso effect's dependency signature is built from. */
+const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softness','balance','shadowTint',
+  'invert','spread','shape','split','offset','inkMode','gradMode','gradAngle','gradA','gradB',
+  'screenOffset','field','fieldInk','fieldStrength','dotGain','jitter','pucker',
+  'spotLo','spotHi','spotSoft','spotInvert','spotBase','transparent','fit',
+  'blurUnder','blurOver','grain','grainSize',
+  'saturation','hue','temperature','midInk','hiTint','hiInk','ink3','ghost','glyphChar',
+  'bandInks','bandJitter','cutEdge','cutEdgeInk','cutSlip','cutSlipAngle','fieldTexture',
+  'spotMode','spotHue','spotHueRange','spot2','spot2Lo','spot2Hi','spot2Ink',
+  'ditherMode','ditherScale','hatchSpacing','hatchWeight','hatchCross','hatchWobble',
+  'toner','copyNoise','streaks','generations','contourWeight','contourFill',
+  'contourSmooth','contourTint','contourLine','contourInk','contourSlip','contourSlipAngle',
+  'edgeDetail','edgeThick','edgeBackdrop','edgeSmooth','edgeClean','edgeInk','edgeWash',
+  'edgeEcho','edgeEchoAngle','edgeEchoInk','cellSize','mosaicDepth','mosaicGap',
+  'ditherAngle','mosaicShape','mosaicBond','mosaicJitter','mosaicGrout',
+  'toneSmooth','contourEcho','contourEchoAngle','contourEchoInk','edgeSlip','edgeSlipAngle',
+  'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
+  'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
+  'grainInk','grainBlend','finBright','finContrast','finSat',
+  'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
+  'mix2','mix2Mode'];
+/* One cheap scalar fingerprint of every dial the press reads. Joining ~120
+   primitives costs microseconds; re-running the press costs ~25ms, so this is
+   what keeps a photo from re-developing on every unrelated re-render.
+   Deliberately does NOT include x/y — moving a photo doesn't change its pixels. */
+function risoSig(el){ let s=''; for(let i=0;i<OPT_KEYS.length;i++) s += '|'+el[OPT_KEYS[i]]; return s; }
+
 function PhotoEl({ el, theme, inkKey, selected, exporting }){
   const ref = React.useRef(null);
   const bleedRef = React.useRef(null);
@@ -78,28 +107,6 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
     const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w),900);
     const H=Math.max(1,Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
-    /* every engine-facing dial rides through by name — undefined props (docs
-       saved before a control existed) fall back to the engine's defaults */
-    const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softness','balance','shadowTint',
-      'invert','spread','shape','split','offset','inkMode','gradMode','gradAngle','gradA','gradB',
-      'screenOffset','field','fieldInk','fieldStrength','dotGain','jitter','pucker',
-      'spotLo','spotHi','spotSoft','spotInvert','spotBase','transparent','fit',
-      'blurUnder','blurOver','grain','grainSize',
-      'saturation','hue','temperature','midInk','hiTint','hiInk','ink3','ghost','glyphChar',
-      'bandInks','bandJitter','cutEdge','cutEdgeInk','cutSlip','cutSlipAngle','fieldTexture',
-      'spotMode','spotHue','spotHueRange','spot2','spot2Lo','spot2Hi','spot2Ink',
-      'ditherMode','ditherScale','hatchSpacing','hatchWeight','hatchCross','hatchWobble',
-      'toner','copyNoise','streaks','generations','contourWeight','contourFill',
-      'contourSmooth','contourTint','contourLine','contourInk','contourSlip','contourSlipAngle',
-      'edgeDetail','edgeThick','edgeBackdrop','edgeSmooth','edgeClean','edgeInk','edgeWash',
-      'edgeEcho','edgeEchoAngle','edgeEchoInk','cellSize','mosaicDepth','mosaicGap',
-      'ditherAngle','mosaicShape','mosaicBond','mosaicJitter','mosaicGrout',
-      'toneSmooth','contourEcho','contourEchoAngle','contourEchoInk','edgeSlip','edgeSlipAngle',
-      'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
-      'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
-      'grainInk','grainBlend','finBright','finContrast','finSat',
-      'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
-      'mix2','mix2Mode'];
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
       paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null };
     OPT_KEYS.forEach(k=>{ opts[k]=el[k]; });
@@ -118,7 +125,17 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       if(!s1){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }   // empty logo stays transparent
       draw(s1,s2); });
     return ()=>{ alive=false; };
-  });
+  /* Dependencies matter enormously here: this effect IS the press, and it used
+     to have none — so every re-render of the app (every frame of dragging ANY
+     element, every slider tick anywhere) re-developed every photo on the
+     poster. On a 4:5 with two photos that alone was most of the frame.
+     Everything the effect reads is listed; x/y are deliberately absent, which
+     is what makes dragging cheap. `src`/`src2` stay identities rather than
+     going through risoSig — they're data URLs and hashing them each render
+     would just move the cost. */
+  }, [el.w, el.h, el.type, el.src, el.src2, el.sample, el.treatment, el.ink2, el.paperFill,
+      el.imgScale, el.imgX, el.imgY, el.imgRot, el.img2Scale, el.img2X, el.img2Y, el.img2Rot,
+      inkKey, theme, exporting, risoSig(el)]);
 
   /* editing aid: while this photo is selected, show the cropped image OUTSIDE
      the frame, faded — so it's clear what's kept vs cut. Raw source (not riso),
@@ -145,7 +162,10 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
       else window.RISO.loadImage(el.src).then(im=>{ _imgCache.set(el.src,im); drawSrc(im); }).catch(()=>drawSrc(getSample(el.sample))); }
     else drawSrc(getSample(el.sample));
     return ()=>{ alive=false; };
-  });
+  /* Same story as the press above: undeclared deps meant this redrew on every
+     render, i.e. every frame of dragging the very photo it belongs to. It only
+     depends on the crop, not the position. */
+  }, [selected, el.src, el.sample, el.w, el.h, el.imgScale, el.imgX, el.imgY, el.imgRot]);
 
   const t=seTheme(theme);
   const off=`${-(BLEED_K-1)/2*100}%`, span=`${BLEED_K*100}%`;

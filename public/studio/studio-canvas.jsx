@@ -29,9 +29,21 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
     // Shift toggles the element in/out of the multi-selection (for aligning),
     // and does not start a drag.
     if(e.shiftKey){ onSelect(el.id, true); return; }
-    onSelect(el.id, false);
+    /* Grabbing a box that is ALREADY part of a multi-selection drags the whole
+       group — collapsing the selection on pointer-down (what this used to do)
+       made a group impossible to move. Every member's start position is
+       captured here so the drag applies one delta from the originals and can't
+       accumulate rounding drift.
+       A grab that never moves still collapses to that one box (see onUp), so
+       clicking a member to single it out keeps working. */
+    const ids = selectedIds || [];
+    const asGroup = ids.length > 1 && ids.indexOf(el.id) >= 0;
+    if(!asGroup) onSelect(el.id, false);
     const p = toCanvas(e);
-    dragRef.current = { mode:'move', id:el.id, ox:p.x-el.x, oy:p.y-el.y, w:el.w, h:el.h };
+    dragRef.current = { mode:'move', id:el.id, ox:p.x-el.x, oy:p.y-el.y, w:el.w, h:el.h,
+      x0:el.x, y0:el.y, moved:false,
+      group: asGroup ? ids.map(id=>{ const g = elements.find(x=>x.id===id);
+        return g ? { id:g.id, x:g.x, y:g.y } : null; }).filter(Boolean) : null };
     addListeners();
   }
   function startRotate(e, el){
@@ -67,9 +79,12 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
         // OTHER element's left/centre/right (x) and top/middle/bottom (y).
         // Snapping the moving box's nearest edge to these is what makes the
         // Swiss vertical-line alignment effortless.
+        // On a group drag every member is "self" — snapping the grabbed box to
+        // its own travelling companions would fight the drag.
+        const moving = d.group ? d.group.map(m=>m.id) : [d.id];
         const xL = [540, safe.x, safe.x+safe.w];
         const yL = [safe.y+safe.h/2, safe.y, safe.y+safe.h];
-        elements.forEach(e=>{ if(e.id===d.id||e.hidden) return;
+        elements.forEach(e=>{ if(moving.indexOf(e.id)>=0||e.hidden) return;
           xL.push(e.x, e.x+e.w/2, e.x+e.w); yL.push(e.y, e.y+e.h/2, e.y+e.h); });
         const myX=[nx, nx+d.w/2, nx+d.w]; let bX=null, bXd=TH;
         myX.forEach((m,i)=>xL.forEach(L=>{ const dd=Math.abs(m-L); if(dd<bXd){ bXd=dd; bX={L,e:i}; } }));
@@ -81,7 +96,15 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
         else ny = scSnap(ny, SC_STEP);
       }
       setGuides(g);
-      onChange(d.id, { x:Math.round(nx), y:Math.round(ny) });
+      if(Math.abs(nx-d.x0)>0.5 || Math.abs(ny-d.y0)>0.5) d.moved = true;
+      if(d.group){
+        /* one delta, applied to every member's ORIGINAL position — the grabbed
+           box carries the snapping and the rest keep their exact offsets */
+        const dx = nx - d.x0, dy = ny - d.y0;
+        d.group.forEach(m=> onChange(m.id, { x:Math.round(m.x+dx), y:Math.round(m.y+dy) }));
+      } else {
+        onChange(d.id, { x:Math.round(nx), y:Math.round(ny) });
+      }
     }
     else if(d.mode==='rotate'){
       let ang = Math.atan2(p.y-d.cy, p.x-d.cx)*180/Math.PI + 90;
@@ -107,13 +130,24 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
       onSliceChange && onSliceChange({ yFrac:d.y0/f.h, hFrac:nh/f.h });
     }
   }
-  function onUp(){ dragRef.current = null; setGuides([]); removeListeners(); onCommit && onCommit(); }
+  function onUp(){
+    const d = dragRef.current;
+    /* A grab inside a group that never actually moved was a CLICK — collapse to
+       that one box, the way every canvas tool behaves. */
+    if(d && d.mode==='move' && d.group && !d.moved) onSelect(d.id, false);
+    dragRef.current = null; setGuides([]); removeListeners(); onCommit && onCommit();
+  }
   function addListeners(){ window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); }
   function removeListeners(){ window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); }
   React.useEffect(()=>removeListeners, []);
 
   const hs = 26/scale, bw = 2.5/scale;
   const sel = elements.find(el=>el.id===selectedId && !el.hidden);
+  /* Every box in the live drag gets `dragging` (not just the grabbed one) so
+     the whole group has its 160ms glide switched off — otherwise the others
+     ease along behind the cursor and the group looks like it's coming apart. */
+  const _drag = dragRef.current;
+  const isDragging = (id)=> !!_drag && (_drag.group ? _drag.group.some(m=>m.id===id) : _drag.id===id);
 
   return (
     <div ref={stageRef} className="rs-stage"
@@ -142,7 +176,7 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
           (exporting && el.hidden) ? null :
           <div key={el.id} style={ el.hidden ? { opacity:.22, filter:'grayscale(.4)' } : null }>
             <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent}
-              selected={el.id===selectedId} dragging={dragRef.current && dragRef.current.id===el.id}
+              selected={el.id===selectedId} dragging={isDragging(el.id)}
               onElPointerDown={startMove} exporting={exporting} />
           </div>
         ))}

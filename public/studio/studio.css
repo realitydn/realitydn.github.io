@@ -52,6 +52,8 @@ body{ background:#0e0c09; overflow:hidden; }
   font-size:10px; color:#cbc1ad; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
   padding:8px 12px; cursor:pointer; transition:.12s; display:inline-flex; align-items:center; gap:7px; }
 .rs-iconbtn:hover{ border-color:#6f6553; color:#fffbf1; }
+/* after :hover — same specificity, so a disabled button must win on order */
+.rs-iconbtn:disabled, .rs-iconbtn:disabled:hover{ opacity:.4; cursor:default; border-color:#3a2f1f; color:#cbc1ad; }
 .rs-iconbtn.on{ background:#241a10; border-color:#ed1b72; color:#fff; }
 
 /* export controls — poster name, format select, save button */

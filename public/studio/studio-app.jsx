@@ -1055,20 +1055,26 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </div>
 
         {/* Distribute needs something BETWEEN the two extremes to move, so it
-            only earns its space at 3+. */}
-        {selCount>=3 && <React.Fragment>
+            can't do anything at 2 — but HIDING it there just read as "distribute
+            is missing". Always shown from 2, disabled until 3, and the hint says
+            why. */}
+        {(()=>{ const off = selCount<3; return <React.Fragment>
           <div className="rs-lab">Distribute — even gaps</div>
           <div className="rs-actions">
-            <button className="rs-iconbtn" onClick={()=>distribute('x','gaps')} title="Equal gaps left-to-right">⇄ Across</button>
-            <button className="rs-iconbtn" onClick={()=>distribute('y','gaps')} title="Equal gaps top-to-bottom">⇕ Down</button>
+            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('x','gaps')} title="Equal gaps left-to-right">⇄ Across</button>
+            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('y','gaps')} title="Equal gaps top-to-bottom">⇕ Down</button>
           </div>
           <div className="rs-lab">Distribute — even centres</div>
           <div className="rs-actions">
-            <button className="rs-iconbtn" onClick={()=>distribute('x','centres')} title="Equal spacing of centres, left-to-right">⇄ Across</button>
-            <button className="rs-iconbtn" onClick={()=>distribute('y','centres')} title="Equal spacing of centres, top-to-bottom">⇕ Down</button>
+            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('x','centres')} title="Equal spacing of centres, left-to-right">⇄ Across</button>
+            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('y','centres')} title="Equal spacing of centres, top-to-bottom">⇕ Down</button>
           </div>
-          <div className="rs-mini" style={{ margin:'4px 0 12px' }}>The outermost two stay put. <b>Gaps</b> evens the space between boxes; <b>centres</b> evens their midpoints — they differ once the boxes are different sizes.</div>
-        </React.Fragment>}
+          <div className="rs-mini" style={{ margin:'4px 0 12px' }}>
+            {off
+              ? <React.Fragment>Select a <b>third</b> box to distribute — with two there's nothing between them to space.</React.Fragment>
+              : <React.Fragment>The outermost two stay put. <b>Gaps</b> evens the space between boxes; <b>centres</b> evens their midpoints — they differ once the boxes are different sizes.</React.Fragment>}
+          </div>
+        </React.Fragment>; })()}
 
         <div className="rs-lab">Centre the group on the canvas</div>
         <div className="rs-actions">

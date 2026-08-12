@@ -414,7 +414,10 @@ function _scalePath(d,w,h){ let i=0; return d.replace(/-?\d*\.?\d+/g, m=> ((i++%
 /* kind → path for a w×h box. circle/ellipse return null (renderers draw an
    ellipse). Polygons inscribe in the short-side circle (stay regular); box
    shapes fill the rectangle. */
-const SHAPE_KINDS=['circle','rounded','squircle','rect','pill','triangle','diamond','pentagon','hexagon','octagon','star5','star6','chevron','cross','banner','shield','arch','heart','blob'];
+/* Keep this list + shapePath IDENTICAL to their twins in
+   public/studio/studio-data.jsx — Poster Studio draws the same shapes from the
+   same geometry, and a kind added to one studio only is a silent divergence. */
+const SHAPE_KINDS=['circle','rounded','squircle','rect','pill','triangle','diamond','pentagon','hexagon','octagon','star5','star6','chevron','cross','banner','shield','arch','heart','blob','drop','arrow','halfdisc','quarter','bolt'];
 function shapePath(kind, w, h){
   const cx=w/2, cy=h/2, R=Math.min(w,h)/2;
   switch(kind){
@@ -437,6 +440,11 @@ function shapePath(kind, w, h){
     case 'arch':     { const a=Math.min(w/2,h*0.7).toFixed(2); return `M 0 ${h} L 0 ${a} Q 0 0 ${cx} 0 Q ${w} 0 ${w} ${a} L ${w} ${h} Z`; }
     case 'heart':    return _scalePath('M 0.5 0.95 C 0.0 0.62 0.05 0.16 0.32 0.16 C 0.44 0.16 0.5 0.30 0.5 0.36 C 0.5 0.30 0.56 0.16 0.68 0.16 C 0.95 0.16 1.0 0.62 0.5 0.95 Z', w, h);
     case 'blob':     return _scalePath('M 0.50 0.03 C 0.80 0.0 1.0 0.24 0.97 0.52 C 0.94 0.80 0.80 1.0 0.50 0.97 C 0.18 1.0 0.03 0.78 0.05 0.50 C 0.0 0.20 0.20 0.05 0.50 0.03 Z', w, h);
+    case 'drop':     return _scalePath('M 0.50 0.0 C 0.78 0.30 0.92 0.48 0.92 0.64 C 0.92 0.87 0.73 1.0 0.50 1.0 C 0.27 1.0 0.08 0.87 0.08 0.64 C 0.08 0.48 0.22 0.30 0.50 0.0 Z', w, h);
+    case 'arrow':    { const s=h*0.28; return _poly([[0,cy-s],[w*0.58,cy-s],[w*0.58,0],[w,cy],[w*0.58,h],[w*0.58,cy+s],[0,cy+s]]); }
+    case 'halfdisc': return `M 0 ${h} L 0 ${cy.toFixed(2)} A ${cx.toFixed(2)} ${cy.toFixed(2)} 0 0 1 ${w} ${cy.toFixed(2)} L ${w} ${h} Z`;
+    case 'quarter':  return `M 0 ${h} L 0 0 A ${w} ${h} 0 0 1 ${w} ${h} Z`;
+    case 'bolt':     return _scalePath('M 0.62 0.0 L 0.14 0.56 L 0.44 0.56 L 0.34 1.0 L 0.86 0.40 L 0.55 0.40 Z', w, h);
     default:         return _poly([[0,0],[w,0],[w,h],[0,h]]);
   }
 }

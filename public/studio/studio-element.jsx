@@ -3,6 +3,10 @@
    Exports: StudioElement
    ============================================================ */
 const { PALETTE: SE_PAL, ACCENTS: SE_ACC, themeColors: seTheme, surfaceStyle: seSurf, QRGlyph: SEQR } = window;
+/* shared vector geometry (studio-data.jsx) — the SAME functions Print Studio
+   draws its PDFs from, so a shape here and a shape there are one shape. */
+const { shapePath: seShapePath, shapeClip: seShapeClip, burstRays: seBurst,
+        ruleLayout: seRule, iconLayout: seIcon } = window;
 const MONT = "'Montserrat',sans-serif";
 const ALT  = "'Montserrat Alternates',sans-serif";
 const GROT = "'Space Grotesk',sans-serif";
@@ -150,15 +154,31 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
      on the outer box so it isn't clipped); an opaque photo/paper logo casts off
      its card edge. */
   const lsh = (el.type==='logo'||el.type==='photo') ? seShadow(el, theme) : null;
+  /* MASK — the photo frame wearing a shape from the same registry the Shape
+     element draws from (circle, arch, blob…). Rectangular boxShadow/border
+     would betray the silhouette, so a masked photo casts its shadow as a
+     drop-shadow on the OUTER box (which follows the clipped alpha) and draws
+     its frame as a stroked copy of the mask path on top. */
+  const maskClip = el.type==='photo' ? seShapeClip(el.mask, el.w, el.h) : null;
+  const maskPath = maskClip ? seShapePath(el.mask, el.w, el.h) : null;
+  const outerFilter = (lsh && (el.transparent || maskClip)) ? lsh.filter : undefined;
   return <div style={{ width:'100%', height:'100%', position:'relative', boxSizing:'border-box',
-      filter: (lsh && el.transparent) ? lsh.filter : undefined }}>
+      filter: outerFilter }}>
     {selected && <canvas ref={bleedRef} aria-hidden="true" style={{ position:'absolute',
       left:off, top:off, width:span, height:span, opacity:0.22, pointerEvents:'none', zIndex:0 }} />}
     <div style={{ position:'absolute', inset:0, overflow:'hidden', zIndex:1,
-      border: el.frame? `3px solid ${t.fg}` : 'none',
-      boxShadow: el.frame? `0 10px 2px ${t.shadow(theme==='night'?0.2:0.16)}` : (lsh && !el.transparent ? lsh.css : 'none'), boxSizing:'border-box' }}>
+      clipPath: maskClip||undefined, WebkitClipPath: maskClip||undefined,
+      border: (el.frame && !maskClip)? `3px solid ${t.fg}` : 'none',
+      boxShadow: maskClip ? 'none'
+        : (el.frame? `0 10px 2px ${t.shadow(theme==='night'?0.2:0.16)}` : (lsh && !el.transparent ? lsh.css : 'none')), boxSizing:'border-box' }}>
       <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />
     </div>
+    {maskClip && el.frame && <svg viewBox={`0 0 ${el.w} ${el.h}`} preserveAspectRatio="none" aria-hidden="true"
+      style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:2, pointerEvents:'none', display:'block' }}>
+      {maskPath
+        ? <path d={maskPath} fill="none" stroke={t.fg} strokeWidth={6} strokeLinejoin="round" />
+        : <ellipse cx={el.w/2} cy={el.h/2} rx={Math.max(0.5,el.w/2-3)} ry={Math.max(0.5,el.h/2-3)} fill="none" stroke={t.fg} strokeWidth={6} />}
+    </svg>}
   </div>;
 }
 
@@ -251,6 +271,135 @@ function BlockEl({ el, theme, fillHex, exporting }){
   </div>;
 }
 
+/* ============================================================
+   GRAPHICAL ELEMENTS — shape · icon · rule · burst.
+
+   All four draw as inline SVG, so they stay crisp at every export
+   ratio (A1 captures at ~3.25×) instead of being resampled like the
+   riso canvases. They share the block's colour + shadow vocabulary:
+   `fill` resolves 'fg' → the poster accent (so a shape follows the
+   day carousel), and window.shadowModel drives the drop-shadow.
+   ============================================================ */
+
+/* Grain on a vector shape: the riso noise pass painted into a canvas that is
+   CLIPPED to the shape's own path (Path2D takes the same `d` string the SVG
+   uses), so a grained hexagon is grained hexagon-shaped. Same engine call as
+   BlockEl, so a grained block and a grained shape match. */
+function ShapeGrain({ el, fillHex, path, exporting }){
+  const ref = React.useRef(null);
+  React.useEffect(()=>{
+    const cv=ref.current; if(!cv||!window.RISO) return;
+    const xr = typeof exporting==='number' ? exporting : 2;
+    const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w), 900);
+    const H = Math.max(1, Math.round(W*(el.h/el.w)));
+    cv.width=W; cv.height=H;
+    const cx=cv.getContext('2d'), s=W/el.w;
+    /* Paint + grain the full rect first (identical to BlockEl, so the texture
+       reads the same), then punch it down to the silhouette with a
+       destination-in pass — clipping BEFORE the grain wouldn't survive the
+       engine's own canvas writes. */
+    cx.clearRect(0,0,W,H);
+    cx.fillStyle=fillHex; cx.fillRect(0,0,W,H);
+    window.RISO.grain(cv, el.grain, el.grainSize!=null?el.grainSize:2, el.grainInk, el.grainBlend);
+    cx.save();
+    cx.globalCompositeOperation='destination-in';
+    cx.scale(s,s);
+    cx.fillStyle='#000';
+    if(path) cx.fill(new Path2D(path));
+    else { cx.beginPath(); cx.ellipse(el.w/2, el.h/2, el.w/2, el.h/2, 0, 0, 6.2832); cx.fill(); }
+    cx.restore();
+  });
+  return <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />;
+}
+
+/* Vector shape — circle first, then the full kind registry. `style` picks
+   solid (filled) or outline (hollow, keyline only), which is what turns the
+   same 24 kinds into 48 marks. Stroke insets on the ellipse so an outline
+   circle can't clip on its own box. */
+function ShapeEl({ el, theme, fillHex, exporting }){
+  const t = seTheme(theme);
+  const kind = el.kind||'circle';
+  const path = seShapePath(kind, el.w, el.h);
+  const hollow = el.style==='outline';
+  const sw = hollow ? Math.max(1, el.stroke!=null?el.stroke:8) : (el.stroke>0 ? el.stroke : 0);
+  const strokeCol = hollow ? fillHex : seResolve(el.strokeColor||'fg', t.fg);
+  const grainy = !hollow && (el.grain||0) > 0.001;
+  const half = sw/2;
+  const sh = seShadow(el, theme);
+  return <div style={{ position:'absolute', inset:0, opacity: el.opacity!=null?el.opacity:1,
+    filter: sh? sh.filter : undefined }}>
+    <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none"
+      style={{ display:'block', overflow:'visible' }}>
+      {path
+        ? <path d={path} fill={hollow?'none':(grainy?'transparent':fillHex)}
+            stroke={sw>0?strokeCol:'none'} strokeWidth={sw} strokeLinejoin="round" strokeLinecap="round" />
+        : <ellipse cx={el.w/2} cy={el.h/2} rx={Math.max(0.5, el.w/2 - (hollow?half:0))} ry={Math.max(0.5, el.h/2 - (hollow?half:0))}
+            fill={hollow?'none':(grainy?'transparent':fillHex)} stroke={sw>0?strokeCol:'none'} strokeWidth={sw} />}
+    </svg>
+    {grainy && <ShapeGrain el={el} fillHex={fillHex} path={path} exporting={exporting} />}
+  </div>;
+}
+
+/* Year 2 glyph — 24×24 primitives scaled into the box by iconLayout, drawn as
+   real strokes so a 400px poster icon keeps the mark's proportions. `solid`
+   fills the closed primitives (lines always stroke). */
+function IconEl({ el, theme, fillHex }){
+  const lay = seIcon(el);
+  const sh = seShadow(el, theme);
+  const common = { fill:'none', stroke:fillHex, strokeWidth:lay?lay.sw:2, strokeLinecap:'round', strokeLinejoin:'round' };
+  const solid  = { fill:fillHex, stroke:'none' };
+  const node = (p,i)=>{
+    const st = p.stroke ? common : solid;
+    if(p.t==='rect')    return <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} {...st} />;
+    if(p.t==='line')    return <line key={i} x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2} {...common} />;
+    if(p.t==='ellipse') return <ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} {...st} />;
+    if(p.t==='poly')    return <polygon key={i} points={p.pts.map(q=>q[0]+','+q[1]).join(' ')} {...st} />;
+    if(p.t==='path')    return <path key={i} d={p.d} {...st} />;
+    return null;
+  };
+  return <div style={{ position:'absolute', inset:0, opacity: el.opacity!=null?el.opacity:1,
+    filter: sh? sh.filter : undefined }}>
+    {lay
+      ? <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+          {lay.prims.map(node)}
+        </svg>
+      : <div style={{ width:'100%', height:'100%', border:`2px dashed ${seTheme(theme).shadow(0.45)}`, borderRadius:8, boxSizing:'border-box' }} />}
+  </div>;
+}
+
+/* Divider — one layout (ruleLayout) covering ten patterns and four terminals.
+   Rotate the element for a vertical rule; the geometry is always drawn along
+   the box's long axis and centred on it. */
+function RuleEl({ el, theme, fillHex }){
+  const lay = seRule(el);
+  const sh = seShadow(el, theme);
+  return <div style={{ position:'absolute', inset:0, opacity: el.opacity!=null?el.opacity:1,
+    filter: sh? sh.filter : undefined }}>
+    <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
+      {lay.strokes.map((s,i)=><polyline key={'s'+i} points={s.pts.map(p=>p[0]+','+p[1]).join(' ')} fill="none"
+        stroke={fillHex} strokeWidth={lay.w} strokeLinecap={lay.cap} strokeLinejoin="round" />)}
+      {lay.dots.map((d,i)=><circle key={'o'+i} cx={d.x} cy={d.y} r={d.r} fill={fillHex} />)}
+      {lay.fills.map((f,i)=><polygon key={'f'+i} points={f.pts.map(p=>p[0]+','+p[1]).join(' ')} fill={fillHex} />)}
+    </svg>
+  </div>;
+}
+
+/* Sunburst — filled wedges radiating from the centre, with an optional knocked
+   -out hub. Spin it with the element's own rotate handle or the Spin dial. */
+function BurstEl({ el, theme, fillHex }){
+  const b = seBurst(el.w, el.h, el.rays||16, el.spin||0);
+  const hub = el.hub!=null?el.hub:0;
+  const hubHex = seResolve(el.hubFill||'paper', seTheme(theme).paper);
+  const sh = seShadow(el, theme);
+  return <div style={{ position:'absolute', inset:0, overflow:'hidden', opacity: el.opacity!=null?el.opacity:1,
+    filter: sh? sh.filter : undefined }}>
+    <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block' }}>
+      {b.wedges.map((w,i)=><path key={i} d={`M${w.cx} ${w.cy} L${w.p0[0]} ${w.p0[1]} L${w.p1[0]} ${w.p1[1]} Z`} fill={fillHex} />)}
+      {hub>0 && <circle cx={b.cx} cy={b.cy} r={b.R*hub} fill={hubHex} />}
+    </svg>
+  </div>;
+}
+
 /* The canonical REALITY wordmark — Montserrat with Alternates A/I/Y, baked
    as vector (same paths as the site Logo). Posters use this, not set-text. */
 function WordmarkSVG({ height, color, fill }){
@@ -329,6 +478,28 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     // accentHex already resolved el.fill (Auto → the poster accent)
     return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
       <BlockEl el={el} theme={theme} fillHex={accentHex} exporting={exporting} />
+    </Wrap>;
+  }
+  /* graphical family — same accentHex resolution as the block, so Auto fill
+     follows the poster accent (and therefore the day) for all of them. */
+  if(el.type==='shape'){
+    return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
+      <ShapeEl el={el} theme={theme} fillHex={accentHex} exporting={exporting} />
+    </Wrap>;
+  }
+  if(el.type==='icon'){
+    return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
+      <IconEl el={el} theme={theme} fillHex={accentHex} />
+    </Wrap>;
+  }
+  if(el.type==='rule'){
+    return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
+      <RuleEl el={el} theme={theme} fillHex={accentHex} />
+    </Wrap>;
+  }
+  if(el.type==='burst'){
+    return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
+      <BurstEl el={el} theme={theme} fillHex={accentHex} />
     </Wrap>;
   }
   /* Unified shadow for the text / surface family (everything below). A bare

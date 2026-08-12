@@ -7,6 +7,8 @@ const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:A
         DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
         pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
         TYPE_SCALE:AP_SCALE, StudioCanvas:APCanvas,
+        GRAPHICS:AP_GFX, SHAPE_KINDS:AP_SHAPES, SHAPE_LABELS:AP_SHAPELAB, MASK_KINDS:AP_MASKS,
+        RULE_PATTERNS:AP_RULES, RULE_TERMS:AP_TERMS, BURST_PRESETS:AP_BURSTS,
         TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl } = window;
 const LS_KEY = 'reality-studio-doc-v2';
 const TPL_KEY = 'reality-studio-templates-v1';
@@ -198,6 +200,12 @@ const TYPE_CAPS = {
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
   matchup:  { align:true, surface:true, shadow:true },
   block:    { fillOwn:true, shadow:true },
+  /* graphical family — each owns its fill (and its own bespoke panel above),
+     so they skip the shared Surface block and keep the shadow control */
+  shape:    { fillOwn:true, shadow:true },
+  icon:     { fillOwn:true, shadow:true },
+  rule:     { fillOwn:true, shadow:true },
+  burst:    { fillOwn:true, shadow:true },
   photo:    { media:true, shadow:true },
   logo:     { media:true, shadow:true },
 };
@@ -313,6 +321,111 @@ function Fold({ id, title, open, badge, children }){
     </div>
   );
 }
+/* ============================================================
+   GRAPHICS PICKER — one grid component with two jobs:
+     library   → each tile DRAG-spawns a new element (pass onSpawn)
+     inspector → each tile CLICKS to swap the selected element's kind
+                 (pass onPick), so a circle becomes a hexagon in place.
+   Previews are drawn from the SAME geometry functions the canvas
+   renders with, so what you pick is literally what you get.
+   ============================================================ */
+function GfxPreview({ type, kind, preset }){
+  const S = 38;
+  if(type==='shape'){
+    /* 'none' only appears in the photo-mask grid — draw it as an empty frame
+       rather than letting shapePath fall through to a filled rectangle. */
+    if(kind==='none') return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block' }}>
+      <rect x="2" y="2" width={S-4} height={S-4} fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity=".55" />
+    </svg>;
+    const d = window.shapePath(kind, S, S);
+    return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block', overflow:'visible' }}>
+      {d ? <path d={d} fill="currentColor" /> : <circle cx={S/2} cy={S/2} r={S/2} fill="currentColor" />}
+    </svg>;
+  }
+  if(type==='rule'){
+    const W=46, H=18;
+    const lay = window.ruleLayout({ w:W, h:H, pattern:kind, weight:2.2, amp:4, tickLen:4, term:'none' });
+    return <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display:'block' }}>
+      {lay.strokes.map((s,i)=><polyline key={'s'+i} points={s.pts.map(p=>p[0]+','+p[1]).join(' ')} fill="none"
+        stroke="currentColor" strokeWidth={lay.w} strokeLinecap={lay.cap} />)}
+      {lay.dots.map((d,i)=><circle key={'o'+i} cx={d.x} cy={d.y} r={d.r} fill="currentColor" />)}
+    </svg>;
+  }
+  if(type==='burst'){
+    const p = preset||{ rays:16, hub:0 };
+    const b = window.burstRays(S, S, p.rays, 0);
+    return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block' }}>
+      {b.wedges.map((w,i)=><path key={i} d={`M${w.cx} ${w.cy} L${w.p0[0]} ${w.p0[1]} L${w.p1[0]} ${w.p1[1]} Z`} fill="currentColor" />)}
+      {p.hub>0 && <circle cx={b.cx} cy={b.cy} r={b.R*p.hub} fill="#15110b" />}
+    </svg>;
+  }
+  if(type==='icon'){
+    const lay = window.iconLayout({ kind, w:S, h:S, strokeScale:1, solid:false });
+    if(!lay) return null;
+    const st = { fill:'none', stroke:'currentColor', strokeWidth:lay.sw, strokeLinecap:'round', strokeLinejoin:'round' };
+    return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block' }}>
+      {lay.prims.map((p,i)=>{
+        if(p.t==='rect')    return <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} {...st} />;
+        if(p.t==='line')    return <line key={i} x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2} {...st} />;
+        if(p.t==='ellipse') return <ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} {...st} />;
+        if(p.t==='poly')    return <polygon key={i} points={p.pts.map(q=>q[0]+','+q[1]).join(' ')} {...st} />;
+        if(p.t==='path')    return <path key={i} d={p.d} {...st} />;
+        return null;
+      })}
+    </svg>;
+  }
+  return null;
+}
+function GfxGrid({ type, items, prop, value, onPick, onSpawn, wide }){
+  return (
+    <div className={'rs-gfxgrid'+(wide?' wide':'')}>
+      {items.map(it=>{
+        const spawn = onSpawn ? (e)=>onSpawn(e, { type, label:it.l,
+          preset: Object.assign({}, it.preset||null, prop?{ [prop]:it.k }:null) }) : undefined;
+        return (
+          <button key={it.k} type="button" title={it.l}
+            className={'rs-gfxtile'+(value===it.k?' on':'')}
+            onClick={onPick?()=>onPick(it.k):undefined}
+            onPointerDown={spawn}>
+            <span className="gp"><GfxPreview type={type} kind={it.k} preset={it.preset} /></span>
+            <span className="gl">{it.l}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+/* Icon browser — 70-odd glyphs is too many for one flat grid, so it's a live
+   filter over the design system's own categories (plus the core UI set, which
+   ICON_CATEGORIES doesn't cover). Search matches key or label. */
+function IconPicker({ value, onPick, onSpawn }){
+  const [q,setQ] = React.useState('');
+  const groups = React.useMemo(()=>{
+    const cats = (window.ICON_CATEGORIES||[]).map(c=>({ group:c.group, items:c.items }));
+    const core = (window.ICON_CORE||[]);
+    return core.length ? [{ group:'Core · interface', items:core }].concat(cats) : cats;
+  }, []);
+  const lab = k => (window.ICON_LABELS||{})[k] || k.replace(/_/g,' ');
+  const needle = q.trim().toLowerCase();
+  const hit = k => !needle || k.toLowerCase().indexOf(needle)>=0 || lab(k).toLowerCase().indexOf(needle)>=0;
+  const shown = groups.map(g=>({ group:g.group, items:g.items.filter(hit) })).filter(g=>g.items.length);
+  const total = shown.reduce((n,g)=>n+g.items.length,0);
+  return (
+    <React.Fragment>
+      <input className="rs-input rs-gfxsearch" type="search" value={q} placeholder="Search icons…"
+        onChange={e=>setQ(e.target.value)} />
+      {shown.map(g=>(
+        <React.Fragment key={g.group}>
+          <div className="rs-mini" style={{ margin:'8px 0 4px', opacity:.7 }}>{g.group}</div>
+          <GfxGrid type="icon" prop="kind" value={value} onPick={onPick} onSpawn={onSpawn} wide
+            items={g.items.map(k=>({ k, l:lab(k) }))} />
+        </React.Fragment>
+      ))}
+      {!total && <div className="rs-mini" style={{ margin:'8px 0' }}>Nothing matches “{q}”.</div>}
+    </React.Fragment>
+  );
+}
+
 /* tooltip label for an ink key — the neutrals get their brand names */
 const inkTitle = a => a==='ink' ? 'Ink' : a==='cream' ? 'Cream' : a;
 /* an ink swatch row with a leading Auto/Off slot (null) */
@@ -705,6 +818,15 @@ function PhotoControls({ el, update, theme }){
         </React.Fragment>}
         <Chips label="Frame" options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
         {el.type==='logo' && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>The whole logo always shows (contain). Zoom <b>below 1×</b> for more paper space around it.</div>}
+        {/* MASK — the same shape registry the Shape element draws from, applied
+            as the photo's silhouette. Ink border follows the mask, and so does
+            the shadow, so a circle photo casts a circle shadow. */}
+        {el.type==='photo' && <React.Fragment>
+          <div className="rs-sech">Mask</div>
+          <GfxGrid type="shape" prop="kind" value={el.mask||'none'} onPick={v=>update({mask:v})}
+            items={AP_MASKS.map(k=> k==='none' ? { k:'none', l:'None' } : { k, l:AP_SHAPELAB[k]||k })} />
+          {(el.mask&&el.mask!=='none') && <div className="rs-mini" style={{ margin:'4px 0 12px' }}>Cut from the same shape set as the graphics library — pan/zoom below to re-frame inside it.</div>}
+        </React.Fragment>}
         <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
         <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
         <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
@@ -732,6 +854,118 @@ function BlockControls({ el, doc, update }){
       <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>A pinch of grain makes a flat field feel printed, not digital.</div>
       <div className="rs-sech">Edge</div>
       <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={!!el.outline} onChange={v=>update({outline:v})} />
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   GRAPHICAL ELEMENT PANELS — shape · icon · rule · burst.
+   Each opens with the kind picker (the same grid as the library, so
+   swapping a circle for a hexagon is one click and never needs a
+   re-drag), then that family's own dials. Colour is always the shared
+   Swatches, so Auto keeps them on the poster accent.
+   ============================================================ */
+function ShapeControls({ el, doc, update }){
+  const hollow = el.style==='outline';
+  return (
+    <React.Fragment>
+      {/* "Silhouette", not "Shape" — the row above already says the element
+          type, and two SHAPE headings in a row read like a bug. */}
+      <div className="rs-sech">Silhouette</div>
+      <GfxGrid type="shape" items={AP_SHAPES.map(k=>({ k, l:AP_SHAPELAB[k]||k }))} prop="kind"
+        value={el.kind||'circle'} onPick={v=>update({kind:v})} />
+      <div className="rs-sech">Fill</div>
+      {/* Outline needs a line to draw — dial one in on the way there rather
+          than leaving the shape invisible at stroke 0. */}
+      <Chips options={[{v:'solid',l:'Solid'},{v:'outline',l:'Outline'}]} value={hollow?'outline':'solid'}
+        onChange={v=>update(v==='outline' && !(el.stroke>0) ? { style:v, stroke:10 } : { style:v })} />
+      <Swatches value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})}
+        autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+      <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
+      {hollow
+        ? <Slider label="Line weight" val={el.stroke!=null?el.stroke:8} min={1} max={60} step={1} onChange={v=>update({stroke:v})} suffix="px" />
+        : <React.Fragment>
+            <div className="rs-sech">Keyline</div>
+            <Slider label="Weight" val={el.stroke!=null?el.stroke:0} min={0} max={40} step={1} onChange={v=>update({stroke:v})} suffix="px" />
+            {el.stroke>0 && <Swatches label="Keyline colour" value={el.strokeColor||'fg'} onChange={v=>update({strokeColor:v})}
+              autoTitle="Auto — the theme ink" />}
+          </React.Fragment>}
+      {!hollow && <React.Fragment>
+        <div className="rs-sech">Texture</div>
+        <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
+        {el.grain>0 && <React.Fragment>
+          <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />
+          <InkRow label="Grain ink" value={el.grainInk} onChange={v=>update({grainInk:v})} autoTitle="Auto — neutral tooth" />
+          <Chips label="Character" options={[{v:'soft',l:'Soft'},{v:'dirty',l:'Dirty'}]} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
+        </React.Fragment>}
+        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Grain is clipped to the silhouette, so a grained hexagon stays a hexagon.</div>
+      </React.Fragment>}
+    </React.Fragment>
+  );
+}
+
+function IconControls({ el, doc, update }){
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Icon</div>
+      <IconPicker value={el.kind} onPick={v=>update({kind:v})} />
+      <div className="rs-sech">Ink</div>
+      <Chips options={[{v:false,l:'Line'},{v:true,l:'Solid'}]} value={!!el.solid} onChange={v=>update({solid:v})} />
+      <Swatches value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})}
+        autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+      <Slider label="Stroke weight" val={el.strokeScale!=null?el.strokeScale:1} min={0.4} max={3} step={0.1} onChange={v=>update({strokeScale:v})} suffix="×" />
+      <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
+      <div className="rs-mini" style={{ marginTop:-2 }}>The Year 2 glyph set — the same vectors the app and Print Studio draw.</div>
+    </React.Fragment>
+  );
+}
+
+function RuleControls({ el, doc, update }){
+  const pat = el.pattern||'solid';
+  const shaped = pat==='zigzag'||pat==='wave'||pat==='square';
+  const spaced = pat!=='solid'&&pat!=='double'&&pat!=='triple';
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Pattern</div>
+      <GfxGrid type="rule" items={AP_RULES.map(p=>({ k:p.v, l:p.l }))} prop="pattern"
+        value={pat} onPick={v=>update({pattern:v})} />
+      <div className="rs-sech">Line</div>
+      <Swatches value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})}
+        autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+      <Slider label="Weight" val={el.weight!=null?el.weight:6} min={1} max={40} step={1} onChange={v=>update({weight:v})} suffix="px" />
+      {spaced && <Slider label="Spacing" val={el.spacing!=null?el.spacing:20} min={4} max={120} step={1} onChange={v=>update({spacing:v})} suffix="px" />}
+      {pat==='dashed' && <Slider label="Dash length" val={el.dashRatio!=null?el.dashRatio:0.55} min={0.1} max={0.9} step={0.05} onChange={v=>update({dashRatio:v})} />}
+      {shaped && <Slider label="Amplitude" val={el.amp!=null?el.amp:10} min={1} max={80} step={1} onChange={v=>update({amp:v})} suffix="px" />}
+      {(pat==='double'||pat==='triple') && <Slider label="Line gap" val={el.gap!=null?el.gap:12} min={2} max={80} step={1} onChange={v=>update({gap:v})} suffix="px" />}
+      {pat==='ticks' && <React.Fragment>
+        <Slider label="Tick length" val={el.tickLen!=null?el.tickLen:10} min={2} max={60} step={1} onChange={v=>update({tickLen:v})} suffix="px" />
+        <Chips label="Tick direction" options={[{v:'both',l:'Both'},{v:'up',l:'Up'},{v:'down',l:'Down'}]} value={el.tickDir||'both'} onChange={v=>update({tickDir:v})} />
+      </React.Fragment>}
+      <div className="rs-sech">Ends</div>
+      <Chips options={AP_TERMS} value={el.term||'none'} onChange={v=>update({term:v})} />
+      {el.term && el.term!=='none' && <React.Fragment>
+        <Chips label="Which end" options={[{v:'end',l:'End'},{v:'start',l:'Start'},{v:'both',l:'Both'}]} value={el.termAt||'end'} onChange={v=>update({termAt:v})} />
+        <Slider label="Terminal size" val={el.termScale!=null?el.termScale:1} min={0.4} max={3} step={0.1} onChange={v=>update({termScale:v})} suffix="×" />
+      </React.Fragment>}
+      <Chips label="Caps" options={[{v:'round',l:'Round'},{v:'butt',l:'Flat'}]} value={el.cap||'round'} onChange={v=>update({cap:v})} />
+      <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
+      <div className="rs-mini" style={{ marginTop:-2 }}>Rotate the element 90° for a vertical rule — the geometry always runs along the box.</div>
+    </React.Fragment>
+  );
+}
+
+function BurstControls({ el, doc, update }){
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Burst</div>
+      <Swatches value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})}
+        autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+      <Slider label="Rays" val={el.rays!=null?el.rays:16} min={3} max={64} step={1} onChange={v=>update({rays:v})} />
+      <Slider label="Spin" val={el.spin!=null?el.spin:0} min={0} max={90} step={1} onChange={v=>update({spin:v})} suffix="°" />
+      <Slider label="Hub" val={el.hub!=null?el.hub:0} min={0} max={0.9} step={0.02} onChange={v=>update({hub:v})} />
+      {el.hub>0 && <Swatches label="Hub colour" value={el.hubFill||'paper'} onChange={v=>update({hubFill:v})} autoTitle="Auto — the paper" />}
+      <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
+      <div className="rs-mini" style={{ marginTop:-2 }}>Send it behind a title (▼) and knock the hub out to ring a photo.</div>
     </React.Fragment>
   );
 }
@@ -819,6 +1053,10 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* appearance — image / surface / fill of the whole element */}
       {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
       {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
+      {el.type==='shape' && <ShapeControls el={el} doc={doc} update={update} />}
+      {el.type==='icon'  && <IconControls  el={el} doc={doc} update={update} />}
+      {el.type==='rule'  && <RuleControls  el={el} doc={doc} update={update} />}
+      {el.type==='burst' && <BurstControls el={el} doc={doc} update={update} />}
       {caps.surface && <React.Fragment>
         <div className="rs-sech">Surface</div>
         <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
@@ -2095,6 +2333,20 @@ function App(){
               ))}
             </React.Fragment>
           ))}
+
+          {/* GRAPHICS — four families that differ only by one prop, so they're
+              folds of silhouette grids rather than 60 more library rows. Drag a
+              tile out exactly like a part; it lands with that kind preset. */}
+          <div className="rs-sech">Graphics</div>
+          {AP_GFX.map(g=>(
+            <Fold key={g.id} id={g.id} title={g.title} open={g.open}>
+              {g.groups
+                ? <IconPicker value={null} onSpawn={startSpawn} />
+                : <GfxGrid type={g.type} prop={g.prop} items={g.items} onSpawn={startSpawn} />}
+              <div className="rs-mini" style={{ marginTop:8 }}>{g.hint}</div>
+            </Fold>
+          ))}
+
           <div className="rs-mini" style={{ marginTop:16 }}>Drag a part onto the poster — it snaps to the grid and joins the Master layout.</div>
         </div>
 

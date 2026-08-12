@@ -22,6 +22,16 @@ const PORT = process.env.PORT || 4501;
 const ROOT = path.resolve(__dirname, '..', 'public', 'studio');
 const ENTRY = 'index.html';
 
+// Files the Studio loads from OUTSIDE its own folder. Deployed, public/ is
+// copied verbatim to the site root, so index.html's "../print/print-icons.js"
+// resolves to /print/print-icons.js and just works; locally ROOT containment
+// would 403 it. The Year 2 glyph set is deliberately one file shared with
+// Print Studio (see its header) rather than a second copy that can drift, so
+// this maps that one request back to the real file.
+const SHARED = {
+  '/print/print-icons.js': path.resolve(__dirname, '..', 'public', 'print', 'print-icons.js'),
+};
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -51,9 +61,11 @@ const server = http.createServer((req, res) => {
   let rel = decodeURIComponent((req.url || '/').split('?')[0]);
   if (rel === '/') rel = '/' + ENTRY;
 
-  // Contain to ROOT — no path traversal out of the design folder.
-  const filePath = path.normalize(path.join(ROOT, rel));
-  if (!filePath.startsWith(ROOT)) {
+  // Contain to ROOT — no path traversal out of the design folder, except the
+  // explicitly listed shared files above.
+  const shared = SHARED[rel];
+  const filePath = shared || path.normalize(path.join(ROOT, rel));
+  if (!shared && !filePath.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end('Forbidden');
   }

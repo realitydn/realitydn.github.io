@@ -113,6 +113,26 @@ body{ background:#0e0c09; overflow:hidden; }
   font-size:12px; color:#fffbf1; }
 .rs-libitem .lh{ font-size:11px; color:#8a7f6c; font-family:var(--rs-grot); line-height:1.2; }
 
+/* graphics picker — shape / rule / burst / icon grids. One component serves
+   both the library (drag to spawn) and the Inspector (click to swap kind), so
+   the tiles are sized to work in the 236px library AND the 312px inspector.
+   Previews inherit `currentColor`, which is why a selected tile's silhouette
+   goes accent-pink for free. */
+.rs-gfxgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(58px, 1fr)); gap:5px; margin-bottom:2px; }
+.rs-gfxgrid.wide{ grid-template-columns:repeat(auto-fill, minmax(44px, 1fr)); }
+.rs-gfxtile{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 3px 5px;
+  border:1px solid #33291b; border-radius:8px; background:#1b1610; color:#c9bda6;
+  cursor:grab; transition:.12s; touch-action:none; user-select:none; overflow:hidden; }
+.rs-gfxtile:hover{ border-color:#ed1b72; background:#221a13; color:#fffbf1; transform:translateY(-1px); }
+.rs-gfxtile:active{ cursor:grabbing; }
+.rs-gfxtile.on{ border-color:#ed1b72; background:#2a1620; color:#ed1b72; }
+.rs-gfxtile .gp{ display:block; width:100%; height:30px; }
+.rs-gfxtile .gp svg{ width:100%; height:100%; }
+.rs-gfxtile .gl{ font-family:var(--rs-grot); font-size:8.5px; letter-spacing:.02em; line-height:1.1;
+  color:#8a7f6c; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-gfxtile:hover .gl, .rs-gfxtile.on .gl{ color:inherit; }
+.rs-gfxsearch{ margin-bottom:2px; }
+
 /* stage */
 .rs-stage{ position:relative; overflow:hidden;
   background:

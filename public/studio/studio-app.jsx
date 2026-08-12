@@ -971,7 +971,24 @@ function BurstControls({ el, doc, update }){
 }
 
 /* ---------- inspector ---------- */
-function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align }){
+/* Centre-on-canvas row — the same three buttons serve one box and a group of
+   them (the handler centres the selection's bounding box either way), so the
+   only thing that changes is the label. */
+function CentreRow({ label, centre, hint }){
+  return (
+    <React.Fragment>
+      <div className="rs-lab" style={{ marginTop:0 }}>{label}</div>
+      <div className="rs-actions">
+        <button className="rs-iconbtn" onClick={()=>centre('x')} title="Centre left-to-right on the canvas">⇄ Across</button>
+        <button className="rs-iconbtn" onClick={()=>centre('y')} title="Centre top-to-bottom on the canvas">⇕ Down</button>
+        <button className="rs-iconbtn" onClick={()=>centre('both')} title="Centre on both axes">⊕ Both</button>
+      </div>
+      {hint && <div className="rs-mini" style={{ margin:'4px 0 2px' }}>{hint}</div>}
+    </React.Fragment>
+  );
+}
+
+function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel }){
   if(!el){
     const DAYS = AP_ABYDAY.map((a,i)=>({ n:i+1, abbr:AP_DABBR[i], accent:a }));
     return (
@@ -1023,31 +1040,68 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   return (
     <React.Fragment>
       {selCount>=2 && <React.Fragment>
-        <div className="rs-sech">Align · {selCount} selected</div>
-        <div className="rs-lab" style={{ marginTop:0 }}>On a vertical line</div>
+        <div className="rs-sech">Arrange · {selCount} selected</div>
+        <div className="rs-lab" style={{ marginTop:0 }}>Align on a vertical line</div>
         <div className="rs-actions">
           <button className="rs-iconbtn" onClick={()=>align('x','left')} title="Align left edges">Left</button>
           <button className="rs-iconbtn" onClick={()=>align('x','center')} title="Align horizontal centres">Centre</button>
           <button className="rs-iconbtn" onClick={()=>align('x','right')} title="Align right edges">Right</button>
         </div>
-        <div className="rs-lab">On a horizontal line</div>
+        <div className="rs-lab">Align on a horizontal line</div>
         <div className="rs-actions">
           <button className="rs-iconbtn" onClick={()=>align('y','top')} title="Align top edges">Top</button>
           <button className="rs-iconbtn" onClick={()=>align('y','middle')} title="Align vertical centres">Middle</button>
           <button className="rs-iconbtn" onClick={()=>align('y','bottom')} title="Align bottom edges">Bottom</button>
         </div>
-        <button className="rs-iconbtn rs-del" style={{ width:'100%', justifyContent:'center', marginTop:6 }} onClick={del}>Delete {selCount}</button>
+
+        {/* Distribute needs something BETWEEN the two extremes to move, so it
+            only earns its space at 3+. */}
+        {selCount>=3 && <React.Fragment>
+          <div className="rs-lab">Distribute — even gaps</div>
+          <div className="rs-actions">
+            <button className="rs-iconbtn" onClick={()=>distribute('x','gaps')} title="Equal gaps left-to-right">⇄ Across</button>
+            <button className="rs-iconbtn" onClick={()=>distribute('y','gaps')} title="Equal gaps top-to-bottom">⇕ Down</button>
+          </div>
+          <div className="rs-lab">Distribute — even centres</div>
+          <div className="rs-actions">
+            <button className="rs-iconbtn" onClick={()=>distribute('x','centres')} title="Equal spacing of centres, left-to-right">⇄ Across</button>
+            <button className="rs-iconbtn" onClick={()=>distribute('y','centres')} title="Equal spacing of centres, top-to-bottom">⇕ Down</button>
+          </div>
+          <div className="rs-mini" style={{ margin:'4px 0 12px' }}>The outermost two stay put. <b>Gaps</b> evens the space between boxes; <b>centres</b> evens their midpoints — they differ once the boxes are different sizes.</div>
+        </React.Fragment>}
+
+        <div className="rs-lab">Centre the group on the canvas</div>
+        <div className="rs-actions">
+          <button className="rs-iconbtn" onClick={()=>centre('x')} title="Centre the group left-to-right on the canvas">⇄ Across</button>
+          <button className="rs-iconbtn" onClick={()=>centre('y')} title="Centre the group top-to-bottom on the canvas">⇕ Down</button>
+          <button className="rs-iconbtn" onClick={()=>centre('both')} title="Centre the group on both axes">⊕ Both</button>
+        </div>
+        <div className="rs-mini" style={{ margin:'4px 0 2px' }}>Moves the whole selection as one onto the {formatLabel} centre — the boxes keep their positions relative to each other.</div>
+
+        <button className="rs-iconbtn rs-del" style={{ width:'100%', justifyContent:'center', marginTop:8 }} onClick={del}>Delete {selCount}</button>
         <div className="rs-mini" style={{ margin:'8px 0 2px' }}>Editing the last-clicked box below · shift-click to add/remove.</div>
       </React.Fragment>}
       <div className="rs-sech" style={{ display:'flex', justifyContent:'space-between' }}>
         <span>{el.type}{el._overridden && <span className="rs-ovtag"> · overridden</span>}</span>
       </div>
+      {/* Two rows: stacking order, then the destructive pair. Six buttons on one
+          row crushed "Duplicate"/"Delete" to illegible at 312px. */}
+      <div className="rs-actions" style={{ marginBottom:6 }}>
+        <button className="rs-iconbtn" onClick={()=>layer('back')} title="Send to back">⤓ Back</button>
+        <button className="rs-iconbtn" onClick={()=>layer(-1)} title="Send back one">▼</button>
+        <button className="rs-iconbtn" onClick={()=>layer(1)} title="Bring forward one">▲</button>
+        <button className="rs-iconbtn" onClick={()=>layer('front')} title="Bring to front">⤒ Front</button>
+      </div>
       <div className="rs-actions">
-        <button className="rs-iconbtn" onClick={()=>layer(1)} title="Bring forward">▲</button>
-        <button className="rs-iconbtn" onClick={()=>layer(-1)} title="Send back">▼</button>
         <button className="rs-iconbtn" onClick={dup} title="Duplicate">Duplicate</button>
         <button className="rs-iconbtn rs-del" onClick={del} title="Delete">Delete</button>
       </div>
+      {/* Centring is arrangement, so it sits with the stacking buttons rather
+          than down in Transform — behind a photo panel it would never be found.
+          Hidden while several boxes are selected: the group version is up in
+          Arrange, and two Centre rows meaning different things is a trap. */}
+      {selCount<2 && <CentreRow label="Centre on the canvas" centre={centre}
+        hint={'Exact centre of the '+formatLabel+' canvas — never snapped to the grid.'} />}
 
       {/* ===================== WHOLE ITEM ===================== */}
       {/* appearance — image / surface / fill of the whole element */}
@@ -1612,13 +1666,38 @@ function App(){
     const c=Object.assign(JSON.parse(JSON.stringify(mEl)), {id:window.uid(), x:mEl.x+40, y:mEl.y+40});
     setDoc(d=>({ ...d, elements:[...d.elements, c] })); setSelectedIds([c.id]);
   };
-  const layer = (dir)=>{ if(!sel) return; setDoc(d=>{ const arr=d.elements.slice(); const i=arr.findIndex(e=>e.id===sel.id); const j=i+dir; if(j<0||j>=arr.length) return d; const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp; return {...d, elements:arr}; }); };
+  /* Layer order. A number steps one place; 'front'/'back' jump the whole way
+     (the ▲▼ buttons alone made burying a full-bleed shape a lot of clicking). */
+  const layer = (dir)=>{ if(!sel) return; setDoc(d=>{
+    const arr=d.elements.slice(); const i=arr.findIndex(e=>e.id===sel.id); if(i<0) return d;
+    if(dir==='front'||dir==='back'){
+      const [it]=arr.splice(i,1);
+      if(dir==='front') arr.push(it); else arr.unshift(it);
+      return {...d, elements:arr};
+    }
+    const j=i+dir; if(j<0||j>=arr.length) return d;
+    const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp; return {...d, elements:arr};
+  }); };
   const clearAll = ()=>{ if(confirm('Remove all elements from the poster?')){ setDoc(d=>({...d, elements:[], overrides:{}, eventRef:null})); setSelectedIds([]); } };
 
-  /* Align the selected boxes to a shared edge/line — the Swiss vertical (and
-     horizontal). Operates on the selection's bounding box. */
+  /* ============================================================
+     ARRANGE — align · distribute · centre on canvas.
+
+     All three read the RESOLVED boxes (what you actually see in the
+     format on screen) and write back through updateEl, so the edit is
+     routed exactly like dragging a box: in Master it moves Master, in
+     an output format it lands as that format's override.
+
+     Deliberately NOT snapped to the grid even when Snap is on — the
+     whole point of "centre" and "distribute" is the exact number, and
+     rounding it to the 54px step would put it visibly off.
+     ============================================================ */
+  function selBoxes(){ return selectedIds.map(id=>resolved.find(e=>e.id===id)).filter(Boolean); }
+
+  /* Align to a shared edge/line — the Swiss vertical (and horizontal).
+     Operates on the selection's own bounding box. */
   function alignSel(axis, mode){
-    const items = selectedIds.map(id=>resolved.find(e=>e.id===id)).filter(Boolean);
+    const items = selBoxes();
     if(items.length<2) return;
     const x0=Math.min(...items.map(e=>e.x)), x1=Math.max(...items.map(e=>e.x+e.w));
     const y0=Math.min(...items.map(e=>e.y)), y1=Math.max(...items.map(e=>e.y+e.h));
@@ -1630,6 +1709,59 @@ function App(){
         const ny = mode==='top'? y0 : mode==='bottom'? y1-e.h : (y0+y1)/2 - e.h/2;
         updateEl(e.id, { y: Math.round(ny) });
       }
+    });
+  }
+
+  /* Distribute — the two extremes stay put and everything between them is
+     respaced. Two readings, because they differ the moment the boxes aren't
+     the same size:
+       'gaps'    even GAPS between edges — what the eye reads as even rhythm
+                 for a row of mixed-width chips.
+       'centres' even spacing of CENTRES — what you want when the boxes are
+                 icons/marks on a grid and the gaps should vary.
+     Needs 3+ (with 2 there is nothing between the extremes to move). */
+  function distributeSel(axis, mode){
+    const items = selBoxes();
+    if(items.length<3) return;
+    const P = axis==='x' ? 'x' : 'y', S = axis==='x' ? 'w' : 'h';
+    const sorted = items.slice().sort((a,b)=> (a[P]+a[S]/2) - (b[P]+b[S]/2));
+    if(mode==='centres'){
+      const c0 = sorted[0][P]+sorted[0][S]/2;
+      const last = sorted[sorted.length-1];
+      const c1 = last[P]+last[S]/2;
+      const step = (c1-c0)/(sorted.length-1);
+      sorted.forEach((e,i)=>{ if(i===0||i===sorted.length-1) return;
+        updateEl(e.id, { [P]: Math.round(c0 + i*step - e[S]/2) }); });
+    } else {
+      const start = Math.min(...sorted.map(e=>e[P]));
+      const end   = Math.max(...sorted.map(e=>e[P]+e[S]));
+      const span  = sorted.reduce((n,e)=>n+e[S], 0);
+      const gap   = (end - start - span) / (sorted.length - 1);   // may go negative on overlaps — that's the honest result
+      let cur = start;
+      sorted.forEach((e,i)=>{
+        if(i && i<sorted.length-1) updateEl(e.id, { [P]: Math.round(cur) });
+        cur += e[S] + gap;
+      });
+    }
+  }
+
+  /* Centre on the canvas. One box centres itself; several centre as a GROUP —
+     the selection's bounding box lands on the canvas centre and every box
+     keeps its place within it. (The safe square is itself centred on the
+     canvas, so canvas-centre and safe-centre are the same point — no second
+     control needed.) */
+  function centreSel(axis){
+    const items = selBoxes();
+    if(!items.length) return;
+    const f = AP_FMT[viewFormat];
+    const x0=Math.min(...items.map(e=>e.x)), x1=Math.max(...items.map(e=>e.x+e.w));
+    const y0=Math.min(...items.map(e=>e.y)), y1=Math.max(...items.map(e=>e.y+e.h));
+    const dx = f.w/2 - (x0+x1)/2, dy = f.h/2 - (y0+y1)/2;
+    items.forEach(e=>{
+      const patch = {};
+      if(axis!=='y') patch.x = Math.round(e.x + dx);
+      if(axis!=='x') patch.y = Math.round(e.y + dy);
+      updateEl(e.id, patch);
     });
   }
 
@@ -2364,7 +2496,8 @@ function App(){
           <Inspector el={sel} doc={doc} update={update} dup={dup} del={del} layer={layer}
             clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel}
             resetOverride={resetOverride} toggleHidden={toggleHidden}
-            selCount={selectedIds.length} align={alignSel} />
+            selCount={selectedIds.length} align={alignSel} distribute={distributeSel} centre={centreSel}
+            formatLabel={activeLabel} />
           {/* Feed slice — the text-less strip that fills the calendar's "This week"
               cards. Toggle to drag the band on the poster; sliders for precision. */}
           <div className="rs-sech" style={{ marginTop:16 }}>Feed slice</div>

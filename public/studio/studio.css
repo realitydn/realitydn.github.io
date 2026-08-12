@@ -169,8 +169,10 @@ body{ background:#0e0c09; overflow:hidden; }
   background:#ed1b72; cursor:pointer; border:2px solid #15110b; }
 .rs-slider::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#ed1b72; cursor:pointer; border:2px solid #15110b; }
 
-.rs-actions{ display:flex; gap:6px; margin-bottom:14px; }
-.rs-actions .rs-iconbtn{ flex:1; justify-content:center; padding:9px 6px; }
+/* wrap rather than crush — arrange rows carry 2–4 buttons and the inspector
+   is only 312px wide */
+.rs-actions{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.rs-actions .rs-iconbtn{ flex:1 1 60px; justify-content:center; padding:9px 6px; white-space:nowrap; }
 .rs-del{ border-color:#5a2326 !important; color:#ed7a82 !important; }
 .rs-del:hover{ background:#2a1416 !important; border-color:#ed2224 !important; color:#fff !important; }
 

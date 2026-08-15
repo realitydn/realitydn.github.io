@@ -137,15 +137,16 @@ function renderElement(page, el, ctx){
     const c=place(lxC,lyC);
     page.drawEllipse(bm(Object.assign({ x:c.x, y:c.y, xScale:rx, yScale:ry, rotate:ROT }, opts)));
   }
-  function drawLineStr(str, lx, baselineTop, font, size, color, tracking){
+  function drawLineStr(str, lx, baselineTop, font, size, color, tracking, opacity){
     if(!str) return;
+    const alpha = (opacity!=null && opacity<1) ? { opacity } : null;
     /* fast path only when there's no ★ and no tracking; otherwise step per glyph
        so ★ can be swapped for a vector star (missing from every embedded face). */
-    if(str.indexOf(STAR_CH)<0 && Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); return; }
+    if(str.indexOf(STAR_CH)<0 && Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,bm(Object.assign({x:p.x,y:p.y,size,font,color,rotate:ROT},alpha))); return; }
     let curX=lx;
     for(const ch of chars(str)){
-      if(ch===STAR_CH){ const w=starGlyphW(size); localPath(window.starPath(0,0,size*0.38), color, curX+w/2, baselineTop-size*0.35); curX += w+tracking*size; continue; }
-      const p=place(curX,baselineTop); page.drawText(ch,bm({x:p.x,y:p.y,size,font,color,rotate:ROT})); curX += font.widthOfTextAtSize(ch,size)+tracking*size;
+      if(ch===STAR_CH){ const w=starGlyphW(size); localPath(window.starPath(0,0,size*0.38), color, curX+w/2, baselineTop-size*0.35, alpha); curX += w+tracking*size; continue; }
+      const p=place(curX,baselineTop); page.drawText(ch,bm(Object.assign({x:p.x,y:p.y,size,font,color,rotate:ROT},alpha))); curX += font.widthOfTextAtSize(ch,size)+tracking*size;
     }
   }
   /* draw an SVG path given in LOCAL element coords (0..w, 0..h, y-down),
@@ -355,14 +356,18 @@ function renderElement(page, el, ctx){
   }
   else if(t==='coupon'){
     drawSurface();   // shared styled border (dashed by default) + lift
-    const pad=12;
-    const kf=fontFor('mont',700), ks=10, ka=kf.heightAtSize(ks,{descender:false});
-    drawLineStr((el.heading||'').toUpperCase(), pad, pad+ka, kf, ks, accentColor(isAccent(fillKey)?fillKey:accentName), 0.22);
-    const bf=fontFor('mont',800), bs=Math.min(el.w*0.12,26), blines=wrapText((el.big||'').toUpperCase(),bf,bs,0,el.w-pad*2), ba=bf.heightAtSize(bs,{descender:false}), blh=bs*0.98;
-    blines.forEach((ln,i)=>drawLineStr(ln, pad, pad+18+i*blh+ba, bf, bs, textColor, 0));
-    if(el.terms){ const tf=fontFor('grot',400), ts=9, ta=tf.heightAtSize(ts,{descender:false}); drawLineStr(el.terms, pad, el.h-28-ts+ta, tf, ts, textColor, 0); }
-    if(el.code){ const cf=fontFor('mont',700), csz=10, cw=measure(el.code,cf,csz,0.1), ca=cf.heightAtSize(csz,{descender:false}), chipH=csz+8, chipW=cw+14, chipTop=el.h-pad-chipH;
-      rect(pad, chipTop, chipW, chipH, { color:textColor }); drawLineStr(el.code, pad+7, chipTop+(chipH-csz)/2+ca, cf, csz, whiteColor(), 0.1); }
+    /* every offset below comes from the shared couponLayout the screen renders
+       from — same wraps, same space-between gaps, same baselines. */
+    const headCol=accentColor(isAccent(fillKey)?fillKey:accentName);
+    window.couponLayout(el).blocks.forEach(b=>{
+      if(b.kind==='chip'){
+        rect(b.left, b.top, b.w, b.h, { color:textColor });
+        drawLineStr(b.text, b.left+b.padX, b.top+b.baseOff, fontFor(b.fam,b.weight), b.size, whiteColor(), b.tracking);
+        return;
+      }
+      const f=fontFor(b.fam,b.weight), col=(b.key==='heading')?headCol:textColor;
+      b.lines.forEach((ln,i)=> drawLineStr(ln, b.left, b.top+b.baseOff+i*b.lineH, f, b.size, col, b.tracking, b.opacity));
+    });
   }
   else if(t==='block'){
     const radius=el.radius||0;

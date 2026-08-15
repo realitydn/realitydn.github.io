@@ -297,11 +297,28 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </div>;
   }
   else if(t==='coupon'){
-    inner = <div style={box({ padding:'12px 14px', justifyContent:'space-between' })}>
-      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.22em', fontSize:'10px', color:accentHex }}>{el.heading}</div>
-      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', fontSize:Math.min(el.w*0.12,26)+'px', lineHeight:0.95, color:textCol, whiteSpace:'pre-wrap' }}>{el.big}</div>
-      <div style={{ fontFamily:FAM_CSS.grot, fontWeight:400, fontSize:'9px', color:textCol, opacity:.8 }}>{el.terms}</div>
-      {el.code ? <div style={{ alignSelf:'flex-start', fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:'10px', letterSpacing:'.1em', color:PE_WHITE.rgb, background:textCol, padding:'3px 8px' }}>{el.code}</div> : null}
+    /* geometry comes from the shared couponLayout so the PDF can place the same
+       four blocks to the point. Absolute, not flex: the layout already did the
+       space-between maths, and re-deriving it here is how the two drifted. */
+    const lay = window.couponLayout(el);
+    /* border:0 so the blocks measure from the element's own corner — the box's
+       transparent border is only a box-model placeholder (the visible rule is
+       the SVG overlay), and Chrome floors it to whole pixels, which would slide
+       everything a fraction off the geometry the PDF draws. The inset it stood
+       for is already in the layout's padding. */
+    const at = (b)=>({ position:'absolute', left:b.left+'px', top:b.top+'px' });
+    /* overflow visible: a coupon too small for its four blocks spills past the
+       border in the PDF, so the studio has to show that spill rather than
+       quietly clipping it and looking fine. */
+    inner = <div style={box({ padding:0, border:0, position:'relative', overflow:'visible' })}>
+      {lay.blocks.map(b=> b.kind==='chip'
+        ? <div key={b.key} style={Object.assign(at(b), { fontFamily:FAM_CSS.mont, fontWeight:b.weight, fontSize:b.size+'px',
+            lineHeight:(b.h-6)+'px', letterSpacing:b.tracking+'em', padding:'3px '+b.padX+'px',
+            color:PE_WHITE.rgb, background:textCol, whiteSpace:'pre' })}>{b.text}</div>
+        : <div key={b.key} style={Object.assign(at(b), { width:lay.maxW+'px', fontFamily:FAM_CSS[b.fam], fontWeight:b.weight,
+            fontSize:b.size+'px', lineHeight:b.lineH+'px', letterSpacing:b.tracking+'em', whiteSpace:'pre',
+            color:b.key==='heading'?accentHex:textCol, opacity:b.opacity!=null?b.opacity:1 })}>{b.lines.join('\n')}</div>
+      )}
     </div>;
   }
   else if(t==='block'){

@@ -886,6 +886,11 @@ function App(){
 
   React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }, [doc]);
   React.useEffect(()=>{ if(window.PrintExport) window.PrintExport.ready().catch(()=>{}); }, []);
+  /* layouts measured in JS (fitted headlines, the coupon stack) read the webfont
+     off a canvas — repaint once the faces land so a cold load isn't laid out
+     against the fallback metrics. */
+  const [, fontsIn] = React.useState(0);
+  React.useEffect(()=>{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>fontsIn(1)).catch(()=>{}); }, []);
 
   /* ---- history — one entry per quiet burst of edits (350ms), max 80 ---- */
   const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });

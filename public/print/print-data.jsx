@@ -562,6 +562,87 @@ function arcTextLayout(text, w, h, opts){
   return { glyphs, R, cx:ccx, cy:ccy, fontSize };
 }
 
+/* font content box, off the SAME canvas the widths come from. asc/desc are the
+   metrics CSS builds a 'normal' line box out of, so a stack measured here can
+   hand the PDF exporter a baseline that lands exactly where the browser puts
+   it — half-leading and all — instead of the usual "ascent below the top"
+   approximation. */
+function fontMetrics(fam, weight){
+  const cx=_measCanvas(); cx.font=(weight||700)+' 100px '+_cssFam(fam);
+  const m=cx.measureText('Hxg'), asc=m.fontBoundingBoxAscent, desc=m.fontBoundingBoxDescent;
+  return (asc>0 && desc>=0) ? { asc:asc/100, desc:desc/100, lh:(asc+desc)/100 }
+                            : { asc:1.0, desc:0.3, lh:1.3 };   /* webfont not in yet */
+}
+/* greedy wrap on the shared canvas — screen and PDF break at the same words */
+function wrapTextW(text, fam, weight, size, tracking, maxW){
+  const out=[];
+  (text||'').split('\n').forEach(par=>{
+    const words=par.split(/\s+/).filter(w=>w.length);
+    if(!words.length){ out.push(''); return; }
+    let cur='';
+    for(const w of words){ const t=cur?cur+' '+w:w;
+      if(!cur || measureTextW(t,fam,weight,size,tracking)<=maxW) cur=t; else { out.push(cur); cur=w; } }
+    if(cur) out.push(cur);
+  });
+  return out;
+}
+
+/* ---- coupon stack — ONE layout, read by the screen and by the PDF exporter.
+   It used to be computed twice: the screen leaned on flex `space-between`
+   while the exporter hard-coded offsets (big at pad+18, terms at h-28). Those
+   only ever agreed on a ~150pt-tall coupon; on a short one the PDF printed the
+   headline straight through the terms line. Everything is measured here now —
+   wraps, block heights, the space-between gaps, every baseline — and both
+   sides just draw what they're handed. `big` steps down if the stack would
+   overrun the box, so nothing is clipped on screen or spilled past the border
+   in the PDF. ---- */
+const COUPON_PAD_X = 14, COUPON_PAD_Y = 12;
+function couponLayout(el){
+  /* the screen box carries a transparent CSS border (border-box), so its
+     content starts that far in — the PDF has to inset by the same amount. */
+  const surfaced = el.surface && el.surface!=='none';
+  const inset = surfaced ? (el.border!=null?el.border:2) : 1.6;
+  const padX = COUPON_PAD_X+inset, padY = COUPON_PAD_Y+inset;
+  const maxW = Math.max(1, el.w-padX*2), availH = Math.max(0, el.h-padY*2);
+
+  function textBlock(key, str, fam, weight, size, tracking, leading, upper, opacity){
+    const t = upper ? (str||'').toUpperCase() : (str||'');
+    if(!t) return null;
+    const fm = fontMetrics(fam, weight), lines = wrapTextW(t, fam, weight, size, tracking, maxW);
+    const lineH = size*(leading!=null?leading:fm.lh);
+    return { kind:'text', key, lines, fam, weight, size, tracking, opacity, lineH, left:padX,
+             baseOff:(lineH-size*fm.lh)/2 + size*fm.asc, h:lines.length*lineH };
+  }
+  function chipBlock(){
+    if(!el.code) return null;
+    const fam='mont', weight=700, size=10, tracking=0.1, fm=fontMetrics(fam,weight), lineH=size*fm.lh;
+    return { kind:'chip', key:'code', text:el.code, fam, weight, size, tracking, left:padX,
+             w:measureTextW(el.code,fam,weight,size,tracking)+16, h:lineH+6, padX:8, baseOff:3+size*fm.asc };
+  }
+
+  /* step the headline down until the stack fits — a coupon printed past its own
+     cut line is worse than a smaller headline. Never below the 10pt kicker. */
+  const nominal = Math.min(el.w*0.12, 26), floor = 11;
+  let bs = nominal, blocks, total;
+  for(;;){
+    blocks = [
+      textBlock('heading', el.heading, 'mont', 700, 10, 0.22, null, true),
+      textBlock('big',     el.big,     'mont', 800, bs, 0,    0.95, true),
+      textBlock('terms',   el.terms,   'grot', 400, 9,  0,    null, false, 0.8),
+      chipBlock()
+    ].filter(Boolean);
+    total = blocks.reduce((s,b)=>s+b.h, 0);
+    if(total<=availH || bs<=floor) break;
+    bs = Math.max(floor, bs-1);
+  }
+  /* space-between: leftover height splits into the gaps, and a stack that still
+     overruns packs from the top with no gap — exactly what flexbox does. */
+  const gap = blocks.length>1 ? Math.max(0, (availH-total)/(blocks.length-1)) : 0;
+  let y = padY;
+  blocks.forEach(b=>{ b.top=y; y += b.h+gap; });
+  return { blocks, padX, padY, inset, maxW, bigSize:bs };
+}
+
 /* ---- blend modes — riso overprint. Shared by screen (mix-blend-mode) + the
    PDF (pdf-lib BlendMode); CSS names map 1:1, the PDF enum is PascalCase. ---- */
 const BLEND_MODES=['normal','multiply','screen','overlay','darken','lighten','hard-light'];
@@ -1521,6 +1602,7 @@ Object.assign(window, {
   dotFieldLayout, stripeLayout, burstRays, ruleLayout, borderDash,
   iconLayout, punchLayout, listSplit, LIST_ROW_SIZES, listRowFont,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
+  fontMetrics, wrapTextW, couponLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate

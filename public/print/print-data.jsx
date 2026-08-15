@@ -562,16 +562,38 @@ function arcTextLayout(text, w, h, opts){
   return { glyphs, R, cx:ccx, cy:ccy, fontSize };
 }
 
-/* font content box, off the SAME canvas the widths come from. asc/desc are the
-   metrics CSS builds a 'normal' line box out of, so a stack measured here can
-   hand the PDF exporter a baseline that lands exactly where the browser puts
-   it — half-leading and all — instead of the usual "ascent below the top"
-   approximation. */
-function fontMetrics(fam, weight){
-  const cx=_measCanvas(); cx.font=(weight||700)+' 100px '+_cssFam(fam);
-  const m=cx.measureText('Hxg'), asc=m.fontBoundingBoxAscent, desc=m.fontBoundingBoxDescent;
-  return (asc>0 && desc>=0) ? { asc:asc/100, desc:desc/100, lh:(asc+desc)/100 }
-                            : { asc:1.0, desc:0.3, lh:1.3 };   /* webfont not in yet */
+/* where the browser actually puts a baseline. Blink rounds a font's ascent and
+   descent to whole pixels AT THE USED SIZE and floors the half-leading, so
+   metrics sampled at one size and scaled to another land up to a point out —
+   Montserrat 700 is 0.97/0.25 em at 100px but a flat 1.0/0.3 at 10px. Nothing
+   short of asking the engine reproduces that, so probe a real line box and let
+   the PDF draw on the number the browser reports. One hidden layout per
+   (face, size, leading), cached once the webfonts are in. */
+let _lbHost=null; const _lbCache=new Map();
+function _lbProbe(fam, weight, size, lh){
+  if(!_lbHost){ _lbHost=document.createElement('div');
+    _lbHost.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;pointer-events:none';
+    document.body.appendChild(_lbHost); }
+  const d=document.createElement('div');
+  d.style.cssText=`font-family:${_cssFam(fam)};font-weight:${weight};font-size:${size}px;line-height:${lh};white-space:pre`;
+  /* a zero-box inline-block sits ON the baseline — its top IS the baseline y */
+  const s=document.createElement('span');
+  s.style.cssText='display:inline-block;width:0;height:0;vertical-align:baseline';
+  d.appendChild(s); d.appendChild(document.createTextNode('Hxg'));
+  _lbHost.appendChild(d);
+  const dr=d.getBoundingClientRect(), sr=s.getBoundingClientRect();
+  const out={ h:dr.height, base:sr.top-dr.top };
+  _lbHost.removeChild(d);
+  return out;
+}
+/* leading null = CSS `normal` (whatever the face asks for) */
+function lineBox(fam, weight, size, leading){
+  const key=fam+'/'+weight+'/'+size+'/'+(leading==null?'n':leading);
+  const hit=_lbCache.get(key); if(hit) return hit;
+  const lineH = leading!=null ? size*leading : _lbProbe(fam,weight,size,'normal').h;
+  const box={ lineH, baseOff:_lbProbe(fam,weight,size,lineH+'px').base };
+  if(document.fonts && document.fonts.status==='loaded') _lbCache.set(key,box);
+  return box;
 }
 /* greedy wrap on the shared canvas — screen and PDF break at the same words */
 function wrapTextW(text, fam, weight, size, tracking, maxW){
@@ -608,16 +630,15 @@ function couponLayout(el){
   function textBlock(key, str, fam, weight, size, tracking, leading, upper, opacity){
     const t = upper ? (str||'').toUpperCase() : (str||'');
     if(!t) return null;
-    const fm = fontMetrics(fam, weight), lines = wrapTextW(t, fam, weight, size, tracking, maxW);
-    const lineH = size*(leading!=null?leading:fm.lh);
-    return { kind:'text', key, lines, fam, weight, size, tracking, opacity, lineH, left:padX,
-             baseOff:(lineH-size*fm.lh)/2 + size*fm.asc, h:lines.length*lineH };
+    const lb = lineBox(fam, weight, size, leading), lines = wrapTextW(t, fam, weight, size, tracking, maxW);
+    return { kind:'text', key, lines, fam, weight, size, tracking, opacity, lineH:lb.lineH, left:padX,
+             baseOff:lb.baseOff, h:lines.length*lb.lineH };
   }
   function chipBlock(){
     if(!el.code) return null;
-    const fam='mont', weight=700, size=10, tracking=0.1, fm=fontMetrics(fam,weight), lineH=size*fm.lh;
+    const fam='mont', weight=700, size=10, tracking=0.1, lb=lineBox(fam,weight,size,null);
     return { kind:'chip', key:'code', text:el.code, fam, weight, size, tracking, left:padX,
-             w:measureTextW(el.code,fam,weight,size,tracking)+16, h:lineH+6, padX:8, baseOff:3+size*fm.asc };
+             w:measureTextW(el.code,fam,weight,size,tracking)+16, h:lb.lineH+6, padX:8, baseOff:3+lb.baseOff };
   }
 
   /* step the headline down until the stack fits — a coupon printed past its own
@@ -1602,7 +1623,7 @@ Object.assign(window, {
   dotFieldLayout, stripeLayout, burstRays, ruleLayout, borderDash,
   iconLayout, punchLayout, listSplit, LIST_ROW_SIZES, listRowFont,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,
-  fontMetrics, wrapTextW, couponLayout,
+  lineBox, wrapTextW, couponLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate

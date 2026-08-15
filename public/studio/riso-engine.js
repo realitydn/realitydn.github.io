@@ -868,6 +868,38 @@
                        dither, hatch, photocopy, contour, edges, mosaic };
 
   /* ============================================================
+     BLEND-THROUGH — print the press over the REAL photo
+     treatStrength <1 mixes the treatment with the untreated photo
+     underneath (subtle riso); treatWhere confines the print to one
+     tonal end, feathered on the photo's own luminance, so a duotone
+     can sink into just the shadows while faces stay true. Ported from
+     the app's Disposable Camera darkroom (src/lib/riso-photo.ts).
+     Runs after the treatment, before the finish stack — grain, blur
+     and the press artifacts still print over the blended result.
+     ============================================================ */
+  function blendThrough(cv,o){
+    const s=o.treatStrength!=null?o.treatStrength:1, where=o.treatWhere||'all';
+    if(s>=1 && where==='all') return;                 // full-strength everywhere = classic render
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d',{willReadFrequently:true});
+    const base=document.createElement('canvas'); base.width=w; base.height=h;
+    untreated(base,o);       // honours Adjust & focus, fit, paper fill, 2nd exposure
+    const L=lumBuffer(w,h,1);                         // adjusted photo tone drives the mask
+    const bd=base.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
+    const out=cx.getImageData(0,0,w,h), d=out.data;
+    for(let p=0,i=0;p<L.length;p++,i+=4){
+      let mw=1;
+      if(where==='shadows') mw=1-smooth(0.3,0.7,L[p]);
+      else if(where==='highlights') mw=smooth(0.3,0.7,L[p]);
+      const t=s*mw, u=1-t;
+      d[i]  =d[i]*t   + bd[i]*u;
+      d[i+1]=d[i+1]*t + bd[i+1]*u;
+      d[i+2]=d[i+2]*t + bd[i+2]*u;
+      d[i+3]=d[i+3]*t + bd[i+3]*u;
+    }
+    cx.putImageData(out,0,0);
+  }
+
+  /* ============================================================
      FINISH PASSES — blur, grain and the press-artifact stack
      All sizes are design px relative to a 520-wide frame (like
      dot/offset), so previews and 2× exports match exactly.
@@ -1163,6 +1195,7 @@
   }
 
   const RENDER_DEFAULTS = {
+    treatStrength:1, treatWhere:'all',
     ink:'pink', paper:'night', contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
     softness:0.12, angle:null, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
     shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2,
@@ -1212,6 +1245,7 @@
     MIX2 = { amount: SRC2? (o.mix2||0) : 0, mode:o.mix2Mode||'screen' };
     cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
     (TREATMENTS[name]||duotone)(cv,o);
+    if(name!=='none') blendThrough(cv,o);
     /* ---- finish stack: everything below prints over the finished image ---- */
     applyBlur(cv, { amount:o.blurOver||0, type:o.blurOverType, angle:o.blurOverAngle,
                     x:o.blurOverX, y:o.blurOverY, pos:o.blurOverPos, width:o.blurOverWidth });

@@ -538,6 +538,13 @@ function PhotoControls({ el, update, theme }){
           </div>
         </React.Fragment>}
 
+        {t!=='none' && <React.Fragment>
+          <div className="rs-sech">Blend with photo</div>
+          <Chips label="Where" options={[{v:'all',l:'Everywhere'},{v:'shadows',l:'Shadows'},{v:'highlights',l:'Lights'}]} value={el.treatWhere||'all'} onChange={v=>update({treatWhere:v})} />
+          <Slider label="Strength" val={el.treatStrength!=null?el.treatStrength:1} min={0.1} max={1} step={0.02} onChange={v=>update({treatStrength:v})} />
+          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Below full strength the press prints over the <b>real photo</b>. Shadows / Lights feather the print into one tonal end — the photo shows through everywhere else.</div>
+        </React.Fragment>}
+
         {t!=='none' && <div className="rs-sech">{'Press · '+pressLabel}</div>}
         {t==='duotone' && <React.Fragment>
           <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />

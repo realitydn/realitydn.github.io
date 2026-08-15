@@ -81,6 +81,7 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
   'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
   'grainInk','grainBlend','finBright','finContrast','finSat',
+  'treatStrength','treatWhere',
   'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
   'mix2','mix2Mode'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120

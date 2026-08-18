@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { STR } from '../data/translations';
 import {
   pickTitle,
+  pickQualifier,
   pickDescription,
   pickLocName,
   pickPoster,
@@ -43,6 +44,9 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
   const S = STR[lang].eventOverlay;
   const CF = cfStr(lang);
   const title = pickTitle(event, lang) || 'REALITY event';
+  // Name + qualifier split (hub 0054): the type line under the name; empty =
+  // the title renders alone, exactly as before.
+  const qualifier = pickQualifier(event, lang);
   const desc = pickDescription(event, lang);
   const loc = pickLocName(event.location, lang);
   const poster = event.posters?.poster4x5 || pickPoster(event.posters);
@@ -101,6 +105,7 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
           <div>
             {dateTab && <span className="cal-datetab mb-3">{dateTab}</span>}
             <h3 className="h-section text-2xl md:text-3xl text-ink leading-tight mt-3">{title}</h3>
+            {qualifier && <p className="type-sub mt-1">{qualifier}</p>}
             <p className="text-sm text-gray-600 font-body mt-1">
               {[loc, costLine].filter(Boolean).join(' · ')}
             </p>

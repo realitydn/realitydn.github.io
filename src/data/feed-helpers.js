@@ -131,6 +131,15 @@ export function pickDescription(ev, lang) {
   return (lang === 'VN' ? ev.description_vi : ev.description_en) || ev.description_en || ev.description_vi || '';
 }
 
+// Name + qualifier split (feed additive fields qualifier_en/_vi, hub mig 0054):
+// the type line under the name. Same fallback as the hub's renderers: VN reads
+// the VI field and borrows EN when it's missing; every other language reads EN
+// only. Empty = the name renders alone, exactly as before the field existed.
+export function pickQualifier(ev, lang) {
+  if (!ev) return '';
+  return (lang === 'VN' ? ev.qualifier_vi || ev.qualifier_en : ev.qualifier_en) || '';
+}
+
 export function pickLocName(loc, lang) {
   if (!loc) return '';
   return (lang === 'VN' ? loc.name_vi : loc.name_en) || loc.name_en || loc.name_vi || '';

@@ -5,7 +5,7 @@ import { FEED_ICS_URL } from '../data/feed';
 import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
-import { fmtTime, pickTitle, pickLocName } from '../data/feed-helpers';
+import { fmtTime, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
 import { splitFeedSite, dayClassFromISO, fmtDayDate, cfStr, costLabel } from '../data/cal-feed';
 
 // Calendar — the "what's on" feed, wearing the app's calendar look: solid
@@ -61,6 +61,9 @@ export default function Calendar({ lang }) {
   // top-right. The hero variant is taller with bigger type.
   const slice = (ev, hero = false) => {
     const title = pickTitle(ev, lang) || 'REALITY event';
+    // Name + qualifier split (hub 0054): the type line gets its own chip under
+    // the title. Empty = no chip — the stack renders exactly as before.
+    const qualifier = pickQualifier(ev, lang);
     const loc = pickLocName(ev.location, lang);
     const start = fmtTime(ev.startsAt);
     const end = ev.endsAt ? fmtTime(ev.endsAt) : '';
@@ -79,6 +82,7 @@ export default function Calendar({ lang }) {
         <div className="cal-ov">
           <span className="cal-bx cal-bx-d">{fmtDayDate(ev.startsAt, lang)}</span>
           <span className="cal-bx cal-bx-t">{title}</span>
+          {qualifier && <span className="cal-bx cal-bx-q">{qualifier}</span>}
           {meta && <span className="cal-bx cal-bx-m">{meta}</span>}
         </div>
       </button>

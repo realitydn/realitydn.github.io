@@ -1,6 +1,7 @@
 # Generates the official REALITY QR codes for https://realitydn.com
 # (canonical apex — www.realitydn.com 301s here, so encoding the apex
-# saves every scan a redirect hop; the *printed* URL stays www.realitydn.com).
+# saves every scan a redirect hop; the *printed* URL is the bare host
+# `realitydn.com` — canon D5, 19.08.26).
 #
 # Outputs to brand-assets/qr/:
 #   reality-qr-ink-on-white.png   2160px, for print on white

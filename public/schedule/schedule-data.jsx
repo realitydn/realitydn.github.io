@@ -14,7 +14,11 @@ const GROT = "'Space Grotesk',sans-serif";
 
 /* Year 2 locked palette, glued to weekdays (ISO 1=Mon .. 7=Sun):
    MON green · TUE blue · WED purple · THU pink · FRI red · SAT orange (amber) · SUN yellow.
-   Purple is the one block that takes cream text (--on-ink logic). */
+   Purple is the one block that takes cream text (--on-ink logic).
+   SOURCE OF TRUTH: public/tokens/day-colours.json (canon 18.08.26). These are
+   literals only because a canvas renderer can't read CSS custom properties —
+   tools/verify-day-colours.mjs enforces the match and fails the build on
+   drift. Change the json first, then this block. */
 const DAY_COLORS = { 1:'#43b02a', 2:'#18a7e0', 3:'#6e3179', 4:'#ed1b72', 5:'#ed2224', 6:'#fdb515', 7:'#fddf00' };
 const DAY_TEXT   = { 1:INK, 2:INK, 3:CREAM, 4:INK, 5:INK, 6:INK, 7:INK };
 const DAY_ABBR   = { 1:'MON', 2:'TUE', 3:'WED', 4:'THU', 5:'FRI', 6:'SAT', 7:'SUN' };

@@ -17,7 +17,9 @@ const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
 const INK_CHOICES = ACCENTS.concat(['ink','cream']);
 /* Weekday each accent codes for on schedule surfaces (Year 2 scheme, shifted
    June 2026) — surfaced as tooltips on the poster-accent picker so an event
-   poster can match its day. Amber is the schedule's "orange". */
+   poster can match its day. Amber is the schedule's "orange".
+   SOURCE OF TRUTH: public/tokens/day-colours.json (canon 18.08.26) —
+   tools/verify-day-colours.mjs enforces this pairing at build time. */
 const ACCENT_DAYS = {
   yellow:'Sunday', green:'Monday', blue:'Tuesday', purple:'Wednesday',
   pink:'Thursday', red:'Friday', amber:'Saturday'
@@ -572,7 +574,7 @@ const DEFAULTS = {
   // The calendar handoff fills it from the event's cost ("FREE" when free).
   cost:    { w:240, h:84,  props:{ text:'FREE', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
   host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0.02 } },
-  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'www.realitydn.com', surface:'paper', showQR:true, color:'fg' } },
+  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
   sessions:{ w:660, h:460, props:{ heading:'Next sessions',
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
@@ -890,7 +892,7 @@ const TEMPLATES = [
         {l:'Cà phê',p:'₫25k'},{l:'Trà đá',p:'₫10k'},{l:'Soft drink',p:'₫20k'},{l:'Nước suối',p:'₫10k'} ] } },
     { type:'specials', k:'snacks', x:560, y:770, w:430, h:270, p:{ heading:'Snacks', headingSize:18, surface:'paper', rowSize:26, rowGap:16, rowWeight:700, rowTracking:0.02, items:[
         {l:'Khoai tây / Chips',p:'₫20k'},{l:'Đậu phộng',p:'₫15k'},{l:'Bánh snack',p:'₫15k'} ] } },
-    { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'www.realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
+    { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
   /* ---- HANDOUT · about-REALITY flyer (Day · red). A give-away to sit beside the
      menu at a stall: a wordmark masthead (ink kicker + an accent rule), a short

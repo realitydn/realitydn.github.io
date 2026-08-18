@@ -17,19 +17,31 @@
   --green:  #43b02a;
   --purple: #6e3179;   /* lifts in night */
 
-  /* category accent — swappable per context. The site leads with the
-     majors (blue/yellow/red); minors play second fiddle. Blue is the
-     site's lead accent, pink its misregistration partner. */
+  /* accent — THEME-AWARE (canon 18.08.26): Day leads blue, Night leads pink;
+     --accent-2 is the lead's partner from day-colours.json. Never a fixed
+     default, never hand-set per context. Each theme scope sets its own pair. */
   --accent:   var(--blue);
   --accent-2: var(--pink);
+
+  /* misregister — static offsets (canon 18.08.26; the drifting loop was
+     retired). Needs isolation:isolate on a BACKGROUND-LESS ancestor or the
+     negative-z plates vanish silently. */
+  --misreg-hero-1: 13px; --misreg-hero-2: 6px;
+  --misreg-card-1: 6px;  --misreg-card-2: 3px;
 
   /* ---- SURFACES — DAY (default) ---- */
   --bg:        #fffbf1;
   --surface:   #fffbf1;
-  --surface-2: #fffbf1;
+  /* --surface-2 and --paper-shade are NOT tints: two shades of unprinted
+     stock (insets, day headers, skeletons; poster placeholders). They were
+     collapsed onto --bg pre-audit, which made every one invisible in Day. */
+  --surface-2: #f4ecd7;
+  --paper-shade: #ece2c9;
   --fg:        #0d0905;
   --fg-dim:    rgba(13, 9, 5, .72);
-  --fg-faint:  rgba(13, 9, 5, .45);
+  /* 4.53:1 — corrected from .45 (3.15:1, failed WCAG AA); canon 19.08.26.
+     --fg-faint carries real reading text (hints, placeholders, timestamps). */
+  --fg-faint:  rgba(13, 9, 5, .56);
   --hairline:  rgba(13, 9, 5, .16);
   --on-ink:    #fffbf1;
 
@@ -37,10 +49,13 @@
   --fg-rgb: 13 9 5;
   --bg-rgb: 255 251 241;
 
-  /* ---- FLAT DOWN-SHADOWS — ink leaking beneath a lifted edge ---- */
-  --sh-light:   0 4px 1px rgba(13, 9, 5, .08);
-  --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
-  --sh-heavy:   0 12px 3px rgba(13, 9, 5, .18);
+  /* ---- FLAT DOWN-SHADOWS — ink leaking beneath a lifted edge ----
+     Day corrected upward 18.08.26 (.08/.12/.18@12px washed out on cream);
+     Night was already right — the asymmetry is deliberate. PRINT is exempt
+     and keeps the old ladder (white stock has more headroom). */
+  --sh-light:   0 4px 1px rgba(13, 9, 5, .10);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
+  --sh-heavy:   0 13px 3px rgba(13, 9, 5, .23);
 
   /* ---- SPACING — 4px ramp ---- */
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px;
@@ -51,6 +66,13 @@
   --mont:    'Montserrat', ui-sans-serif, system-ui, sans-serif;
   --alt:     'Montserrat Alternates', ui-sans-serif, system-ui, sans-serif;
   --grotesk: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  /* tracking — the ratified ladder (F4, canon 19.08.26): baked per role,
+     never a size-derived formula. Print rides +.01em on the same ladder. */
+  --tr-display: 0.015em; --tr-h1: 0.025em; --tr-h2: 0.04em;
+  --tr-name: 0em; --tr-label: 0.16em; --tr-button: 0.11em;
+  /* 12px is the floor for anything you would ACT on; 11px decorative only. */
+  --type-floor: 12px;
 
   /* ---- MOTION ---- */
   --ease-stamp: cubic-bezier(0.2, 1.4, 0.45, 1);
@@ -72,13 +94,18 @@
 /* ---- NIGHT — "after dark". Shadows invert to cream. ---- */
 [data-theme="dark"] {
   --purple:    #9a4faa;
+  /* Night leads pink; blue becomes the partner ink (canon 18.08.26). */
+  --accent:    var(--pink);
+  --accent-2:  var(--blue);
 
   --bg:        #0a0703;
   --surface:   #171109;
   --surface-2: #241a10;
+  --paper-shade: #1c140b;
   --fg:        #fffbf1;
   --fg-dim:    rgba(255, 251, 241, .60);
-  --fg-faint:  rgba(255, 251, 241, .32);
+  /* 4.84:1 — corrected from .32 (2.71:1, failed WCAG AA); canon 19.08.26. */
+  --fg-faint:  rgba(255, 251, 241, .48);
   --hairline:  #3a2c1c;
   --on-ink:    #fffbf1;
 
@@ -95,8 +122,9 @@
 /* Local theme scopes — one block rendered in the opposite mode
    (e.g. the After Dark band on a Day page). */
 .scope-night {
-  --bg: #0a0703; --surface: #171109; --surface-2: #241a10;
-  --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .32);
+  --accent: var(--pink); --accent-2: var(--blue);
+  --bg: #0a0703; --surface: #171109; --surface-2: #241a10; --paper-shade: #1c140b;
+  --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .48);
   --hairline: #3a2c1c; --purple: #9a4faa;
   --fg-rgb: 255 251 241; --bg-rgb: 10 7 3;
   --sh-light: 0 4px 1px rgba(255, 251, 241, .14);
@@ -105,13 +133,14 @@
   color-scheme: dark;
 }
 .scope-day {
-  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #fffbf1;
-  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .45);
+  --accent: var(--blue); --accent-2: var(--pink);
+  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
+  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56);
   --hairline: rgba(13, 9, 5, .16); --purple: #6e3179;
   --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
-  --sh-light: 0 4px 1px rgba(13, 9, 5, .08);
-  --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
-  --sh-heavy: 0 12px 3px rgba(13, 9, 5, .18);
+  --sh-light: 0 4px 1px rgba(13, 9, 5, .10);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
+  --sh-heavy: 0 13px 3px rgba(13, 9, 5, .23);
   color-scheme: light;
 }
 
@@ -151,7 +180,7 @@ body {
   font-family: var(--mont);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tr-h2);
 }
 
 .font-body {
@@ -160,19 +189,19 @@ body {
 }
 
 /* Display — Montserrat Thin, for the big statements. Pair with a
-   .font-display-bold line for the slam. */
+   .font-display-bold line for the slam. Tracking per the ratified ladder. */
 .font-display {
   font-family: var(--mont);
   font-weight: 100;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tr-display);
   line-height: 1.05;
 }
 .font-display-bold {
   font-family: var(--mont);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--tr-display);
   line-height: 1.05;
 }
 
@@ -181,7 +210,7 @@ body {
   font-family: var(--mont);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tr-h1);
   line-height: 1.1;
 }
 
@@ -190,9 +219,43 @@ body {
   font-family: var(--mont);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--tr-label);
   font-size: 13px;
 }
+
+/* ── Space Grotesk states FACTS (canon two-axis type, 18.08.26): times,
+   prices, rooms, dates are Grotesk in every medium — at range only size
+   and weight rise, never the family. ── */
+.type-fact {
+  font-family: var(--grotesk);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.type-sub {
+  font-family: var(--grotesk);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--fg-faint);
+  letter-spacing: 0;
+}
+.type-name {
+  font-family: var(--mont);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: var(--tr-name);
+  line-height: 1.3;
+}
+/* Long names split at the DATA layer, never truncated: name + qualifier as
+   two fields — the qualifier set in .type-sub. */
+.name-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.name-block .type-name { text-transform: none !important; }
+
+/* Uppercase Vietnamese: stacked diacritics sit above cap height; display
+   steps to weight 200. Never strip diacritics. */
+:lang(vi) .font-display, :lang(vi) .font-display-bold, :lang(vi) .h-section { line-height: 1.3; }
+:lang(vi) .font-display { font-weight: 200; }
 
 /* Wordmark — Montserrat Alternates 600 (text contexts; SVG logo preferred) */
 .wordmark {
@@ -230,11 +293,13 @@ body {
 
 /* Buttons — Montserrat 700, uppercase, stamped. Hover lifts, press stamps. */
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-info,
+.btn-notice {
   font-family: var(--mont);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--tr-button);
   border: 2px solid var(--fg);
   box-shadow: var(--sh-default);
   transition: transform var(--dur-tap) ease, box-shadow var(--dur-tap) ease;
@@ -251,14 +316,34 @@ body {
   color: var(--fg);
 }
 
+/* Role fills (canon buttons card, 19.08.26): blue = INFO / wayfinding
+   ("take me to more of this" — listings, calendar subscribe), yellow =
+   NOTICE / offer. Coloured fills take ink — the one exception is the red
+   ACTION, which is cream (see the canon AA exception; the site currently
+   has no ACTION-role button). */
+.btn-info {
+  background-color: var(--blue);
+  color: #0d0905;
+  border-color: var(--blue);
+}
+.btn-notice {
+  background-color: var(--yellow);
+  color: #0d0905;
+  border-color: var(--yellow);
+}
+
 .btn-primary:hover,
-.btn-secondary:hover {
+.btn-secondary:hover,
+.btn-info:hover,
+.btn-notice:hover {
   transform: translateY(-3px);
   box-shadow: var(--sh-heavy);
 }
 
 .btn-primary:active,
-.btn-secondary:active {
+.btn-secondary:active,
+.btn-info:active,
+.btn-notice:active {
   transform: translateY(2px);
   box-shadow: var(--sh-light);
 }
@@ -524,7 +609,11 @@ section[id], div[id="proposal"] {
   scroll-margin-top: 90px;
 }
 
-/* Print styles */
+/* Print styles. SUBSTRATE (canon): on press ink is #111111 on white stock,
+   cream is never laid down as a fill, and the shadow ladder keeps the
+   pre-correction values (.08/.12/.18, heavy at 12px) as a deliberate
+   exemption — white stock has more headroom and K prints heavier than it
+   looks. Tracking rides +.01em on the same ladder. */
 @media print {
   .no-print {
     display: none !important;
@@ -534,6 +623,17 @@ section[id], div[id="proposal"] {
     color: black;
     background: white;
   }
+
+  :root {
+    --sh-light:   0 4px 1px rgba(13, 9, 5, .08);
+    --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
+    --sh-heavy:   0 12px 3px rgba(13, 9, 5, .18);
+  }
+
+  .font-display, .font-display-bold { letter-spacing: calc(var(--tr-display) + 0.01em); }
+  .h-section { letter-spacing: calc(var(--tr-h1) + 0.01em); }
+  .font-title { letter-spacing: calc(var(--tr-h2) + 0.01em); }
+  .eyebrow { letter-spacing: calc(var(--tr-label) + 0.01em); }
 }
 
 /* ============================================================
@@ -544,7 +644,9 @@ section[id], div[id="proposal"] {
 
 /* Day-of-week colour coding — each class sets --day (palette colour) and
    --on-day (the higher-contrast text colour on that fill: purple takes
-   paper, the rest take ink). Literals, so Night doesn't shift them. */
+   paper, the rest take ink). Source of truth: design-system-year2/
+   design_handoff_reality_system/tokens/day-colours.json — never hardcode
+   a weekday hue outside this block. */
 .d-mon { --day: var(--green);  --on-day: #0d0905; }
 .d-tue { --day: var(--blue);   --on-day: #0d0905; }
 .d-wed { --day: var(--purple); --on-day: #fffbf1; }
@@ -552,6 +654,9 @@ section[id], div[id="proposal"] {
 .d-fri { --day: var(--red);    --on-day: #0d0905; }
 .d-sat { --day: var(--amber);  --on-day: #0d0905; }
 .d-sun { --day: var(--yellow); --on-day: #0d0905; }
+/* Night lifts purple to #9a4faa, light enough to carry ink — Wednesday's
+   text flips with it (canon tokens, 19.08.26). */
+[data-theme="dark"] .d-wed { --on-day: #0d0905; }
 
 /* The scroll pane — the widget shows a phone-feed's worth of calendar and
    scrolls inside itself, so the section stops eating the page. The wrapper
@@ -641,13 +746,19 @@ section[id], div[id="proposal"] {
   pointer-events: none;
 }
 .cal-bx { background: var(--bg); color: var(--fg); padding: 3px 8px; max-width: 100%; }
-.cal-bx-d { font-family: var(--mont); font-weight: 700; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; }
+/* 12px floor (canon): the date chip and the time·meta line are the deciding
+   facts on a card — the hub bumped these 17.08.26; the port follows. */
+.cal-bx-d { font-family: var(--mont); font-weight: 700; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; }
 .cal-bx-t {
   font-family: var(--mont); font-weight: 700; font-size: 14px; line-height: 1.05;
   text-transform: uppercase; letter-spacing: 0.01em;
   display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.cal-bx-m { font-family: var(--grotesk); font-weight: 500; font-size: 11px; }
+.cal-bx-m { font-family: var(--grotesk); font-weight: 500; font-size: 12px; }
+/* Name + qualifier split (canon, hub mig 0054): the qualifier gets its own chip
+   line between title and meta — the slices' translation of .type-sub. Absent =
+   no chip; the stack renders exactly as before. */
+.cal-bx-q { font-family: var(--grotesk); font-weight: 400; font-size: 12px; letter-spacing: 0; color: var(--fg-faint); }
 .cal-hero-slice .cal-bx-d { font-size: 12px; }
 .cal-hero-slice .cal-bx-t { font-size: 19px; }
 @media (min-width: 640px) { .cal-hero-slice .cal-bx-t { font-size: 22px; } }
@@ -664,8 +775,11 @@ section[id], div[id="proposal"] {
   pointer-events: none;
 }
 
-/* Hero misregister prints — the riso echoes drift behind the next-up card
-   (two desynced loops, transform-only), same as the hub's .cal-hero-wrap. */
+/* Hero misregister prints — STATIC riso echoes behind the next-up card,
+   same as the hub's .cal-hero-wrap. The drifting 9s/13s loops were retired
+   by canon C1 (18.08.26): the plates sit at the ratified hero offsets
+   (--misreg-hero-1/2: 13/6, diagonal) at every size. The isolation is
+   LOAD-BEARING and must sit on a background-less ancestor. */
 .cal-hero-wrap { position: relative; isolation: isolate; margin-bottom: 12px; }
 .cal-hero-wrap::before,
 .cal-hero-wrap::after {
@@ -677,23 +791,15 @@ section[id], div[id="proposal"] {
 }
 .cal-hero-wrap::before {
   background: var(--accent-2);
-  transform: translate(5px, 6px);
-  animation: cal-echo-a 9s ease-in-out infinite alternate;
+  transform: translate(var(--misreg-hero-2), var(--misreg-hero-2));
 }
 .cal-hero-wrap::after {
   background: var(--accent);
-  transform: translate(10px, 12px);
-  animation: cal-echo-b 13s ease-in-out infinite alternate;
+  transform: translate(var(--misreg-hero-1), var(--misreg-hero-1));
 }
-@keyframes cal-echo-a { from { transform: translate(3.5px, 4px); } to { transform: translate(5px, 6px); } }
-@keyframes cal-echo-b { from { transform: translate(7px, 8.5px); } to { transform: translate(10px, 12px); } }
 @media (min-width: 640px) {
   .cal-hero-wrap { margin-bottom: 16px; }
-  .cal-hero-wrap::before { transform: translate(8px, 10px); animation-name: cal-echo-a-lg; }
-  .cal-hero-wrap::after { transform: translate(16px, 19px); animation-name: cal-echo-b-lg; }
 }
-@keyframes cal-echo-a-lg { from { transform: translate(5.5px, 7px); } to { transform: translate(8px, 10px); } }
-@keyframes cal-echo-b-lg { from { transform: translate(11px, 13px); } to { transform: translate(16px, 19px); } }
 
 /* Date tab — theme fill framed in the weekday colour (matches the feed cards);
    the event overlay's header stamp (hub .cal-datetab). */

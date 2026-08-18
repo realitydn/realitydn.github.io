@@ -1,0 +1,120 @@
+<!-- @dsCard group="Motion" name="Motion Index" subtitle="The naming convention, the curves, and every named keyframe in the system with its one-line job — so they get reused instead of reinvented" viewport="1100x2500" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Motion Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.curves{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.curves{grid-template-columns:1fr}}
+.cv{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px 16px}
+.cv .nm2{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.cv .bz{font-family:var(--mont);font-weight:600;font-size:10.5px;color:var(--fg-faint);margin-top:3px;display:block}
+.cv .track{position:relative;height:24px;border:2px solid var(--fg);background:var(--bg);margin:12px 0 10px;overflow:hidden}
+.cv .track i{position:absolute;top:2px;bottom:2px;width:18px;background:var(--accent);border:2px solid var(--fg);left:0;animation:mo-run 1800ms infinite alternate}
+.cv.a i{animation-timing-function:cubic-bezier(.2,1.4,.45,1)}
+.cv.b i{animation-timing-function:cubic-bezier(.3,0,.2,1)}
+.cv.c i{animation-timing-function:cubic-bezier(.16,1,.3,1)}
+@keyframes mo-run{from{left:0}to{left:calc(100% - 18px)}}
+.cv p{font-size:12.5px;color:var(--fg-dim)}
+.durs{display:flex;flex-direction:column;gap:9px}
+.dur{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--hairline);padding-bottom:9px}
+.dur:last-child{border-bottom:none}
+.dur .dn{font-family:var(--mont);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;width:120px;flex:none}
+.dur .dv{font-family:var(--mont);font-weight:800;font-size:12px;width:58px;flex:none}
+.dur .db{flex:1;height:9px;background:var(--surface-2);border:2px solid var(--fg);position:relative}
+.dur .db i{position:absolute;inset:0;right:auto;background:var(--accent)}
+.dur .du{font-size:12px;color:var(--fg-dim);flex:2}
+table.ki{width:100%;border-collapse:collapse;font-size:12.5px}
+table.ki th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 9px 7px 0;border-bottom:2px solid var(--fg)}
+table.ki td{padding:8px 9px 8px 0;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-dim)}
+table.ki td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.ki td.w{font-family:var(--mont);font-weight:600;font-size:10.5px;color:var(--fg-dim);white-space:nowrap}
+table.ki tr:last-child td{border-bottom:none}
+.gl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:9.5px;background:var(--fg);color:var(--bg);padding:3px 8px;display:inline-block;margin-bottom:12px}
+.conv{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.conv{grid-template-columns:repeat(2,1fr)}}
+.cc{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:13px 15px}
+.cc h5{font-family:var(--mont);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.cc p{font-size:12px;color:var(--fg-dim)}
+.cc code{font-size:11px}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Motion Index</span><span class="sub">Three curves, five durations, and a named keyframe set. The point of this card is not to specify each animation &mdash; it is so nobody writes a tenth entrance.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>The thesis, in four lines</h4>
+  <p><b>Stamp, don&rsquo;t fade.</b> Things arrive by landing, not by appearing. <b>Overshoot and settle.</b> Weight is expressed by going slightly too far. <b>The shadow snaps in on landing</b> &mdash; not before, not gradually. <b>Press has weight:</b> active states go <i>below</i> rest, never just dim.</p>
+  <p>If an animation can&rsquo;t be described in those terms, it isn&rsquo;t this system. Opacity-only fades are the one thing this brand explicitly does not do &mdash; a silkscreen either printed or it didn&rsquo;t.</p>
+</div>
+
+<p class="tier">The three curves</p>
+<div class="curves">
+  <div class="cv a"><span class="nm2">--ease-stamp</span><span class="bz">cubic-bezier(.2, 1.4, .45, 1)</span><div class="track"><i></i></div><p><b style="color:var(--fg);font-weight:600">Overshoot punch.</b> Entrances, stamps, chip pops, anything that lands. The 1.4 is the overshoot &mdash; the reason things feel struck rather than moved.</p></div>
+  <div class="cv b"><span class="nm2">--ease-snap</span><span class="bz">cubic-bezier(.3, 0, .2, 1)</span><div class="track"><i></i></div><p><b style="color:var(--fg);font-weight:600">Quick settle.</b> Hover lifts, presses, toggles, the theme flip. No overshoot &mdash; used where a bounce would read as sloppy rather than physical.</p></div>
+  <div class="cv c"><span class="nm2">--ease-out</span><span class="bz">cubic-bezier(.16, 1, .3, 1)</span><div class="track"><i></i></div><p><b style="color:var(--fg);font-weight:600">Long decel.</b> Big travel and slow reveals &mdash; sheets, panels, ken-push on photography. The only curve that suits durations above 400ms.</p></div>
+</div>
+
+<p class="tier">The five durations</p>
+<div class="pane">
+  <div class="durs">
+    <div class="dur"><span class="dn">--dur-tap</span><span class="dv">120ms</span><span class="db"><i style="width:9%"></i></span><span class="du">Hover lift, button press. The <code>.lift</code> primitive.</span></div>
+    <div class="dur"><span class="dn">--dur-quick</span><span class="dv">200ms</span><span class="db"><i style="width:16%"></i></span><span class="du">Chips, toggles, small selection states.</span></div>
+    <div class="dur"><span class="dn">--dur-settle</span><span class="dv">350ms</span><span class="db"><i style="width:28%"></i></span><span class="du"><b>Interaction settle</b> &mdash; a state change you caused. <b>Not the theme flip</b>; that claim was corrected 18.08.26.</span></div>
+    <div class="dur"><span class="dn">--dur-enter</span><span class="dv">700ms</span><span class="db"><i style="width:56%"></i></span><span class="du">Entrances, counters, kinetic type, <b>and the Day&harr;Night flip</b> via <code>html.theme-settling</code>.</span></div>
+    <div class="dur"><span class="dn">--stagger</span><span class="dv">90ms</span><span class="db"><i style="width:7%"></i></span><span class="du">Delay between siblings. Multiply by index; cap the total at ~6 items or the last one arrives late.</span></div>
+  </div>
+</div>
+
+<p class="tier">Naming convention</p>
+<div class="conv">
+  <div class="cc"><h5>Verb-first</h5><p><code>stamp-in</code>, <code>chip-pop</code>, <code>plate-wipe</code>. The name says what happens, not where it is used &mdash; so it survives being reused somewhere else.</p></div>
+  <div class="cc"><h5>Component-prefixed if bound</h5><p><code>cal-echo-a</code>, <code>live-pulse</code>, <code>skeleton-sheen</code>. A prefix means <b>this keyframe is not general</b> &mdash; don&rsquo;t borrow it.</p></div>
+  <div class="cc"><h5>Suffix -a / -b for pairs</h5><p>Two layers of one effect, deliberately desynced. Never three.</p></div>
+  <div class="cc"><h5>Suffix -lg for breakpoint</h5><p>Same effect, larger travel above 640px. If a keyframe needs a third size, the effect is wrong.</p></div>
+</div>
+
+<p class="tier">The index</p>
+<div class="pane">
+  <span class="gl">In the system &middot; reality-ds.css</span>
+  <table class="ki">
+    <tr><th style="width:19%">Keyframe</th><th style="width:16%">Timing</th><th>Job</th></tr>
+    <tr><td class="k">live-pulse</td><td class="w">1.6s snap &middot; infinite</td><td>The <code>.live-dot</code> heartbeat. Scale 1&rarr;1.5, opacity 1&rarr;.55 at the midpoint. The only infinite animation allowed on a static page element.</td></tr>
+    <tr><td class="k">skeleton-sheen</td><td class="w">1.5s linear &middot; infinite</td><td>Ink sheen travelling <code>-100% &rarr; 100%</code> across a <code>.skeleton</code>. Linear on purpose &mdash; an eased shimmer reads as a highlight rather than a pass.</td></tr>
+    <tr><td class="k">marquee-ticker</td><td class="w">14s linear &middot; infinite</td><td><code>translateX(0 &rarr; -50%)</code>. Requires content duplicated exactly twice.</td></tr>
+    <tr><td class="k">rdSpin</td><td class="w">.7s linear &middot; infinite</td><td>The bracket spinner &mdash; a square with two transparent borders rotating 360&deg;. <b>No soft arcs anywhere in this system.</b></td></tr>
+  </table>
+</div>
+
+<div class="pane" style="margin-top:16px">
+  <span class="gl" style="background:var(--blue);color:#0d0905">In the app &middot; to fold in</span>
+  <table class="ki">
+    <tr><th style="width:19%">Set</th><th style="width:16%">Curve</th><th>Job</th></tr>
+    <tr><td class="k">stamp-in</td><td class="w">stamp &middot; 700ms</td><td>The house entrance. Element lands from slightly above with an overshoot, shadow snapping in at the landing frame. Everything that appears on first paint uses this or a variant of it.</td></tr>
+    <tr><td class="k">chip-pop</td><td class="w">stamp &middot; 460ms</td><td>Filter chips laying down left to right on <code>--stagger</code>, each firing a small misregistered print behind it. Poster Echo, shrunk to chip scale.</td></tr>
+    <tr><td class="k">plate-wipe</td><td class="w">out &middot; 700ms</td><td>A colour plate wiping across a block, as a screen pulling through. Section transitions and takeovers.</td></tr>
+    <tr><td class="k">reprint-pass</td><td class="w">snap &middot; 350ms</td><td>Re-render feedback in the studios &mdash; the artwork flashes as if a second pass went through the press.</td></tr>
+    <tr><td class="k">quad-seal</td><td class="w">stamp &middot; 700ms</td><td>Four corner marks converging into a registration seal. Confirmations, submitted forms, saved states.</td></tr>
+    <tr><td class="k">slur</td><td class="w">out &middot; 200ms</td><td>Momentary ink-slur offset on a title &mdash; a press artefact, used sparingly as an accent on hover of hero type.</td></tr>
+    <tr><td class="k">ken-push</td><td class="w">out &middot; 8&ndash;14s</td><td>Slow scale-and-drift on photography. The one place in the system where motion is ambient rather than caused.</td></tr>
+    <tr><td class="k">promo-reel</td><td class="w">linear &middot; long</td><td>Bar-screen sequence: schedule panes advancing on a loop with marquee and counter behaviour composed in.</td></tr>
+    <tr><td class="k">counter-roll</td><td class="w">enter &middot; 700ms</td><td>Digits spinning up and settling right-to-last. Scoreboards, leaderboards, tallies.</td></tr>
+    <tr><td class="k">cal-echo-a / -b<br>cal-echo-a-lg / -b-lg</td><td class="w">9s / 13s alternate</td><td><b>Retired.</b> The drifting hero misregister. C1 replaced it with static offsets on 18.08.26 &mdash; these four come out of the site when the sweep lands.</td></tr>
+  </table>
+  <div class="note" style="box-shadow:none">
+    <h4>What "to fold in" means</h4>
+    <p>The app ships roughly ninety named keyframes built on the three curves above. The <b>sets</b> are canon &mdash; those are the vocabulary, and a new surface should compose from them. The individual keyframe percentages still live only in the app source and should be dumped into this system in one pass, at which point this half of the table becomes exact rather than descriptive. <b>Nothing here needs a decision</b>; it needs one export.</p>
+  </div>
+</div>
+
+<div class="note">
+  <h4>Rules</h4>
+  <p><b>One theme duration.</b> The flip is 700ms via <code>html.theme-settling</code>, which transitions every surface, border, shadow and fill together and then releases back to interaction timing. Never animate the theme per component.</p>
+  <p><b>Two layers, not three.</b> Every misregister and echo effect is exactly two plates. Three reads as a printing fault rather than a printing style.</p>
+  <p><b>Infinite animation is rationed.</b> <code>live-pulse</code>, <code>skeleton-sheen</code>, <code>marquee-ticker</code>, <code>rdSpin</code> and <code>ken-push</code> &mdash; that is the whole list. Anything else that loops forever is decoration and will be cut.</p>
+  <p><b>Reduced motion kills all of it.</b> The blanket <code>prefers-reduced-motion</code> rule means every animated state must be legible at rest. Design the rest state first.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

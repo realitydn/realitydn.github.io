@@ -16,23 +16,33 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none;}
   /* silkscreen palette — 3 majors + 4 minors. LOCKED. light/day values */
   /* MAJOR */ --yellow:#fddf00; --red:#ed2224; --blue:#18a7e0;
   /* MINOR */ --pink:#ed1b72; --amber:#fdb515; --green:#43b02a; --purple:#6e3179;
-  --accent:var(--pink);          /* poster lead accent (swappable) */
-  --accent-2:var(--blue);        /* second misregistration layer  */
+  /* ACCENT — theme-aware (decided 18.08.26). Day leads blue, Night leads pink;
+     the second ink is the lead's partner from the partner map. Never hand-set
+     an accent that shares a family with the surface it sits on. The partner map
+     in day-colours.json is CANON; its neverPair list is ADVISORY (19.08.26) —
+     warn, don't block. */
+  --accent:var(--blue);          /* Day lead */
+  --accent-2:var(--pink);        /* second misregistration layer = partner ink */
+
+  /* MISREGISTER — static offsets (decided 18.08.26; the drifting loop was retired).
+     Two steps: hero and card. Needs isolation:isolate on a background-less ancestor. */
+  --misreg-hero-1:13px; --misreg-hero-2:6px;
+  --misreg-card-1:6px;  --misreg-card-2:3px;
 
   /* semantic surfaces — LIGHT / DAY (default) */
   --bg:#fffbf1;        /* page / "paper"  */
   --surface:#fffbf1;   /* cards (bordered, same paper) */
-  --surface-2:#fffbf1;
+  --surface-2:#f4ecd7;--paper-shade:#ece2c9;
   --fg:#0d0905;        /* ink: text, 2px borders, primary fills */
   --fg-dim:rgba(13,9,5,.72);
-  --fg-faint:rgba(13,9,5,.45);
+  --fg-faint:rgba(13,9,5,.56);
   --hairline:rgba(13,9,5,.16);
   --on-ink:#fffbf1;    /* text sitting on an ink fill */
 
   /* flat down-shadows — ink leaking beneath the lifted edge */
-  --sh-light:0 4px 1px rgba(13,9,5,.08);
-  --sh-default:0 8px 2px rgba(13,9,5,.12);
-  --sh-heavy:0 12px 3px rgba(13,9,5,.18);
+  --sh-light:0 4px 1px rgba(13,9,5,.10);
+  --sh-default:0 8px 2px rgba(13,9,5,.16);
+  --sh-heavy:0 13px 3px rgba(13,9,5,.23);
 
   /* spacing — 4px base ramp. mirrors the system rhythm (2px borders, 4/8/12 shadows) */
   --space-1:4px;  --space-2:8px;  --space-3:12px; --space-4:16px; --space-5:20px;
@@ -56,7 +66,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none;}
   /* motion — duration scale (see REALITY Motion.html) */
   --dur-tap:120ms;      /* hover lift · button press */
   --dur-quick:200ms;    /* chip / small state change */
-  --dur-settle:350ms;   /* theme flip · surface crossfade */
+  --dur-settle:350ms;   /* interaction settle — NOT the theme flip (corrected 18.08.26) */
   --dur-enter:700ms;    /* counters · kinetic · big entrances */
   --stagger:90ms;       /* delay between sibling entrances */
   color-scheme:light;
@@ -65,12 +75,14 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none;}
 /* DARK / NIGHT — "after dark". Purple lifts to glow on the dark. */
 [data-theme="dark"]{
   --purple:#9a4faa;
+  --accent:var(--pink);          /* Night lead */
+  --accent-2:var(--blue);        /* partner ink */
   --bg:#0a0703;
   --surface:#171109;
-  --surface-2:#241a10;
+  --surface-2:#241a10;--paper-shade:#1c140b;
   --fg:#fffbf1;
   --fg-dim:rgba(255,251,241,.60);
-  --fg-faint:rgba(255,251,241,.32);
+  --fg-faint:rgba(255,251,241,.48);
   --hairline:#3a2c1c;
   --on-ink:#fffbf1;
   /* shadows invert: cream light leaking beneath a lifted edge */
@@ -82,14 +94,16 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none;}
 
 /* local theme scopes — render a block in the opposite mode */
 .scope-day{
-  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#fffbf1;
-  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.45);--hairline:rgba(13,9,5,.16);
-  --sh-light:0 4px 1px rgba(13,9,5,.08);--sh-default:0 8px 2px rgba(13,9,5,.12);--sh-heavy:0 12px 3px rgba(13,9,5,.18);
+  --accent:var(--blue);--accent-2:var(--pink);
+  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#f4ecd7;--paper-shade:#ece2c9;
+  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.56);--hairline:rgba(13,9,5,.16);
+  --sh-light:0 4px 1px rgba(13,9,5,.10);--sh-default:0 8px 2px rgba(13,9,5,.16);--sh-heavy:0 13px 3px rgba(13,9,5,.23);
   color-scheme:light;
 }
 .scope-night{
-  --bg:#0a0703;--surface:#171109;--surface-2:#241a10;
-  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.32);--hairline:#3a2c1c;
+  --accent:var(--pink);--accent-2:var(--blue);
+  --bg:#0a0703;--surface:#171109;--surface-2:#241a10;--paper-shade:#1c140b;
+  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.48);--hairline:#3a2c1c;
   --sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);
   color-scheme:dark;
 }
@@ -346,3 +360,153 @@ footer .wrap{display:flex;justify-content:space-between;align-items:center;flex-
 footer .muted{font-family:var(--mont);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg-faint);}
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;}}
+
+
+/* ============================================================
+   DAY-OF-WEEK CODING — [SHIPPED 17.08.26, from the app]
+   The calendar is the product, so in practice this is the largest
+   colour system on any public surface: feed card fills, week-list
+   borders, event-detail hero border + poster placeholder, /now,
+   profile — all read --day.
+   --day = the weekday's palette hue · --on-day = the higher-contrast
+   text colour on that fill (purple takes paper, all others take ink).
+   NEVER hardcode a weekday hue — always read --day / --on-day.
+   UNRESOLVED: this axis carries no rank, and 4 of 7 days are minors
+   (incl. the busiest night). Not reconciled with "lead with the
+   majors" — see guidelines/canon-open-questions.html.
+   ============================================================ */
+.d-mon{--day:var(--green);--on-day:#0d0905;}
+.d-tue{--day:var(--blue);--on-day:#0d0905;}
+.d-wed{--day:var(--purple);--on-day:#fffbf1;}
+.d-thu{--day:var(--pink);--on-day:#0d0905;}
+.d-fri{--day:var(--red);--on-day:#0d0905;}
+.d-sat{--day:var(--amber);--on-day:#0d0905;}
+.d-sun{--day:var(--yellow);--on-day:#0d0905;}
+
+
+/* ============================================================
+   CANON REV 18.08.26 — decisions applied
+   Full record: guidelines/canon-applied.html
+   ============================================================ */
+
+/* Day-of-week coding lives above. Source of truth is now day-colours.json —
+   the CSS build emits .d-mon…d-sun from it, and canvas / PDF renderers import
+   that file rather than carrying their own hex literals. */
+
+/* ============================================================
+   TYPE SYSTEM — REV 18.08.26 (treatments 5 + 6 merged)
+   Two independent axes:
+     FAMILY by job      — Montserrat NAMES things, Space Grotesk STATES facts.
+     CASE by register   — far surfaces take caps, near surfaces sentence case.
+   Register is a closed list, never a distance estimate or a size threshold:
+     FAR  poster · banner · signage · social thumbnail · projected/TV schedule
+          · hero plate            -> .reg-far  (caps)
+     NEAR app list · web body · printed schedule · menu · ticket · email
+          · any body copy         -> .reg-near (sentence case)
+   Same content can be both: the weekly schedule is FAR on the bar TV and
+   NEAR as an A4. The poster shouts the name; the app tells you about it.
+   Do NOT "fix" that difference — it is the system working.
+   Floors: informational text 12px min (11px decorative labels only).
+   Weight 100 is display-only: never under 28px, never below 24pt in print,
+   never on signage. Uppercase Vietnamese needs line-height >= 1.28. */
+
+/* — MONTSERRAT · names, headings, labels, controls ——————————— */
+.type-display{font-family:var(--mont);font-weight:100;font-size:clamp(40px,7vw,82px);letter-spacing:.015em;text-transform:uppercase;line-height:1.05;}
+.type-h1{font-family:var(--mont);font-weight:700;font-size:clamp(30px,4vw,46px);letter-spacing:.025em;line-height:1.1;}
+.type-h2{font-family:var(--mont);font-weight:600;font-size:24px;letter-spacing:.04em;line-height:1.2;}
+.type-h3{font-family:var(--mont);font-weight:600;font-size:17px;letter-spacing:0;line-height:1.25;}
+.type-name{font-family:var(--mont);font-weight:600;font-size:15px;letter-spacing:0;line-height:1.3;}
+/* Eyebrows, tab labels, table headers and buttons stay caps at any size —
+   caps here is a SIGNAL that this is a label or a control, not reading matter. */
+.type-label{font-family:var(--mont);font-weight:700;font-size:13px;letter-spacing:.16em;text-transform:uppercase;}
+.type-button{font-family:var(--mont);font-weight:700;font-size:13px;letter-spacing:.11em;text-transform:uppercase;}
+.type-sign{font-family:var(--mont);font-weight:700;letter-spacing:.09em;text-transform:uppercase;}
+/* Wordmark only. Never for copy. */
+.type-wordmark{font-family:var(--alt);font-weight:600;letter-spacing:.10em;text-transform:uppercase;}
+
+/* — SPACE GROTESK · facts, figures, body ————————————————————— */
+/* Facts are Grotesk in EVERY medium (M1: family wins over distance); at range
+   the size and weight rise to 700, the case never changes. */
+.type-fact{font-family:var(--grotesk);font-weight:500;font-size:13px;letter-spacing:0;font-variant-numeric:tabular-nums;}
+.type-fact-far{font-family:var(--grotesk);font-weight:700;letter-spacing:0;font-variant-numeric:tabular-nums;}
+.type-page{font-family:var(--grotesk);font-weight:400;font-size:17px;line-height:1.7;letter-spacing:0;}
+.type-sub{font-family:var(--grotesk);font-weight:400;font-size:12px;color:var(--fg-faint);letter-spacing:0;}
+/* The one uppercase Grotesk variant (M3-B): technical micro-labels only —
+   ticket stubs, order numbers, form hints, table headers on receipts. */
+.type-micro{font-family:var(--grotesk);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;}
+.type-page>*+*{margin-top:.75em;}
+/* Grotesk above 24px eases very slightly. */
+.type-page-lg{font-family:var(--grotesk);font-weight:400;font-size:26px;line-height:1.4;letter-spacing:-.005em;}
+
+/* Register — the only thing that changes case. */
+.reg-far .type-h1,.reg-far .type-h2,.reg-far .type-h3,.reg-far .type-name{text-transform:uppercase;}
+.reg-near .type-h1,.reg-near .type-h2,.reg-near .type-h3,.reg-near .type-name{text-transform:none;}
+
+/* Figures: tabular for anything in a column, proportional in a sentence.
+   Money is 45.000d-style — dot thousands, currency trailing, no space. */
+.tnum{font-variant-numeric:tabular-nums;}
+.pnum{font-variant-numeric:proportional-nums;}
+.type-page .tnum,.type-page{font-variant-numeric:proportional-nums;}
+
+/* Uppercase Vietnamese: stacked diacritics sit above cap-height. */
+:lang(vi) .type-display,:lang(vi) .reg-far .type-h1,:lang(vi) .reg-far .type-h2,
+:lang(vi) .reg-far .type-h3,:lang(vi) .reg-far .type-name,:lang(vi) .type-sign{line-height:1.3;}
+:lang(vi) .type-display{font-weight:200;}
+
+/* Per-medium tracking offsets (M6). Ink spread closes counters, distance
+   opens them: print +.01em, signage +.02em and never below weight 700.
+   One ladder, two offsets — never a second table. */
+@media print{
+  .type-display,.type-h1,.type-h2,.type-h3,.type-name,.type-label,.type-button,.type-micro,.type-sign{letter-spacing:calc(var(--tr,0em) + .01em);}
+  .type-display{--tr:.015em;} .type-h1{--tr:.025em;} .type-h2{--tr:.04em;}
+  .type-label{--tr:.16em;} .type-button{--tr:.11em;} .type-micro{--tr:.12em;}
+}
+.medium-signage .type-sign,.medium-signage .type-label,.medium-signage .type-h1,.medium-signage .type-h2,.medium-signage .type-fact-far{letter-spacing:calc(var(--tr,.02em) + .02em);font-weight:700;}
+
+/* Long names are split at the DATA layer, not truncated (M5): a schedule row
+   carries name + qualifier as two fields, the qualifier set in .type-sub.
+   Performer names keep their own capitalisation (M4) — never normalised. */
+.name-block{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.name-block .type-name{text-transform:none!important;}
+
+/* Misregister — static. .misreg on a background-less wrapper; the plate is the
+   first child, the two echoes are pseudo-layers on negative z. */
+.misreg{position:relative;isolation:isolate;}
+.misreg::before,.misreg::after{content:"";position:absolute;inset:0;z-index:-1;}
+.misreg::before{background:var(--accent-2);transform:translate(var(--misreg-card-2),var(--misreg-card-2));}
+.misreg::after{background:var(--accent);transform:translate(var(--misreg-card-1),var(--misreg-card-1));}
+.misreg-hero::before{transform:translate(var(--misreg-hero-2),var(--misreg-hero-2));}
+.misreg-hero::after{transform:translate(var(--misreg-hero-1),var(--misreg-hero-1));}
+
+/* Primitives */
+.live-dot{width:9px;height:9px;background:var(--red);border:2px solid var(--fg);display:inline-block;animation:live-pulse 1.6s var(--ease-snap) infinite;}
+@keyframes live-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.55}}
+.tag{font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;border:2px solid var(--fg);background:var(--surface);padding:3px 8px;display:inline-block;}
+.chip-dot{width:10px;height:10px;border:1.5px solid var(--fg);background:var(--day,var(--accent));display:inline-block;}
+.skeleton{background:var(--surface-2);position:relative;overflow:hidden;}
+.skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(13,9,5,.10),transparent);animation:skeleton-sheen 1.5s linear infinite;}
+[data-theme="dark"] .skeleton::after,.scope-night .skeleton::after{background:linear-gradient(90deg,transparent,rgba(255,251,241,.14),transparent);}
+@keyframes skeleton-sheen{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.lift{transition:transform var(--dur-tap) var(--ease-snap),box-shadow var(--dur-tap) var(--ease-snap);}
+.lift:hover{transform:translateY(-3px);box-shadow:var(--sh-heavy);}
+.lift:active{transform:translateY(2px);box-shadow:var(--sh-light);}
+.marquee{overflow:hidden;border-block:2px solid var(--fg);}
+.marquee>*{display:inline-block;white-space:nowrap;animation:marquee-ticker 14s linear infinite;}
+@keyframes marquee-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.field-hint{font-family:var(--grotesk);font-size:12px;color:var(--fg-faint);margin-top:5px;display:block;}
+.field.error{border-color:var(--red);}
+.field.error+.field-hint{color:var(--red);}
+/* view-transition hooks — contract between two routes, not components */
+.vt-hero{view-transition-name:hero;}
+.vt-title{view-transition-name:title;}
+.vt-date{view-transition-name:date;}
+
+/* Theme flip: 700ms (--dur-enter) on every surface, border, shadow and fill
+   together via html.theme-settling, then release to interaction timing.
+   --dur-settle stays the interaction settle, not the theme duration. */
+html.theme-settling,html.theme-settling *{transition:background-color var(--dur-enter) var(--ease-snap),color var(--dur-enter) var(--ease-snap),border-color var(--dur-enter) var(--ease-snap),box-shadow var(--dur-enter) var(--ease-snap),outline-color var(--dur-enter) var(--ease-snap)!important;}
+
+/* SUBSTRATE — screen values above are cream-paper simulations. On press the
+   substrate IS the paper: ink #111111 on white stock, cream never laid down as
+   a fill, and the K lift ladder stays .08/.12/.18 with heavy at 12px. Those are
+   print equivalents, not a second opinion. */

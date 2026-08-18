@@ -73,7 +73,7 @@ export default function MenuSection({ lang, t }) {
   return (
     <section id="menus" className="bg-cream text-ink">
       <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
-        <div className="eyebrow mb-2" style={{ color: 'var(--accent)' }}>
+        <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>
           {t.use('drinkEyebrow')}
         </div>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">

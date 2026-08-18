@@ -2,8 +2,13 @@
 
 All codes encode **https://realitydn.com** — the canonical address.
 (www.realitydn.com 301-redirects there; encoding the apex saves every scan a
-redirect hop. The *printed* URL next to a QR stays `www.realitydn.com` per the
-brand's mandatory elements.)
+redirect hop.)
+
+**The printed URL next to a QR is `realitydn.com`** — bare host, decided
+18.08.26 (D5). It is shorter, sets tighter in the footer's tightest block, and
+matches both the QR target and how people type it. An earlier version of this
+file called `www.realitydn.com` the mandatory form; that is superseded. The
+encoded target is unchanged either way.
 
 QR spec: version 2 (25×25 modules), error correction M, 4-module quiet zone.
 Verified decodable with OpenCV from 120px up; print at ≥ 2×2 cm.

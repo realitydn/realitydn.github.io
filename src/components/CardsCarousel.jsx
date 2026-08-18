@@ -39,7 +39,7 @@ export default function CardsCarousel({ items, renderCard, eyebrow, title }) {
         <Reveal stagger className="grid grid-cols-12 gap-6 items-end mb-8">
           <div className="col-span-12 md:col-span-8">
             {eyebrow && (
-              <div className="eyebrow mb-2" style={{ color: 'var(--accent)' }}>
+              <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>
                 {eyebrow}
               </div>
             )}

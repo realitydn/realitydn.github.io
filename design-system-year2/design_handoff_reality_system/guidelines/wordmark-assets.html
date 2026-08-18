@@ -1,0 +1,133 @@
+<!-- @dsCard group="Foundations" name="Wordmark, QR & Assets" subtitle="The mark is a mixed-font vector, not a CSS font-family — plus the QR spec, the mandatory strings, and what ships where" viewport="1100x2400" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Wordmark, QR & Assets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.markbox{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);padding:26px 22px 20px;display:flex;flex-direction:column;gap:16px;align-items:flex-start}
+.wm{font-family:var(--mont);font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-size:52px;line-height:.9;display:flex}
+.wm .alt{font-family:var(--alt);font-weight:600}
+.wm .hl{position:relative}
+.wm .hl::after{content:"";position:absolute;left:-2px;right:-2px;bottom:-6px;height:4px;background:var(--accent)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mont);font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-faint)}
+.legend i{display:inline-block;width:12px;height:4px;background:var(--accent);vertical-align:2px;margin-right:6px}
+.big{font-size:66px}
+table.sp{width:100%;border-collapse:collapse;font-size:12.5px}
+table.sp th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 9px 7px 0;border-bottom:2px solid var(--fg)}
+table.sp td{padding:9px 9px 9px 0;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-dim)}
+table.sp td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.sp tr:last-child td{border-bottom:none}
+.qrgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.qrgrid{grid-template-columns:1fr}}
+.qc{border:2px solid var(--fg);box-shadow:var(--sh-light);display:flex;flex-direction:column}
+.qc .qh{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.09em;text-transform:uppercase;padding:9px 12px;border-bottom:2px solid var(--fg);background:var(--surface-2)}
+.qc .qb{padding:16px;display:flex;justify-content:center;background:var(--surface)}
+.qc .qp{padding:0 12px 12px;font-size:11.5px;color:var(--fg-dim)}
+.qtile{width:96px;height:96px;background:repeating-conic-gradient(from 0deg at 50% 50%,#0d0905 0deg 90deg,#fff 90deg 180deg);background-size:16px 16px;border:8px solid #fff}
+.qtile.dark{border-color:#fffbf1;background:repeating-conic-gradient(from 0deg at 50% 50%,#0d0905 0deg 90deg,#fffbf1 90deg 180deg);background-size:16px 16px}
+.qbad{width:96px;height:96px;background:repeating-conic-gradient(from 0deg at 50% 50%,#fffbf1 0deg 90deg,#0d0905 90deg 180deg);background-size:16px 16px;border:8px solid #0d0905}
+.ticket{border:3px solid var(--fg);background:var(--surface);padding:12px 14px;display:flex;gap:14px;align-items:center;justify-content:space-between}
+.ticket .tw{font-family:var(--mont);font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-size:22px;line-height:.9}
+.ticket .tw .alt{font-family:var(--alt);font-weight:600}
+.ticket .tm{font-family:var(--grotesk);font-weight:500;font-size:10.5px;line-height:1.6;text-align:right}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.rules{grid-template-columns:1fr}}
+.rc{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px}
+.rc h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:6px}
+.rc p{font-size:12.5px;color:var(--fg-dim)}
+.rc.no{border-color:var(--red)}.rc.no h5{color:var(--red)}
+.clear{position:relative;border:2px solid var(--fg);background:var(--bg);padding:34px;display:inline-flex}
+.clear::before{content:"";position:absolute;inset:12px;border:2px dashed var(--hairline)}
+.clear .in{position:relative;z-index:1;font-family:var(--mont);font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-size:30px;line-height:.9}
+.clear .in .alt{font-family:var(--alt);font-weight:600}
+.cap{font-family:var(--mont);font-weight:600;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);margin-top:10px}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Wordmark, QR &amp; Assets</span><span class="sub">Correcting the record: the wordmark is <b>not</b> one font, and the spec that said so was wrong. Until now this only existed in a handoff README that had gone stale.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>The correction</h4>
+  <p>The mark is <b>Montserrat</b>, with <b>Montserrat Alternates forms substituted for the A, I and Y only</b>. The R, E, L and T stay Montserrat. Semi-Bold, all caps, tracked <b>0.1em</b>. An earlier spec said "Montserrat Alternates" for the whole word &mdash; that was wrong and produced a visibly different mark.</p>
+  <p><b>You cannot get this from one CSS <code>font-family</code>.</b> The letterforms are baked into <code>assets/wordmark/reality-wordmark.svg</code>. Ship the SVG. Don&rsquo;t re-typeset it, don&rsquo;t approximate it with a font stack, and don&rsquo;t let a generator draw it from live text.</p>
+</div>
+
+<p class="tier">The mark</p>
+<div class="two">
+  <div class="markbox">
+    <span class="wm big">R<span class="alt hl">E</span>ALITY</span>
+    <div class="wm"><span>R</span><span class="alt hl">E</span><span>AL</span><span class="alt hl">I</span><span>T</span><span class="alt hl">Y</span></div>
+    <div class="legend"><span><i></i>Alternates: A, I, Y</span><span>Montserrat: R, E, L, T</span><span>SemiBold 600 &middot; caps &middot; .1em</span></div>
+    <p style="font-size:12.5px;color:var(--fg-dim)">Rendered here from live fonts as a <b>reference only</b> &mdash; note that the E is not substituted. Production always uses the vector.</p>
+  </div>
+  <div class="markbox" style="align-items:center;justify-content:center">
+    <div class="clear"><span class="in">R<span class="alt">E</span>ALITY</span></div>
+    <span class="cap">Clear space = cap height on all four sides</span>
+    <div class="ticket" style="width:100%;margin-top:6px"><span class="tw">R<span class="alt">E</span>ALITY</span><span class="tm">86 Mai Th&uacute;c L&acirc;n &middot; &#272;&agrave; N&#7861;ng<br>realitydn.com</span></div>
+  </div>
+</div>
+
+<p class="tier">Files</p>
+<div class="pane">
+  <table class="sp">
+    <tr><th style="width:30%">File</th><th style="width:16%">Format</th><th>Use</th></tr>
+    <tr><td class="k">assets/wordmark/<br>reality-wordmark.svg</td><td>Vector</td><td>The canonical mark. Posters, site header, schedule footers, tickets, banners. <b>Everything.</b></td></tr>
+    <tr><td class="k">assets/wordmark/<br>reality-mark-R.svg</td><td>Vector</td><td>The R of that same vector, standing alone. Favicon, app icon, avatar, stamp. Never a re-drawn R.</td></tr>
+    <tr><td class="k">assets/qr/<br>reality-qr-ink.svg</td><td>Vector</td><td>Any scale, transparent modules. Default for print and for the studios.</td></tr>
+    <tr><td class="k">reality-qr-ink-on-white.png</td><td>2160px</td><td>Print materials on white stock.</td></tr>
+    <tr><td class="k">reality-qr-ink-on-cream.png</td><td>2160px</td><td>Digital and cream surfaces.</td></tr>
+    <tr><td class="k">reality-qr-ink-transparent.png</td><td>2160px</td><td>Drops onto any light surface.</td></tr>
+    <tr><td class="k">reality-qr-matrix.js</td><td>Data</td><td>Raw module matrix. <b>This is what the Poster Studio embeds</b>, which is why exported posters scan &mdash; a re-generated code at export time would not be verified.</td></tr>
+    <tr><td class="k">tools/generate-qr.py</td><td>Script</td><td>Regeneration, and UTM-tagged variants for scan tracking.</td></tr>
+  </table>
+</div>
+
+<p class="tier">QR</p>
+<div class="qrgrid">
+  <div class="qc"><div class="qh">On white / cream</div><div class="qb"><div class="qtile"></div></div><p class="qp">Ink modules on a light tile. The default everywhere.</p></div>
+  <div class="qc"><div class="qh">On a night poster</div><div class="qb" style="background:#0a0703"><div class="qtile dark"></div></div><p class="qp">Still ink modules &mdash; placed as a <b>cream tile</b> on the dark surface, the way the poster footer atoms do it.</p></div>
+  <div class="qc" style="border-color:var(--red)"><div class="qh" style="background:var(--red);color:#0d0905">Never invert</div><div class="qb" style="background:#0a0703"><div class="qbad"></div></div><p class="qp">Cream modules on ink. <b>Many phone cameras refuse inverted codes outright.</b></p></div>
+</div>
+
+<div class="pane" style="margin-top:16px">
+  <div class="plabel">Spec</div>
+  <table class="sp">
+    <tr><td class="k" style="width:24%">Encodes</td><td><code>https://realitydn.com</code> &mdash; the apex. <code>www</code> 301-redirects there, so encoding the apex saves every scan a redirect hop.</td></tr>
+    <tr><td class="k">Symbol</td><td>Version 2, <b>25&times;25 modules</b>, error correction <b>M</b>, 4-module quiet zone.</td></tr>
+    <tr><td class="k">Verified</td><td>Decodable with OpenCV from <b>120px</b> up. Print at <b>2&times;2cm minimum</b>.</td></tr>
+    <tr><td class="k">Quiet zone</td><td>Ships with it. Don&rsquo;t crop tighter &mdash; it is part of the symbol, not padding.</td></tr>
+  </table>
+</div>
+
+<p class="tier">Mandatory strings on artwork</p>
+<div class="pane">
+  <table class="sp">
+    <tr><th style="width:22%">Element</th><th style="width:26%">String</th><th>Rule</th></tr>
+    <tr><td class="k">Address</td><td><code>86 Mai Th&uacute;c L&acirc;n &middot; &#272;&agrave; N&#7861;ng</code></td><td>Diacritics always correct, never stripped to ASCII. Middot separator on one line, comma when it runs into a sentence.</td></tr>
+    <tr><td class="k">Site</td><td><code>realitydn.com</code></td><td><b>Bare host</b> (D5, 18.08.26). Shorter, sets tighter in the footer&rsquo;s tightest block, and matches both the QR target and how people type it.</td></tr>
+    <tr><td class="k">Wordmark</td><td>The SVG</td><td>Every piece of artwork carries it. The ticket / footer atom is the standard placement.</td></tr>
+    <tr><td class="k">QR</td><td>Optional</td><td>On anything a stranger might photograph &mdash; posters, standees, table cards. Not on internal schedules.</td></tr>
+  </table>
+</div>
+
+<p class="tier">Rules</p>
+<div class="rules">
+  <div class="rc"><h5>Clear space = cap height</h5><p>On all four sides, measured from the mark&rsquo;s own cap height. In the footer atom the rule above it counts as the boundary.</p></div>
+  <div class="rc"><h5>Ink or cream only</h5><p>The mark is <code>--fg</code> or <code>--bg</code>. It never takes a palette colour, never sits in a coloured box, and never gets the misregister treatment.</p></div>
+  <div class="rc no"><h5>Never re-typeset</h5><p>No live-font wordmark in any generator, template or component. If a tool draws it from text, that tool is wrong &mdash; the Studio renders the vector for exactly this reason.</p></div>
+  <div class="rc no"><h5>Never distort</h5><p>Scale proportionally. No condensing to fit, no added tracking on top of the baked 0.1em, no outline or shadow.</p></div>
+  <div class="rc"><h5>The R stands alone</h5><p>Where the full mark won&rsquo;t fit, use <code>reality-mark-R.svg</code> &mdash; not a cropped wordmark and not a typed R.</p></div>
+  <div class="rc"><h5>One mark per surface</h5><p>A poster has one wordmark, in the footer atom. A second one anywhere on the sheet is a mistake.</p></div>
+</div>
+
+<div class="note">
+  <h4>Two things to correct in code</h4>
+  <p><b>The QR README contradicts D5.</b> It states the printed URL stays <code>www.realitydn.com</code> &ldquo;per the brand&rsquo;s mandatory elements&rdquo;. That was true when it was written; the 18.08 call made the bare host canon for artwork. The README needs the same edit as the generators &mdash; the encoded target is unaffected either way.</p>
+  <p><b>The <code>www.</code> sweep is wider than the audit recorded.</b> It is in <code>print-data</code>, <code>print-export</code>, <code>schedule-render</code>, <code>studio-data</code> and <code>public/event-report</code> &mdash; not just Print Studio&rsquo;s one constant. Roughly forty document presets carry it as a literal.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

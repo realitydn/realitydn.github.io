@@ -12,7 +12,7 @@ export default function Footer({ lang }) {
           <Logo className="h-7 w-auto mb-3" color="var(--fg)" />
           <p className="text-gray-700 font-body">86 Mai Thúc Lân, Đà Nẵng</p>
           <p className="text-gray-700 font-body">{STR[lang].hours}</p>
-          <p className="text-gray-700 font-body">www.realitydn.com</p>
+          <p className="text-gray-700 font-body">realitydn.com</p>
         </div>
         <div className="col-span-12 md:col-span-6 md:text-right">
           <div className="eyebrow text-gray-600">
@@ -114,7 +114,7 @@ export default function Footer({ lang }) {
         <div style={{ borderTop: '1px solid var(--hairline)' }}>
           <div className="max-w-7xl mx-auto px-4 py-4">
             <p className="text-center text-xs font-body" style={{ color: 'var(--fg-faint)' }}>
-              © {new Date().getFullYear()} REALITY · 86 Mai Thúc Lân, Đà Nẵng · www.realitydn.com
+              © {new Date().getFullYear()} REALITY · 86 Mai Thúc Lân, Đà Nẵng · realitydn.com
             </p>
           </div>
         </div>

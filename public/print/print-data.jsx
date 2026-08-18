@@ -161,7 +161,7 @@ const WORDMARK_PATH = [
 
 /* mandatory brand strings (style guide §11) — always full diacritics */
 const ADDR = '86 Mai Thúc Lân · Đà Nẵng';
-const SITE = 'www.realitydn.com';
+const SITE = 'realitydn.com';
 
 /* Misregistration partners — the second silkscreen layer (--accent-2). An
    element's "echo" ghost is drawn offset in its partner colour, the riso
@@ -1238,7 +1238,7 @@ const TEMPLATES = [
     {"type":"body","x":44,"y":290,"w":240,"h":70,"p":{"text":"Every drink we pour, knocked down for three hours. Down the stairs, second on the left.","fontSize":13,"leading":1.34}},
     {"type":"pricelist","x":44,"y":470,"w":320,"h":230,"p":{"heading":"ON POUR","items":[{"l":"House spirits","p":"50k"},{"l":"Draft beer","p":"45k"},{"l":"Highball","p":"65k"},{"l":"House wine","p":"70k"}],"dotLeader":true}},
     {"type":"rule","x":44,"y":716,"w":507,"h":10,"p":{"weight":3,"fill":"ink"}},
-    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"drink-of-week-numeral", name:"Drink Of The Week", group:"Specials", size:"a4", orient:"portrait", accent:"red", els:[
     {"type":"block","x":0,"y":0,"w":595,"h":842,"p":{"fill":"white"}},
@@ -1249,7 +1249,7 @@ const TEMPLATES = [
     {"type":"numeral","x":320,"y":470,"w":235,"h":170,"p":{"text":"120K","weight":100,"fontSize":124,"ink":"red","echo":true,"align":"right"}},
     {"type":"badge","x":44,"y":500,"w":130,"h":130,"p":{"top":"THIS","big":"WK","sub":"ONLY","surface":"accent","fill":"amber","rot":-8,"lift":"default"}},
     {"type":"marquee","x":0,"y":678,"w":595,"h":36,"p":{"text":"REALITY","sep":"★","surface":"solid","fill":"red","fontSize":16}},
-    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"two-for-one-kinetic", name:"Two For One", group:"Specials", size:"a4", orient:"portrait", accent:"yellow", els:[
     {"type":"block","x":0,"y":0,"w":595,"h":842,"p":{"fill":"yellow"}},
@@ -1260,7 +1260,7 @@ const TEMPLATES = [
     {"type":"body","x":44,"y":500,"w":420,"h":70,"p":{"text":"Order one, the second is on us. Same drink, every cocktail on the list — no catch.","fontSize":14,"ink":"white","leading":1.34}},
     {"type":"badge","x":432,"y":360,"w":124,"h":124,"p":{"top":"EVERY","big":"WED","sub":"—","surface":"accent","fill":"pink","rot":7,"lift":"default"}},
     {"type":"rule","x":44,"y":660,"w":507,"h":10,"p":{"weight":3,"fill":"ink"}},
-    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"spirits-flight-amber", name:"Spirits Flight", group:"Specials", size:"a4", orient:"portrait", accent:"amber", els:[
     {"type":"slab","x":0,"y":0,"w":595,"h":210,"p":{"fill":"amber","angle":-10,"echo":true}},
@@ -1271,7 +1271,7 @@ const TEMPLATES = [
     {"type":"pricelist","x":44,"y":410,"w":360,"h":250,"p":{"heading":"THIS WEEK'S POUR","items":[{"l":"Highland single malt","p":"—"},{"l":"Bourbon, small batch","p":"—"},{"l":"Rye, bottled in bond","p":"—"}],"dotLeader":true}},
     {"type":"seal","x":430,"y":420,"w":120,"h":120,"p":{"top":"BAR","big":"★","sub":"FLIGHT","fill":"red","rot":-9}},
     {"type":"rule","x":44,"y":690,"w":507,"h":10,"p":{"weight":3,"fill":"ink"}},
-    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"house-pour-list-a4", name:"House Pour List", group:"Specials", size:"a4", orient:"portrait", accent:"purple", els:[
     {"type":"block","x":0,"y":0,"w":595,"h":130,"p":{"fill":"purple"}},
@@ -1280,7 +1280,7 @@ const TEMPLATES = [
     {"type":"pricelist","x":44,"y":168,"w":507,"h":280,"p":{"heading":"SIGNATURE COCKTAILS","items":[{"l":"Smoked Negroni","p":"120k"},{"l":"Espresso Martini","p":"110k"},{"l":"Sông Hàn Spritz","p":"95k"},{"l":"Old Fashioned","p":"115k"},{"l":"Tamarind Margarita","p":"105k"}],"dotLeader":true,"surface":"paper"}},
     {"type":"rule","x":44,"y":466,"w":507,"h":8,"p":{"weight":2,"fill":"purple","style":"double"}},
     {"type":"pricelist","x":44,"y":490,"w":507,"h":200,"p":{"heading":"BEER & WINE","items":[{"l":"Draft beer","p":"45k"},{"l":"Bottled craft","p":"75k"},{"l":"House red / white","p":"70k"}],"dotLeader":true}},
-    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":44,"y":748,"w":507,"h":74,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"golden-hour-blue", name:"Golden Hour", group:"Specials", size:"a5", orient:"portrait", accent:"blue", els:[
     {"type":"slab","x":0,"y":0,"w":420,"h":180,"p":{"fill":"blue","angle":-14,"echo":true}},
@@ -1289,7 +1289,7 @@ const TEMPLATES = [
     {"type":"numeral","x":200,"y":200,"w":190,"h":130,"p":{"text":"5–7","weight":100,"fontSize":130,"ink":"blue","echo":true,"align":"right"}},
     {"type":"body","x":30,"y":220,"w":165,"h":80,"p":{"text":"Half-price spritzes while the sun drops over the river.","fontSize":12,"leading":1.34}},
     {"type":"badge","x":290,"y":360,"w":100,"h":100,"p":{"top":"HALF","big":"½","sub":"SPRITZ","surface":"accent","fill":"amber","rot":-8,"lift":"default"}},
-    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"new-arrival-green", name:"New Arrival", group:"Specials", size:"a5", orient:"portrait", accent:"green", els:[
     {"type":"block","x":0,"y":0,"w":420,"h":595,"p":{"fill":"white"}},
@@ -1299,7 +1299,7 @@ const TEMPLATES = [
     {"type":"headline","x":30,"y":202,"w":360,"h":120,"p":{"text":"YUZU\nGIMLET","weight":800,"fontSize":50,"ink":"ink","leading":0.88,"echo":true,"echoAccent":"green","upper":true}},
     {"type":"body","x":30,"y":330,"w":280,"h":80,"p":{"text":"Gin, fresh yuzu, a whisper of basil. Sharp, green, built for the heat.","fontSize":13,"leading":1.34}},
     {"type":"numeral","x":220,"y":400,"w":170,"h":120,"p":{"text":"95K","weight":100,"fontSize":100,"ink":"green","echo":true,"align":"right"}},
-    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"weekday-specials-grid", name:"Weekday Specials", group:"Specials", size:"a5", orient:"portrait", accent:"pink", els:[
     {"type":"block","x":0,"y":0,"w":420,"h":110,"p":{"fill":"pink"}},
@@ -1308,7 +1308,7 @@ const TEMPLATES = [
     {"type":"pricelist","x":30,"y":152,"w":360,"h":330,"p":{"heading":"","items":[{"l":"MON · House spirits","p":"40k"},{"l":"TUE · Draft pints","p":"35k"},{"l":"WED · 2-for-1 cocktails","p":"—"},{"l":"THU · Wine by glass","p":"55k"},{"l":"FRI · Highballs","p":"55k"}],"dotLeader":true,"surface":"paper"}},
     {"type":"rule","x":30,"y":470,"w":360,"h":8,"p":{"weight":3,"fill":"pink"}},
     {"type":"body","x":30,"y":486,"w":360,"h":30,"p":{"text":"Bar only, from 4pm. No mixing across days.","fontSize":11,"leading":1.3}},
-    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"fifty-k-pours", name:"Fifty K Pours", group:"Specials", size:"a5", orient:"portrait", accent:"amber", els:[
     {"type":"slab","x":0,"y":0,"w":420,"h":595,"p":{"fill":"amber","angle":0,"echo":false}},
@@ -1318,7 +1318,7 @@ const TEMPLATES = [
     {"type":"headline","x":56,"y":320,"w":310,"h":60,"p":{"text":"EVERY POUR","weight":700,"fontSize":34,"ink":"ink","align":"center","upper":true}},
     {"type":"body","x":56,"y":388,"w":310,"h":70,"p":{"text":"Spirits, beer, house wine — one price, all of Sunday. Pick anything off the rail.","fontSize":13,"align":"center","leading":1.34}},
     {"type":"badge","x":290,"y":36,"w":100,"h":100,"p":{"top":"SUN","big":"ALL","sub":"DAY","surface":"accent","fill":"red","rot":9,"lift":"default"}},
-    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":false,"rule":true}}
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":false,"rule":true}}
   ]},
   { id:"seasonal-menu-purple", name:"Seasonal Menu", group:"Specials", size:"a5", orient:"portrait", accent:"purple", els:[
     {"type":"slab","x":0,"y":0,"w":420,"h":170,"p":{"fill":"purple","angle":-12,"echo":true}},
@@ -1326,7 +1326,7 @@ const TEMPLATES = [
     {"type":"headline","x":30,"y":64,"w":360,"h":90,"p":{"text":"SEASONAL\nPOURS","weight":800,"fontSize":46,"ink":"white","leading":0.86,"upper":true}},
     {"type":"pricelist","x":30,"y":200,"w":360,"h":250,"p":{"heading":"ON NOW","items":[{"l":"Lychee Collins","p":"100k"},{"l":"Passionfruit Sour","p":"105k"},{"l":"Watermelon Paloma","p":"100k"},{"l":"Iced Vietnamese Espresso Martini","p":"115k"}],"dotLeader":true}},
     {"type":"marquee","x":0,"y":470,"w":420,"h":32,"p":{"text":"REALITY","sep":"★","surface":"accent","fill":"purple","fontSize":14}},
-    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"ladies-night-pink", name:"Thursday Pour", group:"Specials", size:"a5", orient:"portrait", accent:"pink", els:[
     {"type":"block","x":0,"y":0,"w":420,"h":595,"p":{"fill":"ink"}},
@@ -1335,7 +1335,7 @@ const TEMPLATES = [
     {"type":"headline","x":30,"y":150,"w":360,"h":130,"p":{"text":"FREE\nFIRST\nROUND","weight":800,"fontSize":56,"ink":"white","leading":0.84,"upper":true}},
     {"type":"body","x":30,"y":390,"w":360,"h":70,"p":{"text":"First cocktail of the night is on the house, every Thursday. Walk in, sit down, we'll sort the rest.","fontSize":13,"ink":"white","leading":1.34}},
     {"type":"seal","x":280,"y":392,"w":110,"h":110,"p":{"top":"ON THE","big":"★","sub":"HOUSE","fill":"amber","rot":-8}},
-    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":30,"y":528,"w":360,"h":60,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"happy-hour-a3-hero", name:"Happy Hour Hero", group:"Specials", size:"a3", orient:"portrait", accent:"red", els:[
     {"type":"block","x":0,"y":0,"w":842,"h":1191,"p":{"fill":"yellow"}},
@@ -1347,20 +1347,20 @@ const TEMPLATES = [
     {"type":"body","x":64,"y":500,"w":340,"h":120,"p":{"text":"Three hours, every weekday. Every drink on the list knocked down. Down the stairs, second on the left.","fontSize":20,"leading":1.34}},
     {"type":"pricelist","x":64,"y":760,"w":470,"h":300,"p":{"heading":"ON POUR","items":[{"l":"House spirits","p":"50k"},{"l":"Draft beer","p":"45k"},{"l":"Highball","p":"65k"},{"l":"House wine","p":"70k"}],"dotLeader":true,"surface":"paper"}},
     {"type":"marquee","x":0,"y":1080,"w":842,"h":44,"p":{"text":"REALITY","sep":"★","surface":"solid","fill":"ink","fontSize":20}},
-    {"type":"footer","x":64,"y":1115,"w":714,"h":64,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":64,"y":1115,"w":714,"h":64,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"free-coffee-voucher", name:"Free Coffee Voucher", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"amber", els:[
     {"type":"slab","x":0,"y":0,"w":298,"h":78,"p":{"fill":"amber","angle":-8,"echo":true}},
     {"type":"kicker","x":22,"y":24,"w":220,"h":18,"p":{"text":"LOYALTY · BAR ONLY","ink":"white","tracking":0.24}},
     {"type":"coupon","x":18,"y":70,"w":262,"h":122,"p":{"heading":"ONE FREE COFFEE","big":"ON US","terms":"One per guest. Dine-in only.","code":"REAL-10","surface":"outline"}},
-    {"type":"contact","x":22,"y":193,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":22,"y":193,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"happy-hour-token", name:"Happy Hour Token", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"red", els:[
     {"type":"block","x":0,"y":0,"w":298,"h":210,"p":{"fill":"red"}},
     {"type":"kicker","x":22,"y":28,"w":200,"h":16,"p":{"text":"ONE DRINK · ONE TOKEN","ink":"white","tracking":0.22}},
     {"type":"numeral","x":18,"y":44,"w":200,"h":120,"p":{"text":"1×","weight":100,"fontSize":120,"ink":"white","echo":true,"align":"left"}},
     {"type":"seal","x":196,"y":56,"w":90,"h":90,"p":{"top":"GOOD FOR","big":"★","sub":"ONE POUR","fill":"ink","rot":-8}},
-    {"type":"contact","x":22,"y":184,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":22,"y":184,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"stamp-card-ten", name:"Coffee Stamp Card", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"green", els:[
     {"type":"block","x":0,"y":0,"w":298,"h":60,"p":{"fill":"green"}},
@@ -1368,7 +1368,7 @@ const TEMPLATES = [
     {"type":"icon","x":244,"y":13,"w":34,"h":34,"p":{"kind":"coffee","ink":"white"}},
     {"type":"punchgrid","x":22,"y":76,"w":254,"h":76,"p":{"cols":5,"rows":2,"cell":"circle","gap":8,"stroke":1.5,"ink":"ink","numbered":true,"bonus":true,"bonusFill":"green","bonusLabel":"★"}},
     {"type":"body","x":22,"y":160,"w":254,"h":28,"p":{"text":"Ten coffees, the tenth on us. One stamp per cup.","fontSize":11,"align":"left"}},
-    {"type":"contact","x":22,"y":192,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":22,"y":192,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"loyalty-draft-punch", name:"Draft Club Punch", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"amber", els:[
     {"type":"stripes","x":0,"y":0,"w":298,"h":54,"p":{"fill":"amber","bg":"white","dir":"v","count":11,"ratio":0.5}},
@@ -1376,7 +1376,7 @@ const TEMPLATES = [
     {"type":"icon","x":246,"y":10,"w":36,"h":36,"p":{"kind":"pint","ink":"ink"}},
     {"type":"punchgrid","x":22,"y":70,"w":254,"h":44,"p":{"cols":6,"rows":1,"cell":"star","gap":9,"stroke":1.4,"ink":"ink","numbered":false,"bonus":true,"bonusFill":"amber","bonusLabel":"★"}},
     {"type":"coupon","x":22,"y":124,"w":254,"h":62,"p":{"heading":"SIX POURS","big":"SEVENTH FREE","terms":"Draft only. One stamp per visit.","code":"","surface":"outline","border":1.4,"borderPattern":"dashed"}},
-    {"type":"contact","x":22,"y":192,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":22,"y":192,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"two-for-one-coupon", name:"Two For One", group:"Tags & coupons", size:"a8", orient:"landscape", accent:"pink", els:[
     {"type":"slab","x":0,"y":0,"w":210,"h":60,"p":{"fill":"pink","angle":-12,"echo":true}},
@@ -1389,7 +1389,7 @@ const TEMPLATES = [
     {"type":"kicker","x":20,"y":26,"w":170,"h":16,"p":{"text":"ON POUR","ink":"ink","tracking":0.24}},
     {"type":"numeral","x":16,"y":38,"w":180,"h":90,"p":{"text":"50K","weight":100,"fontSize":84,"ink":"ink","echo":true,"align":"left"}},
     {"type":"body","x":20,"y":150,"w":170,"h":40,"p":{"text":"House spirits, neat or on ice. Ask at the bar.","fontSize":12,"align":"left"}},
-    {"type":"contact","x":20,"y":270,"w":170,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":20,"y":270,"w":170,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"highball-shelf-tag", name:"Highball Shelf Tag", group:"Tags & coupons", size:"a6", orient:"portrait", accent:"blue", els:[
     {"type":"slab","x":0,"y":0,"w":298,"h":150,"p":{"fill":"blue","angle":-10,"echo":true}},
@@ -1405,7 +1405,7 @@ const TEMPLATES = [
     {"type":"headline","x":22,"y":44,"w":180,"h":70,"p":{"text":"FIRST\nROUND","weight":800,"fontSize":36,"ink":"white","leading":0.9,"align":"left"}},
     {"type":"seal","x":198,"y":50,"w":86,"h":86,"p":{"top":"REALITY","big":"★","sub":"COMP","fill":"pink","rot":8}},
     {"type":"body","x":22,"y":130,"w":240,"h":30,"p":{"text":"Hand this to the bar. One drink, our treat.","fontSize":12,"ink":"white","align":"left"}},
-    {"type":"contact","x":22,"y":184,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":22,"y":184,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"draft-token-mini", name:"Draft Drink Token", group:"Tags & coupons", size:"a8", orient:"portrait", accent:"amber", els:[
     {"type":"block","x":0,"y":0,"w":147,"h":90,"p":{"fill":"amber"}},
@@ -1413,13 +1413,13 @@ const TEMPLATES = [
     {"type":"headline","x":12,"y":100,"w":124,"h":28,"p":{"text":"DRAFT BEER","weight":800,"fontSize":16,"ink":"ink","align":"center","tracking":0.06}},
     {"type":"rule","x":24,"y":138,"w":100,"h":8,"p":{"weight":2,"style":"dashed"}},
     {"type":"body","x":12,"y":150,"w":124,"h":30,"p":{"text":"Good for one pour.","fontSize":11,"align":"center"}},
-    {"type":"contact","x":12,"y":188,"w":124,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"center"}}
+    {"type":"contact","x":12,"y":188,"w":124,"h":13,"p":{"site":"realitydn.com","addr":"","align":"center"}}
   ]},
   { id:"weekend-discount", name:"Weekend 20 Off", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"pink", els:[
     {"type":"stripes","x":0,"y":0,"w":298,"h":66,"p":{"fill":"pink","bg":"white","dir":"v","count":9,"ratio":0.55}},
     {"type":"numeral","x":18,"y":70,"w":150,"h":90,"p":{"text":"20%","weight":100,"fontSize":80,"ink":"pink","echo":true,"align":"left"}},
     {"type":"coupon","x":160,"y":74,"w":120,"h":110,"p":{"heading":"WEEKEND OFF","big":"FRI–SUN","terms":"Off your tab, dine-in.","code":"WKND20","surface":"outline"}},
-    {"type":"contact","x":18,"y":192,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":18,"y":192,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"wine-shelf-tag", name:"Wine Glass Tag", group:"Tags & coupons", size:"a7", orient:"portrait", accent:"red", els:[
     {"type":"slab","x":0,"y":0,"w":210,"h":120,"p":{"fill":"red","angle":-8,"echo":true}},
@@ -1427,14 +1427,14 @@ const TEMPLATES = [
     {"type":"headline","x":20,"y":54,"w":170,"h":44,"p":{"text":"WINE","weight":800,"fontSize":40,"ink":"white","align":"left"}},
     {"type":"numeral","x":16,"y":138,"w":180,"h":90,"p":{"text":"70K","weight":100,"fontSize":80,"ink":"red","echo":true,"align":"left"}},
     {"type":"body","x":20,"y":234,"w":170,"h":30,"p":{"text":"Red or white. Ask what's open.","fontSize":12,"align":"left"}},
-    {"type":"contact","x":20,"y":274,"w":170,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":20,"y":274,"w":170,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"birthday-comp", name:"Birthday Drink", group:"Tags & coupons", size:"a7", orient:"landscape", accent:"yellow", els:[
     {"type":"block","x":0,"y":0,"w":298,"h":72,"p":{"fill":"yellow"}},
     {"type":"headline","x":22,"y":22,"w":200,"h":36,"p":{"text":"HAPPY BIRTHDAY","weight":800,"fontSize":24,"ink":"ink","align":"left"}},
     {"type":"badge","x":226,"y":14,"w":58,"h":58,"p":{"top":"FREE","big":"★","sub":"DRINK","surface":"accent","fill":"pink","rot":-8,"lift":"default"}},
     {"type":"coupon","x":18,"y":80,"w":262,"h":100,"p":{"heading":"ONE ON US","big":"YOUR DAY","terms":"Show ID at the bar on your birthday.","code":"BDAY","surface":"outline"}},
-    {"type":"contact","x":22,"y":188,"w":254,"h":13,"p":{"site":"www.realitydn.com","addr":"","align":"left"}}
+    {"type":"contact","x":22,"y":188,"w":254,"h":13,"p":{"site":"realitydn.com","addr":"","align":"left"}}
   ]},
   { id:"table-tent-special", name:"Table Tent Special", group:"Tags & coupons", size:"a6", orient:"portrait", accent:"green", els:[
     {"type":"slab","x":0,"y":0,"w":298,"h":140,"p":{"fill":"green","angle":-10,"echo":true}},
@@ -1536,7 +1536,7 @@ const TEMPLATES = [
     {"type":"block","x":0,"y":432,"w":420,"h":108,"p":{"fill":"ink"}},
     {"type":"kicker","x":30,"y":448,"w":360,"h":20,"p":{"text":"AVAILABLE SIZES","ink":"white","align":"center","tracking":0.3,"fontSize":12}},
     {"type":"headline","x":0,"y":470,"w":420,"h":68,"p":{"text":"S · M · L · XL\n2XL · 3XL · 4XL · 5XL","weight":700,"fontSize":29,"ink":"white","align":"center","leading":1.08,"tracking":0.02}},
-    {"type":"footer","x":30,"y":546,"w":360,"h":48,"p":{"site":"www.realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
+    {"type":"footer","x":30,"y":546,"w":360,"h":48,"p":{"site":"realitydn.com","addr":"86 Mai Thúc Lân · Đà Nẵng","showQR":true,"rule":true}}
   ]},
   { id:"merch-table-a4", name:"Merch Table — all prices", group:"Merch", size:"a4", orient:"portrait", accent:"pink", els:[
     {"type":"stripes","x":0,"y":0,"w":595,"h":90,"p":{"fill":"pink","bg":"white","dir":"v","count":13,"ratio":0.5}},
@@ -1577,7 +1577,7 @@ const TEMPLATES = [
     {"type":"numeral","x":18,"y":52,"w":174,"h":150,"p":{"text":"04","weight":100,"fontSize":130,"ink":"ink","echo":true,"align":"center"}},
     {"type":"rule","x":48,"y":214,"w":114,"h":8,"p":{"weight":2.5,"fill":"blue","term":"dot","termAt":"both"}},
     {"type":"body","x":18,"y":232,"w":174,"h":30,"p":{"text":"Order at the bar with your table number.","align":"center","fontSize":10,"leading":1.3}},
-    {"type":"contact","x":18,"y":270,"w":174,"h":16,"p":{"site":"www.realitydn.com","addr":"","align":"center"}}
+    {"type":"contact","x":18,"y":270,"w":174,"h":16,"p":{"site":"realitydn.com","addr":"","align":"center"}}
   ]},
   { id:"way-whats-where", name:"What's Where — directory", group:"Wayfinding", size:"a4", orient:"portrait", accent:"blue", els:[
     {"type":"kicker","x":44,"y":48,"w":507,"h":22,"p":{"text":"REALITY · 86 MAI THÚC LÂN","ink":"blue","tracking":0.24}},

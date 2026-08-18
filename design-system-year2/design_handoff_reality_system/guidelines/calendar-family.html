@@ -1,0 +1,138 @@
+<!-- @dsCard group="Components" name="Calendar Family" subtitle="The .cal-* set — the most-seen component group in the product · day-colour inheritance, the poster slice, and the imageless fallback" viewport="1100x2600" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Calendar Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.feedwrap{position:relative;background:var(--bg);border:2px solid var(--fg);box-shadow:var(--sh-default);padding:14px 16px 18px}
+.cal-label{position:relative;display:flex;align-items:center;gap:12px;background:var(--bg);padding:6px 0 10px;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim)}
+.cal-label::after{content:"";flex:1;height:2px;background:var(--hairline)}
+.cal-hero-wrap{position:relative;isolation:isolate;margin-bottom:16px}
+.cal-hero-wrap::before,.cal-hero-wrap::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+.cal-hero-wrap::before{background:var(--accent-2);transform:translate(6px,6px)}
+.cal-hero-wrap::after{background:var(--accent);transform:translate(13px,13px)}
+.cal-card{position:relative;display:block;width:100%;text-align:left;border:2px solid var(--day);box-shadow:var(--sh-default);background:var(--day);color:var(--fg);overflow:hidden;padding:0;transition:transform var(--dur-tap) var(--ease-snap),box-shadow var(--dur-tap) var(--ease-snap)}
+.cal-card:hover{transform:translateY(-3px);box-shadow:var(--sh-heavy)}
+.cal-slice{min-height:86px}
+.cal-hero-slice{min-height:200px}
+.slicefill{position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(13,9,5,.14),rgba(13,9,5,.14) 12px,transparent 12px,transparent 24px)}
+.cal-ov{position:absolute;left:8px;bottom:8px;right:8px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.cal-bx{background:var(--bg);color:var(--fg);padding:3px 8px;max-width:100%}
+.cal-bx-d{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.cal-bx-t{font-family:var(--mont);font-weight:700;font-size:14px;line-height:1.05;text-transform:uppercase;letter-spacing:.01em}
+.cal-bx-m{font-family:var(--grotesk);font-weight:500;font-size:11px}
+.cal-hero-slice .cal-bx-d{font-size:12px}
+.cal-hero-slice .cal-bx-t{font-size:22px}
+.cal-go{position:absolute;top:8px;right:8px;z-index:2;background:var(--bg);color:var(--fg);border:1.5px solid var(--fg);padding:2px 6px;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.cal-datetab{display:inline-block;background:var(--bg);color:var(--fg);border:2px solid var(--day);padding:5px 11px;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-size:12px}
+.cal-noposter{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--day);color:var(--on-day);min-height:160px;padding:24px}
+.cal-noposter-wd{font-family:var(--mont);font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase}
+.cal-noposter-dm{font-family:var(--mont);font-weight:800;font-size:66px;line-height:1;letter-spacing:.02em}
+.fade{position:absolute;left:2px;right:14px;bottom:2px;height:48px;pointer-events:none;background:linear-gradient(to bottom,transparent,var(--bg))}
+table.sp{width:100%;border-collapse:collapse;font-size:12.5px}
+table.sp th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 9px 7px 0;border-bottom:2px solid var(--fg)}
+table.sp td{padding:9px 9px 9px 0;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-dim)}
+table.sp td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.sp tr:last-child td{border-bottom:none}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.rules{grid-template-columns:1fr}}
+.rc{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px}
+.rc h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:6px}
+.rc p{font-size:12.5px;color:var(--fg-dim)}
+.rc.no{border-color:var(--red)}
+.rc.no h5{color:var(--red)}
+.stack{display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Calendar Family</span><span class="sub">Nine classes carrying the calendar feed — the component group a visitor sees more than any other, and the one place the day-code, the misregister and the poster slice all meet.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>The one rule that governs the set</h4>
+  <p><b>Every card inherits its colour from the weekday, not from its category.</b> A <code>.d-thu</code> on the card root sets <code>--day</code> and <code>--on-day</code>; border, plate and fallback all read those. Nothing in the family names a hue directly — that is what makes a weekday remap a one-file change.</p>
+  <p><b>The day-colour plate is not a placeholder.</b> It is the card. The poster slice paints over it when there is one, and the plate stays visible while the image loads — so an event with no artwork is still a finished object, never an empty box.</p>
+</div>
+
+<p class="tier">The feed, both themes</p>
+<div class="two">
+  <div class="scope-day feedwrap">
+    <div class="cal-label">Up next</div>
+    <div class="cal-hero-wrap">
+      <div class="cal-card cal-hero-slice d-thu"><div class="slicefill"></div><span class="cal-go">Details</span>
+        <div class="cal-ov"><span class="cal-bx cal-bx-d">Thu 21.08 &middot; 20:00</span><span class="cal-bx cal-bx-t">Open Mic</span><span class="cal-bx cal-bx-m">Front room &middot; free entry</span></div>
+      </div>
+    </div>
+    <div class="cal-label">Coming up</div>
+    <div class="stack">
+      <div class="cal-card cal-slice d-fri"><div class="slicefill"></div><span class="cal-go">Details</span><div class="cal-ov"><span class="cal-bx cal-bx-d">Fri 22.08 &middot; 22:00</span><span class="cal-bx cal-bx-t">Late Set</span></div></div>
+      <div class="cal-card cal-slice d-sat"><div class="slicefill"></div><span class="cal-go">Details</span><div class="cal-ov"><span class="cal-bx cal-bx-d">Sat 23.08 &middot; 19:00</span><span class="cal-bx cal-bx-t">Film Club</span></div></div>
+    </div>
+    <div class="fade"></div>
+  </div>
+  <div class="scope-night feedwrap">
+    <div class="cal-label">Up next</div>
+    <div class="cal-hero-wrap">
+      <div class="cal-card cal-hero-slice d-thu"><div class="slicefill" style="background:repeating-linear-gradient(45deg,rgba(255,251,241,.16),rgba(255,251,241,.16) 12px,transparent 12px,transparent 24px)"></div><span class="cal-go">Details</span>
+        <div class="cal-ov"><span class="cal-bx cal-bx-d">Thu 21.08 &middot; 20:00</span><span class="cal-bx cal-bx-t">Open Mic</span><span class="cal-bx cal-bx-m">Front room &middot; free entry</span></div>
+      </div>
+    </div>
+    <div class="cal-label">Coming up</div>
+    <div class="stack">
+      <div class="cal-card cal-slice d-fri"><div class="slicefill" style="background:repeating-linear-gradient(45deg,rgba(255,251,241,.16),rgba(255,251,241,.16) 12px,transparent 12px,transparent 24px)"></div><span class="cal-go">Details</span><div class="cal-ov"><span class="cal-bx cal-bx-d">Fri 22.08 &middot; 22:00</span><span class="cal-bx cal-bx-t">Late Set</span></div></div>
+      <div class="cal-card cal-slice d-sat"><div class="slicefill" style="background:repeating-linear-gradient(45deg,rgba(255,251,241,.16),rgba(255,251,241,.16) 12px,transparent 12px,transparent 24px)"></div><span class="cal-go">Details</span><div class="cal-ov"><span class="cal-bx cal-bx-d">Sat 23.08 &middot; 19:00</span><span class="cal-bx cal-bx-t">Film Club</span></div></div>
+    </div>
+    <div class="fade"></div>
+  </div>
+</div>
+
+<p class="tier">Imageless fallback &amp; the date tab</p>
+<div class="pane">
+  <div class="plabel">.cal-noposter &middot; .cal-datetab &mdash; what an event without artwork looks like</div>
+  <div class="two">
+    <div class="scope-day" style="background:var(--bg);border:2px solid var(--fg);box-shadow:var(--sh-default);padding:14px;display:flex;flex-direction:column;gap:12px">
+      <div class="d-wed" style="display:flex;flex-direction:column;gap:12px"><span class="cal-datetab">Wed 27.08</span><div class="cal-noposter"><span class="cal-noposter-wd">Wednesday</span><span class="cal-noposter-dm">27.08</span></div></div>
+    </div>
+    <div class="scope-night" style="background:var(--bg);border:2px solid var(--fg);box-shadow:var(--sh-default);padding:14px;display:flex;flex-direction:column;gap:12px">
+      <div class="d-sun" style="display:flex;flex-direction:column;gap:12px"><span class="cal-datetab">Sun 31.08</span><div class="cal-noposter"><span class="cal-noposter-wd">Sunday</span><span class="cal-noposter-dm">31.08</span></div></div>
+    </div>
+  </div>
+</div>
+
+<p class="tier">The nine classes</p>
+<div class="pane">
+  <table class="sp">
+    <tr><th style="width:16%">Class</th><th style="width:20%">Job</th><th>Spec</th></tr>
+    <tr><td class="k">.cal-feed-wrap</td><td>Scroll container</td><td>Positioning context. Paints the <b>paper fade</b> at the bottom edge as the &ldquo;more below&rdquo; affordance &mdash; 56px, transparent to <code>--bg</code>, inset 12px from the right so it clears the scrollbar.</td></tr>
+    <tr><td class="k">.cal-feed-pane</td><td>The scroll pane</td><td><code>max-height:clamp(480px,74vh,820px)</code>, <code>overscroll-behavior:contain</code>. Side padding <b>4px 6px 64px 4px</b> so the hover lift and the misregister prints are not clipped. Ink scrollbar, 2px paper border on the thumb.</td></tr>
+    <tr><td class="k">.cal-label</td><td>Section header</td><td>Montserrat 700, 11px, <b>.14em</b> caps, <code>--fg-dim</code>, <b>sticky at top 0</b> so UP NEXT / COMING UP ride along while the pane scrolls. Trailing hairline rule fills the row.</td></tr>
+    <tr><td class="k">.cal-card</td><td>The event</td><td>Full-width button. <b>2px <code>--day</code> border, <code>--day</code> background</b>, <code>--sh-default</code>, radius 0, <code>overflow:hidden</code>. Hover &minus;3px to <code>--sh-heavy</code>; active back to 0 and <code>--sh-light</code>; focus a 3px <code>--accent</code> ring at 2px offset.</td></tr>
+    <tr><td class="k">.cal-slice<br>.cal-hero-slice</td><td>Two heights</td><td><b>86px</b> for the list, <b>180px</b> for the next-up card, rising to <b>220px</b> above 640px. Only the height differs &mdash; the hero also steps its overlay type up (date 11&rarr;12px, title 14&rarr;19&rarr;22px).</td></tr>
+    <tr><td class="k">.cal-card-img</td><td>Poster slice</td><td><code>position:absolute;inset:0;object-fit:cover</code>. A <b>text-less</b> crop of the poster &mdash; the overlay carries the words, so a slice with type in it double-prints.</td></tr>
+    <tr><td class="k">.cal-ov<br>.cal-bx-d/t/m</td><td>Info boxes</td><td>Lower-left stack, 8px inset, <code>pointer-events:none</code>. Each line is its own <b>paper box on the plate</b> &mdash; never text sitting directly on the image. Date caps .07em; title caps 700 clamped to <b>2 lines</b>; meta in Grotesk 500 at 11px.</td></tr>
+    <tr><td class="k">.cal-go</td><td>Affordance</td><td>Top-right, 1.5px ink border on paper, 11px caps. The one corner the app reserves for its reminder bell &mdash; on the site it carries price or DETAILS. Never both.</td></tr>
+    <tr><td class="k">.cal-hero-wrap</td><td>Misregister</td><td><code>position:relative;isolation:isolate</code> and <b>no background</b>. Two pseudo-layers on <code>z-index:-1</code>: <code>--accent-2</code> at the smaller offset, <code>--accent</code> at the larger. <b>Static</b> since 18.08.26 &mdash; 6/6 and 13/13.</td></tr>
+    <tr><td class="k">.cal-datetab</td><td>Header stamp</td><td>Paper fill in a <b>2px <code>--day</code></b> frame, 12px caps .07em. Matches the card&rsquo;s frame so the overlay reads as the same object opened up.</td></tr>
+    <tr><td class="k">.cal-noposter</td><td>No artwork</td><td>Centred <code>--day</code> plate with <code>--on-day</code> text: weekday at 14px .14em caps over <b>DD.MM at 56px / 72px weight 800</b>. Min-height 160px. This is the reason the feed never shows an empty grey rectangle.</td></tr>
+  </table>
+</div>
+
+<p class="tier">Rules</p>
+<div class="rules">
+  <div class="rc"><h5>Facts at 12px minimum</h5><p>Date, time and room on a card are deciding facts read in a dark bar. <code>.cal-bx-d</code> and <code>.cal-bx-m</code> sit at 11px only because they are inside a hero at 12px &mdash; on the list card, step them to 12px rather than shrinking the box.</p></div>
+  <div class="rc"><h5>One misregister per screen</h5><p>The echo belongs to the <b>next-up card only</b>. Applying <code>.cal-hero-wrap</code> down the list turns a signature into wallpaper and doubles the paint cost of a scrolling pane.</p></div>
+  <div class="rc no"><h5>Never tint the plate</h5><p>The plate is a solid weekday colour. Don&rsquo;t fade, gradient or overlay-scrim it to &ldquo;help&rdquo; the overlay boxes &mdash; the boxes are opaque paper for exactly that reason.</p></div>
+  <div class="rc"><h5>The border and the plate match</h5><p>Both are <code>--day</code>. When a slice covers the plate, that 2px frame is the only remaining day signal, which is why it is never <code>--fg</code> here.</p></div>
+  <div class="rc"><h5>Titles clamp, names split</h5><p>Two lines then ellipsis on <code>.cal-bx-t</code>. If a title is routinely clipping, that is the <b>name + qualifier</b> data fix, not a smaller font.</p></div>
+  <div class="rc no"><h5>Don&rsquo;t nest a scroll</h5><p><code>.cal-feed-pane</code> is the only scroll region in the family. A card is a static frame; an overflowing card is a layout bug.</p></div>
+</div>
+
+<div class="note">
+  <h4>Drift to fix in code</h4>
+  <p>The live site still animates the hero echo &mdash; <code>cal-echo-a</code> / <code>cal-echo-b</code> on desynced 9s and 13s alternating loops, with <code>-lg</code> variants above 640px. <b>C1 retired the drift on 18.08.26</b> in favour of static 13/6 and 6/3. The four keyframes and both animation declarations come out; the transforms stay as the static offsets.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

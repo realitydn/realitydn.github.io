@@ -13,7 +13,7 @@ export default function Hero({ t }) {
       {/* Text content */}
       <div className="col-span-12 md:col-span-6 lg:col-span-5">
         <div className="card-static p-8 md:p-10">
-          <p className="eyebrow mb-4" style={{ color: 'var(--accent)' }}>
+          <p className="eyebrow mb-4" style={{ color: 'var(--blue)' }}>
             86 Mai Thúc Lân · Đà Nẵng
           </p>
           <h1 className="text-ink" style={{ fontSize: 'clamp(32px, 4.5vw, 54px)' }}>

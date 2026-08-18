@@ -1,0 +1,294 @@
+<!-- @dsCard group="Typography" name="Type System — 5 + 6 merged" subtitle="Family split by job, case by reading distance — where they agree, the one place they collide, and the eight things neither of them specifies" viewport="1100x6800" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Type System 5+6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+table.rl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.rl th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:8.5px;color:var(--fg-faint);text-align:left;padding:0 9px 8px 0;border-bottom:2px solid var(--fg);vertical-align:bottom}
+table.rl td{padding:9px 9px 9px 0;border-bottom:1px solid var(--hairline);color:var(--fg-dim);vertical-align:top}
+table.rl td.r{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.rl td.sp{color:var(--fg)}
+table.rl tr:last-child td{border-bottom:none}
+.fm{font-family:var(--mont);font-weight:700;font-size:8px;letter-spacing:.1em;text-transform:uppercase;border:2px solid var(--fg);padding:2px 5px;display:inline-block;white-space:nowrap}
+.f-m{background:var(--blue);color:#0d0905}
+.f-g{background:var(--amber);color:#0d0905}
+.f-a{background:var(--purple);color:#fffbf1}
+.near{background:var(--surface-2);color:var(--fg)}
+.far{background:var(--fg);color:var(--bg)}
+.sched{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light)}
+.sched .hd{background:var(--day,var(--fg));color:var(--on-day,var(--bg));border-bottom:2px solid var(--fg);padding:5px 9px;font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.13em;text-transform:uppercase}
+.sched .r{display:grid;grid-template-columns:52px 1fr auto;gap:9px;padding:7px 9px;border-bottom:1px solid var(--hairline);align-items:baseline}
+.sched .r:last-child{border-bottom:none}
+.sched .t{font-family:var(--grotesk);font-weight:500;font-size:12.5px;font-variant-numeric:tabular-nums;letter-spacing:0}
+.sched .n{font-family:var(--mont);font-weight:600;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sched .p{font-family:var(--grotesk);font-weight:500;font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-faint);text-align:right}
+.sched.old .t,.sched.old .p{font-family:var(--mont);font-weight:700;letter-spacing:.06em;font-variant-numeric:normal;text-transform:uppercase}
+.sched.old .n{white-space:normal}
+.sched.fix .n{text-transform:none;letter-spacing:0;font-weight:600}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.cmp{grid-template-columns:1fr}}
+.meas{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);margin-top:8px;display:block}
+.spec{border:2px solid var(--fg);background:var(--surface);padding:12px;box-shadow:var(--sh-light)}
+.spec .r{font-family:var(--mont);font-weight:700;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:6px}
+.spec p{font-size:12.5px;color:var(--fg-dim)}
+.spec p+p{margin-top:6px}
+.sign{background:var(--fg);color:var(--bg);border:2px solid var(--fg);padding:14px;text-align:center;font-family:var(--mont);font-weight:700;font-size:19px;letter-spacing:.07em;text-transform:uppercase}
+.pos{border:2px solid var(--fg);box-shadow:var(--sh-default);aspect-ratio:4/5;padding:12px;display:flex;flex-direction:column;justify-content:space-between;background:var(--surface)}
+.pos .pt{font-family:var(--mont);font-weight:800;font-size:23px;line-height:.98;letter-spacing:.01em;text-transform:uppercase}
+.pos .pf{font-family:var(--grotesk);font-weight:500;font-size:11.5px;line-height:1.5;font-variant-numeric:tabular-nums}
+.pos .pf.caps{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.11em;text-transform:uppercase}
+.num{font-size:19px;font-variant-numeric:tabular-nums}
+.numo{font-size:19px;font-variant-numeric:proportional-nums}
+.gap{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:13px 15px}
+.gap h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:10.5px;margin-bottom:7px}
+.gap p{font-size:12.5px;color:var(--fg-dim)}
+.gaps{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:820px){.gaps{grid-template-columns:1fr}}
+.pill{font-family:var(--mont);font-weight:700;font-size:8px;letter-spacing:.11em;text-transform:uppercase;border:2px solid var(--fg);padding:2px 5px;display:inline-block}
+.p-ok{background:var(--green);color:#0d0905}
+.p-q{background:var(--amber);color:#0d0905}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Type System · 5 + 6</span><span class="sub">Yes — they compose cleanly, because they cut at different joints: 5 splits by <b>job</b> (which family), 6 splits by <b>distance</b> (which case). One genuine collision, and eight things neither treatment specifies.</span><span class="tag">STUDY · 18.08.26</span></header>
+
+<div class="tally"><span>Picked <b id="tally-n">0</b> of <b id="tally-of">6</b></span><span style="letter-spacing:.06em;font-weight:500;text-transform:none;font-family:var(--grotesk);font-size:12px">Six calls to close the merged system.</span><button class="rs" id="tally-reset">Reset all</button></div>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>Why they compose</h4>
+  <p>5 answers <b>which family</b>: Montserrat names things, Space Grotesk states facts. 6 answers <b>which case</b>: caps for what's read across a room, sentence case for what's read at arm's length. Neither touches the other's variable — so the merged rule is two independent axes, and every role in the system is one cell of that grid. <b>Poster titles stay all-caps</b> (far + name), <b>schedule names lose caps</b> (near + name), <b>schedule times move to Grotesk</b> (near + fact). That is exactly what you asked for.</p>
+  <p>Confirmed on the way in: <b>Space Grotesk carries the Vietnamese subset</b> — I measured ĐÊM NHẠC MỞ / ộ / ữ against fallback in both families and both render natively. Moving facts to Grotesk does not cost VI coverage.</p>
+</div>
+
+<p class="tier">The merged grid</p>
+<div class="pane">
+  <table class="rl">
+    <tr><th style="width:16%">Role</th><th style="width:14%">Family</th><th style="width:11%">Case</th><th style="width:13%">Tracking</th><th>Where it appears</th></tr>
+    <tr><td class="r">Poster title</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm far">CAPS</span></td><td class="sp">.01em @ 800</td><td>Posters, banners, social — far, and a name.</td></tr>
+    <tr><td class="r">Signage</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm far">CAPS</span></td><td class="sp">.07em @ 700</td><td>Wall, door, toilets, upstairs. Never below 700.</td></tr>
+    <tr><td class="r">Display / hero</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm far">CAPS</span></td><td class="sp">.015em @ 100–200</td><td>App and site hero plate — the one near surface that keeps caps, because it is doing a poster's job.</td></tr>
+    <tr><td class="r">Event name · list</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm near">Sentence</span></td><td class="sp">0em @ 600</td><td>Schedule rows, feed cards, week list, search results.</td></tr>
+    <tr><td class="r">Section heading</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm near">Sentence</span></td><td class="sp">0em @ 600</td><td>"The line-up", "This week", "Getting here".</td></tr>
+    <tr><td class="r">Eyebrow / label</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm far">CAPS</span></td><td class="sp">.16em @ 700</td><td>Date eyebrows, tab labels, table headers. Caps as a <i>signal</i>, not as reading.</td></tr>
+    <tr><td class="r">Button</td><td><span class="fm f-m">Montserrat</span></td><td><span class="fm far">CAPS</span></td><td class="sp">.11em @ 700</td><td>Every control. Caps marks it as a thing you press.</td></tr>
+    <tr><td class="r">Facts</td><td><span class="fm f-g">Grotesk</span></td><td><span class="fm near">Sentence</span></td><td class="sp">0em @ 500 · tnum</td><td>Times, prices, rooms, dates, capacities, chips.</td></tr>
+    <tr><td class="r">Body / long-form</td><td><span class="fm f-g">Grotesk</span></td><td><span class="fm near">Sentence</span></td><td class="sp">0em @ 400</td><td>Event descriptions, Film Club, blog, menus.</td></tr>
+    <tr><td class="r">Wordmark</td><td><span class="fm f-a">Alternates</span></td><td><span class="fm far">CAPS</span></td><td class="sp">.10em @ 600</td><td>Wordmark only. Never for copy — the one locked exception.</td></tr>
+  </table>
+</div>
+
+<p class="tier">The schedule, which is the point</p>
+<div class="cmp">
+  <div>
+    <div class="sched old d-thu"><div class="hd">Thu · 20.08</div>
+      <div class="r"><span class="t">19:30</span><span class="n">Language Exchange · Beginner Table</span><span class="p">Free</span></div>
+      <div class="r"><span class="t">20:00</span><span class="n">Open Mic Night</span><span class="p">Free</span></div>
+      <div class="r"><span class="t">21:00</span><span class="n">DJ Bảo Anh · Late Set</span><span class="p">45.000₫</span></div>
+    </div>
+    <span class="meas">Now — all caps, all Montserrat, proportional figures. Wraps, and the times don't align.</span>
+  </div>
+  <div>
+    <div class="sched fix d-thu"><div class="hd">Thu · 20.08</div>
+      <div class="r"><span class="t">19:30</span><span class="n">Language Exchange · Beginner Table</span><span class="p">Free</span></div>
+      <div class="r"><span class="t">20:00</span><span class="n">Open Mic Night</span><span class="p">Free</span></div>
+      <div class="r"><span class="t">21:00</span><span class="n">DJ Bảo Anh · Late Set</span><span class="p">45.000₫</span></div>
+    </div>
+    <span class="meas">5+6 — names sentence-case Montserrat, facts Grotesk with tabular figures. ~12% narrower, one line each, times in a true column.</span>
+  </div>
+</div>
+
+<p class="tier">The one place they collide</p>
+<div class="dq" data-q="far-facts">
+  <div class="dq-h"><span class="dq-n">M1</span><span class="dq-t">A fact read across a room — Grotesk sentence case, or Montserrat caps?<small>5 says facts are Grotesk. 6 says far is caps. A poster's time·price·room line is both. Same poster, three readings.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Family wins</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="pos"><div class="pt">Open<br>Mic</div><div class="pf">Thursday 20.08 · 20:00<br>Stage · Free entry<br>realitydn.com</div></div>
+        <div class="spec"><div class="r">Rule</div><p>Facts are Grotesk in every medium; only the <b>size and weight</b> go up at distance (500 → 700). Case never changes for facts.</p></div>
+      </div>
+      <p class="why">One family per job, no exceptions, and the poster gains a quiet second voice that stops the fact block competing with the title. Grotesk at 700 holds up fine at 3m.</p>
+      <p class="cost"><b>Cost</b>Posters currently set facts in tracked Montserrat caps — this is a visible change to the poster system, and it's the part you said you liked.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Distance wins</span></div>
+      <div class="stage">
+        <div class="pos"><div class="pt">Open<br>Mic</div><div class="pf caps">Thu 20.08 · 20:00<br>Stage · Free<br>realitydn.com</div></div>
+        <div class="spec"><div class="r">Rule</div><p>Far surfaces are all-Montserrat, all-caps — titles <i>and</i> facts. Grotesk exists only on near surfaces.</p></div>
+      </div>
+      <p class="why">Posters and signage are untouched — exactly as they are today — and the family split becomes purely a near-surface tool. Simplest to explain to whoever prints the A2s.</p>
+      <p class="cost"><b>Cost</b>Grotesk never appears in print or on the wall, so the second family reads as an app thing rather than part of the identity. Long fact lines stay wide.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Split the block</span></div>
+      <div class="stage">
+        <div class="pos"><div class="pt">Open<br>Mic</div><div><div class="pf caps" style="margin-bottom:5px">Thu 20.08 · 20:00</div><div class="pf">Stage · Free entry · realitydn.com</div></div></div>
+        <div class="spec"><div class="r">Rule</div><p><b>When and where</b> — the two facts read at range — take Montserrat caps. Everything else in the block is Grotesk.</p></div>
+      </div>
+      <p class="why">Matches how a poster is actually read: date and time from across the street, the rest up close. Keeps both families in print.</p>
+      <p class="cost"><b>Cost</b>Two type treatments inside one small block, and someone has to classify every fact. The most fiddly rule on the page.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<p class="tier">What's missing — eight gaps</p>
+<div class="gaps">
+  <div class="gap"><h5><span class="pill p-q">Call</span> 1 · "Near" and "far" aren't metres</h5><p>A website has no viewing distance. The rule has to name <b>surface classes</b>, or it will be argued about forever — and the same weekly schedule exists as an A4 print, an app list, and a TV behind the bar, which is one content type in three distance classes.</p></div>
+  <div class="gap"><h5><span class="pill p-q">Call</span> 2 · Grotesk's own tracking</h5><p>The optical ladder was derived from Montserrat's wide geometric caps. Grotesk is narrower, has real lowercase, and wants roughly <b>0 to −.01em</b> — applying Montserrat's numbers to it would look sprayed.</p></div>
+  <div class="gap"><h5><span class="pill p-q">Call</span> 3 · Artist and proper names</h5><p>Sentence-case names raise a question caps hid: <b>bảo anh</b>, <b>MIDNIGHT WOLVES</b>, <b>d.j. Hương</b> — do we normalise performers' own capitalisation or preserve it? Caps used to erase the problem.</p></div>
+  <div class="gap"><h5><span class="pill p-ok">Ratify</span> 4 · Figures</h5><p><b>Tabular figures for anything in a column</b> — times, prices, capacities, scores — proportional everywhere else. Plus the money format: <code>45.000₫</code>, dot thousands, symbol trailing, no space.</p></div>
+  <div class="gap"><h5><span class="pill p-q">Call</span> 5 · Schedule overflow</h5><p>Sentence case buys ~12% width, but "Language Exchange · Beginner Table" still overruns a phone. Truncate with an ellipsis, wrap to two lines, or cap titles at a <b>character budget</b> at entry time?</p></div>
+  <div class="gap"><h5><span class="pill p-ok">Ratify</span> 6 · Vietnamese</h5><p><b>line-height ≥ 1.28 on any uppercase VI</b>, and caps VI never at weight 100 — stacked marks above cap-height collide or vanish. Sentence-case VI is safe at 1.15.</p></div>
+  <div class="gap"><h5><span class="pill p-q">Call</span> 7 · Print tracking</h5><p>Ink spread closes counters, so print wants roughly <b>+.01em</b> over screen and signage <b>+.02em</b>. Either the ladder gets per-medium sets, or print stays on screen values and we accept slightly tighter caps.</p></div>
+  <div class="gap"><h5><span class="pill p-q">Call</span> 8 · The two-brands risk</h5><p>Under 5+6 the app title reads <i>Open Mic Night</i> and the poster reads <b>OPEN MIC</b>. Deliberate — but it needs a stated reason on the card, or it will be "fixed" by someone in six months.</p></div>
+</div>
+
+<p class="tier">Closing the gaps</p>
+
+<div class="dq" data-q="surface-classes">
+  <div class="dq-h"><span class="dq-n">M2</span><span class="dq-t">How is near / far actually determined?<small>Gap 1. This is the load-bearing mechanism of treatment 6 — without it the rule is unenforceable.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Surface register</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="spec"><div class="r">Far — caps</div><p>Poster · banner · signage · social thumbnail · projected or TV schedule · hero plate.</p></div>
+        <div class="spec"><div class="r">Near — sentence</div><p>App list · website body · printed schedule · menu · ticket · email · any body copy.</p></div>
+      </div>
+      <p class="why">A closed list of surfaces, so nobody estimates metres. New surfaces get added to the register by decision, which is a two-minute conversation rather than a judgement call in code. The TV-schedule case is handled explicitly.</p>
+      <p class="cost"><b>Cost</b>The register has to be maintained, and the same content genuinely renders differently in two places — which is the point, but needs the note from gap 8.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Size threshold</span></div>
+      <div class="stage">
+        <div class="spec"><div class="r">Mechanism</div><p>Caps above <b>34px / 14pt</b>, sentence case below. Nothing about surfaces at all — the number decides.</p></div>
+        <div style="font-family:var(--mont);font-weight:700;font-size:34px;letter-spacing:.02em;text-transform:uppercase;line-height:1.05">Open Mic</div>
+        <div style="font-family:var(--mont);font-weight:600;font-size:15px;letter-spacing:0">Open Mic Night · doors 19:30</div>
+      </div>
+      <p class="why">Fully mechanical, greppable, and it lands in almost the same place as the register in practice — poster titles are big, list rows are small.</p>
+      <p class="cost"><b>Cost</b>Gets signage wrong: a 20px label on a door sign should be caps. And it makes case a function of a clamp, so a title changes case at a breakpoint.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Per-component flag</span></div>
+      <div class="stage">
+        <div class="spec"><div class="r">Mechanism</div><p>Every component declares its register — <code>data-register="far"</code> / <code>"near"</code> — and the type roles read it. No global rule at all.</p></div>
+      </div>
+      <p class="why">Maximum flexibility and the truth lives next to the component, not in a document someone has to find.</p>
+      <p class="cost"><b>Cost</b>No rule means no consistency; the register would drift within a month. This is how we got here.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<div class="dq" data-q="grotesk-tracking">
+  <div class="dq-h"><span class="dq-n">M3</span><span class="dq-t">Grotesk's tracking, and does it ever take caps?<small>Gap 2. Both specimens are the same size for comparison.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Never takes caps</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="spec"><div class="r">Rule</div><p>Grotesk is set at <b>0em</b> for facts and body, <b>−.005em</b> above 24px, and is <b>never uppercased</b>. Caps are Montserrat's job, full stop.</p></div>
+        <div style="font-family:var(--grotesk);font-weight:500;font-size:15px;font-variant-numeric:tabular-nums">20:00 · Stage · Free · 45.000₫</div>
+        <div style="font-family:var(--mont);font-weight:700;font-size:13px;letter-spacing:.16em;text-transform:uppercase">Thu · 20.08</div>
+      </div>
+      <p class="why">Makes the two families instantly distinguishable — <b>if it's capitalised it's Montserrat</b>. That single sentence is worth more than any tracking table, and it stops Grotesk drifting into label territory where it would look like a mistake.</p>
+      <p class="cost"><b>Cost</b>Rules out uppercase Grotesk as a texture, which is a genuinely nice look for a technical footer or a ticket stub.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Caps micro-label</span></div>
+      <div class="stage">
+        <div class="spec"><div class="r">Rule</div><p>Grotesk at 0em for facts, plus one uppercase variant at <b>.12em / 11–12px / 600</b> for technical micro-labels — ticket stubs, form hints, table headers.</p></div>
+        <div style="font-family:var(--grotesk);font-weight:600;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase">Order no · 0248 · Table 6</div>
+      </div>
+      <p class="why">Gives the system a genuinely technical register that Montserrat can't do — useful on tickets, receipts and forms.</p>
+      <p class="cost"><b>Cost</b>Two families both doing tracked caps at 11–12px is the exact ambiguity option A eliminates.</p>
+      <button class="pick">Choose B</button>
+    </div>
+  </div>
+</div>
+
+<div class="dq" data-q="proper-names">
+  <div class="dq-h"><span class="dq-n">M4</span><span class="dq-t">Artist and proper names in sentence case<small>Gap 3. Caps used to normalise everything; sentence case exposes it.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Preserve as given</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="sched fix"><div class="r"><span class="t">21:00</span><span class="n" style="text-transform:none">bảo anh · lowercase set</span><span class="p">45.000₫</span></div><div class="r"><span class="t">22:00</span><span class="n" style="text-transform:none">MIDNIGHT WOLVES</span><span class="p">Free</span></div></div>
+      </div>
+      <p class="why">An artist's name is their own typography. Preserving it costs nothing, reads as respect, and the variety is honest — a listings page for a real venue looks like this.</p>
+      <p class="cost"><b>Cost</b>A ragged column, and one all-caps band name will always look like a bug to someone.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Normalise</span></div>
+      <div class="stage">
+        <div class="sched fix"><div class="r"><span class="t">21:00</span><span class="n" style="text-transform:none">Bảo Anh · Lowercase Set</span><span class="p">45.000₫</span></div><div class="r"><span class="t">22:00</span><span class="n" style="text-transform:none">Midnight Wolves</span><span class="p">Free</span></div></div>
+      </div>
+      <p class="why">One even column, and no CMS entry can break the layout with a shouted name.</p>
+      <p class="cost"><b>Cost</b>Overrides how artists write themselves, which is the wrong instinct for a venue that programmes them. Also needs a title-case function that handles Vietnamese.</p>
+      <button class="pick">Choose B</button>
+    </div>
+  </div>
+</div>
+
+<div class="dq" data-q="overflow">
+  <div class="dq-h"><span class="dq-n">M5</span><span class="dq-t">Long names in a crowded schedule<small>Gap 5. Row is 320px wide here, roughly a phone.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Truncate</span></div>
+      <div class="stage"><div style="max-width:320px"><div class="sched fix"><div class="r"><span class="t">19:30</span><span class="n">Language Exchange · Beginner Table</span><span class="p">Free</span></div><div class="r"><span class="t">20:00</span><span class="n">Open Mic Night</span><span class="p">Free</span></div></div></div></div>
+      <p class="why">Perfect row rhythm, times always aligned, schedule density preserved — which is what a crowded schedule needs most.</p>
+      <p class="cost"><b>Cost</b>Information is lost at the point it matters, and the qualifier after the <code>·</code> is usually the useful half.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Name + subtitle</span><span class="rec">Suggested</span></div>
+      <div class="stage"><div style="max-width:320px"><div class="sched fix"><div class="r"><span class="t">19:30</span><span><span class="n" style="display:block">Language Exchange</span><span style="font-family:var(--grotesk);font-weight:400;font-size:12px;color:var(--fg-faint)">Beginner table</span></span><span class="p">Free</span></div><div class="r"><span class="t">20:00</span><span class="n">Open Mic Night</span><span class="p">Free</span></div></div></div></div>
+      <p class="why">Splits the data instead of the string: <b>name</b> and <b>qualifier</b> become two fields, the qualifier drops into Grotesk, and nothing is lost or truncated. Fixes the cause rather than the symptom — most long titles are two facts joined by a <code>·</code>.</p>
+      <p class="cost"><b>Cost</b>A schema change and a pass over existing events. Rows vary in height.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Character budget</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p><b>28 characters</b> for a schedule name, enforced in the CMS with a counter. Longer names are the author's problem, at the point of writing.</p></div></div>
+      <p class="why">Nothing to render around, ever. Forces better event names, which is a real editorial win.</p>
+      <p class="cost"><b>Cost</b>Vietnamese names run longer than English for the same meaning, so one budget penalises VI. And it constrains programming to fit a layout.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<div class="dq" data-q="print-tracking">
+  <div class="dq-h"><span class="dq-n">M6</span><span class="dq-t">Print and signage tracking<small>Gap 7. Same as block K's option C, now scoped to the merged system.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Per-medium offsets</span><span class="rec">Suggested</span></div>
+      <div class="stage"><div class="spec"><div class="r">Three sets, one ladder</div><p>Screen is the base. <b>Print +.01em</b>, <b>signage +.02em and never below 700</b>. Expressed as offsets, not separate tables, so there is only ever one ladder to change.</p></div></div>
+      <p class="why">Acknowledges ink spread and distance as physical facts without duplicating the ladder — and it matches how the print substrate rule already works.</p>
+      <p class="cost"><b>Cost</b>Two more numbers, and the studios have to apply them.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">One ladder</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p>Screen values everywhere. Accept marginally tighter caps in print; riso spread is part of the look anyway.</p></div></div>
+      <p class="why">One table, nothing to forget, and ink spread arguably <i>helps</i> the printed look we want.</p>
+      <p class="cost"><b>Cost</b>Small caps in print at 9–11pt will close up, which is where the menu and ticket type lives.</p>
+      <button class="pick">Choose B</button>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <h4>Ratified without a vote</h4>
+  <p><b>Figures:</b> tabular for anything in a column, proportional elsewhere; money as <code>45.000₫</code>. <b>Vietnamese:</b> uppercase VI needs line-height ≥ 1.28 and never weight 100; sentence-case VI is safe at 1.15. <b>Weight 100:</b> display only — never under 28px, never below 24pt in print, never on signage. Say the word if you want any of these opened up instead.</p>
+  <p><b>Gap 8</b> needs no pick, just a sentence on the card: <i>the poster shouts the name, the app tells you about it</i> — same event, two jobs, deliberately different case. Without that written down, someone re-uppercases the feed next year.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

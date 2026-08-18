@@ -1,105 +1,158 @@
 {
-  "$description": "REALITY Design System — Year 2. Silkscreen/riso DNA, one tokened theme (day + night). Style-Dictionary-style { value } leaves. Themed tokens carry day + night; everything else is global.",
+  "$schema": "https://design-tokens.org/draft",
+  "$comment": "REALITY Year 2 tokens · rev 19.08.26. Generated from reality-ds.css. Values marked corrected were changed by accessibility audit or measurement after the app shipped — a codebase carrying the old values is pre-audit, not authoritative. Weekday hues and the ink partner map live in day-colours.json (canvas/PDF renderers import that directly).",
+  "revision": "19.08.26",
   "color": {
-    "brand": {
-      "$description": "Locked silkscreen palette — 3 majors + 4 minors. Do not add or recolor.",
-      "major": {
-        "yellow": { "value": "#fddf00" },
-        "red":    { "value": "#ed2224" },
-        "blue":   { "value": "#18a7e0" }
-      },
-      "minor": {
-        "pink":   { "value": "#ed1b72" },
-        "amber":  { "value": "#fdb515" },
-        "green":  { "value": "#43b02a" },
-        "purple": { "value": "#6e3179", "dark": "#9a4faa", "$comment": "purple lifts to #9a4faa in night theme" }
-      }
+    "$comment": "Palette locked. Majors carry MEANING (named UI jobs); minors carry MOOD (day-code + artwork). No minor takes a UI job — the accent is the one exemption.",
+    "major": {
+      "yellow": { "value": "#fddf00", "job": "notices, deals" },
+      "red":    { "value": "#ed2224", "job": "imperative, alerts" },
+      "blue":   { "value": "#18a7e0", "job": "eyebrows, links, wayfinding" }
     },
-    "accent": {
-      "$description": "Category accent — swappable per context. Default pink; the poster engine uses two layers for the misregistered echo.",
-      "lead":   { "value": "{color.brand.minor.pink}" },
-      "layer2": { "value": "{color.brand.major.blue}" }
+    "minor": {
+      "pink":   { "value": "#ed1b72", "job": "Thursday, parties" },
+      "amber":  { "value": "#fdb515", "job": "Saturday, warm/late" },
+      "green":  { "value": "#43b02a", "job": "Monday, community/day" },
+      "purple": { "value": "#6e3179", "valueNight": "#9a4faa", "job": "Wednesday" }
+    }
+  },
+  "accent": {
+    "$comment": "Theme-aware (18.08.26). The second ink is the lead's partner from day-colours.json — the partner map is CANON (19.08.26). Never share a family with the surface. The neverPair list is ADVISORY: warn, do not block.",
+    "day":   { "lead": "blue", "second": "pink" },
+    "night": { "lead": "pink", "second": "blue" }
+  },
+  "surface": {
+    "day": {
+      "bg":          { "value": "#fffbf1", "$comment": "paper" },
+      "surface":     { "value": "#fffbf1", "$comment": "cards — same paper, bordered" },
+      "surface-2":   { "value": "#f4ecd7", "corrected": true, "was": "#fffbf1", "why": "collapsed onto bg made every inset, day header, placeholder and skeleton invisible in Day" },
+      "paper-shade": { "value": "#ece2c9", "corrected": true, "was": null, "why": "deeper off-paper for poster placeholders before an image paints" },
+      "fg":          { "value": "#0d0905" },
+      "fg-dim":      { "value": "rgba(13,9,5,.72)", "ratio": "9.1:1" },
+      "fg-faint":    { "value": "rgba(13,9,5,.56)", "ratio": "4.53:1", "corrected": true, "was": "rgba(13,9,5,.45)", "why": "WCAG AA — .45 measured 3.15:1 and it carries nav labels, hints, placeholders, timestamps" },
+      "hairline":    { "value": "rgba(13,9,5,.16)", "aaExempt": true, "why": "decoration only — never carries text, never the sole indicator" },
+      "on-ink":      { "value": "#fffbf1" }
     },
-    "surface": {
-      "$description": "Semantic surfaces. value = DAY (light, default); dark = NIGHT.",
-      "bg":        { "value": "#fffbf1", "dark": "#0a0703" },
-      "surface":   { "value": "#fffbf1", "dark": "#171109" },
-      "surface-2": { "value": "#fffbf1", "dark": "#241a10" }
-    },
-    "text": {
-      "fg":      { "value": "#0d0905",            "dark": "#fffbf1" },
-      "fg-dim":  { "value": "rgba(13,9,5,0.72)",  "dark": "rgba(255,251,241,0.60)" },
-      "fg-faint":{ "value": "rgba(13,9,5,0.45)",  "dark": "rgba(255,251,241,0.32)" },
-      "on-ink":  { "value": "#fffbf1",            "dark": "#fffbf1", "$comment": "text sitting on an ink fill" }
-    },
-    "line": {
-      "hairline": { "value": "rgba(13,9,5,0.16)", "dark": "#3a2c1c" }
+    "night": {
+      "bg":          { "value": "#0a0703" },
+      "surface":     { "value": "#171109" },
+      "surface-2":   { "value": "#241a10" },
+      "paper-shade": { "value": "#1c140b" },
+      "fg":          { "value": "#fffbf1" },
+      "fg-dim":      { "value": "rgba(255,251,241,.60)", "ratio": "7.2:1" },
+      "fg-faint":    { "value": "rgba(255,251,241,.48)", "ratio": "4.84:1", "corrected": true, "was": "rgba(255,251,241,.32)", "why": "WCAG AA — .32 measured 2.71:1" },
+      "hairline":    { "value": "#3a2c1c", "aaExempt": true },
+      "on-ink":      { "value": "#fffbf1" }
     }
   },
   "shadow": {
-    "$description": "Flat down-shadows — ink leaking beneath a lifted edge. Invert to cream in night.",
-    "light":   { "value": "0 4px 1px rgba(13,9,5,0.08)",  "dark": "0 4px 1px rgba(255,251,241,0.14)" },
-    "default": { "value": "0 8px 2px rgba(13,9,5,0.12)",  "dark": "0 9px 2px rgba(255,251,241,0.18)" },
-    "heavy":   { "value": "0 12px 3px rgba(13,9,5,0.18)", "dark": "0 14px 3px rgba(255,251,241,0.26)" }
+    "$comment": "Flat down-shift — big offset, almost no blur, no spread. Ink leaking under a lifted edge. Day was corrected upward because the lighter set washed out on cream; Night was already right and the asymmetry is deliberate.",
+    "day": {
+      "light":   { "value": "0 4px 1px rgba(13,9,5,.10)", "corrected": true, "was": "0 4px 1px rgba(13,9,5,.08)" },
+      "default": { "value": "0 8px 2px rgba(13,9,5,.16)", "corrected": true, "was": "0 8px 2px rgba(13,9,5,.12)" },
+      "heavy":   { "value": "0 13px 3px rgba(13,9,5,.23)", "corrected": true, "was": "0 12px 3px rgba(13,9,5,.18)" }
+    },
+    "night": {
+      "light":   { "value": "0 4px 1px rgba(255,251,241,.14)" },
+      "default": { "value": "0 9px 2px rgba(255,251,241,.18)" },
+      "heavy":   { "value": "0 14px 3px rgba(255,251,241,.26)" }
+    }
+  },
+  "misregister": {
+    "$comment": "Static since 18.08.26 — the drifting 9s/13s loop was retired. Requires isolation:isolate on a background-less ancestor or the negative-z layers vanish silently. Two plates, never three.",
+    "hero": { "far": "13px", "near": "6px" },
+    "card": { "far": "6px", "near": "3px" }
   },
   "space": {
-    "$description": "4px base ramp.",
-    "1":  { "value": "4px" },
-    "2":  { "value": "8px" },
-    "3":  { "value": "12px" },
-    "4":  { "value": "16px" },
-    "5":  { "value": "20px" },
-    "6":  { "value": "24px" },
-    "7":  { "value": "32px" },
-    "8":  { "value": "48px" },
-    "9":  { "value": "64px" },
-    "10": { "value": "96px" }
+    "$comment": "4px ramp, mirroring the 2px borders and 4/8/13 shadow offsets.",
+    "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px",
+    "6": "24px", "7": "32px", "8": "48px", "9": "64px", "10": "96px",
+    "semantic": {
+      "screen-pad":  { "value": "20px" },
+      "section-gap": { "value": "16px" },
+      "card-pad":    { "value": "20px" },
+      "row-y":       { "value": "12px" },
+      "tap-min":     { "value": "48px", "$comment": "touch-target floor" },
+      "grid-cols":   { "value": 4 },
+      "grid-gutter": { "value": "12px" }
+    }
   },
-  "layout": {
-    "$description": "Semantic app-layout tokens — locked 'Comfortable' density.",
-    "screen-pad":  { "value": "{space.5}",  "px": 20, "$comment": "phone screen margin" },
-    "section-gap": { "value": "{space.4}",  "px": 16, "$comment": "between screen blocks" },
-    "card-pad":    { "value": "{space.5}",  "px": 20, "$comment": "inside cards" },
-    "row-y":       { "value": "{space.3}",  "px": 12, "$comment": "list-row vertical" },
-    "tap-min":     { "value": "{space.8}",  "px": 48, "$comment": "touch-target floor" },
-    "grid-cols":   { "value": 4,            "$comment": "phone content columns" },
-    "grid-gutter": { "value": "{space.3}",  "px": 12, "$comment": "column gutter" }
-  },
-  "border": {
-    "$description": "Hard corners everywhere — radius is always 0. Standard stroke is 2px ink; section rules 1.5px; mastheads/footers 3px.",
-    "radius":       { "value": "0px" },
-    "stroke":       { "value": "2px" },
-    "stroke-rule":  { "value": "1.5px" },
-    "stroke-heavy": { "value": "3px" }
-  },
-  "font": {
+  "type": {
+    "$comment": "Two axes: FAMILY by job (Montserrat names, Grotesk states facts) and CASE by register (.reg-far caps, .reg-near sentence). Register is a closed list, never a distance estimate. Montserrat Alternates is the wordmark only — and the mark is a mixed-font vector, never reproduced from a font-family.",
     "family": {
-      "mont":    { "value": "Montserrat, sans-serif",            "$comment": "UI + display, uppercase wide-tracked. Weights 100/500/600/700/800." },
-      "alt":     { "value": "Montserrat Alternates, sans-serif", "$comment": "wordmark only. Weight 600." },
-      "grotesk": { "value": "Space Grotesk, sans-serif",         "$comment": "body. Weights 400/500/600." }
+      "mont":    { "value": "'Montserrat', sans-serif", "job": "names, headings, labels, controls" },
+      "alt":     { "value": "'Montserrat Alternates', sans-serif", "job": "wordmark only" },
+      "grotesk": { "value": "'Space Grotesk', sans-serif", "job": "facts, figures, body" }
     },
-    "role": {
-      "$description": "Canonical type roles. Sizes use clamp() in CSS; min/max captured here.",
-      "display": { "family": "{font.family.mont}",    "weight": 100, "transform": "uppercase", "letterSpacing": "0.05em", "lineHeight": 1.05, "size": "clamp(40px, 7vw, 82px)" },
-      "h1":      { "family": "{font.family.mont}",    "weight": 700, "transform": "uppercase", "letterSpacing": "0.05em", "lineHeight": 1.1,  "size": "clamp(30px, 4vw, 46px)" },
-      "h2":      { "family": "{font.family.mont}",    "weight": 600, "transform": "uppercase", "letterSpacing": "0.05em", "lineHeight": 1.2,  "size": "24px" },
-      "label":   { "family": "{font.family.mont}",    "weight": 700, "transform": "uppercase", "letterSpacing": "0.15em", "size": "13px", "$comment": "often colored --accent" },
-      "body":    { "family": "{font.family.grotesk}", "weight": 400, "transform": "none",      "letterSpacing": "0",      "lineHeight": 1.7,  "size": "17px" },
-      "wordmark":{ "family": "{font.family.alt}",     "weight": 600, "transform": "uppercase", "letterSpacing": "0.02em", "lineHeight": 0.9 }
+    "register": {
+      "far":  ["poster", "banner", "signage", "social thumbnail", "projected/TV schedule", "hero plate"],
+      "near": ["app list", "web body", "printed schedule", "menu", "ticket", "email", "any body copy"]
+    },
+    "tracking": {
+      "$comment": "Optical ladder, baked per role. One ladder, two offsets: @media print adds .01em, .medium-signage adds .02em and forces weight 700. Never a second table.",
+      "display": ".015em", "h1": ".025em", "h2": ".04em",
+      "name": "0em", "label": ".16em", "button": ".11em",
+      "offset": { "print": ".01em", "signage": ".02em" }
+    },
+    "floor": {
+      "informational": { "value": "12px", "$comment": "Anything you would ACT on — times, rooms, prices, dates, capacities." },
+      "decorative":    { "value": "11px", "$comment": "Labels, eyebrows, tags. Signals, not information." }
+    },
+    "vietnamese": {
+      "lineHeight": { "value": 1.3, "$comment": "Uppercase VI stacks diacritics above cap height; 1.05 clips them." },
+      "displayWeight": { "value": 200, "$comment": "Weight 100 loses hairline diacritic strokes at distance." },
+      "properNames": { "$comment": "Never uppercased or normalised — .name-block .type-name preserves as given." },
+      "diacritics": { "$comment": "Never stripped. Đà Nẵng is never Da Nang on a designed surface." }
+    },
+    "figures": {
+      "tabular": "anything in a column",
+      "proportional": "running text",
+      "money": "45.000₫ — dot thousands, currency trailing, no space"
     }
   },
   "motion": {
     "ease": {
-      "stamp": { "value": "cubic-bezier(0.2, 1.4, 0.45, 1)", "$comment": "overshoot punch — stamps, entrances" },
-      "snap":  { "value": "cubic-bezier(0.3, 0, 0.2, 1)",    "$comment": "quick settle" },
-      "out":   { "value": "cubic-bezier(0.16, 1, 0.3, 1)" }
+      "stamp": { "value": "cubic-bezier(0.2,1.4,0.45,1)", "job": "overshoot punch — entrances, stamps, pops" },
+      "snap":  { "value": "cubic-bezier(0.3,0,0.2,1)", "job": "quick settle — lifts, presses, toggles, theme flip" },
+      "out":   { "value": "cubic-bezier(0.16,1,0.3,1)", "job": "long decel — sheets, panels, ken-push" }
     },
     "duration": {
-      "tap":     { "value": "120ms", "$comment": "hover lift · button press" },
-      "quick":   { "value": "200ms", "$comment": "chip / small state change" },
-      "settle":  { "value": "350ms", "$comment": "theme flip · surface crossfade" },
-      "enter":   { "value": "700ms", "$comment": "counters · kinetic · big entrances" },
-      "stagger": { "value": "90ms",  "$comment": "delay between sibling entrances" }
-    }
-  }
+      "tap":     { "value": "120ms", "job": "hover lift, button press" },
+      "quick":   { "value": "200ms", "job": "chip, small state change" },
+      "settle":  { "value": "350ms", "job": "interaction settle", "corrected": true, "was": "theme flip · surface crossfade", "why": "the flip ships at 700ms via html.theme-settling; this token was mislabelled" },
+      "enter":   { "value": "700ms", "job": "entrances, counters, kinetic type, AND the Day<->Night flip" },
+      "stagger": { "value": "90ms", "job": "delay between siblings — cap the total around 6 items" }
+    },
+    "thesis": [
+      "Stamp, don't fade.",
+      "Overshoot and settle.",
+      "The shadow snaps in on landing.",
+      "Press has weight — active goes below rest."
+    ],
+    "reducedMotion": { "$comment": "Blanket prefers-reduced-motion kills all transitions and animations. Every animated state must be legible at rest; ship the end state in prerendered HTML." }
+  },
+  "strings": {
+    "$comment": "Mandatory on artwork.",
+    "site": { "value": "realitydn.com", "$comment": "Bare host (D5, 18.08.26). QR encodes https://realitydn.com." },
+    "address": { "value": "86 Mai Thúc Lân · Đà Nẵng", "$comment": "Diacritics always correct." }
+  },
+  "substrate": {
+    "$comment": "Screen values are cream-paper simulations. Press is different by design, not by drift.",
+    "screen": { "ink": "#0d0905", "paper": "#fffbf1" },
+    "press":  { "ink": "#111111", "stock": "#ffffff", "creamLaidDown": false },
+    "printShadowExempt": { "light": 0.08, "default": 0.12, "heavy": 0.18, "heavyOffset": "12px", "why": "white stock has more headroom and K prints heavier than it looks" }
+  },
+  "openCalls": {
+    "$comment": "All four closed 19.08.26. Recorded so an implementer knows the AA exception is deliberate.",
+    "F1-surface-ladder": { "decided": "two steps off-paper", "effect": "no change — --surface-2 and --paper-shade stand as shipped" },
+    "F2-action-label": { "decided": "cream on red", "ratio": "4.19:1", "aa": "fails", "accepted": true, "$comment": "Deliberate exception, taken with the measurement in hand: red reads as a filled ink button at distance. Red is the ONLY coloured fill not carrying ink — info, notice and every day-code fill still take ink per --on-day. Do not 'fix' this silently; do not generalise the exception to other fills." },
+    "F3-pair-rule": { "decided": "partner map canon, never-pair advisory", "effect": "neverPairEnforcement: warn" },
+    "F4-tracking": { "decided": "baked per role", "effect": "the six-number optical ladder is canon; no size-derived formula" }
+  },
+  "dna": [
+    "2px ink borders, zero radius — borders carry structure, never tints.",
+    "Flat down-shadow — a riso shift, not a soft ambient glow.",
+    "Hover lifts, click presses below rest.",
+    "Misregister — two offset accent plates behind a hero block, static."
+  ]
 }

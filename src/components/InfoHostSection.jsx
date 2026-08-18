@@ -248,7 +248,7 @@ export default function InfoHostSection({ t, lang }) {
   return (
     <section id="info" className="bg-cream text-ink">
       <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
-        <div className="eyebrow mb-2" style={{ color: 'var(--accent)' }}>
+        <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>
           {ih('sectionEyebrow')}
         </div>
         <h2 className="h-section text-3xl md:text-5xl">
@@ -529,14 +529,17 @@ function PricingTable({ ih }) {
                       borderTopColor: slots[i].accent,
                     }}
                   >
+                    {/* 12px floor (canon): availability + the price unit are
+                        facts you act on; 45%-ink at 10px was the exact pair
+                        the fg-faint AA correction outlawed. */}
                     {price === null ? (
-                      <span className="font-body text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                      <span className="font-body text-[12px] uppercase tracking-[0.1em] text-gray-600">
                         {unavailable}
                       </span>
                     ) : (
                       <span className="font-title font-bold text-base md:text-lg text-ink leading-none tabular-nums">
                         {price}
-                        <span className="font-body font-normal text-[10px] text-gray-500 ml-0.5">
+                        <span className="font-body font-normal text-[12px] text-gray-600 ml-0.5">
                           {unit}
                         </span>
                       </span>
@@ -597,7 +600,7 @@ function ProposalCTA({ t, accent, label, onOpen }) {
     >
       <div
         className="eyebrow mb-2"
-        style={{ color: 'var(--accent)' }}
+        style={{ color: 'var(--blue)' }}
       >
         {t.use('proposal.title')}
       </div>

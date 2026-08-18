@@ -553,7 +553,7 @@ function renderElement(page, el, ctx){
     draw(a1,top,s); if(a2) draw(a2,top+s*1.5,s*0.92);
   }
 }
-const SITELESS = 'www.realitydn.com';
+const SITELESS = 'realitydn.com';
 
 function arrowPoints(dir, w, h){
   const P=[[0.10,0.42],[0.58,0.42],[0.58,0.26],[0.92,0.50],[0.58,0.74],[0.58,0.58],[0.10,0.58]];

@@ -1,0 +1,135 @@
+<!-- @dsCard group="Components" name="Primitives" subtitle="The eight small parts that ship in the system, the three view-transition hooks, and the isolation gotcha that has bitten twice" viewport="1100x2300" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Primitives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.live-dot{width:9px;height:9px;background:var(--red);border:2px solid var(--fg);display:inline-block;animation:live-pulse 1.6s var(--ease-snap) infinite}
+@keyframes live-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.55}}
+.tagp{font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;border:2px solid var(--fg);background:var(--surface);padding:3px 8px;display:inline-block}
+.chip-dot{width:10px;height:10px;border:1.5px solid var(--fg);background:var(--day,var(--accent));display:inline-block}
+.skeleton{background:var(--surface-2);position:relative;overflow:hidden}
+.skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(13,9,5,.10),transparent);animation:skeleton-sheen 1.5s linear infinite}
+.scope-night .skeleton::after{background:linear-gradient(90deg,transparent,rgba(255,251,241,.14),transparent)}
+@keyframes skeleton-sheen{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.liftd{transition:transform var(--dur-tap) var(--ease-snap),box-shadow var(--dur-tap) var(--ease-snap);border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default);padding:12px 16px;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.liftd:hover{transform:translateY(-3px);box-shadow:var(--sh-heavy)}
+.liftd:active{transform:translateY(2px);box-shadow:var(--sh-light)}
+.marq{overflow:hidden;border-block:2px solid var(--fg);background:var(--surface)}
+.marq>span{display:inline-block;white-space:nowrap;animation:marquee-ticker 14s linear infinite;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:7px 0}
+@keyframes marquee-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.fieldd{border:2px solid var(--fg);background:var(--surface);padding:10px 12px;font-family:var(--grotesk);font-size:13px;color:var(--fg-faint);width:100%}
+.fieldd.err{border-color:var(--red)}
+.field-hint{font-family:var(--grotesk);font-size:12px;color:var(--fg-faint);margin-top:5px;display:block}
+.field-hint.err{color:var(--red)}
+.grid8{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:900px){.grid8{grid-template-columns:1fr}}
+.pcell{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);display:flex;flex-direction:column}
+.pcell>.ph{display:flex;align-items:baseline;gap:9px;padding:11px 14px;border-bottom:2px solid var(--fg);background:var(--surface-2)}
+.pcell>.ph .cn{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.pcell>.ph .cj{font-family:var(--grotesk);font-size:11.5px;color:var(--fg-dim);margin-left:auto}
+.pcell>.st{padding:20px 14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;min-height:88px}
+.pcell>.sp{padding:0 14px 14px;font-size:12.5px;color:var(--fg-dim)}
+.pcell>.sp b{color:var(--fg);font-weight:600}
+.iso{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.iso{grid-template-columns:1fr}}
+.isob{border:2px solid var(--fg);padding:14px;background:var(--bg)}
+.isob .lb{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+.isob.bad{border-color:var(--red)}.isob.bad .lb{color:var(--red)}
+.isob.good{border-color:var(--green)}.isob.good .lb{color:var(--green)}
+.mr{position:relative;isolation:isolate}
+.mr::before,.mr::after{content:"";position:absolute;inset:0;z-index:-1}
+.mr::before{background:var(--accent-2);transform:translate(6px,6px)}
+.mr::after{background:var(--accent);transform:translate(13px,13px)}
+.mr>.plate{position:relative;z-index:1;background:var(--surface);border:2px solid var(--fg);padding:16px}
+.nomr{position:relative;background:var(--bg)}
+.nomr::before,.nomr::after{content:"";position:absolute;inset:0;z-index:-1}
+.nomr::before{background:var(--accent-2);transform:translate(6px,6px)}
+.nomr::after{background:var(--accent);transform:translate(13px,13px)}
+.nomr>.plate{position:relative;z-index:1;background:var(--surface);border:2px solid var(--fg);padding:16px}
+.ttl{font-family:var(--mont);font-weight:100;font-size:26px;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
+table.sp2{width:100%;border-collapse:collapse;font-size:12.5px}
+table.sp2 th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 9px 7px 0;border-bottom:2px solid var(--fg)}
+table.sp2 td{padding:9px 9px 9px 0;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-dim)}
+table.sp2 td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.sp2 tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Primitives</span><span class="sub">Small enough that everyone rebuilds them, common enough that everyone rebuilds them differently. These eight plus the misregister wrapper now ship in <code>reality-ds.css</code>, not just in the app.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>Why these are in the system</h4>
+  <p>Each one was independently reimplemented at least twice across the app, the site and the studios &mdash; with different sizes, durations and colours each time. They are in the token layer now so the next surface imports them. <b>If you find yourself writing a pulsing dot or a shimmer, it exists.</b></p>
+</div>
+
+<p class="tier">The eight</p>
+<div class="grid8">
+  <div class="pcell"><div class="ph"><span class="cn">.live-dot</span><span class="cj">happening now</span></div>
+    <div class="st"><span class="live-dot"></span><span class="tagp"><span class="live-dot" style="margin-right:6px;vertical-align:0"></span>Live</span><span style="font-size:12.5px;color:var(--fg-dim)">9px red square, 2px ink border</span></div>
+    <p class="sp">Pulses <b>scale 1&rarr;1.5, opacity 1&rarr;.55</b> over 1.6s on <code>--ease-snap</code>. Square, never round. Only for something happening <b>right now</b> &mdash; not "soon", not "sold out".</p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.tag</span><span class="cj">category / status</span></div>
+    <div class="st"><span class="tagp">Live music</span><span class="tagp">Free entry</span><span class="tagp" style="background:var(--yellow);color:#0d0905">Deal</span></div>
+    <p class="sp">Montserrat 700, 12px, <b>.1em</b> caps, 2px border, 3px&times;8px padding. Paper by default; a coloured fill only when the tag carries a major&rsquo;s job. <b>Never a rounded pill.</b></p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.chip-dot</span><span class="cj">filter marker</span></div>
+    <div class="st"><span class="tagp d-thu"><span class="chip-dot" style="margin-right:6px;vertical-align:-1px"></span>Thursday</span><span class="tagp d-fri"><span class="chip-dot" style="margin-right:6px;vertical-align:-1px"></span>Friday</span><span class="tagp d-sun"><span class="chip-dot" style="margin-right:6px;vertical-align:-1px"></span>Sunday</span></div>
+    <p class="sp">10px square, <b>1.5px</b> border. Reads <code>--day</code> and falls back to <code>--accent</code> &mdash; so it colours itself from whatever day class is on its ancestor. The one primitive that inherits.</p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.skeleton</span><span class="cj">loading</span></div>
+    <div class="st" style="flex-direction:column;align-items:stretch;gap:8px"><div class="skeleton" style="height:46px"></div><div class="skeleton" style="height:12px;width:72%"></div><div class="skeleton" style="height:12px;width:44%"></div></div>
+    <p class="sp"><code>--surface-2</code> block with an <b>ink sheen</b> travelling left to right over 1.5s linear. The sheen inverts to cream in Night. Depends on the surface ladder &mdash; on a collapsed Day ladder it is invisible.</p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.lift</span><span class="cj">interactive object</span></div>
+    <div class="st"><button class="liftd">Hover me</button><span style="font-size:12.5px;color:var(--fg-dim)">&minus;3px / heavy &rarr; +2px / light</span></div>
+    <p class="sp">The house interaction, on <code>--dur-tap</code>. Hover rises 3px into <code>--sh-heavy</code>; <b>active presses 2px below rest</b> into <code>--sh-light</code>. Objects have weight; nothing fades.</p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.marquee</span><span class="cj">ticker</span></div>
+    <div class="st" style="align-items:stretch"><div class="marq" style="width:100%"><span>Open mic thursday &middot; late set friday &middot; film club saturday &middot; open mic thursday &middot; late set friday &middot; film club saturday &middot; </span></div></div>
+    <p class="sp">Border-block only, 14s linear, <code>translateX(0 &rarr; -50%)</code> &mdash; so the content must be <b>duplicated exactly twice</b> or it jumps. Bar screens and promo strips, never body copy.</p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.field-hint</span><span class="cj">form help + error</span></div>
+    <div class="st" style="flex-direction:column;align-items:stretch;gap:0"><input class="fieldd" placeholder="Your name"><span class="field-hint">As you&rsquo;d like it on the list.</span><input class="fieldd err" placeholder="04:00" style="margin-top:12px"><span class="field-hint err">We close at 01:00.</span></div>
+    <p class="sp">Grotesk 12px <code>--fg-faint</code>, 5px below the field. <code>.field.error</code> turns the border red and the adjacent hint red &mdash; <b>the hint is the error message</b>, so no separate error element exists.</p></div>
+
+  <div class="pcell"><div class="ph"><span class="cn">.misreg</span><span class="cj">the signature</span></div>
+    <div class="st" style="padding:26px 20px 20px"><div class="mr" style="flex:1"><div class="plate ttl">Open Mic</div></div></div>
+    <p class="sp">Two pseudo-plates on negative z: <code>--accent-2</code> at the near offset, <code>--accent</code> at the far. <b>Static</b> &mdash; <code>.misreg</code> is 6/3, <code>.misreg-hero</code> is 13/6. Add <code>.misreg-hero</code> for the larger step.</p></div>
+</div>
+
+<p class="tier">The gotcha &mdash; read this before using .misreg</p>
+<div class="pane">
+  <div class="plabel">Same markup, same tokens &middot; the only difference is isolation and a background on the wrapper</div>
+  <div class="iso">
+    <div class="isob good"><div class="lb">&check; isolation:isolate, no background on the wrapper</div><div class="mr"><div class="plate ttl">Open Mic</div></div></div>
+    <div class="isob bad"><div class="lb">&times; wrapper paints a background &mdash; z-index:-1 goes behind it</div><div class="nomr"><div class="plate ttl">Open Mic</div></div></div>
+  </div>
+  <div class="note" style="box-shadow:none;margin-top:18px">
+    <h4>The rule</h4>
+    <p><code>.misreg</code> needs <b><code>isolation:isolate</code> and no background on the wrapper</b>. The echo layers sit at <code>z-index:-1</code>; if the wrapper (or any ancestor up to the nearest stacking context) paints a background, they render <i>behind</i> that paint and vanish silently &mdash; no error, no warning, just a hero that lost its print. <b>This has bitten twice.</b> The class ships with <code>isolation:isolate</code> built in, so the remaining failure mode is putting a background on the same element.</p>
+  </div>
+</div>
+
+<p class="tier">View-transition hooks</p>
+<div class="pane">
+  <table class="sp2">
+    <tr><th style="width:16%">Hook</th><th style="width:24%">Pairs</th><th>Contract</th></tr>
+    <tr><td class="k">.vt-hero</td><td>Feed card slice &rarr; event page hero</td><td>The poster slice grows into the full hero. Both ends must carry the hook and <b>only one element per route may have it</b> &mdash; two <code>.vt-hero</code>s on one page kills the transition for the whole document.</td></tr>
+    <tr><td class="k">.vt-title</td><td>Card title box &rarr; page H1</td><td>Survives the case change: the card is caps in <code>.reg-far</code> context, the page is sentence case in <code>.reg-near</code>. That is intentional &mdash; the morph is the point.</td></tr>
+    <tr><td class="k">.vt-date</td><td>Card date box &rarr; <code>.cal-datetab</code></td><td>Ties the two date treatments together so the tab reads as the same object opened up.</td></tr>
+  </table>
+  <div class="note" style="box-shadow:none">
+    <h4>These are a route contract, not component styling</h4>
+    <p>They belong to the <b>pair of pages</b>, not to the component. Adding <code>.vt-hero</code> to a card component means every list rendering that component breaks the transition. Apply them at the route level, to the one instance being navigated from.</p>
+  </div>
+</div>
+
+<div class="note">
+  <h4>Reduced motion</h4>
+  <p>Four of these animate: <code>.live-dot</code>, <code>.skeleton</code>, <code>.marquee</code> and the theme flip. The system ships a blanket <code>@media (prefers-reduced-motion:reduce)</code> that kills all transitions and animations, so each degrades to its rest state &mdash; a static red square, a flat <code>--surface-2</code> block, a clipped static line of text. <b>Check the marquee</b>: if its content is information rather than decoration, it needs a non-scrolling fallback layout, not just a stopped animation.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

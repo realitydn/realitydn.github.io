@@ -716,7 +716,7 @@ function GridMetaCell({ doc, channel, level, legend }){
         <div>
           <RWordmark tight height={font*1.15} color={T.fg} />
           <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.7, color:T.dim, marginTop:6, lineHeight:1.4 }}>
-            www.realitydn.com<br/>86 Mai Thúc Lân, Đà Nẵng</div>
+            realitydn.com<br/>86 Mai Thúc Lân, Đà Nẵng</div>
         </div>
         <RQR size={font*3.4} dark={R_INK} light={R_CREAM} />
       </div>
@@ -802,7 +802,7 @@ function MetaLine({ font }){
   return (
     <div style={{ fontFamily:R_MONT, fontWeight:600, fontSize:font, letterSpacing:'.07em',
       textTransform:'uppercase', color:T.fg }}>
-      www.realitydn.com<span style={{ fontWeight:500, opacity:.72 }}>{' · '}86 Mai Thúc Lân, Đà Nẵng</span>
+      realitydn.com<span style={{ fontWeight:500, opacity:.72 }}>{' · '}86 Mai Thúc Lân, Đà Nẵng</span>
     </div>
   );
 }
@@ -954,7 +954,7 @@ function PrintFooter({ doc, legend, denIdx, T }){
       <div style={{ textAlign:'right' }}>
         <RWordmark tight height={22} color={T.fg} />
         <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:11, color:T.dim, marginTop:6, lineHeight:1.45 }}>
-          www.realitydn.com<br/>86 Mai Thúc Lân, Đà Nẵng</div>
+          realitydn.com<br/>86 Mai Thúc Lân, Đà Nẵng</div>
       </div>
       <RQR size={86} dark={R_INK} light={R_CREAM} />
     </div>
@@ -1177,7 +1177,7 @@ function DailyCard({ doc, date, variant }){
           <div>
             <RWordmark tight height={story?44:38} color={T.fg} />
             <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:story?22:19, color:T.dim,
-              marginTop:12, lineHeight:1.5 }}>86 Mai Thúc Lân, Đà Nẵng · www.realitydn.com</div>
+              marginTop:12, lineHeight:1.5 }}>86 Mai Thúc Lân, Đà Nẵng · realitydn.com</div>
           </div>
           <RQR size={story?128:104} dark={R_INK} light={R_CREAM} />
         </div>

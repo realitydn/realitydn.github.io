@@ -1,0 +1,128 @@
+<!-- @dsCard group="Components" name="Buttons" subtitle="Four roles, one ACTION per screen, and where the majors are supposed to earn their volume · measured against 249 structural buttons" viewport="1100x2200" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Buttons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.b{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.11em;font-size:13px;border:2px solid var(--fg);padding:13px 22px;box-shadow:var(--sh-default);transition:transform var(--dur-tap) var(--ease-snap),box-shadow var(--dur-tap) var(--ease-snap);display:inline-block;text-align:center}
+.b:hover{transform:translateY(-3px);box-shadow:var(--sh-heavy)}
+.b:active{transform:translateY(2px);box-shadow:var(--sh-light)}
+.b-action{background:var(--red);color:#fffbf1}
+.b-info{background:var(--blue);color:#0d0905}
+.b-notice{background:var(--yellow);color:#0d0905}
+.b-alt{background:var(--surface);color:var(--fg)}
+.b-ink{background:var(--fg);color:var(--bg)}
+.b[disabled]{opacity:.42;box-shadow:none;transform:none}
+.b-sm{font-size:11px;padding:9px 14px;letter-spacing:.1em}
+.roles{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:900px){.roles{grid-template-columns:1fr}}
+.rl{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);display:flex;flex-direction:column}
+.rl>.h{display:flex;align-items:baseline;gap:9px;padding:11px 14px;border-bottom:2px solid var(--fg);background:var(--surface-2)}
+.rl>.h .cn{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.rl>.h .ct{font-family:var(--grotesk);font-size:11.5px;color:var(--fg-dim);margin-left:auto}
+.rl>.s{padding:22px 16px;display:flex;gap:11px;flex-wrap:wrap;align-items:center;min-height:96px}
+.rl>.p{padding:0 16px 16px;font-size:12.5px;color:var(--fg-dim)}
+.rl>.p b{color:var(--fg);font-weight:600}
+.rl>.u{margin:0 16px 16px;border-top:1px solid var(--hairline);padding-top:10px;font-family:var(--mont);font-weight:600;font-size:10.5px;letter-spacing:.04em;color:var(--fg-faint)}
+.states{display:flex;gap:11px;flex-wrap:wrap;align-items:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.screen{background:var(--bg);border:2px solid var(--fg);box-shadow:var(--sh-default);padding:16px;display:flex;flex-direction:column;gap:12px}
+.eb{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.15em;font-size:10px;color:var(--blue)}
+.ttl{font-family:var(--mont);font-weight:100;font-size:28px;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
+.fact{font-family:var(--grotesk);font-weight:500;font-size:13px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
+.noticebar{border:2px solid var(--fg);border-left:7px solid var(--yellow);background:var(--surface);padding:8px 10px;font-size:12.5px;color:var(--fg-dim)}
+.bad{border:2px solid var(--red);padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.bad .lb{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+.good{border:2px solid var(--green);padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.good .lb{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--green)}
+table.ct{width:100%;border-collapse:collapse;font-size:12.5px}
+table.ct th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 9px 7px 0;border-bottom:2px solid var(--fg)}
+table.ct td{padding:9px 9px 9px 0;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-dim)}
+table.ct td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.ct tr:last-child td{border-bottom:none}
+.num{font-family:var(--mont);font-weight:800;font-size:13px;color:var(--fg)}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Buttons</span><span class="sub">Four roles and one geometry. The roles are where the three majors are supposed to earn their volume &mdash; and where, measured, they currently don&rsquo;t.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>One geometry, four registers</h4>
+  <p>Every button in the system is the same object: <b>2px ink border, zero radius, flat down-shadow, Montserrat 700 caps at .11em</b>, hover &minus;3px into heavy, active +2px into light. The role changes <b>only the fill</b>. That is deliberate &mdash; colour carries the meaning, geometry carries the brand.</p>
+  <p><b>The measurement:</b> across the app there are 249 structural buttons and the roles are used <span class="num">53</span> / <span class="num">4</span> / <span class="num">2</span> times. Red pulls its weight; blue and yellow don&rsquo;t. That is not a rule problem, it&rsquo;s a deployment problem &mdash; see the pass at the bottom.</p>
+</div>
+
+<p class="tier">The four roles</p>
+<div class="roles">
+  <div class="rl"><div class="h"><span class="cn">.btn-action</span><span class="ct">red &middot; imperative &middot; 53 uses</span></div>
+    <div class="s"><button class="b b-action">Reserve a table</button><button class="b b-action b-sm">Book</button></div>
+    <p class="p"><b>The thing you came to do.</b> Reserve, book, submit, buy. Red is the loudest fill in the palette and the only one that reads as a command &mdash; which is why <b>one per screen</b> is the whole rule.</p>
+    <div class="u">Cream on red, decided 19.08.26 &mdash; 4.19:1, a knowing AA exception</div></div>
+
+  <div class="rl"><div class="h"><span class="cn">.btn-info</span><span class="ct">blue &middot; navigational &middot; 4 uses</span></div>
+    <div class="s"><button class="b b-info">What&rsquo;s on this week</button><button class="b b-info b-sm">Add to calendar</button></div>
+    <p class="p"><b>Take me to more of this.</b> Listings, schedules, calendar subscribe, detail pages. Blue is the wayfinding major &mdash; it never asks for a commitment, it just moves you.</p>
+    <div class="u">Blue also owns eyebrows and links &mdash; same job, different element</div></div>
+
+  <div class="rl"><div class="h"><span class="cn">.btn-notice</span><span class="ct">yellow &middot; offer &middot; 2 uses</span></div>
+    <div class="s"><button class="b b-notice">Happy hour 17&ndash;19</button><button class="b b-notice b-sm">See the deal</button></div>
+    <p class="p"><b>Something is on offer or worth knowing.</b> Deals, drink specials, opening-hours changes, one-off notices. Yellow is warmth, not warning &mdash; alerts are red.</p>
+    <div class="u">Pairs with the yellow left-rule notice bar for non-interactive versions</div></div>
+
+  <div class="rl"><div class="h"><span class="cn">.btn-alt</span><span class="ct">paper &middot; secondary &middot; everything else</span></div>
+    <div class="s"><button class="b b-alt">Cancel</button><button class="b b-alt b-sm">Filters</button><button class="b b-ink b-sm">Ink variant</button></div>
+    <p class="p"><b>Everything that isn&rsquo;t one of the three.</b> Cancel, back, filters, tabs, toolbars. Paper fill with an ink border, or the inverted ink fill where it needs more presence. <b>This is the default</b> &mdash; a button with no role is this one.</p>
+    <div class="u">The 249 structural buttons are nearly all this</div></div>
+</div>
+
+<p class="tier">States</p>
+<div class="pane">
+  <div class="plabel">The same four transitions on every role &mdash; hover, active, focus, disabled</div>
+  <div class="two">
+    <div class="scope-day screen"><span class="lbl" style="margin:0">Day</span>
+      <div class="states"><button class="b b-action">Rest</button><button class="b b-action" style="transform:translateY(-3px);box-shadow:var(--sh-heavy)">Hover</button><button class="b b-action" style="transform:translateY(2px);box-shadow:var(--sh-light)">Active</button><button class="b b-action" style="outline:3px solid var(--accent);outline-offset:2px">Focus</button><button class="b b-action" disabled>Disabled</button></div>
+    </div>
+    <div class="scope-night screen"><span class="lbl" style="margin:0">Night</span>
+      <div class="states"><button class="b b-action">Rest</button><button class="b b-action" style="transform:translateY(-3px);box-shadow:var(--sh-heavy)">Hover</button><button class="b b-action" style="transform:translateY(2px);box-shadow:var(--sh-light)">Active</button><button class="b b-action" style="outline:3px solid var(--accent);outline-offset:2px">Focus</button><button class="b b-action" disabled>Disabled</button></div>
+    </div>
+  </div>
+  <table class="ct" style="margin-top:20px">
+    <tr><th style="width:16%">State</th><th style="width:26%">Change</th><th>Note</th></tr>
+    <tr><td class="k">Hover</td><td><code>translateY(-3px)</code> &rarr; <code>--sh-heavy</code></td><td>On <code>--dur-tap</code>. The object rises; the fill never changes. <b>No colour-shift hovers anywhere in this system.</b></td></tr>
+    <tr><td class="k">Active</td><td><code>translateY(2px)</code> &rarr; <code>--sh-light</code></td><td>Presses <b>below</b> rest position. This is the single most characteristic interaction in the brand &mdash; it is a physical object being pushed.</td></tr>
+    <tr><td class="k">Focus</td><td>3px <code>--accent</code> ring, 2px offset</td><td>Theme-aware: blue in Day, pink in Night. Never removed, never replaced with a fill change.</td></tr>
+    <tr><td class="k">Disabled</td><td><code>opacity:.42</code>, no shadow, no transform</td><td>Losing the shadow is what communicates it &mdash; the object is no longer lifted off the paper.</td></tr>
+    <tr><td class="k">Tap target</td><td>48px minimum</td><td><code>--tap-min</code>. The small variant at 9px&times;14px padding still clears 48px with its line-height; anything tighter needs padding, not a smaller font.</td></tr>
+  </table>
+</div>
+
+<p class="tier">The one-per-screen rule</p>
+<div class="two">
+  <div class="bad"><span class="lb">&times; Three actions &mdash; nothing is the action</span>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="eb">Thu 21.08 &middot; 20:00</span><span class="ttl">Open Mic</span><span class="fact">Front room &middot; free entry &middot; sign-up from 19:30</span>
+      <div style="display:flex;gap:9px;flex-wrap:wrap"><button class="b b-action b-sm">Reserve</button><button class="b b-action b-sm">Add to calendar</button><button class="b b-action b-sm">Share</button></div>
+    </div>
+  </div>
+  <div class="good"><span class="lb">&check; One action, the rest by role</span>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="eb">Thu 21.08 &middot; 20:00</span><span class="ttl">Open Mic</span><span class="fact">Front room &middot; free entry &middot; sign-up from 19:30</span>
+      <div class="noticebar"><b style="color:var(--fg)">Happy hour</b> 17&ndash;19, before doors</div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap"><button class="b b-action b-sm">Reserve a table</button><button class="b b-info b-sm">Add to calendar</button><button class="b b-alt b-sm">Share</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <h4>Rules</h4>
+  <p><b>One ACTION per screen.</b> Not per section, per screen. If two things both feel imperative, one of them is navigation or a notice &mdash; re-role it.</p>
+  <p><b>Coloured fill takes ink &mdash; except red.</b> Info, notice and every day-code fill take ink via <code>--on-day</code>. <b>ACTION is cream on red</b>, decided 19.08.26 at 4.19:1: a deliberate exception taken because red reads as a filled ink button at distance. It is recorded in <code>reality-tokens.json</code> under <code>openCalls</code> so nobody silently "corrects" it &mdash; and it <b>does not generalise</b> to any other fill.</p>
+  <p><b>Role by job, never by prominence.</b> Blue because it navigates, not because it needs to stand out. Reaching for a colour to add emphasis is how the palette turns to confetti.</p>
+  <p><b>No role is also a role.</b> <code>.btn-alt</code> is the correct answer for most buttons. 249 of them are structural and should stay paper.</p>
+  <p><b>The deployment pass (B3b):</b> blue takes eyebrows, links and calendar-subscribe; yellow takes deals and notices. About a dozen components, no new colours &mdash; it just moves the existing majors onto the jobs the role lock already assigned them.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

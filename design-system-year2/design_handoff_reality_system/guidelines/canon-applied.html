@@ -1,0 +1,138 @@
+<!-- @dsCard group="Decisions" name="Canon — Applied (Rev 18.08.26)" subtitle="Every decision from the audit, what it changed, and where it now lives · the uniformity record" viewport="1100x4500" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Canon Applied</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+table.ap{width:100%;border-collapse:collapse;font-size:13px}
+table.ap th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;color:var(--fg-faint);text-align:left;padding:0 10px 8px 0;border-bottom:2px solid var(--fg)}
+table.ap td{padding:10px 10px 10px 0;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-dim)}
+table.ap td.k{font-family:var(--mont);font-weight:700;font-size:11.5px;color:var(--fg);white-space:nowrap}
+table.ap td.d{font-family:var(--mont);font-weight:700;font-size:11.5px;color:var(--fg)}
+table.ap tr:last-child td{border-bottom:none}
+.pill{font-family:var(--mont);font-weight:700;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;border:2px solid var(--fg);padding:2px 6px;display:inline-block;white-space:nowrap}
+.p-done{background:var(--green);color:#0d0905}
+.p-doc{background:var(--blue);color:#0d0905}
+.p-cut{background:var(--fg);color:var(--bg)}
+.p-hold{background:var(--red);color:#0d0905}
+.p-open{background:var(--amber);color:#0d0905}
+.score{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+@media(max-width:820px){.score{grid-template-columns:repeat(2,1fr)}}
+.sc1{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px 16px}
+.sc1 .n{font-family:var(--mont);font-weight:100;font-size:44px;line-height:1;display:block}
+.sc1 .t{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10.5px;display:block;margin-top:8px}
+.sc1 .s{font-size:12px;color:var(--fg-dim);display:block;margin-top:5px}
+.demo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:820px){.demo{grid-template-columns:1fr}}
+.mk{padding:14px}
+.mk-hero>.e1{transform:translate(13px,13px)}
+.mk-hero>.e2{transform:translate(6px,6px)}
+.tinylbl{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:8.5px;color:var(--fg-faint)}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Canon — Applied</span><span class="sub">The audit is closed. Forty-one calls made across seven decision cards; this is what each one changed and which file now carries it.</span><span class="tag">REV 19.08.26 · CLOSED</span></header>
+
+<div class="score">
+  <div class="sc1"><span class="n">41</span><span class="t">Decided</span><span class="s">Contradictions, omissions, studio-era, two accent rounds, the type study and the final four.</span></div>
+  <div class="sc1"><span class="n">19</span><span class="t">In the token layer</span><span class="s"><code>reality-ds.css</code> + the new <code>day-colours.json</code>.</span></div>
+  <div class="sc1"><span class="n">1</span><span class="t">Cut</span><span class="s">Paper grain, off screen surfaces entirely.</span></div>
+  <div class="sc1"><span class="n">0</span><span class="t">Still open</span><span class="s">The last four closed 19.08.26. One is a deliberate AA exception — see below.</span></div>
+</div>
+
+<div class="note" style="border-width:3px">
+  <h4>The audit is closed &mdash; 19.08.26</h4>
+  <p><b>F1 &middot; Day surface ladder &rarr; two steps off-paper.</b> The earlier revert pick is withdrawn; <code>--surface-2</code> <code>#f4ecd7</code> and <code>--paper-shade</code> <code>#ece2c9</code> stand as shipped. Day headers, poster placeholders and skeletons keep their surface. No code change.</p>
+  <p><b>F2 &middot; ACTION button &rarr; cream on red, knowingly.</b> It measures <b>4.19:1</b> and fails AA, and it is now the only coloured fill in the system not carrying ink &mdash; taken deliberately, with the measurement in hand, because red reads as a filled ink button at distance. <b>Recorded as an exception, not an oversight:</b> it is written into <code>reality-tokens.json</code> under <code>openCalls</code> so nobody &ldquo;fixes&rdquo; it silently, and it does <b>not</b> generalise &mdash; info, notice and every day-code fill still take ink.</p>
+  <p><b>F3 &middot; Partner map canon, never-pair advisory.</b> The seven pairs are the enforced derivation; the four discouraged combinations <b>warn rather than block</b>, so a deliberate near-tonal overprint stays available at poster scale. <code>day-colours.json</code> now carries <code>neverPairEnforcement: "warn"</code>.</p>
+  <p><b>F4 &middot; Tracking ladder baked per role.</b> The six-number optical ladder is ratified; no size-derived formula. The print and signage offsets ride on top.</p>
+</div>
+
+<p class="tier">Colour &amp; accent</p>
+<div class="pane">
+  <table class="ap">
+    <tr><th style="width:15%">Call</th><th style="width:22%">Decision</th><th style="width:15%">Lands in</th><th>Effect</th></tr>
+    <tr><td class="k">B1+B2 accent lead</td><td class="d">Theme-aware</td><td><span class="pill p-done">reality-ds.css</span></td><td>Day leads <b>blue</b>, Night leads <b>pink</b>; each theme scope sets its own <code>--accent</code> / <code>--accent-2</code>. The app and site stop disagreeing — both read the theme.</td></tr>
+    <tr><td class="k">D2 second ink</td><td class="d">Partner map</td><td><span class="pill p-done">day-colours.json</span></td><td>Seven pairs shipped as data: pink↔blue, red→blue, yellow→pink, amber↔purple, green→purple. The riso engine, print exporter and app now read one file.</td></tr>
+    <tr><td class="k">F3 Pair rule</td><td class="d">Map canon &middot; list advisory</td><td><span class="pill p-done">day-colours.json</span></td><td>The partner map is the enforced derivation. The four discouraged combinations <b>warn, not block</b> (<code>neverPairEnforcement: "warn"</code>) &mdash; a deliberate near-tonal overprint stays available at poster scale.</td></tr>
+    <tr><td class="k">F2 ACTION label</td><td class="d">Cream on red</td><td><span class="pill p-hold">AA exception</span></td><td>4.19:1, fails AA, accepted deliberately on the one button that converts. Red is the only coloured fill not carrying ink; the exception does <b>not</b> generalise. Recorded in <code>reality-tokens.json</code> under <code>openCalls</code>.</td></tr>
+    <tr><td class="k">B3 day-code rank</td><td class="d">Separate axis</td><td><span class="pill p-doc">Palette card</span></td><td>Day-code is wayfinding and carries no rank. Feed, week list and event detail unchanged.</td></tr>
+    <tr><td class="k">R2·3 enforcement</td><td class="d">Role lock</td><td><span class="pill p-doc">Palette card</span></td><td>Each major owns named UI jobs; <b>no minor takes a UI job</b>. Minors reach the screen only via the day-code and artwork. The accent is exempt.</td></tr>
+    <tr><td class="k">R2·4 minor lead</td><td class="d">Meaning vs mood</td><td><span class="pill p-doc">Palette card</span></td><td>"Hierarchy" is retired. <b>Majors carry meaning, minors carry mood</b> — the tier column becomes a naming convention, not a rank.</td></tr>
+    <tr><td class="k">B3b majors' jobs</td><td class="d">Deploy them</td><td><span class="pill p-open">App pass</span></td><td>Blue takes eyebrows, links, calendar-subscribe; yellow takes notices and deals. ~a dozen components.</td></tr>
+    <tr><td class="k">D6 substrate</td><td class="d">Substrate rule</td><td><span class="pill p-done">reality-ds.css</span></td><td>Screen values are cream-paper simulations; press is <code>#111111</code> on white stock and cream is never laid down. Written as a token comment and going onto the palette card.</td></tr>
+    <tr><td class="k">D7 renderer hues</td><td class="d">One JSON</td><td><span class="pill p-done">day-colours.json</span></td><td>Weekday hues have a single source; the CSS build emits the classes, canvas and PDF renderers import the file. The rule is enforceable instead of aspirational.</td></tr>
+  </table>
+</div>
+
+<p class="tier">Surfaces, motion &amp; texture</p>
+<div class="pane">
+  <table class="ap">
+    <tr><th style="width:15%">Call</th><th style="width:22%">Decision</th><th style="width:15%">Lands in</th><th>Effect</th></tr>
+    <tr><td class="k">B4 theme flip</td><td class="d">700ms</td><td><span class="pill p-done">reality-ds.css</span></td><td><code>html.theme-settling</code> now ships in the design system with <code>--dur-enter</code>. <code>--dur-settle</code> stays the interaction settle and stops being described as the theme duration.</td></tr>
+    <tr><td class="k">C1 misregister</td><td class="d">Static offsets</td><td><span class="pill p-done">reality-ds.css</span></td><td>Drift retired. <code>.misreg</code> / <code>.misreg-hero</code> with <b>13/6</b> and <b>6/3</b> tokens, and the <code>isolation:isolate</code> requirement in the comment where it can't be missed.</td></tr>
+    <tr><td class="k">C2 riso grain</td><td class="d">Cut</td><td><span class="pill p-cut">Removed</span></td><td>No grain on any screen surface — it didn't read at 4–6%. The texture survives in the poster engine, where it prints at size.</td></tr>
+    <tr><td class="k">B5 Day ladder</td><td class="d">Restore the collapse</td><td><span class="pill p-hold">Held</span></td><td>Not applied — see the note above. Tokens still carry <code>--surface-2 #f4ecd7</code> and <code>--paper-shade #ece2c9</code>.</td></tr>
+    <tr><td class="k">D3 print lift</td><td class="d">Print exempt</td><td><span class="pill p-done">day-colours.json</span></td><td>K ladder stays <b>.08 / .12 / .18</b>, heavy at 12px, recorded as a deliberate exemption rather than drift.</td></tr>
+    <tr><td class="k">C7 motion</td><td class="d">Index card</td><td><span class="pill p-doc">Motion card</span></td><td>~90 named keyframes get a one-line index each so they are reused instead of reinvented. No per-animation specs.</td></tr>
+    <tr><td class="k">C8 primitives</td><td class="d">One card</td><td><span class="pill p-done">reality-ds.css</span></td><td><code>.live-dot</code> <code>.tag</code> <code>.chip-dot</code> <code>.skeleton</code> <code>.lift</code> <code>.marquee</code> <code>.field-hint</code> and the <code>.vt-*</code> hooks now ship in the system, not just the app.</td></tr>
+  </table>
+  <div class="demo">
+    <div class="scope-day mk" style="border:2px solid var(--fg);box-shadow:var(--sh-default);display:flex;flex-direction:column;gap:10px">
+      <span class="tinylbl">Day · blue leads · static 13/6</span>
+      <div class="mk-hero"><i class="e1"></i><i class="e2"></i><div class="h"><span class="mk-eb">Thu · 20.08 · 20:00</span><div class="mk-ttl">Open Mic</div></div></div>
+      <div class="mk-field">Search events</div>
+      <div class="mk-nav"><div class="on">Home</div><div>Live</div><div>Cal</div><div>You</div></div>
+    </div>
+    <div class="scope-night mk" style="border:2px solid var(--fg);box-shadow:var(--sh-default);display:flex;flex-direction:column;gap:10px">
+      <span class="tinylbl">Night · pink leads · static 13/6</span>
+      <div class="mk-hero"><i class="e1"></i><i class="e2"></i><div class="h"><span class="mk-eb">Fri · 21.08 · 22:00</span><div class="mk-ttl">Late Set</div></div></div>
+      <div class="mk-field">Search events</div>
+      <div class="mk-nav"><div class="on">Home</div><div>Live</div><div>Cal</div><div>You</div></div>
+    </div>
+  </div>
+</div>
+
+<p class="tier">Type, components &amp; artwork</p>
+<div class="pane">
+  <table class="ap">
+    <tr><th style="width:15%">Call</th><th style="width:22%">Decision</th><th style="width:15%">Lands in</th><th>Effect</th></tr>
+    <tr><td class="k">C5 type roles</td><td class="d">Classes are canon</td><td><span class="pill p-done">reality-ds.css</span></td><td>Six classes shipped with locked clamps, including <code>.type-h3</code> and <code>.type-page</code>, which the typography card omitted.</td></tr>
+    <tr><td class="k">C6 type floor</td><td class="d">12px informational</td><td><span class="pill p-done">reality-ds.css</span></td><td>Anything you would act on — times, rooms, prices, dates — sits at 12px or above. 11px is decorative labels only.</td></tr>
+    <tr><td class="k">D8 type scales</td><td class="d">Roles map to steps</td><td><span class="pill p-doc">Typography card</span></td><td>Roles stay the shared vocabulary; canvas and print each get a band of steps. Display stops implying weight 100 outside UI.</td></tr>
+    <tr><td class="k">C3 calendar family</td><td class="d">Own card, as named</td><td><span class="pill p-doc">New card</span></td><td>Nine <code>.cal-*</code> classes documented with day inheritance, the <code>--paper-shade</code> placeholder and the 12px facts.</td></tr>
+    <tr><td class="k">C4 button roles</td><td class="d">Keep four</td><td><span class="pill p-doc">Button card</span></td><td>action / info / notice / alt, each with its register and the one-per-screen rule for action.</td></tr>
+    <tr><td class="k">D4 treatments</td><td class="d">Document thirteen</td><td><span class="pill p-doc">Photo Treatments</span></td><td>Spot, dither, hatch, photocopy, contour, edges and mosaic join the six, each with dials, default inks and suited categories.</td></tr>
+    <tr><td class="k">R2·7 accent in artwork</td><td class="d">Dials own artwork</td><td><span class="pill p-doc">Poster system</span></td><td>The theme-aware accent is a screen rule. Posters keep the full palette range; the dials govern ink choice.</td></tr>
+    <tr><td class="k">D5 site string</td><td class="d">realitydn.com</td><td><span class="pill p-open">Print Studio</span></td><td>Bare host on all artwork. Print Studio's mandatory-string constant and spec line need the edit.</td></tr>
+    <tr><td class="k">D1 website tokens</td><td class="d">Patch, not a fork</td><td><span class="pill p-open">src/index.css</span></td><td>Apply section A to the site: <code>--fg-faint</code> .56 / .48, <code>--surface-2</code>, Day shadows. Fixes two AA failures on the public site.</td></tr>
+    <tr><td class="k">D9 5:7</td><td class="d">Already fixed</td><td><span class="pill p-done">REVISION.md</span></td><td>Output set is 4:5, 1:1, 9:16, A4.</td></tr>
+  </table>
+</div>
+
+<p class="tier">Type system — treatments 5 + 6 merged</p>
+<div class="pane">
+  <table class="ap">
+    <tr><th style="width:15%">Call</th><th style="width:22%">Decision</th><th style="width:15%">Lands in</th><th>Effect</th></tr>
+    <tr><td class="k">Caps policy</td><td class="d">6 · Distance rule</td><td><span class="pill p-done">reality-ds.css</span></td><td>Case is set by <b>register</b>, not element type. <code>.reg-far</code> takes caps, <code>.reg-near</code> sentence case. Poster titles, signage, hero plates and social keep all-caps; app lists, web body, printed schedules and menus lose them.</td></tr>
+    <tr><td class="k">Family split</td><td class="d">5 · Facts in Grotesk</td><td><span class="pill p-done">reality-ds.css</span></td><td><b>Montserrat names, Grotesk states facts.</b> New <code>.type-fact</code> / <code>.type-fact-far</code> / <code>.type-sub</code> carry times, prices, rooms and capacities with tabular figures.</td></tr>
+    <tr><td class="k">M2 register</td><td class="d">Surface register</td><td><span class="pill p-done">reality-ds.css</span></td><td>Closed list of far and near surfaces written into the comment block — no metres, no size threshold. The bar-TV schedule is explicitly far, the A4 near.</td></tr>
+    <tr><td class="k">M1 far facts</td><td class="d">Family wins</td><td><span class="pill p-done">reality-ds.css</span></td><td>Facts stay Grotesk in every medium; at range only size and weight rise (500 → 700). Poster fact blocks change — this is the one visible poster edit.</td></tr>
+    <tr><td class="k">M3 Grotesk caps</td><td class="d">Caps micro-label</td><td><span class="pill p-done">reality-ds.css</span></td><td><code>.type-micro</code> — Grotesk 600, 12px, .12em uppercase — for ticket stubs, order numbers, form hints. Note: this is the one place both families do tracked caps, so keep it to technical strings only.</td></tr>
+    <tr><td class="k">M4 proper names</td><td class="d">Preserve as given</td><td><span class="pill p-done">reality-ds.css</span></td><td><code>.name-block .type-name</code> never uppercases. <i>bảo anh</i> and <i>MIDNIGHT WOLVES</i> both render as written.</td></tr>
+    <tr><td class="k">M5 overflow</td><td class="d">Name + subtitle</td><td><span class="pill p-open">Schema</span></td><td>Long titles split into two fields at the data layer rather than truncating. CSS ships (<code>.name-block</code> + <code>.type-sub</code>); the events schema and a content pass are still to do.</td></tr>
+    <tr><td class="k">M6 print tracking</td><td class="d">Per-medium offsets</td><td><span class="pill p-done">reality-ds.css</span></td><td>One ladder, two offsets: <code>@media print</code> adds .01em, <code>.medium-signage</code> adds .02em and forces weight 700.</td></tr>
+    <tr><td class="k">F4 Tracking ladder</td><td class="d">Baked per role</td><td><span class="pill p-done">reality-ds.css</span></td><td>Ratified 19.08.26. The optical ladder in the six roles (.015 / .025 / .04 / 0 / .16 / .11em), with print +.01em and signage +.02em riding on top. No formula.</td></tr>
+    <tr><td class="k">Ratified</td><td class="d">Figures · VI · weight 100</td><td><span class="pill p-done">reality-ds.css</span></td><td>Tabular figures in columns and <code>45.000₫</code>; uppercase VI at line-height 1.3 and display weight stepped to 200 under <code>:lang(vi)</code>; weight 100 display-only.</td></tr>
+  </table>
+</div>
+
+<div class="note">
+  <h4>Left to do</h4>
+  <p><b>Cards to write or rewrite:</b> palette (accent row, role lock, meaning/mood, substrate), surfaces (subtitle + ladder), typography (roles, floor, scale mapping), motion (index + static misregister), Photo Treatments (thirteen), plus three new cards — calendar family, primitives, motion index. <b>Code left:</b> the website token patch, Print Studio's site string, the blue/yellow deployment pass, and pointing the three studios at <code>day-colours.json</code>, and the events schema change for name + qualifier. <b>The typography card needs the fullest rewrite</b> — the merged grid, the surface register, and the “poster shouts the name, the app tells you about it” note that stops someone re-uppercasing the feed.</p>
+  <p>The <code>reality-brand</code> skill is unblocked — it can now be rewritten with the theme-aware accent, the meaning/mood framing, the partner map and the static misregister.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

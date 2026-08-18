@@ -1,114 +1,171 @@
 /* ============================================================
-   REALITY DESIGN SYSTEM — Year 2 · Design Tokens
-   Silkscreen / riso DNA · one tokened theme, day + night
-   ------------------------------------------------------------
-   Drop-in CSS custom properties. Framework-agnostic — works in
-   the website, the REALITY App, the sidework app, etc.
-   Theme by setting data-theme="dark" on <html> (default = day).
+   REALITY — TOKENS ONLY · Year 2 · rev 19.08.26
+   Generated from reality-ds.css. Import this into a codebase before
+   building components; Day/Night and the theme-aware accent come free.
+
+   Companion: reality-tokens.json (same values, machine-readable) and
+   day-colours.json (weekday hues + ink partner map — canvas/PDF
+   renderers import that file directly since they cannot read CSS vars).
+
+   NOTE ON DRIFT: three values here were corrected by accessibility
+   audit and one by measurement. If a codebase carries --fg-faint at
+   .45/.32, --surface-2 collapsed onto --bg, or Day shadows at
+   .08/.12/.18, it is PRE-AUDIT. Patch it; do not "restore" it.
    ============================================================ */
 
-:root {
-  /* ---- BRAND PALETTE — 3 majors + 4 minors. LOCKED. ---- */
-  /* MAJOR — working colours, carry attention */
-  --yellow: #fddf00;
-  --red:    #ed2224;
-  --blue:   #18a7e0;
-  /* MINOR — extend the category-coding */
-  --pink:   #ed1b72;
-  --amber:  #fdb515;
-  --green:  #43b02a;
-  --purple: #6e3179;   /* day value; lifts in night, see below */
+:root{
+  /* ---- PALETTE · LOCKED · 3 majors + 4 minors -------------- */
+  /* Majors carry MEANING (named UI jobs). Minors carry MOOD
+     (day-code + artwork). "Hierarchy" was retired 18.08.26 —
+     no minor takes a UI job; the accent is the one exemption. */
+  --yellow:#fddf00;   /* major · notices, deals            */
+  --red:#ed2224;      /* major · imperative, alerts        */
+  --blue:#18a7e0;     /* major · eyebrows, links, wayfind  */
+  --pink:#ed1b72;     /* minor · Thursday, parties         */
+  --amber:#fdb515;    /* minor · Saturday, warm/late       */
+  --green:#43b02a;    /* minor · Monday, community/day     */
+  --purple:#6e3179;   /* minor · Wednesday (lifts in Night)*/
 
-  /* category accent — swappable per context (party/music/drinks…) */
-  --accent:   var(--pink);   /* poster lead accent          */
-  --accent-2: var(--blue);   /* second misregistration layer */
+  /* ---- ACCENT · theme-aware (18.08.26) -------------------- */
+  /* Day leads blue, Night leads pink. The second ink is the lead's
+     partner from day-colours.json. Never hand-set an accent sharing
+     a family with its surface; never use a never-pair combination. */
+  --accent:var(--blue);
+  --accent-2:var(--pink);
 
-  /* ---- SURFACES — LIGHT / DAY (default) ---- */
-  --bg:        #fffbf1;            /* page / "paper"              */
-  --surface:   #fffbf1;           /* cards (bordered, same paper) */
-  --surface-2: #fffbf1;
-  --fg:        #0d0905;           /* ink: text, 2px borders, fills */
-  --fg-dim:    rgba(13, 9, 5, .72);
-  --fg-faint:  rgba(13, 9, 5, .45);
-  --hairline:  rgba(13, 9, 5, .16);
-  --on-ink:    #fffbf1;           /* text sitting on an ink fill  */
+  /* ---- SURFACES · DAY (default) --------------------------- */
+  --bg:#fffbf1;              /* paper                          */
+  --surface:#fffbf1;         /* cards — same paper, bordered   */
+  --surface-2:#f4ecd7;       /* one step off-paper: insets,
+                                day headers, skeletons         */
+  --paper-shade:#ece2c9;     /* deeper off-paper: poster
+                                placeholders before image load */
+  --fg:#0d0905;              /* ink: text, 2px borders, fills  */
+  --fg-dim:rgba(13,9,5,.72);
+  --fg-faint:rgba(13,9,5,.56);   /* 4.53:1 — was .45 (3.15:1, failed AA) */
+  --hairline:rgba(13,9,5,.16);   /* decoration ONLY — AA exempt */
+  --on-ink:#fffbf1;
 
-  /* ---- FLAT DOWN-SHADOWS — ink leaking beneath a lifted edge ---- */
-  --sh-light:   0 4px 1px rgba(13, 9, 5, .08);
-  --sh-default: 0 8px 2px rgba(13, 9, 5, .12);
-  --sh-heavy:   0 12px 3px rgba(13, 9, 5, .18);
+  /* ---- SHADOW · flat down-shift, ink under a lifted edge --- */
+  /* Day corrected upward 18.08.26: the lighter set washed out on
+     cream. Night was already right — the asymmetry is deliberate. */
+  --sh-light:0 4px 1px rgba(13,9,5,.10);
+  --sh-default:0 8px 2px rgba(13,9,5,.16);
+  --sh-heavy:0 13px 3px rgba(13,9,5,.23);
 
-  /* ---- SPACING — 4px base ramp ---- */
-  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;  --space-5: 20px;
-  --space-6: 24px;  --space-7: 32px;  --space-8: 48px;  --space-9: 64px;  --space-10: 96px;
+  /* ---- MISREGISTER · static offsets (drift retired 18.08.26) */
+  /* Requires isolation:isolate on a BACKGROUND-LESS ancestor or
+     the negative-z layers vanish silently. */
+  --misreg-hero-1:13px; --misreg-hero-2:6px;
+  --misreg-card-1:6px;  --misreg-card-2:3px;
 
-  /* semantic app-layout tokens — locked "Comfortable" density */
-  --screen-pad:   var(--space-5);  /* 20 · phone screen margin    */
-  --section-gap:  var(--space-4);  /* 16 · between screen blocks  */
-  --card-pad:     var(--space-5);  /* 20 · inside cards           */
-  --row-y:        var(--space-3);  /* 12 · list-row vertical      */
-  --tap-min:      var(--space-8);  /* 48 · touch-target floor     */
-  --grid-cols:    4;               /* phone content columns       */
-  --grid-gutter:  var(--space-3);  /* 12 · column gutter          */
+  /* ---- SPACING · 4px ramp --------------------------------- */
+  --space-1:4px;  --space-2:8px;  --space-3:12px; --space-4:16px; --space-5:20px;
+  --space-6:24px; --space-7:32px; --space-8:48px; --space-9:64px; --space-10:96px;
+  /* semantic layout — the locked "Comfortable" density */
+  --screen-pad:var(--space-5);
+  --section-gap:var(--space-4);
+  --card-pad:var(--space-5);
+  --row-y:var(--space-3);
+  --tap-min:var(--space-8);     /* 48px touch-target floor */
+  --grid-cols:4;
+  --grid-gutter:var(--space-3);
 
-  /* ---- TYPEFACES ---- */
-  --mont:    'Montserrat', sans-serif;             /* UI / display, uppercase wide-tracked */
-  --alt:     'Montserrat Alternates', sans-serif;  /* wordmark only                        */
-  --grotesk: 'Space Grotesk', sans-serif;          /* body                                 */
+  /* ---- TYPE ----------------------------------------------- */
+  /* Montserrat NAMES, Grotesk states FACTS. Alternates is the
+     wordmark only — and the mark itself is a mixed-font VECTOR,
+     never reproduced from a font-family. */
+  --mont:'Montserrat',sans-serif;
+  --alt:'Montserrat Alternates',sans-serif;
+  --grotesk:'Space Grotesk',sans-serif;
+  /* tracking ladder, baked per role */
+  --tr-display:.015em; --tr-h1:.025em; --tr-h2:.04em;
+  --tr-name:0em; --tr-label:.16em; --tr-button:.11em;
+  /* 12px is the floor for anything you would ACT on. 11px is
+     decorative labels only. */
+  --type-floor:12px;
 
-  /* ---- MOTION — easing curves ---- */
-  --ease-stamp: cubic-bezier(0.2, 1.4, 0.45, 1);   /* overshoot punch        */
-  --ease-snap:  cubic-bezier(0.3, 0, 0.2, 1);      /* quick settle           */
-  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  /* ---- MOTION -------------------------------------------- */
+  --ease-stamp:cubic-bezier(0.2,1.4,0.45,1);  /* overshoot punch */
+  --ease-snap:cubic-bezier(0.3,0,0.2,1);      /* quick settle    */
+  --ease-out:cubic-bezier(0.16,1,0.3,1);      /* long decel      */
+  --dur-tap:120ms;
+  --dur-quick:200ms;
+  --dur-settle:350ms;   /* interaction settle — NOT the theme flip */
+  --dur-enter:700ms;    /* entrances AND the Day<->Night flip      */
+  --stagger:90ms;
 
-  /* ---- MOTION — duration scale ---- */
-  --dur-tap:    120ms;   /* hover lift · button press        */
-  --dur-quick:  200ms;   /* chip / small state change        */
-  --dur-settle: 350ms;   /* theme flip · surface crossfade   */
-  --dur-enter:  700ms;   /* counters · kinetic · big entrance */
-  --stagger:    90ms;    /* delay between sibling entrances  */
-
-  color-scheme: light;
+  color-scheme:light;
 }
 
-/* ============================================================
-   DARK / NIGHT — "after dark". Purple lifts to glow on the dark.
-   Surfaces flip, text/borders ride --fg, shadows invert to cream.
-   ============================================================ */
-[data-theme="dark"] {
-  --purple:    #9a4faa;          /* lifted from #6e3179 for dark bg */
-
-  --bg:        #0a0703;
-  --surface:   #171109;
-  --surface-2: #241a10;
-  --fg:        #fffbf1;
-  --fg-dim:    rgba(255, 251, 241, .60);
-  --fg-faint:  rgba(255, 251, 241, .32);
-  --hairline:  #3a2c1c;
-  --on-ink:    #fffbf1;
-
-  /* shadows invert: cream light leaking beneath a lifted edge */
-  --sh-light:   0 4px 1px rgba(255, 251, 241, .14);
-  --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
-  --sh-heavy:   0 14px 3px rgba(255, 251, 241, .26);
-
-  color-scheme: dark;
+/* ---- SURFACES · NIGHT ------------------------------------ */
+[data-theme="dark"]{
+  --purple:#9a4faa;          /* lifts to glow on the dark */
+  --accent:var(--pink);      /* Night leads pink          */
+  --accent-2:var(--blue);
+  --bg:#0a0703;
+  --surface:#171109;
+  --surface-2:#241a10;
+  --paper-shade:#1c140b;
+  --fg:#fffbf1;
+  --fg-dim:rgba(255,251,241,.60);
+  --fg-faint:rgba(255,251,241,.48);   /* 4.84:1 — was .32 (2.71:1, failed AA) */
+  --hairline:#3a2c1c;
+  --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);
+  --sh-default:0 9px 2px rgba(255,251,241,.18);
+  --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  color-scheme:dark;
 }
 
-/* ------------------------------------------------------------
-   Local theme scopes — render one block in the opposite mode
-   without flipping the whole page (e.g. a Night poster on a Day
-   page). Apply .scope-day / .scope-night to a container.
-   ------------------------------------------------------------ */
-.scope-day {
-  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #fffbf1;
-  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .45); --hairline: rgba(13, 9, 5, .16);
-  --sh-light: 0 4px 1px rgba(13, 9, 5, .08); --sh-default: 0 8px 2px rgba(13, 9, 5, .12); --sh-heavy: 0 12px 3px rgba(13, 9, 5, .18);
-  color-scheme: light;
+/* ---- LOCAL SCOPES · render a block in the opposite mode --- */
+.scope-day{
+  --accent:var(--blue);--accent-2:var(--pink);--purple:#6e3179;
+  --bg:#fffbf1;--surface:#fffbf1;--surface-2:#f4ecd7;--paper-shade:#ece2c9;
+  --fg:#0d0905;--fg-dim:rgba(13,9,5,.72);--fg-faint:rgba(13,9,5,.56);--hairline:rgba(13,9,5,.16);
+  --sh-light:0 4px 1px rgba(13,9,5,.10);--sh-default:0 8px 2px rgba(13,9,5,.16);--sh-heavy:0 13px 3px rgba(13,9,5,.23);
+  color-scheme:light;
 }
-.scope-night {
-  --bg: #0a0703; --surface: #171109; --surface-2: #241a10;
-  --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .32); --hairline: #3a2c1c;
-  --sh-light: 0 4px 1px rgba(255, 251, 241, .14); --sh-default: 0 9px 2px rgba(255, 251, 241, .18); --sh-heavy: 0 14px 3px rgba(255, 251, 241, .26);
-  color-scheme: dark;
+.scope-night{
+  --accent:var(--pink);--accent-2:var(--blue);--purple:#9a4faa;
+  --bg:#0a0703;--surface:#171109;--surface-2:#241a10;--paper-shade:#1c140b;
+  --fg:#fffbf1;--fg-dim:rgba(255,251,241,.60);--fg-faint:rgba(255,251,241,.48);--hairline:#3a2c1c;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);--sh-default:0 9px 2px rgba(255,251,241,.18);--sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  color-scheme:dark;
 }
+
+/* ---- DAY-OF-WEEK CODING --------------------------------- */
+/* The largest colour system on any public surface. Source of truth
+   is day-colours.json — this block is emitted from it. Components
+   read --day / --on-day and never name a hue. */
+.d-mon{--day:var(--green);--on-day:#0d0905}
+.d-tue{--day:var(--blue);--on-day:#0d0905}
+.d-wed{--day:var(--purple);--on-day:#fffbf1}
+.d-thu{--day:var(--pink);--on-day:#0d0905}
+.d-fri{--day:var(--red);--on-day:#0d0905}
+.d-sat{--day:var(--amber);--on-day:#0d0905}
+.d-sun{--day:var(--yellow);--on-day:#0d0905}
+[data-theme="dark"] .d-wed{--on-day:#0d0905}
+
+/* ---- THEME FLIP ----------------------------------------- */
+/* 700ms on every surface, border, shadow and fill together, then
+   release to interaction timing. Never animate the theme per
+   component; never use --dur-settle for this. */
+html.theme-settling,html.theme-settling *{
+  transition:background-color var(--dur-enter) var(--ease-snap),
+             color var(--dur-enter) var(--ease-snap),
+             border-color var(--dur-enter) var(--ease-snap),
+             box-shadow var(--dur-enter) var(--ease-snap),
+             fill var(--dur-enter) var(--ease-snap) !important;
+}
+
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- SUBSTRATE ------------------------------------------ */
+/* Everything above is SCREEN — cream-paper simulations. On press:
+   ink is #111111, the sheet is white stock, and cream is NEVER laid
+   down as a fill. Those are the print equivalents of --fg / --bg,
+   not a second opinion. Print keeps the pre-correction shadow
+   ladder (.08/.12/.18, heavy at 12px) as a deliberate exemption —
+   white stock has more headroom and K prints heavier than it looks.
+   Print values live in day-colours.json under "print". */

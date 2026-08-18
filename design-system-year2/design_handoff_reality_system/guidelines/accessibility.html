@@ -1,0 +1,159 @@
+<!-- @dsCard group="Foundations" name="Accessibility & Bilingual" subtitle="Every measured contrast pair, the 12px informational floor, focus and targets, reduced motion — plus the Vietnamese typographic rules" viewport="1100x2700" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Accessibility & Bilingual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+table.cx{width:100%;border-collapse:collapse;font-size:12.5px}
+table.cx th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 9px 7px 0;border-bottom:2px solid var(--fg)}
+table.cx td{padding:8px 9px 8px 0;border-bottom:1px solid var(--hairline);vertical-align:middle;color:var(--fg-dim)}
+table.cx td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.cx tr:last-child td{border-bottom:none}
+.chip{display:inline-block;padding:4px 9px;font-family:var(--grotesk);font-weight:500;font-size:12px;border:2px solid var(--fg)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.floor{display:flex;flex-direction:column;gap:9px}
+.fr{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--hairline);padding-bottom:9px}
+.fr:last-child{border-bottom:none}
+.fr .sz{font-family:var(--mont);font-weight:800;font-size:11px;width:44px;flex:none;color:var(--fg)}
+.fr .ex{flex:1}
+.fr .vd{font-family:var(--mont);font-weight:700;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;border:2px solid var(--fg);padding:2px 6px;flex:none}
+.vd.ok{background:var(--green);color:#0d0905}
+.vd.no{background:var(--red);color:#0d0905}
+.vd.dec{background:var(--surface-2);color:var(--fg-dim)}
+.tap{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.tapb{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);display:grid;place-items:center;font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+.tapb.ok{width:104px;height:48px;border-color:var(--green)}
+.tapb.no{width:104px;height:32px;border-color:var(--red)}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.rules{grid-template-columns:1fr}}
+.rc{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px}
+.rc h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:6px}
+.rc p{font-size:12.5px;color:var(--fg-dim)}
+.rc.no{border-color:var(--red)}.rc.no h5{color:var(--red)}
+.vibox{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.vi-bad{font-family:var(--mont);font-weight:100;font-size:34px;text-transform:uppercase;letter-spacing:.015em;line-height:1;border-left:4px solid var(--red);padding-left:12px}
+.vi-good{font-family:var(--mont);font-weight:200;font-size:34px;text-transform:uppercase;letter-spacing:.015em;line-height:1.3;border-left:4px solid var(--green);padding-left:12px}
+.lbl2{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-faint)}
+.dual{border:2px solid var(--fg);background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:5px}
+.dual .en{font-family:var(--mont);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.03em}
+.dual .vi{font-family:var(--grotesk);font-weight:400;font-size:13.5px;color:var(--fg-dim)}
+.dual .fx{font-family:var(--grotesk);font-weight:500;font-size:12px;font-variant-numeric:tabular-nums;margin-top:4px}
+.ratio2{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.08em;border:2px solid var(--fg);padding:2px 6px;display:inline-block;white-space:nowrap}
+.ratio2.pass{background:var(--green);color:#0d0905}
+.ratio2.fail{background:var(--red);color:#0d0905}
+.ratio2.exempt{background:var(--surface-2);color:var(--fg-dim)}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Accessibility &amp; Bilingual</span><span class="sub">Both halves of "can this actually be read" &mdash; the measured contrast and sizing rules, and what Vietnamese does to type that English doesn&rsquo;t.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>Why this card exists</h4>
+  <p>Three of the corrections in this system came from an accessibility audit, not from taste &mdash; and they were scattered across a token file, a decision card and two CSS comments. The rules below are the ones that <b>changed shipped values</b>, so they are the ones most likely to be undone by someone who doesn&rsquo;t know why the numbers look odd.</p>
+  <p><b>The context is a dark bar.</b> Times, rooms and prices get read at arm&rsquo;s length, at night, by someone holding a drink. That is the design constraint behind every number on this page.</p>
+  <p><b>There is exactly one deliberate AA exception</b> in the system: the ACTION button&rsquo;s cream-on-red label at 4.19:1. It was taken knowingly, it is recorded in the token file, and it is the only one. Anything else measuring under 4.5:1 is a bug.</p>
+</div>
+
+<p class="tier">Measured contrast</p>
+<div class="pane">
+  <div class="plabel">Against the theme&rsquo;s own background &middot; the three corrected values are marked</div>
+  <table class="cx">
+    <tr><th style="width:20%">Pair</th><th style="width:22%">Sample</th><th style="width:14%">Ratio</th><th>Note</th></tr>
+    <tr><td class="k">--fg on --bg &middot; Day</td><td><span class="chip" style="background:#fffbf1;color:#0d0905">Open Mic 20:00</span></td><td><span class="ratio2 pass">17.4:1</span></td><td>Ink on cream. The whole system rides on this being enormous.</td></tr>
+    <tr><td class="k">--fg on --bg &middot; Night</td><td><span class="chip" style="background:#0a0703;color:#fffbf1;border-color:#fffbf1">Open Mic 20:00</span></td><td><span class="ratio2 pass">18.1:1</span></td><td>Cream on near-black.</td></tr>
+    <tr><td class="k">--fg-dim &middot; Day</td><td><span class="chip" style="background:#fffbf1;color:rgba(13,9,5,.72)">Front room, free entry</span></td><td><span class="ratio2 pass">9.1:1</span></td><td>.72 &mdash; secondary reading text, body copy on cards.</td></tr>
+    <tr><td class="k">--fg-dim &middot; Night</td><td><span class="chip" style="background:#0a0703;color:rgba(255,251,241,.60);border-color:#fffbf1">Front room, free entry</span></td><td><span class="ratio2 pass">7.2:1</span></td><td>.60 in Night carries the same job as .72 in Day.</td></tr>
+    <tr><td class="k">--fg-faint &middot; Day</td><td><span class="chip" style="background:#fffbf1;color:rgba(13,9,5,.56)">Placeholder text</span></td><td><span class="ratio2 pass">4.53:1</span></td><td><b>Corrected from .45 (3.15:1, failed).</b> It carries nav labels, field hints, placeholders and timestamps &mdash; real reading text, not decoration.</td></tr>
+    <tr><td class="k">--fg-faint &middot; Night</td><td><span class="chip" style="background:#0a0703;color:rgba(255,251,241,.48);border-color:#fffbf1">Placeholder text</span></td><td><span class="ratio2 pass">4.84:1</span></td><td><b>Corrected from .32 (2.71:1, failed).</b></td></tr>
+    <tr><td class="k">Ink on red</td><td><span class="chip" style="background:#ed2224;color:#0d0905">Reserve a table</span></td><td><span class="ratio2 pass">4.6:1</span></td><td>Passes at button size. Considered for ACTION and <b>not taken</b> (F2).</td></tr>
+    <tr><td class="k">Cream on red</td><td><span class="chip" style="background:#ed2224;color:#fffbf1">Reserve a table</span></td><td><span class="ratio2 fail">4.19:1</span></td><td><b>Fails AA &mdash; accepted.</b> What ships on the one button that converts, decided 19.08.26 with the measurement in hand: red reads as a filled ink button at distance. <b>The system&rsquo;s one deliberate AA exception</b>, and it does not generalise &mdash; every other coloured fill takes ink.</td></tr>
+    <tr><td class="k">Ink on blue</td><td><span class="chip" style="background:#18a7e0;color:#0d0905">What&rsquo;s on</span></td><td><span class="ratio2 pass">8.9:1</span></td><td>Info buttons, chips.</td></tr>
+    <tr><td class="k">Ink on yellow</td><td><span class="chip" style="background:#fddf00;color:#0d0905">Happy hour</span></td><td><span class="ratio2 pass">14.6:1</span></td><td>The most legible fill in the palette.</td></tr>
+    <tr><td class="k">Cream on purple &middot; Day</td><td><span class="chip" style="background:#6e3179;color:#fffbf1">Wednesday</span></td><td><span class="ratio2 pass">8.3:1</span></td><td>The one weekday that takes cream rather than ink &mdash; which is why <code>--on-day</code> exists.</td></tr>
+    <tr><td class="k">Ink on purple &middot; Night</td><td><span class="chip" style="background:#9a4faa;color:#0d0905">Wednesday</span></td><td><span class="ratio2 pass">5.4:1</span></td><td>Purple lifts to <code>#9a4faa</code> in Night, which flips its <code>--on-day</code> too.</td></tr>
+    <tr><td class="k">--hairline</td><td><span class="chip" style="background:#fffbf1;color:rgba(13,9,5,.16);border-color:rgba(13,9,5,.16)">divider only</span></td><td><span class="ratio2 exempt">Exempt</span></td><td><b>Decoration only.</b> Never carries text, never the sole indicator of anything. This is the one token deliberately below AA.</td></tr>
+  </table>
+</div>
+
+<p class="tier">The 12px informational floor</p>
+<div class="pane">
+  <div class="plabel">Decided 17.08.26 &mdash; if you would act on it, it sits at 12px or above</div>
+  <div class="two">
+    <div class="floor">
+      <div class="fr"><span class="sz">17px</span><span class="ex" style="font-family:var(--grotesk);font-size:17px">Body copy</span><span class="vd ok">Fine</span></div>
+      <div class="fr"><span class="sz">13px</span><span class="ex" style="font-family:var(--grotesk);font-weight:500;font-size:13px;font-variant-numeric:tabular-nums">Thu 21.08 &middot; 20:00 &middot; 45.000&#8363;</span><span class="vd ok">Fact</span></div>
+      <div class="fr"><span class="sz">12px</span><span class="ex" style="font-family:var(--grotesk);font-weight:500;font-size:12px;font-variant-numeric:tabular-nums">Front room &middot; doors 19:30</span><span class="vd ok">Floor</span></div>
+      <div class="fr"><span class="sz">11px</span><span class="ex" style="font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase">Live music</span><span class="vd dec">Decorative</span></div>
+      <div class="fr"><span class="sz">11px</span><span class="ex" style="font-family:var(--grotesk);font-weight:500;font-size:11px;font-variant-numeric:tabular-nums">Doors 19:30 &middot; 45.000&#8363;</span><span class="vd no">Too small</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="rc"><h5>The test</h5><p>Would someone <b>act</b> on this string? A time, a room, a date, a price, a capacity, a wifi password &mdash; those decide whether you go and where you stand. They sit at <b>12px minimum</b>.</p></div>
+      <div class="rc"><h5>What may stay at 11px</h5><p>Category labels, tab names, eyebrows, tags. They are <b>signals</b>, not information &mdash; you recognise them by shape and position, you don&rsquo;t read them to decide anything.</p></div>
+      <div class="rc no"><h5>Never shrink to fit</h5><p>A fact that won&rsquo;t fit at 12px is a layout or data problem. Split the string, use the name + qualifier field, or drop something else &mdash; don&rsquo;t go to 11px.</p></div>
+    </div>
+  </div>
+</div>
+
+<p class="tier">Focus, targets, motion</p>
+<div class="pane">
+  <div class="two">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <span class="lbl2">Focus &mdash; 3px --accent ring, 2px offset, theme-aware</span>
+        <div class="two" style="gap:12px;margin-top:9px">
+          <div class="scope-day" style="background:var(--bg);border:2px solid var(--fg);padding:14px;display:grid;place-items:center"><span class="chip" style="background:var(--surface);outline:3px solid var(--accent);outline-offset:2px">Day &middot; blue</span></div>
+          <div class="scope-night" style="background:var(--bg);border:2px solid var(--fg);padding:14px;display:grid;place-items:center"><span class="chip" style="background:var(--surface);color:var(--fg);border-color:var(--fg);outline:3px solid var(--accent);outline-offset:2px">Night &middot; pink</span></div>
+        </div>
+      </div>
+      <div>
+        <span class="lbl2">Targets &mdash; --tap-min 48px</span>
+        <div class="tap" style="margin-top:9px"><div class="tapb ok">48px &check;</div><div class="tapb no">32px &times;</div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="rc"><h5>Focus is never removed</h5><p>Not on buttons, not on cards, not on the day chips. The ring is the one place the accent is guaranteed to appear on every screen &mdash; which is why the accent lead being theme-aware mattered enough to decide.</p></div>
+      <div class="rc"><h5>Never colour alone</h5><p>The day-code is wayfinding, not information. Every card also carries its weekday <b>in words</b> &mdash; someone who can&rsquo;t separate pink from red still reads &ldquo;Thu&rdquo;.</p></div>
+      <div class="rc"><h5>Reduced motion</h5><p>A blanket <code>prefers-reduced-motion</code> rule kills every transition and animation. Design the <b>rest state first</b> &mdash; and ship the end-state in prerendered HTML so scroll reveals never leave content invisible to a crawler or a reduced-motion visitor.</p></div>
+      <div class="rc"><h5>Prerender in Day</h5><p>Force <code>prefers-color-scheme: light</code> in the headless renderer so a machine reporting dark mode doesn&rsquo;t bake Night into shipped markup.</p></div>
+    </div>
+  </div>
+</div>
+
+<p class="tier">Vietnamese &mdash; what it does to the type</p>
+<div class="pane">
+  <div class="plabel">Uppercase VI stacks diacritics above cap height, which breaks tight display leading</div>
+  <div class="two">
+    <div class="vibox">
+      <span class="lbl2">&times; line-height 1.05, weight 100 &mdash; marks clip and collide</span>
+      <span class="vi-bad">&#7842;NH S&#7842;NG<br>&#272;&#7896;NG</span>
+      <span class="lbl2">&check; line-height 1.3, weight 200 &mdash; the :lang(vi) rules</span>
+      <span class="vi-good">&#7842;NH S&#7842;NG<br>&#272;&#7896;NG</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="rc"><h5>Line-height 1.3 minimum</h5><p>On <code>.type-display</code> and every <code>.reg-far</code> heading. Stacked marks (&#7842;, &#7896;, &#7844;) sit <b>above</b> cap height &mdash; at 1.05 they clip into the line above.</p></div>
+      <div class="rc"><h5>Display steps to weight 200</h5><p><code>:lang(vi) .type-display</code>. At weight 100 the hairline strokes of a diacritic disappear at distance; 200 keeps them visible without changing the character of the face.</p></div>
+      <div class="rc"><h5>Proper names as given</h5><p><code>.name-block .type-name</code> never uppercases. <i>b&#7843;o anh</i> stays lowercase, <i>MIDNIGHT WOLVES</i> stays caps. A performer&rsquo;s name is theirs.</p></div>
+      <div class="rc no"><h5>Never strip diacritics</h5><p>Not in addresses, not in names, not to make something fit, not in a filename that gets displayed. <code>&#272;&agrave; N&#7861;ng</code> is never <code>Da Nang</code> on a designed surface.</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="pane" style="margin-top:16px">
+  <div class="plabel">Dual-language blocks &mdash; the layout convention</div>
+  <div class="two">
+    <div class="dual"><span class="en">Open Mic</span><span class="vi">&#272;&ecirc;m nh&#7841;c m&#7903;</span><span class="fx">Thu 21.08 &middot; 20:00 &middot; free entry</span></div>
+    <div class="dual"><span class="en">Film Club</span><span class="vi">C&acirc;u l&#7841;c b&#7897; phim</span><span class="fx">Sat 23.08 &middot; 19:00 &middot; 45.000&#8363;</span></div>
+  </div>
+  <table class="cx" style="margin-top:18px">
+    <tr><td class="k" style="width:24%">Order</td><td>English first as the display line, Vietnamese immediately beneath. Same block, no tabs, no toggle &mdash; both audiences read the same object.</td></tr>
+    <tr><td class="k">Type roles</td><td>The English line takes the heading role; the Vietnamese takes <code>.type-page</code> or <code>.type-sub</code> in Grotesk. <b>Never two competing display lines.</b></td></tr>
+    <tr><td class="k">Facts once</td><td>Times, prices and dates are numerals &mdash; they appear <b>once</b>, in Grotesk, serving both languages. Duplicating them is the most common bilingual layout error.</td></tr>
+    <tr><td class="k">Money</td><td><code>45.000&#8363;</code> &mdash; dot thousands, currency trailing, no space. Tabular figures in any column.</td></tr>
+    <tr><td class="k">lang attribute</td><td>Set <code>lang="vi"</code> on the Vietnamese element, not on the page, or the <code>:lang(vi)</code> type rules apply to the English too.</td></tr>
+  </table>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

@@ -1,0 +1,203 @@
+<!-- @dsCard group="Decisions" name="Decisions — Final Four (19.08.26)" subtitle="The last four calls before the system is reimportable · everything else on this rev is documented and shipped" viewport="1100x4200" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Final Four</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.ladder{border:2px solid var(--fg)}
+.ladder div{padding:8px 10px;font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.09em;text-transform:uppercase;border-bottom:1px solid var(--hairline)}
+.ladder div:last-child{border-bottom:none}
+.ph{border:2px solid var(--hairline);height:46px;display:grid;place-items:center;font-family:var(--mont);font-weight:700;font-size:8.5px;letter-spacing:.11em;color:var(--fg-faint)}
+.dayhdr{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.13em;text-transform:uppercase;padding:6px 9px;color:var(--fg-dim)}
+.skel{height:12px;background:var(--surface-2)}
+.bigbtn{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:14px;border:2px solid var(--fg);background:var(--red);padding:13px 22px;box-shadow:var(--sh-default);text-align:center}
+.btnrow{display:flex;flex-direction:column;gap:9px}
+.minibtn{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.11em;font-size:10px;border:2px solid var(--fg);padding:8px 12px;text-align:center}
+.stamps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stm{position:relative}
+.stm>.pl{position:relative;isolation:isolate;padding:0 11px 11px 0}
+.stm>.pl>i{position:absolute;left:11px;top:11px;right:0;bottom:0;z-index:-1;background:var(--ink2)}
+.stm>.pl>span{display:block;background:var(--ink1);border:2px solid var(--fg);aspect-ratio:1/1;position:relative;z-index:1}
+.stm em{display:block;font-family:var(--mont);font-weight:700;font-style:normal;font-size:8px;letter-spacing:.07em;text-transform:uppercase;margin-top:8px;color:var(--fg-dim)}
+.banrow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ban{position:relative}
+.ban>.pl{position:relative;isolation:isolate;padding:0 9px 9px 0}
+.ban>.pl>i{position:absolute;left:9px;top:9px;right:0;bottom:0;z-index:-1;background:var(--ink2)}
+.ban>.pl>span{display:block;background:var(--ink1);border:2px solid var(--fg);height:40px;position:relative;z-index:1}
+.ban em{display:block;font-family:var(--mont);font-weight:700;font-style:normal;font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:7px;color:var(--fg-faint)}
+.trk{border:2px solid var(--fg);background:var(--surface);padding:11px 13px;display:flex;flex-direction:column;gap:9px}
+.trk .l{font-family:var(--mont);font-weight:700;font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-faint)}
+.spec{border:2px solid var(--fg);background:var(--surface);padding:11px 13px;box-shadow:var(--sh-light)}
+.spec .r{font-family:var(--mont);font-weight:700;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:6px}
+.spec p{font-size:12px;color:var(--fg-dim)}
+.spec .mono{display:block;font-family:var(--mont);font-weight:600;font-size:10.5px;line-height:1.85;color:var(--fg-dim)}
+table.st{width:100%;border-collapse:collapse;font-size:11.5px}
+table.st th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:8px;color:var(--fg-faint);text-align:left;padding:0 7px 6px 0;border-bottom:2px solid var(--fg)}
+table.st td{padding:6px 7px 6px 0;border-bottom:1px solid var(--hairline);color:var(--fg-dim)}
+table.st td.k{font-family:var(--mont);font-weight:700;font-size:10px;color:var(--fg);white-space:nowrap}
+table.st tr:last-child td{border-bottom:none}
+.impact{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 24px}
+@media(max-width:820px){.impact{grid-template-columns:repeat(2,1fr)}}
+.ic{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:13px 15px 15px}
+.ic .n{font-family:var(--mont);font-weight:100;font-size:38px;line-height:1;display:block}
+.ic .t{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;display:block;margin-top:7px}
+.ic .s{font-size:11.5px;color:var(--fg-dim);display:block;margin-top:5px}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Final Four</span><span class="sub">All four decided 19.08.26 &mdash; the record of what was chosen and what it cost, kept live so the options stay comparable. The audit is closed.</span><span class="tag">CLOSED · 19.08.26</span></header>
+
+<div class="tally"><span>All four decided &middot; 19.08.26</span><span style="letter-spacing:.06em;font-weight:500;text-transform:none;font-family:var(--grotesk);font-size:12px">The options stay rendered so the reasoning is inspectable. <b style="font-weight:700">F1</b> chose B, <b style="font-weight:700">F2</b> chose A, <b style="font-weight:700">F3</b> chose B, <b style="font-weight:700">F4</b> chose A.</span></div>
+
+<div class="impact">
+  <div class="ic"><span class="n">4</span><span class="t">Closed</span><span class="s">F1 held the shipped ladder; F3 softened the ban list; F2 and F4 ratified.</span></div>
+  <div class="ic"><span class="n">1</span><span class="t">Code change</span><span class="s">F3 only — <code>neverPairEnforcement: "warn"</code> in the JSON.</span></div>
+  <div class="ic"><span class="n">1</span><span class="t">AA exception</span><span class="s">F2 cream-on-red at 4.19:1, accepted knowingly and recorded as such.</span></div>
+  <div class="ic"><span class="n">0</span><span class="t">Open</span><span class="s">Nothing left. The reimport carries the full canon.</span></div>
+</div>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>What was decided</h4>
+  <p><b>F1 &rarr; B, two steps off-paper.</b> The earlier revert is withdrawn; the shipped ladder stands. <b>F2 &rarr; A, cream on red</b> &mdash; taken knowingly at 4.19:1, so red is the one coloured fill not carrying ink; recorded as an exception in <code>reality-tokens.json</code> so it isn't silently "fixed", and it does not generalise. <b>F3 &rarr; B, map canon / list advisory</b> &mdash; the four discouraged combinations warn rather than block, keeping a deliberate near-tonal overprint available at poster scale. <b>F4 &rarr; A, baked per role</b> &mdash; the six-number optical ladder is canon.</p>
+</div>
+
+<p class="tier">F1 — Closed · the shipped ladder stands</p>
+
+<div class="dq" data-resolved data-split data-q="surfaces">
+  <div class="dq-h"><span class="dq-n">F1</span><span class="dq-t">Day surface ladder<small>Your B5 pick came back <b>A · restore the collapse</b>. I held it, because it reverts the bug section A was written to fix. Same mock both ways — day header, poster placeholder, two skeleton lines.</small></span><span class="dq-state st-ratify">Chose B</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A"><div class="oh"><span class="ok">A</span><span class="on">Restore the collapse</span><span class="ship">Not taken</span></div>
+      <div class="stage"><div style="--surface-2:var(--bg);--paper-shade:var(--bg);background:var(--bg);border:2px solid var(--fg);padding:11px;display:flex;flex-direction:column;gap:9px">
+        <div class="ladder"><div style="background:var(--bg)">bg</div><div style="background:var(--surface)">surface</div><div style="background:var(--surface-2)">surface-2</div><div style="background:var(--paper-shade)">paper-shade</div></div>
+        <div style="border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default)"><div class="dayhdr" style="background:var(--surface-2)">Thursday 21 August</div><div style="padding:9px;display:flex;flex-direction:column;gap:7px"><div class="ph" style="background:var(--paper-shade)">POSTER PENDING</div><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div></div></div>
+      </div></div>
+      <p class="why">Purist reading of the DNA: borders carry structure, tints never do. One flat sheet of paper.</p>
+      <p class="cost"><b>Cost</b>The day header, the placeholder and both skeleton lines vanish into the page. Tokens must revert and <code>--paper-shade</code> is deleted; the calendar card, primitives card and app all lose their placeholder surface.</p>
+      <button class="pick">Choose A</button></div>
+    <div class="opt" data-pick="B"><div class="oh"><span class="ok">B</span><span class="on">Two steps off-paper</span><span class="rec">Chosen</span></div>
+      <div class="stage"><div style="background:var(--bg);border:2px solid var(--fg);padding:11px;display:flex;flex-direction:column;gap:9px">
+        <div class="ladder"><div style="background:var(--bg)">bg · fffbf1</div><div style="background:var(--surface)">surface · fffbf1</div><div style="background:var(--surface-2)">surface-2 · f4ecd7</div><div style="background:var(--paper-shade)">paper-shade · ece2c9</div></div>
+        <div style="border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-default)"><div class="dayhdr" style="background:var(--surface-2)">Thursday 21 August</div><div style="padding:9px;display:flex;flex-direction:column;gap:7px"><div class="ph" style="background:var(--paper-shade)">POSTER PENDING</div><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div></div></div>
+      </div></div>
+      <p class="why">Not a grey tint — <b>two shades of unprinted stock</b>. Structure still comes from the 2px border; the tints only mark "nothing has been printed here yet".</p>
+      <p class="cost"><b>Cost</b>Day and Night ladders are different shapes, and the Surfaces subtitle needs rewriting.</p>
+      <button class="pick">Choose B</button></div>
+  </div>
+</div>
+
+<p class="tier">F2 — Closed · a deliberate AA exception</p>
+
+<div class="dq" data-resolved data-split data-q="action-btn">
+  <div class="dq-h"><span class="dq-n">F2</span><span class="dq-t">ACTION button label colour<small>Your B6 pick came back <b>A · cream on red</b>, which is what the CSS already ships — so nothing is broken, but it measures 4.19:1 and it makes red the only coloured fill not carrying ink. Shown against info and notice so you can see the odd-one-out.</small></span><span class="dq-state st-patch">Chose A &middot; AA exception</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A"><div class="oh"><span class="ok">A</span><span class="on">Cream on red</span><span class="ship">Chosen · shipped</span></div>
+      <div class="stage"><div style="background:var(--bg);border:2px solid var(--fg);padding:14px;display:flex;flex-direction:column;gap:11px">
+        <div class="bigbtn" style="color:#fffbf1">Reserve a table</div>
+        <span class="ratio fail">4.19:1 · fails AA</span>
+        <div class="btnrow"><div class="minibtn" style="background:var(--blue);color:#0d0905">What&rsquo;s on this week</div><div class="minibtn" style="background:var(--yellow);color:#0d0905">Happy hour 17&ndash;19</div></div>
+      </div></div>
+      <p class="why">Reads as a fully filled ink button from across a dark room, and the red/cream pairing is the loudest thing in the palette.</p>
+      <p class="cost"><b>Cost</b>A documented AA failure on the one button that converts, and the rule "coloured fill takes ink" gets an exception on its most visible instance.</p>
+      <button class="pick">Choose A</button></div>
+    <div class="opt" data-pick="B"><div class="oh"><span class="ok">B</span><span class="on">Ink on red</span><span class="ship">Not taken</span></div>
+      <div class="stage"><div style="background:var(--bg);border:2px solid var(--fg);padding:14px;display:flex;flex-direction:column;gap:11px">
+        <div class="bigbtn" style="color:#0d0905">Reserve a table</div>
+        <span class="ratio pass">4.6:1 · passes AA</span>
+        <div class="btnrow"><div class="minibtn" style="background:var(--blue);color:#0d0905">What&rsquo;s on this week</div><div class="minibtn" style="background:var(--yellow);color:#0d0905">Happy hour 17&ndash;19</div></div>
+      </div></div>
+      <p class="why">Passes AA and gives every coloured fill in the system <b>one rule with no exceptions</b> — which is the version Fable can actually enforce in a lint pass.</p>
+      <p class="cost"><b>Cost</b>Edits in <code>reality-ds.css</code>, the site, <code>Button.jsx</code> and its prompt. Slightly quieter at distance.</p>
+      <button class="pick">Choose B</button></div>
+  </div>
+</div>
+
+<p class="tier">F3 + F4 — Closed</p>
+
+<div class="dq" data-resolved data-q="pair-rule">
+  <div class="dq-h"><span class="dq-n">F3</span><span class="dq-t">How the accent pair is derived, and is the never-pair list canon?<small>I applied the partner-map reading — Day <b>blue&rarr;pink</b>, Night <b>pink&rarr;blue</b> — because D2 chose the partner map. The four never-pair combinations sit in <code>day-colours.json</code> unratified by any card. Top row: the pair as derived. Bottom row: the four banned combinations, so you can see what the list is actually protecting.</small></span><span class="dq-state st-ratify">Chose A</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A"><div class="oh"><span class="ok">A</span><span class="on">Partner map + ban list is canon</span><span class="rec">Applied</span></div>
+      <div class="stage">
+        <div class="stamps"><div class="stm" style="--ink1:var(--blue);--ink2:var(--pink)"><div class="pl"><i></i><span></span></div><em>Day · blue&rarr;pink</em></div><div class="stm" style="--ink1:var(--pink);--ink2:var(--blue)"><div class="pl"><i></i><span></span></div><em>Night · pink&rarr;blue</em></div><div class="stm" style="--ink1:var(--green);--ink2:var(--purple)"><div class="pl"><i></i><span></span></div><em>green&rarr;purple</em></div></div>
+        <div class="lbl" style="margin:2px 0 0">The four that are banned</div>
+        <div class="banrow"><div class="ban" style="--ink1:var(--pink);--ink2:var(--red)"><div class="pl"><i></i><span></span></div><em>pink · red</em></div><div class="ban" style="--ink1:var(--pink);--ink2:var(--purple)"><div class="pl"><i></i><span></span></div><em>pink · purple</em></div><div class="ban" style="--ink1:var(--amber);--ink2:var(--yellow)"><div class="pl"><i></i><span></span></div><em>amber · yellow</em></div><div class="ban" style="--ink1:var(--blue);--ink2:var(--blue)"><div class="pl"><i></i><span></span></div><em>self · self</em></div></div>
+        <div class="spec"><div class="r">One rule, both directions</div><p>The lead comes from the theme; the second ink comes from the partner map; the ban list is a hard stop that no dial may override.</p></div>
+      </div>
+      <p class="why">The derivation becomes <b>machine-checkable</b> — one lookup, one guard. Every misregister in the product gets a real warm/cool separation, and the four mush combinations can't be authored by accident.</p>
+      <p class="cost"><b>Cost</b>Poster dials lose four combinations they can currently reach by hand.</p>
+      <button class="pick">Choose A</button></div>
+    <div class="opt" data-pick="B"><div class="oh"><span class="ok">B</span><span class="on">Map is canon, ban list is advisory</span><span class="rec">Chosen</span></div>
+      <div class="stage">
+        <div class="stamps"><div class="stm" style="--ink1:var(--blue);--ink2:var(--pink)"><div class="pl"><i></i><span></span></div><em>Day · blue&rarr;pink</em></div><div class="stm" style="--ink1:var(--pink);--ink2:var(--blue)"><div class="pl"><i></i><span></span></div><em>Night · pink&rarr;blue</em></div><div class="stm" style="--ink1:var(--green);--ink2:var(--purple)"><div class="pl"><i></i><span></span></div><em>green&rarr;purple</em></div></div>
+        <div class="lbl" style="margin:2px 0 0">Reachable, warned, not blocked</div>
+        <div class="banrow"><div class="ban" style="--ink1:var(--pink);--ink2:var(--red)"><div class="pl"><i></i><span></span></div><em>pink · red</em></div><div class="ban" style="--ink1:var(--pink);--ink2:var(--purple)"><div class="pl"><i></i><span></span></div><em>pink · purple</em></div><div class="ban" style="--ink1:var(--amber);--ink2:var(--yellow)"><div class="pl"><i></i><span></span></div><em>amber · yellow</em></div><div class="ban" style="--ink1:var(--blue);--ink2:var(--blue)"><div class="pl"><i></i><span></span></div><em>self · self</em></div></div>
+        <div class="spec"><div class="r">Guidance, not a guard</div><p>The map still supplies defaults; the four combinations show a warning in the picker and stay authorable.</p></div>
+      </div>
+      <p class="why">Keeps a deliberate near-tonal overprint available — the amber-on-yellow one is genuinely nice at large scale on stock.</p>
+      <p class="cost"><b>Cost</b>Not enforceable. Fable can't lint an advisory, and the list will drift back into use.</p>
+      <button class="pick">Choose B</button></div>
+  </div>
+</div>
+
+<div class="dq" data-resolved data-q="tracking">
+  <div class="dq-h"><span class="dq-n">F4</span><span class="dq-t">Tracking ladder — baked per role, or one formula?<small>Block K went unpicked; I applied the optical ladder that is now baked into the six type roles. Same six strings both ways — the difference is what happens at sizes nobody has drawn yet.</small></span><span class="dq-state st-ratify">Chose A</span></div>
+  <div class="opts two">
+    <div class="opt" data-pick="A"><div class="oh"><span class="ok">A</span><span class="on">Baked per role</span><span class="rec">Chosen</span></div>
+      <div class="stage">
+        <div class="trk">
+          <div><span class="l">display · .015em</span><div style="font-family:var(--mont);font-weight:100;font-size:26px;letter-spacing:.015em;text-transform:uppercase;line-height:1.05">Open Mic</div></div>
+          <div><span class="l">h1 · .025em</span><div style="font-family:var(--mont);font-weight:700;font-size:19px;letter-spacing:.025em;text-transform:uppercase">Thursday Night</div></div>
+          <div><span class="l">h2 · .04em</span><div style="font-family:var(--mont);font-weight:600;font-size:14px;letter-spacing:.04em;text-transform:uppercase">This Week</div></div>
+          <div><span class="l">name · 0</span><div style="font-family:var(--mont);font-weight:600;font-size:15px">b&#7843;o anh</div></div>
+          <div><span class="l">label · .16em</span><div style="font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase">Live music</div></div>
+          <div><span class="l">button · .11em</span><div style="font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.11em;text-transform:uppercase">Reserve</div></div>
+        </div>
+        <div class="spec"><div class="r">Six numbers, in the class</div><span class="mono">.015 · .025 · .04 · 0 · .16 · .11em</span></div>
+      </div>
+      <p class="why">Optically set at the size each role actually appears. <b>Six numbers a person can memorise</b>, and the print/signage offsets ride on top as <code>+.01em</code> / <code>+.02em</code>.</p>
+      <p class="cost"><b>Cost</b>A poster title at 240px is tracked from the same number as a 40px one, so the studios still judge by eye above the UI range.</p>
+      <button class="pick">Choose A</button></div>
+    <div class="opt" data-pick="B"><div class="oh"><span class="ok">B</span><span class="on">One size-derived formula</span></div>
+      <div class="stage">
+        <div class="trk">
+          <div><span class="l">26px &rarr; derived .02em</span><div style="font-family:var(--mont);font-weight:100;font-size:26px;letter-spacing:.02em;text-transform:uppercase;line-height:1.05">Open Mic</div></div>
+          <div><span class="l">19px &rarr; .028em</span><div style="font-family:var(--mont);font-weight:700;font-size:19px;letter-spacing:.028em;text-transform:uppercase">Thursday Night</div></div>
+          <div><span class="l">14px &rarr; .038em</span><div style="font-family:var(--mont);font-weight:600;font-size:14px;letter-spacing:.038em;text-transform:uppercase">This Week</div></div>
+          <div><span class="l">15px &rarr; .035em</span><div style="font-family:var(--mont);font-weight:600;font-size:15px;letter-spacing:.035em">b&#7843;o anh</div></div>
+          <div><span class="l">11px &rarr; .045em</span><div style="font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.045em;text-transform:uppercase">Live music</div></div>
+          <div><span class="l">11px &rarr; .045em</span><div style="font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.045em;text-transform:uppercase">Reserve</div></div>
+        </div>
+        <div class="spec"><div class="r">Tracking as a function of size</div><span class="mono">smaller &rarr; looser, continuously,<br>from 248px down to 9pt</span></div>
+      </div>
+      <p class="why">Scales to any size, which is what the studios need above the UI range — one rule covers a 248px canvas title and a 9pt menu line.</p>
+      <p class="cost"><b>Cost</b>Look at the bottom two rows: labels and buttons lose the wide silkscreen tracking that is a large part of the brand&rsquo;s voice, and names gain tracking they shouldn&rsquo;t have. A formula can&rsquo;t know that caps labels are a signal rather than reading matter.</p>
+      <button class="pick">Choose B</button></div>
+  </div>
+</div>
+
+<p class="tier">Documented without a call · for the record</p>
+<div class="pane">
+  <p class="plabel">Written into the files on this rev &mdash; no decision was needed</p>
+  <table class="st">
+    <tr><th style="width:24%">Item</th><th style="width:26%">Now says</th><th>Where</th></tr>
+    <tr><td class="k">Calendar family</td><td>Nine <code>.cal-*</code> classes, day inheritance, 12px facts</td><td>New card &middot; <code>guidelines/calendar-family.html</code></td></tr>
+    <tr><td class="k">Primitives</td><td>Eight primitives + three view-transition hooks, with the isolation gotcha</td><td>New card &middot; <code>guidelines/primitives.html</code></td></tr>
+    <tr><td class="k">Motion index</td><td>The named keyframe set, one line each, grouped by job</td><td>New card &middot; <code>guidelines/motion-index.html</code></td></tr>
+    <tr><td class="k">Buttons</td><td>Four roles, one ACTION per screen, 53/4/2 counts called out as under-use</td><td>New card &middot; <code>guidelines/buttons.html</code></td></tr>
+    <tr><td class="k">Wordmark &amp; QR</td><td>Alternates for <b>A, I, Y only</b>; ship the SVG, never re-typeset</td><td>New card &middot; <code>guidelines/wordmark-assets.html</code> (was only in a stale bundle README)</td></tr>
+    <tr><td class="k">Accessibility</td><td>Contrast table, focus, 12px floor, 48px targets, reduced-motion</td><td>New card &middot; <code>guidelines/accessibility.html</code></td></tr>
+    <tr><td class="k">Bilingual type</td><td>VI diacritics, line-height 1.3, display weight 200, dual-language order</td><td>Same card, second half</td></tr>
+    <tr><td class="k">Token export</td><td>Live <code>reality-tokens.css</code> + <code>.json</code> at root, generated from this rev</td><td><code>tokens/</code> &mdash; the old copies in the handoff bundle were pre-audit</td></tr>
+    <tr><td class="k">Theme flip</td><td>700ms via <code>html.theme-settling</code>; <code>--dur-settle</code> is the interaction settle</td><td>Token comment + motion card &mdash; the 350ms claim is gone</td></tr>
+    <tr><td class="k">Substrate</td><td>Screen is cream simulation; press is <code>#111111</code> on white stock</td><td>Token comment + palette section</td></tr>
+  </table>
+</div>
+
+<div class="note">
+  <h4>Code sweeps &mdash; all that is left</h4>
+  <p><b>Not decisions</b> &mdash; the shipped consequences. F1 and F2 changed none of them, so the list is unchanged. Site token patch (<code>src/index.css</code> is still on the pre-fix values, and never re-declares <code>--accent</code> in dark, so the site&rsquo;s Night still leads blue). The <code>www.</code> sweep is wider than the audit said: <code>print-data</code>, <code>print-export</code>, <code>schedule-render</code>, <code>studio-data</code> and <code>event-report</code>, not just one constant. Then the three studios importing <code>day-colours.json</code>, the blue/yellow deployment pass, and the events <code>name + qualifier</code> field.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

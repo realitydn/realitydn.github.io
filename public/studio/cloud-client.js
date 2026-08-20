@@ -237,9 +237,14 @@
   }
 
   /* ---- poster write-back ------------------------------------------------- */
-  // putPoster(eventId, slot, blob, contentType) → { ok, slot, url } | null.
+  // putPoster(eventId, slot, blob, contentType, opts)
+  //   → { ok, slot, url, seriesWide, seriesForced } | null.
   // slot ∈ { feed, poster4x5, square1x1, story }.
-  function putPoster(eventId, slot, blob, contentType) {
+  // opts.scope === 'series' asks the hub to stamp the whole series — the series
+  // default plus EVERY date, hand-edited ones included. The field is omitted
+  // entirely for a normal send, and a hub that predates it simply ignores the
+  // extra form part and answers seriesForced: undefined.
+  function putPoster(eventId, slot, blob, contentType, opts) {
     if (!isSignedIn()) { return Promise.resolve(null); }
     if (!eventId || !slot || !blob) { return Promise.resolve(null); }
     var fd;
@@ -250,6 +255,7 @@
       var ext = ct.indexOf('webp') >= 0 ? 'webp'
         : (ct.indexOf('jpeg') >= 0 || ct.indexOf('jpg') >= 0 ? 'jpg' : 'png');
       fd.append('file', blob, slot + '.' + ext);
+      if (opts && opts.scope) fd.append('scope', String(opts.scope));
     } catch (e) {
       console.info(LOG, 'putPoster: could not build form data; skipping');
       return Promise.resolve(null);

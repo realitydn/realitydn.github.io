@@ -65,6 +65,27 @@ function feedDayIdx(iso){ const d=feedDate(iso); if(d.length<10) return null;   
   const w=new Date(d+'T12:00:00Z').getUTCDay(); return isNaN(w)?null:(w+6)%7; }
 function feedDayLabel(iso){ const d=feedDate(iso); if(d.length<10) return '';   // house style, day-first: 9.7
   return (+d.slice(8,10))+'.'+(+d.slice(5,7)); }
+/* Search text for a feed row — diacritics-blind, so "cafe" finds "Philosophy
+   Café" and "dem" finds "Đêm Trò Chơi". Same đ/Đ hand-map as slugify (they don't
+   decompose under NFD). Both titles, the host and the room code are searchable:
+   the feed runs two months out, so the picker's flat list is ~300 rows deep. */
+function searchNorm(s){
+  return (s||'').replace(/đ/g,'d').replace(/Đ/g,'D')
+    .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'),'')
+    .toLowerCase();
+}
+function eventHaystack(ev){
+  if(!ev) return '';
+  return searchNorm([ev.title_en, ev.title_vi, ev.host, ev.location && ev.location.code]
+    .filter(Boolean).join(' '));
+}
+/* Tokens AND together, so "chess night" and "night chess" both land. */
+function eventMatches(ev, terms){
+  if(!terms || !terms.length) return true;
+  const hay = eventHaystack(ev);
+  for(let i=0;i<terms.length;i++){ if(hay.indexOf(terms[i])<0) return false; }
+  return true;
+}
 /* One queue row per SERIES for weekly events; dismiss/claim key by the series
    so next week's instance doesn't resurrect a dismissed row. */
 function queueKey(ev){ return (ev && (ev.seriesId || ev.id)) || null; }
@@ -2208,12 +2229,25 @@ function App(){
       setEventPicker({ open:true, loading:false, events:[], err:'Could not load the events feed.', origin });
     }
   }
-  async function exportToEvent(eventId){
+  /* scope: 'one' (this date) | 'series' (every upcoming date of the series).
+     The picker only offers the choice when the target actually repeats. */
+  async function exportToEvent(eventId, scope){
     if(exporting || !window.htmlToImage || !window.RCloud) return;
     /* grab the picker's feed rows before closing it — the post-send message needs
-       to know whether the target belongs to a series */
+       to know whether the target belongs to a series, and the fan-out fallback
+       needs the sibling dates */
     const pickedFrom = (eventPicker && eventPicker.events) || [];
     setEventPicker(null);
+    const feedRows = pickedFrom.length ? pickedFrom : ((queueFeed && queueFeed.events) || []);
+    const target = feedRows.find(e=>e.id===eventId) || null;
+    const wantSeries = scope==='series' && !!(target && target.seriesId);
+    /* The other upcoming dates of this series, soonest first. Only walked on the
+       FALLBACK path: a hub that understands scope=series answers seriesForced,
+       having already stamped the series default and every date in one write. */
+    const siblings = wantSeries
+      ? feedRows.filter(e=>e.seriesId===target.seriesId && e.id!==eventId)
+          .sort((a,b)=>String(a.startsAt||'').localeCompare(String(b.startsAt||'')))
+      : [];
     const prev = doc.activeFormat;
     setSelectedIds([]); setExporting(true);
     const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
@@ -2234,7 +2268,8 @@ function App(){
         style:{ transform:`translateY(${-by}px)`, left:'0px', top:'0px', margin:'0', position:'static' } };
       return window.htmlToImage.toBlob(node, opts);
     };
-    let ok = 0, failed = 0, wideHits = 0;
+    let ok = 0, failed = 0, wideHits = 0, forcedHits = 0, fanFailed = 0;
+    const fanned = {};   // sibling ids that took at least one slot on the fallback path
     try{
       for(const m of EVENT_SLOTS){
         const label = m.plate ? 'image-only' : AP_FMT[m.fmt].label;
@@ -2264,8 +2299,21 @@ function App(){
           }
         }catch(e){ /* keep the raw render */ }
         setExportMsg('Uploading '+label+'…');
-        const res = await window.RCloud.putPoster(eventId, m.slot, up.blob, up.type);
-        if(res && res.ok){ ok++; if(res.seriesWide) wideHits++; } else failed++;
+        const res = await window.RCloud.putPoster(eventId, m.slot, up.blob, up.type,
+          wantSeries ? { scope:'series' } : undefined);
+        if(res && res.ok){ ok++; if(res.seriesWide) wideHits++; if(res.seriesForced) forcedHits++; }
+        else { failed++; continue; }
+        /* Fallback for a hub deployed before scope=series: it stamped at most the
+           non-detached dates, so push the same bytes onto each sibling by hand.
+           Costs one upload per date — it stops happening the moment the hub starts
+           answering seriesForced. */
+        if(wantSeries && !res.seriesForced){
+          for(let i=0;i<siblings.length;i++){
+            setExportMsg(label+' — date '+(i+2)+' of '+(siblings.length+1)+'…');
+            const r2 = await window.RCloud.putPoster(siblings[i].id, m.slot, up.blob, up.type, { scope:'series' });
+            if(r2 && r2.ok) fanned[siblings[i].id] = 1; else fanFailed++;
+          }
+        }
       }
       setDoc(d=>({ ...d, activeFormat:prev }));
       if(ok){
@@ -2277,16 +2325,21 @@ function App(){
       /* A send onto a series instance normally stamps the whole series (the hub
          answers seriesWide). It DOESN'T when that instance is hand-edited — a
          detached date keeps its own artwork, so the other dates quietly keep the
-         old poster. Say so, or it reads as "the update didn't work". */
-      const target = pickedFrom.find(e=>e.id===eventId)
-        || ((queueFeed && queueFeed.events) || []).find(e=>e.id===eventId);
-      const oneDateOnly = ok>0 && wideHits===0 && !!(target && target.seriesId);
-      setExportMsg(ok
-        ? (oneDateOnly
-            ? 'Sent to THIS DATE only — the rest of the series keeps its old poster'
-            : ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')))
-        : 'Export to event failed');
-      await new Promise(r=>setTimeout(r, ok?(oneDateOnly?3400:1600):1800));
+         old poster. Say so, or it reads as "the update didn't work"; "All N dates"
+         is the way past it. Each outcome gets its own line — none of them can be
+         inferred from the canvas, so silence here is what made this confusing. */
+      const isSeries = !!(target && target.seriesId);
+      const seriesRun = wantSeries && ok>0;
+      const dates = forcedHits ? (siblings.length+1) : (Object.keys(fanned).length+1);
+      const oneDateOnly = ok>0 && !wantSeries && isSeries && wideHits===0;
+      const wentWide    = ok>0 && !wantSeries && isSeries && wideHits>0;
+      const lost = failed + fanFailed;
+      setExportMsg(!ok ? 'Export to event failed'
+        : seriesRun   ? ('Sent to '+dates+' date'+(dates===1?'':'s')+' in the series'+(lost?(' · '+lost+' failed'):''))
+        : oneDateOnly ? 'Sent to THIS DATE only — the rest of the series keeps its old poster'
+        : wentWide    ? 'Sent to the event — this series shares one poster, so every date took it'
+        : ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')));
+      await new Promise(r=>setTimeout(r, ok?((oneDateOnly||wentWide||seriesRun)?3400:1600):1800));
     }catch(err){
       console.error('export-to-event failed', err);
       setPlateOnly(false);
@@ -2551,17 +2604,76 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
   const originRef = picker.origin || null;
   const originEv = originRef ? picker.events.find(e=>e.id===originRef.id) : null;
   const origin = originEv ? originRef : null;
-  const rest = origin ? picker.events.filter(e=>e.id!==origin.id) : picker.events;
   const whenOf = iso => (iso||'').slice(0,16).replace('T',' ');
-  return (
-    <div className="rs-overlay" onClick={onClose}
-      style={{ position:'fixed', inset:0, background:'rgba(10,7,3,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
-      <div className="rs-modal" onClick={e=>e.stopPropagation()}
-        style={{ width:420, maxWidth:'92vw', maxHeight:'80vh', overflow:'auto', background:'#fffbf1', color:'#0d0905', borderRadius:10, padding:18, boxShadow:'0 30px 70px rgba(0,0,0,.5)' }}>
-        <div style={{ fontFamily:'Montserrat', fontWeight:800, letterSpacing:'.04em', fontSize:14, marginBottom:4 }}>Export to event</div>
-        <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>
-          Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus your text-less <b>feed slice</b> → <b>feed</b> onto the chosen event.
+
+  /* Search by name. The feed is loaded two months out, so this list is ~300 rows
+     deep and the event you want is almost never on screen — scrolling for it was
+     the slowest part of a send. Diacritics-blind and token-AND (see
+     eventMatches), over both titles, the host and the room code. */
+  const [q, setQ] = React.useState('');
+  const terms = React.useMemo(()=>{ const n = searchNorm(q).trim(); return n ? n.split(/\s+/) : []; }, [q]);
+  const searchRef = React.useRef(null);
+  React.useEffect(()=>{ if(!picker.loading){ try{ searchRef.current && searchRef.current.focus(); }catch(e){} } }, [picker.loading]);
+
+  /* seriesId → its upcoming dates, soonest first. Built once so every row can say
+     "repeats" without rescanning the feed. */
+  const bySeries = React.useMemo(()=>{
+    const m = {};
+    picker.events.forEach(e=>{ if(e.seriesId) (m[e.seriesId] = m[e.seriesId] || []).push(e); });
+    Object.keys(m).forEach(k=>m[k].sort((a,b)=>String(a.startsAt||'').localeCompare(String(b.startsAt||''))));
+    return m;
+  }, [picker.events]);
+  const datesOf = ev => (ev && ev.seriesId && bySeries[ev.seriesId]) || [];
+
+  /* A one-off event sends on the click, exactly as before. A repeating one stops
+     for the scope question first: nothing goes series-wide by accident, and
+     nothing silently misses the other dates. */
+  const [scopeStep, setScopeStep] = React.useState(null);   // null | the picked feed row
+  function choose(ev){
+    if(!ev) return;
+    if(datesOf(ev).length > 1) setScopeStep(ev);
+    else onPick(ev.id, 'one');
+  }
+
+  const rest = (origin ? picker.events.filter(e=>e.id!==origin.id) : picker.events)
+    .filter(ev=>eventMatches(ev, terms));
+  const originHit = !!(origin && eventMatches(originEv, terms));
+  const kicker = { fontFamily:'Montserrat', fontWeight:700, fontSize:10, letterSpacing:'.09em',
+    textTransform:'uppercase', opacity:.55, margin:'2px 0 6px' };
+
+  /* ---- step 2: this date, or the whole series? ---- */
+  function renderScope(){
+    const dates = datesOf(scopeStep);
+    const list = dates.slice(0,8).map(d=>feedDayLabel(d.startsAt)).join(' · ')
+      + (dates.length>8 ? '  +'+(dates.length-8)+' more' : '');
+    const opt = { display:'block', width:'100%', textAlign:'left', cursor:'pointer', font:'inherit',
+      color:'#0d0905', borderRadius:6, marginBottom:8, padding:'10px 12px' };
+    return (
+      <React.Fragment>
+        <div style={{ fontWeight:800, fontSize:14, marginBottom:2 }}>{scopeStep.title_en || scopeStep.title_vi || '(untitled)'}</div>
+        <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>Repeats — {dates.length} upcoming dates in the feed.</div>
+        <button onClick={()=>onPick(scopeStep.id, 'one')}
+          style={Object.assign({}, opt, { border:'1px solid rgba(120,110,90,.45)', background:'transparent' })}>
+          <div style={{ fontFamily:'Montserrat', fontWeight:800, fontSize:13 }}>This date only</div>
+          <div style={{ fontSize:11, opacity:.65, marginTop:2 }}>{whenOf(scopeStep.startsAt)}</div>
+        </button>
+        <button onClick={()=>onPick(scopeStep.id, 'series')}
+          style={Object.assign({}, opt, { border:'2px solid #0d0905', background:'#fddf00' })}>
+          <div style={{ fontFamily:'Montserrat', fontWeight:800, fontSize:13 }}>All {dates.length} dates</div>
+          <div style={{ fontSize:11, opacity:.7, marginTop:2 }}>{list}</div>
+        </button>
+        <div style={{ fontSize:11, opacity:.6, lineHeight:1.45 }}>
+          “All dates” also becomes the series default, so dates the app mints later inherit this poster — and it overrides dates whose poster was set by hand.
         </div>
+      </React.Fragment>
+    );
+  }
+
+  /* ---- step 1: pick the event ---- */
+  function renderList(){
+    const listable = !picker.loading && !picker.err && picker.events.length>0;
+    return (
+      <React.Fragment>
         {picker.loading && <div style={{ fontSize:12, opacity:.7 }}>Loading upcoming events…</div>}
         {!picker.loading && picker.err &&
           <div style={{ fontSize:12, color:'#b00' }}>
@@ -2574,10 +2686,16 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
           </div>}
         {!picker.loading && !picker.err && picker.events.length===0 && !origin &&
           <div style={{ fontSize:12, opacity:.7 }}>No upcoming events in the feed.</div>}
-        {!picker.loading && origin && (
+        {listable &&
+          <input ref={searchRef} type="search" value={q} placeholder="Search by name…"
+            onChange={e=>setQ(e.target.value)}
+            style={{ width:'100%', padding:'8px 10px', marginBottom:10, borderRadius:6,
+              border:'2px solid #0d0905', background:'#fff', color:'#0d0905',
+              fontFamily:'Space Grotesk, sans-serif', fontSize:13 }} />}
+        {!picker.loading && originHit && (
           <React.Fragment>
-            <div style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:10, letterSpacing:'.09em', textTransform:'uppercase', opacity:.55, margin:'2px 0 6px' }}>This poster’s event</div>
-            <div onClick={()=>onPick(origin.id)}
+            <div style={kicker}>This poster’s event</div>
+            <div onClick={()=>choose(originEv)}
               style={{ cursor:'pointer', padding:'10px 12px', borderRadius:6, marginBottom:10, border:'2px solid #0d0905', background:'rgba(120,110,90,.07)' }}
               onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.16)'}
               onMouseLeave={e=>e.currentTarget.style.background='rgba(120,110,90,.07)'}>
@@ -2585,23 +2703,47 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
               <div style={{ fontSize:11, opacity:.6 }}>{whenOf((originEv && originEv.startsAt) || origin.startsAt)}{originEv && originEv.location && originEv.location.code ? ' · '+originEv.location.code : ''}</div>
               <div style={{ fontSize:11, opacity:.75, marginTop:3 }}>↳ Send here — this poster was queued for this event.</div>
             </div>
-            {rest.length>0 &&
-              <div style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:10, letterSpacing:'.09em', textTransform:'uppercase', opacity:.55, margin:'2px 0 6px' }}>…or another event</div>}
+            {rest.length>0 && <div style={kicker}>…or another event</div>}
           </React.Fragment>
         )}
         {!picker.loading && rest.map(ev=>{
+          const n = datesOf(ev).length;
           return (
-            <div key={ev.id} onClick={()=>onPick(ev.id)}
+            <div key={ev.id} onClick={()=>choose(ev)}
               style={{ cursor:'pointer', padding:'8px 10px', borderRadius:6, marginBottom:4, border:'1px solid rgba(120,110,90,.2)' }}
               onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.08)'}
               onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
               <div style={{ fontWeight:700, fontSize:13 }}>{ev.title_en || ev.title_vi || '(untitled)'}</div>
-              <div style={{ fontSize:11, opacity:.6 }}>{whenOf(ev.startsAt)}{ev.location && ev.location.code ? ' · '+ev.location.code : ''}</div>
+              <div style={{ fontSize:11, opacity:.6 }}>
+                {whenOf(ev.startsAt)}{ev.location && ev.location.code ? ' · '+ev.location.code : ''}
+                {n>1 ? ' · repeats — '+n+' dates' : ''}
+              </div>
             </div>
           );
         })}
-        <div style={{ marginTop:12, textAlign:'right' }}>
-          <button className="rs-addrow" onClick={onClose} style={{ display:'inline-block' }}>Cancel</button>
+        {listable && !rest.length && !originHit &&
+          <div style={{ fontSize:12, opacity:.7 }}>Nothing matches “{q}”.</div>}
+      </React.Fragment>
+    );
+  }
+
+  return (
+    <div className="rs-overlay" onClick={onClose}
+      style={{ position:'fixed', inset:0, background:'rgba(10,7,3,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
+      <div className="rs-modal" onClick={e=>e.stopPropagation()}
+        style={{ width:420, maxWidth:'92vw', maxHeight:'80vh', overflow:'auto', background:'#fffbf1', color:'#0d0905', borderRadius:10, padding:18, boxShadow:'0 30px 70px rgba(0,0,0,.5)' }}>
+        <div style={{ fontFamily:'Montserrat', fontWeight:800, letterSpacing:'.04em', fontSize:14, marginBottom:4 }}>
+          {scopeStep ? 'Update the series?' : 'Export to event'}
+        </div>
+        {!scopeStep &&
+          <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>
+            Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus your text-less <b>feed slice</b> → <b>feed</b> onto the chosen event.
+          </div>}
+        {scopeStep ? renderScope() : renderList()}
+        <div style={{ marginTop:12, display:'flex', justifyContent:'flex-end', gap:8 }}>
+          {scopeStep &&
+            <button className="rs-addrow" onClick={()=>setScopeStep(null)} style={{ display:'inline-block', width:'auto' }}>‹ Back</button>}
+          <button className="rs-addrow" onClick={onClose} style={{ display:'inline-block', width:'auto' }}>Cancel</button>
         </div>
       </div>
     </div>

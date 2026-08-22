@@ -1,0 +1,78 @@
+@import url("website.css");
+@import url("ink-mark.css");
+@import url("ink-motion.css");
+@import url("overlays.css");
+@import url("ink-ground.css");
+
+/* ================================================================
+   LAYOUT SHEET — the canvas chrome and the components that only
+   exist on the pages added in this pass (event index rail, event
+   hero, rooms, QR block). Everything else comes from website.css.
+   ================================================================ */
+html,body{margin:0;background:#8f8a80}
+body{position:relative;font-family:var(--grotesk)}
+.cv-frame{position:absolute}
+.cv-mark{font:700 11px/1.4 var(--mont)!important;letter-spacing:.1em;text-transform:uppercase;color:#fddf00!important;margin-top:7px!important}
+.pageframe{border:2px solid #0d0905;box-shadow:0 13px 0 rgba(13,9,5,.34);background:var(--bg);color:var(--fg)}
+.pageframe .mast{position:static}
+
+/* popup frames: the context page sits under the scrim, cropped */
+.stack{height:100%;overflow:hidden}
+.ctx{height:100%;overflow:hidden}
+.ctx .mast{padding:14px 26px;gap:18px}
+.ctx .mast .wm{width:132px}
+.ctx .mast-nav{gap:20px;font-size:11px}
+.ctx .mast-nav a,.ctx .btn{white-space:nowrap}
+.ctx .band{--band-pad:34px 26px}
+.mast-m{justify-content:space-between}
+.ph .mast{padding:14px 20px}
+.ph .mast .wm{width:118px}
+.ph .mast-nav{display:none}
+.ph .band{--band-pad:22px 20px}
+.ph .ev{grid-template-columns:96px 1fr;gap:10px 14px;padding:14px 0 14px 22px}
+.ph .ev-meta,.ph .ev-go{display:none}
+.ph .h2{font-size:19px}
+
+/* ---- events index: rail + day-owned sections ---- */
+.ev-page{display:grid;grid-template-columns:200px 1fr;gap:46px;width:100%;align-items:start}
+.ev-rail{position:sticky;top:24px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.rail-day{display:inline-block;background:var(--day,var(--fg));color:var(--on-day,var(--bg));border:2px solid var(--fg);padding:8px 12px;font:800 30px/1 var(--mont);letter-spacing:.02em;text-transform:uppercase}
+.rail-note{font:500 13px/1.4 var(--grotesk);color:var(--fg-dim)}
+.ev-days{display:grid;gap:0;width:100%}
+.ev-day{padding:26px 0;border-top:3px solid var(--fg)}
+.ev-day:first-child{border-top:0;padding-top:0}
+.ev-dh{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.ev-dh-d{font:500 14px/1 var(--grotesk);font-variant-numeric:tabular-nums;color:var(--fg-dim)}
+.day-swatch{flex:1;height:10px;background:var(--day)}
+.ev-card{display:grid;grid-template-columns:1fr 220px;gap:28px;align-items:start}
+.ev-card-b{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.ev-card .facts{max-width:340px}
+.ev-card .slot{width:100%}
+
+/* ---- event detail hero ---- */
+.ev-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:start;width:100%}
+.ev-hero-l{display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.ev-hero .slot{width:100%}
+
+/* ---- section heads that carry the mark ---- */
+.menu-h{display:flex;align-items:flex-end;gap:24px}
+
+/* ---- rooms ---- */
+.rooms{display:grid;grid-template-columns:repeat(4,1fr);gap:0 28px;width:100%}
+.room{display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:3px solid var(--fg)}
+.room-k{font:800 34px/1 var(--mont);letter-spacing:.02em}
+
+/* ---- QR block ---- */
+.visit-qr{display:flex;align-items:flex-end;justify-content:space-between;gap:48px;width:100%}
+.visit-qr .qrcard{flex:none}
+.qrcard img{padding:0;border:0}
+.ft-qr .qrcard{color:#0d0905}
+
+@media(max-width:900px){.ev-page,.ev-card,.ev-hero,.visit-qr{grid-template-columns:1fr;display:grid}.rooms{grid-template-columns:1fr 1fr}}
+
+/* ---- long event names, site side ---- */
+.ev{grid-template-columns:130px 1fr auto auto;align-items:start}
+.ev-b .name{font-size:22px;line-height:1.2;text-wrap:pretty;overflow-wrap:anywhere}
+.ev-qual{color:var(--fg-dim)}
+.ev-meta,.ev-go{align-self:start;padding-top:3px}
+.ev-card .h3{text-wrap:pretty;overflow-wrap:anywhere}

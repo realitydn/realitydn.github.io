@@ -1,0 +1,22 @@
+/* ================================================================
+   INK MARK — the strip (2×9 / 9×2, and the 2×7 short) and the
+   square (4×4). One module, one fixed cell order; recolouring is
+   the only parameter. Canon: guidelines/ink-strip.html +
+   tokens/ink-strip.json. Rendered by ink-mark.js.
+
+   Geometry only lives here. No radius, no gradient, no outline
+   around the whole mark, no shadow on the cells — keylines run
+   BETWEEN cells and are required on any lit face.
+   ================================================================ */
+.im{display:grid;flex:none;gap:0;--m:12px;--kw:2px;--stock:#fffbf1;line-height:0}
+.im i,.im b{display:block;background:var(--k,transparent)}
+.im-strip-v{grid-template-columns:repeat(2,var(--m));grid-auto-rows:var(--m)}
+.im-strip-h{grid-template-rows:repeat(2,var(--m));grid-auto-columns:var(--m);grid-auto-flow:column}
+.im-strip-v i.b,.im-strip-h i.b{grid-column:span 2;grid-row:span 2}
+.im-square{grid-template-columns:repeat(2,calc(var(--m) * 2));grid-template-rows:repeat(2,calc(var(--m) * 2))}
+.im-square .sub{display:grid;grid-template-columns:repeat(2,var(--m));grid-template-rows:repeat(2,var(--m))}
+.im.im-key{gap:var(--kw);padding:var(--kw);background:#0d0905}
+.im.im-key .sub{gap:var(--kw)}
+/* Clear space = 1 module on all four sides, baked into the box. */
+.im-clear{padding:var(--m)}
+.im-clear.im-key{padding:calc(var(--m) + var(--kw))}

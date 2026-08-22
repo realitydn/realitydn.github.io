@@ -1,0 +1,125 @@
+<!-- @dsCard group="Foundations" name="Focus" subtitle="The misregister plate — two impressions of one shape, one slipped. Mechanic, exceptions, and the plate-partner rule" viewport="1100x3200" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Focus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.two.wide{grid-template-columns:1.15fr 1fr}
+@media(max-width:900px){.two,.two.wide{grid-template-columns:1fr}}
+.diag{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);padding:30px;display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+.rd{font-family:var(--mont);font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--fg-faint);display:flex;flex-direction:column;gap:7px}
+.rd b{display:block;font-size:11px;color:var(--fg);letter-spacing:.06em}
+pre.spec{border:2px solid var(--fg);background:var(--surface-2);box-shadow:var(--sh-light);padding:16px 18px;font-family:var(--mont);font-weight:500;font-size:11.5px;line-height:1.65;color:var(--fg-dim);overflow-x:auto;white-space:pre}
+pre.spec b{color:var(--fg);font-weight:700}
+.rc h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:6px}
+.rc p{font-size:12.5px;color:var(--fg-dim)}
+.rc.no{border-color:var(--red)}.rc.no h5{color:var(--red)}
+.rc.yes h5{color:var(--green)}
+.cap{font-family:var(--mont);font-weight:600;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--fg-faint);margin-top:9px;display:block}
+
+/* demo controls — .on forces the focus state so it is visible at rest */
+.ctl{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:13px 20px;border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.11em;text-transform:uppercase;text-decoration:none}
+.ctl.ink{background:var(--fg);color:var(--bg)}
+.ctl.act{background:var(--red);color:#fffbf1;border-color:var(--red)}
+.ctl.on{transform:translate(-4px,-4px);box-shadow:4px 4px 0 0 var(--accent)}
+.inpd{display:block;width:230px;min-height:48px;border:2px solid var(--fg);background:transparent}
+.inpd.on,.lnkd.on,.platey.on{outline:2px solid var(--fg);outline-offset:3px}
+.lnkd{font-family:var(--mont);font-weight:700;font-size:17px;letter-spacing:.02em;text-transform:uppercase;color:var(--fg);text-decoration:none}
+.platey{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:11px 15px;border:2px solid #0d0905;background:var(--yellow);color:#0d0905;font-family:var(--mont);font-weight:700;font-size:15px}
+.platey span{display:grid;place-items:center;width:26px;height:26px;border:2px solid #0d0905;font-weight:800;font-size:12px}
+.field{padding:30px;border:2px solid var(--fg);display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.f-blue{background:var(--blue);--accent:var(--pink)}
+.f-yellow{background:var(--yellow);--accent:var(--red)}
+.f-red{background:var(--red);--accent:var(--yellow);--fg:#fffbf1;--bg:#0d0905}
+.f-paper{background:var(--bg)}
+.f-blue .ctl,.f-yellow .ctl{--fg:#0d0905;--bg:#fffbf1}
+.stack-demo{position:relative;display:flex;gap:34px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Focus</span><span class="sub">Keyboard focus was never designed for Year 2, so every surface inherited the browser default — a rounded blue ring, wrong on all three counts: it has a radius, blue is a major carrying wayfinding, and it was nobody's decision.</span><span class="tag">CANON · 22.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>Definition</h4>
+  <p>A <b>misregister at control scale</b>. Two impressions of the same shape, one slipped — the same move as the hero plates, applied to a button. Focus reads as a printing accident, not as a UI ring.</p>
+  <p>Chosen over three alternatives (offset ink outline, inset ink ring, accent slab) because it is the only candidate already in the system's DNA rather than a new idea, and because it is theme-aware for free.</p>
+</div>
+
+<p class="tier">01 · The mechanic</p>
+<div class="two wide">
+  <div class="diag">
+    <div class="stack-demo">
+      <a class="ctl ink" href="#">Rest</a>
+      <a class="ctl ink on" href="#">Focused</a>
+    </div>
+    <div class="rd">
+      <span><b>The plate</b>stays where the button is</span>
+      <span><b>The face</b>slips 4px up-left off it</span>
+      <span><b>Reveal</b>4px band, down-right</span>
+      <span><b>In</b>200ms · ease-snap</span>
+    </div>
+  </div>
+  <div>
+    <pre class="spec">/* the whole rule */
+<b>:focus-visible</b> {
+  transform: <b>translate(-4px,-4px)</b>;
+  box-shadow: <b>4px 4px 0 0 var(--accent)</b>;
+}</pre>
+    <span class="cap">Two properties. No pseudo-element, no wrapper, no z-index.</span>
+  </div>
+</div>
+
+<div class="note">
+  <h4>The face separates from the colour under it</h4>
+  <p>The control is two parts: a solid accent <b>plate</b> holding the button's real position, and the <b>face</b> — border, fill, label — sliding off it. If the whole control translated, nothing would have misregistered; it would just have moved. That distinction is the entire idea.</p>
+</div>
+
+<p class="tier">02 · Why box-shadow and not a plate element</p>
+<div class="two">
+  <div class="rc no">
+    <h5>Never — a ::after plate at z-index:-1</h5>
+    <p>It needs <b>isolation: isolate</b> on a <b>background-less ancestor</b>. Put <code>isolate</code> on the element carrying the fill and the negative-z child paints <em>after</em> that fill — the plate covers the button and only a 4px sliver of face shows. Drop <code>isolate</code> instead and the plate falls behind the band background and vanishes silently. Both halves of this trap are already flagged in CLAUDE.md for <code>.misreg</code>; both were hit here.</p>
+  </div>
+  <div class="rc yes">
+    <h5>Always — a spread-less box-shadow</h5>
+    <p>A box-shadow paints <b>behind the element's own background by definition</b>. The face fill can never be covered, the plate always lands on the original box, and there is no stacking context to get wrong. <code>4px 4px 0 0</code> — offset, no blur, no spread. It replaces the control's rest shadow while focused, which is correct: the plate <em>is</em> the shadow slot.</p>
+  </div>
+</div>
+
+<p class="tier">03 · The plate never shares a family with the surface</p>
+<div class="diag" style="flex-direction:column;align-items:stretch;gap:14px">
+  <div class="field f-blue"><a class="ctl ink on" href="#">On blue</a><span class="rd" style="color:#0d0905"><b>Field blue</b>plate takes pink</span></div>
+  <div class="field f-yellow"><a class="ctl ink on" href="#">On yellow</a><span class="rd" style="color:#0d0905"><b>Field yellow</b>plate takes red</span></div>
+  <div class="field f-red"><a class="ctl on" href="#">On red</a><span class="rd" style="color:#fffbf1"><b>Field red</b>plate takes yellow</span></div>
+  <div class="field f-paper"><a class="ctl ink on" href="#">On paper</a><span class="rd"><b>Field paper</b>plate takes the accent — blue in Day, pink in Night</span></div>
+</div>
+<div class="note">
+  <h4>This is the accent rule, re-declared per band</h4>
+  <p>Day leads blue and the wayfinding band <em>is</em> blue, so on that band the plate prints blue-on-blue and disappears. The palette already forbids an accent sharing a family with its surface; the only new work is re-declaring <code>--accent</code> on each coloured band. Day-code fields take ink.</p>
+</div>
+
+<p class="tier">04 · Three controls take an outline instead</p>
+<div class="two">
+  <div class="diag" style="gap:22px"><span class="inpd on"></span><div class="rd"><span><b>Input</b>a hole in the paper</span><span>not a plate lifted off it</span></div></div>
+  <div class="diag" style="gap:22px"><span class="platey on"><span>B</span>Trần Thị Lý</span><div class="rd"><span><b>Coloured plate</b>already a colour field</span><span>a plate behind reads as a second fill</span></div></div>
+</div>
+<div class="diag" style="margin-top:18px;gap:22px"><a class="lnkd on" href="#">Host an event</a><div class="rd"><span><b>Bare text link</b>no box to offset</span></div></div>
+<p style="margin-top:12px;font-size:13px;color:var(--fg-dim)">All three take <code>outline: 2px solid var(--fg); outline-offset: 3px</code> — and no transform.</p>
+
+<p class="tier">05 · Rules</p>
+<div class="two">
+  <div class="rc"><h5>:focus-visible only</h5><p>A mouse press never draws it. Bare <code>:focus</code> gets <code>outline: none</code>.</p></div>
+  <div class="rc"><h5>Never reused</h5><p>Not for selected, active, hover or current. Focus is the only thing this pattern means.</p></div>
+  <div class="rc"><h5>The face must be opaque</h5><p>A transparent control lets the plate show through and it reads as a fill. Faces that already carry a fill keep it.</p></div>
+  <div class="rc"><h5>List rows need 4px trailing</h5><p>The plate extends 4px down-right; without room it laps the next row.</p></div>
+  <div class="rc"><h5>Zero radius</h5><p>Both the face and the plate. As everywhere.</p></div>
+  <div class="rc"><h5>Reduced motion</h5><p>Drop the transition, keep the offset. The slipped state is the information.</p></div>
+</div>
+
+<div class="note" style="border-width:3px">
+  <h4>Where it lives</h4>
+  <p>Spec: <code>tokens/reality-tokens.json → focus.decided</code>. Implementation: the focus block at the end of <code>treatment/core.css</code>. The four candidates that were weighed are still rendered in <code>Focus States - Options.html</code>, with C marked canon.</p>
+</div>
+</body></html>

@@ -384,10 +384,11 @@ body {
 .field::placeholder {
   color: var(--fg-faint);
 }
+/* Canon G1: an input is a hole in the paper, not a plate lifted off it —
+   focus is a 2px ink outline, never the accent ring or a border swap. */
 .field:focus {
-  outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  outline-offset: 0;
-  border-color: var(--accent);
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
 }
 .field.field-error {
   border-color: var(--red);
@@ -430,17 +431,58 @@ input[type="radio"] {
 .alert-error a { color: #fffbf1; }
 
 /* ============================================================
-   Focus / a11y
-   ============================================================ */
-:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-}
+   Focus / a11y — canon G1, 22.08.26: the misregister plate.
+   Two impressions of the same shape, one slipped: a solid accent
+   PLATE stays exactly where the control is (a SPREAD-LESS
+   BOX-SHADOW — paints behind the element's own background by
+   definition, no stacking context to get wrong), and the FACE
+   slips 4px up-left off it. :focus-visible ONLY; never reused
+   for selected, active, hover or current.
 
-button:focus-visible,
-a:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+   Three exceptions take a 2px ink outline at 3px offset instead:
+   inputs (a hole in the paper, not a plate lifted off it),
+   coloured choice plates, and bare text links (no box to offset).
+   The old 3px accent ring lived here — do not re-add it.
+   ============================================================ */
+:where(a, button, [tabindex], input, select, textarea, summary):focus {
+  outline: none;
+}
+:where(a, button, [tabindex], summary):focus-visible {
+  outline: none;
+  transform: translate(-4px, -4px);
+  box-shadow: 4px 4px 0 0 var(--accent);
+  transition: transform var(--dur-quick) var(--ease-snap), box-shadow var(--dur-quick) var(--ease-snap);
+}
+/* Faces must be OPAQUE or the plate reads as a fill. Filled controls keep
+   their own fills (their background rules outrank :where's zero specificity);
+   bare-box controls get paper. */
+:where(a, button, [tabindex], summary):focus-visible {
+  background-color: var(--bg);
+}
+.btn-primary:focus-visible { background-color: var(--fg); }
+.btn-secondary:focus-visible { background-color: var(--surface); }
+.btn-info:focus-visible { background-color: var(--blue); }
+.btn-notice:focus-visible { background-color: var(--yellow); }
+.chip:focus-visible { background-color: var(--surface); }
+/* the exceptions — ink outline, no plate, no slip */
+:where(input, select, textarea):focus-visible,
+.field:focus-visible,
+a:not([class]):focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+  transform: none;
+  box-shadow: none;
+  background: none;
+}
+/* THE PLATE NEVER SHARES A FAMILY WITH THE SURFACE — on a coloured field it
+   takes the accent's PARTNER (day-colours.json): blue field → pink, yellow
+   notice → red, red action → yellow, day-coded field → ink. */
+.b-wayfind, .btn-info { --accent: var(--pink); }
+.b-notice, .btn-notice { --accent: var(--red); }
+.b-act { --accent: var(--yellow); }
+.cal-datetab, .cal-noposter, .day-field { --accent: var(--fg); }
+@media (prefers-reduced-motion: reduce) {
+  :where(a, button, [tabindex], summary):focus-visible { transition: none; }
 }
 
 /* Skip-to-content link — hidden until focused. */
@@ -836,4 +878,148 @@ section[id], div[id="proposal"] {
 @media (min-width: 768px) {
   .cal-noposter { min-height: 100%; }
   .cal-noposter-dm { font-size: 72px; }
+}
+
+/* ============================================================
+   INK-MARK PASS — canon rev 22.08.26
+   (design-system-year2/design_handoff_web_app_ink_pass/).
+   The ink strip/square, its motion, the three-ink band system,
+   the shared overlay plate vocabulary, and the state vocabulary.
+   Mark logic: src/components/InkMark.jsx.
+   ============================================================ */
+
+/* ── The ink mark — geometry only. 2×9 / 9×2 strip, 2×7 short, 4×4 square.
+   One module (--m), FIXED cell order; recolouring is the only parameter
+   (tokens/ink-strip.json). No radius, no gradient, no outline around the
+   whole mark, no cell shadows. Stock is a COLOUR — follows the substrate,
+   never the theme. Decorative only: aria-hidden, one mark per surface.
+   Floors: strip 8px, short/square 6px. */
+.im { display: grid; flex: none; gap: 0; --m: 12px; --kw: 2px; --stock: #fffbf1; line-height: 0; }
+.im i { display: block; background: var(--k, transparent); }
+.im-strip-v { grid-template-columns: repeat(2, var(--m)); grid-auto-rows: var(--m); }
+.im-strip-h { grid-template-rows: repeat(2, var(--m)); grid-auto-columns: var(--m); grid-auto-flow: column; }
+.im-strip-v i.b, .im-strip-h i.b { grid-column: span 2; grid-row: span 2; }
+.im-square { grid-template-columns: repeat(2, calc(var(--m) * 2)); grid-template-rows: repeat(2, calc(var(--m) * 2)); }
+.im-square .sub { display: grid; grid-template-columns: repeat(2, var(--m)); grid-template-rows: repeat(2, var(--m)); }
+.im.im-key { gap: var(--kw); padding: var(--kw); background: #0d0905; }
+.im.im-key .sub { gap: var(--kw); }
+.im-clear { padding: var(--m); }
+/* Ground — OPT-IN only (G2): a mark over photography or a print export.
+   The stock-on-stock open silhouette is CORRECT on screen; do not patch it. */
+.im-ground { background: var(--paper-shade); padding: var(--m); }
+
+/* ── Ink motion — Engine A (press pass) as CSS; Engine B (mode swap) runs in
+   JS so unchanged cells never move. SCALE ONLY, never opacity. Screen timing
+   is canon (G4): A1 95/430 · A2 46/300 · A3 420 — the motion card's smaller
+   numbers are poster/print scale. */
+@keyframes ink-stamp-in { 0% { transform: scale(0); } 62% { transform: scale(1.11); } 100% { transform: scale(1); } }
+@keyframes ink-stamp-out { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+.im.pp > i, .im.pp .sub > i { transform: scale(0); }
+.im.pp.run > i, .im.pp.run .sub > i {
+  animation: ink-stamp-in var(--pd, 260ms) var(--ease-stamp) both;
+  animation-delay: var(--d, 0ms);
+}
+.im.pp.pp-whole { transform: scale(0); }
+.im.pp.pp-whole.run { transform: none; animation: ink-stamp-in var(--pd, 260ms) var(--ease-stamp) both; }
+.im.pp.pp-whole > i, .im.pp.pp-whole .sub > i,
+.im.pp.pp-whole.run > i, .im.pp.pp-whole.run .sub > i { transform: none; animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .im.pp > i, .im.pp .sub > i, .im.pp.pp-whole { transform: none !important; animation: none !important; }
+}
+
+/* ── Three-ink bands — ROLE = COLOUR. A section is only coloured when it
+   does a job: blue wayfinds (what/where/when), yellow notices (deals, door
+   times), red commands (ONE per page). Everything else is paper. Coloured
+   bands re-declare BOTH halves of the pair so nested components resolve
+   without per-band patches, and the paper-calibrated alpha ladder is
+   switched off (it composites into the 3–4.2 band). */
+.band { border-top: 3px solid var(--fg); }
+.band:first-child { border-top: 0; }
+.b-wayfind, .b-notice, .b-act { --fg-dim: currentColor; --fg-faint: currentColor; --surface: transparent; }
+.b-wayfind, .b-notice {
+  --fg: #0d0905; --bg: #fffbf1; --on-ink: #fffbf1;
+  --hairline: rgba(13, 9, 5, .26); --surface-2: rgba(13, 9, 5, .08);
+  color: #0d0905;
+}
+.b-wayfind { background: var(--blue); }
+.b-notice { background: var(--yellow); }
+.b-act {
+  background: var(--red);
+  --fg: #fffbf1; --bg: #0d0905; --on-ink: #0d0905;
+  --hairline: rgba(255, 251, 241, .32); --surface-2: rgba(255, 251, 241, .12);
+  color: #fffbf1;
+}
+.b-paper { background: var(--bg); }
+/* ON-RED CONTRACT: on a red field EVERYTHING is ink; only display-size type
+   (≥32px, far register) is re-creamed — .btn-action's AA exception extended
+   by size, never generalised. Doubled specificity so later component rules
+   never win the tie. */
+.b-act.b-act, .b-act.b-act * { color: #0d0905; }
+.b-act.b-act :is(.disp, .h-display, .reg-far), .b-act.b-act :is(.disp, .h-display, .reg-far) * { color: #fffbf1; }
+.b-act.b-act .btn-primary { background: #fffbf1; border-color: #fffbf1; color: #0d0905; }
+.b-act.b-act .btn-secondary { background: transparent; border-color: #0d0905; color: #0d0905; }
+
+/* ── Overlays — one plate vocabulary. An ink-bordered plate on a scrim,
+   hard down-shadow, zero radius; nothing fades, a plate arrives stamped. */
+.scrim { position: fixed; inset: 0; background: rgba(13, 9, 5, 0.66); z-index: 50; }
+.scrim.lit { background: rgba(13, 9, 5, 0.82); }
+.plate {
+  position: fixed; z-index: 51;
+  background: var(--bg); color: var(--fg);
+  border: 3px solid var(--fg);
+  box-shadow: 0 13px 0 rgba(13, 9, 5, 0.30);
+  display: flex; flex-direction: column;
+}
+.plate-h { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; border-bottom: 3px solid var(--fg); }
+.plate-h .plate-t { font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1; letter-spacing: var(--tr-label); text-transform: uppercase; }
+.plate-h .plate-x { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 2px solid var(--fg); font-family: var(--mont); font-weight: 700; font-size: 15px; cursor: pointer; background: var(--bg); color: var(--fg); }
+.plate-b { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; padding: 20px 18px; overflow-y: auto; }
+.plate-f { margin-top: auto; display: flex; gap: 12px; padding: 16px 18px; border-top: 3px solid var(--fg); }
+.plate-f > * { flex: 1; }
+.dlg { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 64px)); max-height: calc(100% - 64px); }
+.dlg-sm { width: min(420px, calc(100% - 48px)); }
+.drawer { inset: 0; border-width: 0; box-shadow: none; }
+/* lightbox — ink plate, 32px inset; the photo is the subject (never a mark) */
+.lbx { inset: 32px; border-width: 3px; display: grid; grid-template-rows: 1fr auto; padding: 0; background: var(--fg); color: var(--on-ink); }
+.lbx .lbx-frame { position: relative; overflow: hidden; border-bottom: 3px solid var(--on-ink); }
+.lbx .lbx-cap { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 18px; font-family: var(--grotesk); font-size: 14px; font-variant-numeric: tabular-nums; }
+.toast-site {
+  position: fixed; z-index: 70; right: 32px; bottom: 32px; width: min(420px, calc(100% - 64px));
+  display: flex; align-items: center; gap: 14px;
+  background: var(--fg); color: var(--on-ink);
+  border: 2px solid var(--fg); box-shadow: 0 9px 0 rgba(13, 9, 5, 0.26);
+  padding: 14px 16px; font-family: var(--mont); font-weight: 700; font-size: 14px;
+}
+.banner {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-bottom: 3px solid var(--fg);
+  background: var(--yellow); color: #0d0905;
+  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.banner.is-ink { background: var(--fg); color: var(--on-ink); }
+.banner .banner-a { margin-left: auto; flex: none; font-weight: 700; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 3px; color: inherit; }
+
+/* ── States — a state is a FACT, not a mood. Skeletons are --surface-2 /
+   --paper-shade blocks at the exact geometry of the real rows, and the
+   animation is a RE-STAMP, never a shimmer or an opacity fade (the old
+   bg-gray-200 + animate-pulse calendar skeleton was both off-palette and
+   theme-blind — do not bring it back). */
+.st { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; width: 100%; padding: 24px 20px; border: 2px solid var(--fg); background: var(--surface-2); }
+.st-t { font-family: var(--mont); font-weight: 700; font-size: 19px; line-height: 1.2; letter-spacing: 0.02em; margin: 0; }
+.st-b { font-family: var(--grotesk); font-size: 14px; line-height: 1.55; margin: 0; color: var(--fg-dim); }
+@keyframes sk-stamp {
+  0%, 72% { transform: scaleY(1); }
+  80% { transform: scaleY(0.55); }
+  88% { transform: scaleY(1.06); }
+  100% { transform: scaleY(1); }
+}
+.sk { display: block; height: 13px; background: var(--surface-2); border: 0; animation: sk-stamp 2.4s var(--ease-snap) infinite; transform-origin: 50% 50%; }
+.sk.sk-2 { background: var(--paper-shade); height: 11px; }
+.sk-block { background: var(--surface-2); animation: sk-stamp 2.4s var(--ease-snap) infinite; transform-origin: 50% 50%; }
+.sk-stagger > *:nth-child(2) .sk, .sk-stagger > .sk-block:nth-child(2) { animation-delay: 0.18s; }
+.sk-stagger > *:nth-child(3) .sk, .sk-stagger > .sk-block:nth-child(3) { animation-delay: 0.36s; }
+.sk-stagger > *:nth-child(4) .sk, .sk-stagger > .sk-block:nth-child(4) { animation-delay: 0.54s; }
+@media (prefers-reduced-motion: reduce) {
+  .sk, .sk-block { animation: none !important; transform: none !important; }
 }

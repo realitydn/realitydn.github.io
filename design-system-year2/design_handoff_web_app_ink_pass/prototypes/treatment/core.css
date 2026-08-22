@@ -1,0 +1,202 @@
+/* ================================================================
+   THREE-INK BANDS — treatment core.  Shared by website, app,
+   schedule, posters and the spec page.
+
+   Three rules decide everything below:
+   1 ROLE = COLOUR.  A section is only coloured when it does a job:
+     blue wayfinds, yellow notices, red commands.  Everything else
+     is paper.  No fixed sequence, no colour for pacing.
+   2 NIGHT STAYS SATURATED.  The hues are fields in both themes;
+     only the paper flips.  Each field declares its own --fg/--bg
+     pair, so components inside it resolve without per-band patches.
+   3 DAY-CODING WINS.  Where a weekday hue and a major would both
+     apply to an event, the weekday hue takes it.  The majors then
+     only appear on non-event sections of an event surface.
+
+   Two contrast contracts, both load-bearing:
+   · A weekday hue is a FIELD for display text (>=18px) or a plate /
+     spine / swatch.  Never behind body copy — purple, pink and red
+     carry ink at only 3.1-3.9 and the token is what fails, not the
+     page.
+   · Cream on red is permitted at DISPLAY size only (>=32px, far
+     register) — the .btn-action exception extended by size, not
+     generalised.  Near-register text on red takes ink.
+   ================================================================ */
+@import url("../tokens/reality-tokens.css");
+
+/* ---- reset / stage ---- */
+*{box-sizing:border-box}
+.tr{background:var(--bg);color:var(--fg);font-family:var(--grotesk);font-size:17px;line-height:1.65}
+.tr h1,.tr h2,.tr h3,.tr h4,.tr p,.tr dl,.tr dd,.tr dt,.tr ul,.tr ol,.tr figure{margin:0;padding:0}
+.tr ul,.tr ol{list-style:none}
+.tr a:not(.btn){color:inherit;text-decoration:none}
+.tr a{text-decoration:none}
+.tr a:not(.btn):hover{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px}
+.tr img{display:block;max-width:100%}
+
+/* ---- wordmark ---- */
+.wm{display:block;width:180px;aspect-ratio:512/84;background:currentColor;-webkit-mask:url("../assets/wordmark/reality-wordmark.svg") no-repeat center/contain;mask:url("../assets/wordmark/reality-wordmark.svg") no-repeat center/contain}
+.wm.is-inline{background:none;-webkit-mask:none;mask:none}
+.wm.is-inline svg{width:100%;height:100%;display:block}
+
+/* ---- TYPE ------------------------------------------------------
+   Montserrat names, Space Grotesk states facts.  Register sets case:
+   .reg-far shouts, .reg-near tells you about it.               ---- */
+.disp{font-family:var(--mont);text-transform:uppercase;letter-spacing:var(--tr-display);line-height:1.02;font-weight:800}
+.disp .thin{display:block;font-weight:200;letter-spacing:var(--tr-h1)}
+.disp .slam{display:block;font-weight:800}
+.h1{font:800 clamp(38px,4.4vw,60px)/1.04 var(--mont);letter-spacing:var(--tr-h1);text-transform:uppercase}
+.h2{font:700 26px/1.18 var(--mont);letter-spacing:var(--tr-h2);text-transform:uppercase;text-wrap:pretty}
+.h3{font:700 19px/1.25 var(--mont);letter-spacing:var(--tr-name);text-wrap:pretty}
+.name{font:700 20px/1.2 var(--mont);letter-spacing:var(--tr-name)}
+.body{font-size:17px;line-height:1.65;text-wrap:pretty}
+.body-sm{font-size:15px;line-height:1.55;text-wrap:pretty}
+.fact{font:500 16px/1.4 var(--grotesk);font-variant-numeric:tabular-nums}
+.label{font:700 12px/1 var(--mont);letter-spacing:var(--tr-label);text-transform:uppercase}
+.deco{font:700 11px/1 var(--mont);letter-spacing:.16em;text-transform:uppercase}
+:lang(vi) .disp,:lang(vi) .h1{font-weight:200;line-height:1.3}
+
+/* Eyebrow: the hue is a 3px rule, the words are ink. */
+.eyebrow{display:flex;align-items:center;gap:10px;font:700 12px/1 var(--mont);letter-spacing:var(--tr-label);text-transform:uppercase;color:var(--fg)}
+.eyebrow::before{content:"";width:18px;height:3px;background:var(--rule,var(--blue));flex:none}
+
+/* ---- BANDS -----------------------------------------------------
+   Every section is a full-bleed field. 3px ink rule between them.
+   Each coloured band redeclares BOTH halves of the pair so nested
+   components need no overrides, and the paper-calibrated alpha
+   ladder is switched off (it composites into the 3-4.2 band).  */
+.band{border-top:3px solid var(--fg);padding:var(--band-pad,64px 56px)}
+.band:first-child{border-top:0}
+.band-in{display:flex;flex-direction:column;gap:24px;align-items:flex-start;max-width:var(--measure,none);margin:0 auto;width:100%}
+.b-wayfind,.b-notice,.b-act,.b-ink{--fg-dim:currentColor;--fg-faint:currentColor;--surface:transparent}
+.b-wayfind,.b-notice{--fg:#0d0905;--bg:#fffbf1;--on-ink:#fffbf1;--hairline:rgba(13,9,5,.26);--surface-2:rgba(13,9,5,.08);--rule:#0d0905;color:#0d0905}
+.b-wayfind{background:var(--blue)}
+.b-notice{background:var(--yellow)}
+.b-act{background:var(--red);--fg:#fffbf1;--bg:#0d0905;--on-ink:#0d0905;--hairline:rgba(255,251,241,.32);--surface-2:rgba(255,251,241,.12);--rule:#fffbf1;color:#fffbf1}
+/* The red contract lives at the END of this file — see ON-RED CONTRACT. */
+.b-act .disp,.b-act .h1,.b-act .h2{color:#fffbf1}
+.b-ink{background:var(--fg);--fg:var(--bg);--bg:var(--surface);color:var(--on-ink,#fffbf1)}
+.b-paper{background:var(--bg)}
+.band-shade{background:var(--paper-shade)}
+
+/* ---- BUTTONS · one ACTION per screen ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:var(--tap-min);padding:14px 26px;border:2px solid var(--fg);background:var(--fg);color:var(--bg);font:700 14px/1 var(--mont);letter-spacing:var(--tr-button);text-transform:uppercase;box-shadow:var(--sh-default);cursor:pointer;transition:transform var(--dur-tap) var(--ease-stamp),box-shadow var(--dur-tap) var(--ease-stamp)}
+.btn:hover{transform:translateY(-3px);box-shadow:var(--sh-heavy);text-decoration:none}
+.btn-2{background:transparent;color:var(--fg)}
+.btn-action{background:var(--red);border-color:var(--red);color:#fffbf1;box-shadow:var(--sh-default)}
+.b-act .btn-action,.b-act .btn{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.b-act .btn-2{background:transparent;border-color:#0d0905;color:#0d0905}
+.btn-sm{min-height:44px;padding:11px 16px;font-size:12px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+
+.pill{display:inline-flex;align-items:center;min-height:40px;padding:10px 14px;border:2px solid var(--fg);font:700 12px/1 var(--mont);letter-spacing:.1em;text-transform:uppercase;color:var(--fg)}
+.pill.is-on{background:var(--fg);color:var(--bg)}
+.chips{display:flex;gap:9px;flex-wrap:wrap}
+
+/* ---- FACTS ---- */
+.facts{display:grid;width:100%}
+.facts>div{display:grid;grid-template-columns:var(--dt,104px) 1fr;gap:18px;padding:12px 0;border-top:2px solid var(--hairline)}
+.facts dt{font:700 12px/1.35 var(--mont);letter-spacing:var(--tr-label);text-transform:uppercase}
+.facts dd{font:500 16px/1.4 var(--grotesk)}
+
+/* ---- DAY CODING ------------------------------------------------
+   Hue as plate, spine and swatch.  .day-plate holds display text
+   only; .day-spine and .sw carry no text at all.              ---- */
+.day-plate{background:var(--day);color:var(--on-day);border:2px solid var(--fg);padding:8px 12px;font:800 18px/1.1 var(--mont);letter-spacing:.04em;text-transform:uppercase;display:inline-block}
+.day-spine{position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--day)}
+.sw{width:20px;height:20px;border:2px solid var(--fg);background:var(--day);flex:none}
+.day-field{background:var(--day);color:var(--on-day);--fg:var(--on-day);--bg:var(--day);--fg-dim:currentColor;--fg-faint:currentColor;--hairline:currentColor;--rule:currentColor;--surface:transparent}
+
+/* ---- IMAGE PLACEHOLDERS / SLOTS ---- */
+.slot{position:relative;border:2px solid var(--fg);background:var(--surface-2);background-image:repeating-linear-gradient(135deg,transparent 0 11px,var(--hairline) 11px 12px);display:grid;place-items:center;overflow:hidden}
+.slot>image-slot{position:absolute;inset:0}
+.slot-tag{font:400 12px/1.4 ui-monospace,Menlo,monospace;color:var(--fg);background:var(--bg);border:2px solid var(--fg);padding:5px 9px;text-align:center;max-width:80%}
+.riso{filter:grayscale(1) contrast(1.32) brightness(1.04)}
+
+/* ---- MISREGISTER (static; needs a background-less isolate parent) ---- */
+.misreg{position:relative;isolation:isolate}
+.misreg::before,.misreg::after{content:"";position:absolute;inset:0;z-index:-1}
+.misreg::before{background:var(--accent);transform:translate(var(--misreg-card-1),var(--misreg-card-1))}
+.misreg::after{background:var(--accent-2);transform:translate(calc(var(--misreg-card-2) * -1),var(--misreg-card-2))}
+.misreg-hero::before{transform:translate(var(--misreg-hero-1),var(--misreg-hero-1))}
+.misreg-hero::after{transform:translate(calc(var(--misreg-hero-2) * -1),var(--misreg-hero-2))}
+
+/* ==== ON-RED CONTRACT · must stay last ===================================
+   On a red field EVERYTHING is ink; only display-size type (>=32px, far
+   register) is re-creamed.  Enumerating the ink side is what let .eyebrow,
+   .pill and .timer-t leak cream one at a time; declaring it LAST with
+   doubled specificity is what stops later component rules winning the tie. */
+.b-act.b-act,.b-act.b-act *{color:#0d0905}
+.b-act.b-act :is(.disp,.h1,.h2,.reg-far),.b-act.b-act :is(.disp,.h1,.h2,.reg-far) *{color:#fffbf1}
+.b-act.b-act .eyebrow::before{background:#0d0905}
+.b-act.b-act .pill{border-color:#0d0905}
+.b-act.b-act .pill.is-on{background:#0d0905;color:#fffbf1}
+.b-act.b-act .btn{background:#fffbf1;border-color:#fffbf1;color:#0d0905}
+.b-act.b-act .btn-2{background:transparent;border-color:#0d0905;color:#0d0905}
+
+/* ---- canvas chrome (exploration pages only) ---- */
+.cv-frame{position:absolute}
+.cv-label{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px;color:#fffbf1}
+.cv-num{font:800 40px/.9 var(--mont)}
+.cv-label h4{font:700 18px/1.2 var(--mont);letter-spacing:.06em;text-transform:uppercase;margin:0 0 5px}
+.cv-label p{font:400 14px/1.45 var(--grotesk);color:rgba(255,251,241,.72);margin:0;max-width:52ch}
+
+/* ================================================================
+   FOCUS · canon 22.08.26 — candidate C, the misregister plate.
+   Full spec: tokens/reality-tokens.json -> focus.decided.
+
+   A misregister is TWO IMPRESSIONS OF THE SAME SHAPE, one slipped.
+   So the control is two parts: a solid colour plate that stays exactly
+   where the button is, and the face on top of it — border, fill, label
+   — which SLIPS 4px up-left off that plate. The face separates from
+   the colour under it. The colour never moves; if the whole control
+   translates, nothing has misregistered, it has just shifted.
+
+   Mechanically the plate is a SPREAD-LESS BOX-SHADOW, not a negative-z
+   pseudo-element: box-shadow paints behind the element's own background
+   by definition, so the face fill is never covered and there is no
+   stacking context to get wrong. (A ::after plate at z-index:-1 needs
+   isolation on a BACKGROUND-LESS ancestor — put isolate on the element
+   carrying the fill and the plate paints on top of it instead, which is
+   the inverse of what you want. Same trap CLAUDE.md flags for .misreg.)
+   The face translates -4/-4 and the shadow sits +4/+4, so the plate
+   lands on the button's original box. It transitions in, so focus is
+   the moment the press slips.
+
+   Three rules that are easy to break:
+   1 The face must be OPAQUE, or the plate shows through it and reads
+     as a fill instead of a second impression.
+   2 Inputs, coloured choice plates and bare text links take a 2px ink
+     outline at 3px offset instead — an input is a hole in the paper,
+     not a plate lifted off it.
+   3 :focus-visible ONLY, and never reused for selected, active,
+     hover or current.
+   ================================================================ */
+:where(a,button,[tabindex],input,select,textarea,summary):focus{outline:none}
+:where(a,button,[tabindex],summary),.pill{transition:transform var(--dur-quick,200ms) var(--ease-snap),box-shadow var(--dur-quick,200ms) var(--ease-snap)}
+:where(a,button,[tabindex],summary):focus-visible,.pill:focus-visible{background:var(--bg);outline:none;transform:translate(-4px,-4px);box-shadow:4px 4px 0 0 var(--accent)}
+/* faces that already carry their own fill keep it — the face must be opaque */
+.btn:focus-visible{background:var(--fg)}
+.btn-2:focus-visible{background:var(--bg)}
+.btn-action:focus-visible{background:var(--red)}
+.pill.is-on:focus-visible{background:var(--fg)}
+.nav a:focus-visible{background:var(--bg)}
+/* no plate: inputs, coloured choice plates, bare text links */
+input:focus-visible,select:focus-visible,textarea:focus-visible,.in:focus-visible,.ans-quick button:focus-visible,.lnk:focus-visible,.drawer-nav a:focus-visible,.ft-nav a:focus-visible{outline:2px solid var(--fg);outline-offset:3px;background:none;transform:none}
+input:focus-visible::after,textarea:focus-visible::after,.ans-quick button:focus-visible::after,.lnk:focus-visible::after,.drawer-nav a:focus-visible::after,.ft-nav a:focus-visible::after{display:none}
+.ans-quick .q-a:focus-visible{background:var(--blue)}
+.ans-quick .q-b:focus-visible{background:var(--yellow)}
+.ans-quick .q-c:focus-visible{background:var(--green)}
+.ans-quick .q-d:focus-visible{background:var(--pink)}
+/* THE PLATE NEVER SHARES A FAMILY WITH THE SURFACE — canon accent rule.
+   Day leads blue, and the wayfinding band IS blue, so on that band the plate
+   would print blue-on-blue and vanish. On any coloured field the plate takes
+   the accent's PARTNER from day-colours.json instead. */
+.b-wayfind,.hero,.visit{--accent:var(--pink)}
+.b-notice{--accent:var(--red)}
+.b-act,.act{--accent:var(--yellow)}
+.day-field{--accent:var(--fg)}
+/* list rows need trailing room so the plate does not overlap the next row */
+.rows-ev .r-ev:focus-visible{margin-bottom:4px}
+@media(prefers-reduced-motion:reduce){:where(a,button,[tabindex],summary),.pill{transition:none}}
+

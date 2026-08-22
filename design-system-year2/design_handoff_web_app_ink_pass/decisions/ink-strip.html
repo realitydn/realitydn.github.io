@@ -1,0 +1,217 @@
+<!-- @dsCard group="Foundations" name="The Ink Strip & Square" subtitle="The palette printed as a mark — 2×9 strip, 4×4 square, one module, one token order. Grid, modes, placement, and the Studio contract" viewport="1100x4900" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — The Ink Strip &amp; Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.ist{display:grid;grid-template-columns:repeat(2,var(--m,20px));grid-auto-rows:var(--m,20px);gap:0;flex:none;--stock:#fffbf1}
+.ist i{display:block;background:var(--k)}
+.ist i.b{grid-column:span 2;grid-row:span 2}
+.ist.h{grid-template-columns:none;grid-template-rows:repeat(2,var(--m,20px));grid-auto-rows:none;grid-auto-columns:var(--m,20px);grid-auto-flow:column}
+.ist.key,.isq.key{gap:var(--kw,2px);padding:var(--kw,2px);background:var(--fg)}
+.isq{display:grid;grid-template-columns:repeat(2,calc(var(--m,20px)*2));grid-template-rows:repeat(2,calc(var(--m,20px)*2));gap:0;flex:none;--stock:#fffbf1}
+.isq>b,.isq .sub>i{display:block;background:var(--k)}
+.isq .sub{display:grid;grid-template-columns:repeat(2,var(--m,20px));grid-template-rows:repeat(2,var(--m,20px))}
+.isq.key .sub{gap:var(--kw,2px)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.two.wide{grid-template-columns:1.15fr 1fr}
+@media(max-width:900px){.two,.two.wide{grid-template-columns:1fr}}
+.diag{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);padding:24px;display:flex;gap:28px;align-items:center}
+.diag .an{position:relative;isolation:isolate}
+.diag .ov{position:absolute;inset:0;display:grid;pointer-events:none}
+.diag .ov span{border:0 dashed rgba(13,9,5,.35);border-right-width:1px;border-bottom-width:1px}
+.diag .rd{font-family:var(--mont);font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--fg-faint);display:flex;flex-direction:column;gap:7px}
+.diag .rd b{display:block;font-size:11px;color:var(--fg);letter-spacing:.06em}
+.inv{width:100%;border-collapse:collapse;font-size:12.5px}
+.inv th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 10px 7px 0;border-bottom:2px solid var(--fg)}
+.inv td{padding:8px 10px 8px 0;border-bottom:1px solid var(--hairline);vertical-align:middle;color:var(--fg-dim)}
+.inv tr:last-child td{border-bottom:none}
+.inv td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.inv td.n{font-family:var(--mont);font-weight:600;font-size:11px;color:var(--fg);white-space:nowrap}
+.inv .sw{width:20px;height:20px;border:1.5px solid var(--fg);display:block}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.g{border:2px solid var(--fg);box-shadow:var(--sh-light);background:var(--surface);display:flex;flex-direction:column}
+.g .gs{min-height:172px;display:flex;align-items:center;justify-content:center;padding:20px;border-bottom:2px solid var(--fg);background:#fffbf1}
+.g .gs.ink{background:#0d0905}
+.g .gs.lit{background:#fff}
+.g .gs.field{background:repeating-linear-gradient(45deg,#87878d 0 6px,#9b9ba1 6px 12px)}
+.g .gt{padding:12px 14px 14px}
+.g .gt h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:5px}
+.g .gt p{font-size:12px;color:var(--fg-dim);line-height:1.45}
+.g .gt code{font-family:var(--mont);font-weight:600;font-size:11px;color:var(--fg)}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.rules{grid-template-columns:1fr}}
+.rc{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px}
+.rc h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:6px}
+.rc p{font-size:12.5px;color:var(--fg-dim)}
+.rc.no{border-color:var(--red)}.rc.no h5{color:var(--red)}
+.rc.yes h5{color:var(--green)}
+.clr{position:relative;border:2px solid var(--fg);background:var(--bg);padding:40px;display:inline-flex}
+.clr::before{content:"";position:absolute;inset:20px;border:1.5px dashed var(--accent)}
+.pairbox{display:flex;align-items:flex-end;gap:0}
+.pairbox .qp{background:#fffbf1;flex:none;display:block}
+.pairbox .qp img{display:block}
+pre.spec{border:2px solid var(--fg);background:var(--surface-2);box-shadow:var(--sh-light);padding:16px 18px;font-family:var(--mont);font-weight:500;font-size:11.5px;line-height:1.65;color:var(--fg-dim);overflow-x:auto;white-space:pre}
+pre.spec b{color:var(--fg);font-weight:700}
+.cap{font-family:var(--mont);font-weight:600;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--fg-faint);margin-top:9px;display:block}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">The Ink Strip &amp; Square</span><span class="sub">The system's second mark: the locked palette printed as a grid. It is <b>not</b> a logo and never replaces the wordmark — it sits beside it, and it is the one element designed to be recoloured per event.</span><span class="tag">CANON · 19.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>Definition</h4>
+  <p>A <b>press colour-control strip</b>, drawn honestly: every colour in the palette printed once, in token order, on a square module, with the paper itself counted as one of the colours. Two forms, one grid — the <b>ink strip</b> (2 × 9 modules) and the <b>ink square</b> (4 × 4). The square is the strip folded, not a second mark.</p>
+  <p>It carries no meaning of its own. It says <em>this is REALITY and this is printed</em>. Everything else it can say — which night, which mood, how many inks the job affords — it says by recolouring, which is the whole point of building a mark out of the palette instead of a picture.</p>
+</div>
+
+<p class="tier">01 · Anatomy</p>
+<div class="two wide">
+  <div class="diag">
+    <div class="an">
+      <div class="ist" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" style="--m:38px"></div>
+      <div class="ov" style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(9,1fr)"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="rd">
+      <span><b>Ink strip</b>2 × 9 modules</span>
+      <span><b>Bands</b>3 × (2 × 2) — the majors</span>
+      <span><b>Field</b>6 × (1 × 1) — neutral pair + minors</span>
+      <span><b>Aspect</b>2 : 9 exactly</span>
+    </div>
+  </div>
+  <div class="diag">
+    <div class="an">
+      <div class="isq" data-quads="red blue yellow" data-sub="stock pink purple amber" style="--m:38px"></div>
+      <div class="ov" style="grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr)"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="rd">
+      <span><b>Ink square</b>4 × 4 modules</span>
+      <span><b>Quadrants</b>majors, Z order</span>
+      <span><b>Fourth quadrant</b>half-module cells</span>
+      <span><b>Aspect</b>1 : 1</span>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <h4>The order never changes</h4>
+  <p><b>Majors first, in token order — red, blue, yellow — then the neutral pair, then the minors.</b> In the strip that reads top to bottom; in the square it folds into a Z (red top-left, blue top-right, yellow bottom-left) with the field in the fourth quadrant. Anyone who learns one form has learned the other.</p>
+</div>
+
+<p class="tier">02 · Inventory</p>
+<table class="inv">
+  <thead><tr><th style="width:34px"></th><th>Cell</th><th>Token</th><th>Value</th><th>Position</th></tr></thead>
+  <tbody>
+    <tr><td><span class="sw" style="background:#ed2224"></span></td><td class="k">Red</td><td class="n">--red</td><td class="n">#ed2224</td><td>Band 1 · quadrant TL</td></tr>
+    <tr><td><span class="sw" style="background:#18a7e0"></span></td><td class="k">Blue</td><td class="n">--blue</td><td class="n">#18a7e0</td><td>Band 2 · quadrant TR</td></tr>
+    <tr><td><span class="sw" style="background:#fddf00"></span></td><td class="k">Yellow</td><td class="n">--yellow</td><td class="n">#fddf00</td><td>Band 3 · quadrant BL</td></tr>
+    <tr><td><span class="sw" style="background:#fffbf1"></span></td><td class="k">Stock</td><td class="n">substrate</td><td class="n">#fffbf1 / #fff</td><td>Field · <b>inner</b> cell</td></tr>
+    <tr><td><span class="sw" style="background:#0d0905"></span></td><td class="k">Ink</td><td class="n">--fg</td><td class="n">#0d0905</td><td>Field · beside stock</td></tr>
+    <tr><td><span class="sw" style="background:#43b02a"></span></td><td class="k">Green</td><td class="n">--green</td><td class="n">#43b02a</td><td>Field · minor</td></tr>
+    <tr><td><span class="sw" style="background:#ed1b72"></span></td><td class="k">Pink</td><td class="n">--pink</td><td class="n">#ed1b72</td><td>Field · minor</td></tr>
+    <tr><td><span class="sw" style="background:#6e3179"></span></td><td class="k">Purple</td><td class="n">--purple</td><td class="n">#6e3179 · #9a4faa Night/lit</td><td>Field · minor</td></tr>
+    <tr><td><span class="sw" style="background:#fdb515"></span></td><td class="k">Amber</td><td class="n">--amber</td><td class="n">#fdb515</td><td>Field · minor</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <h4>Stock is a colour. A void is a move.</h4>
+  <p><b>Stock</b> is a positive cell, printed as the substrate's own white — cream <span class="mono">#fffbf1</span> on paper, <span class="mono">#ffffff</span> on backlit film. It follows the substrate, never the theme, and it is butted to <b>ink</b> as the <b>neutral pair</b>: paper-and-solid side by side is how a control strip states its own contrast range. Never tint it, never fill it, never let a renderer treat it as transparent.</p>
+  <p>A <b>void</b> is a variation move — a cell left open so the field shows through (a photo, a wall, a colour). <b>The reference mark has no voids.</b> Variations may have up to three; the stock cell always stays printed so the pair still reads.</p>
+  <p><b>Placement rule:</b> stock sits on an <b>inner</b> cell. On an outer edge or corner it vanishes against matching stock and opens the silhouette — the mark then has two different outlines depending on the field. Inner placement gives one closed rectangle everywhere.</p>
+</div>
+
+<p class="tier">03 · Forms</p>
+<div class="gal">
+  <div class="g"><div class="gs"><div class="ist" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" style="--m:14px"></div></div><div class="gt"><h5>Strip · vertical</h5><p><code>2 × 9</code> The reference form. Poster spines, signage, menu edge, app splash.</p></div></div>
+  <div class="g"><div class="gs"><div class="ist h" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" style="--m:13px"></div></div><div class="gt"><h5>Strip · horizontal</h5><p><code>9 × 2</code> Rotate −90°; reading order stays red-first. Headers, footers, awning, TV schedule.</p></div></div>
+  <div class="g"><div class="gs"><div class="ist" data-bands="red blue yellow" data-cells="stock ink" style="--m:18px"></div></div><div class="gt"><h5>Strip · short</h5><p><code>2 × 7</code> Minors dropped, neutral pair kept. The only sanctioned reduction.</p></div></div>
+  <div class="g"><div class="gs"><div class="isq" data-quads="red blue yellow" data-sub="stock pink purple amber" style="--m:19px"></div></div><div class="gt"><h5>Square</h5><p><code>4 × 4</code> Green steps out for stock. Square frames and small sizes.</p></div></div>
+  <div class="g"><div class="gs"><div class="isq" data-quads="red blue yellow" data-sub="stock pink green ink" style="--m:19px"></div></div><div class="gt"><h5>Square · anchored</h5><p>Whole neutral pair kept, two minors out. Ink takes the outer corner so the square still closes.</p></div></div>
+  <div class="g"><div class="gs"><div class="ist key" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" style="--m:14px;--kw:3px"></div></div><div class="gt"><h5>Keylined</h5><p>Ink rules between cells. <b>Lit, embroidered, or under the size floor only</b> — on paper it over-articulates.</p></div></div>
+</div>
+
+<div class="note">
+  <h4>The reduction rule, in one line</h4>
+  <p><b>Shorten from the bottom, never from the top.</b> The three majors and the neutral pair are the mark; the minors are the mood. A 2 × 7 short strip and a 2 × 9 full strip read as the same object because the top six modules never move. Nothing between 2 × 7 and 2 × 9 exists — there is no 2 × 8.</p>
+</div>
+
+<p class="tier">04 · Modes</p>
+<div class="gal">
+  <div class="g"><div class="gs"><div class="ist" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" style="--m:13px"></div></div><div class="gt"><h5>Full · 8 colours</h5><p><code>full</code> Identity only: street sign, front page, year poster. Says <em>everything happens here</em>.</p></div></div>
+  <div class="g"><div class="gs"><div class="ist" data-bands="red blue yellow" data-cells="stock ink stock ink ink stock" style="--m:13px"></div></div><div class="gt"><h5>Majors · 3 + neutral</h5><p><code>majors</code> Minors become an ink/stock checker. Real press budgets, newsprint, two-plate runs.</p></div></div>
+  <div class="g"><div class="gs"><div class="ist" data-bands="pink ink pink" data-cells="stock pink ink pink pink stock" style="--m:13px"></div></div><div class="gt"><h5>Day code · 1 hue</h5><p><code>daycode</code> One weekday hue from <span class="mono">day-colours.json</span> + ink + stock. Shown: Thursday. <b>The event mode.</b></p></div></div>
+  <div class="g"><div class="gs"><div class="ist" data-bands="ink stock ink" data-cells="ink stock stock ink ink stock" style="--m:13px"></div></div><div class="gt"><h5>Ink only</h5><p><code>ink</code> Alternate ink and stock so the grid still reads. Vinyl, laser, emboss, single-colour merch.</p></div></div>
+  <div class="g"><div class="gs field"><div class="ist" data-bands="red void yellow" data-cells="stock ink void amber purple void" style="--m:13px"></div></div><div class="gt"><h5>Drop-outs</h5><p><code>dropout</code> True voids show the field. Max three, never a band and its neighbour, stock always printed.</p></div></div>
+  <div class="g"><div class="gs ink"><div class="ist" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" data-night="1" style="--m:13px"></div></div><div class="gt"><h5>On ink</h5><p>Any mode, Night field, <b>unplated</b>. Purple lifts to <span class="mono">#9a4faa</span>; stock reads as a punched chip; the ink cell drops out and the silhouette opens. Decided 19.08.26 — <b>never plate it</b>.</p></div></div>
+</div>
+
+<p class="tier">05 · Placement</p>
+<div class="rules">
+  <div class="rc yes"><h5>One form per surface</h5><p>The frame decides: long edge → strip, square or tiny frame → square. Never both in one composition, and never the square where the strip fits. Exception: a poster may carry the strip while its footer QR carries the square — separate objects.</p></div>
+  <div class="rc yes"><h5>One mode per eyeline</h5><p>A full-palette strip beside a day-code square is the one genuinely confusing combination. Pick one mode per surface.</p></div>
+  <div class="rc yes"><h5>Clear space &amp; gutter</h5><p><b>One module</b> on all four sides, and <b>one full module</b> between the mark and any type. Nothing sits inside the clear space, including the wordmark.</p></div>
+  <div class="rc yes"><h5>Size floor</h5><p>Full strip: module ≥ <b>8px</b> (16 × 72). Short strip: ≥ <b>6px</b>. Square: ≥ <b>6px</b> (24 × 24). Below that, keyline it or step down a form — never scale past the floor.</p></div>
+  <div class="rc yes"><h5>Substrate</h5><p>Stock = the substrate: cream on paper, white on lit film, and on an ink field the mark stays <b>unplated</b> — the dropped ink cell is the Night form. Purple takes <span class="mono">#9a4faa</span> on Night <em>and</em> lit. Shadows are exempt on print and lit — a transmitted shadow is a contradiction.</p></div>
+  <div class="rc yes"><h5>Lit &amp; small keylines</h5><p>Backlit flats bloom into their neighbours: <b>3mm ink keylines between cells on any lit face</b>, Day or Night. An ink field separates only the outer edge, never the interior adjacencies.</p></div>
+  <div class="rc no"><h5>Never</h5><p>No radius, no gradient, no outline around the whole mark, no drop shadow on the cells, no rotation other than ±90°, no reordering the majors, no stock on an outer corner, no eighth ink.</p></div>
+  <div class="rc no"><h5>Never a logo</h5><p>It does not replace the wordmark, never carries the name inside it, and never appears alone on a first-contact surface (shopfront, front page, ticket face).</p></div>
+  <div class="rc no"><h5>Never a UI job</h5><p>Its colours are mood, not state. A red band is not an alert. Do not build status, selection or validation on top of it.</p></div>
+</div>
+
+<div class="two" style="margin-top:18px">
+  <div class="diag" style="justify-content:center"><div><div class="clr"><div class="ist" data-bands="red blue yellow" data-cells="stock ink green pink purple amber" style="--m:20px"></div></div><span class="cap">Clear space = 1 module, all sides</span></div></div>
+  <div class="diag" style="justify-content:center"><div><div class="pairbox"><div class="isq" data-quads="red blue yellow" data-sub="stock pink purple amber" style="--m:26px"></div><span class="qp"><img src="../assets/qr/reality-qr-ink-on-cream.png" alt="QR to realitydn.com" width="104" height="104"></span></div><span class="cap">QR pairing · 1 mark module = 8.25 QR modules</span></div></div>
+</div>
+
+<div class="note">
+  <h4>The QR pairing</h4>
+  <p>The mark and the QR are the same object drawn for two readers: a modular grid of ink on stock, hard edges, no radius, mandatory unprinted border, fixed reading order. Our code is <b>v2, 25 × 25 modules with a 4-module quiet zone — 33 modules overall</b>. Set <b>1 mark module = 8.25 QR modules</b> and the square's outer width matches the code's exactly.</p>
+  <p>Because the quiet zone is already 4 modules of stock, the mark may sit <b>flush against the code</b> and it still scans. Two hard limits: <b>never restyle the code</b> (no colour fill, no knock-out, no inversion — <span class="mono">assets/qr/</span> is verified decodable from 120px) and <b>never place the mark inside the quiet zone</b>. Everything expressive happens beside the code.</p>
+</div>
+
+<p class="tier">06 · The Studio contract</p>
+<p style="font-size:13px;color:var(--fg-dim);max-width:80ch;margin-bottom:14px">A generator needs six inputs and nothing else. Renderers that cannot read CSS variables import <span class="mono">tokens/ink-strip.json</span> and <span class="mono">day-colours.json</span> directly — the same way the schedule and print renderers already do.</p>
+<pre class="spec"><b>form</b>      "strip-v" | "strip-h" | "strip-short-v" | "strip-short-h" | "square" | "square-anchored"
+<b>mode</b>      "full" | "majors" | "daycode" | "ink" | "dropout"
+<b>day</b>       "mon".."sun"          <span style="opacity:.6">// daycode only — hue read from day-colours.json</span>
+<b>module</b>    number (px | mm)      <span style="opacity:.6">// floors: strip 8, short 6, square 6</span>
+<b>substrate</b> "paper" | "lit" | "ink"   <span style="opacity:.6">// sets the stock value and the purple value</span>
+<b>keylines</b>  0 | number           <span style="opacity:.6">// ink rule width; required when substrate = "lit"</span>
+
+<b>invariants the tool must enforce</b>
+  · cell order is fixed — expose recolouring, never reordering
+  · stock is always an inner cell, always printed, never transparent
+  · dropout: max 3 voids, never two adjacent, never the stock cell
+  · module never below the floor for the chosen form
+  · clear space = 1 module, baked into the export bounds
+  · export SVG at integer module sizes so cells stay hairline-free</pre>
+
+<div class="note">
+  <h4>Pending in the token layer</h4>
+  <p><span class="dq-state st-patch" style="margin:0 8px 0 0">PATCH</span> Add <b><span class="mono">substrate.lit</span></b> to <span class="mono">reality-tokens.json</span>: ink <span class="mono">#0d0905</span> at full opacity, stock <span class="mono">#ffffff</span> translucent film, cream <em>not</em> laid down, shadows exempt, purple at <span class="mono">#9a4faa</span>. Neither <span class="mono">screen</span> nor <span class="mono">press</span> describes a backlit face.</p>
+  <p><span class="dq-state st-patch" style="margin:0 8px 0 0">PATCH</span> Add the artwork carve-out to the palette contract: <b>jobs bind in UI; on artwork all seven inks are mood.</b> Without it, the strip's red band reads as a rule violation to the next auditor.</p>
+</div>
+
+<script>
+(function(){
+  var INK={red:'#ed2224',blue:'#18a7e0',yellow:'#fddf00',pink:'#ed1b72',amber:'#fdb515',green:'#43b02a',purple:'#6e3179',ink:'#0d0905',stock:'var(--stock)',void:'transparent'};
+  var NIGHT={purple:'#9a4faa'};
+  document.querySelectorAll('.ist').forEach(function(el){
+    var night=el.dataset.night==='1',pick=function(n){return (night&&NIGHT[n])||INK[n]||'transparent';},html='';
+    (el.dataset.bands||'').trim().split(/\s+/).filter(Boolean).forEach(function(n){html+='<i class="b" style="--k:'+pick(n)+'"></i>';});
+    (el.dataset.cells||'').trim().split(/\s+/).filter(Boolean).forEach(function(n){html+='<i style="--k:'+pick(n)+'"></i>';});
+    el.innerHTML=html;
+  });
+  document.querySelectorAll('.isq').forEach(function(el){
+    var night=el.dataset.night==='1',pick=function(n){return (night&&NIGHT[n])||INK[n]||'transparent';},html='';
+    (el.dataset.quads||'').trim().split(/\s+/).filter(Boolean).forEach(function(n){html+='<b style="--k:'+pick(n)+'"></b>';});
+    var s=(el.dataset.sub||'').trim().split(/\s+/).filter(Boolean);
+    if(s.length){html+='<div class="sub">';s.forEach(function(n){html+='<i style="--k:'+pick(n)+'"></i>';});html+='</div>';}
+    el.innerHTML=html;
+  });
+})();
+</script>
+</body>
+</html>

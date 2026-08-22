@@ -1,0 +1,30 @@
+@import url("app-sheet.css");
+
+/* ================================================================
+   VIETNAMESE SHEET. The three token rules, applied — and the
+   measuring marks that make it obvious when they are not.
+   ================================================================ */
+
+/* uppercase VI needs the room; 1.05 clips the diacritics */
+:lang(vi) .disp,:lang(vi) .h1,:lang(vi) .h2,:lang(vi) .ev-title{line-height:1.3}
+/* display steps to weight 200 — 100 loses the hairline strokes */
+:lang(vi) .disp,:lang(vi) .disp .slam{font-weight:200}
+:lang(vi) .disp .slam{font-weight:800}
+:lang(vi) .tv-q .disp{font-weight:200;line-height:1.3}
+/* names wrap, they never truncate and never transform */
+:lang(vi) .name-block .r-n{line-height:1.32;text-transform:none}
+:lang(vi) .type-sub{line-height:1.45}
+/* the when-column is sized for Th 2 – CN, which is wider than Mon–Sun */
+:lang(vi) .r-ev{grid-template-columns:74px 1fr 22px}
+:lang(vi) .day-plate{font-size:13px;letter-spacing:.04em}
+:lang(vi) .facts{--dt:104px}
+
+/* the stress row: four lines, and the meta must not move */
+.is-stress .r-n{font-size:16px}
+.is-stress .r-ev,.is-stress.rows-ev .r-ev{align-items:start}
+
+/* measuring marks — a hairline at cap height and at the descender, so a
+   clipped diacritic is visible instead of merely wrong */
+.vi-measure{position:relative}
+.vi-measure::before{content:"";position:absolute;left:0;right:0;top:0;border-top:1px dashed var(--blue);opacity:.5}
+.cv-lang{font:700 11px/1.4 var(--mont)!important;letter-spacing:.1em;text-transform:uppercase;color:#43b02a!important;margin-top:5px!important}

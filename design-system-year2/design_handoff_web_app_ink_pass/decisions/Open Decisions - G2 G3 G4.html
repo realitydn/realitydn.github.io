@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>REALITY — Decisions G2 / G3 / G4, closed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="treatment/core.css">
+<link rel="stylesheet" href="treatment/ink-mark.css">
+<link rel="stylesheet" href="treatment/ink-motion.css">
+<link rel="stylesheet" href="treatment/ink-ground.css">
+<style>
+html,body{margin:0;background:#8f8a80}
+.wrap{width:1180px;margin:0 auto;padding:52px 40px 100px;font-family:var(--grotesk)}
+.hd{color:#fffbf1;max-width:80ch;margin-bottom:42px}
+.hd h1{font:800 32px/1.06 var(--mont);letter-spacing:.02em;text-transform:uppercase;margin:0 0 14px}
+.hd p{font:400 15px/1.55 var(--grotesk);margin:0 0 9px;color:rgba(255,251,241,.84)}
+.hd b{color:#fddf00;font-weight:700}
+.dc{background:var(--bg);color:var(--fg);border:3px solid #0d0905;box-shadow:0 13px 0 rgba(13,9,5,.34);margin-bottom:38px}
+.dc-h{padding:22px 26px;border-bottom:3px solid var(--fg);display:flex;gap:18px;align-items:flex-start}
+.dc-k{flex:none;background:var(--fg);color:var(--bg);font:800 15px/1 var(--mont);letter-spacing:.12em;padding:10px 11px}
+.dc-h h2{font:700 20px/1.15 var(--mont);letter-spacing:.02em;text-transform:uppercase;margin:0 0 8px}
+.dc-h p{font:400 14px/1.55 var(--grotesk);margin:0;color:var(--fg-dim);max-width:82ch}
+.dc-b{padding:26px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.opts.three{grid-template-columns:1fr 1fr 1fr}
+.o{border:2px solid var(--fg);display:flex;flex-direction:column}
+.o-h{padding:13px 16px;border-bottom:2px solid var(--fg);display:flex;align-items:center;gap:10px}
+.o-h .t{font:700 11px/1 var(--mont);letter-spacing:.13em;text-transform:uppercase}
+.o-h .b{margin-left:auto;font:700 9.5px/1 var(--mont);letter-spacing:.12em;text-transform:uppercase;padding:5px 7px;border:2px solid var(--fg)}
+.o.ship .o-h{background:var(--fg);color:var(--bg)}
+.o.ship .o-h .b{border-color:var(--bg)}
+.o-stage{padding:30px 24px;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;min-height:200px;background:var(--bg)}
+.o-stage.shade{background:var(--paper-shade)}
+.o-note{padding:14px 16px;border-top:2px solid var(--hairline);font:400 12.5px/1.5 var(--grotesk);color:var(--fg-dim)}
+.o-note b{color:var(--fg);font-weight:700}
+.lab{font:700 9.5px/1 var(--mont);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-faint)}
+.rec{margin-top:22px;padding:16px 18px;border:2px solid var(--fg);background:var(--surface-2);font:400 13.5px/1.6 var(--grotesk)}
+.rec b{font-weight:700;color:var(--fg)}
+.rec>b:first-child{font:700 10px/1 var(--mont);letter-spacing:.14em;text-transform:uppercase;color:var(--fg);display:block;margin-bottom:7px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.rp{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:11px 14px;border:2px solid var(--fg);background:var(--bg);color:var(--fg);font:700 10px/1 var(--mont);letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+/* quiz choice demo */
+.qs{display:grid;gap:9px;width:100%}
+.qs a{display:flex;align-items:center;gap:11px;min-height:52px;padding:11px 14px;border:2px solid #0d0905;color:#0d0905;font:700 15px/1.2 var(--mont);text-decoration:none}
+.qs span{display:grid;place-items:center;width:27px;height:27px;border:2px solid #0d0905;font:800 12px/1 var(--mont);flex:none}
+.hue .a{background:var(--blue)}.hue .b{background:var(--yellow)}.hue .c{background:var(--green)}.hue .d{background:var(--pink)}
+.inkonly a{background:var(--bg);color:var(--fg);border-color:var(--fg)}
+.inkonly span{border-color:var(--fg)}
+.inkonly a.sel{background:var(--fg);color:var(--bg)}
+.inkonly a.sel span{border-color:var(--bg)}
+.dark{background:#0a0703;padding:22px;border:2px solid var(--fg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="hd">
+<h1>Three decisions · closed 22.08.26</h1>
+<p>All three are settled. The alternatives stay rendered below because that is what makes a decision record useful later — <b>the chosen option is marked DECIDED</b>, and what was weighed against it is still on screen.</p>
+<p>Recorded in <code>tokens/reality-tokens.json</code> under <code>openCalls</code> as G2–G4, all closed. G1 (focus) has its own card at <code>guidelines/focus.html</code>.</p>
+</div>
+
+<!-- ───────── G2 ───────── -->
+<div class="dc">
+<div class="dc-h"><span class="dc-k">G2</span><div><h2>Stock landing on an outer corner <em style="font-style:normal;color:var(--red)">· neither fix</em></h2>
+<p>Canon says stock is a printed colour and is <em>never on an outer edge or corner — there it vanishes against matching stock and opens the silhouette.</em> But cell order is also fixed, and <code>majors</code>, <code>daycode</code> and the short strip all <b>terminate on stock</b>. So on a cream surface the mark's outer corner disappears, and the two rules contradict each other.</p></div></div>
+<div class="dc-b">
+<div class="opts three">
+  <div class="o ship"><div class="o-h"><span class="t">Ungrounded</span><span class="b">Decided</span></div>
+    <div class="o-stage"><span class="lab">majors, on paper</span><span class="im" data-form="strip-h" data-mode="majors" data-idle="off" data-ground="off" style="--m:22px"></span></div>
+    <div class="o-note">The bottom-right module is stock on cream, so the corner <b>opens</b>. Kept: it reads as ink laid <em>on</em> the page rather than a badge sitting on it, and it is what makes cell-switching legible — a cell pulling to zero at the edge opens the silhouette further instead of punching a hole in a patch.</div></div>
+  <div class="o"><div class="o-h"><span class="t">Option A · ground patch</span><span class="b">Rejected</span></div>
+    <div class="o-stage"><span class="lab">grounded on paper-shade — option A</span><span class="im" data-form="strip-h" data-mode="majors" data-idle="off" data-ground="on" style="--m:22px"></span></div>
+    <div class="o-note">Sits on <code>--paper-shade</code> with one module of clear space. Closes the silhouette, but turns the mark into an object <em>on</em> a surface — and it fights the swap animations, which is what settled it. <b>Still available as <code>data-ground="on"</code></b> for a mark over photography, or for print export. Never automatic.</div></div>
+  <div class="o"><div class="o-h"><span class="t">Option B · re-order</span><span class="b">Rejected</span></div>
+    <div class="o-stage"><span class="lab">re-ordered to end on ink</span><span class="im" data-form="strip-h" data-mode="majors" data-cells="stock ink stock ink stock ink" data-idle="off" data-ground="off" style="--m:22px"></span></div>
+    <div class="o-note">Swap the last two field cells so every mode terminates on ink. Cleaner with no extra surface — but <b>reordering is explicitly not a parameter</b> in the canon, and it forks the DOM renderer away from the print presets.</div></div>
+</div>
+<div class="rec"><b>Decided · neither</b>The open silhouette is correct on screen and is not a bug to patch. Canon's outer-corner rule holds for <b>print</b>, where the mark is a solid object on a sheet; on screen the opening is wanted, and it will matter more as the swap animations get pushed. Automatic grounding has been removed from <code>ink-motion.js</code> — do not restore the background-comparison test.</div>
+</div></div>
+
+<!-- ───────── G3 ───────── -->
+<div class="dc">
+<div class="dc-h"><span class="dc-k">G3</span><div><h2>Four hues for the quiz quick-fingers choices <em style="font-style:normal;color:var(--green)">· ratified</em></h2>
+<p>The speed round gives four options four colours so they can be told apart across a dark room in six seconds. It is the <b>first time a minor takes a job in the UI</b>. Built on the weekday precedent rather than as an exception — the hue <em>identifies</em> a choice, it never states a status — but blue and yellow are majors, and in a choice set they are doing neither wayfinding nor notices.</p></div></div>
+<div class="dc-b">
+<div class="opts">
+  <div class="o ship"><div class="o-h"><span class="t">Option A · four hues</span><span class="b">Decided</span></div>
+    <div class="o-stage dark"><div class="qs hue"><a class="a" href="#"><span>A</span>Thuận Phước</a><a class="b" href="#"><span>B</span>Trần Thị Lý</a><a class="c" href="#"><span>C</span>Cầu Vàng</a><a class="d" href="#"><span>D</span>Cầu Rồng</a></div></div>
+    <div class="o-note">Fixed slot order like the weekday map — A is always blue. Ink text and a 2px ink border on every plate. Letter, colour and words always travel together, so the hue is never the sole carrier. Correct is a filled ink plate; incorrect is an ink strike. <b>No hue ever means right or wrong.</b></div></div>
+  <div class="o"><div class="o-h"><span class="t">Option B · ink only</span><span class="b">Revert</span></div>
+    <div class="o-stage dark"><div class="qs inkonly"><a href="#"><span>A</span>Thuận Phước</a><a class="sel" href="#"><span>B</span>Trần Thị Lý</a><a href="#"><span>C</span>Cầu Vàng</a><a href="#"><span>D</span>Cầu Rồng</a></div></div>
+    <div class="o-note">Letters and position do all the identifying; selection is an ink fill. Nothing to ratify, no precedent set, and it matches every other list in the app. <b>Slower to scan</b> — four near-identical plates at arm's length in a loud room.</div></div>
+</div>
+<div class="rec"><b>Decided · A, scoped</b>Ratified for <b>quiz choice sets only</b>. That clause is the load-bearing part of this decision, not the hues: it does not license colour-coding event categories, menu sections, room codes or tags. A weekday hue remains the only other identifying colour in the system.</div>
+</div></div>
+
+<!-- ───────── G4 ───────── -->
+<div class="dc">
+<div class="dc-h"><span class="dc-k">G4</span><div><h2>Slowed product motion, and idle life <em style="font-style:normal;color:var(--green)">· ratified</em></h2>
+<p>The parameter sets on the motion canon card are <b>poster-scale</b> — a mark read once, at distance, on paper. On screen the same numbers read as a blip. The prototypes slowed the clock and kept the shape, and added idle life so the press never quite stops. Press both buttons and compare.</p></div></div>
+<div class="dc-b">
+<div class="opts">
+  <div class="o"><div class="o-h"><span class="t">Canon card timing</span><span class="b">Poster scale</span></div>
+    <div class="o-stage"><span class="im" id="g4-poster" data-form="strip-h" data-mode="full" data-idle="off" data-ground="off" style="--m:22px"></span>
+      <div class="btnrow"><button class="rp" type="button" data-run="poster">↻ A1 · 60 / 260</button></div></div>
+    <div class="o-note">Nine plates in 540ms. At poster size, read once, this is right. On a phone it registers as a flicker — you see that something happened, not that it printed.</div></div>
+  <div class="o ship"><div class="o-h"><span class="t">Product timing + idle</span><span class="b">Decided</span></div>
+    <div class="o-stage"><span class="im" id="g4-product" data-form="strip-h" data-mode="full" data-ground="off" style="--m:22px"></span>
+      <div class="btnrow"><button class="rp" type="button" data-run="product">↻ A1 · 95 / 430</button></div></div>
+    <div class="o-note">Same shape, ~1.3s end to end. Then <b>idle life</b>: every 5–8s one cell lifts and re-prints in its own colour — never a recolour, since a hue changing on a timer would be saying something. Stops off-screen. Watch this one for a while.</div></div>
+</div>
+<div class="rec"><b>Decided · both</b>Screen timing is canon; the motion card's sets are the print and poster numbers. Idle life is ratified too, as a <b>separate token</b> from the pass timing — so it can be tuned or dropped later without touching arrival. Idle currently re-stamps a cell in its own colour and never recolours; if the swap animations get pushed further, that is the line to revisit.</div>
+</div></div>
+
+</div>
+<script src="treatment/ink-mark.js"></script>
+<script src="treatment/ink-motion.js"></script>
+<script>
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-run]');
+  if (!b) return;
+  var poster = b.dataset.run === 'poster';
+  var el = document.getElementById(poster ? 'g4-poster' : 'g4-product');
+  window.InkMotion.pressPass(el, poster ? { stagger: 60, cell: 260 } : { stagger: 95, cell: 430 });
+});
+</script>
+</body>
+</html>

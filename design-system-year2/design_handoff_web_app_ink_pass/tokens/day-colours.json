@@ -1,0 +1,92 @@
+{
+  "$comment": "Single source of truth for weekday coding and ink partnering. CSS build emits .d-mon…d-sun; canvas and PDF renderers import this file directly (decided 18.08.26 — renderers may not read CSS custom properties).",
+  "revision": "18.08.26",
+  "days": {
+    "mon": {
+      "token": "--green",
+      "hex": "#43b02a",
+      "on": "#0d0905"
+    },
+    "tue": {
+      "token": "--blue",
+      "hex": "#18a7e0",
+      "on": "#0d0905"
+    },
+    "wed": {
+      "token": "--purple",
+      "hex": "#6e3179",
+      "hexNight": "#9a4faa",
+      "on": "#fffbf1"
+    },
+    "thu": {
+      "token": "--pink",
+      "hex": "#ed1b72",
+      "on": "#0d0905"
+    },
+    "fri": {
+      "token": "--red",
+      "hex": "#ed2224",
+      "on": "#0d0905"
+    },
+    "sat": {
+      "token": "--amber",
+      "hex": "#fdb515",
+      "on": "#0d0905"
+    },
+    "sun": {
+      "token": "--yellow",
+      "hex": "#fddf00",
+      "on": "#0d0905"
+    }
+  },
+  "partners": {
+    "pink": "blue",
+    "red": "blue",
+    "blue": "pink",
+    "yellow": "pink",
+    "amber": "purple",
+    "green": "purple",
+    "purple": "amber"
+  },
+  "accent": {
+    "day": {
+      "lead": "blue",
+      "second": "pink"
+    },
+    "night": {
+      "lead": "pink",
+      "second": "blue"
+    }
+  },
+  "$neverPairNote": "ADVISORY, not a guard (decided 19.08.26). The partner map is canon and supplies every default; these four combinations are discouraged and should warn in a picker, but remain authorable — a deliberate near-tonal overprint is allowed at large scale on stock. Do not lint as an error.",
+  "neverPairEnforcement": "warn",
+  "neverPair": [
+    [
+      "pink",
+      "red"
+    ],
+    [
+      "pink",
+      "purple"
+    ],
+    [
+      "amber",
+      "yellow"
+    ],
+    [
+      "any",
+      "itself"
+    ]
+  ],
+  "print": {
+    "ink": "#111111",
+    "stock": "#ffffff",
+    "shadow": {
+      "light": 0.08,
+      "default": 0.12,
+      "heavy": 0.18,
+      "heavyOffset": "12px"
+    }
+  },
+  "site": "realitydn.com"
+}

@@ -1,0 +1,34 @@
+/* ================================================================
+   INK MOTION — the two engines, as CSS. Canon:
+   guidelines/ink-strip-motion-applied.html.
+
+   Engine A · PRESS PASS   cells scale 0 → 1 in token order (stamp)
+   Engine B · MODE SWAP    pull to 0, re-ink, pop back (done in JS,
+                           Web Animations, so unchanged cells never move)
+
+   Scale only. Never opacity — a silkscreen either printed or it didn't.
+   ================================================================ */
+@keyframes ink-stamp-in{0%{transform:scale(0)}62%{transform:scale(1.11)}100%{transform:scale(1)}}
+@keyframes ink-stamp-out{0%{transform:scale(1)}100%{transform:scale(0)}}
+
+.im.pp>i,.im.pp>b,.im.pp .sub>i{transform:scale(0)}
+.im.pp.run>i,.im.pp.run>b,.im.pp.run .sub>i{animation:ink-stamp-in var(--pd,260ms) var(--ease-stamp) both;animation-delay:var(--d,0ms)}
+.im.pp.out>i,.im.pp.out>b,.im.pp.out .sub>i{transform:scale(1);animation:ink-stamp-out var(--pd,160ms) var(--ease-snap) both;animation-delay:var(--d,0ms)}
+/* A3 · single plate — the silhouette stamps, the cells never sequence */
+.im.pp.pp-whole{transform:scale(0)}
+.im.pp.pp-whole.run{transform:none;animation:ink-stamp-in var(--pd,260ms) var(--ease-stamp) both}
+.im.pp.pp-whole>i,.im.pp.pp-whole>b,.im.pp.pp-whole .sub>i,.im.pp.pp-whole.run>i,.im.pp.pp-whole.run>b,.im.pp.pp-whole.run .sub>i{transform:none;animation:none}
+
+/* A4 · chained pass — the mark hands the stagger outward to type */
+.ink-chain{transform:scale(0);transform-origin:0 50%}
+.ink-chain.run{animation:ink-stamp-in 260ms var(--ease-stamp) both;animation-delay:var(--d,0ms)}
+
+/* reduced motion · frame one is the finished mark */
+@media(prefers-reduced-motion:reduce){
+  .im.pp>i,.im.pp>b,.im.pp .sub>i,.im.pp.pp-whole,.ink-chain{transform:none!important;animation:none!important}
+}
+
+/* the replay affordance on the layout sheets (not a product control) */
+.js-replay{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:11px 15px;border:2px solid var(--fg);background:var(--bg);color:var(--fg);font:700 11px/1 var(--mont);letter-spacing:.13em;text-transform:uppercase;cursor:pointer;box-shadow:var(--sh-light);transition:transform var(--dur-tap) var(--ease-snap),box-shadow var(--dur-tap) var(--ease-snap)}
+.js-replay:hover{transform:translateY(-2px);box-shadow:var(--sh-default)}
+.js-replay:active{transform:translateY(2px);box-shadow:none}

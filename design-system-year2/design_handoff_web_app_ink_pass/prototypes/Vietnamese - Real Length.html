@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>REALITY — Vietnamese at real length</title>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="treatment/vi-sheet.css">
+</head>
+<body>
+<script src="treatment/image-slot.js"></script>
+<script src="treatment/app.js"></script>
+<script src="treatment/app-vi.js"></script>
+<script src="treatment/ink-mark.js"></script>
+<script src="treatment/ink-motion.js"></script>
+<script src="treatment/treatment.js"></script>
+<script>
+(function(){
+  const boot = () => {
+    document.querySelectorAll('.cv-frame').forEach(n => n.remove());
+    const L = window.APP_VI, PAD = 80, GAP = 140;
+    let x = PAD;
+    const frames = L.map((s, i) => {
+      const w = s.k === 'tv' ? 1000 : 390;
+      const f = document.createElement('div');
+      f.className = 'cv-frame';
+      f.setAttribute('data-frame','');
+      f.style.cssText = `left:${x}px;top:${PAD}px;width:${w}px`;
+      x += w + GAP;
+      const n = 'V' + String(i + 1).padStart(2,'0');
+      f.innerHTML = `<div class="cv-label"><span class="cv-num">${n}</span><div><h4>${s.n}</h4><p>${s.th}</p><p class="cv-mark">${s.mark}</p><p class="cv-lang">lang="vi" · fixtures, not copy</p></div></div>
+<div class="${s.k} tr app" lang="${s.lang || 'vi'}" data-theme-scope data-theme="${s.theme || 'light'}" data-screen-label="${n} ${s.n}"><div class="screen">${s.html()}</div></div>`;
+      document.body.appendChild(f);
+      return f;
+    });
+    const settle = () => {
+      document.body.style.width = (x + PAD) + 'px';
+      document.body.style.height = (PAD + Math.max(...frames.map(f => f.offsetHeight)) + 160) + 'px';
+    };
+    settle();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
+    if (window.renderInkMarks) window.renderInkMarks();
+    if (window.InkMotion) window.InkMotion.wire(document);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot, 0));
+  else setTimeout(boot, 0);
+})();
+</script>
+</body>
+</html>

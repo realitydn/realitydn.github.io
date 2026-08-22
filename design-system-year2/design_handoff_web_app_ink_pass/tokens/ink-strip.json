@@ -1,0 +1,99 @@
+{
+  "$name": "REALITY — Ink Strip & Square",
+  "$rev": "19.08.26",
+  "$comment": "Machine-readable spec for the ink strip / ink square. Canon card: guidelines/ink-strip.html. Renderers that cannot read CSS vars (canvas, PDF, SVG export, Studio tools) import this file plus day-colours.json. Cell ORDER is fixed; only colour assignment is a parameter.",
+
+  "module": {
+    "shape": "square",
+    "unit": "relative — the module is the only dimension; everything else is a multiple",
+    "floors": { "strip": 8, "stripShort": 6, "square": 6, "unit": "px", "why": "below the floor the 1x1 field cells merge into a grey band" },
+    "reference": { "signA1": { "modulePx": 84, "ofWidthPx": 842, "asMm": 59.3 } }
+  },
+
+  "forms": {
+    "strip-v":        { "grid": [2, 9], "bands": 3, "fieldCells": 6, "primary": true },
+    "strip-h":        { "grid": [9, 2], "bands": 3, "fieldCells": 6, "note": "strip-v rotated -90deg; reading order stays red-first, left to right" },
+    "strip-short-v":  { "grid": [2, 7], "bands": 3, "fieldCells": 2, "note": "minors dropped, neutral pair kept — the only sanctioned reduction" },
+    "strip-short-h":  { "grid": [7, 2], "bands": 3, "fieldCells": 2 },
+    "square":         { "grid": [4, 4], "quadrants": 3, "fieldCells": 4, "note": "majors as 2x2 quadrants in Z order; field at half module in quadrant 4" },
+    "square-anchored":{ "grid": [4, 4], "quadrants": 3, "fieldCells": 4, "note": "whole neutral pair kept, two minors dropped; ink takes the outer corner" }
+  },
+
+  "order": {
+    "$comment": "Fixed. Expose recolouring, never reordering.",
+    "bands": ["red", "blue", "yellow"],
+    "field": ["stock", "ink", "green", "pink", "purple", "amber"],
+    "squareQuadrants": ["red", "blue", "yellow"],
+    "squareQuadrantMap": { "red": "top-left", "blue": "top-right", "yellow": "bottom-left", "field": "bottom-right" },
+    "squareField": ["stock", "pink", "purple", "amber"],
+    "squareFieldAnchored": ["stock", "pink", "green", "ink"],
+    "squareFieldMap": ["inner (top-left of quadrant)", "top-right", "bottom-left", "outer corner (bottom-right)"]
+  },
+
+  "cells": {
+    "red":    { "token": "--red",    "value": "#ed2224" },
+    "blue":   { "token": "--blue",   "value": "#18a7e0" },
+    "yellow": { "token": "--yellow", "value": "#fddf00" },
+    "green":  { "token": "--green",  "value": "#43b02a" },
+    "pink":   { "token": "--pink",   "value": "#ed1b72" },
+    "amber":  { "token": "--amber",  "value": "#fdb515" },
+    "purple": { "token": "--purple", "value": "#6e3179", "valueNight": "#9a4faa", "valueLit": "#9a4faa" },
+    "ink":    { "token": "--fg",     "value": "#0d0905" },
+    "stock":  { "token": "substrate", "value": "#fffbf1", "valueLit": "#ffffff", "positive": true,
+                "$comment": "A COLOUR, not an absence. Follows the substrate, never the theme. Never transparent, never tinted, never on an outer edge or corner." },
+    "void":   { "value": "transparent", "positive": false,
+                "$comment": "A variation move only — the field shows through. The reference mark has NO voids." }
+  },
+
+  "modes": {
+    "full":    { "bands": ["red", "blue", "yellow"], "field": ["stock", "ink", "green", "pink", "purple", "amber"], "use": "identity only — signage, front page, year poster" },
+    "majors":  { "bands": ["red", "blue", "yellow"], "field": ["stock", "ink", "stock", "ink", "ink", "stock"], "use": "three plates plus stock — press runs, newsprint" },
+    "daycode": { "bands": ["day", "ink", "day"], "field": ["stock", "day", "ink", "day", "day", "stock"], "use": "the event mode — hue from day-colours.json", "requires": "day" },
+    "ink":     { "bands": ["ink", "stock", "ink"], "field": ["ink", "stock", "stock", "ink", "ink", "stock"], "use": "one colour — vinyl, laser, emboss, merch" },
+    "dropout": { "basedOn": "any", "maxVoids": 3, "use": "cells left open over a photo, wall or colour field" }
+  },
+
+  "substrates": {
+    "paper": { "stock": "#fffbf1", "ink": "#0d0905", "purple": "#6e3179", "keylines": 0, "shadows": "exempt" },
+    "lit":   { "stock": "#ffffff", "ink": "#0d0905", "purple": "#9a4faa", "keylines": "3mm", "shadows": "exempt",
+               "$comment": "PENDING in reality-tokens.json as substrate.lit. Backlit flats bloom into neighbours — keylines are required, Day or Night." },
+    "ink":   { "field": "#0d0905", "stock": "#fffbf1", "purple": "#9a4faa", "keylines": 0, "plate": false,
+               "$comment": "UNPLATED (decided 19.08.26). Stock reads as a punched chip and the ink cell drops out — the open silhouette IS the Night form. Never lay a cream plate behind a Night mark; a plate is for real cream stock only." }
+  },
+
+  "placement": {
+    "clearSpace": "1 module on all four sides — nothing inside it, including the wordmark",
+    "gutterToType": "1 module minimum",
+    "onePerSurface": "the frame decides: long edge -> strip, square or tiny frame -> square. Never both in one composition.",
+    "oneModePerEyeline": true,
+    "rotation": [0, -90],
+    "radius": 0,
+    "outline": "none around the whole mark; keylines run BETWEEN cells only",
+    "exception": "a poster may carry the strip while its footer QR carries the square — separate objects"
+  },
+
+  "qrPairing": {
+    "code": { "version": 2, "modules": 25, "quietZone": 4, "totalModules": 33, "ec": "M", "minRenderPx": 120 },
+    "ratio": { "markModule": 1, "qrModules": 8.25, "$comment": "square (4 modules) then matches the code's 33-module outer width exactly" },
+    "butting": "allowed — the quiet zone is already 4 modules of stock, so the mark may sit flush against the code",
+    "never": ["restyle or recolour the code", "invert the code", "knock a logo into the code", "place the mark inside the quiet zone"],
+    "assets": "assets/qr/ — verified decodable from 120px"
+  },
+
+  "invariants": [
+    "cell order is fixed — expose recolouring, never reordering",
+    "stock is always an inner cell, always printed, never transparent",
+    "dropout: max 3 voids, never two adjacent, never the stock cell",
+    "module never below the floor for the chosen form",
+    "clear space = 1 module, baked into export bounds",
+    "export SVG at integer module sizes so cells stay hairline-free",
+    "no radius, no gradient, no cell shadow, no eighth colour",
+    "never replaces the wordmark; never appears alone on a first-contact surface",
+    "colours are mood, not state — no UI job may be built on it"
+  ],
+
+  "pending": [
+    { "file": "tokens/reality-tokens.json", "add": "substrate.lit", "state": "patch" },
+    { "file": "tokens/reality-tokens.json", "add": "palette carve-out: jobs bind in UI; on artwork all seven inks are mood", "state": "patch" }
+  ]
+}

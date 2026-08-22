@@ -1,0 +1,52 @@
+@import url("core.css");
+
+html,body{margin:0;background:#8f8a80}
+body{position:relative;width:5600px;height:1900px}
+.po{position:relative;width:1080px;height:1350px;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--grotesk);border:2px solid #0d0905;box-shadow:0 13px 3px rgba(13,9,5,.34);display:flex;flex-direction:column}
+/* 1:1 social safe square — 1080×1080 centred vertically on the 4:5 plate */
+.po::after{content:"";position:absolute;left:0;right:0;top:135px;height:1080px;border:2px dashed rgba(13,9,5,.34);pointer-events:none;z-index:9}
+.po[data-theme="dark"]::after{border-color:rgba(255,251,241,.4)}
+body.no-safe .po::after{display:none}
+
+/* far register: caps, and facts stay Space Grotesk */
+.po .reg-far{text-transform:uppercase}
+.po-name{font-family:var(--mont);font-weight:800;text-transform:uppercase;line-height:.94;letter-spacing:.01em}
+.po-qual{font:700 26px/1.25 var(--mont);letter-spacing:.1em;text-transform:uppercase}
+.po-when{font:600 40px/1.1 var(--grotesk);font-variant-numeric:tabular-nums}
+.po-body{font:400 26px/1.4 var(--grotesk);text-wrap:pretty}
+.po-eyebrow{display:flex;align-items:center;gap:16px;font:800 24px/1 var(--mont);letter-spacing:.18em;text-transform:uppercase}
+.po-eyebrow::before{content:"";width:44px;height:5px;background:currentColor}
+.po-ft{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:28px;padding:34px 56px;border-top:4px solid currentColor}
+.po-ft .wm{width:230px}
+.po-ft-t{font:700 20px/1.4 var(--mont);letter-spacing:.12em;text-transform:uppercase;text-align:right}
+.po-qr{width:130px;height:130px;border:4px solid currentColor;background:#fffbf1;padding:8px;flex:none}
+.po-in{padding:56px;display:flex;flex-direction:column;gap:28px;align-items:flex-start;flex:1}
+
+/* 01 — full weekday field, name at maximum */
+.po-field{background:var(--day);color:var(--on-day)}
+.po-field .po-name{font-size:186px}
+.po-rule{width:100%;height:5px;background:currentColor}
+.po-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;width:100%;border-top:5px solid currentColor;padding-top:22px}
+.po-facts dt{font:800 20px/1 var(--mont);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.po-facts dd{font:600 30px/1.1 var(--grotesk);font-variant-numeric:tabular-nums}
+
+/* 02 — photo plate over ink block */
+.po-photo{position:relative;height:700px;border-bottom:4px solid var(--fg);flex:none}
+.po-photo .slot{position:absolute;inset:0;border:0}
+.po-spine{position:absolute;left:0;top:0;bottom:0;width:28px;background:var(--day);z-index:4}
+.po-ink{background:var(--fg);color:var(--bg)}
+.po-ink .po-name{font-size:112px}
+
+/* 03 — paper poster, misregistered title plate */
+.po-paper .po-name{font-size:104px}
+.po-plate{position:relative;background:var(--bg);border:4px solid var(--fg);padding:34px 38px;isolation:isolate}
+.po-plate::before,.po-plate::after{content:"";position:absolute;inset:0;z-index:-1}
+.po-plate::before{background:var(--blue);transform:translate(13px,13px)}
+.po-plate::after{background:var(--red);transform:translate(-6px,6px)}
+
+/* 04 — bilingual split */
+.po-split{flex:1;display:grid;grid-template-rows:1fr 1fr}
+.po-half{padding:52px 56px;display:flex;flex-direction:column;gap:20px;justify-content:center}
+.po-half:first-child{background:var(--day);color:var(--on-day);border-bottom:4px solid var(--fg)}
+.po-half .po-name{font-size:96px}
+:lang(vi) .po-name{font-weight:200;line-height:1.12}

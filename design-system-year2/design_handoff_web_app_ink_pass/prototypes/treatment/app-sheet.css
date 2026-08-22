@@ -1,0 +1,80 @@
+@import url("app.css");
+@import url("ink-mark.css");
+@import url("ink-motion.css");
+@import url("overlays.css");
+@import url("ink-ground.css");
+
+/* ================================================================
+   APP LAYOUT SHEET — canvas chrome for the full screen + overlay
+   set. Geometry only; every component comes from app.css.
+   ================================================================ */
+html,body{margin:0;background:#8f8a80}
+body{position:relative;width:auto;height:auto}
+.cv-frame{position:absolute}
+.cv-mark{font:700 11px/1.4 var(--mont)!important;letter-spacing:.1em;text-transform:uppercase;color:#fddf00!important;margin-top:7px!important}
+
+/* a frame carrying an overlay clips to the phone */
+.phone.stack{overflow:hidden}
+.phone.stack .screen{min-height:844px}
+
+/* splash */
+.splash{flex:1;border-top:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px}
+.splash .wm{width:196px}
+.splash-t{font:700 11px/1 var(--mont);letter-spacing:.16em;text-transform:uppercase;color:var(--fg-dim)}
+
+/* the mark sits on its own line in a band, one module clear of type */
+.app .band-in>.im{margin-bottom:2px}
+.tv-foot .im{align-self:center}
+
+/* ================================================================
+   PASS 2 — long titles, three-tab nav, quick-fingers choice hues.
+   ================================================================ */
+
+/* ---- long event names ------------------------------------------
+   Real titles run to three lines. The name wraps; the day plate, the
+   date, the time and the arrow do not move, because they are their own
+   grid tracks pinned to the top of the row. ---- */
+.r-ev{grid-template-columns:64px 1fr 22px;gap:6px 14px;align-items:start;padding:15px 0 15px 20px}
+.r-when{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.r-dt{font:500 12px/1 var(--grotesk);font-variant-numeric:tabular-nums;color:var(--fg-faint)}
+.name-block{display:flex;flex-direction:column;gap:4px;min-width:0}
+.name-block .r-n{font:700 16px/1.25 var(--mont);text-wrap:pretty;overflow-wrap:anywhere;hyphens:auto}
+.type-sub{font:500 13px/1.35 var(--grotesk);color:var(--fg-dim);text-wrap:pretty}
+.name-block .r-m{font:600 13px/1 var(--mont);letter-spacing:.06em;font-variant-numeric:tabular-nums;margin-top:2px}
+.r-ev .r-go{align-self:center}
+.r-ev .day-plate{font-size:14px;padding:6px 8px}
+:lang(vi) .name-block .r-n{line-height:1.3}
+
+/* ---- nav · three tabs, label always legible ---- */
+.nav a{gap:6px;padding:9px 4px 11px;min-height:60px;font:700 10px/1.1 var(--mont);letter-spacing:.07em}
+.nav a span{white-space:nowrap}
+.nav a.is-on::before{width:44px}
+.nav svg{width:24px;height:24px}
+
+/* ---- quick-fingers choice hues ---------------------------------
+   The one place a minor takes a job in the UI, and it is the weekday
+   precedent, not a status: the hue IDENTIFIES a choice. Rules that make
+   it safe — ink text on every plate, 2px ink border, the letter and the
+   words always present, and no hue ever means right or wrong. Feedback
+   stays ink: correct is a filled ink plate, wrong is an ink strike. ---- */
+.ans.ans-quick button{color:#0d0905;border-color:#0d0905}
+.ans.ans-quick .q-a{background:var(--blue)}
+.ans.ans-quick .q-b{background:var(--yellow)}
+.ans.ans-quick .q-c{background:var(--green)}
+.ans.ans-quick .q-d{background:var(--pink)}
+.ans-quick .ans-k{border-color:#0d0905}
+.ans-quick .q-a,.tv-quick .q-a{background:var(--blue)}
+.ans-quick .q-b,.tv-quick .q-b{background:var(--yellow)}
+.ans-quick .q-c,.tv-quick .q-c{background:var(--green)}
+.ans-quick .q-d,.tv-quick .q-d{background:var(--pink)}
+.tv-ans.tv-quick div{color:#0d0905;border-color:#0d0905}
+.tv-quick span{border-color:#0d0905}
+.ans-quick button:active{transform:translateY(2px)}
+/* answered / not-answered stays ink, never a hue */
+.ans-quick button[aria-pressed="true"]{box-shadow:inset 0 0 0 5px #0d0905}
+
+/* the largest event name in the app: uppercase display at real length */
+.ev-title{font-size:26px;line-height:1.08;text-wrap:balance;overflow-wrap:anywhere}
+.ev-title .slam{display:block}
+:lang(vi) .ev-title{line-height:1.3}
+.app .band-in>.type-sub{margin-top:-8px}

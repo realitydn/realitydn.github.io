@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>REALITY Website — 390 / 768 / 1200</title>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="treatment/responsive-sheet.css">
+</head>
+<body>
+<script src="treatment/image-slot.js"></script>
+<script src="treatment/site-pages.js"></script>
+<script src="treatment/ink-mark.js"></script>
+<script src="treatment/ink-motion.js"></script>
+<script src="treatment/treatment.js"></script>
+<script>
+(function(){
+  const WIDTHS = [
+    { w: 390, cls: 'w390', n: 'Phone', p: 'The masthead collapses to wordmark + theme + MENU; the nav lives in the drawer that was already designed as a popup. Event rows RE-STACK rather than shrink — when, name and meta become three rows. Buttons go full-width. The QR pairing shrinks code and square together so the 1:8.25 butt survives.' },
+    { w: 768, cls: 'w768', n: 'Tablet', p: 'Every two-column split becomes one column and the events rail goes horizontal above the days. Display type steps down one notch; nothing informational moves. This is the width where the long event name is still comfortable on one grid — the last one that is.' },
+    { w: 1200, cls: 'w1200', n: 'Desktop', p: 'The authored width. Everything here is what you have already signed off; it is in the sheet as the control.' }
+  ];
+  const PAGES = ['Home', 'Events'];
+  const boot = () => {
+    document.querySelectorAll('.cv-frame').forEach(n => n.remove());
+    const PAD = 80, GAP = 90, COLGAP = 150;
+    let x = PAD, tallest = 0;
+    const frames = [];
+    PAGES.forEach((pname) => {
+      WIDTHS.forEach((wd) => {
+        const src = document.createElement('div');
+        const f = document.createElement('div');
+        f.className = 'cv-frame';
+        f.setAttribute('data-frame','');
+        f.style.cssText = `left:${x}px;top:${PAD}px;width:${wd.w}px`;
+        x += wd.w + GAP;
+        f.innerHTML = `<div class="rs-col"><div class="rs-hd"><span class="w">${wd.w}px</span><h3>${pname} · ${wd.n}</h3><p>${wd.p}</p><button class="js-focus" type="button" aria-pressed="false">Show focus — the plate stays, the face slips</button></div>
+<div class="rs-frame ${wd.cls} tr" data-theme-scope data-theme="light" data-screen-label="${pname} ${wd.w}"></div></div>`;
+        document.body.appendChild(f);
+        frames.push([f, pname, f.querySelector('.rs-frame')]);
+      });
+      x += COLGAP - GAP;
+    });
+    /* render each page into its frame at that width */
+    frames.forEach(([f, pname, host]) => {
+      const page = window.SITE_PAGES.find(p => p.n === pname);
+      host.innerHTML = page.html();
+    });
+    const settle = () => {
+      document.body.style.width = (x + PAD) + 'px';
+      document.body.style.height = (PAD + Math.max(...frames.map(([f]) => f.offsetHeight)) + 160) + 'px';
+    };
+    settle();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
+    if (window.renderInkMarks) window.renderInkMarks();
+    if (window.InkMotion) window.InkMotion.wire(document);
+  };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.js-focus');
+    if (!b) return;
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(on));
+    b.closest('.cv-frame').querySelector('.rs-frame').classList.toggle('show-focus', on);
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(boot, 0));
+  else setTimeout(boot, 0);
+})();
+</script>
+</body>
+</html>

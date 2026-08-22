@@ -1,0 +1,19 @@
+/* ================================================================
+   INK GROUND — placement fix, not a new part of the mark.
+
+   OPT-IN ONLY, per G2 (closed 22.08.26). The open silhouette is
+   correct on screen: a strip terminating on stock lets its corner
+   open, which keeps the mark reading as ink laid ON the page and
+   is what makes cell-switching legible. There is NO automatic
+   grounding — do not restore the background-comparison test.
+
+   data-ground="on" grounds a single mark on --paper-shade (the
+   second shade of unprinted stock, not a tint) with the canon
+   1-module clear space. Two cases need it: a mark over
+   photography, and print export, where the canon outer-corner
+   rule does still apply. No outline, no radius, no shadow.
+   ================================================================ */
+.im-ground{background:var(--paper-shade,var(--surface-2,#ece2c9));padding:var(--m)}
+.im-ground.im-key{padding:calc(var(--m) + var(--kw))}
+/* a mark already carrying its clear space keeps one module, not two */
+.im-ground.im-clear{padding:var(--m)}

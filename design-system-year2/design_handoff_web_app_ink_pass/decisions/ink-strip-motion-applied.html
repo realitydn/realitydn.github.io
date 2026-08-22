@@ -1,0 +1,441 @@
+<!-- @dsCard group="Foundations" name="Ink Strip Motion — Applied" subtitle="Press pass and mode swap developed as the system's two motion engines: parameters, ten adaptations across surfaces, the composite, and the exit" viewport="1180x6000" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Ink Strip Motion Applied</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+.ist{display:grid;grid-template-columns:repeat(2,var(--m,20px));grid-auto-rows:var(--m,20px);gap:0;flex:none;--stock:#fffbf1}
+.ist i{display:block;background:var(--k)}
+.ist i.b{grid-column:span 2;grid-row:span 2}
+.ist.h{grid-template-columns:none;grid-template-rows:repeat(2,var(--m,20px));grid-auto-rows:none;grid-auto-columns:var(--m,20px);grid-auto-flow:column}
+.isq{display:grid;grid-template-columns:repeat(2,calc(var(--m,20px)*2));grid-template-rows:repeat(2,calc(var(--m,20px)*2));gap:0;flex:none;--stock:#fffbf1}
+.isq>b,.isq .sub>i{display:block;background:var(--k)}
+.isq .sub{display:grid;grid-template-columns:repeat(2,var(--m,20px));grid-template-rows:repeat(2,var(--m,20px))}
+.ist.key{gap:2px;padding:2px;background:var(--fg)}
+
+@keyframes stampIn{0%{transform:scale(0)}62%{transform:scale(1.11)}100%{transform:scale(1)}}
+@keyframes stampOut{0%{transform:scale(1)}100%{transform:scale(0)}}
+.pp i,.pp>b,.pp .sub>i{transform:scale(0)}
+.pp.run i,.pp.run>b,.pp.run .sub>i{animation:stampIn var(--pd,260ms) var(--ease-stamp) both;animation-delay:var(--d,0ms)}
+.pp.out i,.pp.out>b,.pp.out .sub>i{transform:scale(1);animation:stampOut var(--pd,160ms) var(--ease-snap) both;animation-delay:var(--d,0ms)}
+.pp.whole{transform:scale(0)}
+.pp.whole.run{transform:none;animation:stampIn 260ms var(--ease-stamp) both}
+.pp.whole.run i,.pp.whole.run>b,.pp.whole.run .sub>i{animation:none;transform:none}
+.pp.whole i,.pp.whole>b,.pp.whole .sub>i{transform:none}
+
+.mcard{border:2px solid var(--fg);background:var(--bg);box-shadow:var(--sh-default);display:flex;flex-direction:column}
+.mcard>.ch{display:flex;align-items:baseline;gap:11px;border-bottom:2px solid var(--fg);padding:13px 16px}
+.mcard>.ch .n{font-family:var(--mont);font-weight:800;font-size:11.5px;letter-spacing:.08em;background:var(--fg);color:var(--bg);padding:4px 8px;flex:none}
+.mcard>.ch h4{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:12px}
+.mcard>.ch .kind{margin-left:auto;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:9px;color:var(--fg-faint);flex:none}
+.mstage{min-height:210px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:24px;padding:24px;border-bottom:2px solid var(--fg);background:#fffbf1;position:relative;overflow:hidden}
+.mstage.ink{background:#0a0703}
+.mstage.field{background:repeating-linear-gradient(45deg,#87878d 0 7px,#9b9ba1 7px 14px)}
+.mstage.tv{background:#0a0703;align-items:stretch;justify-content:flex-start;padding:0}
+.mstage .st-lbl{position:absolute;left:14px;bottom:11px;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.13em;font-size:9.5px;color:rgba(13,9,5,.56);z-index:2}
+.mstage.ink .st-lbl,.mstage.tv .st-lbl{color:rgba(255,251,241,.48)}
+.mstage.field .st-lbl{color:#0d0905;background:#fffbf1;padding:3px 6px}
+.mmeta{padding:13px 16px 15px;display:grid;gap:7px}
+.mmeta div{display:grid;grid-template-columns:76px 1fr;gap:10px;font-size:12.5px;color:var(--fg-dim);line-height:1.5}
+.mmeta b{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg);padding-top:3px}
+.mmeta div.p{color:var(--fg-faint)}
+.mono,code{font-family:var(--mont);font-weight:600;font-size:11.5px;color:var(--fg)}
+.mbar{display:flex;border-top:2px solid var(--fg);margin-top:auto}
+.mbar button{flex:1;font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:10px;padding:11px 12px;border-right:2px solid var(--fg);transition:background var(--dur-tap) var(--ease-snap)}
+.mbar button:last-child{border-right:none}
+.mbar button:hover{background:var(--fg);color:var(--bg)}
+.mbar button[aria-pressed="true"]{background:var(--accent);color:#0d0905}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media(max-width:940px){.g2{grid-template-columns:1fr}}
+
+.eng{border:3px solid var(--fg);background:var(--bg);box-shadow:var(--sh-heavy);padding:0;margin-bottom:20px}
+.eng>.eh{display:flex;align-items:baseline;gap:12px;border-bottom:3px solid var(--fg);padding:16px 20px;background:var(--surface-2)}
+.eng>.eh .n{font-family:var(--mont);font-weight:800;font-size:12px;letter-spacing:.1em;background:var(--fg);color:var(--bg);padding:5px 9px}
+.eng>.eh h3{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:15px}
+.eng>.eh .sub{font-size:12.5px;color:var(--fg-dim)}
+.eng .ebody{display:grid;grid-template-columns:300px 1fr;gap:0}
+@media(max-width:940px){.eng .ebody{grid-template-columns:1fr}}
+.eng .edemo{border-right:2px solid var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:26px;min-height:250px}
+.eng .edemo .marks{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:24px}
+.eng .edemo .elab{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.13em;font-size:9.5px;color:var(--fg-faint)}
+@media(max-width:940px){.eng .edemo{border-right:none;border-bottom:2px solid var(--fg)}}
+.eng .espec{padding:20px 22px}
+pre.spec{border:2px solid var(--fg);background:var(--surface-2);box-shadow:var(--sh-light);padding:14px 16px;font-family:var(--mont);font-weight:500;font-size:11.5px;line-height:1.7;color:var(--fg-dim);overflow-x:auto;white-space:pre;margin-top:12px}
+pre.spec b{color:var(--fg);font-weight:700}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:940px){.rules{grid-template-columns:1fr}}
+.rc{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:14px 16px}
+.rc h5{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:6px}
+.rc p{font-size:12.5px;color:var(--fg-dim)}
+.rc.no{border-color:var(--red)}.rc.no h5{color:var(--red)}
+.rc.yes h5{color:var(--green)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--fg-faint);text-align:left;padding:0 10px 7px 0;border-bottom:2px solid var(--fg)}
+.tbl td{padding:8px 10px 8px 0;border-bottom:1px solid var(--hairline);color:var(--fg-dim);vertical-align:top}
+.tbl td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.tbl td.e{font-family:var(--mont);font-weight:600;font-size:10.5px;color:var(--fg);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.playall{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:10px;border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);padding:9px 13px;transition:transform var(--dur-tap) var(--ease-snap),box-shadow var(--dur-tap) var(--ease-snap)}
+.playall:hover{transform:translateY(-2px);box-shadow:var(--sh-default)}
+.playall:active{transform:translateY(2px);box-shadow:none}
+
+/* composite mock chrome */
+.tvrow{display:flex;flex-direction:column;width:100%;color:#fffbf1}
+.tvrow .top{display:flex;align-items:center;gap:14px;border-bottom:3px solid #fffbf1;padding:14px 18px}
+.tvrow .top .wm{font-family:var(--mont);font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:14px}
+.tvrow .top .dt{margin-left:auto;font-family:var(--grotesk);font-size:12px;color:rgba(255,251,241,.60)}
+.tvrow .body{display:flex;gap:16px;padding:16px 18px 34px;align-items:flex-start}
+.tvrow .lines{display:grid;gap:9px;flex:1}
+.tvrow .lines>div{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:baseline;border-bottom:1px solid #3a2c1c;padding-bottom:7px}
+.tvrow .lines .t{font-family:var(--mont);font-weight:700;font-size:11.5px;letter-spacing:.06em}
+.tvrow .lines .e{font-family:var(--grotesk);font-size:12.5px;color:rgba(255,251,241,.60)}
+.postermock{width:186px;background:#fffbf1;border:2px solid #0d0905;box-shadow:var(--sh-light);display:flex;flex-direction:column;gap:0;padding:0}
+.postermock .pt{padding:14px 14px 12px;display:grid;gap:8px}
+.postermock .eyebrow{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:8.5px;color:#18a7e0}
+.postermock .nm{font-family:var(--mont);font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:21px;line-height:.98;color:#0d0905}
+.postermock .fact{font-family:var(--grotesk);font-size:11px;color:rgba(13,9,5,.72)}
+.postermock .strip-slot{border-top:2px solid #0d0905;padding:10px 14px;display:flex;justify-content:flex-start}
+.pp-t{transform:scale(0);transform-origin:0 50%}
+.pp-t.run{animation:stampIn 260ms var(--ease-stamp) both;animation-delay:var(--d,0ms)}
+@media(prefers-reduced-motion:reduce){.pp i,.pp>b,.pp .sub>i,.pp.whole,.pp.whole.run,.pp-t{transform:none!important}}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Ink Strip Motion — Applied</span><span class="sub">Press pass and mode swap, developed. Two engines with named parameters, ten adaptations across the surfaces we actually ship, one composite, one exit. Everything else from the eight is retired.</span><span class="tag">PROPOSAL · 20.08.26</span></header>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>Two engines, not eight animations</h4>
+  <p><b>Press pass</b> is the <em>arrival</em> engine: cells stamp in, in token order, on a stagger. <b>Mode swap</b> is the <em>change</em> engine: the grid holds still and each changing cell pulls out and pops back in with its new ink — the same stamp, run twice. Between them they cover everything the mark needs to do — appear, change, and leave — because leaving is a press pass run backwards and every other behaviour is a recolour.</p>
+  <p>Each adaptation below is the same engine with different parameters. That is the point: <b>one implementation, a parameter set per surface</b>, so the app, the site and the studios can share the code the way they already share <span class="mono">day-colours.json</span>.</p>
+  <p>Both engines were already legal — press pass is stamp-not-fade by construction, mode swap only ever touches colour assignment. Neither can break cell order, radius, rotation or the size floor, which is why they survived and the other six didn't.</p>
+</div>
+
+<div class="eng">
+  <div class="eh"><span class="n">ENGINE A</span><h3>Press pass</h3><span class="sub">appear · leave</span></div>
+  <div class="ebody">
+    <div class="edemo" id="engA"></div>
+    <div class="espec">
+      <p style="font-size:13px;color:var(--fg-dim)">Cells scale from zero to full on <code>--ease-stamp</code>, sequenced in token order — the three majors, then the field. Never opacity. The overshoot is the ink hitting the paper; the stagger is the plate order.</p>
+      <pre class="spec"><b>pressPass(mark, {</b>
+  order     "token" | "whole"      <span style="opacity:.6">// whole = one plate, no stagger</span>
+  stagger   ms                     <span style="opacity:.6">// 0 · 20 · 60 · 90</span>
+  cell      ms                     <span style="opacity:.6">// per-cell duration, 160–260</span>
+  direction "in" | "out"           <span style="opacity:.6">// out reverses, bottom-up, on --ease-snap</span>
+  chain     [element, …]           <span style="opacity:.6">// continue the stagger into type</span>
+<b>})</b>
+
+<b>fixed, not parameters</b>
+  · order is token order — always, both directions
+  · scale only; no opacity, no rotation, no radius
+  · one ease per pass; cells are plates, not characters
+  · reduced motion → frame one is the finished mark</pre>
+    </div>
+  </div>
+</div>
+
+<div class="g2" id="gA"></div>
+
+<div class="eng" style="margin-top:26px">
+  <div class="eh"><span class="n">ENGINE B</span><h3>Mode swap</h3><span class="sub">change · hold</span></div>
+  <div class="ebody">
+    <div class="edemo" id="engB"></div>
+    <div class="espec">
+      <p style="font-size:13px;color:var(--fg-dim)">The geometry never moves, and no colour ever crossfades: each cell <b>pulls</b> — scales to zero on <code>--ease-snap</code> — and the replacement <b>pops</b> back in on <code>--ease-stamp</code>. Engine A's vocabulary applied to a plate change: the old plate lifts, the new one lands. Every mode in the canon card is a target, and so is a void set — a dropout is a pull with nothing following it.</p>
+      <pre class="spec"><b>modeSwap(mark, {</b>
+  to        "full" | "majors" | "daycode" | "ink" | assignment[]
+  day       "mon".."sun"           <span style="opacity:.6">// daycode only, from day-colours.json</span>
+  swap      "pullpop" | "cut"      <span style="opacity:.6">// pullpop is the default; cut only at the size floor</span>
+  out / in  ms                     <span style="opacity:.6">// pull 140 snap · pop 220 stamp</span>
+  stagger   ms                     <span style="opacity:.6">// 0 · 40 · 90</span>
+  hold      ms | "manual"          <span style="opacity:.6">// loop dwell, or wait for a trigger</span>
+  sequence  [mode, …]              <span style="opacity:.6">// loops only</span>
+<b>})</b>
+
+<b>fixed, not parameters</b>
+  · assignments come from the mode table or day-colours.json
+  · pull always precedes pop — the cell is empty between plates
+  · unchanged cells never move; only the plates that change animate
+  · voids ≤ 3, never adjacent, never the stock cell
+  · no colour interpolation, ever — no crossfade, no tween
+  · never bound to state, progress, validity or selection</pre>
+    </div>
+  </div>
+</div>
+
+<div class="g2" id="gB"></div>
+
+<p class="tier">Composite — arrive, then hold <button class="playall" id="playall" style="margin-left:10px">▶ Replay both</button></p>
+<div class="g2" id="gC"></div>
+
+<p class="tier">The parameter table</p>
+<table class="tbl">
+  <thead><tr><th style="width:52px">#</th><th style="width:150px">Adaptation</th><th style="width:88px">Engine</th><th style="width:250px">Parameters</th><th>Surface</th></tr></thead>
+  <tbody>
+    <tr><td class="e">A1</td><td class="k">Full pass</td><td class="e">Press pass</td><td class="mono">token · 60 · 260 · in</td><td>Splash, first load, poster reveal, video title</td></tr>
+    <tr><td class="e">A2</td><td class="k">Quick pass</td><td class="e">Press pass</td><td class="mono">token · 20 · 160 · in</td><td>Nav mark, footer, card arrival, list header</td></tr>
+    <tr><td class="e">A3</td><td class="k">Single plate</td><td class="e">Press pass</td><td class="mono">whole · 0 · 260 · in</td><td>At or near the size floor, keylined instances, favicon-scale</td></tr>
+    <tr><td class="e">A4</td><td class="k">Chained pass</td><td class="e">Press pass</td><td class="mono">token · 60 · 260 · chain: type</td><td>Poster animation, hero, section opener, story card</td></tr>
+    <tr><td class="e">A5</td><td class="k">Pull</td><td class="e">Press pass</td><td class="mono">token · 40 · 160 · out</td><td>Page leave, sheet dismiss, slide-out, end card</td></tr>
+    <tr><td class="e">B1</td><td class="k">Day tick</td><td class="e">Mode swap</td><td class="mono">daycode · pullpop · 0 · manual</td><td>Schedule, week board, door screen — re-plates when the day changes</td></tr>
+    <tr><td class="e">B2</td><td class="k">Theme flip</td><td class="e">Mode swap</td><td class="mono">full · night · pullpop · 0</td><td>Every screen instance — purple re-plates inside the 700ms flip</td></tr>
+    <tr><td class="e">B3</td><td class="k">Budget step</td><td class="e">Mode swap</td><td class="mono">[full, majors, ink] · pullpop · 40 · 1600</td><td>TV, systems talk, about page, year-in-review</td></tr>
+    <tr><td class="e">B4</td><td class="k">Section hue</td><td class="e">Mode swap</td><td class="mono">daycode · pullpop · 0 · manual (scroll)</td><td>Long page with day-owned sections, programme index</td></tr>
+    <tr><td class="e">B5</td><td class="k">Dropout hold</td><td class="e">Mode swap</td><td class="mono">assignment[] · pullpop · 0 · 1200</td><td>Photo-led hero, poster video, projection, social loop</td></tr>
+    <tr><td class="e">C1</td><td class="k">Arrive &amp; hold</td><td class="e">A → B</td><td class="mono">A1 then B3 after 400ms</td><td>The in-room TV and anything that lives on screen for hours</td></tr>
+  </tbody>
+</table>
+
+<p class="tier">Rules that come with the two engines</p>
+<div class="rules">
+  <div class="rc yes"><h5>One arrival per surface</h5><p>A surface gets one press pass. If the mark appears twice on a page, the second instance is static — the pass belongs to the first contact.</p></div>
+  <div class="rc yes"><h5>Chain outward, never inward</h5><p>A chained pass may hand the stagger to type, never the reverse. The mark prints first; it is the plate the rest registers to.</p></div>
+  <div class="rc yes"><h5>Swap holds ≥ 1.2s</h5><p>Below that, cuts read as flicker rather than plate changes. Manual triggers (day tick, theme flip, scroll) have no floor.</p></div>
+  <div class="rc no"><h5>Never a swap on a near surface</h5><p>App lists, menus, tickets, body copy: static mark. Recolouring beside text a person is reading looks like the UI is telling them something.</p></div>
+  <div class="rc no"><h5>Never both engines at once</h5><p>Stamping and swapping in the same beat is unreadable. The composite runs them in sequence with a 400ms gap, and that is the only legal pairing.</p></div>
+  <div class="rc no"><h5>Never interpolate ink</h5><p>No cross-fade, no colour tween, no blend between two assignments. The cell is <em>empty</em> between plates — that gap is the whole mechanic. This is the rule the studios are most likely to break.</p></div>
+</div>
+
+<div class="note">
+  <h4>What this needs from the token layer</h4>
+  <p><span class="dq-state st-patch" style="margin:0 8px 0 0">PATCH</span> Add a <b><span class="mono">motion</span></b> block to <span class="mono">tokens/ink-strip.json</span> carrying the two engines and the eleven parameter sets above, so the Studio tools, the site and the app animate from one source instead of three.</p>
+  <p><span class="dq-state st-patch" style="margin:0 8px 0 0">PATCH</span> Name the two primitives in <span class="mono">motion</span>: <b>pull</b> (140ms, <span class="mono">--ease-snap</span>, scale to 0) and <b>pop</b> (220ms, <span class="mono">--ease-stamp</span>, scale from 0 with overshoot). Both engines are built from them, and both should be named once rather than re-derived per renderer.</p>
+  <p><span class="dq-state st-patch" style="margin:0 8px 0 0">PATCH</span> Register <b>stagger 20ms and 60ms</b> alongside the existing <span class="mono">--stagger</span> 90ms. Press pass needs a tighter grade than the UI stagger, and hardcoding it in each renderer is how it drifts.</p>
+</div>
+
+<script>
+var INK={red:'#ed2224',blue:'#18a7e0',yellow:'#fddf00',pink:'#ed1b72',amber:'#fdb515',green:'#43b02a',purple:'var(--purple)',ink:'#0d0905',stock:'var(--stock)',day:'var(--day)',void:'transparent'};
+var FULL={bands:['red','blue','yellow'],field:['stock','ink','green','pink','purple','amber']};
+var MODES={
+  full:FULL,
+  majors:{bands:['red','blue','yellow'],field:['stock','ink','stock','ink','ink','stock']},
+  daycode:{bands:['day','ink','day'],field:['stock','day','ink','day','day','stock']},
+  ink:{bands:['ink','stock','ink'],field:['ink','stock','stock','ink','ink','stock']}
+};
+/* square form: 3 quadrants + 4 half-module field cells (inner → outer corner), per tokens/ink-strip.json */
+var SQ={
+  full:['red','blue','yellow','stock','pink','purple','amber'],
+  majors:['red','blue','yellow','stock','ink','stock','ink'],
+  daycode:['day','ink','day','stock','day','day','ink'],
+  ink:['ink','stock','ink','ink','stock','stock','ink']
+};
+function strip(spec,m,cls){
+  var el=document.createElement('div');el.className='ist'+(cls?' '+cls:'');el.style.setProperty('--m',m+'px');
+  spec.bands.forEach(function(n){var i=document.createElement('i');i.className='b';i.style.setProperty('--k',INK[n]);el.appendChild(i)});
+  spec.field.forEach(function(n){var i=document.createElement('i');i.style.setProperty('--k',INK[n]);el.appendChild(i)});
+  el.__names=spec.bands.concat(spec.field);el.__ctx={day:null,night:false};
+  return el;
+}
+function square(m,cls){
+  var el=document.createElement('div');el.className='isq'+(cls?' '+cls:'');el.style.setProperty('--m',m+'px');
+  ['red','blue','yellow'].forEach(function(n){var b=document.createElement('b');b.style.setProperty('--k',INK[n]);el.appendChild(b)});
+  var sub=document.createElement('div');sub.className='sub';
+  ['stock','pink','purple','amber'].forEach(function(n){var i=document.createElement('i');i.style.setProperty('--k',INK[n]);sub.appendChild(i)});
+  el.appendChild(sub);el.__names=SQ.full.slice();el.__ctx={day:null,night:false};return el;
+}
+function cellsOf(el){return [].slice.call(el.querySelectorAll(':scope > i, :scope > b, .sub > i'))}
+
+/* ── Engine A ─────────────────────────────────────────── */
+function pressPass(el,o){
+  o=o||{};var stagger=o.stagger==null?60:o.stagger,cell=o.cell||260,out=o.direction==='out';
+  el.classList.add('pp');if(o.order==='whole')el.classList.add('whole');
+  el.style.setProperty('--pd',cell+'ms');
+  var c=cellsOf(el);if(out)c=c.slice().reverse();
+  c.forEach(function(i,k){i.style.setProperty('--d',(o.order==='whole'?0:k*stagger)+'ms')});
+  var chain=o.chain||[],base=(o.order==='whole'?0:c.length*stagger);
+  chain.forEach(function(t,k){t.classList.add('pp-t');t.style.setProperty('--d',(base+k*90)+'ms')});
+  el.classList.remove('run','out');chain.forEach(function(t){t.classList.remove('run')});
+  void el.offsetWidth;
+  el.classList.add(out?'out':'run');
+  if(!out)chain.forEach(function(t){void t.offsetWidth;t.classList.add('run')});
+}
+/* ── Engine B ─────────────────────────────────────────── */
+var RM=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+var PULL=[{transform:'scale(1)'},{transform:'scale(0)'}];
+var POP=[{transform:'scale(0)'},{transform:'scale(1.11)',offset:.62},{transform:'scale(1)'}];
+var E_SNAP='cubic-bezier(.3,0,.2,1)',E_STAMP='cubic-bezier(.2,1.4,.45,1)';
+function pull(i,ms){if(i.__a)i.__a.cancel();if(i.animate)i.__a=i.animate(PULL,{duration:ms||140,easing:E_SNAP,fill:'forwards'});else i.style.transform='scale(0)'}
+function pop(i,ms){if(i.__a)i.__a.cancel();if(i.animate)i.__a=i.animate(POP,{duration:ms||220,easing:E_STAMP,fill:'forwards'});else i.style.transform='none'}
+function settle(i){if(i.__a)i.__a.cancel();if(i.animate)i.__a=i.animate([{transform:'none'}],{duration:1,fill:'forwards'});else i.style.transform='none'}
+var HEX={red:'#ed2224',blue:'#18a7e0',yellow:'#fddf00',pink:'#ed1b72',amber:'#fdb515',green:'#43b02a',ink:'#0d0905',stock:'#fffbf1',void:'transparent'};
+var DAYINK={mon:'green',tue:'blue',wed:'purple',thu:'pink',fri:'red',sat:'amber',sun:'yellow'};
+function resolveInk(n,ctx){
+  if(n==='day')n=DAYINK[ctx.day]||'ink';
+  if(n==='purple')return ctx.night?'#9a4faa':'#6e3179';
+  return HEX[n]!==undefined?HEX[n]:n;
+}
+function modeSwap(el,o){
+  o=o||{};var st=o.stagger==null?40:o.stagger,out=o.out||140,inn=o.in||220,cut=o.swap==='cut'||RM;
+  var sq=el.classList.contains('isq');
+  var a=Array.isArray(o.to)?o.to:(sq?SQ[o.to].slice():MODES[o.to].bands.concat(MODES[o.to].field));
+  var cells=cellsOf(el),applied=false;
+  if(a.length!==cells.length)return;
+  var prev=(el.__names&&el.__names.length===cells.length)?el.__names:a,pctx=el.__ctx||{day:null,night:false},ctx={day:o.day||pctx.day,night:!!o.night};
+  var setDay=function(){if(o.day)el.className=el.className.replace(/\s*\bd-\w{3}\b/g,'')+' d-'+o.day};
+  var apply=function(){if(applied)return;applied=true;setDay();if(o.apply)o.apply()};
+  var changed=cells.map(function(_,j){return resolveInk(a[j],ctx)!==resolveInk(prev[j],pctx)});
+  el.__names=a;el.__ctx=ctx;
+  if(cut){cells.forEach(function(i,j){var v=INK[a[j]]!==undefined?INK[a[j]]:a[j];
+    if(st&&changed[j])setTimeout(function(){i.style.setProperty('--k',v);apply()},j*st);else i.style.setProperty('--k',v)});apply();return}
+  if(changed.indexOf(true)<0){apply();return}
+  cells.forEach(function(i,j){
+    if(!changed[j])return;
+    var v=INK[a[j]]!==undefined?INK[a[j]]:a[j],d=j*st;
+    var wasVoid=resolveInk(prev[j],pctx)==='transparent',willVoid=v==='transparent';
+    setTimeout(function(){
+      if(wasVoid){i.style.setProperty('--k',v);apply();pop(i,inn);return}
+      pull(i,out);
+      setTimeout(function(){i.style.setProperty('--k',v);apply();if(willVoid)settle(i);else pop(i,inn)},out);
+    },d);
+  });
+}
+
+function mcard(o){
+  var c=document.createElement('div');c.className='mcard';
+  c.innerHTML='<div class="ch"><span class="n">'+o.n+'</span><h4>'+o.name+'</h4><span class="kind">'+o.kind+'</span></div>'
+   +'<div class="mstage '+(o.bg||'')+'"><span class="st-lbl">'+o.lbl+'</span></div>'
+   +'<div class="mmeta"><div><b>Change</b><span>'+o.mech+'</span></div><div class="p"><b>Params</b><span class="mono">'+o.params+'</span></div><div><b>Surface</b><span>'+o.where+'</span></div></div>';
+  var stage=c.querySelector('.mstage'),bar=document.createElement('div');bar.className='mbar';c.appendChild(bar);
+  o.build(stage,bar);return c;
+}
+function btn(bar,fn,label){var b=document.createElement('button');b.textContent=label||'▶ Replay';b.onclick=fn;bar.appendChild(b);return b}
+function loopBtn(bar,tickFn,hold){
+  var on=true,t,b;
+  var run=function(){tickFn();if(on)t=setTimeout(run,hold)};
+  b=btn(bar,function(){on=!on;b.setAttribute('aria-pressed',on?'true':'false');b.textContent=on?'❚❚ Pause':'▶ Play';if(on)run();else clearTimeout(t)},'❚❚ Pause');
+  b.setAttribute('aria-pressed','true');run();return function(){};
+}
+
+/* engine hero demos */
+(function(){
+  var a=document.getElementById('engA'),el=strip(FULL,24,''),sq=square(17,'');
+  var rowA=document.createElement('div');rowA.className='marks';rowA.appendChild(el);rowA.appendChild(sq);a.appendChild(rowA);
+  var b=document.createElement('button');b.className='playall';b.textContent='▶ Press pass';b.onclick=function(){pressPass(el,{stagger:60});pressPass(sq,{stagger:60})};a.appendChild(b);
+  setTimeout(b.onclick,300);
+  var bb=document.getElementById('engB'),e2=strip(FULL,24,'');e2.classList.add('d-thu');
+  var lab=document.createElement('span');lab.className='elab';bb.appendChild(lab);
+  var rowB=document.createElement('div');rowB.className='marks';rowB.appendChild(e2);bb.appendChild(rowB);
+  var seq=['full','majors','daycode','ink'],k=0,on=true,t;
+  var lb=document.createElement('button');lb.className='playall';lb.textContent='❚❚ Pause';
+  var run=function(){lab.textContent=seq[k]+(seq[k]==='daycode'?' · thursday':'');modeSwap(e2,{to:seq[k],day:'thu',stagger:40});k=(k+1)%seq.length;if(on)t=setTimeout(run,1600)};
+  lb.onclick=function(){on=!on;lb.textContent=on?'❚❚ Pause':'▶ Play';if(on)run();else clearTimeout(t)};bb.appendChild(lb);run();
+})();
+
+var A=[
+{n:'A1',name:'Full pass',kind:'Splash · reveal',lbl:'token · 60ms · 260ms',
+ mech:'The reference arrival, unchanged: nine plates in token order, one second end to end. This is the only adaptation allowed to spend a full second.',
+ params:'order token · stagger 60 · cell 260 · in',where:'Splash, first page load, poster reveal, video title card',
+ build:function(s,bar){var el=strip(FULL,22,'');s.appendChild(el);var sq=square(15,'');s.appendChild(sq);
+   var go=function(){pressPass(el,{stagger:60});pressPass(sq,{stagger:60})};btn(bar,go);setTimeout(go,300);s.__go=go}},
+{n:'A2',name:'Quick pass',kind:'UI arrival',lbl:'token · 20ms · 160ms — ~340ms total',
+ mech:'Same pass, compressed until it reads as one gesture with grain rather than nine events. Still in token order, so it is the same behaviour at a glance.',
+ params:'order token · stagger 20 · cell 160 · in',where:'Nav mark, footer, card arrival, list header, modal masthead',
+ build:function(s,bar){var el=strip(FULL,15,'h');s.appendChild(el);var sq=square(11,'');s.appendChild(sq);
+   var go=function(){pressPass(el,{stagger:20,cell:160});pressPass(sq,{stagger:20,cell:160})};btn(bar,go);setTimeout(go,400);s.__go=go}},
+{n:'A3',name:'Single plate',kind:'At the floor',lbl:'whole · one stamp, no stagger',
+ mech:'The whole mark stamps as one plate. Below module 8 the field cells are too small to sequence — staggering them smears the mark into a grey band, so the pass moves up a level and hits the silhouette instead.',
+ params:'order whole · stagger 0 · cell 260 · in',where:'Module 6–8, keylined instances, favicon and app-icon scale',
+ build:function(s,bar){var el=strip(FULL,8,'key');s.appendChild(el);var sq=square(7,'');s.appendChild(sq);var el2=strip(FULL,8,'');s.appendChild(el2);
+   var go=function(){pressPass(el,{order:'whole'});pressPass(sq,{order:'whole'});pressPass(el2,{order:'whole'})};btn(bar,go);setTimeout(go,500);s.__go=go}},
+{n:'A4',name:'Chained pass',kind:'Composition',lbl:'mark prints, then the type registers to it',
+ mech:'The stagger does not stop at the mark — it hands off to the eyebrow, the name and the facts at 90ms, the UI stagger. The mark is the plate everything else registers to, which is why it always goes first.',
+ params:'order token · stagger 60 · chain [eyebrow, name, facts]',where:'Poster animation, hero, section opener, story card, end card',
+ build:function(s,bar){
+   var p=document.createElement('div');p.className='postermock';
+   p.innerHTML='<div class="pt"><span class="eyebrow">film club · thứ năm</span><span class="nm">Perfect<br>Days</span><span class="fact">20:00 · 86 Mai Thúc Lân · free</span></div><div class="strip-slot"></div>';
+   s.appendChild(p);var el=strip(FULL,9,'h');p.querySelector('.strip-slot').appendChild(el);
+   var chain=[p.querySelector('.eyebrow'),p.querySelector('.nm'),p.querySelector('.fact')];
+   var go=function(){pressPass(el,{stagger:20,cell:160,chain:chain})};btn(bar,go);setTimeout(go,600);s.__go=go}},
+{n:'A5',name:'Pull',kind:'Exit',lbl:'reverse · bottom-up · 40ms',
+ mech:'The pass run backwards on <code>--ease-snap</code> — no overshoot on the way out, and strictly bottom-up, so the majors are the last thing on the page. It is the reduction rule as motion: shorten from the bottom, never from the top.',
+ params:'order token · stagger 40 · cell 160 · out',where:'Page leave, sheet dismiss, slide-out, video end card',
+ build:function(s,bar){var el=strip(FULL,22,'');s.appendChild(el);var sq=square(15,'');s.appendChild(sq);
+   var out=false;var go=function(){out=!out;var o={stagger:40,cell:160,direction:out?'out':'in'};pressPass(el,o);pressPass(sq,o)};
+   btn(bar,go,'⇄ Out / in');s.__go=go}}
+];
+var B=[
+{n:'B1',name:'Day tick',kind:'Schedule',lbl:'day code · the hue re-plates on the trigger',
+ mech:'Day-code mode with the hue read from <code>day-colours.json</code>, on a real trigger — midnight, or the schedule advancing — not a timer. Only the day-hue cells pull and pop; ink and stock never move, which is exactly what makes the new hue read as a plate change. Zero stagger, because a class-driven recolour lands on one frame.',
+ params:'to daycode · pullpop · stagger 0 · manual',where:'Schedule screen, week board, door screen, programme header',
+ build:function(s,bar){
+   var el=strip(MODES.daycode,20,'');el.classList.add('d-mon');el.__ctx={day:'mon',night:false};s.appendChild(el);
+   var lab=document.createElement('span');lab.style.cssText='font-family:var(--mont);font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:26px;color:var(--day)';s.appendChild(lab);
+   var days=['mon','tue','wed','thu','fri','sat','sun'],names=['thứ hai','thứ ba','thứ tư','thứ năm','thứ sáu','thứ bảy','chủ nhật'],k=0;
+   var paint=function(){lab.textContent=names[k];lab.className='d-'+days[k]};paint();
+   var go=function(){k=(k+1)%7;modeSwap(el,{to:'daycode',day:days[k],stagger:0,apply:paint})};
+   btn(bar,go,'→ Next day');s.__go=go}},
+{n:'B2',name:'Theme flip',kind:'Every screen',lbl:'rides the 700ms theme-settling flip',
+ mech:'The mark is not exempt from the flip. <b>Purple</b> is the one plate that changes value — it lifts to <code>#9a4faa</code> — so purple is the one cell that pulls and pops, on zero stagger, inside the same 700ms as every other surface. The ink cell drops out and the silhouette opens because the <em>field</em> moved, not the ink; the mark stays <b>unplated</b> and stock stays cream.',
+ params:'to full · night · pullpop · stagger 0 · on html.theme-settling',where:'Every screen instance of the mark, Day and Night',
+ build:function(s,bar){
+   var w=document.createElement('div');w.style.cssText='display:flex;gap:24px;align-items:center;padding:18px;transition:background 700ms var(--ease-snap)';w.className='scope-day';w.style.background='#fffbf1';
+   var el=strip(FULL,20,'');w.appendChild(el);var sq=square(14,'');w.appendChild(sq);s.appendChild(w);
+   var night=false;var lbl=s.querySelector('.st-lbl');
+   var go=function(){night=!night;
+     var flip=function(){w.className=night?'scope-night':'scope-day';w.style.background=night?'#0a0703':'#fffbf1';
+       lbl.textContent=night?'night · unplated, ink cell drops out':'day · ink on cream';lbl.style.color=night?'rgba(255,251,241,.48)':'rgba(13,9,5,.56)'};
+     modeSwap(el,{to:'full',night:night,stagger:0,apply:flip});modeSwap(sq,{to:'full',night:night,stagger:0})};
+   btn(bar,go,'⇄ Flip theme');s.__go=go}},
+{n:'B3',name:'Budget step',kind:'Ambient',lbl:'full → majors → ink · 1.6s holds',
+ mech:'The plate ladder as a loop: eight colours, then three plus stock, then one. Cells drop out and land in the new ink, so you can see how many plates each step costs — the same object at every press budget. The only loop allowed on a surface with type near it.',
+ params:'sequence [full, majors, ink] · pullpop · stagger 40 · hold 1600',where:'In-room TV, systems talk, about page, year-in-review',
+ build:function(s,bar){
+   var el=strip(FULL,20,'');s.appendChild(el);var sq=square(14,'');s.appendChild(sq);
+   var seq=['full','majors','ink'],k=0,lbl=s.querySelector('.st-lbl');
+   loopBtn(bar,function(){lbl.textContent=seq[k]+' · '+({full:'8 inks',majors:'3 inks + stock',ink:'1 ink'})[seq[k]];modeSwap(el,{to:seq[k],stagger:40});modeSwap(sq,{to:seq[k],stagger:40});k=(k+1)%3},1600);
+   s.__go=function(){}}},
+{n:'B4',name:'Section hue',kind:'Long page',lbl:'scroll — the mark takes the section\'s day',
+ mech:'On a page whose sections are owned by nights, the mark carries the current section\'s hue and re-plates as you cross the boundary — one pull-pop on the day cells, so the change registers in peripheral vision without pulling the eye. Wayfinding by mood, not by state — it never tells you where you are, it tells you what you are looking at.',
+ params:'to daycode · pullpop · stagger 0 · manual (scroll)',where:'Programme index, long event page, week overview',
+ build:function(s,bar){
+   var el=strip(MODES.daycode,18,'');el.classList.add('d-tue');el.__ctx={day:'tue',night:false};s.appendChild(el);
+   var box=document.createElement('div');box.style.cssText='flex:1;max-width:260px;height:150px;overflow:auto;border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light)';
+   var days=['tue','wed','thu','fri','sat'],ttl=['Quiz Night','Film Club','Open Decks','Live Set','Market Day'];
+   days.forEach(function(d,i){var sec=document.createElement('div');sec.className='d-'+d;sec.dataset.day=d;
+     sec.style.cssText='padding:14px;border-bottom:1.5px solid var(--hairline);min-height:100px';
+     sec.innerHTML='<div style="font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:9px;color:var(--day)">'+d+'</div><div style="font-family:var(--mont);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em">'+ttl[i]+'</div><div style="font-size:12px;color:var(--fg-dim)">20:00 · free entry</div>';
+     box.appendChild(sec)});
+   s.appendChild(box);var lbl=s.querySelector('.st-lbl');var cur='';
+   box.addEventListener('scroll',function(){
+     var mid=box.scrollTop+box.clientHeight/3,acc=0,d=days[0];
+     [].slice.call(box.children).forEach(function(sec){if(acc<=mid)d=sec.dataset.day;acc+=sec.offsetHeight});
+     if(d!==cur){cur=d;modeSwap(el,{to:'daycode',day:d,stagger:0,apply:function(){lbl.textContent='section · '+d}})}
+   });
+   lbl.textContent='scroll the list →';s.__go=function(){box.scrollTop=0}}},
+{n:'B5',name:'Dropout hold',kind:'Photo-led',lbl:'≤3 voids · never adjacent · stock printed',
+ mech:'A void is a pull with nothing following it — the cell lifts and the field shows through; when it returns it pops back like any other plate. Sets are pre-validated against the invariants: three maximum, no two adjacent, the stock cell always printed.',
+ params:'to assignment[] · pullpop · stagger 0 · hold 1200',where:'Photo-led hero, poster video, projection, social loop',bg:'field',
+ build:function(s,bar){
+   var el=strip(FULL,20,'');s.appendChild(el);var all=FULL.bands.concat(FULL.field);
+   var sets=[[],[1,4],[0,6,8],[2,5],[1,3,7]],k=0,lbl=s.querySelector('.st-lbl');
+   loopBtn(bar,function(){var v=sets[k];lbl.textContent=v.length?v.length+' void'+(v.length>1?'s':''):'no voids · reference mark';
+     modeSwap(el,{to:all.map(function(n,j){return v.indexOf(j)>-1?'void':n}),stagger:0});k=(k+1)%sets.length},1200);
+   s.__go=function(){}}}
+];
+var C=[
+{n:'C1',name:'Arrive & hold',kind:'Composite',lbl:'press pass, 400ms gap, then the ladder',
+ mech:'The only legal pairing: engine A prints the screen, everything pauses for 400ms, then engine B takes over for as long as the screen lives. Never overlapping — the pass must fully land before the first cut.',
+ params:'A1 → 400ms → B3 (hold 2000)',where:'In-room TV, door screen, projection, anything on for hours',bg:'tv',
+ build:function(s,bar){
+   var w=document.createElement('div');w.className='tvrow';
+   w.innerHTML='<div class="top"><span class="wm">REALITY</span><span class="dt">Thứ năm 20.08 · 11:00–02:00</span></div><div class="body"><div class="lines"></div></div>';
+   s.appendChild(w);
+   var lines=w.querySelector('.lines'),data=[['19:00','Film Club · Perfect Days'],['21:00','Open Decks'],['23:00','Late set']];
+   var tt=[];data.forEach(function(d){var r=document.createElement('div');r.innerHTML='<span class="t">'+d[0]+'</span><span class="e">'+d[1]+'</span>';lines.appendChild(r);tt.push(r)});
+   var el=strip(FULL,17,'');w.querySelector('.body').insertBefore(el,lines);
+   var seq=['full','majors','daycode','ink'],k=0,t2,t3;
+   var go=function(){clearTimeout(t2);clearTimeout(t3);k=0;
+     pressPass(el,{stagger:60,chain:tt});
+     t2=setTimeout(function(){var run=function(){modeSwap(el,{to:seq[k],day:'thu',stagger:40});el.style.setProperty('--m','17px');k=(k+1)%seq.length;t3=setTimeout(run,2000)};run()},9*60+260+400)};
+   btn(bar,go);setTimeout(go,700);s.__go=go}},
+{n:'C2',name:'What this replaces',kind:'Retired',lbl:'registration · squeegee · fold · press response',
+ mech:'Registration, squeegee, the fold and press response are <b>out</b>. Mode swap now borrows the stamp, so the pull and the pop are the system\'s only two motion primitives. Registration reopened the retired drift; squeegee reads as a progress bar; the fold solved a problem the two forms already solve statically; press response implied every mark is tappable. Day roll and dropout survive <em>as parameters</em> — B1 and B5 — not as separate behaviours.',
+ params:'6 of 8 retired · 2 folded into engine B',where:'Nothing. Kept here so the next auditor knows they were considered.',
+ build:function(s,bar){
+   var el=strip(FULL,20,'');s.appendChild(el);var sq=square(14,'');s.appendChild(sq);
+   var lbl=s.querySelector('.st-lbl');lbl.textContent='the mark, static — the default state everywhere';
+   btn(bar,function(){pressPass(el,{stagger:60});pressPass(sq,{stagger:60})},'▶ Press pass, once')}}
+];
+[['gA',A],['gB',B],['gC',C]].forEach(function(p){var g=document.getElementById(p[0]);p[1].forEach(function(o){g.appendChild(mcard(o))})});
+document.getElementById('playall').onclick=function(){[].slice.call(document.querySelectorAll('.mstage')).forEach(function(s,i){if(s.__go)setTimeout(s.__go,i*140)})};
+</script>
+</body></html>

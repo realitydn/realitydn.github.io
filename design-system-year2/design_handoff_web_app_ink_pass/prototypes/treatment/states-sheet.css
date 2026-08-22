@@ -1,0 +1,49 @@
+@import url("app-sheet.css");
+
+/* ================================================================
+   STATES SHEET — empty, loading, error, offline, denied, end-of-list.
+   Geometry only. Every state is an ink plate stating a fact.
+   ================================================================ */
+
+/* the shared state plate */
+.st{display:flex;flex-direction:column;gap:14px;align-items:flex-start;width:100%;padding:24px 20px;border:2px solid var(--fg);background:var(--surface-2)}
+.st-t{font:700 19px/1.2 var(--mont);letter-spacing:.02em;margin:0;text-wrap:pretty}
+.st-b{font:400 14px/1.55 var(--grotesk);margin:0;color:var(--fg-dim);text-wrap:pretty}
+.st .facts{width:100%}
+.st .row{width:100%}
+.st .btn{flex:1}
+.st-end{border:0;background:none;padding:22px 0 4px;align-items:center;text-align:center}
+.st-end .st-b{color:var(--fg-faint)}
+
+/* ---- skeletons ------------------------------------------------
+   --surface-2 and --paper-shade are two shades of UNPRINTED STOCK,
+   not tints. Collapse them onto --bg (as the shipped site still
+   does) and every block below disappears in Day. ---- */
+.sk{display:block;height:13px;background:var(--surface-2);border:0}
+.sk:nth-child(2){background:var(--paper-shade);height:11px}
+.r-ev.is-sk{grid-template-columns:64px 1fr;pointer-events:none}
+.r-ev.is-sk .r-when .sk{height:26px}
+.r-ev.is-sk .r-when .sk:last-child{height:10px}
+.r-ev.is-sk .name-block .sk:first-child{height:16px}
+@media(prefers-reduced-motion:no-preference){
+  /* the press idling, not a shimmer: the block re-stamps in place */
+  @keyframes sk-stamp{0%,72%{transform:scaleY(1)}80%{transform:scaleY(.55)}88%{transform:scaleY(1.06)}100%{transform:scaleY(1)}}
+  .sk{animation:sk-stamp 2.4s var(--ease-snap) infinite;transform-origin:50% 50%}
+  .r-ev.is-sk:nth-child(2) .sk{animation-delay:.18s}
+  .r-ev.is-sk:nth-child(3) .sk{animation-delay:.36s}
+  .r-ev.is-sk:nth-child(4) .sk{animation-delay:.54s}
+  .r-ev.is-sk:nth-child(5) .sk{animation-delay:.72s}
+}
+
+/* ---- past events -------------------------------------------------
+   --fg-faint carries this, which is exactly why .45 failed AA and was
+   corrected to .56. At .45 these rows are decoration; at .56 they are
+   information you can still act on. ---- */
+.is-past .r-n,.is-past .r-m{color:var(--fg-faint)}
+.is-past .type-sub{color:var(--fg-faint)}
+.is-past .day-plate{background:none;color:var(--fg-faint);border:2px solid var(--hairline)}
+.is-past .day-spine{background:var(--hairline)}
+.is-past .r-go{color:var(--fg-faint)}
+
+/* stale: the disabled-until-fresh action reads as secondary, not dead */
+.cv-night{font:700 11px/1.4 var(--mont)!important;letter-spacing:.1em;text-transform:uppercase;color:#18a7e0!important;margin-top:5px!important}

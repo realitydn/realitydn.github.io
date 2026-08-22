@@ -1,0 +1,156 @@
+@import url("layout-sheet.css");
+
+/* ================================================================
+   RESPONSIVE SHEET — the website at 390 / 768 / 1200.
+
+   The prototypes were authored at 1200 only, so every rule below is
+   the part that was never designed. Three things drive all of it:
+
+   1 The long event name is the first thing that breaks. At 390 the
+     day plate, date, time and room cannot all sit on one line beside
+     a three-line name, so the row RE-STACKS rather than shrinking:
+     when/name/meta become three rows, not three columns.
+   2 Zero radius and 2px borders do not scale down. Borders stay 2px
+     (3px on mastheads) at every width — thinning them to 1px on
+     mobile would be the single fastest way to stop looking like us.
+   3 The 12px informational floor holds. Nothing that carries a time,
+     a room or a price gets smaller on a small screen; the type ramp
+     compresses from the TOP down.
+   ================================================================ */
+
+/* the sheet frames each width as its own device */
+.rs-col{display:flex;flex-direction:column;gap:14px}
+.rs-hd{color:#fffbf1;max-width:44ch}
+.rs-hd h3{font:800 20px/1.1 var(--mont);letter-spacing:.03em;text-transform:uppercase;margin:0 0 8px}
+.rs-hd .w{display:inline-block;background:#fddf00;color:#0d0905;font:800 11px/1 var(--mont);letter-spacing:.14em;padding:6px 8px;margin-bottom:9px}
+.rs-hd p{font:400 13px/1.5 var(--grotesk);margin:0;color:rgba(255,251,241,.82)}
+.rs-frame{border:2px solid #0d0905;box-shadow:0 13px 0 rgba(13,9,5,.34);background:var(--bg);color:var(--fg);overflow:hidden}
+.rs-frame .mast{position:static}
+
+/* ---------- 768 · tablet ---------------------------------------- */
+.w768{width:768px}
+.w768 .band{--band-pad:44px 34px}
+.w768 .hero .band-in,.w768 .visit .band-in{grid-template-columns:1fr;gap:34px}
+.w768 .ev-hero,.w768 .ev-card,.w768 .visit-qr,.w768 .ev-page{grid-template-columns:1fr;gap:30px}
+.w768 .hero-img{aspect-ratio:16/9}
+.w768 .rooms{grid-template-columns:1fr 1fr;gap:0 22px}
+.w768 .qas,.w768 .drs,.w768 .steps{grid-template-columns:1fr 1fr}
+.w768 .gal{grid-template-columns:1fr 1fr}
+.w768 .disp{font-size:58px}
+.w768 .h1{font-size:34px}
+.w768 .ev-rail{position:static;flex-direction:row;align-items:center;flex-wrap:wrap;gap:14px}
+/* the masthead is the first thing to run out of room: nav wraps to its own
+   rule below the wordmark rather than letting labels break mid-phrase */
+.w768 .mast{flex-wrap:wrap;row-gap:14px}
+.w768 .mast-nav{order:3;flex-basis:100%;gap:24px;padding-top:12px;border-top:2px solid var(--hairline)}
+.w768 .mast-nav a,.w768 .mast-act .btn{white-space:nowrap}
+.w768 .mast-act{margin-left:auto}
+.w768 .ev{grid-template-columns:120px 1fr auto}
+.w768 .ev-go{grid-column:2/-1;justify-self:start}
+
+/* ---------- 390 · phone ----------------------------------------
+   The masthead collapses to wordmark + one action + the drawer
+   trigger. The nav itself lives in the drawer, which already
+   exists as a designed popup — no new pattern. ---- */
+.w390{width:390px}
+.w390 .band{--band-pad:28px 20px}
+.w390 .band-in{gap:18px}
+.w390 .mast{padding:14px 20px;gap:12px}
+.w390 .mast .wm{width:116px}
+.w390 .mast-nav{display:none}
+.w390 .mast-act .ico:not(.js-theme),.w390 .mast-act .btn{display:none}
+.w390 .mast-act::after{content:"MENU";display:grid;place-items:center;min-width:48px;min-height:48px;border:2px solid var(--fg);font:700 10px/1 var(--mont);letter-spacing:.12em}
+.w390 .disp{font-size:38px;line-height:.98}
+.w390 .h1{font-size:26px}
+.w390 .h2{font-size:20px}
+.w390 .hero .band-in,.w390 .visit .band-in{grid-template-columns:1fr;gap:24px}
+.w390 .ev-hero,.w390 .ev-card,.w390 .visit-qr,.w390 .ev-page,.w390 .rooms,.w390 .qas,.w390 .drs,.w390 .steps,.w390 .gal{grid-template-columns:1fr;gap:22px}
+
+/* ---- the phone hero: FULL BLEED, not a shrunken card ------------
+   A 5:4 bordered card beside display type works at 1200 and becomes a
+   stamp at 390. So the strategy changes rather than the size: the image
+   breaks the band padding entirely, runs edge to edge under the copy,
+   and drops its border and shadow — there is no paper margin left for a
+   lifted edge to sit on. 4:3, which is the most room a phone can give
+   it before it pushes the calendar off the fold. ---- */
+.w390 .hero .band-in{gap:0}
+.w390 .hero-l{padding-bottom:26px}
+.w390 .hero-img{width:calc(100% + 40px);margin:0 -20px -28px;border:0;box-shadow:none;aspect-ratio:4/3}
+.w390 .hero-img image-slot{border:0}
+/* the same move on the event poster and the map — both were side cards */
+.w390 .ev-hero .slot{width:calc(100% + 40px);margin:0 -20px;border:0}
+.w390 .visit-map{width:calc(100% + 40px);margin:0 -20px;border:0;aspect-ratio:1/1}
+.w390 .row{flex-direction:column;align-items:stretch;width:100%}
+.w390 .row .btn{width:100%;justify-content:center}
+.w390 .facts{--dt:100px}
+
+/* the event row re-stacks — it does not shrink */
+.w390 .ev{grid-template-columns:1fr;gap:10px;padding:18px 0 18px 18px}
+.w390 .ev-when{flex-direction:row;align-items:center;gap:10px}
+.w390 .ev-b .name{font-size:19px}
+.w390 .ev-meta{flex-direction:row;gap:12px}
+.w390 .ev-go{justify-self:start;min-height:48px;display:inline-flex;align-items:center}
+
+/* the QR pairing holds its 1:8.25 ratio by shrinking BOTH together */
+.w390 .qrcard{padding:12px}
+.w390 .qrcard img{width:120px;height:120px}
+.w390 .qrcard .im{--m:30px!important}
+
+/* ---- the footer -------------------------------------------------
+   EVERY collapse on this sheet has to target grid-template-columns.
+   .ft, .ft-nav, .dr, .rule-i and .field.wide are all GRID in
+   website.css, so flex-direction on them is a silent no-op — the
+   tracks stay put and the QR card walks off the frame. This is the
+   whole bug class to watch for in the port: a container query that
+   sets a flex axis on a grid does nothing and reports no error. ---- */
+.w390 .ft{grid-template-columns:1fr;row-gap:26px;column-gap:0;padding:28px 20px}
+.w390 .ft-nav{grid-template-columns:1fr 1fr;gap:14px 20px}
+.w390 .ft .wm{width:150px}
+.w390 .ft-qr{align-items:flex-start}
+.w390 .dr{grid-template-columns:1fr;gap:8px}
+.w390 .rule-i{grid-template-columns:34px 1fr;gap:14px}
+.w390 .form{grid-template-columns:1fr;gap:16px}
+.w768 .ft{grid-template-columns:1fr auto;row-gap:34px;column-gap:40px}
+.w768 .ft-qr{grid-row:1/3;align-self:start}
+.w768 .form,.w768 .rules{grid-template-columns:1fr}
+
+/* .mtabs and .chips are FLEX rows with no wrap — they overflow rather
+   than reflow. Wrapping is the fix; shrinking the chips is not, they
+   are 48px touch targets. */
+.w390 .mtabs,.w390 .chips{flex-wrap:wrap;gap:8px}
+.w768 .mtabs,.w768 .chips{flex-wrap:wrap}
+
+/* the gallery's first slot spans two columns at 1200; at 390 there is
+   only one column, so the span has to be dropped or it reserves a
+   track that does not exist */
+.w390 .gal .slot:first-child{grid-column:auto;aspect-ratio:4/3}
+.w768 .gal .slot:first-child{grid-column:span 2}
+
+/* mastheads and footers keep 3px at every width */
+.w390 .mast,.w390 .ft,.w768 .mast,.w768 .ft{border-width:0 0 3px}
+
+/* nothing informational drops below 12px, at any width */
+.w390 .ev-time,.w390 .ev-room,.w390 .r-m,.w390 .facts dd,.w390 .dr-p{font-size:13px}
+.w390 .eyebrow{font-size:11px}
+
+/* ---- seeing focus on a static sheet ----------------------------
+   Focus is :focus-visible only, so it is invisible in a screenshot and
+   only appears when you tab. The button in each frame header forces the
+   state on so the misregister is visible without a keyboard — a sheet
+   affordance, not a product state. Same two-part mechanic as the canon
+   in core.css: the PLATE stays put, the FACE slips off it. ---- */
+.js-focus{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:9px 13px;margin-top:10px;border:2px solid #fddf00;background:transparent;color:#fddf00;font:700 10px/1 var(--mont);letter-spacing:.13em;text-transform:uppercase;cursor:pointer}
+.js-focus[aria-pressed="true"]{background:#fddf00;color:#0d0905}
+.show-focus :is(.btn,.pill,.ev-go,.ft-site,.mast-nav a,.ico){transform:translate(-4px,-4px);box-shadow:4px 4px 0 0 var(--accent);transition:transform 200ms var(--ease-snap),box-shadow 200ms var(--ease-snap)}
+.show-focus .btn{background:var(--fg)}
+.show-focus .btn-2,.show-focus .ico{background:var(--bg)}
+.show-focus .btn-action{background:var(--red)}
+.show-focus .pill{background:var(--bg)}
+.show-focus .pill.is-on{background:var(--fg)}
+.show-focus .ev-go,.show-focus .mast-nav a{background:var(--bg);padding:2px 4px}
+.show-focus .ft-site{background:var(--fg);padding:2px 4px}
+/* the exceptions keep the ink outline: no plate on a hole in the paper */
+.show-focus :is(.in,.ft-nav a){outline:2px solid var(--fg);outline-offset:3px;transform:none;background:none;box-shadow:none}
+.show-focus .ft-nav a{outline-color:var(--on-ink)}
+/* the footer is ink, so its plate takes the partner too */
+.show-focus .ft{--accent:var(--pink)}

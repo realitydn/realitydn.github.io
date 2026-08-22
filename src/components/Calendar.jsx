@@ -212,7 +212,10 @@ export default function Calendar({ lang }) {
           its #events anchor lives on so header nav + old links still land here. */}
       <div id="events" aria-hidden="true" style={{ scrollMarginTop: '90px' }} />
       <div className="mb-8">
-        <div className="eyebrow mb-2" style={{ color: 'var(--accent)' }}>{C.eyebrow}</div>
+        {/* Blue literal, not the accent: eyebrows are blue's JOB (canon), and
+            the theme-aware accent would flip this pink in Night. (Donald's
+            pending polish, folded in for the merge.) */}
+        <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>{C.eyebrow}</div>
         <h2 className="h-section text-3xl md:text-5xl text-ink">{C.title}</h2>
       </div>
 
@@ -252,9 +255,11 @@ export default function Calendar({ lang }) {
         <div className="card-static card-lg overflow-hidden p-6 md:p-10 text-center">
           <h3 className="h-section text-xl md:text-2xl text-ink mb-3">{C.errorTitle}</h3>
           <p className="text-sm text-gray-600 font-body max-w-2xl mx-auto mb-6">{C.errorBody}</p>
+          {/* INFO role (canon B3b): calendar-subscribe is blue's job. (Donald's
+              pending polish, folded in for the merge.) */}
           <a
             href={FEED_ICS_URL}
-            className="btn-secondary inline-flex items-center gap-2 px-5 py-3 text-sm"
+            className="btn-info inline-flex items-center gap-2 px-5 py-3 text-sm"
           >
             {C.addToCalendar}
           </a>
@@ -292,9 +297,12 @@ export default function Calendar({ lang }) {
             <span className="text-sm font-body text-ink/60">
               {CF.upcomingCount.replace('{n}', String(total))}
             </span>
+            {/* INFO role (canon B3b): calendar-subscribe is blue's job — a
+                small blue chip, not a buried grey link. (Donald's pending
+                polish, folded in for the merge.) */}
             <a
               href={FEED_ICS_URL}
-              className="text-sm font-body text-ink/80 underline underline-offset-2 hover:opacity-70"
+              className="btn-info inline-flex items-center px-3 py-2 text-xs"
             >
               {C.addToCalendar}
             </a>

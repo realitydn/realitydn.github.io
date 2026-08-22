@@ -459,12 +459,37 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='footer'){
     const ink = peFill(el.ink||'ink', accentHex);
+    /* Ink mark on the footer — DEFAULT ON (absent prop = on): the footer is
+       the print ticket, the brand carrier. Canon (ink-strip.json, poster
+       exception): the footer QR carries the SQUARE — 4 modules matching the
+       QR's rendered height (module = height/4), butted FLUSH on the QR's
+       outer side; the QR's quiet zone is the gap, no rule between.
+       square-anchored: ink takes the outer corner, stock stays inner —
+       G2 holds with no ground, stock cells are the unprinted paper (the
+       same white the QR block leaves). Without a QR, a short strip (majors)
+       takes the trailing end at module ≈ band height/4, floors respected.
+       Geometry mirrors print-export.jsx EXACTLY — change both or they drift. */
+    const markOn = el.mark!=='off';
+    const mk = (form, mode, m)=>{
+      const lay = window.inkMarkLayout(form), cells = window.inkMarkCells(form, mode);
+      const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
+      return <div aria-hidden="true" style={{ position:'relative', flex:'none', width:lay.cols*m, height:lay.rows*m }}>
+        {lay.boxes.map(b=>(<div key={b.slot} style={{ position:'absolute', left:b.x*m, top:b.y*m, width:b.w*m, height:b.h*m,
+          background:window.inkMarkHex(nameOf(b.slot), 'red') }} />))}
+      </div>;
+    };
+    const qs = Math.min(el.h-6, 56);
+    const stripM = Math.max(window.INK_MARK.floors.short,
+      Math.min(Math.round(el.h/4), Math.floor((el.h-6)/2), Math.floor(el.w*0.28/7)));
     inner = <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', gap:14, paddingTop: el.rule!==false?6:0, borderTop: el.rule!==false?`2.5px solid ${PE_INK.rgb}`:'none', boxSizing:'border-box', boxShadow:lift }}>
       <WordmarkSVG height={Math.min(el.h-12,28)} color={ink} />
       <div style={{ flex:'1 1 auto', minWidth:0, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', fontSize:'10px', color:ink, lineHeight:1.4 }}>
         <div>{el.site}</div>{el.addr ? <div style={{ fontWeight:600, opacity:.72, letterSpacing:'.04em' }}>{el.addr}</div> : null}
       </div>
-      {el.showQR ? <div style={{ flex:'none', width:Math.min(el.h-6,56), height:Math.min(el.h-6,56) }}><QRView data={el.qrData||'https://realitydn.com'} ecl="M" dark={PE_INK.rgb} light={PE_WHITE.rgb} quiet={true} /></div> : null}
+      {el.showQR ? <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
+        <div style={{ width:qs, height:qs }}><QRView data={el.qrData||'https://realitydn.com'} ecl="M" dark={PE_INK.rgb} light={PE_WHITE.rgb} quiet={true} /></div>
+        {markOn ? mk('square-anchored','full', qs/4) : null}
+      </div> : (markOn ? mk('strip-short-h','majors', stripM) : null)}
     </div>;
   }
   else if(t==='wordmark'){

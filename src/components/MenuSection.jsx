@@ -71,7 +71,12 @@ export default function MenuSection({ lang, t }) {
     active ? { boxShadow: `5px 6px 0 ${CATEGORY_ACCENTS[key] || 'var(--fg)'}` } : undefined;
 
   return (
-    <section id="menus" className="bg-cream text-ink">
+    // A paper band in the canon stack (ink pass 22.08.26): full-bleed field
+    // on var(--bg) — theme-aware where the old hardcoded cream ground wasn't
+    // guaranteed to be — with the content constrained by the inner max-w
+    // wrappers. The 3px separation from DarkCTA above is THIS band's top rule
+    // (the .band stack idiom; DarkCTA's own bottom border was removed).
+    <section id="menus" className="band b-paper section text-ink">
       <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
         <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>
           {t.use('drinkEyebrow')}
@@ -142,13 +147,20 @@ export default function MenuSection({ lang, t }) {
               All categories stay in the DOM (hidden when inactive) so the
               full menu lands in the pre-rendered HTML for crawlers. The
               active panel's header + section groups lay down in a cascade
-              (panel-swap). */}
-          <div className="card-static scroll-mt-24" ref={panelRef}>
+              (panel-swap). Rules-on-paper, not a floating card: the old
+              card-static shell only existed to give the panel a ground
+              against the parallax collage — on a flat paper band a 2px ink
+              section rule does the structural work. */}
+          <div
+            className="scroll-mt-24"
+            ref={panelRef}
+            style={{ borderTop: '2px solid var(--fg)' }}
+          >
             {MENU.map((cat, i) => (
               <section
                 key={cat.key}
                 hidden={i !== index}
-                className={`p-6 md:p-10 space-y-8 ${i === index ? 'panel-swap' : ''}`}
+                className={`py-6 md:py-8 space-y-8 ${i === index ? 'panel-swap' : ''}`}
                 role="tabpanel"
               >
                 <header className="flex items-start gap-3 md:gap-4">

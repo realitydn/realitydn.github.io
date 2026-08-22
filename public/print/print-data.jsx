@@ -930,10 +930,16 @@ const CATALOG = [
      echoDx/echoDy : ghost offset (pt)
      border: ink border width on surfaced boxes (pt) */
 const DEFAULTS = {
-  headline:  { w:320, h:96,  props:{ text:'HEADLINE', fam:'mont', weight:800, fontSize:46, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0.00, leading:0.92, upper:true, border:2, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
-  numeral:   { w:200, h:160, props:{ text:'01', fam:'mont', weight:100, fontSize:128, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0.02, leading:0.88, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:5, echoDy:5 } },
-  bignum:    { w:220, h:120, props:{ text:'4–7', fam:'mont', weight:800, fontSize:90, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:0.9, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
-  kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.22, leading:1.1, upper:true } },
+  // Tracking defaults follow the CANON LADDER (reality-tokens.css/.json,
+  // baked per role — no size-derived formula) PLUS the print offset (+.01em,
+  // "one ladder, two offsets"): display .015→.025 · label .16→.17 ·
+  // name 0→.01 · body stays 0 (Grotesk states facts). headline/numeral/
+  // bignum = display · kicker = label. Enforced by
+  // tools/verify-day-colours.mjs §TYPE — change the ladder there first.
+  headline:  { w:320, h:96,  props:{ text:'HEADLINE', fam:'mont', weight:800, fontSize:46, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0.025, leading:0.92, upper:true, border:2, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
+  numeral:   { w:200, h:160, props:{ text:'01', fam:'mont', weight:100, fontSize:128, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0.025, leading:0.88, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:5, echoDy:5 } },
+  bignum:    { w:220, h:120, props:{ text:'4–7', fam:'mont', weight:800, fontSize:90, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0.025, leading:0.9, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
+  kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.17, leading:1.1, upper:true } },
   body:      { w:300, h:80,  props:{ text:'Readable body copy goes here. Keep it short and bold.', fam:'grot', weight:400, fontSize:13, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:1.34, upper:false } },
   pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', listStyle:'prices', marker:'•', markerColor:'auto', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none', cols:1, rowSize:'m', headingColor:'auto' } },
   qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', quiet:true,
@@ -956,7 +962,10 @@ const DEFAULTS = {
                blurUnder:0, blurOver:0, grain:0, grainSize:2,
                fit:'cover', imgScale:1, imgX:0, imgY:0, imgRot:0, frame:false, frameW:3, lift:'none', blend:'normal' } },
   rule:      { w:260, h:20,  props:{ fill:'ink', weight:3, pattern:'solid', spacing:12, dashRatio:0.55, amp:7, gap:6, cap:'round', tickLen:6, tickDir:'both', term:'none', termAt:'end', echo:false, echoAccent:'auto' } },
-  footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, surface:'none', rule:true, ink:'ink' } },
+  /* mark:'on' — the canon ink mark on the footer (square flush with the QR /
+     short strip when there's none). ABSENT = ON by design: the footer is the
+     print ticket, the brand carrier, so saved docs + templates gain it. */
+  footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, mark:'on', surface:'none', rule:true, ink:'ink' } },
   wordmark:  { w:240, h:42,  props:{ ink:'ink' } },
   /* The ink strip / square (INK_MARK above) — user-placeable ONLY, never
      auto-placed. On print the paper IS the ground (stock cells unprinted),

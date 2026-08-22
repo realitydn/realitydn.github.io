@@ -7,7 +7,10 @@ import { STR } from '../data/translations';
 export default function GetAppStrip({ lang = 'EN' }) {
   const S = STR[lang].getApp;
   return (
-    <div className="mt-6 card-static p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div
+      className="mt-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      style={{ borderTop: '2px solid var(--fg)' }}
+    >
       <div>
         <p className="font-title font-bold text-sm uppercase tracking-wide text-ink">{S.title}</p>
         <p className="text-sm text-gray-600 font-body mt-1">{S.blurb}</p>

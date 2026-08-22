@@ -456,6 +456,31 @@ function InkmarkEl({ el, theme }){
   </div>;
 }
 
+/* The ticket's ink mark — a fixed-module rendering of the canon grid (same
+   inkMarkLayout/inkMarkCells the Inkmark element and Print Studio's PDF draw,
+   so the geometries can never drift). Unlike InkmarkEl it takes its module
+   `m` directly instead of fitting a box: the ticket derives the module from
+   the QR (square) or the band (strip). `grounded` wraps the cells in the
+   paper-shade plate with one module of clear space (G2 — stock never lands
+   on an outer corner of a paper surface); square-anchored never needs it,
+   its ink cell IS the outer corner. Flat cells, no radius, static always. */
+function TicketInkMark({ form, mode, m, grounded, theme }){
+  const lay = window.inkMarkLayout(form);
+  const cells = window.inkMarkCells(form, mode);
+  const pad = grounded ? 1 : 0;
+  const shade = theme==='night' ? '#1c140b' : '#ece2c9';   /* --paper-shade */
+  const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
+  return <div aria-hidden="true" style={{ position:'relative', flex:'none',
+      width:(lay.cols+pad*2)*m, height:(lay.rows+pad*2)*m,
+      background: grounded ? shade : 'transparent' }}>
+    {lay.boxes.map(b=>(
+      <div key={b.slot} style={{ position:'absolute',
+        left:(pad+b.x)*m, top:(pad+b.y)*m, width:b.w*m, height:b.h*m,
+        background:window.inkMarkHex(nameOf(b.slot), 'red') }} />
+    ))}
+  </div>;
+}
+
 /* The canonical REALITY wordmark — Montserrat with Alternates A/I/Y, baked
    as vector (same paths as the site Logo). Posters use this, not set-text. */
 function WordmarkSVG({ height, color, fill }){
@@ -656,24 +681,61 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='ticket'){
     const qrLight = surf.background==='transparent'? t.paper : surf.background;
+    /* Ink mark on the ticket — DEFAULT ON (an absent prop = on): the ticket
+       is the brand carrier, so every saved poster and every template gains
+       the mark on next open. Canon (ink-strip.json + the poster exception):
+       the poster carries the strip while its footer QR carries the SQUARE —
+       4 modules matching the QR's rendered height (module = height/4),
+       butted FLUSH against the QR's box on its outer side; the QR's own
+       quiet zone is the gap, no rule between. square-anchored puts ink on
+       the outer corner, so it needs no ground on any substrate — its stock
+       cells print the same cream (#fffbf1) the QR block already prints,
+       on paper and on the ink band alike. Without a QR, a short strip
+       (majors) takes the band's trailing end at module ≈ band height/4,
+       floors + fit caps respected — grounded per the print rule (G2) on
+       paper-like surfaces, bare on an ink/accent band where stock reads as
+       printed cream. */
+    const markOn = el.mark!=='off';
+    const qrBlock = (qs)=> (
+      <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
+        <SEQR size={qs} dark={surf.color} light={qrLight} />
+        {markOn && <TicketInkMark form="square-anchored" mode="full" m={qs/4} grounded={false} theme={theme} />}
+      </div>
+    );
+    const stripGrounded = !(el.surface==='solid' || el.surface==='accent');
+    const stripCols = 7 + (stripGrounded?2:0), stripRows = 2 + (stripGrounded?2:0);
+    const stripModule = (availH)=> Math.max(window.INK_MARK.floors.short,
+      Math.min(Math.round(el.h/4), Math.floor(availH/stripRows), Math.floor(el.w*0.28/stripCols)));
+    const stripEl = (m)=> <TicketInkMark form="strip-short-h" mode="majors" m={m} grounded={stripGrounded} theme={theme} />;
     if(el.variant==='banner'){
       // Full-width band — wordmark centred over the address. The serious,
-      // bookish bottom for talks.
-      inner = <div style={box(Object.assign({ flexDirection:'column', alignItems:seColAlign(el), justifyContent:'center', gap:16 }, sePad(el, 30)))}>
+      // bookish bottom for talks. The trailing strip reserves its own width in
+      // the right padding so the centred column can never slide under it
+      // (padding stays ONE shorthand — the longhand/shorthand desync trap).
+      const tim = window.textInsetModel(el);
+      const padL = tim.side==='left' ? tim.val : tim.def;
+      const padR = tim.side==='right' ? tim.val : tim.def;
+      const stripOn = !el.showQR && markOn;
+      const bm = stripOn ? stripModule(el.h-60) : 0;
+      const bannerPad = { padding:'30px '+(padR + (stripOn ? stripCols*bm+22 : 0))+'px 30px '+padL+'px' };
+      inner = <div style={box(Object.assign({ flexDirection:'column', alignItems:seColAlign(el), justifyContent:'center', gap:16 }, bannerPad))}>
         <WordmarkSVG height={64*B} color={textCol} />
         <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, color:textCol }}>
           {el.site}{el.addr? <span style={{ fontWeight:600, opacity:.72 }}>{'  ·  '+el.addr}</span> : null}
         </div>
-        {el.showQR && <div style={{ flex:'none', marginTop:4 }}><SEQR size={92*B} dark={surf.color} light={qrLight} /></div>}
+        {el.showQR && <div style={{ flex:'none', marginTop:4 }}>{qrBlock(92*B)}</div>}
+        {stripOn && <div style={{ position:'absolute', right:padR, top:'50%', transform:'translateY(-50%)' }}>
+          {stripEl(bm)}
+        </div>}
       </div>;
     } else {
       const wmH = (el.variant==='mini'?38 : el.variant==='slim'?44 : 50) * B;
       inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:22 }, sePad(el, 22)))}>
         <WordmarkSVG height={wmH} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:18*B, lineHeight:1.5, color:textCol }}>
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.11em', fontSize:18*B, lineHeight:1.5, color:textCol }}>
           {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14*B, letterSpacing:'.06em' }}>{el.addr}</span> : null}
         </div>
-        {el.showQR && <div style={{ flex:'none' }}><SEQR size={108*B} dark={surf.color} light={qrLight} /></div>}
+        {el.showQR ? qrBlock(108*B) : (markOn ? stripEl(stripModule(el.h-44)) : null)}
       </div>;
     }
   }

@@ -513,12 +513,36 @@ function renderElement(page, el, ctx){
     const top=6, wmH=Math.min(el.h-top-6, 30), s=wmH/84, wmW=512*s, wmTop=top+(el.h-top-wmH)/2;
     const wmA=place(0,wmTop);
     page.drawSvgPath(window.WORDMARK_PATH, { x:wmA.x, y:wmA.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
-    // QR right
+    /* Ink mark (absent prop = ON — mirrors print-element.jsx's footer, change
+       both or they drift). With a QR: the canon SQUARE (square-anchored),
+       module = QR height/4, butted FLUSH on the QR's outer (trailing) side —
+       the quiet zone is the gap. Without: a short strip (majors) at the
+       trailing end, module ≈ band height/4, floors respected. STOCK CELLS
+       ARE UNPRINTED — the paper shows (same rule as the inkmark element). */
+    const markOn = el.mark!=='off';
+    const drawMark=(form, mode, mx, my, mm)=>{
+      const lay=window.inkMarkLayout(form), cells=window.inkMarkCells(form, mode);
+      const nameOf=(slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
+      lay.boxes.forEach(b=>{
+        const name=nameOf(b.slot);
+        if(name==='stock') return;                     // unprinted — the paper shows
+        rect(mx+b.x*mm, my+b.y*mm, b.w*mm, b.h*mm, { color: name==='ink' ? inkColor() : accentColor(name) });
+      });
+    };
+    // QR right (+ the flush square when the mark is on)
     let rightX=el.w;
-    if(el.showQR){ const m=window.buildQR(el.qrData||'https://realitydn.com','M'), qs=Math.min(el.h-6, 56), qy=(el.h-qs)/2, qx=el.w-qs;
+    if(el.showQR){ const m=window.buildQR(el.qrData||'https://realitydn.com','M'), qs=Math.min(el.h-6, 56), qy=(el.h-qs)/2, qx=el.w-qs-(markOn?qs:0);
       rect(qx,qy,qs,qs,{color:whiteColor()});
       if(m){ const quiet=2,n=m.length,tot=n+quiet*2,ms=qs/tot; for(let rr=0;rr<n;rr++)for(let cc=0;cc<n;cc++) if(m[rr][cc]) rect(qx+(cc+quiet)*ms,qy+(rr+quiet)*ms,ms+0.3,ms+0.3,{color:inkColor()}); }
+      if(markOn) drawMark('square-anchored','full', qx+qs, qy, qs/4);
       rightX=qx-12; }
+    else if(markOn){
+      const mm=Math.max(window.INK_MARK.floors.short,
+        Math.min(Math.round(el.h/4), Math.floor((el.h-top)/2), Math.floor(el.w*0.28/7)));
+      const sy=top+(el.h-top-2*mm)/2;
+      drawMark('strip-short-h','majors', el.w-7*mm, sy, mm);
+      rightX=el.w-7*mm-12;
+    }
     // address + site between wordmark and QR
     const tf=fontFor('mont',700), ts=10, ta=tf.heightAtSize(ts,{descender:false}), tx=wmW+18, tw=Math.max(0,rightX-tx);
     const a1=(el.site||SITELESS).toUpperCase(), a2=el.addr||'';

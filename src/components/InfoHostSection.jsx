@@ -246,7 +246,11 @@ export default function InfoHostSection({ t, lang }) {
   };
 
   return (
-    <section id="info" className="bg-cream text-ink">
+    // A paper band in the canon stack (ink pass 22.08.26): full-bleed field on
+    // var(--bg), 3px ink top rule from .band, content constrained by the inner
+    // max-w wrappers. The accent squares on tabs/titles stay — they're eyebrow
+    // furniture, not parallax décor.
+    <section id="info" className="band b-paper section text-ink">
       <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
         <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>
           {ih('sectionEyebrow')}
@@ -275,8 +279,15 @@ export default function InfoHostSection({ t, lang }) {
 
           {/* Panels — natural height, the page is the only thing that
               scrolls. Every panel stays in the DOM (hidden when inactive)
-              so the full info content lands in the pre-rendered HTML. */}
-          <div className="card-static scroll-mt-24" ref={panelRef}>
+              so the full info content lands in the pre-rendered HTML.
+              Rules-on-paper: the card-static shell existed to ground the
+              panel against the parallax collage; on the flat band a 2px
+              ink section rule replaces it. */}
+          <div
+            className="scroll-mt-24"
+            ref={panelRef}
+            style={{ borderTop: '2px solid var(--fg)' }}
+          >
             <Panel active={activeMain === 'welcome'}>
               <PanelTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</PanelTitle>
               <p className="mb-4">{ih('welcomeBody')}</p>
@@ -362,7 +373,7 @@ function Panel({ active, children }) {
   return (
     <div
       hidden={!active}
-      className="p-6 md:p-10"
+      className="py-6 md:py-8"
       role="tabpanel"
     >
       <div className={`font-body text-sm md:text-base text-gray-700 leading-relaxed ${active ? 'panel-swap' : ''}`}>
@@ -592,11 +603,13 @@ function GeneralRulesLink({ ih, goTo }) {
 
 // The folded-away proposal form, presented as a clear next step. Clicking
 // expands the form in place (stamp, don't float) — no inner scrollbars.
+// Rules-on-paper (ink pass): the card shell was collage furniture; a 2px
+// ink rule marks off the proposal step on the flat band.
 function ProposalCTA({ t, accent, label, onOpen }) {
   return (
     <div
-      className="card-static p-6 md:p-8"
-      style={{ borderColor: 'var(--fg)' }}
+      className="pt-6 md:pt-8"
+      style={{ borderTop: '2px solid var(--fg)' }}
     >
       <div
         className="eyebrow mb-2"
@@ -623,10 +636,13 @@ function ProposalCTA({ t, accent, label, onOpen }) {
   );
 }
 
+// Rules-on-paper like the CTA it replaces — the stamp-in motion carries the
+// arrival; the confirmation doesn't need a floating card to read as one.
 function ThankYou({ ih, onReset }) {
   return (
     <div
-      className="card-static stamp-in p-8 md:p-12 max-w-2xl text-center"
+      className="stamp-in pt-8 md:pt-10 pb-4 max-w-2xl text-center"
+      style={{ borderTop: '2px solid var(--fg)' }}
       role="status"
       aria-live="polite"
     >

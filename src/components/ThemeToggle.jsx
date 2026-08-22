@@ -6,7 +6,10 @@ const THEME_COLORS = { day: '#fffbf1', night: '#0a0703' };
 const SETTLE_MS = 750; // a hair past --dur-enter so the crossfade completes
 
 /**
- * ThemeToggle — the Day / Night segmented control from the Year 2 masthead.
+ * ThemeToggle — ONE bordered icon button in the masthead (ink pass 22.08.26).
+ * The old DAY|NIGHT segmented control read as branding/metaphor; the icon
+ * shows the mode a tap switches TO (moon while light, sun while dark), the
+ * accessible name speaks the same target mode.
  *
  * The whole site re-skins from data-theme="dark" on <html>; an inline script
  * in index.html applies any saved choice before first paint. While flipping,
@@ -16,6 +19,24 @@ const SETTLE_MS = 750; // a hair past --dur-enter so the crossfade completes
  * Two instances are mounted (desktop masthead + mobile menu); they stay in
  * sync by watching the data-theme attribute rather than sharing state.
  */
+
+// Inline icons — 2px stroke, square linecaps, per the ink-pass icon spec.
+function MoonIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4" />
+    </svg>
+  );
+}
 export default function ThemeToggle({ lang = 'EN', compact = false }) {
   const [night, setNight] = useState(() =>
     typeof document !== 'undefined' &&
@@ -89,36 +110,22 @@ export default function ThemeToggle({ lang = 'EN', compact = false }) {
 
   const labels = (STR[lang] && STR[lang].theme) || STR.EN.theme;
 
-  const seg = (active) =>
-    `font-title text-[10px] tracking-[0.12em] transition-colors ${
-      compact ? 'px-2.5' : 'px-3'
-    } flex items-center justify-center ${
-      active ? 'bg-ink text-cream' : 'bg-transparent text-ink/60 hover:text-ink'
-    }`;
+  // The accessible name speaks the mode a tap switches TO, matching the icon.
+  // (The locale catalogues are frozen, so the existing day/night words carry
+  // it — "Theme: Night" while light, "Theme: Day" while dark.)
+  const label = `${labels.group}: ${night ? labels.day : labels.night}`;
 
   return (
-    <div
-      role="group"
-      aria-label={labels.group}
-      className="flex items-stretch border-2 border-ink bg-cream"
-      style={{ boxShadow: 'var(--sh-light)', minHeight: compact ? 36 : 44 }}
+    <button
+      type="button"
+      onClick={() => apply(!night)}
+      aria-label={label}
+      title={label}
+      className={`btn-secondary flex items-center justify-center ${
+        compact ? 'min-w-[44px] min-h-[44px] p-3' : 'min-w-[48px] min-h-[48px] p-3'
+      }`}
     >
-      <button
-        type="button"
-        onClick={() => apply(false)}
-        aria-pressed={!night}
-        className={seg(!night)}
-      >
-        {labels.day}
-      </button>
-      <button
-        type="button"
-        onClick={() => apply(true)}
-        aria-pressed={night}
-        className={seg(night)}
-      >
-        {labels.night}
-      </button>
-    </div>
+      {night ? <SunIcon /> : <MoonIcon />}
+    </button>
   );
 }

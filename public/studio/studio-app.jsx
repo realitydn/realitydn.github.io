@@ -1273,6 +1273,9 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
         <Field label="Address" value={el.addr} onChange={v=>update({addr:v})} />
         <Chips label="QR" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]} value={el.showQR} onChange={v=>update({showQR:v})} />
+        {/* absent prop = ON — the ticket is the brand carrier (see DEFAULTS) */}
+        <Chips label="Ink mark" options={[{v:'on',l:'On'},{v:'off',l:'Off'}]} value={el.mark||'on'} onChange={v=>update({mark:v})} />
+        <div className="rs-mini" style={{ marginTop:-2, marginBottom:8 }}>The canon ink square rides the QR, flush — its quiet zone is the gap. Without a QR, a short strip takes the band's trailing end.</div>
       </React.Fragment>}
       {el.type==='qr' && <React.Fragment>
         <div className="rs-sech">Content</div>

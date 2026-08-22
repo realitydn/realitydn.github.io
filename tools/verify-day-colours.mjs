@@ -10,7 +10,10 @@
 // Checks: Schedule Studio day literals · Poster Studio ACCENT_DAYS · Print
 // Studio PALETTE hexes · the INK_MARK cell hexes + fixed cell order in BOTH
 // studio-data.jsx and print-data.jsx (and their generated .js) · the
-// event-report denylist of retired off-palette hexes · site strings.
+// event-report denylist of retired off-palette hexes · site strings · the
+// TYPE section: the canon tracking ladder on both studios' text presets
+// (print bakes the +.01em offset) and the ticket/footer wordmark staying the
+// baked vector, never a font-family re-typeset.
 //
 // Run it whenever the studios' data files or day-colours.json change (it's
 // cheap — wire it wherever the precompile step runs). If canon ever changes
@@ -189,8 +192,101 @@ for (const rel of SITE_FILES) {
     fail(`${rel}: carries www.${canon.site} — artwork site string is the bare host (${canon.site})`);
 }
 
+// ── 7 · TYPE: the canon tracking ladder + the ticket's wordmark source ──
+// Ladder (reality-tokens.css/.json — baked per role, no size-derived
+// formula): display .015 · h1 .025 · h2 .04 · name 0 · label .16 ·
+// button .11. One ladder, two offsets: print +.01em, signage +.02em.
+// Poster Studio artwork carries the bare ladder (screen/social); Print
+// Studio's data BAKES the print offset. Role map — poster: title=display,
+// subtitle=h1, stamp=h2, host+list rows=name, when/cost=label; print:
+// headline/numeral/bignum=display, kicker=label, body=Grotesk at 0.
+const LADDER = { display: 0.015, h1: 0.025, h2: 0.04, name: 0, label: 0.16, button: 0.11 };
+const PRINT_OFF = 0.01;
+const near = (a, b) => Math.abs(a - b) < 1e-9;
+// First `prop: <number>` after the `key: {` that opens the preset. esbuild
+// may reprint numbers in exponent form (0.005 → 5e-3) — parseFloat the raw.
+const presetNum = (src, rel, key, prop) => {
+  const m = src.match(new RegExp(`\\b${key}:\\s*\\{[\\s\\S]*?\\b${prop}:\\s*(-?[0-9.]+(?:e-?[0-9]+)?)`));
+  if (!m) { fail(`${rel}: ${key}.${prop} not found`); return null; }
+  return parseFloat(m[1]);
+};
+const checkRole = (src, rel, key, prop, role, off = 0) => {
+  const got = presetNum(src, rel, key, prop);
+  if (got == null) return;
+  const want = LADDER[role] + off;
+  if (!near(got, want))
+    fail(`${rel}: ${key}.${prop} is ${got} — the ${role} role tracks ${want}em${off ? " (ladder + print offset)" : ""}`);
+};
+// Poster Studio data — the bare screen ladder.
+for (const rel of ["public/studio/studio-data.jsx", "public/studio/studio-data.js"]) {
+  const src = read(rel);
+  checkRole(src, rel, "title", "letterSpacing", "display");
+  checkRole(src, rel, "title", "subTracking", "h1");
+  checkRole(src, rel, "stamp", "letterSpacing", "h2");
+  checkRole(src, rel, "host", "letterSpacing", "name");
+  checkRole(src, rel, "when", "letterSpacing", "label");
+  checkRole(src, rel, "cost", "letterSpacing", "label");
+  for (const key of ["lineup", "sessions", "specials", "agenda"])
+    checkRole(src, rel, key, "rowTracking", "name");
+}
+// Print Studio data — ladder + the baked print offset; body stays Grotesk 0.
+for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {
+  const src = read(rel);
+  checkRole(src, rel, "headline", "tracking", "display", PRINT_OFF);
+  checkRole(src, rel, "numeral", "tracking", "display", PRINT_OFF);
+  checkRole(src, rel, "bignum", "tracking", "display", PRINT_OFF);
+  checkRole(src, rel, "kicker", "tracking", "label", PRINT_OFF);
+  const bodyTr = presetNum(src, rel, "body", "tracking");
+  if (bodyTr != null && !near(bodyTr, 0))
+    fail(`${rel}: body.tracking is ${bodyTr} — body is Grotesk at natural tracking (0)`);
+  if (!new RegExp(`\\bbody:\\s*\\{[\\s\\S]*?fam:\\s*['"]grot['"]`).test(src))
+    fail(`${rel}: body preset is not fam:'grot' — Grotesk states facts (canon families)`);
+}
+// The ticket's wordmark must stay the baked VECTOR — never re-typeset from a
+// font-family (Alternates is wordmark-only, and only as the A/I/Y
+// substitution inside the shipped paths). Its site line is the button role
+// (.11em); the banner line is the label role (.16em).
+{
+  const slice = (src, rel, fromRe, toRe, what) => {
+    const i = src.search(fromRe), j = src.search(toRe);
+    if (i < 0 || j <= i) { fail(`${rel}: ${what} block not found`); return null; }
+    return src.slice(i, j);
+  };
+  for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-element.js"]) {
+    const src = read(rel);
+    const block = slice(src, rel, /el\.type\s*===?\s*['"]ticket['"]/, /el\.type\s*===?\s*['"]lineup['"]/, "ticket renderer");
+    if (!block) continue;
+    if (!/WordmarkSVG/.test(block))
+      fail(`${rel}: ticket no longer renders WordmarkSVG — the wordmark stays the baked vector`);
+    if (/Alternates/.test(block) || /fontFamily:\s*ALT\b/.test(block))
+      fail(`${rel}: ticket sets its mark from a font-family — never re-typeset the wordmark`);
+    if (!/\.11em/.test(block))
+      fail(`${rel}: ticket site line lost its .11em (button role) tracking`);
+    if (!/\.16em/.test(block))
+      fail(`${rel}: ticket banner line lost its .16em (label role) tracking`);
+    if (!/M73\.4,63\.7/.test(src))
+      fail(`${rel}: WordmarkSVG's baked letter paths are missing`);
+  }
+  for (const rel of ["public/print/print-element.jsx", "public/print/print-element.js"]) {
+    const src = read(rel);
+    const block = slice(src, rel, /t\s*===?\s*['"]footer['"]/, /t\s*===?\s*['"]wordmark['"]/, "footer renderer");
+    if (!block) continue;
+    if (!/WordmarkSVG/.test(block))
+      fail(`${rel}: footer no longer renders WordmarkSVG — the wordmark stays the baked vector`);
+    if (/Alternates/.test(block) || /FAM_CSS\.alt\b/.test(block))
+      fail(`${rel}: footer sets its mark from a font-family — never re-typeset the wordmark`);
+  }
+  for (const rel of ["public/print/print-export.jsx", "public/print/print-export.js"]) {
+    const src = read(rel);
+    const block = slice(src, rel, /t\s*===?\s*['"]footer['"]/, /t\s*===?\s*['"]wordmark['"]/, "footer exporter");
+    if (!block) continue;
+    if (!/WORDMARK_PATH/.test(block))
+      fail(`${rel}: footer PDF no longer draws WORDMARK_PATH — the wordmark stays the baked vector`);
+  }
+}
+
 if (failures) {
   console.error(`\n${failures} drift(s) against public/tokens/day-colours.json`);
   process.exit(1);
 }
-console.log("day-colours: studios + site strings match canon.");
+console.log("day-colours: studios + site strings + type ladder match canon.");

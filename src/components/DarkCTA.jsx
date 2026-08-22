@@ -13,10 +13,9 @@ import { URLS, STR } from '../data/translations';
  */
 export default function DarkCTA({ lang }) {
   return (
-    <section
-      className="section band b-act py-16"
-      style={{ borderBottom: '3px solid var(--fg)' }}
-    >
+    // Band separation belongs to the NEXT band's top rule (the .band stack
+    // idiom) — no own bottom border, or the seam doubles to 6px.
+    <section className="section band b-act py-16">
       <Reveal stagger className="max-w-7xl mx-auto px-4 grid md:grid-cols-12 gap-6 items-center">
         <div className="md:col-span-7">
           <h2 className="font-display-bold reg-far text-3xl md:text-5xl">

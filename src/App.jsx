@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import ParallaxLayers from "./components/ParallaxLayers";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Calendar from "./components/Calendar";
@@ -58,25 +57,25 @@ function HomePage({ lang }) {
       <a href="#main-content" className="skip-link">
         {t.use('skipLink')}
       </a>
-      <ParallaxLayers />
-      <div className="relative z-10">
-        <Header
-          lang={lang}
-          mobileOpen={mobileOpen}
-          setMobileOpen={setMobileOpen}
-          t={t}
-        />
-        <main id="main-content" tabIndex={-1}>
-          <Hero t={t} />
-          <Calendar lang={lang} />
-          <InfoHostSection t={t} lang={lang} />
-          <DarkCTA lang={lang} />
-          <MenuSection lang={lang} t={t} />
-          <VisitSection lang={lang} t={t} />
-          <GallerySection t={t} />
-        </main>
-        <Footer lang={lang} />
-      </div>
+      {/* Ink pass (22.08.26): the parallax collage is gone — the page is a
+          stack of full-width bands on flat paper (body carries var(--bg)),
+          so nothing needs a z-lift over background plates any more. */}
+      <Header
+        lang={lang}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+        t={t}
+      />
+      <main id="main-content" tabIndex={-1}>
+        <Hero t={t} />
+        <Calendar lang={lang} />
+        <InfoHostSection t={t} lang={lang} />
+        <DarkCTA lang={lang} />
+        <MenuSection lang={lang} t={t} />
+        <VisitSection lang={lang} t={t} />
+        <GallerySection t={t} />
+      </main>
+      <Footer lang={lang} />
     </div>
   );
 }

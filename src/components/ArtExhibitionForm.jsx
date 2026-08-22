@@ -194,7 +194,11 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card-static p-6 md:p-8 max-w-2xl">
+    // Rules-on-paper (ink pass 22.08.26): the card-static shell grounded the
+    // form against the old parallax collage; on the flat paper band the form
+    // is fields on paper under a 2px ink rule — the inputs carry their own
+    // ink borders.
+    <form onSubmit={handleSubmit} className="pt-6 md:pt-8 max-w-2xl" style={{ borderTop: '2px solid var(--fg)' }}>
       {/* Progress indicator — stamped squares on a rule */}
       <div className="mb-8 flex justify-between items-center">
         {[1, 2, 3, 4].map((num) => (

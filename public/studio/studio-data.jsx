@@ -659,23 +659,31 @@ const GRAPHICS = [
 ];
 
 const DEFAULTS = {
-  // letterSpacing is in em; defaults match each type's prior fixed tracking so
-  // nothing shifts until you move the slider. Spread things far apart at will.
-  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:144, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.005,
-             subtitle:'', subSize:32, subWeight:600, subTracking:0.02, subColor:'fg', subLayout:'snug' } },
+  // letterSpacing is in em. Tracking defaults follow the CANON LADDER
+  // (reality-tokens.css, baked per role — no size-derived formula):
+  //   display .015 · h1 .025 · h2 .04 · name 0 · label .16 · button .11
+  // title=display · subtitle=h1 · when/cost=label · host+rows=name ·
+  // stamp=h2. Screen artwork carries the bare ladder (the +.01em offset is
+  // print's — Print Studio bakes it, this file must NOT). Enforced by
+  // tools/verify-day-colours.mjs §TYPE — change the ladder there first.
+  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:144, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.015,
+             subtitle:'', subSize:32, subWeight:600, subTracking:0.025, subColor:'fg', subLayout:'snug' } },
   tagline: { w:560, h:80,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
   info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:26, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
   when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
   // Cost chip — the day·time chip's twin (same accent tag), carrying the price.
   // The calendar handoff fills it from the event's cost ("FREE" when free).
   cost:    { w:240, h:84,  props:{ text:'FREE', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
-  host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0.02 } },
-  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
-  lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
+  host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0 } },
+  /* mark:'on' — the canon ink mark on the ticket band (square flush with the
+     QR / short strip when there's none). ABSENT = ON by design: the ticket is
+     the brand carrier, so saved posters and templates gain it on open. */
+  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, mark:'on', color:'fg' } },
+  lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
   sessions:{ w:660, h:460, props:{ heading:'Next sessions',
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
-             rowSize:0, rowWeight:700, rowTracking:0.01, rowGap:7, headingSize:15, markerKey:{}, surface:'scrim', color:'fg' } },
-  specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, rowWeight:700, rowTracking:0.03, rowGap:5, headingSize:26, surface:'accent', color:'fg' } },
+             rowSize:0, rowWeight:700, rowTracking:0, rowGap:7, headingSize:15, markerKey:{}, surface:'scrim', color:'fg' } },
+  specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:5, headingSize:26, surface:'accent', color:'fg' } },
   /* Colour-coded week — one row per day, each auto-tinted by the weekly-schedule
      accent (Mon green · Tue blue · Wed purple · Thu pink · Fri red · Sat amber ·
      Sun yellow). Day chip + event name · time, with an optional description
@@ -685,7 +693,7 @@ const DEFAULTS = {
              items:[{day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
                     {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture.'},
                     {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'}],
-             rowSize:22, rowGap:16, headingSize:30, rowTracking:0.01, surface:'none', color:'fg' } },
+             rowSize:22, rowGap:16, headingSize:30, rowTracking:0, surface:'none', color:'fg' } },
   qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
   stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04, align:'center' } },
   badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
@@ -988,12 +996,12 @@ const TEMPLATES = [
   { id:'menu-two-cat', name:'Two-category', group:'Menu', theme:'day', accent:'red',
     ov:{ '1x1':{ ticket:{ hidden:true } } }, els:[
     { type:'title', k:'title', x:90, y:140, w:900, h:200, p:{ text:'MENU', fontSize:120, weight:800, align:'left', surface:'accent', subtitle:'Drinks & Snacks', subSize:28 } },
-    { type:'specials', k:'alc', x:90, y:380, w:430, h:660, p:{ heading:'Alcoholic', headingSize:28, surface:'paper', rowSize:34, rowGap:24, rowWeight:700, rowTracking:0.02, items:[
+    { type:'specials', k:'alc', x:90, y:380, w:430, h:660, p:{ heading:'Alcoholic', headingSize:28, surface:'paper', rowSize:34, rowGap:24, rowWeight:700, rowTracking:0, items:[
         {l:'Bia Saigon',p:'₫25k'},{l:'Rum & Coke',p:'₫70k'},{l:'Gin Tonic',p:'₫80k'},
         {l:'House Cocktail',p:'₫90k'},{l:'Wine, glass',p:'₫90k'},{l:'Rượu shot',p:'₫50k'} ] } },
-    { type:'specials', k:'nonalc', x:560, y:380, w:430, h:360, p:{ heading:'Non-Alcoholic', headingSize:28, surface:'paper', rowSize:30, rowGap:18, rowWeight:700, rowTracking:0.02, items:[
+    { type:'specials', k:'nonalc', x:560, y:380, w:430, h:360, p:{ heading:'Non-Alcoholic', headingSize:28, surface:'paper', rowSize:30, rowGap:18, rowWeight:700, rowTracking:0, items:[
         {l:'Cà phê',p:'₫25k'},{l:'Trà đá',p:'₫10k'},{l:'Soft drink',p:'₫20k'},{l:'Nước suối',p:'₫10k'} ] } },
-    { type:'specials', k:'snacks', x:560, y:770, w:430, h:270, p:{ heading:'Snacks', headingSize:18, surface:'paper', rowSize:26, rowGap:16, rowWeight:700, rowTracking:0.02, items:[
+    { type:'specials', k:'snacks', x:560, y:770, w:430, h:270, p:{ heading:'Snacks', headingSize:18, surface:'paper', rowSize:26, rowGap:16, rowWeight:700, rowTracking:0, items:[
         {l:'Khoai tây / Chips',p:'₫20k'},{l:'Đậu phộng',p:'₫15k'},{l:'Bánh snack',p:'₫15k'} ] } },
     { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
@@ -1006,11 +1014,11 @@ const TEMPLATES = [
      rule + agenda heading follow the poster accent; the day chips are the pop. */
   { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'red', els:[
     { type:'wordmark', x:90, y:64, w:472, h:77, p:{ surface:'none', color:'fg' } },
-    { type:'title', x:90, y:152, w:910, h:44, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.08 } },
+    { type:'title', x:90, y:152, w:910, h:44, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.16 } },
     { type:'block', x:90, y:206, w:910, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
     { type:'info', x:90, y:230, w:910, h:170, p:{ surface:'none', align:'left', fontSize:24, lineHeight:1.4,
       text:'REALITY is a bar, café, and community space on three floors in Đà Nẵng — coffee, craft cocktails, and 30+ events a week. **Our mission: to become the easiest place in Đà Nẵng to make friends.** Everyone is welcome.' } },
-    { type:'agenda', x:90, y:418, w:910, h:772, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0.01, surface:'none', items:[
+    { type:'agenda', x:90, y:418, w:910, h:772, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0, surface:'none', items:[
         {day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
         {day:'Tuesday',name:'Chess Night',time:'19:00',desc:'All skill levels — newbie to grandmaster — welcomed.'},
         {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture, for foreigners.'},

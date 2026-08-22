@@ -53,16 +53,21 @@ export default function GallerySection({ t }) {
 
   return (
     <>
-      <section id="gallery" className="section max-w-7xl mx-auto px-4 pb-6">
-        <Reveal className="mb-2">
-          <h2 className="h-section text-3xl md:text-5xl text-ink">
-            {t.use('galleryTitle')}
-          </h2>
-        </Reveal>
-        <CardsCarousel
-          items={GALLERY}
-          renderCard={renderGalleryCard}
-        />
+      {/* A paper band in the canon stack (ink pass 22.08.26): the band is
+          full-bleed with its 3px ink top rule; the max-w wrapper moved inside
+          so the content stays constrained. The grid itself is untouched. */}
+      <section id="gallery" className="band b-paper section">
+        <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
+          <Reveal className="mb-2">
+            <h2 className="h-section text-3xl md:text-5xl text-ink">
+              {t.use('galleryTitle')}
+            </h2>
+          </Reveal>
+          <CardsCarousel
+            items={GALLERY}
+            renderCard={renderGalleryCard}
+          />
+        </div>
       </section>
 
       {/* Lightbox — .lbx ink plate on the darker scrim (canon 22.08.26). The

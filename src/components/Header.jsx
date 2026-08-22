@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
+import InkMark from './InkMark';
 import ThemeToggle from './ThemeToggle';
 import LangMenu from './LangMenu';
 import { URLS } from '../data/translations';
@@ -25,11 +26,36 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
       className="sticky top-0 z-40 bg-cream"
       style={{ borderBottom: '3px solid var(--fg)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        {/* Logo */}
-        <Link to={homeHref} onClick={onLogoClick} className="flex items-center" aria-label="REALITY home">
-          <Logo className="h-6 md:h-7 w-auto" color="var(--fg)" />
-        </Link>
+      {/* gap-1.5 below sm is a fit lever, not a style call: justify-between
+          makes the gap a minimum only, and the row is 412.7px deep at phone
+          width (wordmark 146.28 + 7px air + 49px strip + controls 170.4 +
+          32px padding) — those 6px of slack are exactly what keep the
+          module-7 strip on 412px Androids instead of wrapping it away. */}
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-1.5 sm:gap-3">
+        {/* Logo + ink strip — the identity pair the sticky masthead now
+            carries on every page (Donald: the strip up here is an
+            identifiable thing for us; its partner is the footer QR square).
+            One module of air off the wordmark, vertically centred, and it
+            must never cost the bar its single line: the wrapper is
+            height-pinned to the wordmark with flex-wrap + overflow-hidden,
+            so on a phone too narrow for the whole strip it wraps onto a
+            clipped second row and sits out — the mark never crops, the
+            header never grows. */}
+        <div className="flex flex-wrap content-start items-center h-6 md:h-7 overflow-hidden">
+          <Link to={homeHref} onClick={onLogoClick} className="flex items-center flex-none" aria-label="REALITY home">
+            <Logo className="h-6 md:h-7 w-auto" color="var(--fg)" />
+          </Link>
+          {/* module 8 with 8px air; phones (below sm) drop to 7 — the short
+              strip's 6px floor is never crossed. Two prints, one ever
+              visible: InkMark pins --m inline, so a breakpoint can't retune
+              a single instance. */}
+          <span className="hidden sm:flex items-center flex-none ml-2" aria-hidden="true">
+            <InkMark form="strip-short-h" mode="full" module={8} idle="slow" />
+          </span>
+          <span className="flex sm:hidden items-center flex-none ml-[7px]" aria-hidden="true">
+            <InkMark form="strip-short-h" mode="full" module={7} idle="slow" />
+          </span>
+        </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em]">

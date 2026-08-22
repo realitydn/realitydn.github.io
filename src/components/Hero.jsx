@@ -1,5 +1,4 @@
 import React from 'react';
-import InkMark from './InkMark';
 
 export default function Hero({ t }) {
   // "coffee / cocktails / community" → Thin lines + an 800 slam on the last
@@ -48,11 +47,9 @@ export default function Hero({ t }) {
               {t.use('nav.menus')}
             </a>
           </div>
-          {/* The ink strip — the page's ONE strip (its footer partner is the
-              QR square). INK mode here: the blue field already owns one of
-              the full mark's colours, and full-on-owned-colour loses a cell
-              (canon) — so the strip prints ink + stock only. */}
-          <InkMark form="strip-h" mode="ink" module={11} pass="A1" className="mt-8" />
+          {/* No ink strip here — the sticky masthead carries the page's
+              strip on every surface now (one mark per surface; the footer
+              QR square is its sanctioned partner). */}
         </div>
 
         {/* Hero photo — 2px ink frame + the hard down-shadow, sitting ON the

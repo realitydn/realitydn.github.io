@@ -1005,7 +1005,10 @@ section[id], div[id="proposal"] {
    event is a ROW: day plate + date, name (wraps, never truncated) with the
    qualifier collapsing when absent, time · room in tabular figures, one
    arrow. The weekday hue carries identity as plate + spine only. */
-.wk { display: grid; gap: 0; width: 100%; border-top: 2px solid var(--fg); }
+/* Solid paper under the rows: the parallax riso plates read as collage
+   between sections, but showing through a typographic list they read as
+   clutter — the list owns its ground. */
+.wk { display: grid; gap: 0; width: 100%; border-top: 2px solid var(--fg); background: var(--bg); }
 .ev {
   position: relative;
   display: grid; grid-template-columns: 132px 1fr auto auto; gap: 20px; align-items: center;

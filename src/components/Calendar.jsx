@@ -6,19 +6,21 @@ import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
 import { fmtTime, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
-import { splitFeedSite, dayClassFromISO, fmtDayDate, cfStr, costLabel } from '../data/cal-feed';
+import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel } from '../data/cal-feed';
 
-// Calendar — the "what's on" feed, wearing the app's calendar look: solid
-// day-colour slice bands (imageless), the next-up event as a big hero slice
-// with drifting riso echoes, UP NEXT / COMING UP labels that stick while the
-// pane scrolls INSIDE itself (the section no longer eats the page). Tapping a
-// slice opens the event in the EventOverlay — details + the open-in-app door.
+// Calendar — the "what's on" feed, wearing the app's calendar look. Posters
+// are spent on the next FIVE events only (Donald, 22.08 — the all-poster feed
+// was too busy): a big hero slice + four slice bands under UP NEXT, then
+// everything after sets as typographic canon rows (.wk/.ev) under COMING UP.
+// The labels stick while the pane scrolls INSIDE itself (the section no
+// longer eats the page). Tapping a slice OR a row opens the event in the
+// EventOverlay — details + the open-in-app door.
 //
 // Graceful states (never a blank box):
 //   loading                → slice-shaped skeleton
 //   error && no events      → static message + WhatsApp CTA + "add to your calendar"
 //   no upcoming events      → "Check our socials for what's on"
-//   events                  → the feed: hero + slices, today-forward.
+//   events                  → the feed: five posters + rows, today-forward.
 //
 // This site's language toggle is 'EN' | 'VN' (NOT en/vi); feed-helpers map 'VN' → *_vi.
 
@@ -54,6 +56,14 @@ export default function Calendar({ lang }) {
   // shape — soon (today + tomorrow, ICT) and later — both soonest-first.
   const { soon, later } = useMemo(() => splitFeedSite(events || []), [events]);
   const total = soon.length + later.length;
+
+  // The five-poster cap: soon and later are each soonest-first, and later
+  // starts strictly after soon's today+tomorrow window, so concatenating
+  // keeps chronological order. The first five wear posters (the wall); the
+  // rest set as rows.
+  const all = [...soon, ...later];
+  const wall = all.slice(0, 5);
+  const rest = all.slice(5);
 
   // One slice band — the text-less poster slice fills the card (the hub's
   // textlessPoster order: feed slice first, designed 4:5 as fallback), solid
@@ -92,6 +102,50 @@ export default function Calendar({ lang }) {
   const sliceList = (list) => (
     <div className="flex flex-col gap-3">{list.map((ev) => slice(ev))}</div>
   );
+
+  // One canon row (index.css "Calendar rows") — past the wall an event is
+  // typography: day plate + DD.MM, name (wraps, never truncated) with the
+  // qualifier collapsing when absent, time · room · price in tabular meta,
+  // one arrow. The weekday hue survives as plate + spine only, and the price
+  // rides as TEXT, never a colour block. Same sources as the slices, so all
+  // six languages flow through unchanged.
+  const row = (ev) => {
+    const title = pickTitle(ev, lang) || 'REALITY event';
+    const qualifier = pickQualifier(ev, lang);
+    const loc = pickLocName(ev.location, lang);
+    const start = fmtTime(ev.startsAt);
+    const dm = fmtDM(ev.startsAt);
+    // fmtDayDate prints "<weekday> <DD.MM>" in every language — peel the
+    // date off the tail to get the localized weekday (VN's "Thứ 2" included)
+    // without opening a second formatter path.
+    const full = fmtDayDate(ev.startsAt, lang);
+    const wd = dm && full.endsWith(dm) ? full.slice(0, -dm.length).trim() : full;
+    return (
+      <button
+        key={ev.id}
+        type="button"
+        className={`ev ${dayClassFromISO(ev.startsAt)}`}
+        onClick={() => setOverlayEvent(ev)}
+        aria-label={title}
+      >
+        <span className="day-spine" />
+        <span className="ev-when">
+          <span className="day-plate">{wd}</span>
+          <span className="ev-date">{dm}</span>
+        </span>
+        <span className="ev-b">
+          <span className="ev-n">{title}</span>
+          {qualifier && <span className="ev-qual">{qualifier}</span>}
+        </span>
+        <span className="ev-meta">
+          {start && <span className="ev-time">{start}</span>}
+          {loc && <span className="ev-room">{loc}</span>}
+          <span className="ev-qual">{costLabel(ev, lang)}</span>
+        </span>
+        <span className="ev-go" aria-hidden="true">→</span>
+      </button>
+    );
+  };
 
   return (
     <section id="calendar" className="section max-w-7xl mx-auto px-4 py-12">
@@ -137,28 +191,18 @@ export default function Calendar({ lang }) {
         </div>
       )}
 
-      {/* ── The feed — hero + slices in a self-scrolling pane ──────────── */}
+      {/* ── The feed — five posters, then rows, in a self-scrolling pane ── */}
       {!loading && total > 0 && (
         <>
           <div className="cal-feed-wrap">
             <div className="cal-feed-pane">
-              {soon.length > 0 ? (
+              <div className="cal-label">{CF.upNext}</div>
+              <div className="cal-hero-wrap">{slice(wall[0], true)}</div>
+              {wall.length > 1 && sliceList(wall.slice(1))}
+              {rest.length > 0 && (
                 <>
-                  <div className="cal-label">{CF.upNext}</div>
-                  <div className="cal-hero-wrap">{slice(soon[0], true)}</div>
-                  {soon.length > 1 && sliceList(soon.slice(1))}
-                  {later.length > 0 && (
-                    <>
-                      <div className="cal-label mt-6">{CF.comingUp}</div>
-                      {sliceList(later)}
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="cal-label">{CF.comingUp}</div>
-                  <div className="cal-hero-wrap">{slice(later[0], true)}</div>
-                  {later.length > 1 && sliceList(later.slice(1))}
+                  <div className="cal-label mt-6">{CF.comingUp}</div>
+                  <div className="wk">{rest.map(row)}</div>
                 </>
               )}
             </div>

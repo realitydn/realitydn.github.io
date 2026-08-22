@@ -488,6 +488,26 @@ function renderElement(page, el, ctx){
     if(el.echo){ const ec = el.echoAccent&&el.echoAccent!=='auto' ? accentColor(el.echoAccent) : accentColor(window.partnerOf(accentName)); drawLay(ec, el.echoDx||5, el.echoDy||5); }
     drawLay(col, 0, 0);
   }
+  else if(t==='inkmark'){
+    /* The ink strip / ink square — canon rev 22.08.26. Pure vector: one flat
+       rect per cell from the SAME inkMarkLayout the screen draws, fitted and
+       centred identically. Accents fill from PALETTE_CMYK; ink cells ride the
+       K plate (0,0,0,1). STOCK CELLS ARE UNPRINTED — stock is the paper, so
+       they are skipped entirely: never lay cream (or white) as a fill. No
+       lift, no echo, no border — the mark stays flat by canon. */
+    const lay = window.inkMarkLayout(el.form||'strip-v');
+    const cells = window.inkMarkCells(el.form||'strip-v', el.mode||'full');
+    const dayAcc = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
+    const m = Math.min(el.w/lay.cols, el.h/lay.rows);
+    const ox = (el.w-lay.cols*m)/2, oy = (el.h-lay.rows*m)/2;
+    const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
+    lay.boxes.forEach(b=>{
+      const name = nameOf(b.slot);
+      if(name==='stock') return;                       // unprinted — the paper shows
+      const col = name==='ink' ? inkColor() : accentColor(name==='day' ? dayAcc : name);
+      rect(ox+b.x*m, oy+b.y*m, b.w*m, b.h*m, { color:col });
+    });
+  }
   else if(t==='footer'){
     if(el.rule!==false) rect(0,0,el.w,2.5,{ color:inkColor() });
     const top=6, wmH=Math.min(el.h-top-6, 30), s=wmH/84, wmW=512*s, wmTop=top+(el.h-top-wmH)/2;

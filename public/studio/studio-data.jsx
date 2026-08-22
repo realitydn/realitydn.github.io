@@ -294,6 +294,101 @@ function QRGlyph({ size, dark, light }){
 }
 
 /* ============================================================
+   INK MARK — the ink strip / ink square as a placeable element
+   (canon rev 22.08.26). Machine spec: design-system-year2/
+   design_handoff_web_app_ink_pass/tokens/ink-strip.json — cell
+   ORDER is FIXED; recolouring (mode / day) is the only parameter.
+   Forms: 2×9 / 9×2 strip · 2×7 / 7×2 short · 4×4 square (+
+   square-anchored, where ink takes the outer corner).
+
+   G2 (closed 22.08.26): on print/poster surfaces the outer-corner
+   rule HOLDS — stock is never on an outer edge or corner — so the
+   poster element defaults to a paper-shade GROUND with one module
+   of clear space (square-anchored needs none: its ink corner IS
+   the anchor). The open silhouette is a SCREEN-only allowance.
+
+   No radius, no gradients, no cell shadows, never auto-placed.
+   v1 deliberately skips voids/dropout (the max-3-void variation
+   move) — recolour only. Cell hexes are enforced against
+   public/tokens/day-colours.json by tools/verify-day-colours.mjs.
+   ============================================================ */
+const INK_MARK_CELLS = {
+  red:PALETTE.red, blue:PALETTE.blue, yellow:PALETTE.yellow, green:PALETTE.green,
+  pink:PALETTE.pink, purple:PALETTE.purple, amber:PALETTE.amber,
+  ink:PALETTE.ink,      /* #0d0905 — literal artwork ink */
+  stock:PALETTE.cream   /* #fffbf1 — a COLOUR, not an absence; always an inner cell */
+};
+const INK_MARK = {
+  rev:'22.08.26',
+  forms:{
+    'strip-v':        { cols:2, rows:9, field:6 },
+    'strip-h':        { cols:9, rows:2, field:6 },
+    'strip-short-v':  { cols:2, rows:7, field:2 },
+    'strip-short-h':  { cols:7, rows:2, field:2 },
+    'square':         { cols:4, rows:4, field:4, square:true },
+    'square-anchored':{ cols:4, rows:4, field:4, square:true, anchored:true }
+  },
+  /* fixed cell orders per mode — bands read red-first; `field` lists the six
+     1×1 strip cells in reading order; `sq` is the square's quadrant-4 field
+     in Z order. Mirrors src/components/InkMark.jsx exactly. */
+  modes:{
+    full:    { bands:['red','blue','yellow'], field:['stock','ink','green','pink','purple','amber'], sq:['stock','pink','purple','amber'] },
+    majors:  { bands:['red','blue','yellow'], field:['stock','ink','stock','ink','ink','stock'],     sq:['stock','ink','stock','ink'] },
+    daycode: { bands:['day','ink','day'],     field:['stock','day','ink','day','day','stock'],       sq:['stock','day','day','ink'] },
+    ink:     { bands:['ink','stock','ink'],   field:['ink','stock','stock','ink','ink','stock'],     sq:['stock','ink','ink','ink'] }
+  },
+  /* square-anchored × full: whole neutral pair kept, two minors dropped —
+     ink lands on the OUTER corner (why that form needs no ground). */
+  anchoredField:['stock','pink','green','ink'],
+  floors:{ strip:8, short:6, square:6 }      /* px per module */
+};
+const INK_MARK_DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
+/* day key → accent name, derived from the canonical pairing above so the two
+   can never drift (mon green · tue blue · wed purple · thu pink · fri red ·
+   sat amber · sun yellow — day-colours.json). */
+const INK_MARK_DAY_ACCENT = {};
+INK_MARK_DAY_KEYS.forEach((d,i)=>{ INK_MARK_DAY_ACCENT[d] = ACCENTS_BY_DAY[i]; });
+
+/* form + mode → the cell names for the 3 bands and the field, canon order. */
+function inkMarkCells(form, mode){
+  const m = INK_MARK.modes[mode] || INK_MARK.modes.full;
+  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
+  const field = f.square
+    ? ((f.anchored && (mode==='full' || !INK_MARK.modes[mode])) ? INK_MARK.anchoredField : m.sq)
+    : (f.field===2 ? m.field.slice(0,2) : m.field);
+  return { bands:m.bands.slice(), field:field.slice() };
+}
+/* form → cell boxes in MODULE units: [{ slot:'b0'…'b2'|'f0'…'f5', x,y,w,h }].
+   ONE geometry for the screen divs AND Print Studio's vector PDF, so the two
+   renderers can't drift. Bands are 2×2; field cells 1×1.
+     strip-v: bands stacked, field rows of two (row-major)
+     strip-h: strip-v rotated -90° — bands left-to-right, field columns of two
+     square:  quadrants in Z order (red TL · blue TR · yellow BL), field at
+              half module in quadrant 4 (Z order, f3 = the outer corner). */
+function inkMarkLayout(form){
+  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
+  const boxes=[];
+  if(f.square){
+    boxes.push({ slot:'b0', x:0, y:0, w:2, h:2 });
+    boxes.push({ slot:'b1', x:2, y:0, w:2, h:2 });
+    boxes.push({ slot:'b2', x:0, y:2, w:2, h:2 });
+    for(let i=0;i<4;i++) boxes.push({ slot:'f'+i, x:2+(i%2), y:2+(i>>1), w:1, h:1 });
+  } else if(f.cols===2){
+    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:0, y:b*2, w:2, h:2 });
+    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:i%2, y:6+(i>>1), w:1, h:1 });
+  } else {
+    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:b*2, y:0, w:2, h:2 });
+    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:6+(i>>1), y:i%2, w:1, h:1 });
+  }
+  return { cols:f.cols, rows:f.rows, boxes };
+}
+/* cell name → hex. 'day' takes the weekday accent's hue. */
+function inkMarkHex(name, dayAccent){
+  if(name==='day') return PALETTE[dayAccent] || PALETTE.pink;
+  return INK_MARK_CELLS[name] || PALETTE.ink;
+}
+
+/* ============================================================
    VECTOR GEOMETRY — the graphical-element kit.
 
    Every path here is an SVG path string in LOCAL, y-DOWN element
@@ -505,6 +600,7 @@ const CATALOG = [
     { type:'stamp',    label:'Stamp',    hint:'SOLD OUT / FREE' },
     { type:'badge',    label:'Badge',    hint:'Every Wed' },
     { type:'wordmark', label:'REALITY wordmark', hint:'Canonical mark · resizable', wide:true },
+    { type:'inkmark',  label:'Ink mark', hint:'The strip / square · canon grid' },
   ]},
   { group:'Media', items:[
     { type:'photo',   label:'Photo',    hint:'Riso-treated image', wide:true },
@@ -597,6 +693,13 @@ const DEFAULTS = {
      resizable element. Default box is on-aspect (512:84 ≈ 6.1:1); the mark
      always fits undistorted, so drag any handle to scale. */
   wordmark:{ w:512, h:84,  props:{ surface:'none', color:'fg' } },
+  /* The ink strip / square (INK_MARK above) — user-placeable ONLY, never
+     auto-placed. Cell order is canon; mode/day recolour it, nothing reorders
+     it. Ground defaults ON (G2): a paper-shade plate with one module of clear
+     space keeps stock off the outer corners on a poster; square-anchored
+     ignores it (its ink corner is the anchor). Default box = module 30 on the
+     grounded 4×11 strip-v grid. */
+  inkmark: { w:120, h:330, props:{ form:'strip-v', mode:'full', day:'fri', ground:true } },
   /* Weekly recurring-event combo: an accent bar with the price (left) and time
      (right), and a day-of-week badge centred on top. One draggable unit. */
   weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg',
@@ -946,6 +1049,7 @@ Object.assign(window, {
   snapToScale, scaleStep,
   themeColors, contrastInk, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
   SHAPE_KINDS, SHAPE_LABELS, MASK_KINDS, RULE_PATTERNS, RULE_TERMS, BURST_PRESETS, GRAPHICS,
+  INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
   shapePath, shapeClip, roundedRectPath, burstRays, ruleLayout, iconLayout,
   resolveElements, mapElementToFormat, pointToMaster,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate

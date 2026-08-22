@@ -221,6 +221,9 @@ const TYPE_CAPS = {
   weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
   matchup:  { align:true, surface:true, shadow:true },
   block:    { fillOwn:true, shadow:true },
+  /* ink mark — fixed canon palette: no surface, no fill, no shadow (the spec
+     bans cell shadows and the whole mark stays flat). Its own panel only. */
+  inkmark:  {},
   /* graphical family — each owns its fill (and its own bespoke panel above),
      so they skip the shared Surface block and keep the shadow control */
   shape:    { fillOwn:true, shadow:true },
@@ -998,6 +1001,56 @@ function BurstControls({ el, doc, update }){
   );
 }
 
+/* Ink mark — form · mode · day · module · ground. The mark is the canon grid
+   (studio-data INK_MARK): the panel only ever RECOLOURS (mode/day) or resizes
+   by whole modules; cell order is untouchable. Form/module changes resize the
+   element box to exact module multiples so cells stay square; a free drag-
+   resize still fits-and-centres without distortion. v1 has no voids/dropout. */
+function InkmarkControls({ el, doc, update }){
+  const IM = window.INK_MARK;
+  const form = el.form||'strip-v';
+  const f = IM.forms[form] || IM.forms['strip-v'];
+  const anchored = form==='square-anchored';
+  const grounded = el.ground!==false && !anchored;
+  const pad = grounded?2:0;
+  const gw = f.cols+pad, gh = f.rows+pad;
+  const m = Math.max(1, Math.round(Math.min(el.w/gw, el.h/gh)));
+  const floor = IM.floors[form.indexOf('short')>=0 ? 'short' : f.square ? 'square' : 'strip'];
+  /* resize the box to exact module multiples for a target form/ground/module */
+  const fit = (patch, mod)=>{
+    const nf = IM.forms[patch.form!=null?patch.form:form] || f;
+    const na = (patch.form!=null?patch.form:form)==='square-anchored';
+    const ng = (patch.ground!=null?patch.ground:el.ground)!==false && !na;
+    const np = ng?2:0;
+    return Object.assign(patch, { w:Math.round((nf.cols+np)*mod), h:Math.round((nf.rows+np)*mod) });
+  };
+  const days = window.INK_MARK_DAY_KEYS.map((d,i)=>({ v:d, l:window.DAY_ABBR[i] }));
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Ink mark</div>
+      <Chips label="Form" options={[
+        {v:'strip-v',l:'Strip'},{v:'strip-h',l:'Strip ↔'},
+        {v:'strip-short-v',l:'Short'},{v:'strip-short-h',l:'Short ↔'},
+        {v:'square',l:'Square'},{v:'square-anchored',l:'Anchored'}]}
+        value={form} onChange={v=>update(fit({form:v}, m))} />
+      <Chips label="Mode" options={[{v:'full',l:'Full'},{v:'majors',l:'Majors'},{v:'daycode',l:'Day code'},{v:'ink',l:'Ink'}]}
+        value={el.mode||'full'} onChange={v=>update({mode:v})} />
+      {el.mode==='daycode' && <Chips label="Day — sets the hue" options={days}
+        value={el.day||'fri'} onChange={v=>update({day:v})} />}
+      <Slider label="Module" val={m} min={floor} max={90} step={1} suffix="px"
+        onChange={v=>update(fit({}, v))} />
+      {anchored
+        ? <div className="rs-mini" style={{ marginTop:2 }}>Anchored needs no ground — its ink cell takes the outer corner itself.</div>
+        : <React.Fragment>
+            <Chips label="Ground — paper-shade plate" options={[{v:true,l:'On'},{v:false,l:'Off'}]}
+              value={el.ground!==false} onChange={v=>update(fit({ground:v}, m))} />
+            <div className="rs-mini" style={{ marginTop:2 }}>On a poster the ground keeps stock off the outer corners (canon G2) — one module of clear space, baked in.</div>
+          </React.Fragment>}
+      <div className="rs-mini" style={{ margin:'4px 0 8px' }}>Cell order is canon — the panel recolours (mode / day), never reorders. One mark per surface.</div>
+    </React.Fragment>
+  );
+}
+
 /* ---------- inspector ---------- */
 /* Centre-on-canvas row — the same three buttons serve one box and a group of
    them (the handler centres the selection's bounding box either way), so the
@@ -1145,6 +1198,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {el.type==='icon'  && <IconControls  el={el} doc={doc} update={update} />}
       {el.type==='rule'  && <RuleControls  el={el} doc={doc} update={update} />}
       {el.type==='burst' && <BurstControls el={el} doc={doc} update={update} />}
+      {el.type==='inkmark' && <InkmarkControls el={el} doc={doc} update={update} />}
       {caps.surface && <React.Fragment>
         <div className="rs-sech">Surface</div>
         <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />

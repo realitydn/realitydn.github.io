@@ -692,8 +692,39 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
     </React.Fragment>;
   })();
   else if(el.type==='wordmark') content = <div className="ps-mini" style={{ marginBottom:8 }}>The canonical REALITY vector — Montserrat with the Alternates A·I·Y. Colour below.</div>;
+  else if(el.type==='inkmark') content = (()=>{
+    /* the canon grid (print-data INK_MARK) — the panel only RECOLOURS
+       (mode/day) or resizes by whole modules; cell order is untouchable.
+       Form/module changes snap the box to exact module multiples so cells
+       stay square; a free drag-resize still fits-and-centres undistorted. */
+    const IM = window.INK_MARK;
+    const form = el.form||'strip-v';
+    const f = IM.forms[form] || IM.forms['strip-v'];
+    const m = Math.max(1, Math.round(Math.min(el.w/f.cols, el.h/f.rows)));
+    const floor = IM.floors[form.indexOf('short')>=0 ? 'short' : f.square ? 'square' : 'strip'];
+    const fit = (patch, mod)=>{
+      const nf = IM.forms[patch.form!=null?patch.form:form] || f;
+      return Object.assign(patch, { w:Math.round(nf.cols*mod), h:Math.round(nf.rows*mod) });
+    };
+    const days = window.INK_MARK_DAY_KEYS.map(d=>({ v:d, l:d.charAt(0).toUpperCase()+d.slice(1) }));
+    return <React.Fragment>
+      <Chips label="Form" options={[
+        {v:'strip-v',l:'Strip'},{v:'strip-h',l:'Strip ↔'},
+        {v:'strip-short-v',l:'Short'},{v:'strip-short-h',l:'Short ↔'},
+        {v:'square',l:'Square'},{v:'square-anchored',l:'Anchored'}]}
+        value={form} onChange={v=>update(fit({form:v}, m))} />
+      <Chips label="Mode" options={[{v:'full',l:'Full'},{v:'majors',l:'Majors'},{v:'daycode',l:'Day code'},{v:'ink',l:'Ink'}]}
+        value={el.mode||'full'} onChange={v=>update({mode:v})} />
+      {el.mode==='daycode' && <Chips label="Day — sets the hue" options={days}
+        value={el.day||'fri'} onChange={v=>update({day:v})} />}
+      <Slider label="Module" val={m} min={floor} max={60} step={1} suffix="pt"
+        onChange={v=>update(fit({}, v))} />
+      <div className="ps-mini" style={{ margin:'4px 0 8px' }}>Cell order is canon — recolour by mode/day only. Stock cells are the paper: <b>unprinted</b> in the PDF, never a cream fill. One mark per surface.</div>
+    </React.Fragment>;
+  })();
 
-  const showColour = el.type!=='image';
+  /* the ink mark's palette is canon-fixed — no colour/surface dials for it */
+  const showColour = el.type!=='image' && el.type!=='inkmark';
   const showBorder = (el.type==='block' || (SURFACED_BOX.indexOf(el.type)>=0 && el.surface && el.surface!=='none'));
 
   return (

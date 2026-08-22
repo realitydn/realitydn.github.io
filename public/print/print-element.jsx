@@ -437,6 +437,26 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       {layNodes(col, 0, 0)}
     </svg>;
   }
+  else if(t==='inkmark'){
+    /* The ink strip / ink square — canon rev 22.08.26 (print-data INK_MARK).
+       Flat cells on the shared inkMarkLayout module grid — the SAME geometry
+       the PDF exporter draws — fitted undistorted into the box and centred.
+       Stock cells are the PAPER: shown white here, skipped (unprinted) in the
+       PDF. No radius, no lift, no echo, no blend — the mark stays flat. */
+    const lay = window.inkMarkLayout(el.form||'strip-v');
+    const cells = window.inkMarkCells(el.form||'strip-v', el.mode||'full');
+    const dayAcc = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
+    const m = Math.min(el.w/lay.cols, el.h/lay.rows);
+    const ox = (el.w-lay.cols*m)/2, oy = (el.h-lay.rows*m)/2;
+    const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
+    inner = <div style={{ position:'relative', width:'100%', height:'100%' }} aria-hidden="true">
+      {lay.boxes.map(b=>(
+        <div key={b.slot} style={{ position:'absolute',
+          left:ox+b.x*m, top:oy+b.y*m, width:b.w*m, height:b.h*m,
+          background:window.inkMarkHex(nameOf(b.slot), dayAcc) }} />
+      ))}
+    </div>;
+  }
   else if(t==='footer'){
     const ink = peFill(el.ink||'ink', accentHex);
     inner = <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', gap:14, paddingTop: el.rule!==false?6:0, borderTop: el.rule!==false?`2.5px solid ${PE_INK.rgb}`:'none', boxSizing:'border-box', boxShadow:lift }}>

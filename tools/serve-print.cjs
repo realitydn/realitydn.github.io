@@ -1,9 +1,10 @@
 // Zero-dependency static server for the REALITY Print Studio.
 //
-// Like the Poster Studio it is a fully client-side app (React + Babel in the
-// browser) that must be SERVED over HTTP — Babel fetches the sibling .jsx
-// files via XHR, which file:// blocks, and the PDF engine fetches the vendored
-// font .ttf files. This serves public/print/.
+// Like the Poster Studio it is a fully client-side app (precompiled React —
+// no in-browser Babel since 23faf1c; this server transpiles the .jsx sources
+// on the fly via studio-jsx.cjs) that must be SERVED over HTTP — the page
+// fetches sibling scripts via XHR, which file:// blocks, and the PDF engine
+// fetches the vendored font .ttf files. This serves public/print/.
 //
 // Launched by "Print Studio.bat". Stop with Ctrl-C or by closing the window.
 

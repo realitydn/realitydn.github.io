@@ -421,6 +421,41 @@ function BurstEl({ el, theme, fillHex }){
   </div>;
 }
 
+/* The ink strip / ink square — canon rev 22.08.26 (studio-data INK_MARK,
+   from ink-strip.json). Flat cells on a shared module grid (inkMarkLayout —
+   the SAME geometry Print Studio's PDF draws), fitted undistorted into the
+   element box and centred, like the wordmark. Recolouring (mode/day) is the
+   only parameter — cell order never changes. No radius, no gradient, no cell
+   shadow; STATIC always (studio output never animates).
+   Ground (G2, defaults on): a paper-shade plate with one module of clear
+   space so stock never lands on an outer corner of the poster; the
+   square-anchored form skips it — its ink cell IS the outer corner. */
+function InkmarkEl({ el, theme }){
+  const form = el.form||'strip-v';
+  const lay = window.inkMarkLayout(form);
+  const cells = window.inkMarkCells(form, el.mode||'full');
+  const dayAccent = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
+  const hx = (n)=> window.inkMarkHex(n, dayAccent);
+  const grounded = el.ground!==false && form!=='square-anchored';
+  const pad = grounded ? 1 : 0;                       // one module of clear space
+  const gw = lay.cols + pad*2, gh = lay.rows + pad*2;
+  const m = Math.max(1, Math.min(el.w/gw, el.h/gh));  // module: fit the box, keep cells square
+  const W = gw*m, H = gh*m;
+  /* --paper-shade (src/index.css tokens) — the sanctioned ground tone. Stock
+     itself stays substrate-pinned (#fffbf1) and never tints with the theme. */
+  const shade = theme==='night' ? '#1c140b' : '#ece2c9';
+  const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
+  return <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div style={{ position:'relative', width:W, height:H, background: grounded?shade:'transparent' }} aria-hidden="true">
+      {lay.boxes.map(b=>(
+        <div key={b.slot} style={{ position:'absolute',
+          left:(pad+b.x)*m, top:(pad+b.y)*m, width:b.w*m, height:b.h*m,
+          background:hx(nameOf(b.slot)) }} />
+      ))}
+    </div>
+  </div>;
+}
+
 /* The canonical REALITY wordmark — Montserrat with Alternates A/I/Y, baked
    as vector (same paths as the site Logo). Posters use this, not set-text. */
 function WordmarkSVG({ height, color, fill }){
@@ -499,6 +534,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     // accentHex already resolved el.fill (Auto → the poster accent)
     return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
       <BlockEl el={el} theme={theme} fillHex={accentHex} exporting={exporting} />
+    </Wrap>;
+  }
+  if(el.type==='inkmark'){
+    // fixed-palette canon mark — never recoloured by the poster accent
+    return <Wrap el={el} wrap={wrap} sel={selected} onDown={onElPointerDown}>
+      <InkmarkEl el={el} theme={theme} />
     </Wrap>;
   }
   /* graphical family — same accentHex resolution as the block, so Auto fill

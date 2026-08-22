@@ -470,6 +470,18 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
        takes the trailing end at module ≈ band height/4, floors respected.
        Geometry mirrors print-export.jsx EXACTLY — change both or they drift. */
     const markOn = el.mark!=='off';
+    /* markForm — 'auto' keeps the classic pairing (square rides the QR, short
+       strip otherwise); 'square' / 'strip' (7×2) / 'strip-long' (9×2) force a
+       form. markMode recolours (full/majors/ink); ABSENT keeps each form's
+       classic ink (square full · strip majors) so saved sheets are unchanged.
+       The square stays square-anchored — ink takes the outer corner in every
+       mode, stock stays inner, so G2 holds with no ground on the paper. */
+    const markForm = el.markForm||'auto';
+    const squareMark = markForm==='square' || (markForm==='auto' && !!el.showQR);
+    const markMode = el.markMode || (squareMark ? 'full' : 'majors');
+    const stripForm = markForm==='strip-long' ? 'strip-h' : 'strip-short-h';
+    const stripCells = stripForm==='strip-h' ? 9 : 7;
+    const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     const mk = (form, mode, m)=>{
       const lay = window.inkMarkLayout(form), cells = window.inkMarkCells(form, mode);
       const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
@@ -479,17 +491,19 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       </div>;
     };
     const qs = Math.min(el.h-6, 56);
-    const stripM = Math.max(window.INK_MARK.floors.short,
-      Math.min(Math.round(el.h/4), Math.floor((el.h-6)/2), Math.floor(el.w*0.28/7)));
+    const stripM = Math.max(stripFloor,
+      Math.min(Math.round(el.h/4), Math.floor((el.h-6)/2), Math.floor(el.w*(el.showQR ? 0.20 : (stripForm==='strip-h'?0.34:0.28))/stripCells)));
+    const sqM = Math.max(window.INK_MARK.floors.square, Math.floor((el.h-6)/4));
     inner = <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', gap:14, paddingTop: el.rule!==false?6:0, borderTop: el.rule!==false?`2.5px solid ${PE_INK.rgb}`:'none', boxSizing:'border-box', boxShadow:lift }}>
       <WordmarkSVG height={Math.min(el.h-12,28)} color={ink} />
       <div style={{ flex:'1 1 auto', minWidth:0, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', fontSize:'10px', color:ink, lineHeight:1.4 }}>
         <div>{el.site}</div>{el.addr ? <div style={{ fontWeight:600, opacity:.72, letterSpacing:'.04em' }}>{el.addr}</div> : null}
       </div>
-      {el.showQR ? <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
+      {el.showQR ? <div style={{ flex:'none', display:'flex', alignItems:'center', gap: (markOn && !squareMark) ? 10 : 0 }}>
+        {markOn && !squareMark ? mk(stripForm, markMode, stripM) : null}
         <div style={{ width:qs, height:qs }}><QRView data={el.qrData||'https://realitydn.com'} ecl="M" dark={PE_INK.rgb} light={PE_WHITE.rgb} quiet={true} /></div>
-        {markOn ? mk('square-anchored','full', qs/4) : null}
-      </div> : (markOn ? mk('strip-short-h','majors', stripM) : null)}
+        {markOn && squareMark ? mk('square-anchored', markMode, qs/4) : null}
+      </div> : (markOn ? (squareMark ? mk('square-anchored', markMode, sqM) : mk(stripForm, markMode, stripM)) : null)}
     </div>;
   }
   else if(t==='wordmark'){

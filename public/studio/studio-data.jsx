@@ -677,8 +677,13 @@ const DEFAULTS = {
   host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0 } },
   /* mark:'on' — the canon ink mark on the ticket band (square flush with the
      QR / short strip when there's none). ABSENT = ON by design: the ticket is
-     the brand carrier, so saved posters and templates gain it on open. */
-  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, mark:'on', color:'fg' } },
+     the brand carrier, so saved posters and templates gain it on open.
+     markForm 'auto' keeps that classic pairing; 'square' / 'strip' (7×2) /
+     'strip-long' (9×2) force one form on both variants. markMode (full /
+     majors / ink) recolours — DELIBERATELY absent here: unset keeps each
+     form's classic ink (square full · strip majors), so older docs render
+     unchanged. */
+  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, mark:'on', markForm:'auto', color:'fg' } },
   lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
   sessions:{ w:660, h:460, props:{ heading:'Next sessions',
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
@@ -872,7 +877,7 @@ function pointToMaster(type, x, y, masterFormat, format){
    canvas; you then tune from there. Positions keep the key
    content inside the 4:5 safe zone.
    ============================================================ */
-const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Menu', 'Handout'];
+const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Ink', 'Menu', 'Handout'];
 /* Every template opens with a full-bleed background photo (the house style),
    keeps content on a shared left line (x:90 — the Swiss vertical), and the
    Talk/Series families end with a full-width Reality banner filling the bottom
@@ -984,6 +989,62 @@ const TEMPLATES = [
     { type:'when',  k:'when', x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },
     TICKET(),
   ]},
+  /* ---- INK · the Year-2 system spoken plainly: no photograph — the locked
+     palette, the tracking ladder and the canon mark do the whole composition
+     on bare paper. Three starting points: a band stack, the mark as hero, and
+     a typographic listing. All three keep the ticket (mark absent = on). ---- */
+  /* Three-ink bands — a band-stack poster. Day-accent display band (title,
+     Auto fill follows the day carousel), a paper band of facts (Grotesk,
+     name-role rows), and the red ACTION band: one imperative line set cream —
+     cream-on-red is CANON, the one knowing AA exception, which is why
+     textColor:'cream' is explicit (contrastInk would pick ink). 3px ink rules
+     between the bands; no decoration beyond the fields. The bands run
+     edge-to-edge, so 9:16 pins their x/w back to the frame (the Story boost
+     would otherwise push a full-width box past the canvas); text keeps the
+     x:90 Swiss line via textInset. */
+  { id:'ink-bands', name:'Three-ink bands', group:'Ink', theme:'day', accent:'blue',
+    ov:{ '9x16':{ band1:{ x:0, w:1080 }, r1:{ x:0, w:1080 }, facts:{ x:0, w:1080 }, r2:{ x:0, w:1080 }, action:{ x:0, w:1080 } } }, els:[
+    { type:'title', k:'band1', x:0, y:135, w:1080, h:380, p:{ text:'Event\nTitle', fontSize:144, weight:800, align:'left', surface:'accent', textInset:90 } },
+    { type:'rule',  k:'r1', x:0, y:509, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
+    { type:'info',  k:'facts', x:0, y:515, w:1080, h:250, p:{ surface:'none', align:'left', fontSize:32, lineHeight:1.5, textInset:90,
+      text:'THU · 25.09.26 · 19:00\nThe Rooftop · Floor 3\nFree entry — all welcome' } },
+    { type:'rule',  k:'r2', x:0, y:759, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
+    { type:'title', k:'action', x:0, y:765, w:1080, h:190, p:{ text:'Come early', fontSize:100, weight:800, align:'left', surface:'accent', fill:'red', textColor:'cream', textInset:90 } },
+    TICKET(),
+  ]},
+  /* Ink-mark hero — the mark AS the composition: one large square-anchored
+     inkmark (its ink cell is the anchor corner, so no ground) over a display
+     title on the ladder, minimal facts, ticket. One PLACED mark per surface;
+     the ticket's QR square is the footer's own canon fixture (the poster
+     exception), not a second placed mark. */
+  { id:'ink-hero', name:'Ink-mark hero', group:'Ink', theme:'day', accent:'blue',
+    ov:{ '1x1':{ title:{ y:475, h:260 }, when:{ y:756 }, cost:{ y:756 } } }, els:[
+    { type:'inkmark', k:'mark', x:90, y:165, w:440, h:440, p:{ form:'square-anchored', mode:'full' } },
+    { type:'title',  k:'title', x:90, y:650, w:900, h:280, p:{ text:'Event\nTitle', fontSize:120, weight:800, align:'left', surface:'none', color:'fg' } },
+    { type:'when',   k:'when', x:90, y:970, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent', align:'center' } },
+    { type:'cost',   k:'cost', x:480, y:970, w:230, h:84, p:{ text:'FREE', surface:'accent', align:'center' } },
+    TICKET(),
+  ]},
+  /* The listing — a typographic weekly programme: the canon short strip at the
+     masthead (grounded — G2's paper-shade plate), a display title, then the
+     agenda's day-plate rows (lead chip auto-tinted Mon green … Sun yellow,
+     name + time at name-role tracking), ticket at the foot. Explicit rowSize:
+     when the list IS the poster the auto-fit reads too small (the menu's
+     lesson). The 1:1 shortens the agenda so it clears the pinned ticket. */
+  { id:'ink-listing', name:'The listing', group:'Ink', theme:'day', accent:'green',
+    ov:{ '1x1':{ agenda:{ h:520 } } }, els:[
+    { type:'inkmark', k:'strip', x:90, y:150, w:180, h:80, p:{ form:'strip-short-h', mode:'full' } },
+    { type:'title', k:'title', x:90, y:255, w:900, h:170, p:{ text:'This week', fontSize:120, weight:800, align:'left', surface:'none', color:'fg' } },
+    { type:'agenda', k:'agenda', x:90, y:450, w:900, h:560, p:{ heading:'', rowSize:28, rowGap:14, rowTracking:0, surface:'none', items:[
+        {day:'Monday',name:'Board Game Night',time:'19:00'},
+        {day:'Tuesday',name:'Chess Night',time:'19:00'},
+        {day:'Wednesday',name:'Vietnam Talk',time:'14:30'},
+        {day:'Thursday',name:'Coffee + Conversation',time:'11:00'},
+        {day:'Friday',name:'No Mic Open Mic',time:'19:00'},
+        {day:'Saturday',name:'Women’s Circle',time:'13:00'},
+        {day:'Sunday',name:'Pub Quiz',time:'20:00'} ] } },
+    TICKET(),
+  ]},
   /* ---- MENU · vended / pop-up stall (Day · clean white cards + colour-block
      header). Two drink categories as side-by-side cards, the smaller (right)
      one carrying a Snacks SUB-section beneath it — same card, smaller heading,
@@ -1012,7 +1073,8 @@ const TEMPLATES = [
      … Sun yellow) — and the address + site. Authored at the 4:5 master; its home
      is the small A-sheets, so switch to the A5/A6 HANDOUT view to print. The red
      rule + agenda heading follow the poster accent; the day chips are the pop. */
-  { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'red', els:[
+  { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'red',
+    ov:{ '1x1':{ ticket:{ hidden:true } } }, els:[
     { type:'wordmark', x:90, y:64, w:472, h:77, p:{ surface:'none', color:'fg' } },
     { type:'title', x:90, y:152, w:910, h:44, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.16 } },
     { type:'block', x:90, y:206, w:910, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
@@ -1026,8 +1088,13 @@ const TEMPLATES = [
         {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'},
         {day:'Saturday',name:'Women’s Circle',time:'13:00',desc:'A women-only space to talk honestly and meet each other.'},
         {day:'Sunday',name:'Pub Quiz',time:'20:00',desc:'Bring a team and weaponize your otherwise useless knowledge.'} ] } },
-    { type:'tagline', x:90, y:1200, w:910, h:46, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
-    { type:'tagline', x:90, y:1264, w:910, h:40, p:{ text:'86 Mai Thúc Lân, Đà Nẵng · realitydn.com', fontSize:21, weight:500, align:'left', surface:'none', color:'fg' } },
+    { type:'tagline', x:90, y:1196, w:910, h:44, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
+    /* conformance 22.08: the plain address tagline became the slim ticket —
+       the brand carrier (wordmark + site + address + the canon short strip,
+       mark absent = on) closes the sheet. Hidden on the square like the menu's
+       footer: the handout's real home is the A-sheets, and the 1:1 centre crop
+       would land the ticket on the agenda. */
+    { type:'ticket', k:'ticket', x:90, y:1246, w:910, h:96, p:{ variant:'slim', surface:'none', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
 ];
 function buildTemplate(tpl){

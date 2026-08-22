@@ -696,36 +696,62 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        paper-like surfaces, bare on an ink/accent band where stock reads as
        printed cream. */
     const markOn = el.mark!=='off';
+    /* markForm — 'auto' keeps the classic pairing (the square rides the QR;
+       a short strip takes the bare band); 'square' / 'strip' (7×2) /
+       'strip-long' (9×2 full strip) force one form, on BOTH variants.
+       markMode recolours (full / majors / ink); ABSENT keeps each form's
+       classic ink (square full · strip majors) so saved posters render
+       unchanged. Mirrored on Print Studio's footer — change both or drift. */
+    const markForm = el.markForm||'auto';
+    const squareMark = markForm==='square' || (markForm==='auto' && !!el.showQR);
+    const markMode = el.markMode || (squareMark ? 'full' : 'majors');
+    const stripForm = markForm==='strip-long' ? 'strip-h' : 'strip-short-h';
+    const stripGrounded = !(el.surface==='solid' || el.surface==='accent');
+    const stripCells = stripForm==='strip-h' ? 9 : 7;
+    const stripCols = stripCells + (stripGrounded?2:0), stripRows = 2 + (stripGrounded?2:0);
+    const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
+    /* width cap: tighter when the strip shares the band with a QR, a little
+       roomier for the 9×2 full strip — the centred text column never collides. */
+    const stripWFrac = el.showQR ? 0.20 : (stripForm==='strip-h' ? 0.34 : 0.28);
+    const stripModule = (availH)=> Math.max(stripFloor,
+      Math.min(Math.round(el.h/4), Math.floor(availH/stripRows), Math.floor(el.w*stripWFrac/stripCols)));
+    const stripEl = (m)=> <TicketInkMark form={stripForm} mode={markMode} m={m} grounded={stripGrounded} theme={theme} />;
+    /* the square is ALWAYS square-anchored — its ink cell takes the outer
+       corner in every mode (full → anchoredField; majors/ink → f3 is ink), so
+       it needs no ground on any band. Flush with the QR when one is shown
+       (module = QR height/4, the quiet zone is the gap); standalone it sizes
+       to the band height. */
+    const squareEl = (m)=> <TicketInkMark form="square-anchored" mode={markMode} m={m} grounded={false} theme={theme} />;
+    const sqModule = (availH)=> Math.max(window.INK_MARK.floors.square, Math.floor(availH/4));
     const qrBlock = (qs)=> (
       <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
         <SEQR size={qs} dark={surf.color} light={qrLight} />
-        {markOn && <TicketInkMark form="square-anchored" mode="full" m={qs/4} grounded={false} theme={theme} />}
+        {markOn && squareMark && squareEl(qs/4)}
       </div>
     );
-    const stripGrounded = !(el.surface==='solid' || el.surface==='accent');
-    const stripCols = 7 + (stripGrounded?2:0), stripRows = 2 + (stripGrounded?2:0);
-    const stripModule = (availH)=> Math.max(window.INK_MARK.floors.short,
-      Math.min(Math.round(el.h/4), Math.floor(availH/stripRows), Math.floor(el.w*0.28/stripCols)));
-    const stripEl = (m)=> <TicketInkMark form="strip-short-h" mode="majors" m={m} grounded={stripGrounded} theme={theme} />;
     if(el.variant==='banner'){
       // Full-width band — wordmark centred over the address. The serious,
-      // bookish bottom for talks. The trailing strip reserves its own width in
-      // the right padding so the centred column can never slide under it
-      // (padding stays ONE shorthand — the longhand/shorthand desync trap).
+      // bookish bottom for talks. The trailing mark (strip, or a standalone
+      // square when no QR carries it) reserves its own width in the right
+      // padding so the centred column can never slide under it (padding stays
+      // ONE shorthand — the longhand/shorthand desync trap).
       const tim = window.textInsetModel(el);
       const padL = tim.side==='left' ? tim.val : tim.def;
       const padR = tim.side==='right' ? tim.val : tim.def;
-      const stripOn = !el.showQR && markOn;
+      const stripOn = markOn && !squareMark;
+      const sqSideOn = markOn && squareMark && !el.showQR;
       const bm = stripOn ? stripModule(el.h-60) : 0;
-      const bannerPad = { padding:'30px '+(padR + (stripOn ? stripCols*bm+22 : 0))+'px 30px '+padL+'px' };
+      const sqm = sqSideOn ? sqModule(el.h-60) : 0;
+      const reserve = stripOn ? stripCols*bm+22 : sqSideOn ? 4*sqm+22 : 0;
+      const bannerPad = { padding:'30px '+(padR+reserve)+'px 30px '+padL+'px' };
       inner = <div style={box(Object.assign({ flexDirection:'column', alignItems:seColAlign(el), justifyContent:'center', gap:16 }, bannerPad))}>
         <WordmarkSVG height={64*B} color={textCol} />
         <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, color:textCol }}>
           {el.site}{el.addr? <span style={{ fontWeight:600, opacity:.72 }}>{'  ·  '+el.addr}</span> : null}
         </div>
         {el.showQR && <div style={{ flex:'none', marginTop:4 }}>{qrBlock(92*B)}</div>}
-        {stripOn && <div style={{ position:'absolute', right:padR, top:'50%', transform:'translateY(-50%)' }}>
-          {stripEl(bm)}
+        {(stripOn || sqSideOn) && <div style={{ position:'absolute', right:padR, top:'50%', transform:'translateY(-50%)' }}>
+          {stripOn ? stripEl(bm) : squareEl(sqm)}
         </div>}
       </div>;
     } else {
@@ -735,7 +761,14 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.11em', fontSize:18*B, lineHeight:1.5, color:textCol }}>
           {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14*B, letterSpacing:'.06em' }}>{el.addr}</span> : null}
         </div>
-        {el.showQR ? qrBlock(108*B) : (markOn ? stripEl(stripModule(el.h-44)) : null)}
+        {el.showQR
+          ? <div style={{ flex:'none', display:'flex', alignItems:'center', gap:14 }}>
+              {markOn && !squareMark && stripEl(stripModule(el.h-44))}
+              {qrBlock(108*B)}
+            </div>
+          /* standalone square: el.h-56 = the band interior (2×22 padding +
+             borders) so the 4-module square never clips on the card edge */
+          : (markOn ? (squareMark ? squareEl(sqModule(el.h-56)) : stripEl(stripModule(el.h-44))) : null)}
       </div>;
     }
   }

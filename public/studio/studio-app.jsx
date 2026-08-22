@@ -1275,7 +1275,11 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Chips label="QR" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]} value={el.showQR} onChange={v=>update({showQR:v})} />
         {/* absent prop = ON — the ticket is the brand carrier (see DEFAULTS) */}
         <Chips label="Ink mark" options={[{v:'on',l:'On'},{v:'off',l:'Off'}]} value={el.mark||'on'} onChange={v=>update({mark:v})} />
-        <div className="rs-mini" style={{ marginTop:-2, marginBottom:8 }}>The canon ink square rides the QR, flush — its quiet zone is the gap. Without a QR, a short strip takes the band's trailing end.</div>
+        {el.mark!=='off' && <Chips label="Mark form" options={[{v:'auto',l:'Auto'},{v:'square',l:'Square'},{v:'strip',l:'Strip'},{v:'strip-long',l:'Full strip'}]}
+          value={el.markForm||'auto'} onChange={v=>update({markForm:v})} />}
+        {el.mark!=='off' && <Chips label="Mark mode" options={[{v:'full',l:'Full'},{v:'majors',l:'Majors'},{v:'ink',l:'Ink'}]}
+          value={el.markMode||(((el.markForm||'auto')==='square'||((el.markForm||'auto')==='auto'&&!!el.showQR))?'full':'majors')} onChange={v=>update({markMode:v})} />}
+        <div className="rs-mini" style={{ marginTop:-2, marginBottom:8 }}>Auto pairs the canon square with the QR (flush — its quiet zone is the gap) and a short strip with a bare band; Square / Strip / Full strip force one form, on the banner too. Mode unset keeps each form's classic ink (square Full · strip Majors).</div>
       </React.Fragment>}
       {el.type==='qr' && <React.Fragment>
         <div className="rs-sech">Content</div>

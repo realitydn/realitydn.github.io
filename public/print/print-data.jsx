@@ -964,8 +964,12 @@ const DEFAULTS = {
   rule:      { w:260, h:20,  props:{ fill:'ink', weight:3, pattern:'solid', spacing:12, dashRatio:0.55, amp:7, gap:6, cap:'round', tickLen:6, tickDir:'both', term:'none', termAt:'end', echo:false, echoAccent:'auto' } },
   /* mark:'on' — the canon ink mark on the footer (square flush with the QR /
      short strip when there's none). ABSENT = ON by design: the footer is the
-     print ticket, the brand carrier, so saved docs + templates gain it. */
-  footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, mark:'on', surface:'none', rule:true, ink:'ink' } },
+     print ticket, the brand carrier, so saved docs + templates gain it.
+     markForm 'auto' keeps that pairing; 'square' / 'strip' (7×2) /
+     'strip-long' (9×2) force one form. markMode (full / majors / ink)
+     recolours — DELIBERATELY absent: unset keeps each form's classic ink
+     (square full · strip majors), so older docs render unchanged. */
+  footer:    { w:540, h:74,  props:{ site:SITE, addr:ADDR, qrData:'https://realitydn.com', showQR:true, mark:'on', markForm:'auto', surface:'none', rule:true, ink:'ink' } },
   wordmark:  { w:240, h:42,  props:{ ink:'ink' } },
   /* The ink strip / square (INK_MARK above) — user-placeable ONLY, never
      auto-placed. On print the paper IS the ground (stock cells unprinted),

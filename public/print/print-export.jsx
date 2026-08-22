@@ -514,12 +514,25 @@ function renderElement(page, el, ctx){
     const wmA=place(0,wmTop);
     page.drawSvgPath(window.WORDMARK_PATH, { x:wmA.x, y:wmA.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
     /* Ink mark (absent prop = ON — mirrors print-element.jsx's footer, change
-       both or they drift). With a QR: the canon SQUARE (square-anchored),
-       module = QR height/4, butted FLUSH on the QR's outer (trailing) side —
-       the quiet zone is the gap. Without: a short strip (majors) at the
-       trailing end, module ≈ band height/4, floors respected. STOCK CELLS
-       ARE UNPRINTED — the paper shows (same rule as the inkmark element). */
+       both or they drift). markForm 'auto' keeps the classic pairing: with a
+       QR the canon SQUARE (square-anchored), module = QR height/4, butted
+       FLUSH on the QR's outer (trailing) side — the quiet zone is the gap;
+       without, a short strip at the trailing end, module ≈ band height/4,
+       floors respected. 'square'/'strip' (7×2)/'strip-long' (9×2) force one
+       form; markMode (full/majors/ink) recolours, absent = each form's
+       classic ink (square full · strip majors). STOCK CELLS ARE UNPRINTED —
+       the paper shows (same rule as the inkmark element); accents fill from
+       PALETTE_CMYK, ink rides the K plate. */
     const markOn = el.mark!=='off';
+    const markForm = el.markForm||'auto';
+    const squareMark = markForm==='square' || (markForm==='auto' && !!el.showQR);
+    const markMode = el.markMode || (squareMark ? 'full' : 'majors');
+    const stripForm = markForm==='strip-long' ? 'strip-h' : 'strip-short-h';
+    const stripCells = stripForm==='strip-h' ? 9 : 7;
+    const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
+    const stripM = Math.max(stripFloor,
+      Math.min(Math.round(el.h/4), Math.floor((el.h-top)/2), Math.floor(el.w*(el.showQR ? 0.20 : (stripForm==='strip-h'?0.34:0.28))/stripCells)));
+    const sqM = Math.max(window.INK_MARK.floors.square, Math.floor((el.h-top)/4));
     const drawMark=(form, mode, mx, my, mm)=>{
       const lay=window.inkMarkLayout(form), cells=window.inkMarkCells(form, mode);
       const nameOf=(slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
@@ -529,19 +542,28 @@ function renderElement(page, el, ctx){
         rect(mx+b.x*mm, my+b.y*mm, b.w*mm, b.h*mm, { color: name==='ink' ? inkColor() : accentColor(name) });
       });
     };
-    // QR right (+ the flush square when the mark is on)
+    // QR right (+ the flush square, or a strip on its inner side)
     let rightX=el.w;
-    if(el.showQR){ const m=window.buildQR(el.qrData||'https://realitydn.com','M'), qs=Math.min(el.h-6, 56), qy=(el.h-qs)/2, qx=el.w-qs-(markOn?qs:0);
+    if(el.showQR){ const m=window.buildQR(el.qrData||'https://realitydn.com','M'), qs=Math.min(el.h-6, 56), qy=(el.h-qs)/2, qx=el.w-qs-((markOn&&squareMark)?qs:0);
       rect(qx,qy,qs,qs,{color:whiteColor()});
       if(m){ const quiet=2,n=m.length,tot=n+quiet*2,ms=qs/tot; for(let rr=0;rr<n;rr++)for(let cc=0;cc<n;cc++) if(m[rr][cc]) rect(qx+(cc+quiet)*ms,qy+(rr+quiet)*ms,ms+0.3,ms+0.3,{color:inkColor()}); }
-      if(markOn) drawMark('square-anchored','full', qx+qs, qy, qs/4);
-      rightX=qx-12; }
+      if(markOn&&squareMark) drawMark('square-anchored', markMode, qx+qs, qy, qs/4);
+      rightX=qx-12;
+      if(markOn && !squareMark){
+        const sy=(el.h-2*stripM)/2;
+        drawMark(stripForm, markMode, qx-10-stripCells*stripM, sy, stripM);
+        rightX=qx-10-stripCells*stripM-12;
+      } }
     else if(markOn){
-      const mm=Math.max(window.INK_MARK.floors.short,
-        Math.min(Math.round(el.h/4), Math.floor((el.h-top)/2), Math.floor(el.w*0.28/7)));
-      const sy=top+(el.h-top-2*mm)/2;
-      drawMark('strip-short-h','majors', el.w-7*mm, sy, mm);
-      rightX=el.w-7*mm-12;
+      if(squareMark){
+        const sy=top+(el.h-top-4*sqM)/2;
+        drawMark('square-anchored', markMode, el.w-4*sqM, sy, sqM);
+        rightX=el.w-4*sqM-12;
+      } else {
+        const sy=top+(el.h-top-2*stripM)/2;
+        drawMark(stripForm, markMode, el.w-stripCells*stripM, sy, stripM);
+        rightX=el.w-stripCells*stripM-12;
+      }
     }
     // address + site between wordmark and QR
     const tf=fontFor('mont',700), ts=10, ta=tf.heightAtSize(ts,{descender:false}), tx=wmW+18, tw=Math.max(0,rightX-tx);

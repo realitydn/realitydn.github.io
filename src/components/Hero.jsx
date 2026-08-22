@@ -1,4 +1,5 @@
 import React from 'react';
+import InkMark from './InkMark';
 
 export default function Hero({ t }) {
   // "coffee / cocktails / community" → Thin lines + an 800 slam on the last
@@ -41,6 +42,10 @@ export default function Hero({ t }) {
               {t.use('nav.menus')}
             </a>
           </div>
+          {/* The ink strip — the page's ONE strip (its footer partner is the
+              QR square). Full palette on paper, subordinate to the headline:
+              it closes the copy block like a printer's mark. */}
+          <InkMark form="strip-h" mode="full" module={11} pass="A1" className="mt-8" />
         </div>
       </div>
 

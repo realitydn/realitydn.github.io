@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from './Icons';
 import Logo from './Logo';
+import InkMark from './InkMark';
 import { URLS, STR } from '../data/translations';
 
 export default function Footer({ lang }) {
@@ -74,7 +75,13 @@ export default function Footer({ lang }) {
               </div>
             </div>
 
-            {/* Right side - QR Code */}
+            {/* Right side - QR Code + its ink square, the hero strip's
+                sanctioned partner. The square butts FLUSH against the code —
+                the QR's own quiet zone is the gap, no rule between them —
+                and its 4 modules must equal the QR's rendered height, so the
+                QR box is pinned at 96px (module 24) on every width. Ink
+                cells dropping out against the Night ground IS the Night
+                form — no plate behind it. */}
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
                 <div className="eyebrow text-[11px]" style={{ color: 'var(--fg-dim)' }}>
@@ -84,27 +91,30 @@ export default function Footer({ lang }) {
                   Scan to join WhatsApp
                 </div>
               </div>
-              <div
-                className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center"
-                style={{
-                  backgroundColor: '#fffbf1',
-                  border: '2px solid var(--fg)',
-                  boxShadow: 'var(--sh-default)',
-                }}
-              >
-                <img
-                  src="/images/whatsapp-qr.png"
-                  alt="Scan to join the REALITY WhatsApp community"
-                  className="w-full h-full object-contain p-1"
-                  loading="lazy"
-                  decoding="async"
-                  width="96"
-                  height="96"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = '<span style="color:#0d0905" class="text-xs font-body text-center px-2">QR Code</span>';
+              <div className="flex items-center">
+                <InkMark form="square" mode="full" module={24} idle="slow" />
+                <div
+                  className="w-24 h-24 flex items-center justify-center"
+                  style={{
+                    backgroundColor: '#fffbf1',
+                    border: '2px solid var(--fg)',
+                    boxShadow: 'var(--sh-default)',
                   }}
-                />
+                >
+                  <img
+                    src="/images/whatsapp-qr.png"
+                    alt="Scan to join the REALITY WhatsApp community"
+                    className="w-full h-full object-contain p-1"
+                    loading="lazy"
+                    decoding="async"
+                    width="96"
+                    height="96"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<span style="color:#0d0905" class="text-xs font-body text-center px-2">QR Code</span>';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

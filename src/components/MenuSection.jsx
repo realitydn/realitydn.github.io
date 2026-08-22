@@ -63,7 +63,7 @@ export default function MenuSection({ lang, t }) {
       active
         ? 'bg-ink text-cream border-ink'
         : 'bg-transparent text-ink border-ink/20 hover:border-ink/60'
-    } focus:outline-none`;
+    }`;
 
   // Active tab carries a misregistered echo in its category accent —
   // the chip-pop end-state from the motion library.
@@ -84,7 +84,7 @@ export default function MenuSection({ lang, t }) {
             href={URLS.PDF}
             target="_blank"
             rel="noreferrer"
-            className="font-title font-bold text-sm underline underline-offset-4 flex items-center gap-2 hover:opacity-70 transition-opacity focus:outline-none"
+            className="font-title font-bold text-sm underline underline-offset-4 flex items-center gap-2 hover:opacity-70 transition-opacity"
           >
             {t.use('downloadPdf')}
           </a>

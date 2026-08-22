@@ -33,16 +33,16 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em]">
-          <a href="#events" className="hover:opacity-70 transition-opacity focus:underline focus:outline-none">
+          <a href="#events" className="hover:opacity-70 transition-opacity focus:underline">
             {t.use('nav.events')}
           </a>
-          <a href="#info" className="hover:opacity-70 transition-opacity focus:underline focus:outline-none">
+          <a href="#info" className="hover:opacity-70 transition-opacity focus:underline">
             {t.use('nav.info')}
           </a>
-          <a href="#menus" className="hover:opacity-70 transition-opacity focus:underline focus:outline-none">
+          <a href="#menus" className="hover:opacity-70 transition-opacity focus:underline">
             {t.use('nav.menus')}
           </a>
-          <a href="#visit" className="hover:opacity-70 transition-opacity focus:underline focus:outline-none">
+          <a href="#visit" className="hover:opacity-70 transition-opacity focus:underline">
             {t.use('nav.visit')}
           </a>
         </nav>

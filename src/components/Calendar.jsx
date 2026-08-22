@@ -103,12 +103,14 @@ export default function Calendar({ lang }) {
         <h2 className="h-section text-3xl md:text-5xl text-ink">{C.title}</h2>
       </div>
 
-      {/* ── Loading skeleton — slice-shaped so nothing jumps on arrival ──── */}
+      {/* ── Loading skeleton — slice-shaped so nothing jumps on arrival.
+          .sk-block re-stamps (never a shimmer/opacity pulse) and reads the
+          theme tokens, so the bars hold in Day and Night alike. ──── */}
       {loading && (
-        <div className="animate-pulse flex flex-col gap-3" aria-hidden="true">
-          <div className="h-44 sm:h-52 bg-gray-200" style={{ borderRadius: 0 }} />
+        <div className="sk-stagger flex flex-col gap-3" aria-hidden="true">
+          <div className="sk-block h-44 sm:h-52" style={{ borderRadius: 0 }} />
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-[86px] bg-gray-200" style={{ borderRadius: 0 }} />
+            <div key={i} className="sk-block h-[86px]" style={{ borderRadius: 0 }} />
           ))}
           <span className="sr-only">{C.loading}</span>
         </div>

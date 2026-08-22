@@ -4,24 +4,22 @@ import Reveal from './Reveal';
 import { URLS, STR } from '../data/translations';
 
 /**
- * DarkCTA — the "after dark" band. Runs in the Night scope regardless of the
- * page theme: on a Day page it's the dark teaser strip; when the whole site
- * is in Night mode it blends in, separated by its cream rules.
+ * DarkCTA — the page's ONE red ACT band (canon 22.08.26: red commands, once
+ * per page). The on-red contract in index.css does the colour work: body copy
+ * goes ink, the display heading re-creams via reg-far, btn-primary flips to
+ * cream-on-red and btn-secondary to an ink outline. The band supplies the
+ * top rule; the bottom rule stays inline because what follows is plain paper,
+ * not a band.
  */
 export default function DarkCTA({ lang }) {
   return (
     <section
-      className="section scope-night py-16"
-      style={{
-        backgroundColor: 'var(--bg)',
-        color: 'var(--fg)',
-        borderTop: '3px solid var(--fg)',
-        borderBottom: '3px solid var(--fg)',
-      }}
+      className="section band b-act py-16"
+      style={{ borderBottom: '3px solid var(--fg)' }}
     >
       <Reveal stagger className="max-w-7xl mx-auto px-4 grid md:grid-cols-12 gap-6 items-center">
         <div className="md:col-span-7">
-          <h2 className="font-display-bold text-3xl md:text-5xl">
+          <h2 className="font-display-bold reg-far text-3xl md:text-5xl">
             {STR[lang].darkTitle}
           </h2>
           <p className="mt-3 font-body text-lg" style={{ color: 'var(--fg-dim)' }}>

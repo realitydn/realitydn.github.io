@@ -65,37 +65,39 @@ export default function GallerySection({ t }) {
         />
       </section>
 
-      {/* Lightbox Modal — paper scrim, stamped frame */}
+      {/* Lightbox — .lbx ink plate on the darker scrim (canon 22.08.26). The
+          photo is the subject: frame + caption row only, nothing decorative.
+          Scrim and plate are siblings, so no stopPropagation is needed. */}
       {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            backgroundColor: 'rgb(var(--bg-rgb) / 0.88)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-          }}
-          onClick={closeLightbox}
-        >
-          <button
-            className="absolute top-4 right-4 text-ink hover:opacity-70 transition-opacity p-2"
-            onClick={closeLightbox}
-            aria-label="Close lightbox"
-          >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M6 18L18 6"/>
-            </svg>
-          </button>
+        <>
+          <div className="scrim lit" onClick={closeLightbox} aria-hidden="true" />
           <div
-            className="max-w-4xl max-h-[90vh] card-static stamp-in overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="plate lbx"
+            role="dialog"
+            aria-modal="true"
+            aria-label={lightboxAlt}
           >
-            <img
-              src={lightboxImg}
-              alt={lightboxAlt}
-              className="w-full h-full object-contain"
-            />
+            <div className="lbx-frame">
+              <img
+                src={lightboxImg}
+                alt={lightboxAlt}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="lbx-cap">
+              <span className="min-w-0 truncate">{lightboxAlt}</span>
+              <button
+                className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                onClick={closeLightbox}
+                aria-label="Close lightbox"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M6 6l12 12M6 18L18 6"/>
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );

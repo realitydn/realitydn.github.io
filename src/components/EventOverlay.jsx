@@ -62,71 +62,70 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
   const appUrl = `${APP_BASE}/events/${event.id}?utm_source=website&utm_medium=event_overlay`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{
-        backgroundColor: 'rgb(var(--bg-rgb) / 0.88)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-      }}
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <button
-        className="absolute top-4 right-4 text-ink hover:opacity-70 transition-opacity p-2"
-        onClick={onClose}
-        aria-label={S.close}
-      >
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M6 6l12 12M6 18L18 6" />
-        </svg>
-      </button>
-
+    <>
+      {/* Ink scrim + plate (canon 22.08.26): siblings, so a scrim click closes
+          without a stopPropagation dance. No stamp-in on the plate — .dlg
+          centres via transform, and stampIn's fill:both would pin over it.
+          Width/height are inline: .dlg is 560px, but this window has always
+          been max-w-2xl (672px) at p-4 gutters and 90vh — keep that. */}
+      <div className="scrim" onClick={onClose} aria-hidden="true" />
       <div
-        className={`w-full max-w-2xl max-h-[90vh] card-static stamp-in overflow-hidden flex flex-col md:flex-row ${dayCls}`}
-        onClick={(e) => e.stopPropagation()}
+        className={`plate dlg ${dayCls}`}
+        style={{ width: 'min(672px, calc(100% - 32px))', maxHeight: '90vh' }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
       >
-        {poster ? (
-          <div className="md:w-2/5 shrink-0 bg-cream max-h-[40vh] md:max-h-none overflow-hidden">
-            <img src={poster} alt={title} className="w-full h-full object-cover" loading="eager" decoding="async" />
-          </div>
-        ) : (
-          <div className="md:w-2/5 shrink-0 overflow-hidden">
-            <div className="cal-noposter">
-              <span className="cal-noposter-wd">{fmtDayDate(event.startsAt, lang).split(' ')[0]}</span>
-              <span className="cal-noposter-dm">{fmtDM(event.startsAt)}</span>
+        <div className="plate-h">
+          <span className="plate-t min-w-0 truncate">{title}</span>
+          <button className="plate-x shrink-0" onClick={onClose} aria-label={S.close}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M6 6l12 12M6 18L18 6" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
+          {poster ? (
+            <div className="md:w-2/5 shrink-0 bg-cream max-h-[40vh] md:max-h-none overflow-hidden">
+              <img src={poster} alt={title} className="w-full h-full object-cover" loading="eager" decoding="async" />
             </div>
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0 p-5 md:p-6 flex flex-col gap-3 overflow-y-auto">
-          <div>
-            {dateTab && <span className="cal-datetab mb-3">{dateTab}</span>}
-            <h3 className="h-section text-2xl md:text-3xl text-ink leading-tight mt-3">{title}</h3>
-            {qualifier && <p className="type-sub mt-1">{qualifier}</p>}
-            <p className="text-sm text-gray-600 font-body mt-1">
-              {[loc, costLine].filter(Boolean).join(' · ')}
-            </p>
-          </div>
-
-          {desc && (
-            <p className="text-sm text-ink/90 font-body whitespace-pre-wrap flex-1">{desc}</p>
+          ) : (
+            <div className="md:w-2/5 shrink-0 overflow-hidden">
+              <div className="cal-noposter">
+                <span className="cal-noposter-wd">{fmtDayDate(event.startsAt, lang).split(' ')[0]}</span>
+                <span className="cal-noposter-dm">{fmtDM(event.startsAt)}</span>
+              </div>
+            </div>
           )}
 
-          <div className="pt-2 mt-auto">
-            <a
-              href={appUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-primary inline-block px-6 py-3 text-sm"
-            >
-              {S.openInApp} →
-            </a>
+          <div className="plate-b flex-1 min-w-0">
+            <div>
+              {dateTab && <span className="cal-datetab mb-3">{dateTab}</span>}
+              <h3 className="h-section text-2xl md:text-3xl text-ink leading-tight mt-3">{title}</h3>
+              {qualifier && <p className="type-sub mt-1">{qualifier}</p>}
+              <p className="text-sm text-gray-600 font-body mt-1">
+                {[loc, costLine].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+
+            {desc && (
+              <p className="text-sm text-ink/90 font-body whitespace-pre-wrap flex-1">{desc}</p>
+            )}
+
+            <div className="pt-2 mt-auto">
+              <a
+                href={appUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary inline-block px-6 py-3 text-sm"
+              >
+                {S.openInApp} →
+              </a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

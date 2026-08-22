@@ -160,7 +160,7 @@ export default function InfoHostSection({ t, lang }) {
       active
         ? 'bg-ink text-cream border-ink'
         : 'bg-transparent text-ink border-ink/20 hover:border-ink/60'
-    } focus:outline-none`;
+    }`;
 
   // Active tab carries a misregistered echo in its accent — the chip-pop
   // end-state from the motion library.
@@ -209,7 +209,7 @@ export default function InfoHostSection({ t, lang }) {
         <button
           key={type}
           onClick={() => goTo('host', type)}
-          className="text-left px-4 py-2.5 border-2 font-title font-bold uppercase tracking-[0.12em] text-[10px] transition-all flex items-center gap-2.5 focus:outline-none"
+          className="text-left px-4 py-2.5 border-2 font-title font-bold uppercase tracking-[0.12em] text-[10px] transition-all flex items-center gap-2.5"
           style={subTabStyle(type, activeEventType === type)}
         >
           <span

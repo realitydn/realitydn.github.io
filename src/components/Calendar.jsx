@@ -39,7 +39,14 @@ function WhatsAppCta({ lang }) {
         {Icons.whatsapp()}
         {STR[lang].joinWA}
       </a>
-      <p className="text-center text-sm text-gray-600 font-body max-w-2xl">
+      {/* The blurb sits over the section's decorative riso plates — it gets
+          its own paper (the printed-box idiom, same as the feed's .cal-bx)
+          so the sentence never runs across a colour block. Was live on prod
+          crossing the blue plate at ≥1024 (caught 19.08.26 review). */}
+      <p
+        className="text-center text-sm text-gray-600 font-body max-w-2xl relative z-[1] px-3 py-1"
+        style={{ background: 'var(--bg)' }}
+      >
         {STR[lang].waBlurb}
       </p>
     </div>
@@ -213,8 +220,7 @@ export default function Calendar({ lang }) {
       <div id="events" aria-hidden="true" style={{ scrollMarginTop: '90px' }} />
       <div className="mb-8">
         {/* Blue literal, not the accent: eyebrows are blue's JOB (canon), and
-            the theme-aware accent would flip this pink in Night. (Donald's
-            pending polish, folded in for the merge.) */}
+            the theme-aware accent would flip this pink in Night. */}
         <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>{C.eyebrow}</div>
         <h2 className="h-section text-3xl md:text-5xl text-ink">{C.title}</h2>
       </div>
@@ -255,8 +261,7 @@ export default function Calendar({ lang }) {
         <div className="card-static card-lg overflow-hidden p-6 md:p-10 text-center">
           <h3 className="h-section text-xl md:text-2xl text-ink mb-3">{C.errorTitle}</h3>
           <p className="text-sm text-gray-600 font-body max-w-2xl mx-auto mb-6">{C.errorBody}</p>
-          {/* INFO role (canon B3b): calendar-subscribe is blue's job. (Donald's
-              pending polish, folded in for the merge.) */}
+          {/* INFO role (canon B3b): calendar-subscribe is blue's job. */}
           <a
             href={FEED_ICS_URL}
             className="btn-info inline-flex items-center gap-2 px-5 py-3 text-sm"
@@ -297,9 +302,8 @@ export default function Calendar({ lang }) {
             <span className="text-sm font-body text-ink/60">
               {CF.upcomingCount.replace('{n}', String(total))}
             </span>
-            {/* INFO role (canon B3b): calendar-subscribe is blue's job — a
-                small blue chip, not a buried grey link. (Donald's pending
-                polish, folded in for the merge.) */}
+            {/* INFO role (canon B3b): calendar-subscribe is blue's job —
+                a small blue chip, not a buried grey link. */}
             <a
               href={FEED_ICS_URL}
               className="btn-info inline-flex items-center px-3 py-2 text-xs"

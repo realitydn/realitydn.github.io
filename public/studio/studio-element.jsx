@@ -736,7 +736,18 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='host'){
     inner = <div style={box(Object.assign({ alignItems: el.align==='left'?'flex-start':el.align==='right'?'flex-end':'center' }, sePad(el, 18)))}>
-      {el.kicker && <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(el.fontSize*0.38)+'px', color:kickerHex, marginBottom:6 }}>{el.kicker}</div>}
+      {/* The credit lead-in — "Hosted by", "With", "On the decks" — is INFO,
+          not an eyebrow. It reads as a sentence that the name completes, so it
+          takes Grotesk like every other fact on the poster rather than
+          Montserrat's tracked caps. Ruled 23.08: the generic rule puts
+          eyebrows in Montserrat because caps there are a SIGNAL ("this is a
+          label, not reading matter"), and this line is the opposite — it IS
+          reading matter, the first half of "Hosted by / Speaker Name".
+
+          Grotesk is never uppercased (M3), so no text-transform: the string
+          renders as typed, which is why every template and default already
+          carries it in sentence case. */}
+      {el.kicker && <div style={FACT((el.fontSize*0.38)+'px', { color:kickerHex, marginBottom:6 })}>{el.kicker}</div>}
       <div style={{ fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase', letterSpacing:EM(el.letterSpacing!=null?el.letterSpacing:TRACK.name), fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align }}>{el.name}</div>
     </div>;
   }

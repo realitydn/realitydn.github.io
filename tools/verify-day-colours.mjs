@@ -283,6 +283,25 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
     fail(`${rel}: the when/cost chip uppercases — Grotesk is never uppercased (M3)`);
   if (!/tabular-nums/.test(chip))
     fail(`${rel}: the when/cost chip lost tabular figures — facts in a column are tnum`);
+  // The host credit lead-in ("Hosted by" / "With" / "On the decks") is INFO,
+  // not an eyebrow — ruled 23.08.26. It is the one label-shaped string that
+  // takes Grotesk, because it reads as the first half of a sentence the name
+  // completes rather than as a caps signal. Guarded so the generic
+  // "eyebrows are Montserrat" rule does not reclaim it later.
+  // Bound the slice to the kicker element ITSELF: from `el.kicker &&` to its
+  // own text node, which is the second `el.kicker` in both the .jsx and the
+  // compiled .js. Anything looser runs into the NAME div that follows, whose
+  // uppercase is correct and would read as a false positive here.
+  const k = src.search(/el\.kicker\s*&&/);
+  const kEnd = src.indexOf("el.kicker", k + 9) + 9;
+  if (k < 0 || kEnd <= k) fail(`${rel}: host kicker renderer not found`);
+  else {
+    const line = src.slice(k, kEnd);
+    if (!/FACT\(/.test(line))
+      fail(`${rel}: the host kicker is off FACT() — the credit lead-in is info, so it is Grotesk`);
+    if (/uppercase/.test(line))
+      fail(`${rel}: the host kicker uppercases — Grotesk is never uppercased (M3)`);
+  }
 }
 // Print Studio data — ladder + the baked print offset; body stays Grotesk 0.
 for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {

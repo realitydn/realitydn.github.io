@@ -25,7 +25,9 @@ export default function Hero({ t }) {
           <h1 className="text-ink" style={{ fontSize: 'clamp(32px, 4.5vw, 54px)' }}>
             {lead.length > 0 && (
               <span className="font-display block">
-                {lead.join(' / ')}{' /'}
+                {/* NBSP before the trailing slash — a breakable space let the
+                    lone "/" wrap onto its own line at 390 (walkthrough 23.08). */}
+                {lead.join(' / ')}{' /'}
               </span>
             )}
             <span className="font-display-bold block">{slam}</span>

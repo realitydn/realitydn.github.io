@@ -930,10 +930,24 @@ function mapElementToFormat(el, masterFormat, format){
    override still wins, so anything hand-sized in 9:16 keeps its size. */
 function boostForStory(r, k, tf){
   if(k===1) return r;
-  const cx=tf.w/2, nw=r.w*k, nh=r.h*k;
-  const nx = cx + (r.x + r.w/2 - cx)*k - nw/2;
-  const ny = r.anchor==='bottom' ? (r.y + r.h) - nh : (tf.h/2 + (r.y + r.h/2 - tf.h/2)*k - nh/2);
-  const out = Object.assign({}, r, { x:Math.round(nx), y:Math.round(ny), w:Math.round(nw), h:Math.round(nh) });
+  /* A FULL-BLEED band does not widen. Its job is to span the frame, and 1.15×
+     of "the whole frame" is 81px off each edge of a 1080 story — which put the
+     Reality banner's own padding off-canvas and cropped the mark block clean
+     off the right side of every story export that used it. Eight templates.
+     The band still grows vertically and its internal type still boosts; only
+     the horizontal span is pinned.
+     ink-bands carried a hand-written 9:16 override for exactly this, on each
+     of its five edge-to-edge elements. That override is now redundant rather
+     than load-bearing — the rule belongs here, not in one template. */
+  const full = r.x <= 0 && (r.x + r.w) >= tf.w;
+  const cx=tf.w/2, nw = full ? tf.w : r.w*k, nh=r.h*k;
+  const nx = full ? 0 : cx + (r.x + r.w/2 - cx)*k - nw/2;
+  /* Round the HEIGHT first, then derive y from the rounded value: computing
+     both from the unrounded number let a bottom-anchored band land a pixel
+     past the canvas foot (1609.5 + 310.5 rounding to 1610 + 311 = 1921). */
+  const H = Math.round(nh);
+  const ny = r.anchor==='bottom' ? (r.y + r.h) - H : (tf.h/2 + (r.y + r.h/2 - tf.h/2)*k - H/2);
+  const out = Object.assign({}, r, { x:Math.round(nx), y:Math.round(ny), w:Math.round(nw), h:H });
   if(typeof r.fontSize==='number') out.fontSize = Math.round(r.fontSize*k);
   out._boost = k;   // blocks with fixed internal type read this to scale their text in step
   return out;
@@ -1190,13 +1204,21 @@ const TEMPLATES = [
      is the small A-sheets, so switch to the A5/A6 HANDOUT view to print. The red
      rule + agenda heading follow the poster accent; the day chips are the pop. */
   { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'red',
-    ov:{ '1x1':{ ticket:{ hidden:true } } }, els:[
-    { type:'wordmark', x:90, y:90, w:472, h:77, p:{ surface:'none', color:'fg' } },
-    { type:'title', x:90, y:180, w:900, h:45, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.16 } },
-    { type:'block', x:90, y:234, w:900, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
-    { type:'info', x:90, y:270, w:900, h:135, p:{ surface:'none', align:'left', fontSize:24, lineHeight:1.4,
+    /* The square is not this sheet's format — its home is A4/A5/A6, and it
+       carries a masthead, an intro AND seven day-rows: 1350 of content mapped
+       into 1080. Something has to give, so the SQUARE drops the intro
+       paragraph and lifts the masthead into frame; the week is the payload and
+       it survives whole. Without this the wordmark lost 45 of its 77px off the
+       top edge — a beheaded logo — and the closing line fell off the foot. */
+    ov:{ '1x1':{ ticket:{ hidden:true }, intro:{ hidden:true },
+                 wm:{ y:45 }, strap:{ y:135 }, rule:{ y:189 },
+                 week:{ y:225, h:765 }, closer:{ y:1005 } } }, els:[
+    { type:'wordmark', k:'wm', x:90, y:90, w:472, h:77, p:{ surface:'none', color:'fg' } },
+    { type:'title', k:'strap', x:90, y:180, w:900, h:45, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.16 } },
+    { type:'block', k:'rule', x:90, y:234, w:900, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
+    { type:'info', k:'intro', x:90, y:270, w:900, h:135, p:{ surface:'none', align:'left', fontSize:24, lineHeight:1.4,
       text:'REALITY is a bar, café, and community space on three floors in Đà Nẵng — coffee, craft cocktails, and 30+ events a week. **Our mission: to become the easiest place in Đà Nẵng to make friends.** Everyone is welcome.' } },
-    { type:'agenda', x:90, y:450, w:900, h:765, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0, surface:'none', items:[
+    { type:'agenda', k:'week', x:90, y:450, w:900, h:765, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0, surface:'none', items:[
         {day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
         {day:'Tuesday',name:'Chess Night',time:'19:00',desc:'All skill levels — newbie to grandmaster — welcomed.'},
         {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture, for foreigners.'},
@@ -1204,7 +1226,7 @@ const TEMPLATES = [
         {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'},
         {day:'Saturday',name:'Women’s Circle',time:'13:00',desc:'A women-only space to talk honestly and meet each other.'},
         {day:'Sunday',name:'Pub Quiz',time:'20:00',desc:'Bring a team and weaponize your otherwise useless knowledge.'} ] } },
-    { type:'tagline', x:90, y:1215, w:900, h:45, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
+    { type:'tagline', k:'closer', x:90, y:1215, w:900, h:45, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
     /* conformance 22.08: the plain address tagline became the slim ticket —
        the brand carrier (wordmark + site + address + the canon short strip,
        mark absent = on) closes the sheet. Hidden on the square like the menu's

@@ -11,6 +11,26 @@ const MONT = "'Montserrat',sans-serif";
 const ALT  = "'Montserrat Alternates',sans-serif";
 const GROT = "'Space Grotesk',sans-serif";
 
+/* ---- FACT type — the 5+6 merge, in one place -------------------------
+   Canon (reality-ds.css .type-fact-far · decision M1 "family wins"):
+   Montserrat NAMES things, Space Grotesk STATES facts, and the family does
+   NOT change with the medium — at range only the size and weight rise
+   (500 → 700). Poster surfaces are FAR, so every fact here runs at 700.
+
+   Takes: times, prices, dates, room names, capacities, set times, the
+   day·time and cost chips. Does NOT take: event names, headings, host
+   names, taglines, buttons, eyebrows — those stay Montserrat.
+
+   Grotesk is never uppercased (M3), so nothing here sets text-transform;
+   tabular figures keep a column of times or prices in true alignment.
+   `letterSpacing` is 0 by definition — the optical ladder is Montserrat's,
+   derived from its wide geometric caps, and spraying it across Grotesk's
+   narrower lowercase is exactly what the merge forbids. */
+const FACT = (size, extra) => Object.assign({
+  fontFamily:GROT, fontWeight:700, letterSpacing:0, fontSize:size,
+  fontVariantNumeric:'tabular-nums'
+}, extra||{});
+
 /* riso image caches (shared across photo elements) */
 const _imgCache = new Map();
 const _sampleCache = {};
@@ -668,9 +688,19 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='when' || el.type==='cost'){
-    // The cost chip is the day·time chip's twin — same accent tag, price text.
+    /* The cost chip is the day·time chip's twin — same accent tag, price text.
+       Both are FACTS, so both are Space Grotesk (canon M1, "family wins over
+       distance"): the family never changes with the medium, only the size and
+       weight rise at range, which is why these sit at 700 rather than the
+       near-surface 500. Tabular figures keep a column of chips aligned.
+
+       They were tracked Montserrat caps at .16em — the label role — which is
+       the single most visible edit in the whole 5+6 merge. Caps are reserved
+       for things you press or things that label; a time is neither. Grotesk
+       is never uppercased (M3), so no text-transform: the chip renders the
+       string as typed, and "Thu · 19:00" is the house form. */
     inner = <div style={box(Object.assign({ alignItems:'center' }, sePad(el, 10)))}>
-      <div style={{ fontFamily:MONT, fontWeight:el.weight||700, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.16)+'em', fontSize:el.fontSize+'px', color:textCol, width:'100%' }}>{el.text}</div>
+      <div style={{ fontFamily:GROT, fontWeight:el.weight||700, letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0)+'em', fontSize:el.fontSize+'px', color:textCol, width:'100%', fontVariantNumeric:'tabular-nums' }}>{el.text}</div>
     </div>;
   }
   else if(el.type==='host'){
@@ -723,51 +753,97 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        to the band height. */
     const squareEl = (m)=> <TicketInkMark form="square-anchored" mode={markMode} m={m} grounded={false} theme={theme} />;
     const sqModule = (availH)=> Math.max(window.INK_MARK.floors.square, Math.floor(availH/4));
+    /* The flush square is sized off the QR's PATTERN, not its tile. A QR tile
+       is 25 data modules inside a 4-module quiet zone per side, so only ~76%
+       of the box it occupies is ink — match the boxes and the solid square
+       reads a third heavier than the code beside it. Measuring against the
+       pattern is also what the canon line means by "4 modules matching the
+       QR's rendered height": the two marks now read at one size, and the
+       quiet zone IS the gap between them, exactly as specified. */
     const qrBlock = (qs)=> (
       <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
         <SEQR size={qs} dark={surf.color} light={qrLight} />
-        {markOn && squareMark && squareEl(qs/4)}
+        {markOn && squareMark && squareEl(qs*window.QR_DATA_FRAC/4)}
       </div>
     );
     if(el.variant==='banner'){
-      // Full-width band — wordmark centred over the address. The serious,
-      // bookish bottom for talks. The trailing mark (strip, or a standalone
-      // square when no QR carries it) reserves its own width in the right
-      // padding so the centred column can never slide under it (padding stays
-      // ONE shorthand — the longhand/shorthand desync trap).
+      /* Full-width band — a stacked wordmark + site·address column on one
+         side, the mark block (QR, ink square, strip) on the other. The
+         serious, bookish bottom for talks.
+
+         ALIGNMENT is a real composition dial here, not just text-align: the
+         column follows `align` (banner default RIGHT — ticketAlignDef) and
+         the mark block takes the OPPOSITE edge, so the two can never collide
+         and the band reads the same at every setting. Centre keeps the column
+         centred with the mark trailing, which is how the banner always looked.
+
+         The QR used to sit INSIDE the column, below the address, at a fixed
+         92px — which made a QR banner a three-row stack and left the QR
+         visibly smaller than a standalone ink square on the same band. Both
+         marks now fill the band interior off the same expression, so a QR
+         banner and a square banner carry the same weight.
+
+         Whichever side it lands on, the mark block reserves its width in that
+         side's padding so the column can never slide under it — and the
+         padding stays ONE shorthand (the longhand/shorthand desync trap). */
       const tim = window.textInsetModel(el);
       const padL = tim.side==='left' ? tim.val : tim.def;
       const padR = tim.side==='right' ? tim.val : tim.def;
-      const stripOn = markOn && !squareMark;
+      const vPad = 30;
+      const bandH = Math.max(24, el.h - vPad*2);
+      /* one size for every mark on the band: the QR, the square flush beside
+         it, and a standalone square are all `4 × sqModule(bandH)`. */
+      const qs  = el.showQR ? 4*sqModule(bandH) : 0;
+      const stripOn  = markOn && !squareMark;
       const sqSideOn = markOn && squareMark && !el.showQR;
-      const bm = stripOn ? stripModule(el.h-60) : 0;
-      const sqm = sqSideOn ? sqModule(el.h-60) : 0;
-      const reserve = stripOn ? stripCols*bm+22 : sqSideOn ? 4*sqm+22 : 0;
-      const bannerPad = { padding:'30px '+(padR+reserve)+'px 30px '+padL+'px' };
+      const bm  = stripOn  ? stripModule(bandH) : 0;
+      const sqm = sqSideOn ? sqModule(bandH) : 0;
+      /* block width = strip (if forced) + QR + its flush square, or whichever
+         single mark is showing. The 14px gap matches the row variants'. */
+      const markW = (stripOn ? stripCols*bm : 0)
+                  + (el.showQR ? qs + (markOn && squareMark ? qs*window.QR_DATA_FRAC : 0) : 0)
+                  + (stripOn && el.showQR ? 14 : 0)
+                  + (sqSideOn ? 4*sqm : 0);
+      const reserve = markW ? markW + 26 : 0;
+      /* column right → mark left; column left or centred → mark right */
+      const markLeft = tim.align==='right';
+      const bannerPad = { padding: markLeft
+        ? vPad+'px '+padR+'px '+vPad+'px '+(padL+reserve)+'px'
+        : vPad+'px '+(padR+reserve)+'px '+vPad+'px '+padL+'px' };
+      const markBox = { position:'absolute', top:'50%', transform:'translateY(-50%)',
+        display:'flex', alignItems:'center', gap:14 };
+      markBox[markLeft?'left':'right'] = markLeft ? padL : padR;
       inner = <div style={box(Object.assign({ flexDirection:'column', alignItems:seColAlign(el), justifyContent:'center', gap:16 }, bannerPad))}>
         <WordmarkSVG height={64*B} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, color:textCol }}>
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, color:textCol, textAlign:tim.align }}>
           {el.site}{el.addr? <span style={{ fontWeight:600, opacity:.72 }}>{'  ·  '+el.addr}</span> : null}
         </div>
-        {el.showQR && <div style={{ flex:'none', marginTop:4 }}>{qrBlock(92*B)}</div>}
-        {(stripOn || sqSideOn) && <div style={{ position:'absolute', right:padR, top:'50%', transform:'translateY(-50%)' }}>
-          {stripOn ? stripEl(bm) : squareEl(sqm)}
+        {markW>0 && <div style={markBox}>
+          {stripOn ? stripEl(bm) : null}
+          {el.showQR ? qrBlock(qs) : (sqSideOn ? squareEl(sqm) : null)}
         </div>}
       </div>;
     } else {
       const wmH = (el.variant==='mini'?38 : el.variant==='slim'?44 : 50) * B;
       inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:22 }, sePad(el, 22)))}>
         <WordmarkSVG height={wmH} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.11em', fontSize:18*B, lineHeight:1.5, color:textCol }}>
+        {/* nowrap so the address stays ONE line. As a flex item with the default
+            min-width:auto, nowrap makes the string its own minimum — the row
+            gives up gap before it breaks "86 Mai Thúc Lân · Đà Nẵng" across two
+            lines, which is what happened once the QR grew to fill the band. */}
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.11em', fontSize:18*B, lineHeight:1.5, color:textCol, whiteSpace:'nowrap', textAlign:'center' }}>
           {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14*B, letterSpacing:'.06em' }}>{el.addr}</span> : null}
         </div>
+        {/* el.h-56 = the band interior (2×22 padding + borders) so a 4-module
+            mark never clips on the card edge. The QR fills that SAME interior
+            — it used to sit at a fixed 108px while a standalone square filled
+            the band, so the two marks read at different weights on an
+            identical ticket. One expression, one size. */}
         {el.showQR
           ? <div style={{ flex:'none', display:'flex', alignItems:'center', gap:14 }}>
               {markOn && !squareMark && stripEl(stripModule(el.h-44))}
-              {qrBlock(108*B)}
+              {qrBlock(4*sqModule(el.h-56))}
             </div>
-          /* standalone square: el.h-56 = the band interior (2×22 padding +
-             borders) so the 4-module square never clips on the card edge */
           : (markOn ? (squareMark ? squareEl(sqModule(el.h-56)) : stripEl(stripModule(el.h-44))) : null)}
       </div>;
     }
@@ -785,7 +861,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:(el.rowGap!=null?el.rowGap:7)+'px 0',
           fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase' }}>
           <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:(el.rowTracking!=null?el.rowTracking:0.01)+'em' }}>{it.n}</span>
-          <span style={{ fontSize:lpTime*B, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.t}</span>
+          {/* set time = fact → Grotesk; the artist name beside it stays Montserrat */}
+          <span style={FACT(lpTime*B, { textTransform:'none', opacity:.72 })}>{it.t}</span>
         </div>
       ))}
     </div>;
@@ -834,7 +911,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
               marginTop:Math.round(fs*0.26) }} /> : null}
             <div style={{ flex:'1 1 auto', minWidth:0 }}>
               <div style={{ fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase', fontSize:fs, lineHeight:1.0, letterSpacing:rowTr }}>{it.title}</div>
-              {(it.date||it.time||it.num) ? <div style={{ fontFamily:MONT, fontWeight:600, textTransform:'uppercase', fontSize:metaFs, letterSpacing:'.06em', opacity:.66, marginTop:Math.round(fs*0.1) }}>
+              {/* the whole meta line is facts — number, date, time → Grotesk.
+                  600 rather than the far-fact 700: it sits under a headline as
+                  supporting detail, and the row above already carries weight. */}
+              {(it.date||it.time||it.num) ? <div style={FACT(metaFs, { fontWeight:600, textTransform:'none', opacity:.66, marginTop:Math.round(fs*0.1) })}>
                 {[it.num, it.date, it.time].filter(Boolean).join('  ·  ')}</div> : null}
             </div>
           </div>
@@ -853,9 +933,11 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
             borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:rowGap+'px 0',
             fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }}>
-            {it.num ? <span style={{ flex:'none', fontSize:sub, color:accentHex, letterSpacing:'.08em' }}>{it.num}</span> : null}
+            {/* the row inherits Montserrat caps for the TITLE (a name); the
+                number and the date are facts and opt out into Grotesk. */}
+            {it.num ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', color:accentHex })}>{it.num}</span> : null}
             <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:rowTr }}>{it.title}</span>
-            {it.date ? <span style={{ flex:'none', fontSize:sub, fontWeight:600, letterSpacing:'.06em', opacity:.72 }}>{it.date}</span> : null}
+            {it.date ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', opacity:.72 })}>{it.date}</span> : null}
           </div>
         ))}
         {!items.length && !exporting &&
@@ -873,7 +955,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:(el.rowGap!=null?el.rowGap:5)+'px 0',
           borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:spBase*B, letterSpacing:(el.rowTracking!=null?el.rowTracking:0.03)+'em' }}>
-          <span>{it.l}</span><span style={{ fontWeight:800 }}>{it.p}</span>
+          {/* label is a name, price is a fact — the row carries both families */}
+          <span>{it.l}</span><span style={FACT(spBase*B, { textTransform:'none' })}>{it.p}</span>
         </div>
       ))}
     </div>;
@@ -912,7 +995,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           <div style={{ flex:'1 1 auto', minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'baseline', gap:Math.round(10*B), flexWrap:'wrap' }}>
               <span style={{ fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:nameFs, letterSpacing:rowTr, lineHeight:1.04 }}>{it.name}</span>
-              {it.time?<span style={{ fontFamily:MONT, fontWeight:700, fontSize:Math.round(nameFs*0.78), color:col, letterSpacing:'.04em' }}>{it.time}</span>:null}
+              {/* the day's time = fact → Grotesk; the event name keeps Montserrat */}
+              {it.time?<span style={FACT(Math.round(nameFs*0.78), { color:col })}>{it.time}</span>:null}
             </div>
             {it.desc?<div style={{ fontFamily:GROT, fontWeight:400, fontSize:descFs, lineHeight:1.3, opacity:.72, marginTop:Math.round(3*B) }}>{it.desc}</div>:null}
           </div>
@@ -923,8 +1007,16 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='qr'){
-    inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, 16)))}>
-      {el.showQR && <SEQR size={Math.min(el.h-32, el.w*0.42)} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}
+    /* The QR FILLS the box interior (height minus the 16px padding pair),
+       rounded down to a 4-module multiple so it lands at exactly the size a
+       canon ink square would — the same `4 × floor(interior/4)` the ticket's
+       square uses. It used to carry a `w*0.42` cap on top of that, which
+       silently shrank it on any box narrower than ~2.4:1 and left it smaller
+       than the square it sits next to. Drag the box to size the code. */
+    const qrPad = 16;
+    const qrFill = Math.max(24, 4*Math.floor((el.h - qrPad*2)/4));
+    inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, qrPad)))}>
+      {el.showQR && <SEQR size={qrFill} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.04em', lineHeight:1.15 }}>
         <div style={{ fontSize:18*B }}>{el.label}</div>
         <div style={{ fontSize:12*B, color:accentHex, letterSpacing:'.12em', marginTop:5 }}>{el.site}</div>
@@ -944,10 +1036,14 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     </div>;
   }
   else if(el.type==='weekly'){
-    /* accent bar (price left · time right) with a white day-badge on top */
+    /* accent bar (price left · time right) with a white day-badge on top.
+       The bar text goes through window.contrastInk like every other accent
+       fill in the Studio — it used to carry its OWN naive-luminance rule at a
+       0.6 threshold, which put cream on blue and green where canon says ink,
+       so a Weekly bar and a When chip on the same accent disagreed. One rule,
+       one answer; el.textColor still overrides. */
     const accent = accentHex, ink='#0d0905', cream='#fffbf1';
-    const lum = (function(h){ if(!h||h[0]!=='#'||h.length<7) return 0.5; var r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255; return 0.2126*r+0.7152*g+0.0722*b; })(accent);
-    const barText = lum < 0.6 ? cream : ink;          // cream on saturated accents, dark on yellow/amber
+    const barText = el.textColor!=null ? textCol : window.contrastInk(accent);
     const H=el.h, barH=Math.round(H*0.6), badgeD=H, pad=Math.round(el.w*0.05);
     /* fonts derive from el.h (which boostForStory already scales per format), so
        they must NOT also multiply by B — that would scale the text twice. */
@@ -956,8 +1052,11 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     inner = <div style={{ position:'relative', width:'100%', height:'100%', boxSizing:'border-box' }}>
       <div style={{ position:'absolute', left:0, right:0, top:(H-barH)/2, height:barH, background:accent, boxShadow: sh?sh.css:'none',
         display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 '+pad+'px', boxSizing:'border-box' }}>
-        <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:barText, fontSize:barF, letterSpacing:'.08em' }}>{el.price}</span>
-        <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:barText, fontSize:barF, letterSpacing:'.08em' }}>{el.time}</span>
+        {/* price + time = facts → Grotesk. The day badge above keeps the
+            wordmark's Alternates and the EVERY / ALL YEAR labels keep
+            Montserrat caps: those are labels, not facts. */}
+        <span style={FACT(barF, { color:barText })}>{el.price}</span>
+        <span style={FACT(barF, { color:barText })}>{el.time}</span>
       </div>
       <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
         width:badgeD, height:badgeD, borderRadius:'50%', background:cream, border:Math.max(2,Math.round(badgeD*0.018))+'px solid '+ink, boxShadow: sh?sh.css:'none', boxSizing:'border-box',
@@ -989,7 +1088,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:window.contrastInk(accentHex), letterSpacing:'.02em' }}>{el.vs||'VS'}</span>
       </div>
       <div style={team}>{el.teamB}</div>
-      {(el.date||el.time) ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:dtF, color:textCol, marginTop:gap }}>
+      {/* kickoff date · time = facts → Grotesk; the team names stay Montserrat */}
+      {(el.date||el.time) ? <div style={FACT(dtF, { color:textCol, marginTop:gap })}>
         {el.date}{el.date&&el.time? <span style={{ color:accentHex }}>{'  ·  '}</span> : null}{el.time}</div> : null}
     </div>;
   }

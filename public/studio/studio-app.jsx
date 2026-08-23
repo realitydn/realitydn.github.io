@@ -19,12 +19,16 @@ function starterDoc(){
     activeFormat:'master', masterFormat:'4x5',
     theme:'night', accent:'pink', showGrid:true, snap:true, overrides:{},
     title:'', exportFormat:'png', storyBoost:true, storyScale:1.15,
+    /* The empty-Studio demo, re-cut onto the 90/45 frame (23.08) — it used to
+       sit on 80/96/150/280/1014, none of which Snap could reach, so the first
+       thing anyone dragged jumped. Text still overlaps the photo on purpose;
+       every edge is just a multiple of the step now. */
     elements:[
-      Object.assign(apMake('photo', 80, 96), { w:920, h:700, treatment:'duotone', frame:false }),
-      apMake('when', 360, 280),
-      Object.assign(apMake('title', 150, 388), { text:'Pulse\nSessions', color:'fg' }),
-      Object.assign(apMake('host', 280, 720), { kicker:'On the decks', name:'DJ Milk' }),
-      apMake('ticket', 80, 1014),
+      Object.assign(apMake('photo', 90, 90), { w:900, h:900, treatment:'duotone', frame:false }),
+      apMake('when', 360, 270),
+      Object.assign(apMake('title', 135, 405), { text:'Pulse\nSessions', color:'fg' }),
+      Object.assign(apMake('host', 270, 720), { kicker:'On the decks', name:'DJ Milk' }),
+      apMake('ticket', 90, 1125),
     ]
   };
 }
@@ -206,8 +210,10 @@ const TYPE_CAPS = {
   title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, lineHeight:{ def:0.84, min:0.7, max:1.5 }, subtitle:true, surface:true, shadow:true },
   tagline:  { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, orient:true, surface:true, shadow:true },
   info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:{ def:1.4, min:1, max:2 }, surface:true, shadow:true },
-  when:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
-  cost:     { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
+  /* when + cost are FACT chips — Space Grotesk (canon M1), so their weight
+     picker is the Grotesk set, not Montserrat's. */
+  when:     { text:true, font:'grot', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
+  cost:     { text:true, font:'grot', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
   ticket:   { align:true, surface:true, shadow:true },
@@ -218,7 +224,9 @@ const TYPE_CAPS = {
   agenda:   { list:true, rowSize:true, align:true, surface:true, shadow:true },
   badge:    { align:true, surface:true, shadow:true },
   wordmark: { surface:true, shadow:true },
-  weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true },
+  /* weekly owns its accent bar, so it takes textColor WITHOUT surface — the
+     bar text needs the same Auto/override swatch every accent fill gets. */
+  weekly:   { fillOwn:true, shadow:true, height:true, widthPreset:true, textColor:true },
   matchup:  { align:true, surface:true, shadow:true },
   block:    { fillOwn:true, shadow:true },
   /* ink mark — fixed canon palette: no surface, no fill, no shadow (the spec
@@ -236,8 +244,11 @@ const TYPE_CAPS = {
 const ROW_SIZES = [{v:0,l:'Auto fit'},{v:16,l:'S'},{v:21,l:'M'},{v:26,l:'L'}];
 /* Shared height vocabulary for chip/tag-shaped elements (when · stamp · weekly)
    so a Weekly tag and a When chip can be dialled to the SAME height and sit in a
-   row at uniform height — no more delicate per-element resizing. */
-const TAG_HEIGHTS = [{v:84,l:'S'},{v:120,l:'M'},{v:162,l:'L'},{v:220,l:'XL'}];
+   row at uniform height — no more delicate per-element resizing.
+   Rungs are MODULE multiples (1 · 1.5 · 2 · 2.5) rather than the old
+   84/120/162/220, so a tag set from this list already sits on the grid and
+   Snap doesn't shift it the moment you drag it. */
+const TAG_HEIGHTS = [{v:90,l:'S'},{v:135,l:'M'},{v:180,l:'L'},{v:225,l:'XL'}];
 
 /* One shadow control for every element. Defaults + slider ranges come from the
    shared window.shadowModel, so what you see matches what renders, and a brand
@@ -267,12 +278,21 @@ function ShadowControls({ el, update, theme }){
   );
 }
 /* Reality-ticket formats — picked from the details panel (not separate
-   sidebar items). Each sets the size + what's shown; content is preserved. */
+   sidebar items). Each sets the size + what's shown; content is preserved.
+
+   The BANNER is the full-width closing band and the poster's brand carrier,
+   so it comes up complete: QR shown, the canon ink SQUARE in FULL ink, and
+   the column aligned right with the mark block opposite (see the banner
+   renderer). markForm is pinned to 'square' rather than left on 'auto' so
+   the square survives the QR being switched off — 'auto' only picks the
+   square *because* a QR is there. The two slim variants stay bare; they
+   exist for sheets that already carry a ticket elsewhere. */
 const TICKET_FORMATS = {
-  banner:   { variant:'banner',   x:0, w:1080, h:270, surface:'paper', showQR:false },
-  standard: { variant:'standard',      w:920,  h:200, surface:'paper', showQR:true  },
-  slim:     { variant:'slim',          w:680,  h:120, surface:'paper', showQR:false },
-  mini:     { variant:'mini',          w:480,  h:92,  surface:'paper', showQR:false },
+  banner:   { variant:'banner',   x:0, w:1080, h:270, surface:'paper', showQR:true,
+              align:'right', mark:'on', markForm:'square', markMode:'full' },
+  standard: { variant:'standard',      w:900,  h:180, surface:'paper', showQR:true  },
+  slim:     { variant:'slim',          w:675,  h:135, surface:'paper', showQR:false },
+  mini:     { variant:'mini',          w:450,  h:90,  surface:'paper', showQR:false },
 };
 
 /* ---------- photo helpers ---------- */
@@ -849,21 +869,28 @@ function PhotoControls({ el, update, theme }){
         </React.Fragment>}
         <Chips label="Frame" options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
         {el.type==='logo' && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>The whole logo always shows (contain). Zoom <b>below 1×</b> for more paper space around it.</div>}
-        {/* MASK — the same shape registry the Shape element draws from, applied
-            as the photo's silhouette. Ink border follows the mask, and so does
-            the shadow, so a circle photo casts a circle shadow. */}
-        {el.type==='photo' && <React.Fragment>
-          <div className="rs-sech">Mask</div>
-          <GfxGrid type="shape" prop="kind" value={el.mask||'none'} onPick={v=>update({mask:v})}
-            items={AP_MASKS.map(k=> k==='none' ? { k:'none', l:'None' } : { k, l:AP_SHAPELAB[k]||k })} />
-          {(el.mask&&el.mask!=='none') && <div className="rs-mini" style={{ margin:'4px 0 12px' }}>Cut from the same shape set as the graphics library — pan/zoom below to re-frame inside it.</div>}
-        </React.Fragment>}
         <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
         <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
         <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
         <Slider label="Rotate" val={el.imgRot!=null?el.imgRot:0} min={-180} max={180} step={1} onChange={v=>update({imgRot:v})} suffix="°" />
         <button className="rs-addrow" onClick={()=>update({imgScale:1, imgX:0, imgY:0, imgRot:0})}>↺ Reset image</button>
       </Fold>
+
+      {/* MASK — the same shape registry the Shape element draws from, applied
+          as the photo's silhouette. Ink border follows the mask, and so does
+          the shadow, so a circle photo casts a circle shadow.
+
+          Its own fold, CLOSED by default. Eighteen shape tiles was the tallest
+          block in the panel and it sat INSIDE "Frame & placement", pushing
+          Zoom / Pan / Rotate off-screen on every photo — and most photos never
+          take a mask. The head badge names the active mask, so a set one is
+          never hidden by the collapse. */}
+      {el.type==='photo' && <Fold id="ph-mask" title="Mask"
+        badge={(el.mask&&el.mask!=='none') ? (AP_SHAPELAB[el.mask]||el.mask) : null}>
+        <GfxGrid type="shape" prop="kind" value={el.mask||'none'} onPick={v=>update({mask:v})}
+          items={AP_MASKS.map(k=> k==='none' ? { k:'none', l:'None' } : { k, l:AP_SHAPELAB[k]||k })} />
+        {(el.mask&&el.mask!=='none') && <div className="rs-mini" style={{ margin:'4px 0 12px' }}>Cut from the same shape set as the graphics library — pan/zoom in <b>Frame &amp; placement</b> to re-frame inside it.</div>}
+      </Fold>}
     </React.Fragment>
   );
 }
@@ -1334,7 +1361,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {caps.size && <ScaleControl label={sizeLabel} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
       {caps.sizePreset && <Chips label="Size preset" options={[{v:'lg',l:'Large'},{v:'md',l:'Medium'},{v:'sm',l:'Small'}]}
         value={el.fontSize>=40?'lg':el.fontSize>=30?'md':'sm'}
-        onChange={v=>update(v==='lg'?{fontSize:46,h:170}:v==='md'?{fontSize:32,h:120}:{fontSize:26,h:84})} />}
+        onChange={v=>update(v==='lg'?{fontSize:46,h:180}:v==='md'?{fontSize:32,h:135}:{fontSize:26,h:90})} />}
       {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
       {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
       {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
@@ -1347,8 +1374,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           onChange={v=>update({textInset:v})} suffix="px" />}
       {caps.align && caps.list && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Aligns the heading and row text. Two-column rows (name · time) keep their columns — that spread is the layout.</div>}
       {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
-      {caps.surface && !caps.list && <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
-        onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />}
+      {(caps.surface || caps.textColor) && !caps.list && <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':el.type==='weekly'?'Bar text colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
+        onChange={v=>update({textColor:v})} autoTitle="Auto — the readable neutral for this fill (ink, or cream on purple)" />}
 
       {/* ===================== SUBTEXT ===================== */}
       {caps.subtitle && <React.Fragment>
@@ -1916,8 +1943,10 @@ function App(){
     const built = apBuildTpl(tpl);
     const di = feedDayIdx(ev.startsAt);
     const accent = di!=null ? AP_ABYDAY[di] : built.accent;
-    /* weekly series read "THU · 19:00"; one-offs pin the date: "THU 9.7 · 19:00" */
-    const when = ((di!=null?AP_DABBR[di].toUpperCase():'')
+    /* weekly series read "Thu · 19:00"; one-offs pin the date: "Thu 9.7 · 19:00".
+       Sentence case, not caps: the chip is a FACT and renders in Grotesk, which
+       is never uppercased (canon M3) — AP_DABBR is already in the house form. */
+    const when = ((di!=null?AP_DABBR[di]:'')
       + (ev.seriesId ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
     /* Fill every box the feed can populate: the day·time chip, the host credit,
        and the price chip. Host keeps the template placeholder when the event has
@@ -1925,7 +1954,7 @@ function App(){
        cost means free — matching the app's own event page). */
     built.elements.forEach(el=>{
       if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); }
-      if(el.type==='when'){ el.text = when; el.w = 460; }
+      if(el.type==='when'){ el.text = when; el.w = 450; }
       if(el.type==='host' && ev.host){ el.name = ev.host; }
       if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
     });

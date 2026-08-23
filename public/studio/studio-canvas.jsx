@@ -183,8 +183,24 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
 
         {/* Grid + safe-zone guides sit ABOVE the artwork (incl. photos) so they
             actually guide placement over imagery; never captured in exports. */}
-        {showGrid && !exporting && <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:40,
-          backgroundImage:`repeating-linear-gradient(to right, ${t.shadow(.28)} 0 1px, transparent 1px ${SC_MOD}px), repeating-linear-gradient(to bottom, ${t.shadow(.28)} 0 1px, transparent 1px ${SC_MOD}px)` }} />}
+        {/* The grid, drawn in three weights so the armature is legible rather
+            than a flat mesh: faint MODULE lines, a stronger one-module MARGIN
+            frame (x 90 / 990 — the Swiss line every template sits on), and the
+            canvas CENTRE cross. At MODULE 90 the master tiles exactly (12×15
+            on 4:5, 12×12 on 1:1) and every one of these lines is a multiple of
+            STEP, so Snap can actually reach them — which it could not at 108.
+            On 9:16 and A4 the last row is a genuine partial; it's drawn as it
+            falls rather than faked. */}
+        {showGrid && !exporting && <React.Fragment>
+          <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:40,
+            backgroundImage:`repeating-linear-gradient(to right, ${t.shadow(.24)} 0 1px, transparent 1px ${SC_MOD}px), repeating-linear-gradient(to bottom, ${t.shadow(.24)} 0 1px, transparent 1px ${SC_MOD}px)` }} />
+          <div style={{ position:'absolute', left:SC_MOD, top:SC_MOD, width:f.w-SC_MOD*2, height:f.h-SC_MOD*2,
+            border:`1px solid ${t.shadow(.5)}`, pointerEvents:'none', zIndex:40 }} />
+          <div style={{ position:'absolute', left:f.w/2, top:0, width:1, height:f.h,
+            background:t.shadow(.34), pointerEvents:'none', zIndex:40 }} />
+          <div style={{ position:'absolute', top:f.h/2, left:0, height:1, width:f.w,
+            background:t.shadow(.34), pointerEvents:'none', zIndex:40 }} />
+        </React.Fragment>}
         {/* Safe-zone guide — deliberately NOT the accent (it has to read over a
             full-bleed photo or an accent fill): a dashed cream stroke sandwiched
             by a 1px ink outline so it stays legible on light, dark, or busy art. */}

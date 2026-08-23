@@ -10,7 +10,9 @@ const { INK:R_INK, CREAM:R_CREAM, WHITE:R_WHITE, MONT:R_MONT, ALT:R_ALT, GROT:R_
         LOCATIONS:R_LOCS, FLAGS:R_FLAGS, rangeDates:r_rangeDates, rangeLabel:r_rangeLabel,
         dWeekday:r_wd, dShort:r_dshort, eventsOn:r_eventsOn, dayInfo:r_dayInfo,
         timeLabel:r_timeLabel, usedLegend:r_usedLegend, partDates:r_partDates,
-        Wordmark:RWordmark, SchQR:RQR } = window;
+        Wordmark:RWordmark, SchQR:RQR, SchInkMark:RInkMark, QR_DATA_FRAC:R_QR_FRAC,
+        INK_MARK:R_INK_MARK,
+        QR_HOST:R_QR_HOST, QR_LABEL:R_QR_LABEL, QR_LABEL_SHORT:R_QR_LABEL_SHORT } = window;
 
 /* ---- stylings — Year 2 token sets. Each renderer reads these generically, so a
    styling skins every output at once. Print always falls back to day-on-white. ---- */
@@ -194,20 +196,29 @@ function footerEstimate(doc, channel, legend, denIdx){
   const hasLegend = legend.locations.length || legend.flags.length;
   const support = doc.footer.supportNote;
   /* lean optimistic — the rendered DOM is measured and bumps if this is short */
-  if(channel==='wa') return 18 + (denIdx===0 ? 44 : 36);   /* single-row footer */
+  /* wa: single-row footer. denIdx 0 now carries a 62px code + its caption, so
+     the row is the code's height rather than the text's. */
+  if(channel==='wa') return 18 + (denIdx===0 ? 84 : 36);
   let h = g.footPad || 20;
+  let col = 0;                       /* the centred stack's own height */
   if(denIdx===0){
-    if(hasLegend) h += Math.max(legend.locations.length, legend.flags.length||1)*28*s + 14;
-    if(support) h += 118*s;
-    h += 52*s;
+    if(hasLegend) col += Math.max(legend.locations.length, legend.flags.length||1)*28*s + 14;
+    if(support) col += 118*s;
+    col += 52*s;
   } else if(denIdx===1){
-    if(hasLegend) h += 28*s;
-    if(support) h += 50*s;
-    h += 38*s;
+    if(hasLegend) col += 28*s;
+    if(support) col += 50*s;
+    col += 38*s;
   } else {
-    h += (hasLegend?24:0)*s + 28*s;
+    col += (hasLegend?24:0)*s + 28*s;
   }
-  return h;
+  /* The QR rides BESIDE that stack, so it only costs height on a footer whose
+     stack is shorter than the code — e.g. a week with no legend and the
+     support note switched off. max(), not +, is the whole point of putting it
+     in the margin. */
+  const qs = (CAROUSEL_QR[denIdx]||0) * s;
+  const qrH = qs ? qs + 8 + 14*s : 0;
+  return h + Math.max(col, qrH);
 }
 
 /* ---- surface fit: ladder levels then footer densities ---- */
@@ -519,8 +530,23 @@ function HeaderFull({ doc, channel }){
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div>
           <RWordmark tight height={54*s} color={T.fg} />
-          <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:15*s, letterSpacing:'.3em',
-            color:T.dim, marginTop:12*s, textTransform:'uppercase' }}>ĐÀ NẴNG</div>
+          <div style={{ display:'flex', alignItems:'center', gap:14*s, marginTop:12*s }}>
+            <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:15*s, letterSpacing:'.3em',
+              color:T.dim, textTransform:'uppercase' }}>ĐÀ NẴNG</div>
+            {/* The placed mark: the canon 7×2 short strip on the masthead, bare
+                (no ground — the sheet is already stock). ONE placed mark per
+                surface, so this is the only one; the square riding the footer
+                QR is that footer's own fixture, not a second mark.
+
+                Module is a fraction of the WORDMARK's height, not of the ĐÀ
+                NẴNG line beside it. Pinned to the eyebrow's cap height it came
+                out 49×14 on a 1080px feed card — technically present, visually
+                a speck. The wordmark is what sets the masthead's scale, so the
+                mark is measured against that: ~26px tall on the feed, ~30 on a
+                story, and it actually reads. */}
+            <RInkMark form="strip-short-h" mode="full"
+              m={Math.max(R_INK_MARK.floors.short, Math.round(54*s*0.24))} />
+          </div>
         </div>
         <div style={{ textAlign:'right', display:'flex', flexDirection:'column', alignItems:'flex-end', gap:12*s }}>
           <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:27*s, letterSpacing:'.14em',
@@ -718,7 +744,7 @@ function GridMetaCell({ doc, channel, level, legend }){
           <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.7, color:T.dim, marginTop:6, lineHeight:1.4 }}>
             realitydn.com<br/>86 Mai Thúc Lân, Đà Nẵng</div>
         </div>
-        <RQR size={font*3.4} dark={R_INK} light={R_CREAM} />
+        <QRBlock size={font*3.4} align="flex-end" />
       </div>
     </div>
   );
@@ -797,12 +823,60 @@ function SupportNote({ text, font, maxW, plain }){
       fontFamily:R_GROT, fontWeight:500, fontSize:font, lineHeight:1.5, color:T.fg, textAlign:'center' }}>{text}</div>
   );
 }
+/* nowrap: the footer is a flex row, and once the QR block gained its caption
+   the address started breaking after "ĐÀ". As a flex item with the default
+   min-width:auto, nowrap makes the string its own minimum, so the row gives up
+   gap instead of splitting the address. */
 function MetaLine({ font }){
   const T = React.useContext(ThemeCtx);
   return (
     <div style={{ fontFamily:R_MONT, fontWeight:600, fontSize:font, letterSpacing:'.07em',
-      textTransform:'uppercase', color:T.fg }}>
+      textTransform:'uppercase', color:T.fg, whiteSpace:'nowrap' }}>
       realitydn.com<span style={{ fontWeight:500, opacity:.72 }}>{' · '}86 Mai Thúc Lân, Đà Nẵng</span>
+    </div>
+  );
+}
+/* The QR and its caption. The code targets app.realitydn.com — a weekly
+   listing's natural partner is the LIVE version of itself, where every event
+   has a detail page and a printed sheet from Monday still resolves to
+   Thursday's changes — so it earns a word telling people what they get.
+
+   The caption is sized to the block rather than fixed, because this code turns
+   up in footers ranging from a story card to a stamp-sized grid cell: the full
+   sentence under a large code, the short form under a middling one, and
+   nothing at all below ~52px, where any caption would be sub-legible and the
+   bare code reads better than a smudge. Pass label={false} to force it off. */
+function QRBlock({ size, label, align, boxW }){
+  const T = React.useContext(ThemeCtx);
+  const txt = label===false ? null
+            : size >= 76 ? (label || R_QR_LABEL)
+            : size >= 52 ? R_QR_LABEL_SHORT
+            : null;
+  const ta = align==='flex-end' ? 'right' : align==='flex-start' ? 'left' : 'center';
+  /* boxW pins the block to a known width so a caller can reserve exactly that
+     much elsewhere — the carousel footer puts an invisible spacer of the same
+     width on the opposite side, which keeps its centred column optically
+     centred while the QR rides the margin. */
+  const w = boxW || null;
+  /* The canon square rides the QR — the poster's footer rule, applied here:
+     square-anchored (its ink cell takes the outer corner, so it needs no
+     ground on any substrate), butted FLUSH against the code with no rule
+     between, because the QR's own quiet zone IS the gap. Module = the QR's
+     PATTERN height / 4, not its tile height, so the two marks read at one
+     size. Dropped below the caption floor, where 4 modules would fall under
+     the 6px cell floor and print as mud. */
+  const sqM = size*R_QR_FRAC/4;
+  const sq = sqM >= R_INK_MARK.floors.square;
+  return (
+    <div style={{ flex:'none', width:w, display:'flex', flexDirection:'column',
+      alignItems:align||'center', gap:Math.round(size*0.07) }}>
+      <div style={{ display:'flex', alignItems:'center' }}>
+        <RQR size={size} dark={R_INK} light={R_CREAM} />
+        {sq ? <RInkMark form="square-anchored" mode="full" m={sqM} /> : null}
+      </div>
+      {txt ? <div style={{ fontFamily:R_GROT, fontWeight:600,
+        fontSize:Math.max(8.5, Math.round(size*0.115)), lineHeight:1.25, color:T.dim,
+        maxWidth:w || size*1.9, textAlign:ta }}>{txt}</div> : null}
     </div>
   );
 }
@@ -821,24 +895,49 @@ function ArrowChip({ dir, size }){
   );
 }
 /* final-part footer at a given density */
+/* Width the QR block reserves in a carousel footer, at each density. The same
+   number is used for the invisible spacer opposite it, so the centred column
+   stays centred. Density 2 (minimal) gets NO code: that density exists for the
+   weeks where nothing fits, and it is the one place a QR would cost height
+   rather than ride space the footer already has. */
+const CAROUSEL_QR = { 0:112, 1:80, 2:0 };
 function CarouselFooter({ doc, channel, legend, denIdx }){
   const T = React.useContext(ThemeCtx);
   const g = GEOM[channel];
   const s = g.fs || 1;
+  /* The QR sits in the footer's left/right MARGIN, beside the centred stack,
+     not beneath it — so on a feed card it adds no height at all: the support
+     note and meta line are already taller than the code. Feed and Stories had
+     no QR whatsoever before this; only the A4 print sheet carried one, which
+     meant the app link never reached the three social channels. */
+  const qs = Math.round((CAROUSEL_QR[denIdx]||0) * s);
+  const qrW = qs ? Math.round(qs*1.5) : 0;
+  const withQR = (stack) => qs
+    ? <div style={{ display:'flex', alignItems:'center', gap:16*s, width:'100%' }}>
+        <div style={{ width:qrW, flex:'none' }} aria-hidden="true" />
+        <div style={{ flex:'1 1 auto', minWidth:0, display:'flex', flexDirection:'column',
+          gap:stack.gap, alignItems:'center' }}>{stack.children}</div>
+        <QRBlock size={qs} boxW={qrW} />
+      </div>
+    : <div style={{ display:'flex', flexDirection:'column', gap:stack.gap, alignItems:'center' }}>{stack.children}</div>;
   if(denIdx===0) return (
     <div style={{ flex:'none', borderTop:'3px solid '+T.fg, marginTop:g.footPad*0.5, paddingTop:g.footPad,
-      display:'flex', flexDirection:'column', gap:20*s, alignItems:'center' }}>
-      <LegendBlock legend={legend} font={18*s} />
-      {doc.footer.supportNote && <SupportNote text={doc.footer.supportText} font={18*s} maxW={(channelById(channel).w-g.pad*2)*0.8} />}
-      <MetaLine font={17*s} />
+      display:'flex', flexDirection:'column', alignItems:'center' }}>
+      {withQR({ gap:20*s, children:<React.Fragment>
+        <LegendBlock legend={legend} font={18*s} />
+        {doc.footer.supportNote && <SupportNote text={doc.footer.supportText} font={18*s} maxW={(channelById(channel).w-g.pad*2-qrW*2)*0.86} />}
+        <MetaLine font={17*s} />
+      </React.Fragment> })}
     </div>
   );
   if(denIdx===1) return (
     <div style={{ flex:'none', borderTop:'3px solid '+T.fg, marginTop:g.footPad*0.4, paddingTop:g.footPad*0.7,
-      display:'flex', flexDirection:'column', gap:12*s, alignItems:'center' }}>
-      <LegendLine legend={legend} font={15*s} />
-      {doc.footer.supportNote && <SupportNote plain text={doc.footer.supportText} font={14*s} maxW={(channelById(channel).w-g.pad*2)*0.9} />}
-      <MetaLine font={16*s} />
+      display:'flex', flexDirection:'column', alignItems:'center' }}>
+      {withQR({ gap:12*s, children:<React.Fragment>
+        <LegendLine legend={legend} font={15*s} />
+        {doc.footer.supportNote && <SupportNote plain text={doc.footer.supportText} font={14*s} maxW={(channelById(channel).w-g.pad*2-qrW*2)*0.92} />}
+        <MetaLine font={16*s} />
+      </React.Fragment> })}
     </div>
   );
   return (
@@ -956,7 +1055,7 @@ function PrintFooter({ doc, legend, denIdx, T }){
         <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:11, color:T.dim, marginTop:6, lineHeight:1.45 }}>
           realitydn.com<br/>86 Mai Thúc Lân, Đà Nẵng</div>
       </div>
-      <RQR size={86} dark={R_INK} light={R_CREAM} />
+      <QRBlock size={86} />
     </div>
   );
   if(denIdx===1) return (
@@ -967,7 +1066,7 @@ function PrintFooter({ doc, legend, denIdx, T }){
         wifi: {doc.footer.wifiName} · pass: {doc.footer.wifiPass}</div>}
       <div style={{ flex:1 }} />
       <MetaLine font={10.5} />
-      <RQR size={56} dark={R_INK} light={R_CREAM} />
+      <QRBlock size={56} />
     </div>
   );
   return (
@@ -1070,11 +1169,16 @@ function WACard({ doc, onFitReport }){
               </div>}
         </div>
         {look!=='grid' &&
+          /* The 1:1 card is the tightest channel we have, so its code is the
+             smallest one that still scans reliably at arm's length, and it
+             drops off entirely at the compact density rather than squeezing
+             the two columns above it. */
           (denIdx===0
             ? <div style={{ flex:'none', borderTop:'3px solid '+T.fg, paddingTop:13,
                 display:'flex', justifyContent:'space-between', alignItems:'center', gap:20 }}>
                 <LegendLine legend={legend} font={15} />
                 <MetaLine font={14.5} />
+                <QRBlock size={62} />
               </div>
             : <div style={{ flex:'none', borderTop:'3px solid '+T.fg, paddingTop:10,
                 display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
@@ -1179,7 +1283,7 @@ function DailyCard({ doc, date, variant }){
             <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:story?22:19, color:T.dim,
               marginTop:12, lineHeight:1.5 }}>86 Mai Thúc Lân, Đà Nẵng · realitydn.com</div>
           </div>
-          <RQR size={story?128:104} dark={R_INK} light={R_CREAM} />
+          <QRBlock size={story?128:104} />
         </div>
       </div>
     </ThemeCtx.Provider>

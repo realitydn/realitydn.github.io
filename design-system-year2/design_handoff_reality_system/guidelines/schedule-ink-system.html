@@ -1,0 +1,358 @@
+<!-- @dsCard group="Decisions" name="Schedule Studio — the Ink pass" subtitle="Five calls to put the Year-2 ink system into the weekly schedule, measured against a real 38-event week" viewport="1100x6200" -->
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REALITY — Schedule Ink System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="decisions.css">
+<style>
+/* ---- capacity table ---- */
+table.cap{width:100%;border-collapse:collapse;font-family:var(--grotesk);font-size:12.5px;font-variant-numeric:tabular-nums}
+table.cap th{font-family:var(--mont);font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:8.5px;color:var(--fg-faint);text-align:left;padding:0 10px 8px 0;border-bottom:2px solid var(--fg)}
+table.cap td{padding:7px 10px 7px 0;border-bottom:1px solid var(--hairline);color:var(--fg-dim)}
+table.cap td.k{font-family:var(--mont);font-weight:700;font-size:11px;color:var(--fg);white-space:nowrap}
+table.cap tr:last-child td{border-bottom:none}
+table.cap tr.band td{background:var(--surface-2)}
+.st{font-family:var(--mont);font-weight:700;font-size:8px;letter-spacing:.1em;text-transform:uppercase;border:2px solid var(--fg);padding:2px 5px;display:inline-block;white-space:nowrap}
+.s-ok{background:var(--green);color:#0d0905}
+.s-tight{background:var(--amber);color:#0d0905}
+.s-over{background:var(--red);color:#fffbf1}
+
+/* ---- schedule mock: one shared skin, variants toggle the day treatment ---- */
+.mk-s{border:2px solid var(--fg);background:var(--surface);box-shadow:var(--sh-light);font-family:var(--grotesk);overflow:hidden}
+.mk-s .hd{display:flex;align-items:center;gap:8px;padding:6px 9px;border-bottom:2px solid var(--fg)}
+.mk-s .wm{font-family:var(--alt);font-weight:600;letter-spacing:.09em;font-size:11px;text-transform:uppercase}
+.mk-s .rng{margin-left:auto;font-family:var(--grotesk);font-weight:500;font-size:10px;font-variant-numeric:tabular-nums;color:var(--fg-dim)}
+.mk-s .day{display:grid;grid-template-columns:46px 1fr;gap:9px;padding:7px 9px;border-bottom:1px solid var(--hairline)}
+.mk-s .day:last-child{border-bottom:none}
+.mk-s .plate{background:var(--day,var(--fg));color:var(--on-day,var(--bg));display:flex;flex-direction:column;justify-content:center;align-items:center;padding:5px 0;height:fit-content}
+.mk-s .plate b{font-family:var(--mont);font-weight:800;font-size:11px;letter-spacing:.06em;line-height:1}
+.mk-s .plate i{font-family:var(--grotesk);font-style:normal;font-weight:500;font-size:9px;font-variant-numeric:tabular-nums;opacity:.85;margin-top:2px}
+.mk-s .r{display:flex;align-items:baseline;gap:8px;line-height:1.42}
+.mk-s .t{font-family:var(--grotesk);font-weight:500;font-size:10.5px;font-variant-numeric:tabular-nums;color:var(--fg);flex:none;width:34px}
+.mk-s .n{font-family:var(--grotesk);font-weight:600;font-size:10.5px;min-width:0}
+.mk-s .c{font-family:var(--grotesk);font-weight:500;font-size:9.5px;color:var(--fg-faint);flex:none}
+/* S3 variants */
+.mk-s.v-ruled .plate{background:var(--surface);color:var(--fg);border:2px solid var(--fg);position:relative}
+.mk-s.v-ruled .plate::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--day,var(--fg))}
+.mk-s.v-rail{--rail:6px}
+.mk-s.v-rail .day{grid-template-columns:var(--rail) 1fr;gap:11px}
+.mk-s.v-rail .plate{background:var(--day,var(--fg));padding:0;align-self:stretch;height:auto;min-height:100%}
+.mk-s.v-rail .plate b,.mk-s.v-rail .plate i{display:none}
+.mk-s .dname{display:none}
+.mk-s.v-rail .dname{display:block;font-family:var(--mont);font-weight:800;font-size:10.5px;letter-spacing:.05em;margin-bottom:3px;color:var(--fg)}
+/* S4 register */
+.mk-s.reg-far .n{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.035em;text-transform:uppercase}
+.mk-s.reg-far .t{font-weight:700}
+/* footer */
+.mk-s .ft{display:flex;align-items:center;gap:9px;padding:6px 9px;border-top:2px solid var(--fg)}
+.mk-s .ft .lg{font-family:var(--grotesk);font-weight:500;font-size:8.5px;color:var(--fg-faint);line-height:1.35}
+.mk-s .ft .qrw{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mk-s .ft .qrl{font-family:var(--grotesk);font-weight:600;font-size:7px;color:var(--fg-faint)}
+
+/* ---- the ink mark, drawn in CSS grid at canon cell order ---- */
+.im{display:grid;flex:none}
+.im.sq{grid-template-columns:repeat(4,var(--m,7px));grid-template-rows:repeat(4,var(--m,7px))}
+.im.sh{grid-template-columns:repeat(7,var(--m,6px));grid-template-rows:repeat(2,var(--m,6px))}
+.im span{display:block}
+.im .b{grid-column:span 2;grid-row:span 2}
+/* fake QR — a stand-in block, this card is about placement not scanning */
+.qr{background:
+  repeating-linear-gradient(90deg,#0d0905 0 2px,#fffbf1 2px 4px),
+  repeating-linear-gradient(0deg,#0d0905 0 2px,#fffbf1 2px 4px);
+  background-blend-mode:difference;border:5px solid #fffbf1;background-color:#fffbf1}
+
+/* Stacked, not side-by-side: this lives inside one column of a three-option
+   row, which is far too narrow to sit two schedule mocks abreast — the names
+   wrapped to one word per line and the second card clipped. */
+.two-up{display:grid;grid-template-columns:1fr;gap:14px}
+.spec{border:2px solid var(--fg);background:var(--surface);padding:12px;box-shadow:var(--sh-light)}
+.spec .r{font-family:var(--mont);font-weight:700;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:6px}
+.spec p{font-size:12.5px;color:var(--fg-dim);font-family:var(--grotesk)}
+.spec p+p{margin-top:6px}
+.meas{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);margin-top:8px;display:block}
+.pill{font-family:var(--mont);font-weight:700;font-size:8px;letter-spacing:.11em;text-transform:uppercase;border:2px solid var(--fg);padding:2px 5px;display:inline-block}
+.p-ok{background:var(--green);color:#0d0905}
+.p-q{background:var(--amber);color:#0d0905}
+.p-now{background:var(--blue);color:#0d0905}
+</style>
+</head>
+<body class="dsc">
+<header class="dsc-h"><span class="nm">Schedule Studio · the Ink pass</span><span class="sub">The Year-2 ink system reached the site, the app and Poster Studio. The weekly schedule never got it. Five calls, each measured against a <b>38-event week</b> — the real volume, not the 30-event starter.</span><span class="tag">WORKSHOP · 23.08.26</span></header>
+
+<div class="tally"><span>Picked <b id="tally-n">0</b> of <b id="tally-of">5</b></span><span style="letter-spacing:.06em;font-weight:500;text-transform:none;font-family:var(--grotesk);font-size:12px">Five calls to close the schedule's ink pass.</span><button class="rs" id="tally-reset">Reset all</button></div>
+
+<div class="note" style="margin-top:0;border-width:3px">
+  <h4>What is already in</h4>
+  <p>Two things landed before this card, because they needed no decision. The <b>canon mark</b> is on the schedule: the 7×2 short strip on the masthead beside ĐÀ NẴNG, and the square-anchored square riding the footer QR flush, module pinned to the QR's <i>pattern</i> height so the two read at one size. And the <b>QR now targets app.realitydn.com</b>, not the apex — a listing's natural partner is the live version of itself, where every event has a detail page and a sheet printed on Monday still resolves to Thursday's changes. It carries a caption sized to the block: <i>Full schedule + event details</i> where there is room, <i>Full schedule</i> where there is less, nothing under ~52px. The printed site string stays <code>realitydn.com</code>.</p>
+  <p>What is <b>not</b> settled is everything below: which look actually survives 40 events, where the mark belongs, what a day plate should be, and whether a schedule is read near or far.</p>
+</div>
+
+<p class="tier">The measurement — every look, every channel, real weeks</p>
+<div class="pane">
+  <p style="font-family:var(--grotesk);font-size:13px;color:var(--fg-dim);margin-bottom:16px;max-width:70ch">Weeks were grown from the 8.6.26 starter by cloning its own rows across the seven dates, so titles keep real length and real Vietnamese diacritics. Each cell is what <code>computeCapacity</code> returns: <b>ok</b> = fits with air, <b>tight</b> = fits only at the smallest ladder step, <b>over</b> = does not fit.</p>
+  <table class="cap">
+    <tr><th style="width:11%">Events</th><th style="width:13%">Look</th><th>A4 print</th><th>WhatsApp 1:1</th><th>Feed 4:5</th><th>Stories 9:16</th></tr>
+    <tr><td class="k">30 <span style="font-weight:500;color:var(--fg-faint)">(today's starter)</span></td><td class="k">Ledger</td><td><span class="st s-ok">ok</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-ok">ok</span></td><td><span class="st s-ok">ok</span></td></tr>
+    <tr><td></td><td class="k">Stack</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr><td></td><td class="k">Grid</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr class="band"><td class="k">35</td><td class="k">Ledger</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-ok">ok</span></td><td><span class="st s-ok">ok</span></td></tr>
+    <tr class="band"><td></td><td class="k">Stack</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr class="band"><td></td><td class="k">Grid</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr><td class="k">38 <span style="font-weight:500;color:var(--fg-faint)">(the real week)</span></td><td class="k">Ledger</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr><td></td><td class="k">Stack</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr><td></td><td class="k">Grid</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr class="band"><td class="k">40 <span style="font-weight:500;color:var(--fg-faint)">(the bad week)</span></td><td class="k">Ledger</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr class="band"><td></td><td class="k">Stack</td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">4 days over</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr class="band"><td></td><td class="k">Grid</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-over">4 days over</span></td><td><span class="st s-over">4 days over</span></td></tr>
+    <tr><td class="k">45</td><td class="k">Ledger</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-tight">tight</span></td><td><span class="st s-tight">tight</span></td></tr>
+    <tr><td></td><td class="k">Stack</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-over">4 days over</span></td><td><span class="st s-over">4 days over</span></td></tr>
+    <tr><td></td><td class="k">Grid</td><td><span class="st s-tight">tight</span></td><td><span class="st s-over">over</span></td><td><span class="st s-over">4 days over</span></td><td><span class="st s-over">4 days over</span></td></tr>
+  </table>
+</div>
+
+<div class="note">
+  <h4>Three things the table says out loud</h4>
+  <p><b>1 · Ledger is the only look that survives the real week.</b> At 38 it is tight everywhere but nothing overflows; at 40 the same. Stack breaks on the feed at 40, Grid breaks on more.</p>
+  <p><b>2 · Grid is already broken on WhatsApp — at 30 events, today.</b> That is not a 40-event problem, it is a live bug: the 1:1 card cannot hold seven modular day cells at any volume we actually programme. It has presumably been shipping clipped.</p>
+  <p><b>3 · "Tight" is the normal state, not the exception.</b> From 35 events up, every look on every channel is running at the bottom of its type ladder. There is no headroom left to spend on ink chrome — a plate, a rule or a mark has to be paid for out of something else. That is what S3 and S5 are about.</p>
+</div>
+
+<p class="tier">S1 · Which look carries the ink system?</p>
+<div class="dq" data-q="sched-look">
+  <div class="dq-h"><span class="dq-n">S1</span><span class="dq-t">Where does the ink treatment go first?<small>Ink chrome — 2px ink rules, hard offset shadows, day plates, the mark — costs height. The table says only one look has any to give.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Ledger becomes the ink look</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="mk-s">
+          <div class="hd"><span class="wm">Reality</span>
+            <span class="im sh" style="--m:5px"><span class="b" style="background:var(--red)"></span><span class="b" style="background:var(--blue)"></span><span class="b" style="background:var(--yellow)"></span><span style="background:#fffbf1"></span><span style="background:#0d0905"></span></span>
+            <span class="rng">8.6 – 14.6.26</span></div>
+          <div class="day d-mon"><span class="plate"><b>MON</b><i>8.6</i></span><span>
+            <span class="r"><span class="t">17:00</span><span class="n">How to DJ</span><span class="c">2E $</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">Board Game Night</span><span class="c">1L/2E</span></span></span></div>
+          <div class="day d-tue"><span class="plate"><b>TUE</b><i>9.6</i></span><span>
+            <span class="r"><span class="t">13:30</span><span class="n">French Social Club</span><span class="c">2E</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">Đà Nẵng Nomad Chess Club</span><span class="c">2E</span></span></span></div>
+          <div class="ft"><span class="lg">1L 1st-Floor · 2E Event Space</span>
+            <span class="qrw"><span style="display:flex;align-items:center"><span class="qr" style="width:34px;height:34px"></span><span class="im sq" style="--m:6px"><span class="b" style="background:var(--red)"></span><span class="b" style="background:var(--blue)"></span><span class="b" style="background:var(--yellow)"></span><span style="background:#fffbf1"></span><span style="background:var(--pink)"></span><span style="background:var(--green)"></span><span style="background:#0d0905"></span></span></span><span class="qrl">Full schedule</span></span></div>
+        </div>
+        <div class="spec"><div class="r">Rule</div><p>Ledger gets the full treatment — ink rules, the day plate, the masthead strip, the footer QR + square. <b>Stack and Grid keep their current chrome</b> and are marked "not ink" in the picker.</p><p>Grid's WhatsApp overflow is fixed separately, as the bug it is.</p></div>
+      </div>
+      <p class="why">Ink chrome lands where there is room for it, and where the schedule is actually used — the A4 on the wall and the print PDF are Ledger. One look done properly beats three done thinly, and it is the only choice the measurement supports.</p>
+      <p class="cost"><b>Cost</b>The three looks stop being interchangeable skins: picking Stack silently drops you out of the ink system. That needs saying in the UI, not just here.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">All three, after the fix</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p>Fix Grid's 1:1 overflow first (fewer cells per card, or drop to a 2-day card), then apply ink chrome to all three looks with a shared token set.</p></div>
+        <div class="spec"><div class="r">Order</div><p>1 · Grid capacity · 2 · shared ink tokens · 3 · roll out per look</p></div></div>
+      <p class="why">The looks stay interchangeable, which is what they were for — one document, four channels, pick the shape that suits the week.</p>
+      <p class="cost"><b>Cost</b>Three times the work before anything ships, and the measurement says Stack and Grid have no height to spend at 38+ — so their ink chrome would have to be a thinner version anyway, which is where inconsistency comes from.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Ledger + Stack, retire Grid</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p>Grid has overflowed on WhatsApp at every volume we programme. Retire it rather than repair it; ink Ledger and Stack.</p></div></div>
+      <p class="why">Removes a look that has never worked at our volume, and cuts the surface to maintain. Two looks that both hold 38 events is an honest picker.</p>
+      <p class="cost"><b>Cost</b>Grid is the only look that reads as a <i>board</i> rather than a list — it is the one that suits a screen behind the bar. Retiring it forecloses S4's "far" case.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<p class="tier">S2 · Where the mark lives</p>
+<div class="dq" data-q="sched-mark">
+  <div class="dq-h"><span class="dq-n">S2</span><span class="dq-t">One placed mark per surface — which surface?<small>Canon allows one PLACED mark; the square riding a QR is that footer's own fixture and does not count against it. Shipped today: masthead strip + footer square.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Masthead strip + footer square</span><span class="rec">Suggested · shipped</span></div>
+      <div class="stage">
+        <div class="spec"><div class="r">Masthead</div><p>The 7×2 short strip sits beside ĐÀ NẴNG, bare — no ground, because the sheet is already stock. Module pinned to the ĐÀ NẴNG cap height so the two hold the same weight at every channel scale.</p></div>
+        <div class="spec"><div class="r">Footer</div><p>Square-anchored, flush against the QR, module = the QR's <b>pattern</b> height ÷ 4. Its ink cell takes the outer corner, so it needs no ground on any substrate.</p></div>
+      </div>
+      <p class="why">It mirrors the poster exactly — strip at the top of the composition, square on the brand-carrying footer — so a poster and a schedule pinned side by side read as one system. And it is the arrangement already running, so choosing A is choosing to keep it.</p>
+      <p class="cost"><b>Cost</b>Two marks on one sheet, which needs the canon footnote every time someone counts them.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Footer only</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p>No masthead strip. The square riding the QR is the schedule's only mark — literally one per surface, no footnote needed.</p></div>
+        <div class="spec"><div class="r">Effect</div><p>The masthead is wordmark · ĐÀ NẴNG · date stamp, exactly as it is today.</p></div></div>
+      <p class="why">The strictest reading of the canon, and it gives back masthead width — which at 38 events is width the date stamp could use.</p>
+      <p class="cost"><b>Cost</b>The mark only appears at the very bottom of a sheet people read from the top. On the 9:16 story, the footer is the part that gets cropped in a repost.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Per-day daycode square</span></div>
+      <div class="stage">
+        <div class="mk-s" style="max-width:250px">
+          <div class="day d-wed"><span class="plate" style="padding:4px"><span class="im sq" style="--m:5px;margin:0 auto"><span class="b" style="background:var(--purple)"></span><span class="b" style="background:#0d0905"></span><span class="b" style="background:var(--purple)"></span><span style="background:#fffbf1"></span><span style="background:var(--purple)"></span><span style="background:var(--purple)"></span><span style="background:#0d0905"></span></span><b style="margin-top:4px">WED</b></span><span>
+            <span class="r"><span class="t">14:30</span><span class="n">Vietnam Talk</span><span class="c">2E</span></span>
+            <span class="r"><span class="t">17:00</span><span class="n">Stop Chasing Virality!</span><span class="c">2E</span></span></span></div>
+        </div>
+        <div class="spec"><div class="r">Rule</div><p>Every day plate carries the square in <b>daycode</b> mode — the mark tinted to that weekday's hue, replacing the flat colour block.</p></div>
+      </div>
+      <p class="why">The single most distinctive thing we could do with the mark: seven marks, seven hues, the week legible as a colour sequence before a word is read. Daycode mode exists for exactly this.</p>
+      <p class="cost"><b>Cost</b>Seven placed marks on one surface — a direct break with the one-per-surface rule, not a footnote to it. At 38 events the plates are already the tightest column on the sheet, and a 4×4 square needs more height than "WED · 10.6" does.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<p class="tier">S3 · The day plate — where the height comes from</p>
+<div class="dq" data-q="sched-plate">
+  <div class="dq-h"><span class="dq-n">S3</span><span class="dq-t">What is a day plate at 38 events?<small>The plate is the schedule's loudest ink element and its most expensive. All three specimens below carry the same two rows so the height difference is the only variable.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Filled plate, tightened</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="mk-s" style="max-width:255px">
+          <div class="day d-thu"><span class="plate"><b>THU</b><i>11.6</i></span><span>
+            <span class="r"><span class="t">11:00</span><span class="n">Coffee + Conversation</span><span class="c">2L</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">GeoGuessr Battle Night</span><span class="c">2E</span></span></span></div>
+          <div class="day d-fri"><span class="plate"><b>FRI</b><i>12.6</i></span><span>
+            <span class="r"><span class="t">18:30</span><span class="n">Film Club: Sicario (2015)</span><span class="c">2E</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">No Mic Open Mic</span><span class="c">3P</span></span></span></div>
+        </div>
+        <span class="meas">What ships today, with the plate sized to its content rather than the day's row count.</span>
+        <div class="spec"><div class="r">Rule</div><p>Day colour stays a filled block; the plate is <code>height:fit-content</code>, not stretched to the day. Abbreviation in Montserrat 800, date beneath in Grotesk with tabular figures. Cream on purple, ink on the other six — per <code>--on-day</code>.</p></div>
+      </div>
+      <p class="why">The colour block is the single most recognisable thing about the REALITY schedule and the one element people navigate by. Shrinking it costs nothing; removing it costs the format's identity.</p>
+      <p class="cost"><b>Cost</b>It is still the widest fixed column on the sheet — ~46px that every row pays for, whether the day has two events or nine.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Ink-ruled plate</span></div>
+      <div class="stage">
+        <div class="mk-s v-ruled" style="max-width:255px">
+          <div class="day d-thu"><span class="plate"><b>THU</b><i>11.6</i></span><span>
+            <span class="r"><span class="t">11:00</span><span class="n">Coffee + Conversation</span><span class="c">2L</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">GeoGuessr Battle Night</span><span class="c">2E</span></span></span></div>
+          <div class="day d-fri"><span class="plate"><b>FRI</b><i>12.6</i></span><span>
+            <span class="r"><span class="t">18:30</span><span class="n">Film Club: Sicario (2015)</span><span class="c">2E</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">No Mic Open Mic</span><span class="c">3P</span></span></span></div>
+        </div>
+        <span class="meas">2px ink border, stock ground, the day colour as a spine inside it.</span>
+        <div class="spec"><div class="r">Rule</div><p>The plate becomes an ink-outlined card with the weekday hue as a 6px spine. Matches the app's plate and the site's <code>.cal-*</code> family exactly.</p></div>
+      </div>
+      <p class="why">This is what a plate looks like everywhere <i>else</i> in Year 2 — the app, the site, the calendar family. Choosing it makes the schedule stop being the one surface with its own plate language.</p>
+      <p class="cost"><b>Cost</b>Much quieter at three metres. On the A4 pinned by the door, the filled block is what makes the week scannable from across the room, and this loses that.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Colour rail, no plate</span></div>
+      <div class="stage">
+        <div class="mk-s v-rail" style="max-width:255px">
+          <div class="day d-thu"><span class="plate"></span><span><span class="dname">Thursday · 11.6</span>
+            <span class="r"><span class="t">11:00</span><span class="n">Coffee + Conversation</span><span class="c">2L</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">GeoGuessr Battle Night</span><span class="c">2E</span></span></span></div>
+          <div class="day d-fri"><span class="plate"></span><span><span class="dname">Friday · 12.6</span>
+            <span class="r"><span class="t">18:30</span><span class="n">Film Club: Sicario (2015)</span><span class="c">2E</span></span>
+            <span class="r"><span class="t">19:00</span><span class="n">No Mic Open Mic</span><span class="c">3P</span></span></span></div>
+        </div>
+        <span class="meas">The 46px plate column becomes a 6px spine — ~40px back on every row, across seven days.</span>
+        <div class="spec"><div class="r">Rule</div><p>Day colour becomes a full-height 6px rail; the day name moves inline above its rows, in full rather than abbreviated.</p></div>
+      </div>
+      <p class="why">Buys the most width of the three — roughly 40px per row — which is the difference between "tight" and "ok" on the WhatsApp card. And it lets the day read as <b>Thursday</b> rather than THU.</p>
+      <p class="cost"><b>Cost</b>The day name now costs a row of its own, so the width comes back as height. On a light day that is a bad trade.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<p class="tier">S4 · Near or far — the same week in two registers</p>
+<div class="dq" data-q="sched-register">
+  <div class="dq-h"><span class="dq-n">S4</span><span class="dq-t">Is a schedule read at arm's length or across a room?<small>Canon M2 named the weekly schedule as the example that is genuinely both: FAR on the bar TV, NEAR as an A4. It never said what the Studio should do about it.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Register follows the channel</span><span class="rec">Suggested</span></div>
+      <div class="stage">
+        <div class="two-up">
+          <div><div class="mk-s" style="max-width:100%"><div class="day d-sat"><span class="plate"><b>SAT</b><i>13.6</i></span><span>
+            <span class="r"><span class="t">13:00</span><span class="n">Women of REALITY</span><span class="c">2L</span></span>
+            <span class="r"><span class="t">19:30</span><span class="n">small things, mostly</span><span class="c">2E</span></span></span></div></div>
+            <span class="meas">Near — print, WhatsApp</span></div>
+          <div><div class="mk-s reg-far" style="max-width:100%"><div class="day d-sat"><span class="plate"><b>SAT</b><i>13.6</i></span><span>
+            <span class="r"><span class="t">13:00</span><span class="n">Women of REALITY</span><span class="c">2L</span></span>
+            <span class="r"><span class="t">19:30</span><span class="n">small things, mostly</span><span class="c">2E</span></span></span></div></div>
+            <span class="meas">Far — stories, feed, bar TV</span></div>
+        </div>
+        <div class="spec"><div class="r">Rule</div><p>The channel registry gains a <code>register</code> field. <b>print · wa → near</b> (sentence case, Grotesk names). <b>stories · feed · daily · cover → far</b> (Montserrat caps names). Times stay Grotesk with tabular figures in both — facts never change family (M1).</p></div>
+      </div>
+      <p class="why">It is the merged system applied literally, and the channel registry is exactly the "closed list of surfaces" M2 asked for — no metres, no size threshold, one field per channel. It also matches how the two are actually consumed: the A4 is held, the story is thumbed past.</p>
+      <p class="cost"><b>Cost</b>The same document renders in two cases, so a proof of the print sheet no longer tells you what the story looks like. Needs the gap-8 note on the card: <i>the poster shouts the name, the app tells you about it</i>.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Always near</span></div>
+      <div class="stage">
+        <div class="mk-s" style="max-width:255px"><div class="day d-sat"><span class="plate"><b>SAT</b><i>13.6</i></span><span>
+          <span class="r"><span class="t">13:00</span><span class="n">Women of REALITY</span><span class="c">2L</span></span>
+          <span class="r"><span class="t">19:30</span><span class="n">small things, mostly</span><span class="c">2E</span></span>
+          <span class="r"><span class="t">17:00</span><span class="n">Đà Nẵng Film Forum Filmmakers Meetup</span><span class="c">2E</span></span></span></div></div>
+        <span class="meas">Sentence case everywhere — and ~12% narrower, which at 38 events is a real column of room.</span>
+        <div class="spec"><div class="r">Rule</div><p>A schedule is a listing wherever it hangs. Names are sentence-case Montserrat, facts are Grotesk, on every channel. One render, one proof.</p></div>
+      </div>
+      <p class="why">The width saving is the point: sentence case is ~12% narrower than caps, and the table says width is what we are short of. It also preserves artists' own capitalisation (M4) — <b>small things, mostly</b> stays lowercase instead of being shouted.</p>
+      <p class="cost"><b>Cost</b>Gives up the bar-TV case that M2 explicitly carved out. If a screen behind the bar ever runs this, it will be the wrong register and someone will "fix" it.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Always far</span></div>
+      <div class="stage"><div class="mk-s reg-far" style="max-width:255px"><div class="day d-sat"><span class="plate"><b>SAT</b><i>13.6</i></span><span>
+        <span class="r"><span class="t">13:00</span><span class="n">Women of REALITY</span><span class="c">2L</span></span>
+        <span class="r"><span class="t">17:00</span><span class="n">Đà Nẵng Film Forum Filmmakers Meetup</span><span class="c">2E</span></span></span></div></div>
+        <span class="meas">Caps everywhere — the pre-merge look, and where the wrapping came from.</span>
+        <div class="spec"><div class="r">Rule</div><p>The schedule is signage. Montserrat caps names on every channel, as it was before the 5+6 merge.</p></div></div>
+      <p class="why">Nothing changes, and the schedule keeps the poster's voice on every surface.</p>
+      <p class="cost"><b>Cost</b>Costs ~12% width at the exact volume where the table says we have none, forces two-line rows, and flattens every artist's own capitalisation. This is the option the merge was written to end.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<p class="tier">S5 · What gives at 40</p>
+<div class="dq" data-q="sched-overflow">
+  <div class="dq-h"><span class="dq-n">S5</span><span class="dq-t">From 35 events up, every look on every channel is at the bottom of its ladder. What is the release valve?<small>Not a styling question — this is what happens on the week we programme 40 and something has to go.</small></span><span class="dq-state st-open">Needs a call</span></div>
+  <div class="opts three">
+    <div class="opt" data-pick="A">
+      <div class="oh"><span class="ok">A</span><span class="on">Split sooner, automatically</span><span class="rec">Suggested</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p>The two-column A4 and the carousel already split. Lower the trigger: above <b>36 events</b> the sheet splits by default rather than compressing, and the split point is chosen by <code>bestSplit</code> as it is today.</p></div>
+        <div class="spec"><div class="r">Effect</div><p>A 40-event week prints as two A4s or a 2-part carousel at <i>comfortable</i> type, instead of one sheet at the ladder floor.</p></div></div>
+      <p class="why">Trades a constraint we do not control (how many events we run) for one we do (how many sheets we print). Nothing is dropped, nothing shrinks, and it uses machinery that already exists and is already tested.</p>
+      <p class="cost"><b>Cost</b>Two sheets by the door instead of one, and two slides where people expect one image. On WhatsApp a second card is a real cost — people forward the first.</p>
+      <button class="pick">Choose A</button>
+    </div>
+    <div class="opt" data-pick="B">
+      <div class="oh"><span class="ok">B</span><span class="on">Short titles kick in</span></div>
+      <div class="stage">
+        <div class="mk-s" style="max-width:255px"><div class="day d-wed"><span class="plate"><b>WED</b><i>10.6</i></span><span>
+          <span class="r"><span class="t">16:30</span><span class="n">PULSE 2: Ambition</span><span class="c">2L</span></span>
+          <span class="r"><span class="t">18:30</span><span class="n">Short Films Talk</span><span class="c">2E</span></span></span></div></div>
+        <span class="meas">The <code>titleShort</code> field, used automatically instead of only at ladder step ≤ 1.</span>
+        <div class="spec"><div class="r">Rule</div><p>Above 36 events the renderer prefers <code>titleShort</code> wherever one exists, at any ladder step — rather than waiting until the type has already collapsed.</p></div>
+      </div>
+      <p class="why">The short titles are already written and already in the data; today they only appear once things are desperate. Using them earlier keeps type big AND keeps one sheet.</p>
+      <p class="cost"><b>Cost</b>Only helps where a short title exists — currently about a third of events — so a heavy week of long unshortened names gains nothing. And it hides detail on exactly the weeks with the most on.</p>
+      <button class="pick">Choose B</button>
+    </div>
+    <div class="opt" data-pick="C">
+      <div class="oh"><span class="ok">C</span><span class="on">Extend the ladder down</span></div>
+      <div class="stage"><div class="spec"><div class="r">Rule</div><p>Add one or two smaller steps below the current floor, so "tight" has somewhere left to go before "over".</p></div>
+        <div class="spec"><div class="r">Against canon</div><p>C6 type floor: <b>anything you would act on — times, rooms, prices, dates — sits at 12px or above.</b> The print ladder already bottoms at 12.5px.</p></div></div>
+      <p class="why">Simplest possible change, no layout work, no extra sheets.</p>
+      <p class="cost"><b>Cost</b>It breaks a ratified floor, on the surface where the floor matters most — a wall schedule read standing up. This option is here to be rejected on the record, so nobody proposes it again in six months.</p>
+      <button class="pick">Choose C</button>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <h4>Shipped without a vote</h4>
+  <p><b>The mark</b> is on the schedule (masthead short strip · square riding the footer QR, both bare, module pinned to the QR pattern). <b>The QR</b> targets <code>app.realitydn.com</code> with a length-aware caption. <b>The ink-mark spec</b> was ported into <code>schedule-data.jsx</code> in the canonical shape and added to <code>tools/verify-day-colours.mjs</code>, so the schedule's mark cannot drift from the poster's or the print one. Say the word if any of those should be opened up instead.</p>
+  <p><b>Not shipped, and not a decision:</b> Grid's WhatsApp overflow is a bug at every volume we programme. It gets fixed regardless of which option S1 takes.</p>
+</div>
+
+<script src="decisions.js"></script>
+</body></html>

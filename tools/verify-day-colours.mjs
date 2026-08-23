@@ -109,6 +109,10 @@ const INK_ANCHORED = "stock,pink,green,ink";
 const INK_FILES = [
   { rel: "public/studio/studio-data.jsx", neutrals: INK_ARTWORK },
   { rel: "public/studio/studio-data.js",  neutrals: INK_ARTWORK },
+  // Schedule Studio joined the mark on 23.08 (masthead strip + the square
+  // riding the footer QR), so its port is guarded here like the other two.
+  { rel: "public/schedule/schedule-data.jsx", neutrals: INK_ARTWORK },
+  { rel: "public/schedule/schedule-data.js",  neutrals: INK_ARTWORK },
   { rel: "public/print/print-data.jsx",   neutrals: { ink: canon.print.ink, stock: canon.print.stock } },
   { rel: "public/print/print-data.js",    neutrals: { ink: canon.print.ink, stock: canon.print.stock } },
 ];
@@ -200,7 +204,11 @@ for (const rel of SITE_FILES) {
 // Studio's data BAKES the print offset. Role map — poster: title=display,
 // subtitle=h1, stamp=h2, host+list rows=name, when/cost=label; print:
 // headline/numeral/bignum=display, kicker=label, body=Grotesk at 0.
-const LADDER = { display: 0.015, h1: 0.025, h2: 0.04, name: 0, label: 0.16, button: 0.11 };
+// `fact` is not a rung of the Montserrat ladder — it is Space Grotesk, whose
+// tracking is 0 by definition (the ladder was derived from Montserrat's wide
+// geometric caps and means nothing on Grotesk's lowercase). It sits in the
+// same table only so checkRole can guard it with one code path.
+const LADDER = { display: 0.015, h1: 0.025, h2: 0.04, name: 0, label: 0.16, button: 0.11, fact: 0 };
 const PRINT_OFF = 0.01;
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 // First `prop: <number>` after the `key: {` that opens the preset. esbuild
@@ -224,10 +232,33 @@ for (const rel of ["public/studio/studio-data.jsx", "public/studio/studio-data.j
   checkRole(src, rel, "title", "subTracking", "h1");
   checkRole(src, rel, "stamp", "letterSpacing", "h2");
   checkRole(src, rel, "host", "letterSpacing", "name");
-  checkRole(src, rel, "when", "letterSpacing", "label");
-  checkRole(src, rel, "cost", "letterSpacing", "label");
+  // when + cost moved off the label role (23.08.26). They are FACT chips, and
+  // canon M1 "family wins" puts every fact in Space Grotesk in every medium —
+  // so they carry Grotesk's natural tracking, not Montserrat's optical ladder.
+  // Guard the new value the same way, and guard the FAMILY too: a silent slip
+  // back to Montserrat caps is exactly the drift this file exists to catch.
+  checkRole(src, rel, "when", "letterSpacing", "fact");
+  checkRole(src, rel, "cost", "letterSpacing", "fact");
   for (const key of ["lineup", "sessions", "specials", "agenda"])
     checkRole(src, rel, key, "rowTracking", "name");
+}
+// Fact renderers — the family half of M1. Montserrat NAMES, Grotesk STATES
+// facts: the when/cost chips and every list's time/price/date cell go through
+// the FACT() helper in studio-element, which is the one place the rule lives.
+for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-element.js"]) {
+  const src = read(rel);
+  if (!/const FACT\s*=/.test(src))
+    fail(`${rel}: the FACT() type helper is gone — facts are Grotesk in every medium (M1)`);
+  const i = src.search(/el\.type\s*===?\s*['"]when['"]/);
+  const j = src.search(/el\.type\s*===?\s*['"]host['"]/);
+  const chip = i >= 0 && j > i ? src.slice(i, j) : null;
+  if (!chip) { fail(`${rel}: when/cost chip renderer not found`); continue; }
+  if (/fontFamily:\s*MONT/.test(chip))
+    fail(`${rel}: the when/cost chip is back on Montserrat — fact chips are Grotesk (M1)`);
+  if (/textTransform:\s*['"]uppercase['"]/.test(chip))
+    fail(`${rel}: the when/cost chip uppercases — Grotesk is never uppercased (M3)`);
+  if (!/tabular-nums/.test(chip))
+    fail(`${rel}: the when/cost chip lost tabular figures — facts in a column are tnum`);
 }
 // Print Studio data — ladder + the baked print offset; body stays Grotesk 0.
 for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {

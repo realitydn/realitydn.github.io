@@ -86,8 +86,31 @@ function scaleStep(v, dir){
    format). Geometry + image framing + text SIZE — so type can be resized per
    view without touching Master or the other formats. */
 const LAYOUT_KEYS = ['x','y','w','h','rot','hidden','imgScale','imgX','imgY','imgRot','fontSize','subSize'];
-const MODULE = 108;
-const STEP = 54;
+/* ---- THE GRID (rev 23.08.26) ----------------------------------------
+   MODULE 90 / STEP 45 (half-module).
+
+   The poster-grid card specifies a 108px module on a 1080×1512 canvas —
+   10×14 — but 5:7 was retired (D9) and the master is 4:5 (1080×1350), where
+   108 leaves a HALF-MODULE orphan row at the foot. It tiled nothing but the
+   square, and its 54px snap step could not reach either of the two lines the
+   system actually uses: the x:90 Swiss vertical every template sits on, or
+   the safe square's edge at y:135.
+
+   90 fixes all three at once, and keeps the card's intent (a square module,
+   a whole-number grid, generous margins):
+       4:5  1080×1350  ->  12 × 15   exact
+       1:1  1080×1080  ->  12 × 12   exact
+       margin 90       =   one module
+       safe-square edge y135 = step 3
+   9:16 and A4 still carry a remainder (1920 and 1527 aren't multiples of
+   anything useful), but those are DERIVED views — mapElementToFormat places
+   them off the master, nobody authors on their grid. The overlay draws their
+   partial row honestly rather than pretending.
+
+   Templates are authored on this frame: left line 90, right line 990, so a
+   full-width element is w:900 = 10 modules. */
+const MODULE = 90;
+const STEP = 45;
 
 function themeColors(theme){
   return theme==='night'
@@ -95,14 +118,39 @@ function themeColors(theme){
     : { fg:'#0d0905', bg:'#fffbf1', paper:'#fffbf1', shadow:(a)=>`rgba(13,9,5,${a})` };
 }
 
-/* Pick the readable ink/cream for text sitting on a given fill. Threshold is
-   kept low so all seven brand accents keep dark ink (the Riso look); only a
-   genuinely dark fill (e.g. Ink) flips the text to cream. */
+/* Pick the readable ink/cream for text sitting on a given fill.
+
+   This used to threshold a NAIVE luminance (channels averaged without the
+   sRGB gamma expansion) at 0.2, which put ink on every accent — including
+   PURPLE, where ink measures 2.25:1 and is genuinely hard to read. Real
+   relative luminance, and whichever neutral actually contrasts better, lands
+   on exactly the canon `on` value for all seven day accents
+   (public/tokens/day-colours.json): ink on blue · green · yellow · amber ·
+   pink · red, cream on purple. Night-purple (#9a4faa) resolves to cream too.
+   So the rule needs no lookup table to stay in step with canon — it derives
+   the same answer, and keeps working for a custom fill the palette never
+   named.
+
+   NOT generalised: cream-on-red is canon for the ACTION BUTTON only
+   (reality-tokens.json F2 — 4.19:1, a knowing AA exception). A red fill in
+   artwork still takes ink here; a poster that wants the button read sets
+   textColor:'cream' explicitly, the way the Ink-bands template's action band
+   does. Every element's "Text colour" swatch overrides this — Auto is only
+   the starting point. */
+function relLuminance(hex){
+  const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
+    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
+}
+function contrastRatio(a, b){
+  const l1=relLuminance(a), l2=relLuminance(b);
+  return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
+}
 function contrastInk(hex){
   if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return '#0d0905';
-  const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
-  const L=0.2126*r + 0.7152*g + 0.0722*b;
-  return L<0.2 ? '#fffbf1' : '#0d0905';
+  /* ties and near-ties go to ink — the Riso look — because `>` keeps ink
+     unless cream is strictly better (pink 4.72 vs 4.06, red 4.59 vs 4.19). */
+  return contrastRatio(hex,'#fffbf1') > contrastRatio(hex,'#0d0905') ? '#fffbf1' : '#0d0905';
 }
 
 /* surface → concrete box style (canvas px units) */
@@ -177,6 +225,13 @@ const TEXT_ALIGN_DEF = {
   when:'center', cost:'center', stamp:'center', host:'center',
   badge:'center', matchup:'center', ticket:'center'
 };
+/* The banner is the one ticket variant whose alignment is a real composition
+   choice: it's a full-width band running a stacked column (wordmark over the
+   site·address line) rather than the other variants' three-part row, and it
+   closes the poster. It defaults RIGHT — the column sits with the trailing
+   edge, the mark takes the opposite side, and the band reads as a signature
+   rather than a centred title block. Every other variant keeps centre. */
+function ticketAlignDef(el){ return el.variant==='banner' ? 'right' : 'center'; }
 /* baked-in horizontal padding per type — the honest default for the inset */
 const TEXT_PAD = {
   title:26, tagline:24, info:22, when:26, cost:26, host:28, stamp:16,
@@ -191,7 +246,7 @@ function textInsetModel(el){
   else if(el.type==='ticket')  def = el.variant==='banner' ? 46 : 34;
   else if(el.type==='matchup') def = Math.round((el.w||600)*0.06);
   else                         def = TEXT_PAD[el.type] || 0;
-  const align = el.align || TEXT_ALIGN_DEF[el.type] || 'left';
+  const align = el.align || (el.type==='ticket' ? ticketAlignDef(el) : TEXT_ALIGN_DEF[el.type]) || 'left';
   const side  = align==='left' ? 'left' : align==='right' ? 'right' : null;
   return { def, side, align, applies: side!=null,
            val: el.textInset!=null ? el.textInset : def,
@@ -277,6 +332,14 @@ const _QR_ROWS = [
 "1111111010110000001111111"
 ];
 const _QR = _QR_ROWS.map(r=>r.split('').map(Number));
+/* Fraction of a QR tile that is actual PATTERN. The spec's 4-module quiet zone
+   per side is part of the tile, so a 25-module code drawn at `size` shows only
+   25/33 ≈ 76% of that box as ink. Anything that has to look the SAME SIZE as a
+   QR — above all the canon ink square butted against it — must measure against
+   this, not against the tile: matching the outer boxes makes the square read
+   noticeably heavier, because the QR is carrying a cream margin the square has
+   no equivalent of. Exported so the ticket and Print Studio's footer agree. */
+const QR_DATA_FRAC = _QR.length / (_QR.length + 8);
 function QRGlyph({ size, dark, light }){
   const n = _QR.length;
   /* spec quiet zone: 4 modules per side relative to the full tile */
@@ -666,15 +729,20 @@ const DEFAULTS = {
   // stamp=h2. Screen artwork carries the bare ladder (the +.01em offset is
   // print's — Print Studio bakes it, this file must NOT). Enforced by
   // tools/verify-day-colours.mjs §TYPE — change the ladder there first.
-  title:   { w:760, h:300, props:{ text:'Event Title', fontSize:144, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.015,
+  title:   { w:720, h:315, props:{ text:'Event Title', fontSize:144, weight:800, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0.015,
              subtitle:'', subSize:32, subWeight:600, subTracking:0.025, subColor:'fg', subLayout:'snug' } },
-  tagline: { w:560, h:80,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
-  info:    { w:560, h:260, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:26, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
-  when:    { w:360, h:84,  props:{ text:'FRI · 22:00', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
+  tagline: { w:540, h:90,  props:{ text:'A short tagline goes right here', fontSize:22, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0 } },
+  info:    { w:540, h:270, props:{ text:'Doors at 8, music from 9.\n\nEntry is **free** before 10 — *come early*.\n- All welcome\n- Cash bar', fontSize:26, weight:400, surface:'none', align:'left', orient:'h', color:'fg', letterSpacing:0, lineHeight:1.4 } },
+  /* when + cost are FACT chips (canon M1) — Space Grotesk at 700 with tabular
+     figures, so their tracking is 0 by definition, NOT the .16em label role
+     they used to carry. The optical ladder belongs to Montserrat's caps; it
+     has no meaning on Grotesk's lowercase. Sentence-case strings, because
+     Grotesk is never uppercased and the renderer sets no text-transform. */
+  when:    { w:360, h:90,  props:{ text:'Fri · 22:00', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0 } },
   // Cost chip — the day·time chip's twin (same accent tag), carrying the price.
-  // The calendar handoff fills it from the event's cost ("FREE" when free).
-  cost:    { w:240, h:84,  props:{ text:'FREE', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0.16 } },
-  host:    { w:520, h:170, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0 } },
+  // The calendar handoff fills it from the event's cost ("Free" when free).
+  cost:    { w:270, h:90,  props:{ text:'Free', fontSize:32, weight:700, surface:'accent', align:'center', orient:'h', color:'fg', letterSpacing:0 } },
+  host:    { w:630, h:135, props:{ kicker:'Hosted by', name:'The Host', fontSize:46, weight:700, surface:'solid', align:'center', orient:'h', color:'fg', letterSpacing:0 } },
   /* mark:'on' — the canon ink mark on the ticket band (square flush with the
      QR / short strip when there's none). ABSENT = ON by design: the ticket is
      the brand carrier, so saved posters and templates gain it on open.
@@ -683,59 +751,66 @@ const DEFAULTS = {
      majors / ink) recolours — DELIBERATELY absent here: unset keeps each
      form's classic ink (square full · strip majors), so older docs render
      unchanged. */
-  ticket:  { w:920, h:200, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, mark:'on', markForm:'auto', color:'fg' } },
-  lineup:  { w:520, h:240, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
-  sessions:{ w:660, h:460, props:{ heading:'Next sessions',
+  ticket:  { w:900, h:180, anchor:'bottom', props:{ variant:'standard', word:'Reality', addr:'86 Mai Thúc Lân · Đà Nẵng', site:'realitydn.com', surface:'paper', showQR:true, mark:'on', markForm:'auto', color:'fg' } },
+  lineup:  { w:540, h:270, props:{ heading:'On the decks', items:[{n:'DJ Milk',t:'23:00'},{n:'Hanø',t:'00:30'},{n:'b2b Suki',t:'late'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:7, headingSize:15, surface:'scrim', color:'fg' } },
+  sessions:{ w:675, h:450, props:{ heading:'Next sessions',
              raw:'001 — First Session Title — 3.6.26\n002 — Second Session Title — 10.6.26\n003 — Third Session Title — 17.6.26\n004 — Fourth Session Title — 24.6.26',
              rowSize:0, rowWeight:700, rowTracking:0, rowGap:7, headingSize:15, markerKey:{}, surface:'scrim', color:'fg' } },
-  specials:{ w:460, h:230, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:5, headingSize:26, surface:'accent', color:'fg' } },
+  specials:{ w:450, h:225, props:{ heading:'Happy Hour', items:[{l:'House spirits',p:'₫50k'},{l:'Draft + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}], rowSize:0, rowWeight:700, rowTracking:0, rowGap:5, headingSize:26, surface:'accent', color:'fg' } },
   /* Colour-coded week — one row per day, each auto-tinted by the weekly-schedule
      accent (Mon green · Tue blue · Wed purple · Thu pink · Fri red · Sat amber ·
      Sun yellow). Day chip + event name · time, with an optional description
      beneath. The heading takes the poster accent. `day` drives the colour (a
      per-row `accent` override wins); unknown days fall back to the poster accent. */
-  agenda:  { w:910, h:700, props:{ heading:'A taste of the week',
+  agenda:  { w:900, h:720, props:{ heading:'A taste of the week',
              items:[{day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
                     {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture.'},
                     {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'}],
              rowSize:22, rowGap:16, headingSize:30, rowTracking:0, surface:'none', color:'fg' } },
-  qr:      { w:360, h:150, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
-  stamp:   { w:300, h:96,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04, align:'center' } },
-  badge:   { w:200, h:200, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
+  qr:      { w:450, h:180, props:{ label:'Scan for the night', site:'realitydn.com', surface:'paper', showQR:true, color:'fg' } },
+  stamp:   { w:315, h:90,  props:{ text:'SOLD OUT', fontSize:38, weight:800, surface:'accent', rot:-8, color:'fg', letterSpacing:0.04, align:'center' } },
+  badge:   { w:225, h:225, props:{ top:'EVERY', big:'WED', sub:'all year', surface:'paper', color:'fg' } },
   /* Standalone REALITY wordmark — the canonical vector mark as a free,
      resizable element. Default box is on-aspect (512:84 ≈ 6.1:1); the mark
      always fits undistorted, so drag any handle to scale. */
   wordmark:{ w:512, h:84,  props:{ surface:'none', color:'fg' } },
   /* The ink strip / square (INK_MARK above) — user-placeable ONLY, never
      auto-placed. Cell order is canon; mode/day recolour it, nothing reorders
-     it. Ground defaults ON (G2): a paper-shade plate with one module of clear
-     space keeps stock off the outer corners on a poster; square-anchored
-     ignores it (its ink corner is the anchor). Default box = module 30 on the
-     grounded 4×11 strip-v grid. */
-  inkmark: { w:120, h:330, props:{ form:'strip-v', mode:'full', day:'fri', ground:true } },
+     it.
+
+     Ground defaults OFF (23.08): the paper-shade plate is G2's guard for a
+     stock cell landing on an outer edge, but in practice the strip is dropped
+     onto artwork that already has its own ground, and the plate read as a
+     mat nobody asked for. The control is still there and the guidance still
+     sits under it — this changes the DEFAULT, not the rule. Absent stays
+     grounded, so every saved poster renders exactly as before; only newly
+     placed marks come up bare. Default box = module 30 on the bare 2×9
+     strip-v grid (the same 60×270 mark the grounded default drew inside its
+     120×330 plate — the mark doesn't shrink, the plate just goes). */
+  inkmark: { w:60, h:270, props:{ form:'strip-v', mode:'full', day:'fri', ground:false } },
   /* Weekly recurring-event combo: an accent bar with the price (left) and time
      (right), and a day-of-week badge centred on top. One draggable unit. */
-  weekly:  { w:820, h:220, props:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg',
+  weekly:  { w:900, h:225, props:{ price:'Free', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'18:00', fill:'fg', color:'fg',
              shadowOn:true, shadowDist:9, shadowAngle:90, shadowBlur:3, shadowAlpha:null, shadowColor:'fg' } },
   /* Match-up combo: competition kicker, two team names auto-fitted to a matched
      size, an accent VS coin between, date · time below. One draggable unit. */
-  matchup: { w:780, h:680, props:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', vs:'VS',
-             date:'SAT 14 JUN', time:'22:00', surface:'none', color:'fg', fill:'fg' } },
-  block:   { w:540, h:420, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
+  matchup: { w:810, h:675, props:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', vs:'VS',
+             date:'Sat 14 Jun', time:'22:00', surface:'none', color:'fg', fill:'fg' } },
+  block:   { w:540, h:450, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   /* ---- graphical elements. All four share the block's colour + grain
      vocabulary (fill 'fg' = Auto → the poster accent, so they follow the day
      carousel), the one shadowModel, and the standard rotate/resize handles. */
   /* stroke starts at 0 so a fresh shape is a clean flat field (the block's
      manners); switching Fill to Outline in the panel dials it up for you. */
-  shape:   { w:420, h:420, props:{ kind:'circle', fill:'fg', style:'solid', stroke:0, strokeColor:'fg',
+  shape:   { w:405, h:405, props:{ kind:'circle', fill:'fg', style:'solid', stroke:0, strokeColor:'fg',
              opacity:1, grain:0, grainSize:2, grainInk:null, grainBlend:'soft', color:'fg' } },
-  icon:    { w:220, h:220, props:{ kind:'drink', fill:'fg', solid:false, strokeScale:1, opacity:1, color:'fg' } },
+  icon:    { w:225, h:225, props:{ kind:'drink', fill:'fg', solid:false, strokeScale:1, opacity:1, color:'fg' } },
   /* spacing/gap stay null so ruleLayout can pick the right rhythm per pattern */
-  rule:    { w:640, h:40,  props:{ pattern:'solid', fill:'fg', weight:6, spacing:null, dashRatio:0.55,
+  rule:    { w:630, h:45,  props:{ pattern:'solid', fill:'fg', weight:6, spacing:null, dashRatio:0.55,
              amp:10, gap:null, cap:'round', tickLen:10, tickDir:'both', term:'none', termAt:'end',
              termScale:1, dotSize:null, opacity:1, color:'fg' } },
-  burst:   { w:460, h:460, props:{ fill:'fg', rays:16, hub:0, hubFill:'paper', spin:0, opacity:1, color:'fg' } },
-  photo:   { w:760, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
+  burst:   { w:450, h:450, props:{ fill:'fg', rays:16, hub:0, hubFill:'paper', spin:0, opacity:1, color:'fg' } },
+  photo:   { w:765, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
@@ -769,7 +844,7 @@ const DEFAULTS = {
   /* Partner logo — same engine as a photo but untreated by default and with a
      transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark
      shows. Treatments still available if you want to riso a logo. */
-  logo:    { w:320, h:180, props:{ treatment:'none', transparent:true, paperFill:'fg', sample:null, src:null,
+  logo:    { w:315, h:180, props:{ treatment:'none', transparent:true, paperFill:'fg', sample:null, src:null,
              followAccent:true, ink:'pink', ink2:null, contrast:1.1, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
@@ -888,105 +963,124 @@ const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Ink
    Duotone in the poster accent, slightly darkened, keeps cream text readable. */
 const BLEED  = (reserve, extra) => { const r = reserve==null?270:reserve; return ({ type:'photo', x:0, y:0, w:1080, h:1350-r,
   p:Object.assign({ bleed:true, bleedBottom:r, treatment:'duotone', followAccent:true, contrast:1.22, brightness:-0.06, frame:false }, extra||{}) }); };
-const BANNER = () => ({ type:'ticket', k:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
-const TICKET = () => ({ type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
+/* The two closing bands, authored once so every template that ends in one is
+   identical. BANNER matches TICKET_FORMATS.banner exactly (QR on, canon
+   square in full ink, column right) — the two must agree, or picking "Banner"
+   in the details panel would rebuild a template's own footer differently
+   from how the template shipped it. TICKET sits on the shared Swiss frame
+   (x:90 … 990) like every other element; it used to sit at x:80/w:920, one
+   of the odd-one-out numbers the standard-sizing pass swept up. */
+const BANNER = () => ({ type:'ticket', k:'ticket', x:0, y:1080, w:1080, h:270, p:{ variant:'banner', surface:'paper', showQR:true, align:'right', mark:'on', markForm:'square', markMode:'full', site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
+const TICKET = () => ({ type:'ticket', k:'ticket', x:90, y:1125, w:900, h:180, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } });
 
 const TEMPLATES = [
   /* ---- WEEKLY · recurring events (Day · full-bleed + bottom banner) ---- */
   { id:'weekly-classic', name:'Classic', group:'Weekly', theme:'day', accent:'blue', ov:{ '1x1':{ weekly:{ y:35 }, title:{ y:285 }, host:{ y:655 } } }, els:[
     BLEED(),
-    { type:'weekly', k:'weekly', x:90, y:250, w:900, h:220, p:{ price:'FREE', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'19:00' } },
-    { type:'title',  k:'title', x:90, y:520, w:900, h:340, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',   k:'host', x:90, y:900, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    { type:'weekly', k:'weekly', x:90, y:270, w:900, h:225, p:{ price:'Free', every:'EVERY', day:'THU', allYear:'ALL YEAR', time:'19:00' } },
+    { type:'title',  k:'title', x:90, y:540, w:900, h:360, p:{ text:'Quiz\nNight', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',   k:'host', x:90, y:900, w:630, h:135, p:{ kicker:'Hosted by', name:'Host Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   /* ---- SPORTS · match screenings (Night · full-bleed + standard ticket) ---- */
   { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', ov:{ '1x1':{ matchup:{ y:110, h:700 } } }, els:[
     BLEED(0, { contrast:1.32, brightness:-0.1 }),
-    { type:'matchup', k:'matchup', x:90, y:300, w:900, h:760, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'SAT 14 JUN', time:'22:00', textColor:'cream' } },
+    { type:'matchup', k:'matchup', x:90, y:315, w:900, h:765, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'Sat 14 Jun', time:'22:00', textColor:'cream' } },
     TICKET(),
   ]},
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
+  /* THE default event template — what the queue hands a calendar event, and
+     the one every other Talk layout is a variation on. It is deliberately the
+     plainest statement of the standard frame, so the boxes here ARE the house
+     sizes: chips 360×90 and 270×90 on one baseline, title 900 wide, host
+     630×135, banner 1080×270 flush to the foot. Every edge is a multiple of
+     45 and the left/right lines are 90 / 990, so nothing in it needs nudging
+     and Snap lands on all of it.
+
+       270 – 360   Thu · 19:00   +   Free      (one chip row)
+       405 – 765   Event Title
+       810 – 945   Hosted by / Speaker Name
+      1080 – 1350  the Reality banner                                  */
   { id:'talk-classic', name:'Classic', group:'Talk', theme:'day', accent:'blue', els:[
     BLEED(),
-    { type:'when',  x:90,  y:250, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent', align:'center' } },
-    { type:'cost',  x:580, y:250, w:230, h:84, p:{ text:'FREE', surface:'accent', align:'center' } },
-    { type:'title', x:90, y:380, w:900, h:340, p:{ text:'Event\nTitle', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  x:90, y:780, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    { type:'when',  x:90, y:270, w:360, h:90, p:{ text:'Thu · 19:00', surface:'accent', align:'center' } },
+    { type:'cost',  x:540, y:270, w:270, h:90, p:{ text:'Free', surface:'accent', align:'center' } },
+    { type:'title', x:90, y:405, w:900, h:360, p:{ text:'Event\nTitle', fontSize:120, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',  x:90, y:810, w:630, h:135, p:{ kicker:'Hosted by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'talk-top', name:'Top + tagline', group:'Talk', theme:'day', accent:'red', els:[
     BLEED(),
-    { type:'title',  x:90, y:200, w:900, h:260, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'tagline',x:90, y:490, w:780, h:80,  p:{ text:'A short line about the talk.', fontSize:22, surface:'none', color:'cream' } },
-    { type:'when',   x:90, y:600, w:360, h:84,  p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'host',   x:90, y:740, w:640, h:120, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    { type:'title',  x:90, y:180, w:900, h:270, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'tagline',x:90, y:495, w:900, h:90,  p:{ text:'A short line about the talk.', fontSize:22, surface:'none', color:'cream' } },
+    { type:'when',   x:90, y:630, w:360, h:90,  p:{ text:'Thu · 19:00', surface:'accent' } },
+    { type:'host',   x:90, y:765, w:630, h:135, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'talk-block', name:'Text block', group:'Talk', theme:'day', accent:'yellow', els:[
     BLEED(),
-    { type:'title', x:90, y:360, w:760, h:300, p:{ text:'Event Title', fontSize:82, weight:700, align:'left', surface:'solid' } },
-    { type:'when',  x:90, y:690, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'host',  x:90, y:830, w:640, h:120, p:{ kicker:'Presented by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    { type:'title', x:90, y:360, w:900, h:315, p:{ text:'Event Title', fontSize:82, weight:700, align:'left', surface:'solid' } },
+    { type:'when',  x:90, y:720, w:360, h:90, p:{ text:'Thu · 19:00', surface:'accent' } },
+    { type:'host',  x:90, y:855, w:630, h:135, p:{ kicker:'Hosted by', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'talk-statement', name:'Statement', group:'Talk', theme:'day', accent:'red', ov:{ '1x1':{ title:{ y:130 }, when:{ y:710 } } }, els:[
     BLEED(),
-    { type:'title', k:'title', x:90, y:330, w:900, h:560, p:{ text:'BIG\nIDEA', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
-    { type:'when',  k:'when', x:90, y:930, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
+    { type:'title', k:'title', x:90, y:315, w:900, h:540, p:{ text:'BIG\nIDEA', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
+    { type:'when',  k:'when', x:90, y:945, w:360, h:90, p:{ text:'Thu · 19:00', surface:'accent' } },
     BANNER(),
   ]},
   { id:'talk-lower', name:'Lower third', group:'Talk', theme:'day', accent:'blue', ov:{ '1x1':{ when:{ y:240 }, title:{ y:360 }, host:{ y:665 } } }, els:[
     BLEED(),
-    { type:'when',  k:'when', x:90, y:540, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent' } },
-    { type:'title', k:'title', x:90, y:630, w:900, h:280, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  k:'host', x:90, y:910, w:640, h:120, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
+    { type:'when',  k:'when', x:90, y:540, w:360, h:90, p:{ text:'Thu · 19:00', surface:'accent' } },
+    { type:'title', k:'title', x:90, y:630, w:900, h:270, p:{ text:'Event Title', fontSize:100, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',  k:'host', x:90, y:900, w:630, h:135, p:{ kicker:'With', name:'Speaker Name', align:'left', surface:'none', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   /* ---- SERIES · recurring talks (Day · full-bleed + bottom banner) ---- */
   { id:'series-badge', name:'Badge', group:'Series', theme:'day', accent:'green', ov:{ '1x1':{ host:{ y:700 } } }, els:[
     BLEED(),
-    { type:'badge', x:760, y:230, w:230, h:230, p:{ top:'EVERY', big:'THU', sub:'weekly' } },
-    { type:'title', x:90, y:520, w:900, h:300, p:{ text:'Series\nName', fontSize:100, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'host',  k:'host', x:90, y:860, w:640, h:120, p:{ kicker:'Hosted by', name:'Host Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
+    { type:'badge', x:765, y:225, w:225, h:225, p:{ top:'EVERY', big:'THU', sub:'weekly' } },
+    { type:'title', x:90, y:540, w:900, h:315, p:{ text:'Series\nName', fontSize:100, weight:700, surface:'none', align:'left', color:'cream' } },
+    { type:'host',  k:'host', x:90, y:855, w:630, h:135, p:{ kicker:'Hosted by', name:'Host Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
     BANNER(),
   ]},
   { id:'series-lineup', name:'Lineup', group:'Series', theme:'day', accent:'blue', els:[
     BLEED(),
-    { type:'title',  x:90, y:230, w:900, h:220, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'lineup', x:90, y:500, w:620, h:420, p:{ heading:'This month', surface:'scrim', items:[{n:'Opening talk',t:'19:00'},{n:'Main session',t:'19:45'},{n:'Q & A',t:'20:45'}] } },
+    { type:'title',  x:90, y:225, w:900, h:225, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
+    { type:'lineup', x:90, y:495, w:630, h:405, p:{ heading:'This month', surface:'scrim', items:[{n:'Opening talk',t:'19:00'},{n:'Main session',t:'19:45'},{n:'Q & A',t:'20:45'}] } },
     BANNER(),
   ]},
   { id:'series-sessions', name:'Sessions', group:'Series', theme:'day', accent:'purple', ov:{ '1x1':{ sessions:{ h:490 } } }, els:[
     BLEED(),
-    { type:'title',    x:90, y:200, w:900, h:200, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
-    { type:'sessions', k:'sessions', x:90, y:440, w:720, h:580, p:{ heading:'Next sessions', surface:'scrim', raw:'01 — Opening Night — 5.6\n02 — Director in Focus — 12.6\n03 — Late Classic — 19.6\n04 — Closing Film — 26.6' } },
+    { type:'title',    x:90, y:180, w:900, h:180, p:{ text:'Series Name', fontSize:82, weight:700, surface:'none', align:'left', color:'cream' } },
+    { type:'sessions', k:'sessions', x:90, y:450, w:900, h:585, p:{ heading:'Next sessions', surface:'scrim', raw:'01 — Opening Night — 5.6\n02 — Director in Focus — 12.6\n03 — Late Classic — 19.6\n04 — Closing Film — 26.6' } },
     BANNER(),
   ]},
   { id:'series-min', name:'Minimal', group:'Series', theme:'day', accent:'amber', ov:{ '1x1':{ badge:{ y:575 } } }, els:[
     BLEED(),
-    { type:'title', x:90, y:360, w:900, h:300, p:{ text:'Series\nName', fontSize:120, align:'left', surface:'none', color:'cream' } },
-    { type:'badge', k:'badge', x:90, y:720, w:230, h:230, p:{ top:'EVERY', big:'THU', sub:'19:00' } },
+    { type:'title', x:90, y:360, w:900, h:315, p:{ text:'Series\nName', fontSize:120, align:'left', surface:'none', color:'cream' } },
+    { type:'badge', k:'badge', x:90, y:720, w:225, h:225, p:{ top:'EVERY', big:'THU', sub:'19:00' } },
     BANNER(),
   ]},
   /* ---- NIGHTLIFE (Night · full-bleed + standard ticket) ---- */
   { id:'night-dj', name:'DJ hero', group:'Nightlife', theme:'night', accent:'pink', ov:{ '1x1':{ title:{ y:330 }, host:{ y:710 } } }, els:[
     BLEED(0, { contrast:1.3 }),
-    { type:'title', k:'title', x:90, y:520, w:920, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:144, weight:700, align:'left', surface:'none', color:'cream' } },
-    { type:'host',  k:'host', x:90, y:900, w:560, h:120, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
+    { type:'title', k:'title', x:90, y:540, w:900, h:360, p:{ text:'PULSE\nSESSIONS', fontSize:144, weight:700, align:'left', surface:'none', color:'cream' } },
+    { type:'host',  k:'host', x:90, y:900, w:630, h:135, p:{ kicker:'On the decks', name:'DJ Name', surface:'none', align:'left', color:'cream', fontSize:32 } },
     TICKET(),
   ]},
   { id:'night-lineup', name:'Lineup night', group:'Nightlife', theme:'night', accent:'blue', els:[
     BLEED(0),
-    { type:'title',   x:90, y:240, w:920, h:200, p:{ text:'Club Night', fontSize:100, weight:700, surface:'none', color:'cream' } },
-    { type:'lineup',  x:90, y:470, w:560, h:380, p:{ heading:'Lineup', surface:'scrim', items:[{n:'DJ One',t:'22:00'},{n:'DJ Two',t:'23:30'},{n:'b2b Finale',t:'01:00'}] } },
-    { type:'specials',x:680,y:470, w:330, h:320, p:{ surface:'accent', heading:'All night', items:[{l:'House pour',p:'₫50k'},{l:'Beer + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}] } },
+    { type:'title',   x:90, y:225, w:900, h:180, p:{ text:'Club Night', fontSize:100, weight:700, surface:'none', color:'cream' } },
+    { type:'lineup',  x:90, y:450, w:540, h:405, p:{ heading:'Lineup', surface:'scrim', items:[{n:'DJ One',t:'22:00'},{n:'DJ Two',t:'23:30'},{n:'b2b Finale',t:'01:00'}] } },
+    { type:'specials',x:720, y:450, w:270, h:315, p:{ surface:'accent', heading:'All night', items:[{l:'House pour',p:'₫50k'},{l:'Beer + shot',p:'₫65k'},{l:'Til 1am',p:'2-for-1'}] } },
     TICKET(),
   ]},
   { id:'night-party', name:'Party slam', group:'Nightlife', theme:'night', accent:'red', ov:{ '1x1':{ title:{ y:160 }, when:{ y:745 } } }, els:[
     BLEED(0, { treatment:'spot', spotBase:'duotone', contrast:1.3 }),
-    { type:'title', k:'title', x:90, y:330, w:920, h:560, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
-    { type:'when',  k:'when', x:90, y:960, w:360, h:84, p:{ text:'SAT · 22:00', surface:'accent' } },
+    { type:'title', k:'title', x:90, y:315, w:900, h:540, p:{ text:'BIG\nNIGHT', fontSize:206, weight:800, align:'left', surface:'none', color:'cream' } },
+    { type:'when',  k:'when', x:90, y:945, w:360, h:90, p:{ text:'Sat · 22:00', surface:'accent' } },
     TICKET(),
   ]},
   /* ---- INK · the Year-2 system spoken plainly: no photograph — the locked
@@ -1004,12 +1098,12 @@ const TEMPLATES = [
      x:90 Swiss line via textInset. */
   { id:'ink-bands', name:'Three-ink bands', group:'Ink', theme:'day', accent:'blue',
     ov:{ '9x16':{ band1:{ x:0, w:1080 }, r1:{ x:0, w:1080 }, facts:{ x:0, w:1080 }, r2:{ x:0, w:1080 }, action:{ x:0, w:1080 } } }, els:[
-    { type:'title', k:'band1', x:0, y:135, w:1080, h:380, p:{ text:'Event\nTitle', fontSize:144, weight:800, align:'left', surface:'accent', textInset:90 } },
-    { type:'rule',  k:'r1', x:0, y:509, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
-    { type:'info',  k:'facts', x:0, y:515, w:1080, h:250, p:{ surface:'none', align:'left', fontSize:32, lineHeight:1.5, textInset:90,
-      text:'THU · 25.09.26 · 19:00\nThe Rooftop · Floor 3\nFree entry — all welcome' } },
-    { type:'rule',  k:'r2', x:0, y:759, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
-    { type:'title', k:'action', x:0, y:765, w:1080, h:190, p:{ text:'Come early', fontSize:100, weight:800, align:'left', surface:'accent', fill:'red', textColor:'cream', textInset:90 } },
+    { type:'title', k:'band1', x:0, y:135, w:1080, h:360, p:{ text:'Event\nTitle', fontSize:144, weight:800, align:'left', surface:'accent', textInset:90 } },
+    { type:'rule',  k:'r1', x:0, y:483, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
+    { type:'info',  k:'facts', x:0, y:495, w:1080, h:270, p:{ surface:'none', align:'left', fontSize:32, lineHeight:1.5, textInset:90,
+      text:'Thu · 25.09.26 · 19:00\nThe Rooftop · Floor 3\nFree entry — all welcome' } },
+    { type:'rule',  k:'r2', x:0, y:753, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
+    { type:'title', k:'action', x:0, y:765, w:1080, h:180, p:{ text:'Come early', fontSize:100, weight:800, align:'left', surface:'accent', fill:'red', textColor:'cream', textInset:90 } },
     TICKET(),
   ]},
   /* Ink-mark hero — the mark AS the composition: one large square-anchored
@@ -1019,10 +1113,10 @@ const TEMPLATES = [
      exception), not a second placed mark. */
   { id:'ink-hero', name:'Ink-mark hero', group:'Ink', theme:'day', accent:'blue',
     ov:{ '1x1':{ title:{ y:475, h:260 }, when:{ y:756 }, cost:{ y:756 } } }, els:[
-    { type:'inkmark', k:'mark', x:90, y:165, w:440, h:440, p:{ form:'square-anchored', mode:'full' } },
-    { type:'title',  k:'title', x:90, y:650, w:900, h:280, p:{ text:'Event\nTitle', fontSize:120, weight:800, align:'left', surface:'none', color:'fg' } },
-    { type:'when',   k:'when', x:90, y:970, w:360, h:84, p:{ text:'THU · 19:00', surface:'accent', align:'center' } },
-    { type:'cost',   k:'cost', x:480, y:970, w:230, h:84, p:{ text:'FREE', surface:'accent', align:'center' } },
+    { type:'inkmark', k:'mark', x:90, y:180, w:440, h:440, p:{ form:'square-anchored', mode:'full' } },
+    { type:'title',  k:'title', x:90, y:630, w:900, h:270, p:{ text:'Event\nTitle', fontSize:120, weight:800, align:'left', surface:'none', color:'fg' } },
+    { type:'when',   k:'when', x:90, y:945, w:360, h:90, p:{ text:'Thu · 19:00', surface:'accent', align:'center' } },
+    { type:'cost',   k:'cost', x:540, y:945, w:270, h:90, p:{ text:'Free', surface:'accent', align:'center' } },
     TICKET(),
   ]},
   /* The listing — a typographic weekly programme: the canon short strip at the
@@ -1033,9 +1127,9 @@ const TEMPLATES = [
      lesson). The 1:1 shortens the agenda so it clears the pinned ticket. */
   { id:'ink-listing', name:'The listing', group:'Ink', theme:'day', accent:'green',
     ov:{ '1x1':{ agenda:{ h:520 } } }, els:[
-    { type:'inkmark', k:'strip', x:90, y:150, w:180, h:80, p:{ form:'strip-short-h', mode:'full' } },
-    { type:'title', k:'title', x:90, y:255, w:900, h:170, p:{ text:'This week', fontSize:120, weight:800, align:'left', surface:'none', color:'fg' } },
-    { type:'agenda', k:'agenda', x:90, y:450, w:900, h:560, p:{ heading:'', rowSize:28, rowGap:14, rowTracking:0, surface:'none', items:[
+    { type:'inkmark', k:'strip', x:90, y:135, w:180, h:80, p:{ form:'strip-short-h', mode:'full' } },
+    { type:'title', k:'title', x:90, y:270, w:900, h:180, p:{ text:'This week', fontSize:120, weight:800, align:'left', surface:'none', color:'fg' } },
+    { type:'agenda', k:'agenda', x:90, y:450, w:900, h:540, p:{ heading:'', rowSize:28, rowGap:14, rowTracking:0, surface:'none', items:[
         {day:'Monday',name:'Board Game Night',time:'19:00'},
         {day:'Tuesday',name:'Chess Night',time:'19:00'},
         {day:'Wednesday',name:'Vietnam Talk',time:'14:30'},
@@ -1056,15 +1150,15 @@ const TEMPLATES = [
      would collide with the long columns; the menu's real home is A4. */
   { id:'menu-two-cat', name:'Two-category', group:'Menu', theme:'day', accent:'red',
     ov:{ '1x1':{ ticket:{ hidden:true } } }, els:[
-    { type:'title', k:'title', x:90, y:140, w:900, h:200, p:{ text:'MENU', fontSize:120, weight:800, align:'left', surface:'accent', subtitle:'Drinks & Snacks', subSize:28 } },
-    { type:'specials', k:'alc', x:90, y:380, w:430, h:660, p:{ heading:'Alcoholic', headingSize:28, surface:'paper', rowSize:34, rowGap:24, rowWeight:700, rowTracking:0, items:[
+    { type:'title', k:'title', x:90, y:135, w:900, h:180, p:{ text:'MENU', fontSize:120, weight:800, align:'left', surface:'accent', subtitle:'Drinks & Snacks', subSize:28 } },
+    { type:'specials', k:'alc', x:90, y:405, w:405, h:675, p:{ heading:'Alcoholic', headingSize:28, surface:'paper', rowSize:34, rowGap:24, rowWeight:700, rowTracking:0, items:[
         {l:'Bia Saigon',p:'₫25k'},{l:'Rum & Coke',p:'₫70k'},{l:'Gin Tonic',p:'₫80k'},
         {l:'House Cocktail',p:'₫90k'},{l:'Wine, glass',p:'₫90k'},{l:'Rượu shot',p:'₫50k'} ] } },
-    { type:'specials', k:'nonalc', x:560, y:380, w:430, h:360, p:{ heading:'Non-Alcoholic', headingSize:28, surface:'paper', rowSize:30, rowGap:18, rowWeight:700, rowTracking:0, items:[
+    { type:'specials', k:'nonalc', x:585, y:405, w:405, h:360, p:{ heading:'Non-Alcoholic', headingSize:28, surface:'paper', rowSize:30, rowGap:18, rowWeight:700, rowTracking:0, items:[
         {l:'Cà phê',p:'₫25k'},{l:'Trà đá',p:'₫10k'},{l:'Soft drink',p:'₫20k'},{l:'Nước suối',p:'₫10k'} ] } },
-    { type:'specials', k:'snacks', x:560, y:770, w:430, h:270, p:{ heading:'Snacks', headingSize:18, surface:'paper', rowSize:26, rowGap:16, rowWeight:700, rowTracking:0, items:[
+    { type:'specials', k:'snacks', x:585, y:810, w:405, h:270, p:{ heading:'Snacks', headingSize:18, surface:'paper', rowSize:26, rowGap:16, rowWeight:700, rowTracking:0, items:[
         {l:'Khoai tây / Chips',p:'₫20k'},{l:'Đậu phộng',p:'₫15k'},{l:'Bánh snack',p:'₫15k'} ] } },
-    { type:'ticket', k:'ticket', x:80, y:1120, w:920, h:200, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
+    { type:'ticket', k:'ticket', x:90, y:1125, w:900, h:180, p:{ variant:'standard', surface:'paper', showQR:true, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
   /* ---- HANDOUT · about-REALITY flyer (Day · red). A give-away to sit beside the
      menu at a stall: a wordmark masthead (ink kicker + an accent rule), a short
@@ -1075,12 +1169,12 @@ const TEMPLATES = [
      rule + agenda heading follow the poster accent; the day chips are the pop. */
   { id:'handout-about', name:'About REALITY', group:'Handout', theme:'day', accent:'red',
     ov:{ '1x1':{ ticket:{ hidden:true } } }, els:[
-    { type:'wordmark', x:90, y:64, w:472, h:77, p:{ surface:'none', color:'fg' } },
-    { type:'title', x:90, y:152, w:910, h:44, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.16 } },
-    { type:'block', x:90, y:206, w:910, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
-    { type:'info', x:90, y:230, w:910, h:170, p:{ surface:'none', align:'left', fontSize:24, lineHeight:1.4,
+    { type:'wordmark', x:90, y:90, w:472, h:77, p:{ surface:'none', color:'fg' } },
+    { type:'title', x:90, y:180, w:900, h:45, p:{ text:'Bar · Café · Community space', fontSize:24, weight:700, align:'left', surface:'none', color:'fg', letterSpacing:0.16 } },
+    { type:'block', x:90, y:234, w:900, h:6, p:{ fill:'fg', grain:0, opacity:1, outline:false } },
+    { type:'info', x:90, y:270, w:900, h:135, p:{ surface:'none', align:'left', fontSize:24, lineHeight:1.4,
       text:'REALITY is a bar, café, and community space on three floors in Đà Nẵng — coffee, craft cocktails, and 30+ events a week. **Our mission: to become the easiest place in Đà Nẵng to make friends.** Everyone is welcome.' } },
-    { type:'agenda', x:90, y:418, w:910, h:772, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0, surface:'none', items:[
+    { type:'agenda', x:90, y:450, w:900, h:765, p:{ heading:'A taste of the week', headingSize:34, rowSize:22, rowGap:26, rowTracking:0, surface:'none', items:[
         {day:'Monday',name:'Board Game Night',time:'19:00',desc:'A ton of games, a full bar, very, very social.'},
         {day:'Tuesday',name:'Chess Night',time:'19:00',desc:'All skill levels — newbie to grandmaster — welcomed.'},
         {day:'Wednesday',name:'Vietnam Talk',time:'14:30',desc:'A weekly intro to Vietnamese language + culture, for foreigners.'},
@@ -1088,13 +1182,13 @@ const TEMPLATES = [
         {day:'Friday',name:'No Mic Open Mic',time:'19:00',desc:'Rooftop acoustic jam.'},
         {day:'Saturday',name:'Women’s Circle',time:'13:00',desc:'A women-only space to talk honestly and meet each other.'},
         {day:'Sunday',name:'Pub Quiz',time:'20:00',desc:'Bring a team and weaponize your otherwise useless knowledge.'} ] } },
-    { type:'tagline', x:90, y:1196, w:910, h:44, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
+    { type:'tagline', x:90, y:1215, w:900, h:45, p:{ text:'…and literally dozens more events of every kind each week. Come on by!', fontSize:22, weight:600, align:'left', surface:'none', color:'fg' } },
     /* conformance 22.08: the plain address tagline became the slim ticket —
        the brand carrier (wordmark + site + address + the canon short strip,
        mark absent = on) closes the sheet. Hidden on the square like the menu's
        footer: the handout's real home is the A-sheets, and the 1:1 centre crop
        would land the ticket on the agenda. */
-    { type:'ticket', k:'ticket', x:90, y:1246, w:910, h:96, p:{ variant:'slim', surface:'none', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
+    { type:'ticket', k:'ticket', x:90, y:1260, w:900, h:90, p:{ variant:'slim', surface:'none', showQR:false, site:'realitydn.com', addr:'86 Mai Thúc Lân · Đà Nẵng' } },
   ]},
 ];
 function buildTemplate(tpl){
@@ -1122,7 +1216,7 @@ Object.assign(window, {
   PALETTE, ACCENTS, INK_CHOICES, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
-  themeColors, contrastInk, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, parseSessions,
+  themeColors, contrastInk, relLuminance, contrastRatio, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, QR_DATA_FRAC, parseSessions,
   SHAPE_KINDS, SHAPE_LABELS, MASK_KINDS, RULE_PATTERNS, RULE_TERMS, BURST_PRESETS, GRAPHICS,
   INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
   shapePath, shapeClip, roundedRectPath, burstRays, ruleLayout, iconLayout,

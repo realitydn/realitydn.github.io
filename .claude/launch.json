@@ -47,6 +47,13 @@
       "runtimeArgs": ["-m", "http.server", "4510", "--directory", "design-system-year2/claude-design"],
       "port": 4510,
       "autoPort": true
+    },
+    {
+      "name": "ds-guidelines",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4511", "--directory", "design-system-year2/design_handoff_reality_system/guidelines"],
+      "port": 4511,
+      "autoPort": true
     }
   ]
 }

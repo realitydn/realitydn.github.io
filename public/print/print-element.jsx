@@ -12,6 +12,25 @@ const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
+
+/* ---- THE TRACKING LADDER, print ------------------------------------------
+   One ladder, two offsets (canon M6): the screen rungs plus print's +.01em,
+   because ink spread closes counters. DEFAULTS above already carried the
+   offset on the six presets the verifier checks; the components did not, and
+   ran on .14 / .1 / .08 / .06 / .04 / .02 — six numbers against six rungs,
+   none of them matching. Same drift the Poster Studio renderers had.
+   `sign` is print-only: wayfinding type is read across a room, so it takes
+   the signage rung (.09) with the print offset on top. */
+const TRACK = { display:0.025, h1:0.035, h2:0.05, name:0.01, label:0.17, button:0.12, sign:0.10, fact:0 };
+const EM = (v)=> v+'em';
+/* FACT type — Grotesk states facts, in every medium (M1). A printed menu is a
+   NEAR surface (M2's register list names it), so facts here sit at 500 rather
+   than the poster's far-register 700. Tabular figures are what make a price
+   column line up under a dot leader. */
+const FACT = (size, extra)=> Object.assign({
+  fontFamily:FAM_CSS.grot, fontWeight:500, letterSpacing:0, fontSize:size,
+  fontVariantNumeric:'tabular-nums', textTransform:'none'
+}, extra||{});
 const contrastFor = (hex)=> window.contrastInk(hex);
 function peFill(key, accentHex){
   if(key==='ink') return PE_INK.rgb;
@@ -153,7 +172,7 @@ function ImageEl({ el, docAccent, lift }){
   return (
     <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', background:PE_WHITE.rgb, boxShadow:lift, border:frame, boxSizing:'border-box' }}>
       <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />
-      {!el.imgId && <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, color:'#b9b1a0', fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:11, letterSpacing:'.08em', textTransform:'uppercase', border:'1.5px dashed #d9d2c2', boxSizing:'border-box' }}>
+      {!el.imgId && <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, color:'#b9b1a0', fontFamily:FAM_CSS.mont, fontWeight:700, fontSize:11, letterSpacing:EM(TRACK.label), textTransform:'uppercase', border:'1.5px dashed #d9d2c2', boxSizing:'border-box' }}>
         <div style={{ fontSize:22, lineHeight:1 }}>⬆</div>Upload an image
       </div>}
     </div>
@@ -217,16 +236,16 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const colsArr = window.listSplit(el.items, el.cols||1);
     let idx = 0;
     const renderRows = (arr)=> arr.map((it)=>{ const i=idx++;
-      return <div key={i} style={{ display:'flex', alignItems:'baseline', gap:8, padding:(rs*0.3)+'px 0', color:textCol, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', fontSize:rs+'px', letterSpacing:'.02em' }}>
+      return <div key={i} style={{ display:'flex', alignItems:'baseline', gap:8, padding:(rs*0.3)+'px 0', color:textCol, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:el.upper===false?'none':'uppercase', fontSize:rs+'px', letterSpacing:EM(TRACK.name) }}>
         {mode==='bulleted' && <span style={{ flex:'none', color:markerCol, fontWeight:800 }}>{glyph}</span>}
         {mode==='numbered' && <span style={{ flex:'none', color:markerCol, fontWeight:800, minWidth:'1.5em' }}>{i+1}.</span>}
         <span style={{ flex: mode==='prices'?'none':'1 1 auto' }}>{it.l}</span>
         {mode==='prices' && el.dotLeader!==false && <span style={{ flex:'1 1 auto', borderBottom:`1.5px dotted ${textCol}`, opacity:.5, transform:'translateY(-3px)' }} />}
-        {mode==='prices' && <span style={{ flex:'none', fontWeight:800 }}>{it.p}</span>}
+        {mode==='prices' && <span style={FACT(rs+'px', { flex:'none', fontWeight:700 })}>{it.p}</span>}
       </div>;
     });
     inner = <div style={box({ padding: el.surface&&el.surface!=='none'?'12px 14px':'4px 2px', justifyContent:'flex-start' })}>
-      {el.heading ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.04em', fontSize:Math.min(el.fontSize||20,22)+'px', color:headCol, marginBottom:8, lineHeight:1 }}>{el.heading}</div> : null}
+      {el.heading ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:el.upper===false?'none':'uppercase', letterSpacing:EM(TRACK.h2), fontSize:Math.min(el.fontSize||20,22)+'px', color:headCol, marginBottom:8, lineHeight:1 }}>{el.heading}</div> : null}
       {colsArr.length<=1
         ? renderRows(colsArr[0]||[])
         : <div style={{ display:'flex', gap:18, alignItems:'flex-start' }}>
@@ -293,7 +312,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
           <QRView data={el.data} ecl={el.ecl} dark={textCol} light={light} quiet={el.quiet} {...qStyle} eye={eyeCol} logoColor={logoCol} />
         </div>
       </div>
-      {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.14em', fontSize:'12px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
+      {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:'12px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
     </div>;
   }
   else if(t==='coupon'){
@@ -479,7 +498,27 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const markForm = el.markForm||'auto';
     const squareMark = markForm==='square' || (markForm==='auto' && !!el.showQR);
     const markMode = el.markMode || (squareMark ? 'full' : 'majors');
-    const stripForm = markForm==='strip-long' ? 'strip-h' : 'strip-short-h';
+    /* FULL 9x2 strip by default (24.08) — 'auto' and 'strip' both resolved to
+       the 7x2 short form, so the footer only ever drew the truncated mark.
+       Short is now the fallback a caller asks for by name. Mirrors the poster
+       ticket and print-export.jsx — change all three or they drift. */
+    /* The footer runs from a 105mm card to an A3 board, and all three of its
+       parts are fixed-width — wordmark, text block, mark. Below A5 the
+       wordmark alone was taking half the band, which pushed the address onto
+       a third line here and, worse, straight under the mark in the PDF, where
+       drawLineStr does not wrap. So all three scale with the band: the mark
+       falls back to the 7x2 short strip on a narrow footer (exactly the case
+       "too narrow to hold nine cells" was written for), the wordmark and type
+       shrink with the width, and the address drops below ~105mm where it
+       cannot be set legibly anyway. An explicit strip / strip-long always
+       wins — this only decides what 'auto' does. */
+    const fw = el.w;
+    const wmH = Math.min(el.h-12, 28, Math.max(13, fw*0.055));
+    const fts = Math.max(7, Math.min(10, fw/40));
+    const showAddr = !!el.addr && fw >= 300;
+    const stripForm = markForm==='strip' ? 'strip-short-h'
+                    : markForm==='strip-long' ? 'strip-h'
+                    : (fw >= 430 ? 'strip-h' : 'strip-short-h');
     const stripCells = stripForm==='strip-h' ? 9 : 7;
     const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     const mk = (form, mode, m)=>{
@@ -495,9 +534,11 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       Math.min(Math.round(el.h/4), Math.floor((el.h-6)/2), Math.floor(el.w*(el.showQR ? 0.20 : (stripForm==='strip-h'?0.34:0.28))/stripCells)));
     const sqM = Math.max(window.INK_MARK.floors.square, Math.floor((el.h-6)/4));
     inner = <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', gap:14, paddingTop: el.rule!==false?6:0, borderTop: el.rule!==false?`2.5px solid ${PE_INK.rgb}`:'none', boxSizing:'border-box', boxShadow:lift }}>
-      <WordmarkSVG height={Math.min(el.h-12,28)} color={ink} />
-      <div style={{ flex:'1 1 auto', minWidth:0, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', fontSize:'10px', color:ink, lineHeight:1.4 }}>
-        <div>{el.site}</div>{el.addr ? <div style={{ fontWeight:600, opacity:.72, letterSpacing:'.04em' }}>{el.addr}</div> : null}
+      <WordmarkSVG height={wmH} color={ink} />
+      {/* nowrap: the address is one line or it is not shown. Letting it wrap
+          is what made the A5 standee's footer three lines deep. */}
+      <div style={{ flex:'1 1 auto', minWidth:0, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.button), fontSize:fts+'px', color:ink, lineHeight:1.4, whiteSpace:'nowrap' }}>
+        <div>{el.site}</div>{showAddr ? <div style={FACT(fts+'px', { fontWeight:500, opacity:.72 })}>{el.addr}</div> : null}
       </div>
       {el.showQR ? <div style={{ flex:'none', display:'flex', alignItems:'center', gap: (markOn && !squareMark) ? 10 : 0 }}>
         {markOn && !squareMark ? mk(stripForm, markMode, stripM) : null}
@@ -511,9 +552,9 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='badge'){
     inner = <div style={Object.assign(box({ alignItems:'center', justifyContent:'center', gap:2, padding:'8px 6px' }))}>
-      {el.top ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.14em', fontSize:Math.min(el.w*0.11,14)+'px', color:textCol }}>{el.top}</div> : null}
+      {el.top ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:Math.min(el.w*0.11,14)+'px', color:textCol }}>{el.top}</div> : null}
       {el.big ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', fontSize:Math.min(el.w*0.30,42)+'px', lineHeight:.9, color:textCol }}>{el.big}</div> : null}
-      {el.sub ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:Math.min(el.w*0.085,11)+'px', color:textCol }}>{el.sub}</div> : null}
+      {el.sub ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:Math.min(el.w*0.085,11)+'px', color:textCol }}>{el.sub}</div> : null}
     </div>;
   }
   else if(t==='seal'){
@@ -521,8 +562,8 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     inner = <div style={{ position:'relative', width:'100%', height:'100%', borderRadius:'50%', border:`2px solid ${col}`, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:lift, boxSizing:'border-box' }}>
       <div style={{ position:'absolute', inset:'6px', borderRadius:'50%', border:`1px solid ${col}` }} />
       <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, fontSize:Math.min(R*0.42,46)+'px', color:col, lineHeight:1 }}>{el.big||'★'}</div>
-      {el.top ? <div style={{ position:'absolute', top:R*0.14, left:0, right:0, textAlign:'center', fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:Math.min(R*0.10,11)+'px', color:col }}>{el.top}</div> : null}
-      {el.sub ? <div style={{ position:'absolute', bottom:R*0.14, left:0, right:0, textAlign:'center', fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:Math.min(R*0.09,10)+'px', color:col }}>{el.sub}</div> : null}
+      {el.top ? <div style={{ position:'absolute', top:R*0.14, left:0, right:0, textAlign:'center', fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:Math.min(R*0.10,11)+'px', color:col }}>{el.top}</div> : null}
+      {el.sub ? <div style={{ position:'absolute', bottom:R*0.14, left:0, right:0, textAlign:'center', fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:Math.min(R*0.09,10)+'px', color:col }}>{el.sub}</div> : null}
     </div>;
   }
   else if(t==='marquee'){
@@ -531,19 +572,19 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     /* strip pinned LEFT (alignItems on the column cross-axis) so the screen
        matches the PDF, which draws the repeat from x=6. */
     inner = <div style={box({ alignItems:'flex-start', justifyContent:'center', padding:'0 6px' })}>
-      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.1em', fontSize:(el.fontSize||15)+'px', color:textCol, whiteSpace:'nowrap', overflow:'hidden', maxWidth:'100%' }}>{unit.repeat(reps)}</div>
+      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(el.fontSize||15)+'px', color:textCol, whiteSpace:'nowrap', overflow:'hidden', maxWidth:'100%' }}>{unit.repeat(reps)}</div>
     </div>;
   }
   else if(t==='arrow'){
     inner = <div style={box({ flexDirection:'column', alignItems:'center', gap:4, padding:0, boxShadow:'none' })}>
       <div style={{ flex:'1 1 auto', width:'100%', minHeight:0, transform:`rotate(${ARROW_ROT[el.dir||'right']}deg)` }}><ArrowGlyph color={peFill(el.ink||'ink', accentHex)} /></div>
-      {el.label ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:'.06em', fontSize:(el.fontSize||18)+'px', color:textCol }}>{el.label}</div> : null}
+      {el.label ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.sign), fontSize:(el.fontSize||18)+'px', color:textCol }}>{el.label}</div> : null}
     </div>;
   }
   else if(t==='contact'){
     inner = <div style={box({ alignItems: el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start', padding:0, boxShadow:'none' })}>
-      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:(el.fontSize||11)+'px', color:textCol, textAlign:el.align, lineHeight:1.5 }}>
-        {el.site}{el.addr ? <span style={{ display:'block', fontWeight:600, opacity:.72, letterSpacing:'.04em' }}>{el.addr}</span> : null}
+      <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.button), fontSize:(el.fontSize||11)+'px', color:textCol, textAlign:el.align, lineHeight:1.5 }}>
+        {el.site}{el.addr ? <span style={FACT((el.fontSize||11)+'px', { display:'block', fontWeight:500, opacity:.72 })}>{el.addr}</span> : null}
       </div>
     </div>;
   }

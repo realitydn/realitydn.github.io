@@ -266,6 +266,44 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
     fail(`${rel}: off-ladder tracking literal(s) ${stray.join(" ")} — route through TRACK`);
 }
 
+// ── Print Studio's ladder, in BOTH renderers (24.08.26) ──
+// Same drift as the poster renderers had, and one extra hazard: the screen
+// renderer is a PROOF of the vector PDF, so a rung that differs between
+// print-element and print-export is a proof that lies. Guard three things —
+// the rungs carry the screen ladder plus print's +.01em (canon M6), the two
+// files agree exactly, and no off-ladder literal creeps back into the screen
+// one. `sign` is print-only: wayfinding type is read across a room.
+{
+  const PRINT_LADDER = { display: 0.025, h1: 0.035, h2: 0.05, name: 0.01, label: 0.17, button: 0.12, sign: 0.10, fact: 0 };
+  const readTrack = (rel) => {
+    const m = read(rel).match(/const TRACK\s*=\s*\{([^}]*)\}/);
+    if (!m) { fail(`${rel}: the TRACK ladder constant is gone`); return null; }
+    const out = {};
+    for (const g of m[1].matchAll(/(\w+)\s*:\s*(-?[0-9.]+(?:e-?[0-9]+)?)/g)) out[g[1]] = parseFloat(g[2]);
+    return out;
+  };
+  const seen = {};
+  for (const rel of ["public/print/print-element.jsx", "public/print/print-element.js",
+                     "public/print/print-export.jsx", "public/print/print-export.js"]) {
+    const t = readTrack(rel);
+    if (!t) continue;
+    seen[rel] = t;
+    for (const [role, want] of Object.entries(PRINT_LADDER)) {
+      if (t[role] == null) { fail(`${rel}: TRACK is missing the ${role} rung`); continue; }
+      if (!near(t[role], want))
+        fail(`${rel}: TRACK.${role} is ${t[role]}, print canon says ${want} (screen ${want - (role === "fact" || role === "name" ? 0.01 : 0.01)} + the print offset)`);
+    }
+  }
+  const a = seen["public/print/print-element.jsx"], b = seen["public/print/print-export.jsx"];
+  if (a && b && JSON.stringify(a) !== JSON.stringify(b))
+    fail("print-element.jsx and print-export.jsx carry DIFFERENT TRACK ladders — the screen would stop being a proof of the PDF");
+  for (const rel of ["public/print/print-element.jsx", "public/print/print-element.js"]) {
+    const stray = [...new Set(read(rel).match(/letterSpacing:\s*'\.?[0-9][0-9.]*em'/g) || [])];
+    if (stray.length)
+      fail(`${rel}: off-ladder tracking literal(s) ${stray.join(" ")} — route through TRACK`);
+  }
+}
+
 // Fact renderers — the family half of M1. Montserrat NAMES, Grotesk STATES
 // facts: the when/cost chips and every list's time/price/date cell go through
 // the FACT() helper in studio-element, which is the one place the rule lives.

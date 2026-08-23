@@ -657,7 +657,14 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
     <button className="ps-addrow" onClick={()=>setItems([...(el.items||[]), mode==='prices'?{l:'Item',p:'0k'}:{l:'Item',p:''}])}>+ Add row</button>
     <div style={{ height:8 }} />
     <Chips label="Columns" options={[{v:1,l:'1'},{v:2,l:'2'}]} value={el.cols||1} onChange={v=>update({cols:v})} />
-    <Chips label="Row size" options={[{v:'s',l:'S'},{v:'m',l:'M'},{v:'l',l:'L'},{v:'xl',l:'XL'}]} value={el.rowSize||'m'} onChange={v=>update({rowSize:v})} />
+    <Chips label="Row size" options={[{v:'s',l:'S'},{v:'m',l:'M'},{v:'l',l:'L'},{v:'xl',l:'XL'},{v:'xxl',l:'XXL'}]} value={el.rowSize||'m'} onChange={v=>update({rowSize:v})} />
+    {/* Case on the ITEM NAMES. Canon M2 lists a printed menu as a NEAR
+        surface, which takes sentence case — but every list built before this
+        existed was uppercased, so absent still means UPPER and only the new
+        templates opt in. Prices are unaffected either way: they are facts,
+        so they are Grotesk as typed and never uppercased. */}
+    <Chips label="Item case" options={[{v:true,l:'UPPER'},{v:false,l:'As typed'}]} value={el.upper!==false} onChange={v=>update({upper:v})} />
+    {el.upper===false && <div className="ps-hint">Near register — canon's case for a printed menu or card.</div>}
     {mode==='prices' && <Chips label="Dot leader" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.dotLeader!==false} onChange={v=>update({dotLeader:v})} />}
     {mode==='bulleted' && <Chips label="Bullet" options={LIST_MARKERS} value={el.marker||'•'} onChange={v=>update({marker:v})} />}
     {(mode==='bulleted'||mode==='numbered') && <Swatches label="Marker colour" value={el.markerColor!=null?el.markerColor:'auto'} onChange={v=>update({markerColor:v})} auto white />}

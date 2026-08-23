@@ -9,6 +9,12 @@
    ============================================================ */
 (function(){
 const PT_PER_MM = 72/25.4;
+/* THE TRACKING LADDER, print — the exact twin of the TRACK block in
+   print-element.jsx. The screen renderer is a proof of this output, so a rung
+   that differs between the two files is a proof that lies. Canon M6: screen
+   ladder + print's +.01em offset. `fact` is Grotesk's natural 0 — prices,
+   addresses and any other stated fact. */
+const TRACK = { display:0.025, h1:0.035, h2:0.05, name:0.01, label:0.17, button:0.12, sign:0.10, fact:0 };
 function L(){ return window.PDFLib; }
 function sizeDims(size, orient){ return window.sizeDims(size, orient); }
 
@@ -247,9 +253,9 @@ function renderElement(page, el, ctx){
     const listAccent=accentColor(isAccent(fillKey)?fillKey:accentName);
     const headCol=(el.headingColor&&el.headingColor!=='auto')?colorForKey(el.headingColor):listAccent;
     if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
-      drawLineStr(el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, 0.04); yTop+=hs*1.1+8; }
+      drawLineStr(el.upper===false?el.heading:el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, TRACK.h2); yTop+=hs*1.1+8; }
     const rs=window.listRowFont(el);
-    const rf=fontFor('mont',700), mf=fontFor('mont',800), ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.8;
+    const rf=fontFor('mont',700), mf=fontFor('mont',800), pf=fontFor('grot',500), ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.8;
     const markerCol = (el.markerColor&&el.markerColor!=='auto') ? colorForKey(el.markerColor) : listAccent;
     const glyph = el.marker || '•';
     /* 1–2(–3) balanced columns, reading DOWN each column — same split as the screen */
@@ -261,20 +267,23 @@ function renderElement(page, el, ctx){
       let y=yTop;
       arr.forEach((it)=>{
         const i=idx++;
-        const baseTop=y+ra+rs*0.3, lbl=(it.l||'').toUpperCase();
+        const baseTop=y+ra+rs*0.3, lbl=el.upper===false ? (it.l||'') : (it.l||'').toUpperCase();
         let lx=cx0;
         if(mode==='bulleted'){ drawLineStr(glyph, cx0, baseTop, mf, rs, markerCol, 0); lx=cx0+measure(glyph,mf,rs,0)+7; }
         else if(mode==='numbered'){ const num=(i+1)+'.'; drawLineStr(num, cx0, baseTop, mf, rs, markerCol, 0); lx=cx0+Math.max(measure(num,mf,rs,0), rs*0.9)+7; }
         if(mode==='prices'){
-          const prc=(it.p||'').toUpperCase(), pw=measure(prc,rf,rs,0.02);
-          drawLineStr(lbl, lx, baseTop, rf, rs, textColor, 0.02);
-          drawLineStr(prc, cx0+colW-pw, baseTop, rf, rs, textColor, 0.02);
-          if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,0.02), x0=lx+lw+6, x1=cx0+colW-pw-6, my=y+rs*0.3+ra*0.72;
+          /* the price is a FACT — Grotesk, natural tracking, never uppercased.
+             Measured with its OWN face or the right-align and the dot leader
+             would both land on a width that is not the one drawn. */
+          const prc=(it.p||''), pw=measure(prc,pf,rs,TRACK.fact);
+          drawLineStr(lbl, lx, baseTop, rf, rs, textColor, TRACK.name);
+          drawLineStr(prc, cx0+colW-pw, baseTop, pf, rs, textColor, TRACK.fact);
+          if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,TRACK.name), x0=lx+lw+6, x1=cx0+colW-pw-6, my=y+rs*0.3+ra*0.72;
             if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
           y+=rowH;
         } else {   // bulleted / numbered / plain → wrap long labels within the column
-          const availW=Math.max(20, cx0+colW-lx), lineH=rs*1.32, lines=wrapText(lbl, rf, rs, 0.02, availW);
-          lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*lineH, rf, rs, textColor, 0.02));
+          const availW=Math.max(20, cx0+colW-lx), lineH=rs*1.32, lines=wrapText(lbl, rf, rs, TRACK.name, availW);
+          lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*lineH, rf, rs, textColor, TRACK.name));
           y += rowH + (lines.length-1)*lineH;
         }
       });
@@ -351,8 +360,8 @@ function renderElement(page, el, ctx){
         if(g.logoKind==='star') localPath(window.starPath(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.30*ms), lightCol, 0, 0);
       }
     } else { rect(qx, top, qrSize, qrSize, { color:lightCol }); }
-    if(el.caption){ const cf=fontFor('mont',700), csz=11, a=cf.heightAtSize(csz,{descender:false}), cw=measure(el.caption.toUpperCase(),cf,csz,0.14);
-      drawLineStr(el.caption.toUpperCase(), (el.w-cw)/2, top+qrSize+(capH+a)/2-2, cf, csz, textColor, 0.14); }
+    if(el.caption){ const cf=fontFor('mont',700), csz=11, a=cf.heightAtSize(csz,{descender:false}), cw=measure(el.caption.toUpperCase(),cf,csz,TRACK.label);
+      drawLineStr(el.caption.toUpperCase(), (el.w-cw)/2, top+qrSize+(capH+a)/2-2, cf, csz, textColor, TRACK.label); }
   }
   else if(t==='coupon'){
     drawSurface();   // shared styled border (dashed by default) + lift
@@ -510,7 +519,11 @@ function renderElement(page, el, ctx){
   }
   else if(t==='footer'){
     if(el.rule!==false) rect(0,0,el.w,2.5,{ color:inkColor() });
-    const top=6, wmH=Math.min(el.h-top-6, 30), s=wmH/84, wmW=512*s, wmTop=top+(el.h-top-wmH)/2;
+    /* mirrors print-element.jsx: all three parts scale with the band, so a
+       105mm card does not get an A3 wordmark and an address drawn under the
+       mark (drawLineStr does not wrap — in the PDF it would simply overlap). */
+    const fw=el.w;
+    const top=6, wmH=Math.min(el.h-top-6, 30, Math.max(13, fw*0.055)), s=wmH/84, wmW=512*s, wmTop=top+(el.h-top-wmH)/2;
     const wmA=place(0,wmTop);
     page.drawSvgPath(window.WORDMARK_PATH, { x:wmA.x, y:wmA.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
     /* Ink mark (absent prop = ON — mirrors print-element.jsx's footer, change
@@ -527,7 +540,11 @@ function renderElement(page, el, ctx){
     const markForm = el.markForm||'auto';
     const squareMark = markForm==='square' || (markForm==='auto' && !!el.showQR);
     const markMode = el.markMode || (squareMark ? 'full' : 'majors');
-    const stripForm = markForm==='strip-long' ? 'strip-h' : 'strip-short-h';
+    /* FULL 9x2 strip by default — mirrors print-element.jsx and the poster
+       ticket. Short is the fallback a caller asks for by name. */
+    const stripForm = markForm==='strip' ? 'strip-short-h'
+                    : markForm==='strip-long' ? 'strip-h'
+                    : (fw >= 430 ? 'strip-h' : 'strip-short-h');
     const stripCells = stripForm==='strip-h' ? 9 : 7;
     const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     const stripM = Math.max(stripFloor,
@@ -566,11 +583,15 @@ function renderElement(page, el, ctx){
       }
     }
     // address + site between wordmark and QR
-    const tf=fontFor('mont',700), ts=10, ta=tf.heightAtSize(ts,{descender:false}), tx=wmW+18, tw=Math.max(0,rightX-tx);
-    const a1=(el.site||SITELESS).toUpperCase(), a2=el.addr||'';
+    const tf=fontFor('mont',700), ts=Math.max(7, Math.min(10, fw/40)), ta=tf.heightAtSize(ts,{descender:false}), tx=wmW+18, tw=Math.max(0,rightX-tx);
+    /* below ~105mm the address cannot be set legibly in what is left of the
+       band, and the PDF cannot wrap it — so it is dropped, matching the
+       screen. The site string is the mandatory one (canon D5), not this. */
+    const a1=(el.site||SITELESS).toUpperCase(), a2=(el.addr && fw>=300) ? el.addr : '';
     const blockTop=(el.h - (ts*1.4 + (a2?ts*1.25:0)))/2 + 2;
-    drawLineStr(a1, tx, blockTop+ta, tf, ts, colorForKey(el.ink||'ink',inkColor()), 0.08);
-    if(a2) drawLineStr(a2, tx, blockTop+ts*1.4+ta, fontFor('mont',600)||tf, ts*0.92, inkColor(), 0.04);
+    drawLineStr(a1, tx, blockTop+ta, tf, ts, colorForKey(el.ink||'ink',inkColor()), TRACK.button);
+    /* address = fact -> Grotesk, as typed, no tracking */
+    if(a2) drawLineStr(a2, tx, blockTop+ts*1.4+ta, fontFor('grot',500)||tf, ts*0.92, inkColor(), TRACK.fact);
   }
   else if(t==='wordmark'){
     const wmH=Math.min(el.h,el.w*0.16), s=wmH/84, wmW=512*s, lx=(el.w-wmW)/2, lyTop=(el.h-wmH)/2;
@@ -594,29 +615,29 @@ function renderElement(page, el, ctx){
     ellipse(cxL,cyL,R-6,R-6,{ borderColor:col, borderWidth:1 });
     const bigf=fontFor('mont',800), bs=Math.min(R*0.9,46), ba=bigf.heightAtSize(bs,{descender:false}), bw=measure(el.big||'★',bigf,bs,0);
     drawLineStr(el.big||'★', cxL-bw/2, cyL+ba*0.35, bigf, bs, col, 0);
-    if(el.top){ const tf=fontFor('mont',700), ts=Math.min(R*0.20,11), tw=measure(el.top.toUpperCase(),tf,ts,0.1); drawLineStr(el.top.toUpperCase(), cxL-tw/2, cyL-R*0.45, tf, ts, col, 0.1); }
-    if(el.sub){ const sf=fontFor('mont',700), ssz=Math.min(R*0.18,10), sw=measure(el.sub.toUpperCase(),sf,ssz,0.1); drawLineStr(el.sub.toUpperCase(), cxL-sw/2, cyL+R*0.66, sf, ssz, col, 0.1); }
+    if(el.top){ const tf=fontFor('mont',700), ts=Math.min(R*0.20,11), tw=measure(el.top.toUpperCase(),tf,ts,TRACK.label); drawLineStr(el.top.toUpperCase(), cxL-tw/2, cyL-R*0.45, tf, ts, col, 0.1); }
+    if(el.sub){ const sf=fontFor('mont',700), ssz=Math.min(R*0.18,10), sw=measure(el.sub.toUpperCase(),sf,ssz,TRACK.label); drawLineStr(el.sub.toUpperCase(), cxL-sw/2, cyL+R*0.66, sf, ssz, col, 0.1); }
   }
   else if(t==='marquee'){
     drawSurface();
     const f=fontFor('mont',800), s=el.fontSize||15, a=f.heightAtSize(s,{descender:false}), sep=' '+(el.sep||'★')+' ';
-    const unit=(el.text||'REALITY').toUpperCase()+sep, uw=measure(unit,f,s,0.1);
+    const unit=(el.text||'REALITY').toUpperCase()+sep, uw=measure(unit,f,s,TRACK.label);
     const reps=Math.max(1,Math.ceil(el.w/Math.max(1,uw))+1); let str=''; for(let i=0;i<reps;i++) str+=unit;
     const baseTop=(el.h-s)/2+a-2;
-    drawLineStr(str, 6, baseTop, f, s, textColor, 0.1);
+    drawLineStr(str, 6, baseTop, f, s, textColor, TRACK.label);
   }
   else if(t==='arrow'){
     drawSurface();
     const labelH=el.label?24:0, aH=el.h-labelH;
     localPath(arrowPath(el.dir||'right', el.w, aH), colorForKey(el.ink||'ink',accentColor(accentName)));
-    if(el.label){ const f=fontFor('mont',800), s=el.fontSize||18, a=f.heightAtSize(s,{descender:false}), w=measure(el.label.toUpperCase(),f,s,0.06); drawLineStr(el.label.toUpperCase(), (el.w-w)/2, aH+(labelH+a)/2-2, f, s, textColor, 0.06); }
+    if(el.label){ const f=fontFor('mont',800), s=el.fontSize||18, a=f.heightAtSize(s,{descender:false}), w=measure(el.label.toUpperCase(),f,s,TRACK.sign); drawLineStr(el.label.toUpperCase(), (el.w-w)/2, aH+(labelH+a)/2-2, f, s, textColor, TRACK.sign); }
   }
   else if(t==='contact'){
     const align=el.align||'left', a1=(el.site||SITELESS).toUpperCase(), a2=el.addr||'';
     const ff=fontFor('mont',700), s=el.fontSize||11;
-    const draw=(str,topY,sz)=>{ const a=ff.heightAtSize(sz,{descender:false}), w=measure(str,ff,sz,0.08); let lx=0; if(align==='center') lx=(el.w-w)/2; else if(align==='right') lx=el.w-w; drawLineStr(str,lx,topY+a,ff,sz,textColor,0.08); };
+    const draw=(str,topY,sz,face,tr)=>{ const f2=face||ff, t2=(tr==null?TRACK.button:tr), a=f2.heightAtSize(sz,{descender:false}), w=measure(str,f2,sz,t2); let lx=0; if(align==='center') lx=(el.w-w)/2; else if(align==='right') lx=el.w-w; drawLineStr(str,lx,topY+a,f2,sz,textColor,t2); };
     const top=(el.h-(s*1.5+(a2?s*1.3:0)))/2;
-    draw(a1,top,s); if(a2) draw(a2,top+s*1.5,s*0.92);
+    draw(a1,top,s); if(a2) draw(a2,top+s*1.5,s*0.92,fontFor('grot',500),TRACK.fact);
   }
 }
 const SITELESS = 'realitydn.com';

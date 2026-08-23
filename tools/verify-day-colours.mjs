@@ -242,6 +242,30 @@ for (const rel of ["public/studio/studio-data.jsx", "public/studio/studio-data.j
   for (const key of ["lineup", "sessions", "specials", "agenda"])
     checkRole(src, rel, key, "rowTracking", "name");
 }
+// ── The tracking ladder inside the RENDERERS (23.08.26) ──
+// The ladder used to be checked only on the six DEFAULTS presets, so every
+// label and heading hardcoded inside a renderer drifted freely — fourteen
+// distinct numbers across studio-element (.2 on the host kicker, .24 on the
+// matchup kicker, .18 on two list headings, .14, .12, .1, .08, .06, .03 …).
+// They now resolve through a TRACK constant. Guard it two ways: the constant
+// must carry the canon rungs, and no off-ladder letterSpacing literal may
+// reappear. A value that genuinely needs to sit off the ladder belongs in
+// TRACK with a name and a reason, not inline.
+for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-element.js"]) {
+  const src = read(rel);
+  const m = src.match(/const TRACK\s*=\s*\{([^}]*)\}/);
+  if (!m) { fail(`${rel}: the TRACK ladder constant is gone`); continue; }
+  for (const [role, want] of Object.entries(LADDER)) {
+    const got = m[1].match(new RegExp(`\\b${role}\\s*:\\s*(-?[0-9.]+(?:e-?[0-9]+)?)`));
+    if (!got) { fail(`${rel}: TRACK is missing the ${role} rung`); continue; }
+    if (!near(parseFloat(got[1]), want))
+      fail(`${rel}: TRACK.${role} is ${got[1]}, canon says ${want}`);
+  }
+  const stray = [...new Set(src.match(/letterSpacing:\s*'\.?[0-9][0-9.]*em'/g) || [])];
+  if (stray.length)
+    fail(`${rel}: off-ladder tracking literal(s) ${stray.join(" ")} — route through TRACK`);
+}
+
 // Fact renderers — the family half of M1. Montserrat NAMES, Grotesk STATES
 // facts: the when/cost chips and every list's time/price/date cell go through
 // the FACT() helper in studio-element, which is the one place the rule lives.
@@ -291,10 +315,12 @@ for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"])
       fail(`${rel}: ticket no longer renders WordmarkSVG — the wordmark stays the baked vector`);
     if (/Alternates/.test(block) || /fontFamily:\s*ALT\b/.test(block))
       fail(`${rel}: ticket sets its mark from a font-family — never re-typeset the wordmark`);
-    if (!/\.11em/.test(block))
-      fail(`${rel}: ticket site line lost its .11em (button role) tracking`);
-    if (!/\.16em/.test(block))
-      fail(`${rel}: ticket banner line lost its .16em (label role) tracking`);
+    // The site line's two rungs now resolve through TRACK rather than being
+    // written as literals, so guard the reference, not the number.
+    if (!/TRACK\.button/.test(block))
+      fail(`${rel}: ticket site line lost its button-role tracking (TRACK.button)`);
+    if (!/TRACK\.label/.test(block))
+      fail(`${rel}: ticket banner line lost its label-role tracking (TRACK.label)`);
     if (!/M73\.4,63\.7/.test(src))
       fail(`${rel}: WordmarkSVG's baked letter paths are missing`);
   }

@@ -26,6 +26,26 @@ const GROT = "'Space Grotesk',sans-serif";
    `letterSpacing` is 0 by definition — the optical ladder is Montserrat's,
    derived from its wide geometric caps, and spraying it across Grotesk's
    narrower lowercase is exactly what the merge forbids. */
+/* ---- THE TRACKING LADDER, in one place ---------------------------------
+   reality-ds.css / reality-tokens.json, baked per ROLE — no size-derived
+   formula, no per-component taste:
+       display .015 · h1 .025 · h2 .04 · name 0 · label .16 · button .11
+   Grotesk (facts, body) is always 0: the ladder was derived from Montserrat's
+   wide geometric caps and means nothing on Grotesk's lowercase.
+
+   Screen artwork carries the BARE ladder. The +.01em print offset belongs to
+   Print Studio and must never appear in this file.
+
+   Before this pass the ladder had been applied to the six DEFAULTS the
+   verifier checks and to nothing else, so the renderers carried FOURTEEN
+   distinct hardcoded numbers — .2 on the host kicker, .24 on the matchup
+   kicker, .18 on two list headings, .14, .12, .1, .08, .06, .03 … Every one
+   of those is a label or a heading that should have been on a rung.
+   verify-day-colours.mjs §TYPE now fails the build on any off-ladder literal
+   in here, so it cannot drift back. */
+const TRACK = { display:0.015, h1:0.025, h2:0.04, name:0, label:0.16, button:0.11, fact:0 };
+const EM = (v) => v + 'em';
+
 const FACT = (size, extra) => Object.assign({
   fontFamily:GROT, fontWeight:700, letterSpacing:0, fontSize:size,
   fontVariantNumeric:'tabular-nums'
@@ -456,7 +476,15 @@ function InkmarkEl({ el, theme }){
   const cells = window.inkMarkCells(form, el.mode||'full');
   const dayAccent = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
   const hx = (n)=> window.inkMarkHex(n, dayAccent);
-  const grounded = el.ground!==false && form!=='square-anchored';
+  /* Ground is OPT-IN (23.08): only an explicit `ground:true` draws the
+     paper-shade plate. It used to be opt-out — absent meant grounded — which
+     put a mat under every mark placed before the control existed, and under
+     every mark in a doc saved by an older build. G2's outer-corner rule is
+     the reason the plate exists, but in practice the mark is dropped onto
+     artwork that already has its own ground, and the plate reads as a mat
+     nobody asked for. The control and its guidance are unchanged; this is
+     which way the switch rests. */
+  const grounded = el.ground===true && form!=='square-anchored';
   const pad = grounded ? 1 : 0;                       // one module of clear space
   const gw = lay.cols + pad*2, gh = lay.rows + pad*2;
   const m = Math.max(1, Math.min(el.w/gw, el.h/gh));  // module: fit the box, keep cells square
@@ -484,11 +512,14 @@ function InkmarkEl({ el, theme }){
    paper-shade plate with one module of clear space (G2 — stock never lands
    on an outer corner of a paper surface); square-anchored never needs it,
    its ink cell IS the outer corner. Flat cells, no radius, static always. */
-function TicketInkMark({ form, mode, m, grounded, theme }){
+function TicketInkMark({ form, mode, m, grounded, theme, day }){
   const lay = window.inkMarkLayout(form);
   const cells = window.inkMarkCells(form, mode);
   const pad = grounded ? 1 : 0;
   const shade = theme==='night' ? '#1c140b' : '#ece2c9';   /* --paper-shade */
+  /* `day` only bites in daycode mode, where it picks the hue. Defaults to
+     Friday/red so every existing ticket call renders exactly as before. */
+  const dayAccent = (window.INK_MARK_DAY_ACCENT||{})[day||'fri'] || 'red';
   const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
   return <div aria-hidden="true" style={{ position:'relative', flex:'none',
       width:(lay.cols+pad*2)*m, height:(lay.rows+pad*2)*m,
@@ -496,7 +527,7 @@ function TicketInkMark({ form, mode, m, grounded, theme }){
     {lay.boxes.map(b=>(
       <div key={b.slot} style={{ position:'absolute',
         left:(pad+b.x)*m, top:(pad+b.y)*m, width:b.w*m, height:b.h*m,
-        background:window.inkMarkHex(nameOf(b.slot), 'red') }} />
+        background:window.inkMarkHex(nameOf(b.slot), dayAccent) }} />
     ))}
   </div>;
 }
@@ -557,7 +588,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const inner = (el.type==='logo' && !el.src && !exporting)
       ? <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
           border:`2px dashed ${seTheme(theme).shadow(0.45)}`, borderRadius:8, boxSizing:'border-box', padding:8,
-          fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', fontSize:12, color:seTheme(theme).shadow(0.7), textAlign:'center' }}>
+          fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:12, color:seTheme(theme).shadow(0.7), textAlign:'center' }}>
           <span>Partner logo</span><span style={{ fontWeight:600, fontSize:10, opacity:.8 }}>upload a PNG →</span>
         </div>
       : <PhotoEl el={el} theme={theme} inkKey={inkKey} selected={selected} exporting={exporting} />;
@@ -654,7 +685,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         <div style={{
           fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase',
           fontSize:el.fontSize+'px', lineHeight:(el.lineHeight!=null?el.lineHeight:.84),
-          letterSpacing: (el.letterSpacing!=null?el.letterSpacing:(el.weight<300?0.04:0.005))+'em',
+          letterSpacing: EM(el.letterSpacing!=null?el.letterSpacing:TRACK.display),
           color:textCol, textAlign:el.align,
           writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb',
           textShadow: tShadow,
@@ -663,7 +694,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         {hasSub && <div style={{
           fontFamily:MONT, fontWeight:el.subWeight||600, textTransform:'uppercase',
           fontSize:((el.subSize!=null?el.subSize:30)*B)+'px', lineHeight:1.15, marginTop:subGap,
-          letterSpacing:(el.subTracking!=null?el.subTracking:0.02)+'em',
+          letterSpacing:EM(el.subTracking!=null?el.subTracking:TRACK.h1),
           color: seResolve(el.subColor!=null?el.subColor:'fg', textCol), textAlign:el.align,
           whiteSpace:'pre-wrap', textWrap:'balance'
         }}>{el.subtitle}</div>}
@@ -705,8 +736,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='host'){
     inner = <div style={box(Object.assign({ alignItems: el.align==='left'?'flex-start':el.align==='right'?'flex-end':'center' }, sePad(el, 18)))}>
-      {el.kicker && <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.2em', fontSize:(el.fontSize*0.38)+'px', color:kickerHex, marginBottom:6 }}>{el.kicker}</div>}
-      <div style={{ fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase', letterSpacing:(el.letterSpacing!=null?el.letterSpacing:0.02)+'em', fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align }}>{el.name}</div>
+      {el.kicker && <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(el.fontSize*0.38)+'px', color:kickerHex, marginBottom:6 }}>{el.kicker}</div>}
+      <div style={{ fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase', letterSpacing:EM(el.letterSpacing!=null?el.letterSpacing:TRACK.name), fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align }}>{el.name}</div>
     </div>;
   }
   else if(el.type==='ticket'){
@@ -735,14 +766,24 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const markForm = el.markForm||'auto';
     const squareMark = markForm==='square' || (markForm==='auto' && !!el.showQR);
     const markMode = el.markMode || (squareMark ? 'full' : 'majors');
-    const stripForm = markForm==='strip-long' ? 'strip-h' : 'strip-short-h';
-    const stripGrounded = !(el.surface==='solid' || el.surface==='accent');
+    /* FULL 9×2 strip by default. 'auto' and 'strip' both used to resolve to
+       the 7×2 short form, so in practice the ticket only ever drew the
+       truncated mark; the full one needed the explicit 'strip-long' chip that
+       nobody reached for. The short form is now what it should always have
+       been — the fallback for a band too narrow to hold nine cells at the
+       floor module — and `markForm:'strip'` still means short for any doc
+       that asked for it. */
+    const stripForm = markForm==='strip' ? 'strip-short-h' : 'strip-h';
+    /* Ground OFF on the ticket band, like the placed mark. It was grounded on
+       every substrate except solid/accent, which is why a paper ticket — the
+       default — always carried a paper-shade mat under its strip. */
+    const stripGrounded = false;
     const stripCells = stripForm==='strip-h' ? 9 : 7;
     const stripCols = stripCells + (stripGrounded?2:0), stripRows = 2 + (stripGrounded?2:0);
     const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     /* width cap: tighter when the strip shares the band with a QR, a little
        roomier for the 9×2 full strip — the centred text column never collides. */
-    const stripWFrac = el.showQR ? 0.20 : (stripForm==='strip-h' ? 0.34 : 0.28);
+    const stripWFrac = el.showQR ? 0.24 : (stripForm==='strip-h' ? 0.34 : 0.28);
     const stripModule = (availH)=> Math.max(stripFloor,
       Math.min(Math.round(el.h/4), Math.floor(availH/stripRows), Math.floor(el.w*stripWFrac/stripCols)));
     const stripEl = (m)=> <TicketInkMark form={stripForm} mode={markMode} m={m} grounded={stripGrounded} theme={theme} />;
@@ -815,8 +856,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       markBox[markLeft?'left':'right'] = markLeft ? padL : padR;
       inner = <div style={box(Object.assign({ flexDirection:'column', alignItems:seColAlign(el), justifyContent:'center', gap:16 }, bannerPad))}>
         <WordmarkSVG height={64*B} color={textCol} />
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:18*B, color:textCol, textAlign:tim.align }}>
-          {el.site}{el.addr? <span style={{ fontWeight:600, opacity:.72 }}>{'  ·  '+el.addr}</span> : null}
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:18*B, color:textCol, textAlign:tim.align }}>
+          {el.site}{el.addr? <span style={FACT(15*B, { fontWeight:500, opacity:.72, textTransform:'none' })}>{'  ·  '+el.addr}</span> : null}
         </div>
         {markW>0 && <div style={markBox}>
           {stripOn ? stripEl(bm) : null}
@@ -831,8 +872,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
             min-width:auto, nowrap makes the string its own minimum — the row
             gives up gap before it breaks "86 Mai Thúc Lân · Đà Nẵng" across two
             lines, which is what happened once the QR grew to fill the band. */}
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.11em', fontSize:18*B, lineHeight:1.5, color:textCol, whiteSpace:'nowrap', textAlign:'center' }}>
-          {el.site}{(el.addr && el.variant!=='mini')? <span style={{ display:'block', fontWeight:600, opacity:.72, fontSize:14*B, letterSpacing:'.06em' }}>{el.addr}</span> : null}
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.button), fontSize:18*B, lineHeight:1.5, color:textCol, whiteSpace:'nowrap', textAlign:'center' }}>
+          {el.site}{(el.addr && el.variant!=='mini')? <span style={FACT(14*B, { display:'block', fontWeight:500, opacity:.72, textTransform:'none' })}>{el.addr}</span> : null}
         </div>
         {/* el.h-56 = the band interior (2×22 padding + borders) so a 4-module
             mark never clips on the card edge. The QR fills that SAME interior
@@ -855,12 +896,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const lpBase = el.rowSize || Math.max(13, Math.min(22, Math.floor(lpAvail/Math.max(1,el.items.length)) - 10));
     const lpName1 = Math.round(lpBase*1.24), lpTime = Math.max(11, Math.round(lpBase*0.62));
     inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:16,
           borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:(el.rowGap!=null?el.rowGap:7)+'px 0',
           fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase' }}>
-          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:(el.rowTracking!=null?el.rowTracking:0.01)+'em' }}>{it.n}</span>
+          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:EM(el.rowTracking!=null?el.rowTracking:TRACK.name) }}>{it.n}</span>
           {/* set time = fact → Grotesk; the artist name beside it stays Montserrat */}
           <span style={FACT(lpTime*B, { textTransform:'none', opacity:.72 })}>{it.t}</span>
         </div>
@@ -875,7 +916,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        muted beneath) with colour-coded category dots + a legend. */
     const rowGap = el.rowGap!=null?el.rowGap:7;
     const rowWt  = el.rowWeight||700;
-    const rowTr  = (el.rowTracking!=null?el.rowTracking:0.01)+'em';
+    const rowTr  = EM(el.rowTracking!=null?el.rowTracking:TRACK.name);
     const headFs = (el.headingSize!=null?el.headingSize:15)*B;
     const items  = window.parseSessions(el.raw);
     const markers = items.reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
@@ -889,10 +930,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const headH = el.heading ? headFs+13 : 0;
     const legendH = (rich && markers.length) ? 26 : 0;
     const avail = el.h/B - 32 - headH - legendH;
-    const heading = el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.18em', fontSize:headFs, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null;
+    const heading = el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:headFs, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null;
     const legend = (rich && markers.length) ? <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 18px', marginTop:10 }}>
       {markers.map(m=>{ const ms=Math.max(8,Math.round((rich?20:18)*B*0.5));
-        return <span key={m} style={{ display:'flex', alignItems:'center', gap:6, fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:Math.max(11,12*B), letterSpacing:'.08em' }}>
+        return <span key={m} style={{ display:'flex', alignItems:'center', gap:6, fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:Math.max(11,12*B), letterSpacing:EM(TRACK.label) }}>
           <span style={{ width:ms, height:ms, borderRadius:'50%', background:catColor(m), flex:'none' }} />{catName(m)}</span>; })}
     </div> : null;
 
@@ -921,7 +962,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         ))}
         {legend}
         {!items.length && !exporting &&
-          <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
+          <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
       </div>;
     } else {
       const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
@@ -941,7 +982,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           </div>
         ))}
         {!items.length && !exporting &&
-          <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
+          <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
       </div>;
     }
   }
@@ -951,10 +992,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const spAvail = el.h/B - 32 - (el.heading?34:0);
     const spBase = el.rowSize || Math.max(11, Math.min(15, Math.floor(spAvail/Math.max(1,el.items.length)) - 8));
     inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 16)))}>
-      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:(el.headingSize!=null?el.headingSize:26)*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.h2), fontSize:(el.headingSize!=null?el.headingSize:26)*B, marginBottom:8, lineHeight:.9 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, padding:(el.rowGap!=null?el.rowGap:5)+'px 0',
-          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:spBase*B, letterSpacing:(el.rowTracking!=null?el.rowTracking:0.03)+'em' }}>
+          borderTop:i? '1.5px dashed rgba(13,9,5,.3)':'none', fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:spBase*B, letterSpacing:EM(el.rowTracking!=null?el.rowTracking:TRACK.name) }}>
           {/* label is a name, price is a fact — the row carries both families */}
           <span>{it.l}</span><span style={FACT(spBase*B, { textTransform:'none' })}>{it.p}</span>
         </div>
@@ -970,7 +1011,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const dayNames = window.DAY_NAMES||[], dayAbbr = window.DAY_ABBR||[], byDay = window.ACCENT_BY_DAY||{};
     const items = el.items||[];
     const rowGap = el.rowGap!=null?el.rowGap:16;
-    const rowTr  = (el.rowTracking!=null?el.rowTracking:0.01)+'em';
+    const rowTr  = EM(el.rowTracking!=null?el.rowTracking:TRACK.name);
     const headFs = (el.headingSize!=null?el.headingSize:30)*B;
     const headLogical = el.heading ? (el.headingSize!=null?el.headingSize:30)+16 : 0;
     const avail  = el.h/B - 28 - headLogical;
@@ -984,14 +1025,14 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const dayShort = d => { const i = dayNames.findIndex(n=>n.toLowerCase()===String(d||'').toLowerCase()); return i>=0 ? dayAbbr[i] : String(d||'').slice(0,3).toUpperCase(); };
     const ruleC = seSurf('outline',theme,accentHex).color;
     inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 14)))}>
-      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:'.03em', fontSize:headFs, color:accentHex, marginBottom:12, lineHeight:.9 }}>{el.heading}</div> : null}
+      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.h2), fontSize:headFs, color:accentHex, marginBottom:12, lineHeight:.9 }}>{el.heading}</div> : null}
       {items.map((it,i)=>{
         const col = dayCol(it);
         return <div key={i} style={{ display:'flex', alignItems:'stretch', gap:Math.round(14*B),
           borderTop:i?`1.5px solid ${ruleC}22`:'none', padding:rowGap+'px 0' }}>
           <div style={{ flex:'none', width:chipW, borderRadius:Math.round(6*B), background:col, alignSelf:'flex-start',
             display:'flex', alignItems:'center', justifyContent:'center', padding:Math.round(nameFs*0.3)+'px 0',
-            fontFamily:MONT, fontWeight:800, fontSize:abbrFs, letterSpacing:'.08em', color:window.contrastInk(col) }}>{dayShort(it.day)}</div>
+            fontFamily:MONT, fontWeight:800, fontSize:abbrFs, letterSpacing:EM(TRACK.label), color:window.contrastInk(col) }}>{dayShort(it.day)}</div>
           <div style={{ flex:'1 1 auto', minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'baseline', gap:Math.round(10*B), flexWrap:'wrap' }}>
               <span style={{ fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:nameFs, letterSpacing:rowTr, lineHeight:1.04 }}>{it.name}</span>
@@ -1003,7 +1044,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
         </div>;
       })}
       {!items.length && !exporting &&
-        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:14*B, opacity:.4 }}>Add days in the panel →</div>}
+        <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:14*B, opacity:.4 }}>Add days in the panel →</div>}
     </div>;
   }
   else if(el.type==='qr'){
@@ -1017,9 +1058,14 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const qrFill = Math.max(24, 4*Math.floor((el.h - qrPad*2)/4));
     inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, qrPad)))}>
       {el.showQR && <SEQR size={qrFill} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.04em', lineHeight:1.15 }}>
-        <div style={{ fontSize:18*B }}>{el.label}</div>
-        <div style={{ fontSize:12*B, color:accentHex, letterSpacing:'.12em', marginTop:5 }}>{el.site}</div>
+      {/* Tracking is declared on each LINE, never on this wrapper: an em value
+          resolves against the element that carries it, so 0.16em set here
+          computed off the wrapper's inherited 16px and then landed as 0.142em
+          on the 18px label below it. Rungs only stay rungs where the
+          font-size lives. */}
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', lineHeight:1.15 }}>
+        <div style={{ fontSize:18*B, letterSpacing:EM(TRACK.label) }}>{el.label}</div>
+        <div style={{ fontSize:12*B, color:accentHex, letterSpacing:EM(TRACK.button), marginTop:5 }}>{el.site}</div>
       </div>
     </div>;
   }
@@ -1030,9 +1076,9 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   }
   else if(el.type==='badge'){
     inner = <div style={Object.assign(box(Object.assign({ alignItems:seColAlign(el) }, sePad(el, 0))), { borderRadius:'50%' })}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.16em', fontSize:13*B }}>{el.top}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:13*B }}>{el.top}</div>
       <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56*B)+'px', lineHeight:.85, color:accentHex }}>{el.big}</div>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', fontSize:11*B, opacity:.65 }}>{el.sub}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:11*B, opacity:.65 }}>{el.sub}</div>
     </div>;
   }
   else if(el.type==='weekly'){
@@ -1061,9 +1107,9 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       <div style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
         width:badgeD, height:badgeD, borderRadius:'50%', background:cream, border:Math.max(2,Math.round(badgeD*0.018))+'px solid '+ink, boxShadow: sh?sh.css:'none', boxSizing:'border-box',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
-        {el.every ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:'.14em' }}>{el.every}</span> : null}
+        {el.every ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:EM(TRACK.label) }}>{el.every}</span> : null}
         <span style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', color:accent, fontSize:bigF, lineHeight:.9, margin:'0.05em 0' }}>{el.day}</span>
-        {el.allYear ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:'.14em' }}>{el.allYear}</span> : null}
+        {el.allYear ? <span style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', color:ink, fontSize:smF, letterSpacing:EM(TRACK.label) }}>{el.allYear}</span> : null}
       </div>
     </div>;
   }
@@ -1079,13 +1125,13 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
     const teamSize=Math.max(18, Math.min(maxTeam, seFitText(el.teamA, availW, maxTeam), seFitText(el.teamB, availW, maxTeam)));
     const compF=Math.round(H*0.055), dtF=Math.round(H*0.072), vsD=Math.round(teamSize*0.92), vsF=Math.round(vsD*0.42), gap=Math.round(H*0.025);
     const team={ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:teamSize, lineHeight:.9,
-      color:textCol, letterSpacing:'.01em', whiteSpace:'nowrap', maxWidth:'100%' };
+      color:textCol, letterSpacing:EM(TRACK.display), whiteSpace:'nowrap', maxWidth:'100%' };
     inner = <div style={box(Object.assign({ alignItems:seColAlign(el) }, sePad(el, pad)))}>
-      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:'.24em', fontSize:compF, color:accentHex, marginBottom:gap }}>{el.comp}</div> : null}
+      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:compF, color:accentHex, marginBottom:gap }}>{el.comp}</div> : null}
       <div style={team}>{el.teamA}</div>
       <div style={{ width:vsD, height:vsD, borderRadius:'50%', background:accentHex, margin:gap+'px 0', flex:'none',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:window.contrastInk(accentHex), letterSpacing:'.02em' }}>{el.vs||'VS'}</span>
+        <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:window.contrastInk(accentHex), letterSpacing:EM(TRACK.name) }}>{el.vs||'VS'}</span>
       </div>
       <div style={team}>{el.teamB}</div>
       {/* kickoff date · time = facts → Grotesk; the team names stay Montserrat */}
@@ -1126,3 +1172,7 @@ function Wrap({ el, wrap, sel, onDown, children }){
 }
 
 window.StudioElement = StudioElement;
+/* The mark at an explicit module, in a shrink-wrapped box — the ticket's own
+   renderer, shared with the Inspector's mark editor so a swatch in the panel
+   and the mark on the canvas can never be drawn by two different code paths. */
+window.InkMarkSwatch = TicketInkMark;

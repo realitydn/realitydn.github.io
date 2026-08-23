@@ -83,7 +83,7 @@ table.cap tr.band td{background:var(--surface-2)}
 
 <div class="note" style="margin-top:0;border-width:3px">
   <h4>What is already in</h4>
-  <p>Two things landed before this card, because they needed no decision. The <b>canon mark</b> is on the schedule: the 7×2 short strip on the masthead beside ĐÀ NẴNG, and the square-anchored square riding the footer QR flush, module pinned to the QR's <i>pattern</i> height so the two read at one size. And the <b>QR now targets app.realitydn.com</b>, not the apex — a listing's natural partner is the live version of itself, where every event has a detail page and a sheet printed on Monday still resolves to Thursday's changes. It carries a caption sized to the block: <i>Full schedule + event details</i> where there is room, <i>Full schedule</i> where there is less, nothing under ~52px. The printed site string stays <code>realitydn.com</code>.</p>
+  <p>Two things landed before this card, because they needed no decision. The <b>canon mark</b> is on the schedule: the full 9×2 strip on the masthead beside ĐÀ NẴNG, and the square-anchored square riding the footer QR flush, module pinned to whichever of the QR's pattern or tile actually reads as its edge, so the two match on every palette. And the <b>QR now targets app.realitydn.com</b>, not the apex — a listing's natural partner is the live version of itself, where every event has a detail page and a sheet printed on Monday still resolves to Thursday's changes. It carries a caption sized to the block: <i>Full schedule + event details</i> where there is room, <i>Full schedule</i> where there is less, nothing under ~52px. The printed site string stays <code>realitydn.com</code>.</p>
   <p>What is <b>not</b> settled is everything below: which look actually survives 40 events, where the mark belongs, what a day plate should be, and whether a schedule is read near or far.</p>
 </div>
 
@@ -168,8 +168,8 @@ table.cap tr.band td{background:var(--surface-2)}
     <div class="opt" data-pick="A">
       <div class="oh"><span class="ok">A</span><span class="on">Masthead strip + footer square</span><span class="rec">Suggested · shipped</span></div>
       <div class="stage">
-        <div class="spec"><div class="r">Masthead</div><p>The 7×2 short strip sits beside ĐÀ NẴNG, bare — no ground, because the sheet is already stock. Module pinned to the ĐÀ NẴNG cap height so the two hold the same weight at every channel scale.</p></div>
-        <div class="spec"><div class="r">Footer</div><p>Square-anchored, flush against the QR, module = the QR's <b>pattern</b> height ÷ 4. Its ink cell takes the outer corner, so it needs no ground on any substrate.</p></div>
+        <div class="spec"><div class="r">Masthead</div><p>The full 9×2 strip sits beside ĐÀ NẴNG, bare — no ground, because the sheet is already stock. The 7×2 short form is the fallback for a masthead too narrow to hold nine cells. Module pinned to the ĐÀ NẴNG cap height so the two hold the same weight at every channel scale.</p></div>
+        <div class="spec"><div class="r">Footer</div><p>Square-anchored, flush against the QR. On a light ground (Day · Press · Paper) the code's quiet zone vanishes into the sheet, so the square matches its <b>pattern</b>; on Night and Carbon the cream tile reads as a rectangle a third larger, so it matches the <b>tile</b>. Its ink cell takes the outer corner, so it needs no ground on any substrate.</p></div>
       </div>
       <p class="why">It mirrors the poster exactly — strip at the top of the composition, square on the brand-carrying footer — so a poster and a schedule pinned side by side read as one system. And it is the arrangement already running, so choosing A is choosing to keep it.</p>
       <p class="cost"><b>Cost</b>Two marks on one sheet, which needs the canon footnote every time someone counts them.</p>
@@ -350,7 +350,7 @@ table.cap tr.band td{background:var(--surface-2)}
 
 <div class="note">
   <h4>Shipped without a vote</h4>
-  <p><b>The mark</b> is on the schedule (masthead short strip · square riding the footer QR, both bare, module pinned to the QR pattern). <b>The QR</b> targets <code>app.realitydn.com</code> with a length-aware caption. <b>The ink-mark spec</b> was ported into <code>schedule-data.jsx</code> in the canonical shape and added to <code>tools/verify-day-colours.mjs</code>, so the schedule's mark cannot drift from the poster's or the print one. Say the word if any of those should be opened up instead.</p>
+  <p><b>The mark</b> is on the schedule (masthead short strip · square riding the footer QR, both bare, module pinned to the QR pattern). <b>The QR</b> targets <code>app.realitydn.com</code> with a length-aware caption, on <i>every</i> channel — Feed, Stories and WhatsApp had none at all, so the app link reached only the A4 sheet. On the carousels it rides the footer margin beside the centred stack, which costs no height: the capacity table above is unchanged by it. <b>The ink-mark spec</b> was ported into <code>schedule-data.jsx</code> in the canonical shape and added to <code>tools/verify-day-colours.mjs</code>, so the schedule's mark cannot drift from the poster's or the print one. Say the word if any of those should be opened up instead.</p>
   <p><b>Not shipped, and not a decision:</b> Grid's WhatsApp overflow is a bug at every volume we programme. It gets fixed regardless of which option S1 takes.</p>
 </div>
 

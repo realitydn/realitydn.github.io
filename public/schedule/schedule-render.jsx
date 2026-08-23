@@ -14,6 +14,16 @@ const { INK:R_INK, CREAM:R_CREAM, WHITE:R_WHITE, MONT:R_MONT, ALT:R_ALT, GROT:R_
         INK_MARK:R_INK_MARK,
         QR_HOST:R_QR_HOST, QR_LABEL:R_QR_LABEL, QR_LABEL_SHORT:R_QR_LABEL_SHORT } = window;
 
+/* sRGB relative luminance — the real one, with the gamma expansion, not an
+   averaged-channel approximation. Used to decide whether a palette's ground is
+   light enough to carry a QR's quiet zone invisibly. */
+function R_LUM(hex){
+  if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return 1;
+  const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
+    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
+}
+
 /* ---- stylings — Year 2 token sets. Each renderer reads these generically, so a
    styling skins every output at once. Print always falls back to day-on-white. ---- */
 const PRESS_INK = { 1:R_INK,2:R_INK,3:R_INK,4:R_INK,5:R_INK,6:R_INK,7:R_INK };
@@ -543,9 +553,14 @@ function HeaderFull({ doc, channel }){
                 out 49×14 on a 1080px feed card — technically present, visually
                 a speck. The wordmark is what sets the masthead's scale, so the
                 mark is measured against that: ~26px tall on the feed, ~30 on a
-                story, and it actually reads. */}
-            <RInkMark form="strip-short-h" mode="full"
-              m={Math.max(R_INK_MARK.floors.short, Math.round(54*s*0.24))} />
+                story, and it actually reads.
+
+                The FULL 9×2 strip, not the 7×2 short one. The short form is
+                the fallback for a squeeze; the masthead has ~950px of row and
+                the strip needs 117 of it, so there is no squeeze to fall back
+                from. Short stays where space genuinely runs out. */}
+            <RInkMark form="strip-h" mode="full"
+              m={Math.max(R_INK_MARK.floors.strip, Math.round(54*s*0.24))} />
           </div>
         </div>
         <div style={{ textAlign:'right', display:'flex', flexDirection:'column', alignItems:'flex-end', gap:12*s }}>
@@ -861,17 +876,28 @@ function QRBlock({ size, label, align, boxW }){
   /* The canon square rides the QR — the poster's footer rule, applied here:
      square-anchored (its ink cell takes the outer corner, so it needs no
      ground on any substrate), butted FLUSH against the code with no rule
-     between, because the QR's own quiet zone IS the gap. Module = the QR's
-     PATTERN height / 4, not its tile height, so the two marks read at one
-     size. Dropped below the caption floor, where 4 modules would fall under
-     the 6px cell floor and print as mud. */
-  const sqM = size*R_QR_FRAC/4;
+     between, because the QR's own quiet zone IS the gap.
+
+     Which edge the square matches depends on whether the quiet zone is
+     VISIBLE, and that depends on the palette. A QR's light modules must stay
+     light or it will not scan, so on Day / Press / Paper — light grounds — the
+     code's cream tile disappears into the sheet and the PATTERN is the visible
+     object; the square matches that. On Night and Carbon the ground is dark,
+     the cream tile reads as a rectangle a third larger than the pattern, and
+     matching the pattern made the code look bigger than the square sitting
+     next to it. There the square matches the TILE.
+
+     Below the floor the square is dropped entirely: four modules under 6px
+     print as mud. */
+  const lightGround = R_LUM(T.bg) > 0.5;
+  const qrLight = lightGround ? T.bg : R_CREAM;
+  const sqM = (lightGround ? size*R_QR_FRAC : size)/4;
   const sq = sqM >= R_INK_MARK.floors.square;
   return (
     <div style={{ flex:'none', width:w, display:'flex', flexDirection:'column',
       alignItems:align||'center', gap:Math.round(size*0.07) }}>
       <div style={{ display:'flex', alignItems:'center' }}>
-        <RQR size={size} dark={R_INK} light={R_CREAM} />
+        <RQR size={size} dark={R_INK} light={qrLight} />
         {sq ? <RInkMark form="square-anchored" mode="full" m={sqM} /> : null}
       </div>
       {txt ? <div style={{ fontFamily:R_GROT, fontWeight:600,

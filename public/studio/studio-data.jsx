@@ -340,10 +340,32 @@ const _QR = _QR_ROWS.map(r=>r.split('').map(Number));
    noticeably heavier, because the QR is carrying a cream margin the square has
    no equivalent of. Exported so the ticket and Print Studio's footer agree. */
 const QR_DATA_FRAC = _QR.length / (_QR.length + 8);
-function QRGlyph({ size, dark, light }){
+/* QUIET ZONE, in modules per side. The spec asks for 4, and on a light
+   substrate that costs nothing: the zone is the same colour as the sheet, so
+   it is invisible and the code's PATTERN is the whole visible object.
+
+   On a dark substrate it is not free. The zone has to stay light or the code
+   will not scan, so 4 modules draw a cream slab a third wider than the
+   pattern — which next to the canon ink square reads as a much heavier mark.
+   QUIET_TIGHT is the small safe area for that case: enough margin for a
+   reliable read, little enough that the code and the square still balance.
+
+   Two modules is the practical floor. Below that, scanners that rely on
+   finding the timing patterns against clear space start to miss on a busy
+   ground, and this artwork gets printed. */
+const QUIET_SPEC = 4, QUIET_TIGHT = 2;
+/* Visible PATTERN inside a tile of `tile` px at `quiet` modules per side.
+   Callers size the TILE — it is the thing that has to fit the band — and read
+   the pattern back out to size whatever must match the code optically, which
+   in practice is always the canon ink square butted against it. */
+function qrPatternOf(tile, quiet){
+  const q = quiet==null ? QUIET_SPEC : quiet;
+  return tile * _QR.length / (_QR.length + 2*q);
+}
+function QRGlyph({ size, dark, light, quiet }){
   const n = _QR.length;
-  /* spec quiet zone: 4 modules per side relative to the full tile */
-  const pad = size * (4 / (n + 8));
+  const q = quiet==null ? QUIET_SPEC : quiet;
+  const pad = size * (q / (n + 2*q));
   return (
     <div style={{ width:size, height:size, background:light, padding:pad, boxSizing:'border-box' }}>
       <div style={{ width:'100%', height:'100%', display:'grid',
@@ -1216,7 +1238,7 @@ Object.assign(window, {
   PALETTE, ACCENTS, INK_CHOICES, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
-  themeColors, contrastInk, relLuminance, contrastRatio, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, QR_DATA_FRAC, parseSessions,
+  themeColors, contrastInk, relLuminance, contrastRatio, surfaceStyle, shadowModel, textInsetModel, safeRect, CATALOG, DEFAULTS, makeElement, uid, QRGlyph, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, parseSessions,
   SHAPE_KINDS, SHAPE_LABELS, MASK_KINDS, RULE_PATTERNS, RULE_TERMS, BURST_PRESETS, GRAPHICS,
   INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
   shapePath, shapeClip, roundedRectPath, burstRays, ruleLayout, iconLayout,

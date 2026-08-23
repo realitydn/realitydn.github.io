@@ -746,13 +746,45 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
 
           Grotesk is never uppercased (M3), so no text-transform: the string
           renders as typed, which is why every template and default already
-          carries it in sentence case. */}
-      {el.kicker && <div style={FACT((el.fontSize*0.38)+'px', { color:kickerHex, marginBottom:6 })}>{el.kicker}</div>}
-      <div style={{ fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase', letterSpacing:EM(el.letterSpacing!=null?el.letterSpacing:TRACK.name), fontSize:el.fontSize+'px', lineHeight:.95, color:textCol, textAlign:el.align }}>{el.name}</div>
+          carries it in sentence case.
+
+          The NAME is Grotesk too (24.08). The whole credit is one piece of
+          information — "Hosted by Speaker Name" — and splitting it across two
+          families made the lead-in read as a caption bolted onto a heading
+          rather than the opening of a sentence. It loses its caps with the
+          family, which also honours M4: a performer's own capitalisation
+          survives instead of being flattened to a shout.
+
+          Sizing: the lead-in is 0.6 of the name, up from 0.38. Two things were
+          wrong with 0.38. It was already too quiet — and caps tracked at .16em
+          carry far more optical width than the same string set lowercase at
+          0em, so keeping the ratio through the family change shrank it a
+          second time. 0.5 only bought back the old appearance; 0.6 is the size
+          it should have been. The gap and both line-heights derive from the
+          name too — 6px under a 12px lead-in was what made the pair look
+          scrunched, and Grotesk's descenders need more room than the .95 an
+          all-caps Montserrat name could get away with. */}
+      {el.kicker && <div style={FACT(Math.round(el.fontSize*0.6)+'px', { color:kickerHex, lineHeight:1.3, marginBottom:Math.round(el.fontSize*0.32) })}>{el.kicker}</div>}
+      <div style={FACT(el.fontSize+'px', { fontWeight:el.weight, letterSpacing:EM(el.letterSpacing!=null?el.letterSpacing:TRACK.name), lineHeight:1.1, color:textCol, textAlign:el.align })}>{el.name}</div>
     </div>;
   }
   else if(el.type==='ticket'){
-    const qrLight = surf.background==='transparent'? t.paper : surf.background;
+    /* A QR must be DARK-ON-LIGHT. The band's own colours were being handed
+       straight to it, so a night-theme ticket — whose paper surface is
+       #171109 — rendered the code inverted: cream modules on near-black. Most
+       phone cameras decode that, plenty of scanner apps do not, and it is
+       outside the spec on artwork that gets printed.
+
+       So: light bands keep using the band colour, which makes the quiet zone
+       invisible and costs nothing. Dark bands get a real cream code with a
+       TIGHT safe area — 2 modules instead of 4 — so the tile is a close frame
+       around the pattern rather than a slab that outweighs the ink square
+       beside it. */
+    const bandBg = surf.background==='transparent'? t.paper : surf.background;
+    const bandIsDark = window.relLuminance(bandBg) < 0.5;
+    const qrLight = bandIsDark ? '#fffbf1' : bandBg;
+    const qrDark  = bandIsDark ? '#0d0905' : surf.color;
+    const qrQuiet = bandIsDark ? window.QUIET_TIGHT : window.QUIET_SPEC;
     /* Ink mark on the ticket — DEFAULT ON (an absent prop = on): the ticket
        is the brand carrier, so every saved poster and every template gains
        the mark on next open. Canon (ink-strip.json + the poster exception):
@@ -814,8 +846,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        quiet zone IS the gap between them, exactly as specified. */
     const qrBlock = (qs)=> (
       <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
-        <SEQR size={qs} dark={surf.color} light={qrLight} />
-        {markOn && squareMark && squareEl(qs*window.QR_DATA_FRAC/4)}
+        <SEQR size={qs} dark={qrDark} light={qrLight} quiet={qrQuiet} />
+        {markOn && squareMark && squareEl(window.qrPatternOf(qs, qrQuiet)/4)}
       </div>
     );
     if(el.variant==='banner'){
@@ -853,7 +885,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
       /* block width = strip (if forced) + QR + its flush square, or whichever
          single mark is showing. The 14px gap matches the row variants'. */
       const markW = (stripOn ? stripCols*bm : 0)
-                  + (el.showQR ? qs + (markOn && squareMark ? qs*window.QR_DATA_FRAC : 0) : 0)
+                  + (el.showQR ? qs + (markOn && squareMark ? window.qrPatternOf(qs, qrQuiet) : 0) : 0)
                   + (stripOn && el.showQR ? 14 : 0)
                   + (sqSideOn ? 4*sqm : 0);
       const reserve = markW ? markW + 26 : 0;
@@ -1067,8 +1099,16 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
        than the square it sits next to. Drag the box to size the code. */
     const qrPad = 16;
     const qrFill = Math.max(24, 4*Math.floor((el.h - qrPad*2)/4));
+    /* Same dark-on-light guarantee as the ticket's code: a dark surface gets a
+       real cream tile with the tight 2-module safe area rather than an
+       inverted code that only some scanners read. */
+    const qrElBg = surf.background==='transparent'? t.paper : surf.background;
+    const qrElDark = window.relLuminance(qrElBg) < 0.5;
     inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, qrPad)))}>
-      {el.showQR && <SEQR size={qrFill} dark={surf.color} light={surf.background==='transparent'? t.paper : surf.background} />}
+      {el.showQR && <SEQR size={qrFill}
+        dark={qrElDark ? '#0d0905' : surf.color}
+        light={qrElDark ? '#fffbf1' : qrElBg}
+        quiet={qrElDark ? window.QUIET_TIGHT : window.QUIET_SPEC} />}
       {/* Tracking is declared on each LINE, never on this wrapper: an em value
           resolves against the element that carries it, so 0.16em set here
           computed off the wrapper's inherited 16px and then landed as 0.142em

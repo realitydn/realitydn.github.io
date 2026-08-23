@@ -301,6 +301,17 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
       fail(`${rel}: the host kicker is off FACT() — the credit lead-in is info, so it is Grotesk`);
     if (/uppercase/.test(line))
       fail(`${rel}: the host kicker uppercases — Grotesk is never uppercased (M3)`);
+    // The NAME that follows it is Grotesk too (24.08) — one credit, one
+    // family. Slice from the kicker's end to the name's own text node.
+    const nEnd = src.indexOf("el.name", kEnd);
+    const nameEl = nEnd > kEnd ? src.slice(kEnd, nEnd + 7) : null;
+    if (!nameEl) fail(`${rel}: host name renderer not found`);
+    else {
+      if (!/FACT\(/.test(nameEl))
+        fail(`${rel}: the host name is off FACT() — the whole credit is Grotesk`);
+      if (/uppercase/.test(nameEl))
+        fail(`${rel}: the host name uppercases — Grotesk is never uppercased (M3)`);
+    }
   }
 }
 // Print Studio data — ladder + the baked print offset; body stays Grotesk 0.

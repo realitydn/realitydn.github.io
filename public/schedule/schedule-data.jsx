@@ -619,9 +619,24 @@ const _SQR = [
    canon ink square butted against it) measures against this, not the tile.
    Mirrors studio-data.jsx's constant of the same name. */
 const QR_DATA_FRAC = _SQR.length / (_SQR.length + 8);
-function SchQR({ size, dark, light }){
+/* Quiet zone in modules per side. 4 is the spec and is free on a light ground —
+   the zone is the sheet colour, so it is invisible and the code's PATTERN is
+   the whole visible object. On a dark ground it is not free: the zone has to
+   stay light or the code will not scan, and 4 modules draw a cream slab a
+   third wider than the pattern, which outweighs the ink square butted against
+   it. QUIET_TIGHT is the small safe area for that case — enough for a reliable
+   read, little enough that code and square balance. Mirrors studio-data.jsx. */
+const QUIET_SPEC = 4, QUIET_TIGHT = 2;
+/* Visible pattern inside a tile of `tile` px. Callers size the TILE (it has to
+   fit the footer) and read the pattern back out to size the ink square. */
+function qrPatternOf(tile, quiet){
+  const q = quiet==null ? QUIET_SPEC : quiet;
+  return tile * _SQR.length / (_SQR.length + 2*q);
+}
+function SchQR({ size, dark, light, quiet }){
   const n = _SQR.length;
-  const pad = size * (4 / (n + 8));
+  const q = quiet==null ? QUIET_SPEC : quiet;
+  const pad = size * (q / (n + 2*q));
   return (
     <div style={{ width:size, height:size, background:light, padding:pad, boxSizing:'border-box', flex:'none' }}>
       <div style={{ width:'100%', height:'100%', display:'grid',
@@ -643,7 +658,7 @@ Object.assign(window, {
   parseQuickLine, parsePasteBlock, parseCSV, serializeCSV,
   buildDocFromFeed, mergeFeedIntoDoc, ictHHMM, ictDate,
   loadStoredDoc, storeDoc,
-  Wordmark, SchQR, QR_DATA_FRAC, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT,
+  Wordmark, SchQR, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT,
   PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex, SchInkMark,
 });
 

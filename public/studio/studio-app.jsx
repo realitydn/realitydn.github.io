@@ -215,7 +215,9 @@ const TYPE_CAPS = {
   when:     { text:true, font:'grot', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   cost:     { text:true, font:'grot', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
   stamp:    { text:true, font:'mont', size:true, weight:true, tracking:true, tag:true, align:true, surface:true, shadow:true, height:true },
-  host:     { text:true, font:'mont', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
+  /* The whole host credit is Grotesk (24.08) — lead-in AND name — so its
+     weight picker is the Grotesk set, which tops out at 700. */
+  host:     { text:true, font:'grot', size:true, sizePreset:true, weight:true, tracking:true, align:true, surface:true, kickerColor:true, shadow:true },
   ticket:   { align:true, surface:true, shadow:true },
   qr:       { align:true, surface:true, shadow:true },
   lineup:   { list:true, rowSize:true, align:true, surface:true, shadow:true },

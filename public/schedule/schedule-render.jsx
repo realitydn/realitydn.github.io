@@ -11,6 +11,7 @@ const { INK:R_INK, CREAM:R_CREAM, WHITE:R_WHITE, MONT:R_MONT, ALT:R_ALT, GROT:R_
         dWeekday:r_wd, dShort:r_dshort, eventsOn:r_eventsOn, dayInfo:r_dayInfo,
         timeLabel:r_timeLabel, usedLegend:r_usedLegend, partDates:r_partDates,
         Wordmark:RWordmark, SchQR:RQR, SchInkMark:RInkMark, QR_DATA_FRAC:R_QR_FRAC,
+        qrPatternOf:R_QR_PATTERN, QUIET_SPEC:R_QUIET_SPEC, QUIET_TIGHT:R_QUIET_TIGHT,
         INK_MARK:R_INK_MARK,
         QR_HOST:R_QR_HOST, QR_LABEL:R_QR_LABEL, QR_LABEL_SHORT:R_QR_LABEL_SHORT } = window;
 
@@ -878,26 +879,27 @@ function QRBlock({ size, label, align, boxW }){
      ground on any substrate), butted FLUSH against the code with no rule
      between, because the QR's own quiet zone IS the gap.
 
-     Which edge the square matches depends on whether the quiet zone is
-     VISIBLE, and that depends on the palette. A QR's light modules must stay
-     light or it will not scan, so on Day / Press / Paper — light grounds — the
-     code's cream tile disappears into the sheet and the PATTERN is the visible
-     object; the square matches that. On Night and Carbon the ground is dark,
-     the cream tile reads as a rectangle a third larger than the pattern, and
-     matching the pattern made the code look bigger than the square sitting
-     next to it. There the square matches the TILE.
+     The square always matches the code's visible PATTERN. What changes with
+     the palette is how much cream sits around that pattern: a QR's light
+     modules must stay light or it will not scan, so on Day / Press / Paper —
+     light grounds — the quiet zone takes the sheet colour and disappears, and
+     the spec's 4 modules cost nothing. On Night and Carbon the zone has to be
+     real cream, and 4 modules would draw a slab a third wider than the
+     pattern, outweighing the square beside it; there it tightens to 2 — a
+     close safe area that still reads as deliberate margin.
 
      Below the floor the square is dropped entirely: four modules under 6px
      print as mud. */
   const lightGround = R_LUM(T.bg) > 0.5;
   const qrLight = lightGround ? T.bg : R_CREAM;
-  const sqM = (lightGround ? size*R_QR_FRAC : size)/4;
+  const qrQuiet = lightGround ? R_QUIET_SPEC : R_QUIET_TIGHT;
+  const sqM = R_QR_PATTERN(size, qrQuiet)/4;
   const sq = sqM >= R_INK_MARK.floors.square;
   return (
     <div style={{ flex:'none', width:w, display:'flex', flexDirection:'column',
       alignItems:align||'center', gap:Math.round(size*0.07) }}>
       <div style={{ display:'flex', alignItems:'center' }}>
-        <RQR size={size} dark={R_INK} light={qrLight} />
+        <RQR size={size} dark={R_INK} light={qrLight} quiet={qrQuiet} />
         {sq ? <RInkMark form="square-anchored" mode="full" m={sqM} /> : null}
       </div>
       {txt ? <div style={{ fontFamily:R_GROT, fontWeight:600,

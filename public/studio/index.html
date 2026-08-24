@@ -32,6 +32,11 @@
      Studio — loaded from there on purpose so the two studios can never drift
      to different icon sets. Must load before studio-data.js (iconLayout). -->
 <script src="../print/print-icons.js"></script>
+<!-- Shared control kit (window.RUI) — Fold, Slider, Chips, the persisted fold
+     state, the hints mode and the Ctrl-K palette. One copy, shared verbatim
+     with Print Studio so the two can't drift to different components. Must
+     load before the app scripts, which alias its atoms at top level. -->
+<script src="../studio-shared/studio-ui.js"></script>
 <script src="studio-store.js"></script>
 <!-- WP9: best-effort cloud sync (window.RCloud). Strictly additive — no-ops
      when not signed in or the hub is dormant; localStorage/RStore stay the

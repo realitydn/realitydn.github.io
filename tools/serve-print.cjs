@@ -45,13 +45,23 @@ if (!fs.existsSync(path.join(ROOT, ENTRY))) {
   process.exit(1);
 }
 
+// Files the Studio loads from OUTSIDE its own folder. Deployed, public/ is
+// copied verbatim to the site root, so index.html's "../studio-shared/…"
+// resolves at the root and just works; locally ROOT containment would 403 it.
+// The control kit is deliberately one file shared with Poster Studio rather
+// than a second copy that can drift, so this maps that request to the real one.
+const SHARED = {
+  '/studio-shared/studio-ui.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-ui.js'),
+};
+
 const server = http.createServer((req, res) => {
   let rel = decodeURIComponent((req.url || '/').split('?')[0]);
   if (rel === '/') rel = '/' + ENTRY;
 
-  // Contain to ROOT — no path traversal.
-  const filePath = path.normalize(path.join(ROOT, rel));
-  if (!filePath.startsWith(ROOT)) {
+  // Contain to ROOT — no path traversal, except the shared files listed above.
+  const shared = SHARED[rel];
+  const filePath = shared || path.normalize(path.join(ROOT, rel));
+  if (!shared && !filePath.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end('Forbidden');
   }

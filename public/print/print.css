@@ -60,7 +60,12 @@ body{ background:var(--ps-bg); overflow:hidden; }
 .ps-iconbtn.on{ background:var(--ps-surface2); border-color:var(--ps-accent); color:var(--ps-fg); }
 .ps-iconbtn:disabled{ opacity:.4; cursor:default; transform:none; box-shadow:none; }
 
-.ps-tname{ width:150px; background:var(--ps-bg); border:2px solid var(--ps-hairline);
+/* Sticky so a narrow window scrolls the size/accent groups UNDER the export
+   controls instead of pushing Save PDF off the edge. */
+.ps-top .ps-export{ position:sticky; right:0; background:var(--ps-surface); padding-left:12px; z-index:3;
+  box-shadow:-16px 0 16px -8px var(--ps-surface); }
+.ps-top::-webkit-scrollbar{ height:0; }
+.ps-tname{ width:132px; background:var(--ps-bg); border:2px solid var(--ps-hairline);
   color:var(--ps-fg); font-family:var(--ps-grot); font-size:12.5px; padding:8px 10px; outline:none; transition:.12s; }
 .ps-tname:focus{ border-color:var(--ps-accent); }
 .ps-tname::placeholder{ color:var(--ps-faint); }
@@ -231,3 +236,30 @@ body{ background:var(--ps-bg); overflow:hidden; }
 @media (prefers-reduced-motion: reduce){
   *{ transition:none !important; }
 }
+
+/* ============================================================
+   COMMAND PALETTE (Ctrl-K) + the flash it lands on.
+   ============================================================
+   Same component as Poster Studio's (studio-shared/studio-ui),
+   in Print's register: hard corners, 2px borders. */
+.ps-palwrap{ position:fixed; inset:0; z-index:10000; background:rgba(6,4,2,.66);
+  display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; }
+.ps-pal{ width:min(560px, 92vw); background:var(--ps-surface); border:2px solid var(--ps-hairline);
+  box-shadow:0 20px 4px rgba(0,0,0,.4); overflow:hidden; display:flex; flex-direction:column; max-height:70vh; }
+.ps-palq{ width:100%; background:var(--ps-bg); border:none; border-bottom:2px solid var(--ps-hairline);
+  color:var(--ps-fg); font-family:var(--ps-grot); font-size:15px; padding:15px 17px; outline:none; }
+.ps-palq::placeholder{ color:var(--ps-faint); }
+.ps-pallist{ overflow-y:auto; padding:6px; }
+.ps-palrow{ width:100%; display:flex; align-items:baseline; gap:10px; padding:9px 11px; border:none;
+  background:none; cursor:pointer; text-align:left; font-family:var(--ps-grot); }
+.ps-palrow .l{ flex:1 1 auto; font-size:13px; color:var(--ps-fg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ps-palrow .g{ flex:none; font-family:var(--ps-mont); font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; font-size:8.5px; color:var(--ps-faint); }
+.ps-palrow.on{ background:var(--ps-surface2); }
+.ps-palrow.on .g{ color:var(--ps-accent); }
+.ps-palempty{ padding:18px 14px; font-size:12px; line-height:1.5; color:var(--ps-dim); }
+.ps-palfoot{ border-top:2px solid var(--ps-hairline); padding:8px 14px; font-family:var(--ps-mont);
+  font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:8.5px; color:var(--ps-faint); }
+@keyframes ps-flashkf{ 0%,100%{ background:transparent; } 22%{ background:rgba(237,27,114,.22); } }
+.ps-flash{ animation:ps-flashkf 1.25s ease-out; }
+@media (prefers-reduced-motion: reduce){ .ps-flash{ animation:none; box-shadow:0 0 0 2px var(--ps-accent); } }

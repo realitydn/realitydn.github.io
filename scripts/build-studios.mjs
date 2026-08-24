@@ -32,7 +32,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const STUDIO_DIRS = ['studio', 'schedule', 'print'];
+// studio-shared/ holds studio-ui.jsx — the control atoms Poster and Print both
+// load. It compiles exactly like a Studio's own sources; it just isn't one.
+const STUDIO_DIRS = ['studio', 'schedule', 'print', 'studio-shared'];
 
 // Shared with tools/serve-*.cjs — keep the two in step. Any change to how a
 // .jsx is compiled must apply to both the build and the local dev servers, or

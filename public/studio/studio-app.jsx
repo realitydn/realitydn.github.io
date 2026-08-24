@@ -101,51 +101,15 @@ function storeQueueDismissed(o){ try{ localStorage.setItem(QUEUE_DISMISS_KEY, JS
 function queueTitleSize(t){ const n=(t||'').length; return n<=12?120 : n<=22?100 : n<=34?82 : n<=50?68 : 56; }
 
 /* ---------- small controls ---------- */
-function Field({ label, value, onChange, area }){
-  return (
-    <div className="rs-row">
-      {label && <div className="rs-lab">{label}</div>}
-      {area
-        ? <textarea className="rs-area" value={value} onChange={e=>onChange(e.target.value)} />
-        : <input className="rs-input" value={value} onChange={e=>onChange(e.target.value)} />}
-    </div>
-  );
-}
-function Slider({ label, val, min, max, step, onChange, suffix }){
-  return (
-    <div className="rs-row">
-      <div className="rs-lab">{label}<span className="val">{val}{suffix||''}</span></div>
-      <input className="rs-slider" type="range" min={min} max={max} step={step||1} value={val}
-        onChange={e=>onChange(parseFloat(e.target.value))} />
-    </div>
-  );
-}
-function ScaleControl({ label, val, onChange }){
-  const idx = AP_SCALE.indexOf(apSnapScale(val));
-  return (
-    <div className="rs-row">
-      <div className="rs-lab">{label}<span className="val">{val}px · snapped</span></div>
-      <div className="rs-stepper">
-        <button onClick={()=>onChange(apScaleStep(val,-1))} aria-label="Smaller">A−</button>
-        <input className="rs-slider" type="range" min={0} max={AP_SCALE.length-1} step={1} value={idx<0?0:idx}
-          onChange={e=>onChange(AP_SCALE[parseInt(e.target.value)])} />
-        <button onClick={()=>onChange(apScaleStep(val,1))} aria-label="Bigger">A+</button>
-      </div>
-    </div>
-  );
-}
-function Chips({ label, options, value, onChange }){
-  return (
-    <div className="rs-row">
-      {label && <div className="rs-lab">{label}</div>}
-      <div className="rs-chips">
-        {options.map(o=>(
-          <button key={String(o.v)} className={'rs-chip'+(value===o.v?' on':'')} onClick={()=>onChange(o.v)}>{o.l}</button>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ---------- small controls ----------
+   Field / Slider / Chips / ScaleControl / NumField / Fold come from the shared
+   kit (public/studio-shared/studio-ui.jsx), the same copy Print Studio loads,
+   so the two can't drift to different components again. Swatches stays local:
+   its Auto/Ink/Cream trio is Poster's, not Print's K-only set. */
+RUI.configure({ prefix:'rs', storeKey:'reality-studio' });
+const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
+const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnapScale} step={apScaleStep} suffix="px" note="snapped" />;
+
 function Swatches({ label, value, onChange, autoTitle, autoBg }){
   // Auto adapts to the surface/theme; Ink and Cream are literal and fixed, so
   // any element (esp. text over a photo) can be forced dark or light. The Auto
@@ -259,24 +223,28 @@ const TAG_HEIGHTS = [{v:90,l:'S'},{v:135,l:'M'},{v:180,l:'L'},{v:225,l:'XL'}];
    weekly) — the model picks the mode. */
 function ShadowControls({ el, update, theme }){
   const m = window.shadowModel(el, theme);
+  const lift = shadowLift(el, m);
+  const label = (LIFTS.find(x=>x.v===lift)||{}).l;
+  // Only badge a rung you chose. "Lift" on an element whose family lifts by
+  // default is the absence of a decision, and badging it says nothing.
+  const deflt = m.defOn ? 'lift' : 'off';
   return (
-    <React.Fragment>
-      <div className="rs-sech">Shadow</div>
-      <Chips options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={m.on} onChange={v=>update({shadowOn:v})} />
-      {m.on && <React.Fragment>
+    <Fold id="sh" title="Shadow" badge={lift===deflt?null:label} dirty={lift==='custom'?1:0}>
+      <Chips label="Lift" options={LIFTS} value={lift} onChange={v=>update(applyLift(v,m))} />
+      {lift==='custom' && <React.Fragment>
         <Slider label="Distance" val={m.dist} min={0} max={m.maxDist} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
         <Slider label="Direction" val={m.ang} min={-180} max={180} step={5} onChange={v=>update({shadowAngle:v})} suffix="°" />
         <Slider label="Blur" val={m.blur} min={0} max={m.maxBlur} step={1} onChange={v=>update({shadowBlur:v})} suffix="px" />
         <Slider label="Opacity" val={m.alpha} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
         <Swatches label="Shadow colour" value={m.ck} autoTitle="Auto — soft press shadow"
           onChange={v=>update(v==='fg'?{shadowColor:'fg',shadowAlpha:null}:{shadowColor:v,shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:0.9})} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>
-          {m.mode==='text'
-            ? <span>Falls on the letters (bare text) — add a surface for a card shadow instead.</span>
-            : <span>Try a hard accent shadow — distance up, blur 0, full opacity. Very riso.</span>}
-        </div>
       </React.Fragment>}
-    </React.Fragment>
+      <Hint tight>
+        {m.mode==='text'
+          ? <span>Falls on the letters (bare text) — add a surface for a card shadow instead. <b>Hard</b> is the riso one: far, unblurred, opaque.</span>
+          : <span><b>Lift</b> is this element's own default drop. <b>Hard</b> throws it further with no blur — very riso. <b>Custom</b> opens the dials.</span>}
+      </Hint>
+    </Fold>
   );
 }
 /* Reality-ticket formats — picked from the details panel (not separate
@@ -352,20 +320,115 @@ const TREAT_PRESETS = {
   mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper' },
   none:       { contrast:1.1,  brightness:0 }
 };
-/* ---------- collapsible sidebar section (open state remembered per session) ---------- */
-const _foldOpen = {};
-function Fold({ id, title, open, badge, children }){
-  const [isOpen,setOpen] = React.useState(_foldOpen[id]!=null ? _foldOpen[id] : !!open);
-  const toggle=()=>{ _foldOpen[id]=!isOpen; setOpen(!isOpen); };
-  return (
-    <div className={'rs-fold'+(isOpen?' open':'')}>
-      <button type="button" className="rs-foldhead" onClick={toggle}>
-        <span className="chev">{isOpen?'▾':'▸'}</span><span className="t">{title}</span>
-        {(badge!=null && badge!=='') ? <span className="badge">{badge}</span> : null}
-      </button>
-      {isOpen && <div className="rs-foldbody">{children}</div>}
-    </div>
-  );
+/* ============================================================
+   NAMED LOOKS — the presets you actually reach for.
+   ============================================================
+   A treatment like Halftone exposes fourteen dials. Nobody sets
+   a poster by moving fourteen dials; you want "newsprint" or
+   "coarse" and then maybe a nudge. Each look is a patch applied
+   on top of the treatment's own TREAT_PRESETS baseline, so the
+   dials underneath stay honest — a look is a starting point, not
+   a mode, and tuning one afterwards is expected.
+
+   `look` is stored on the element only so the chip shows which
+   one you picked; nothing renders from it. */
+const TREAT_LOOKS = {
+  duotone: [
+    { v:'soft',    l:'Soft',        p:{ balance:0.5,  shadowTint:0.18, contrast:1.18, invert:false, hiTint:0 } },
+    { v:'deep',    l:'Deep',        p:{ balance:0.38, shadowTint:0.34, contrast:1.38, invert:false, hiTint:0 } },
+    { v:'split',   l:'Split tone',  p:{ balance:0.5,  shadowTint:0.2,  contrast:1.2,  hiTint:0.3, hiInk:null } },
+    { v:'flip',    l:'Inverted',    p:{ balance:0.5,  shadowTint:0.18, contrast:1.18, invert:true } },
+  ],
+  halftone: [
+    { v:'news',    l:'Newsprint',   p:{ dot:7,  angle:15, shape:'circle', dotGain:1.15, jitter:0,    field:'paper', inkMode:'single' } },
+    { v:'coarse',  l:'Coarse',      p:{ dot:17, angle:45, shape:'circle', dotGain:1.2,  jitter:0,    field:'paper', inkMode:'single' } },
+    { v:'ring',    l:'Ring screen', p:{ dot:13, angle:0,  shape:'ring',   dotGain:1,    jitter:0,    field:'paper', inkMode:'single' } },
+    { v:'handset', l:'Hand-set',    p:{ dot:11, angle:22, shape:'square', dotGain:1.1,  jitter:0.45, field:'paper', inkMode:'single' } },
+    { v:'twoink',  l:'Two-ink',     p:{ dot:9,  angle:15, shape:'circle', inkMode:'two', screenOffset:30, dotGain:1, jitter:0 } },
+  ],
+  offregister: [
+    { v:'slip',    l:'Slip',        p:{ offset:8,  angle:45, spread:1.2,  ghost:0 } },
+    { v:'miss',    l:'Wide miss',   p:{ offset:27, angle:20, spread:1.45, ghost:0 } },
+    { v:'ghost',   l:'Double feed', p:{ offset:12, angle:47, spread:1.25, ghost:0.55 } },
+  ],
+  posterize: [
+    { v:'four',    l:'Four bands',  p:{ bands:4, bandJitter:0,   toneSmooth:0 } },
+    { v:'two',     l:'Two-tone',    p:{ bands:2, bandJitter:0,   toneSmooth:0 } },
+    { v:'six',     l:'Six bands',   p:{ bands:6, bandJitter:0,   toneSmooth:1.4 } },
+    { v:'torn',    l:'Torn',        p:{ bands:4, bandJitter:0.5, toneSmooth:3 } },
+  ],
+  cutout: [
+    { v:'clean',   l:'Clean',       p:{ threshold:0.52, softness:0.04, cutEdge:0,    invert:false } },
+    { v:'soft',    l:'Soft',        p:{ threshold:0.52, softness:0.3,  cutEdge:0,    invert:false } },
+    { v:'outline', l:'Outlined',    p:{ threshold:0.52, softness:0.08, cutEdge:0.06, cutSlip:0, invert:false } },
+    { v:'ground',  l:'Background',  p:{ threshold:0.52, softness:0.12, cutEdge:0,    invert:true } },
+  ],
+  overprint: [
+    { v:'classic', l:'Classic',     p:{ offset:8,  angle:45, split:0.16, fieldTexture:0 } },
+    { v:'wide',    l:'Wide split',  p:{ offset:14, angle:30, split:0.34, fieldTexture:0 } },
+    { v:'rough',   l:'Textured',    p:{ offset:8,  angle:45, split:0.2,  fieldTexture:0.55 } },
+  ],
+  spot: [
+    { v:'tone',    l:'Tone pop',    p:{ spotMode:'tone', spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotBase:'duotone' } },
+    { v:'hue',     l:'Colour pop',  p:{ spotMode:'hue',  spotHue:340, spotHueRange:45, spotSoft:0.1, spotBase:'duotone' } },
+    { v:'raw',     l:'On the photo',p:{ spotMode:'tone', spotLo:0.35, spotHi:0.65, spotSoft:0.08, spotBase:'image' } },
+  ],
+  dither: [
+    { v:'bayer',   l:'Bayer',       p:{ ditherMode:'bayer', ditherScale:3, ditherAngle:0 } },
+    { v:'noise',   l:'Noise',       p:{ ditherMode:'noise', ditherScale:2, ditherAngle:0 } },
+    { v:'coarse',  l:'Coarse',      p:{ ditherMode:'bayer', ditherScale:6, ditherAngle:0 } },
+  ],
+  hatch: [
+    { v:'fine',    l:'Fine',        p:{ hatchSpacing:6,  hatchWeight:0.8, hatchCross:false, hatchWobble:0.1,  angle:-22 } },
+    { v:'cross',   l:'Cross',       p:{ hatchSpacing:10, hatchWeight:1,   hatchCross:true,  hatchWobble:0.15, angle:-22 } },
+    { v:'sketch',  l:'Sketch',      p:{ hatchSpacing:11, hatchWeight:1.4, hatchCross:false, hatchWobble:0.5,  angle:-35 } },
+  ],
+  photocopy: [
+    { v:'clean',   l:'First gen',   p:{ toner:0.55, copyNoise:0.2,  streaks:0.12, generations:1 } },
+    { v:'worn',    l:'Third gen',   p:{ toner:0.42, copyNoise:0.45, streaks:0.35, generations:3 } },
+    { v:'blown',   l:'Blown out',   p:{ toner:0.75, copyNoise:0.5,  streaks:0.5,  generations:4 } },
+  ],
+  contour: [
+    { v:'map',     l:'Map',         p:{ bands:5, contourWeight:2,   contourFill:'tint', contourTint:0.19, contourSmooth:2.2 } },
+    { v:'line',    l:'Line only',   p:{ bands:6, contourWeight:1.6, contourFill:'none', contourSmooth:2.6 } },
+    { v:'bold',    l:'Bold',        p:{ bands:4, contourWeight:4,   contourFill:'tint', contourTint:0.26, contourSmooth:3 } },
+  ],
+  edges: [
+    { v:'fine',    l:'Fine',        p:{ edgeDetail:0.22, edgeThick:1.4, edgeSmooth:1.6, edgeClean:0.2, edgeBackdrop:'paper' } },
+    { v:'bold',    l:'Bold',        p:{ edgeDetail:0.4,  edgeThick:3,   edgeSmooth:2,   edgeClean:0.3, edgeBackdrop:'paper' } },
+    { v:'onink',   l:'On ink',      p:{ edgeDetail:0.3,  edgeThick:2,   edgeSmooth:1.6, edgeClean:0.2, edgeBackdrop:'ink' } },
+  ],
+  mosaic: [
+    { v:'tile',    l:'Tile',        p:{ cellSize:16, mosaicDepth:4, mosaicShape:'square', mosaicGap:0.08, mosaicBond:'grid' } },
+    { v:'glass',   l:'Stained glass', p:{ cellSize:26, mosaicDepth:5, mosaicShape:'circle', mosaicGap:0.18, mosaicGrout:'ink' } },
+    { v:'brick',   l:'Brick',       p:{ cellSize:20, mosaicDepth:4, mosaicShape:'square', mosaicGap:0.1,  mosaicBond:'brick' } },
+  ],
+};
+
+/* ---- shadow, as a ladder instead of six dials ----
+   Print Studio has had this shape for a while (its LIFTS) and it's the right
+   one: four named steps carry every shadow anyone actually places, and the
+   dials stay one click away for the fifth case. The rungs are multiples of
+   the type's OWN defaults (shadowModel computes those per element family), so
+   "Lift" on a photo and "Lift" on a chip both look right. */
+const LIFTS = [{v:'off',l:'Flat'},{v:'light',l:'Light'},{v:'lift',l:'Lift'},{v:'heavy',l:'Hard'},{v:'custom',l:'Custom'}];
+function shadowLift(el, m){
+  if(el.shadowLift) return el.shadowLift;
+  // Posters saved before the ladder existed: read the rung back off the dials.
+  if(!m.on) return 'off';
+  const touched = el.shadowDist!=null || el.shadowBlur!=null || el.shadowAngle!=null
+               || el.shadowAlpha!=null || !!el.shadowColor;
+  return touched ? 'custom' : 'lift';
+}
+function applyLift(v, m){
+  // null clears an override — shadowModel then falls back to the type default,
+  // which is exactly what "Lift" means.
+  const clear = { shadowDist:null, shadowBlur:null, shadowAngle:null, shadowAlpha:null, shadowColor:null };
+  if(v==='off')   return Object.assign({ shadowLift:'off',   shadowOn:false }, clear);
+  if(v==='light') return Object.assign({ shadowLift:'light', shadowOn:true }, clear, { shadowDist:Math.max(1,Math.round(m.dDef*0.55)), shadowBlur:m.bDef });
+  if(v==='lift')  return Object.assign({ shadowLift:'lift',  shadowOn:true }, clear);
+  if(v==='heavy') return Object.assign({ shadowLift:'heavy', shadowOn:true }, clear, { shadowDist:Math.round(m.dDef*2.2), shadowBlur:0, shadowAlpha:0.9 });
+  return { shadowLift:'custom', shadowOn:true };
 }
 /* ============================================================
    GRAPHICS PICKER — one grid component with two jobs:
@@ -532,23 +595,39 @@ function PhotoControls({ el, update, theme }){
   /* mosaic shares bandInks with posterize (same dark→light order), sized by its depth */
   const nMosaic = Math.max(2, Math.min(6, (el.mosaicDepth|0)||4));
   const setMosaicInk = (i,v)=>{ const arr=[]; for(let b=0;b<nMosaic;b++) arr.push((el.bandInks&&el.bandInks[b])||null); arr[i]=v; update({ bandInks:arr }); };
+
+  /* The named looks for whatever press is selected, and how far off its preset
+     the dials currently sit. TREAT_PRESETS[t] is exactly "what choosing this
+     treatment sets", so deviation from it is exactly "you tuned it" — no second
+     list to keep in step. */
+  const looks = TREAT_LOOKS[t] || [];
+  const activeLook = looks.find(x=>x.v===el.look);
+  const photoBase = (AP_DEF[el.type]||{}).props || {};
+  /* The baseline the Tune badge counts against is "the treatment, plus whatever
+     named look is selected". Picking Deep is a choice you made ONE click ago and
+     can see highlighted — counting its three dials as tuning would badge the
+     fold for doing exactly what the chip above says it did. */
+  const pressBase = Object.assign({}, photoBase, TREAT_PRESETS[t]||{}, activeLook?activeLook.p:{});
+  const pressDirty = RUI.dirtyCount(el, Object.keys(TREAT_PRESETS[t]||{}), pressBase);
+  const adjustDirty = RUI.dirtyCount(el, ['brightness','contrast','saturation','hue','temperature','blurUnder'], pressBase);
+  const frameDirty = RUI.dirtyCount(el, ['imgScale','imgX','imgY','imgRot','frame','bleed','bleedBottom','fit'], photoBase);
   return (
     <React.Fragment>
       <Fold id="ph-img" title="Image" open>
         <PhotoUpload onPick={src=>update({ src })} />
-        <div className="rs-mini" style={{ margin:'2px 0 8px' }}>…or copy an image anywhere and paste it here with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
+        <Hint tight>…or copy an image anywhere and paste it here with <b>Ctrl-V</b> / <b>⌘V</b>.</Hint>
         {el.type==='logo'
           ? <React.Fragment>
               <Chips label="Background" options={[{v:true,l:'Transparent'},{v:false,l:'Paper'}]} value={el.transparent!==false} onChange={v=>update({ transparent:v })} />
               {el.transparent===false && <Swatches label="Paper fill" value={el.paperFill!=null?el.paperFill:'fg'} onChange={v=>update({paperFill:v})} autoTitle="Auto — paper" autoBg={theme==='night'?'#0a0703':'#fffbf1'} />}
-              <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>PNG transparency is kept and the whole mark is shown (contain-fit). Pick a treatment below only if you want to riso it.</div>
+              <Hint tight>PNG transparency is kept and the whole mark is shown (contain-fit). Pick a treatment below only if you want to riso it.</Hint>
             </React.Fragment>
           : <Chips label="Or a sample" options={[{v:'spotlight',l:'DJ'},{v:'crowd',l:'Crowd'},{v:'portrait',l:'Portrait'}]}
               value={el.src?null:el.sample} onChange={v=>update({ sample:v, src:null })} />}
       </Fold>
 
       <Fold id="ph-mix" title="Second exposure" badge={el.src2?'on':null}>
-        {!el.src2 && <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Blend a second image into the source — the press treats the two as one photo.</div>}
+        {!el.src2 && <Hint tight>Blend a second image into the source — the press treats the two as one photo.</Hint>}
         <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onPick={src2=>update({ src2 })} />
         {el.src2 && <React.Fragment>
           <Slider label="Mix" val={el.mix2!=null?el.mix2:0.6} min={0} max={1} step={0.02} onChange={v=>update({mix2:v})} />
@@ -562,7 +641,13 @@ function PhotoControls({ el, update, theme }){
       </Fold>
 
       <Fold id="ph-treat" title={'Treatment · '+pressLabel} open>
-        <Chips options={TREATS} value={el.treatment} onChange={v=>update(Object.assign({ treatment:v }, TREAT_PRESETS[v]||{}))} />
+        <Chips options={TREATS} value={el.treatment} onChange={v=>update(Object.assign({ treatment:v, look:null }, TREAT_PRESETS[v]||{}))} />
+        {/* The variants of this press worth a name. Picking one patches the
+            dials below — it isn't a mode, so nudging afterwards is fine and
+            the chip simply stops being highlighted. */}
+        {looks.length>0 &&
+          <Chips label="Look" options={looks} value={el.look||null}
+            onChange={v=>{ const L=looks.find(x=>x.v===v); update(Object.assign({ look:v }, L?L.p:{})); }} />}
 
         {t!=='none' && <React.Fragment>
           <div className="rs-sech">Main ink</div>
@@ -588,10 +673,15 @@ function PhotoControls({ el, update, theme }){
           <div className="rs-sech">Blend with photo</div>
           <Chips label="Where" options={[{v:'all',l:'Everywhere'},{v:'shadows',l:'Shadows'},{v:'highlights',l:'Lights'}]} value={el.treatWhere||'all'} onChange={v=>update({treatWhere:v})} />
           <Slider label="Strength" val={el.treatStrength!=null?el.treatStrength:1} min={0.1} max={1} step={0.02} onChange={v=>update({treatStrength:v})} />
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Below full strength the press prints over the <b>real photo</b>. Shadows / Lights feather the print into one tonal end — the photo shows through everywhere else.</div>
+          <Hint tight>Below full strength the press prints over the <b>real photo</b>. Shadows / Lights feather the print into one tonal end — the photo shows through everywhere else.</Hint>
         </React.Fragment>}
 
-        {t!=='none' && <div className="rs-sech">{'Press · '+pressLabel}</div>}
+        {/* Every dial the chosen press exposes, folded away. Choosing a
+            treatment already lands on a good default (TREAT_PRESETS) and the
+            Look chips above cover the variants worth naming — this is where
+            you go when none of them is quite it. The badge counts how many
+            dials you've moved off the preset. */}
+        {t!=='none' && <Fold id="ph-press" title={'Tune · '+pressLabel} dirty={pressDirty}>
         {t==='duotone' && <React.Fragment>
           <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
           <Slider label="Shadow tint" val={el.shadowTint} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
@@ -599,7 +689,7 @@ function PhotoControls({ el, update, theme }){
           <InkRow label="Mid ink" value={el.midInk} onChange={v=>update({midInk:v})} autoTitle="Off — two-ink ramp" />
           <Slider label="Highlight tint" val={el.hiTint!=null?el.hiTint:0} min={0} max={0.6} step={0.02} onChange={v=>update({hiTint:v})} />
           {el.hiTint>0 && <InkRow label="Highlight ink" value={el.hiInk} onChange={v=>update({hiInk:v})} autoTitle="Auto — warm/cool partner" />}
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>A <b>mid ink</b> makes it a tritone; <b>highlight tint</b> split-tones the light end.</div>
+          <Hint tight>A <b>mid ink</b> makes it a tritone; <b>highlight tint</b> split-tones the light end.</Hint>
         </React.Fragment>}
         {t==='offregister' && <React.Fragment>
           <Slider label="Offset" val={el.offset} min={0} max={40} step={1} onChange={v=>update({offset:v})} suffix="px" />
@@ -607,7 +697,7 @@ function PhotoControls({ el, update, theme }){
           <Slider label="Ink spread" val={el.spread} min={0.8} max={1.8} step={0.02} onChange={v=>update({spread:v})} />
           <InkRow label="Third ink" value={el.ink3} onChange={v=>update({ink3:v})} autoTitle="Off — two passes" />
           <Slider label="Ghost hit" val={el.ghost!=null?el.ghost:0} min={0} max={1} step={0.02} onChange={v=>update({ghost:v})} />
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Ghost prints a faint second impression of the main ink — the classic riso double-feed.</div>
+          <Hint tight>Ghost prints a faint second impression of the main ink — the classic riso double-feed.</Hint>
         </React.Fragment>}
         {t==='halftone' && <React.Fragment>
           <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'},{v:'two',l:'Two-ink'}]} value={el.inkMode||'single'} onChange={v=>update({inkMode:v})} />
@@ -689,7 +779,7 @@ function PhotoControls({ el, update, theme }){
             ? <React.Fragment>
                 <Slider label="Hue" val={el.spotHue!=null?el.spotHue:340} min={0} max={360} step={2} onChange={v=>update({spotHue:v})} suffix="°" />
                 <Slider label="Hue range" val={el.spotHueRange!=null?el.spotHueRange:45} min={10} max={120} step={2} onChange={v=>update({spotHueRange:v})} suffix="°" />
-                <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Everything near that hue in the <b>original photo</b> floods with the accent — "make the red jacket pop".</div>
+                <Hint tight>Everything near that hue in the <b>original photo</b> floods with the accent — "make the red jacket pop".</Hint>
               </React.Fragment>
             : <React.Fragment>
                 <Slider label="Range low" val={el.spotLo!=null?el.spotLo:0.35} min={0} max={1} step={0.01} onChange={v=>update({spotLo:v})} />
@@ -761,7 +851,7 @@ function PhotoControls({ el, update, theme }){
             <InkRow label="Stock ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Main ink" />
             <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.18} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />
           </React.Fragment>}
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Each generation is a re-copy — harder blacks, blown highlights. Tinted stock runs the toner on coloured paper.</div>
+          <Hint tight>Each generation is a re-copy — harder blacks, blown highlights. Tinted stock runs the toner on coloured paper.</Hint>
         </React.Fragment>}
         {t==='contour' && <React.Fragment>
           <Slider label="Bands" val={el.bands} min={2} max={12} step={1} onChange={v=>update({bands:v})} />
@@ -785,7 +875,7 @@ function PhotoControls({ el, update, theme }){
             <InkRow label="Echo ink" value={el.contourEchoInk} onChange={v=>update({contourEchoInk:v})} autoTitle="Auto — warm/cool partner" />
             <Slider label="Echo angle" val={el.contourEchoAngle!=null?el.contourEchoAngle:45} min={0} max={360} step={5} onChange={v=>update({contourEchoAngle:v})} suffix="°" />
           </React.Fragment>}
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Smoothing melts detail into clean topographic loops — push it up for a weather-map read. Slip prints the linework off-register from the fills; echo re-strikes it in a second ink.</div>
+          <Hint tight>Smoothing melts detail into clean topographic loops — push it up for a weather-map read. Slip prints the linework off-register from the fills; echo re-strikes it in a second ink.</Hint>
         </React.Fragment>}
         {t==='edges' && <React.Fragment>
           <Chips label="Backdrop" options={[{v:'paper',l:'Paper'},{v:'ink',l:'Ink field'},{v:'duotone',l:'Pale duotone'},{v:'image',l:'Raw image'}]} value={el.edgeBackdrop||'paper'} onChange={v=>update({edgeBackdrop:v})} />
@@ -807,7 +897,7 @@ function PhotoControls({ el, update, theme }){
             <InkRow label="Echo ink" value={el.edgeEchoInk} onChange={v=>update({edgeEchoInk:v})} autoTitle="Auto — warm/cool partner" />
             <Slider label="Echo angle" val={el.edgeEchoAngle!=null?el.edgeEchoAngle:45} min={0} max={360} step={5} onChange={v=>update({edgeEchoAngle:v})} suffix="°" />
           </React.Fragment>}
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust. Echo re-strikes the linework off-register in a second ink.</div>
+          <Hint tight>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust. Echo re-strikes the linework off-register in a second ink.</Hint>
         </React.Fragment>}
         {t==='mosaic' && <React.Fragment>
           <Slider label="Tile size" val={el.cellSize!=null?el.cellSize:16} min={4} max={48} step={1} onChange={v=>update({cellSize:v})} suffix="px" />
@@ -823,11 +913,12 @@ function PhotoControls({ el, update, theme }){
           {el.bandInks && Array.from({length:nMosaic}).map((_,i)=>(
             <InkRow key={i} label={'Tile '+(i+1)+(i===0?' · dark':i===nMosaic-1?' · light':'')} value={el.bandInks[i]||null} onChange={v=>setMosaicInk(i,v)} autoTitle="Auto — ramp colour" />
           ))}
-          <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Round and diamond tiles show the grout between them even at 0 — pick a mono grout for a stained-glass read.</div>
+          <Hint tight>Round and diamond tiles show the grout between them even at 0 — pick a mono grout for a stained-glass read.</Hint>
         </React.Fragment>}
+        </Fold>}
       </Fold>
 
-      <Fold id="ph-adjust" title="Adjust & focus" open>
+      <Fold id="ph-adjust" title="Adjust & focus" dirty={adjustDirty}>
         <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
         <Slider label="Contrast" val={el.contrast} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
         {t==='none' && <React.Fragment>
@@ -836,7 +927,7 @@ function PhotoControls({ el, update, theme }){
           <Slider label="Warmth" val={el.temperature!=null?el.temperature:0} min={-1} max={1} step={0.02} onChange={v=>update({temperature:v})} />
         </React.Fragment>}
         <BlurControls el={el} update={update} prefix="blurUnder" label="Soft focus" max={24} />
-        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Soft focus blurs the photo <b>before</b> the press — motion smears the dots along a direction, zoom rushes them outward. The <b>Finish</b> blur prints over the finished image instead.</div>
+        <Hint tight>Soft focus blurs the photo <b>before</b> the press — motion smears the dots along a direction, zoom rushes them outward. The <b>Finish</b> blur prints over the finished image instead.</Hint>
       </Fold>
 
       <Fold id="ph-finish" title="Finish" badge={finishCount? String(finishCount) : null}>
@@ -845,7 +936,7 @@ function PhotoControls({ el, update, theme }){
         <Slider label="Contrast" val={el.finContrast!=null?el.finContrast:1} min={0.5} max={2} step={0.02} onChange={v=>update({finContrast:v})} />
         <Slider label="Saturation" val={el.finSat!=null?el.finSat:1} min={0} max={2} step={0.02} onChange={v=>update({finSat:v})} />
         <button className="rs-addrow" onClick={()=>update({finBright:0, finContrast:1, finSat:1})}>↺ Reset tone</button>
-        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Grades the <b>printed</b> ink — <b>Adjust &amp; focus</b> changes what the press sees instead. Unlike that pass, saturation here works under every treatment: pull it to 0 to grey off a duotone, push it up to make one ink shout.</div>
+        <Hint tight>Grades the <b>printed</b> ink — <b>Adjust &amp; focus</b> changes what the press sees instead. Unlike that pass, saturation here works under every treatment: pull it to 0 to grey off a duotone, push it up to make one ink shout.</Hint>
         <div className="rs-sech">Press artifacts</div>
         <BlurControls el={el} update={update} prefix="blurOver" label="Blur" max={30} />
         <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
@@ -861,16 +952,16 @@ function PhotoControls({ el, update, theme }){
         <Slider label="Dust & scratches" val={el.dust!=null?el.dust:0} min={0} max={1} step={0.02} onChange={v=>update({dust:v})} />
         <Slider label="Misprint" val={el.misprint!=null?el.misprint:0} min={0} max={24} step={0.5} onChange={v=>update({misprint:v})} suffix="px" />
         {el.misprint>0 && <Slider label="Misprint angle" val={el.misprintAngle!=null?el.misprintAngle:-35} min={-180} max={180} step={5} onChange={v=>update({misprintAngle:v})} suffix="°" />}
-        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Press artifacts print over the finished image — the misprint slides the whole print off its paper.</div>
+        <Hint tight>Press artifacts print over the finished image — the misprint slides the whole print off its paper.</Hint>
       </Fold>
 
-      <Fold id="ph-frame" title="Frame & placement" open>
+      <Fold id="ph-frame" title="Frame & placement" dirty={frameDirty}>
         {el.type==='photo' && <React.Fragment>
           <Chips label="Full bleed" options={[{v:true,l:'Fill format'},{v:false,l:'Free size'}]} value={!!el.bleed} onChange={v=>update({bleed:v})} />
-          {el.bleed && <div className="rs-mini" style={{ marginTop:-2 }}>Fills <b>every format</b> edge-to-edge — no resizing per format. Frame the shot with pan/zoom below.</div>}
+          {el.bleed && <Hint tight>Fills <b>every format</b> edge-to-edge — no resizing per format. Frame the shot with pan/zoom below.</Hint>}
         </React.Fragment>}
         <Chips label="Frame" options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={el.frame} onChange={v=>update({frame:v})} />
-        {el.type==='logo' && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>The whole logo always shows (contain). Zoom <b>below 1×</b> for more paper space around it.</div>}
+        {el.type==='logo' && <Hint tight>The whole logo always shows (contain). Zoom <b>below 1×</b> for more paper space around it.</Hint>}
         <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
         <Slider label="Pan X" val={el.imgX!=null?el.imgX:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgX:v})} />
         <Slider label="Pan Y" val={el.imgY!=null?el.imgY:0} min={-0.5} max={0.5} step={0.01} onChange={v=>update({imgY:v})} />
@@ -891,7 +982,7 @@ function PhotoControls({ el, update, theme }){
         badge={(el.mask&&el.mask!=='none') ? (AP_SHAPELAB[el.mask]||el.mask) : null}>
         <GfxGrid type="shape" prop="kind" value={el.mask||'none'} onPick={v=>update({mask:v})}
           items={AP_MASKS.map(k=> k==='none' ? { k:'none', l:'None' } : { k, l:AP_SHAPELAB[k]||k })} />
-        {(el.mask&&el.mask!=='none') && <div className="rs-mini" style={{ margin:'4px 0 12px' }}>Cut from the same shape set as the graphics library — pan/zoom in <b>Frame &amp; placement</b> to re-frame inside it.</div>}
+        {(el.mask&&el.mask!=='none') && <Hint tight>Cut from the same shape set as the graphics library — pan/zoom in <b>Frame &amp; placement</b> to re-frame inside it.</Hint>}
       </Fold>}
     </React.Fragment>
   );
@@ -911,7 +1002,7 @@ function BlockControls({ el, doc, update }){
         <InkRow label="Grain ink" value={el.grainInk} onChange={v=>update({grainInk:v})} autoTitle="Auto — neutral tooth" />
         <Chips label="Character" options={[{v:'soft',l:'Soft'},{v:'dirty',l:'Dirty'}]} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
       </React.Fragment>}
-      <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>A pinch of grain makes a flat field feel printed, not digital.</div>
+      <Hint tight>A pinch of grain makes a flat field feel printed, not digital.</Hint>
       <div className="rs-sech">Edge</div>
       <Chips options={[{v:true,l:'Ink border'},{v:false,l:'Bleed'}]} value={!!el.outline} onChange={v=>update({outline:v})} />
     </React.Fragment>
@@ -958,7 +1049,7 @@ function ShapeControls({ el, doc, update }){
           <InkRow label="Grain ink" value={el.grainInk} onChange={v=>update({grainInk:v})} autoTitle="Auto — neutral tooth" />
           <Chips label="Character" options={[{v:'soft',l:'Soft'},{v:'dirty',l:'Dirty'}]} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
         </React.Fragment>}
-        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Grain is clipped to the silhouette, so a grained hexagon stays a hexagon.</div>
+        <Hint tight>Grain is clipped to the silhouette, so a grained hexagon stays a hexagon.</Hint>
       </React.Fragment>}
     </React.Fragment>
   );
@@ -975,7 +1066,7 @@ function IconControls({ el, doc, update }){
         autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
       <Slider label="Stroke weight" val={el.strokeScale!=null?el.strokeScale:1} min={0.4} max={3} step={0.1} onChange={v=>update({strokeScale:v})} suffix="×" />
       <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
-      <div className="rs-mini" style={{ marginTop:-2 }}>The Year 2 glyph set — the same vectors the app and Print Studio draw.</div>
+      <Hint tight>The Year 2 glyph set — the same vectors the app and Print Studio draw.</Hint>
     </React.Fragment>
   );
 }
@@ -1009,7 +1100,7 @@ function RuleControls({ el, doc, update }){
       </React.Fragment>}
       <Chips label="Caps" options={[{v:'round',l:'Round'},{v:'butt',l:'Flat'}]} value={el.cap||'round'} onChange={v=>update({cap:v})} />
       <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
-      <div className="rs-mini" style={{ marginTop:-2 }}>Rotate the element 90° for a vertical rule — the geometry always runs along the box.</div>
+      <Hint tight>Rotate the element 90° for a vertical rule — the geometry always runs along the box.</Hint>
     </React.Fragment>
   );
 }
@@ -1025,7 +1116,7 @@ function BurstControls({ el, doc, update }){
       <Slider label="Hub" val={el.hub!=null?el.hub:0} min={0} max={0.9} step={0.02} onChange={v=>update({hub:v})} />
       {el.hub>0 && <Swatches label="Hub colour" value={el.hubFill||'paper'} onChange={v=>update({hubFill:v})} autoTitle="Auto — the paper" />}
       <Slider label="Opacity" val={el.opacity!=null?el.opacity:1} min={0.08} max={1} step={0.02} onChange={v=>update({opacity:v})} />
-      <div className="rs-mini" style={{ marginTop:-2 }}>Send it behind a title (▼) and knock the hub out to ring a photo.</div>
+      <Hint tight>Send it behind a title (▼) and knock the hub out to ring a photo.</Hint>
     </React.Fragment>
   );
 }
@@ -1259,7 +1350,7 @@ function InkmarkControls({ el, doc, update }){
               value={el.ground===true} onChange={v=>update(fit({ground:v}, m))} />
             <div className="rs-mini" style={{ marginTop:2 }}>On a poster the ground keeps stock off the outer corners (canon G2) — one module of clear space, baked in.</div>
           </React.Fragment>}
-      <div className="rs-mini" style={{ margin:'4px 0 8px' }}>Cell order is canon — the panel recolours (mode / day), never reorders. One mark per surface.</div>
+      <Hint tight>Cell order is canon — the panel recolours (mode / day), never reorders. One mark per surface.</Hint>
     </React.Fragment>
   );
 }
@@ -1268,6 +1359,82 @@ function InkmarkControls({ el, doc, update }){
 /* Centre-on-canvas row — the same three buttons serve one box and a group of
    them (the handler centres the selection's bounding box either way), so the
    only thing that changes is the label. */
+/* ============================================================
+   LIBRARY CHROME — collapsible sections + real previews.
+   ============================================================
+   The parts list was 3,195px of always-open rows. Print Studio
+   already had the answer (its .ps-sec / .ps-tplcard), so these
+   are the same two ideas in Poster's register: every group is a
+   button with a count that starts closed, and a template is a
+   mini render of itself rather than "4 parts · click to load".
+
+   Open state rides the shared fold store, so it persists — and
+   a closed section renders no children, which is also what keeps
+   twenty riso thumbnails from being built on page load. */
+function Sec({ id, title, count, dot, sub, open, children }){
+  const key = 'lib:'+id;
+  const folds = RUI.useStore(RUI.foldStore);
+  const chosen = folds[key];
+  const isOpen = chosen!=null ? chosen : !!open;
+  return (
+    <React.Fragment>
+      <button className={'rs-sec'+(isOpen?' open':'')} onClick={()=>RUI.setFold(key, !isOpen)}>
+        <span className="caret">{isOpen?'▾':'▸'}</span>
+        {dot && <span className="dot" style={{ background:dot }} />}
+        <span className="t">{title}</span>
+        {sub && <span style={{ fontSize:10, opacity:.45, flex:'none' }}>{sub}</span>}
+        {count!=null && <span className="n">{count}</span>}
+      </button>
+      {isOpen && children}
+    </React.Fragment>
+  );
+}
+
+/* A template drawn at ~1/12 scale by the SAME element renderer the canvas
+   uses, so the preview cannot lie about what loading it gives you. */
+function TplThumb({ doc, w }){
+  const f = AP_FMT[doc.masterFormat||'4x5'];
+  const tw = w||88, sc = tw/f.w, th = Math.round(f.h*sc);
+  const t = window.themeColors(doc.theme||'day');
+  const accentHex = AP_PAL[doc.accent] || AP_PAL.blue;
+  const noop = ()=>{};
+  return (
+    <div className="rs-thumbbox" style={{ width:tw, height:th }}>
+      <div style={{ width:f.w, height:f.h, transform:'scale('+sc+')', transformOrigin:'0 0',
+        background:t.bg, position:'relative', overflow:'hidden', pointerEvents:'none' }}>
+        {doc.elements.map(el=>(
+          <StudioElement key={el.id} el={el} theme={doc.theme||'day'} posterAccentHex={accentHex}
+            posterAccent={doc.accent} selected={false} dragging={false} onElPointerDown={noop} exporting />
+        ))}
+      </div>
+    </div>
+  );
+}
+function TplCard({ tpl, onApply }){
+  const built = React.useMemo(()=>apBuildTpl(tpl), [tpl]);
+  return (
+    <div className="rs-tplcard" onClick={onApply} title={tpl.name}>
+      <TplThumb doc={built} w={88} />
+      <span className="tn">{tpl.name}</span>
+      <span className="ts">{tpl.els.length} parts</span>
+    </div>
+  );
+}
+function UserTplCard({ t, onApply, onArchive, onDelete, archived }){
+  return (
+    <div className="rs-tplcard" onClick={onApply} title={t.name} style={archived?{ opacity:.75 }:null}>
+      <TplThumb doc={t.doc} w={88} />
+      <span className="tn">{t.name}</span>
+      <span className="ts">{archived ? 'archived' : new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+      <button className="rs-tplx" style={{ right:28, top:4, width:20, height:20, fontSize:11, borderColor:'#3a2f1f', color:'#b6ab97' }}
+        title={archived?'Restore to My templates':'Archive — tuck it into the Archive drawer'}
+        onClick={e=>{ e.stopPropagation(); onArchive(); }}>{archived?'↩':'⤓'}</button>
+      <button className="rs-tplx" style={{ top:4, width:20, height:20, fontSize:11 }} title="Delete this template"
+        onClick={e=>{ e.stopPropagation(); onDelete(); }}>×</button>
+    </div>
+  );
+}
+
 function CentreRow({ label, centre, hint }){
   return (
     <React.Fragment>
@@ -1282,11 +1449,33 @@ function CentreRow({ label, centre, hint }){
   );
 }
 
-function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel }){
+/* ============================================================
+   INSPECTOR — one canonical order, every section a fold.
+   ============================================================
+   This used to be a flat wall: 82–88 controls and ~2,100px of
+   scroll for a title, with folds only inside the photo panel.
+   Now it reads the same way for every element type —
+
+     Actions → Content → Type → Subtitle → Rows →
+     Colour & surface → Shadow → Transform → Format override
+
+   — and each section is a Fold that (a) carries a badge counting
+   the props inside it that differ from this type's defaults, and
+   (b) opens itself the first time it has something in it. Once
+   you click a fold your choice is stored and wins from then on.
+
+   Same shape as Print Studio's inspector, deliberately: the two
+   tools are used within minutes of each other and there is no
+   reason for "where is the size control" to have two answers.
+   ============================================================ */
+function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice }){
   if(!el){
     const DAYS = AP_ABYDAY.map((a,i)=>({ n:i+1, abbr:AP_DABBR[i], accent:a }));
+    const slice = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
     return (
       <React.Fragment>
+        {/* The day picker stays bare — it's the single most-used control in the
+            tool and putting it behind a disclosure would be a joke. */}
         <div className="rs-sech">Day — pick the accent</div>
         <div className="rs-vibe rs-days">
           {DAYS.map(d=>(
@@ -1296,21 +1485,50 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
             </button>
           ))}
         </div>
-        <div className="rs-mini" style={{ marginTop:10 }}>Each weekday has its colour. Picking one sets the poster accent — and names the Story export (e.g. <b>3-Wed-…</b>).</div>
-        {isOutput && doc.activeFormat==='9x16' && <React.Fragment>
-          <div className="rs-sech">Story sizing</div>
-          <Chips options={[{v:true,l:'Boost on'},{v:false,l:'Off'}]} value={doc.storyBoost!==false} onChange={v=>setDoc(d=>({...d, storyBoost:v}))} />
-          {doc.storyBoost!==false &&
-            <Slider label="Scale" val={doc.storyScale||1.15} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
-          <div className="rs-mini" style={{ marginTop:2 }}>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</div>
-        </React.Fragment>}
-        <div className="rs-sech">Canvas</div>
-        <div className="rs-empty">
+        <Hint>Each weekday has its colour. Picking one sets the poster accent — and names the Story export (e.g. <b>3-Wed-…</b>).</Hint>
+
+        <div className="rs-empty" style={{ padding:'22px 12px 16px' }}>
           <div className="big">Nothing selected</div>
-          <p>Drag a part from the left onto the poster, or click one to select it. {isOutput? 'Move it here to override just this format.' : 'You\u2019re on Master — edits flow to every format.'}</p>
+          <p>Drag a part from the left onto the poster, or click one to select it. {isOutput? 'Move it here to override just this format.' : 'You’re on Master — edits flow to every format.'}</p>
         </div>
-        <div className="rs-mini" style={{ textAlign:'center', marginBottom:12 }}>{doc.elements.length} element{doc.elements.length===1?'':'s'} placed</div>
-        <button className="rs-iconbtn rs-del" style={{ width:'100%', justifyContent:'center' }} onClick={clearAll}>Clear poster</button>
+
+        {isOutput && doc.activeFormat==='9x16' &&
+          <Fold id="d-story" title="Story sizing" dirty={doc.storyBoost===false||((doc.storyScale||1.15)!==1.15)?1:0}>
+            <Chips options={[{v:true,l:'Boost on'},{v:false,l:'Off'}]} value={doc.storyBoost!==false} onChange={v=>setDoc(d=>({...d, storyBoost:v}))} />
+            {doc.storyBoost!==false &&
+              <Slider label="Scale" val={doc.storyScale||1.15} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
+            <Hint tight>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</Hint>
+          </Fold>}
+
+        {/* Feed slice used to sit below the inspector on EVERY selection, which
+            meant carrying a document-level control through every element edit.
+            It belongs here, with the other whole-poster settings. */}
+        <Fold id="d-slice" title="Feed slice" badge={sliceMode?'picking':null}>
+          <Hint>The text-less strip used on the calendar’s “This week” cards (a thin band — far smaller than a full poster). Pick which part of the image to use.</Hint>
+          <button className="rs-addrow" onClick={()=>{ const on=!sliceMode; setSliceMode(on);
+            if(on) setDoc(d=>({ ...d, activeFormat:'master', feedSlice:d.feedSlice||{ yFrac:0.4, hFrac:0.2 } })); }}>
+            {sliceMode ? '✓ Done selecting' : '◧ Select feed slice…'}</button>
+          {sliceMode && <React.Fragment>
+            <Slider label="Top" val={Math.round(slice.yFrac*100)} min={0} max={92} step={1}
+              onChange={v=>setFeedSlice({ yFrac:v/100, hFrac:slice.hFrac })} suffix="%" />
+            <Slider label="Height" val={Math.round(slice.hFrac*100)} min={8} max={60} step={1}
+              onChange={v=>setFeedSlice({ yFrac:slice.yFrac, hFrac:v/100 })} suffix="%" />
+            <button className="rs-addrow" style={{ marginTop:6 }} onClick={()=>setFeedSlice({ yFrac:0.4, hFrac:0.2 })}>Center · 4:1 band</button>
+          </React.Fragment>}
+        </Fold>
+
+        <Fold id="d-canvas" title="Canvas">
+          <div className="rs-mini" style={{ textAlign:'center', marginBottom:12 }}>{doc.elements.length} element{doc.elements.length===1?'':'s'} placed</div>
+          <button className="rs-iconbtn rs-del" style={{ width:'100%', justifyContent:'center', marginBottom:10 }} onClick={clearAll}>Clear poster</button>
+        </Fold>
+
+        <Fold id="d-keys" title="Shortcuts">
+          <div className="rs-mini" style={{ marginBottom:10 }}>
+            <b>Ctrl-K</b> find any control · <b>Ctrl-Z</b> undo · <b>Ctrl-⇧-Z</b> redo · <b>Ctrl-D</b> duplicate ·
+            <b> Ctrl-A</b> select all · arrows nudge 6px (<b>⇧</b> 30) · <b>⇧-click</b> multi-select ·
+            <b> double-click</b> text to edit it on the poster · <b>Ctrl-V</b> paste an image onto a photo.
+          </div>
+        </Fold>
       </React.Fragment>
     );
   }
@@ -1331,158 +1549,41 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   // auto-sizes to its box, so height stays hidden there.
   const showHeight = !isText || !!caps.tag;
 
-  return (
+  /* Badges + auto-open, counted against what this type is born with. Note the
+     box defaults (w/h/anchor/rot) live OUTSIDE DEFAULTS[type].props — fold them
+     in, or `anchor:'safe'` reads as an edit on every element ever made. */
+  const _D = AP_DEF[el.type] || {};
+  const base = Object.assign({ w:_D.w, h:_D.h, anchor:_D.anchor||'safe', rot:0 }, _D.props||{});
+  const dirt = (keys)=>RUI.dirtyCount(el, keys, base);
+  const dContent   = dirt(['text','name','heading','items','raw','label','site','addr','top','big','sub',
+                           'price','time','every','day','allYear','comp','teamA','teamB','date','vs',
+                           'variant','showQR','mark','markForm','markMode','kind','preset','glyph','pattern']);
+  const dType      = dirt(['fontSize','weight','letterSpacing','lineHeight','align','textInset','orient','textColor','headingSize']);
+  const dSurface   = dirt(['surface','fill']);
+  const dSub       = dirt(['subtitle','subSize','subWeight','subTracking','subColor','subLayout']);
+  const dKicker    = dirt(['kicker','kickerColor']);
+  const dRows      = dirt(['rowSize','rowWeight','rowTracking','rowGap','markerKey']);
+  const dTransform = dirt(['rot','anchor']);   // NOT w/h/x/y — placing a box sets those, so counting them badges everything
+
+  /* Text content lives in its own fold per type. Kept as one expression so the
+     order of the type branches — and the copy in them — is unchanged from when
+     they were bare sections; only the container is new. */
+  const contentBody = (
     <React.Fragment>
-      {selCount>=2 && <React.Fragment>
-        <div className="rs-sech">Arrange · {selCount} selected</div>
-        <div className="rs-lab" style={{ marginTop:0 }}>Align on a vertical line</div>
-        <div className="rs-actions">
-          <button className="rs-iconbtn" onClick={()=>align('x','left')} title="Align left edges">Left</button>
-          <button className="rs-iconbtn" onClick={()=>align('x','center')} title="Align horizontal centres">Centre</button>
-          <button className="rs-iconbtn" onClick={()=>align('x','right')} title="Align right edges">Right</button>
-        </div>
-        <div className="rs-lab">Align on a horizontal line</div>
-        <div className="rs-actions">
-          <button className="rs-iconbtn" onClick={()=>align('y','top')} title="Align top edges">Top</button>
-          <button className="rs-iconbtn" onClick={()=>align('y','middle')} title="Align vertical centres">Middle</button>
-          <button className="rs-iconbtn" onClick={()=>align('y','bottom')} title="Align bottom edges">Bottom</button>
-        </div>
-
-        {/* Distribute needs something BETWEEN the two extremes to move, so it
-            can't do anything at 2 — but HIDING it there just read as "distribute
-            is missing". Always shown from 2, disabled until 3, and the hint says
-            why. */}
-        {(()=>{ const off = selCount<3; return <React.Fragment>
-          <div className="rs-lab">Distribute — even gaps</div>
-          <div className="rs-actions">
-            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('x','gaps')} title="Equal gaps left-to-right">⇄ Across</button>
-            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('y','gaps')} title="Equal gaps top-to-bottom">⇕ Down</button>
-          </div>
-          <div className="rs-lab">Distribute — even centres</div>
-          <div className="rs-actions">
-            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('x','centres')} title="Equal spacing of centres, left-to-right">⇄ Across</button>
-            <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('y','centres')} title="Equal spacing of centres, top-to-bottom">⇕ Down</button>
-          </div>
-          <div className="rs-mini" style={{ margin:'4px 0 12px' }}>
-            {off
-              ? <React.Fragment>Select a <b>third</b> box to distribute — with two there's nothing between them to space.</React.Fragment>
-              : <React.Fragment>The outermost two stay put. <b>Gaps</b> evens the space between boxes; <b>centres</b> evens their midpoints — they differ once the boxes are different sizes.</React.Fragment>}
-          </div>
-        </React.Fragment>; })()}
-
-        <div className="rs-lab">Centre the group on the canvas</div>
-        <div className="rs-actions">
-          <button className="rs-iconbtn" onClick={()=>centre('x')} title="Centre the group left-to-right on the canvas">⇄ Across</button>
-          <button className="rs-iconbtn" onClick={()=>centre('y')} title="Centre the group top-to-bottom on the canvas">⇕ Down</button>
-          <button className="rs-iconbtn" onClick={()=>centre('both')} title="Centre the group on both axes">⊕ Both</button>
-        </div>
-        <div className="rs-mini" style={{ margin:'4px 0 2px' }}>Moves the whole selection as one onto the {formatLabel} centre — the boxes keep their positions relative to each other.</div>
-
-        <button className="rs-iconbtn rs-del" style={{ width:'100%', justifyContent:'center', marginTop:8 }} onClick={del}>Delete {selCount}</button>
-        <div className="rs-mini" style={{ margin:'8px 0 2px' }}>Editing the last-clicked box below · shift-click to add/remove.</div>
-      </React.Fragment>}
-      <div className="rs-sech" style={{ display:'flex', justifyContent:'space-between' }}>
-        <span>{el.type}{el._overridden && <span className="rs-ovtag"> · overridden</span>}</span>
-      </div>
-      {/* Two rows: stacking order, then the destructive pair. Six buttons on one
-          row crushed "Duplicate"/"Delete" to illegible at 312px. */}
-      <div className="rs-actions" style={{ marginBottom:6 }}>
-        <button className="rs-iconbtn" onClick={()=>layer('back')} title="Send to back">⤓ Back</button>
-        <button className="rs-iconbtn" onClick={()=>layer(-1)} title="Send back one">▼</button>
-        <button className="rs-iconbtn" onClick={()=>layer(1)} title="Bring forward one">▲</button>
-        <button className="rs-iconbtn" onClick={()=>layer('front')} title="Bring to front">⤒ Front</button>
-      </div>
-      <div className="rs-actions">
-        <button className="rs-iconbtn" onClick={dup} title="Duplicate">Duplicate</button>
-        <button className="rs-iconbtn rs-del" onClick={del} title="Delete">Delete</button>
-      </div>
-      {/* Centring is arrangement, so it sits with the stacking buttons rather
-          than down in Transform — behind a photo panel it would never be found.
-          Hidden while several boxes are selected: the group version is up in
-          Arrange, and two Centre rows meaning different things is a trap. */}
-      {selCount<2 && <CentreRow label="Centre on the canvas" centre={centre}
-        hint={'Exact centre of the '+formatLabel+' canvas — never snapped to the grid.'} />}
-
-      {/* ===================== WHOLE ITEM ===================== */}
-      {/* appearance — image / surface / fill of the whole element */}
-      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
-      {el.type==='block' && <BlockControls el={el} doc={doc} update={update} />}
-      {el.type==='shape' && <ShapeControls el={el} doc={doc} update={update} />}
-      {el.type==='icon'  && <IconControls  el={el} doc={doc} update={update} />}
-      {el.type==='rule'  && <RuleControls  el={el} doc={doc} update={update} />}
-      {el.type==='burst' && <BurstControls el={el} doc={doc} update={update} />}
-      {el.type==='inkmark' && <InkmarkControls el={el} doc={doc} update={update} />}
-      {caps.surface && <React.Fragment>
-        <div className="rs-sech">Surface</div>
-        <Chips options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
-        <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
-          onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>Fill colours an <b>Accent</b> surface and the element’s accent highlights (heading, first row…).</div>
-      </React.Fragment>}
-      {el.type==='weekly' && <React.Fragment>
-        <div className="rs-sech">Accent</div>
-        <Swatches label="Bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>The badge stays a white circle; the bar and day follow the accent.</div>
-      </React.Fragment>}
-
-      {/* effect */}
-      {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
-
-      {/* geometry of the whole box (+ per-format overrides) */}
-      <div className="rs-sech">Transform{isOutput && <span className="rs-ovtag"> · {activeLabel} only</span>}</div>
-      <Chips label="Tilt presets" options={[{v:0,l:'0°'},{v:-3,l:'-3°'},{v:3,l:'+3°'},{v:-6,l:'-6°'},{v:6,l:'+6°'}]} value={el.rot||0} onChange={v=>update({rot:v})} />
-      <Slider label="Rotation" val={el.rot||0} min={-45} max={45} onChange={v=>update({rot:v})} suffix="°" />
-      <Slider label="Width" val={el.w} min={120} max={1080} step={6} onChange={v=>update({w:v})} suffix="px" />
-      {caps.widthPreset && <Chips label="Width presets" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />}
-      {showHeight && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
-      {caps.height && <Chips label="Height presets — match across tags" options={TAG_HEIGHTS} value={el.h} onChange={v=>update({h:v})} />}
-      <Chips label="Anchor (all formats)" options={[{v:'safe',l:'Safe cluster'},{v:'bottom',l:'Pin to base'}]} value={el.anchor||'safe'} onChange={v=>update({anchor:v})} />
-      {isOutput && <React.Fragment>
-        <Chips label={'Visibility · '+activeLabel} options={[{v:false,l:'Shown'},{v:true,l:'Hidden'}]} value={!!el.hidden} onChange={v=>toggleHidden(el.id, v)} />
-        {el._overridden
-          ? <React.Fragment>
-              <button className="rs-addrow" onClick={()=>resetOverride(el.id)}>↺ Reset to Master</button>
-              <div className="rs-mini" style={{ marginTop:6 }}>Layout detached for {activeLabel}. Reset to follow Master again.</div>
-            </React.Fragment>
-          : <div className="rs-mini">Following Master. Move, resize, rotate{el.type==='photo'?', reframe the photo':''}{isText?', resize text':''} to override just {activeLabel}.</div>}
-      </React.Fragment>}
-
-      {/* ===================== MAIN TEXT ===================== */}
-      {/* content (primary text / data) */}
-      {el.type==='title' && <React.Fragment>
-        <div className="rs-sech">Title</div>
-        <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />
-      </React.Fragment>}
-      {el.type==='tagline' && <React.Fragment>
-        <div className="rs-sech">Text</div>
-        <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />
-      </React.Fragment>}
+      {el.type==='title' && <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />}
+      {el.type==='tagline' && <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />}
       {el.type==='info' && <React.Fragment>
-        <div className="rs-sech">Text</div>
         <Field label="Info text" value={el.text} onChange={v=>update({text:v})} area />
-        <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Markdown: <b>**bold**</b>, <i>*italic*</i>, and lines starting with <b>-</b> become bullets. Blank line = a gap.</div>
+        <Hint tight>Markdown: <b>**bold**</b>, <i>*italic*</i>, and lines starting with <b>-</b> become bullets. Blank line = a gap.</Hint>
       </React.Fragment>}
-      {el.type==='when' && <React.Fragment>
-        <div className="rs-sech">Text</div>
-        <Field label="When" value={el.text} onChange={v=>update({text:v})} />
-      </React.Fragment>}
-      {el.type==='cost' && <React.Fragment>
-        <div className="rs-sech">Text</div>
-        <Field label="Cost" value={el.text} onChange={v=>update({text:v})} />
-      </React.Fragment>}
-      {el.type==='stamp' && <React.Fragment>
-        <div className="rs-sech">Text</div>
-        <Field label="Stamp text" value={el.text} onChange={v=>update({text:v})} />
-      </React.Fragment>}
-      {el.type==='host' && <React.Fragment>
-        <div className="rs-sech">Name</div>
-        <Field label="Name" value={el.name} onChange={v=>update({name:v})} />
-      </React.Fragment>}
+      {el.type==='when' && <Field label="When" value={el.text} onChange={v=>update({text:v})} />}
+      {el.type==='cost' && <Field label="Cost" value={el.text} onChange={v=>update({text:v})} />}
+      {el.type==='stamp' && <Field label="Stamp text" value={el.text} onChange={v=>update({text:v})} />}
+      {el.type==='host' && <Field label="Name" value={el.name} onChange={v=>update({name:v})} />}
       {el.type==='ticket' && <React.Fragment>
-        <div className="rs-sech">Content</div>
         <Chips label="Format" options={[{v:'banner',l:'Banner'},{v:'standard',l:'Standard'},{v:'slim',l:'Slim'},{v:'mini',l:'Mini'}]}
           value={el.variant||'standard'} onChange={v=>update(TICKET_FORMATS[v])} />
-        <div className="rs-mini" style={{ marginBottom:8 }}>Wordmark is the canonical REALITY mark (fixed).</div>
+        <Hint tight>Wordmark is the canonical REALITY mark (fixed).</Hint>
         <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
         <Field label="Address" value={el.addr} onChange={v=>update({addr:v})} />
         <Chips label="QR" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]} value={el.showQR} onChange={v=>update({showQR:v})} />
@@ -1492,27 +1593,22 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           value={el.markForm||'auto'} onChange={v=>update({markForm:v})} />}
         {el.mark!=='off' && <Chips label="Mark mode" options={[{v:'full',l:'Full'},{v:'majors',l:'Majors'},{v:'ink',l:'Ink'}]}
           value={el.markMode||(((el.markForm||'auto')==='square'||((el.markForm||'auto')==='auto'&&!!el.showQR))?'full':'majors')} onChange={v=>update({markMode:v})} />}
-        <div className="rs-mini" style={{ marginTop:-2, marginBottom:8 }}>Auto pairs the canon square with the QR (flush — its quiet zone is the gap) and the <b>full 9×2 strip</b> with a bare band; Square / Full strip / Short strip force one form, on the banner too. Short is the fallback for a band too narrow to hold nine cells. Mode unset keeps each form's classic ink (square Full · strip Majors).</div>
+        <Hint tight>Auto pairs the canon square with the QR (flush — its quiet zone is the gap) and the <b>full 9×2 strip</b> with a bare band; Square / Full strip / Short strip force one form, on the banner too. Short is the fallback for a band too narrow to hold nine cells. Mode unset keeps each form's classic ink (square Full · strip Majors).</Hint>
       </React.Fragment>}
       {el.type==='qr' && <React.Fragment>
-        <div className="rs-sech">Content</div>
         <Field label="Label" value={el.label} onChange={v=>update({label:v})} />
         <Field label="Website" value={el.site} onChange={v=>update({site:v})} />
       </React.Fragment>}
       {el.type==='badge' && <React.Fragment>
-        <div className="rs-sech">Content</div>
         <div className="rs-rowflex">
           <Field label="Top" value={el.top} onChange={v=>update({top:v})} />
           <Field label="Big" value={el.big} onChange={v=>update({big:v})} />
         </div>
         <Field label="Sub" value={el.sub} onChange={v=>update({sub:v})} />
       </React.Fragment>}
-      {el.type==='wordmark' && <React.Fragment>
-        <div className="rs-sech">Wordmark</div>
-        <div className="rs-mini" style={{ marginBottom:8 }}>The canonical REALITY mark — fixed vector letterforms (Montserrat Alternates A/I/Y). Drag a handle or use Width/Height to resize; it scales crisp and never distorts. Recolour below.</div>
-      </React.Fragment>}
+      {el.type==='wordmark' &&
+        <Hint tight>The canonical REALITY mark — fixed vector letterforms (Montserrat Alternates A/I/Y). Drag a handle or use Width/Height to resize; it scales crisp and never distorts. Recolour below.</Hint>}
       {el.type==='weekly' && <React.Fragment>
-        <div className="rs-sech">Content</div>
         <div className="rs-rowflex">
           <Field label="Price (left)" value={el.price} onChange={v=>update({price:v})} />
           <Field label="Time (right)" value={el.time} onChange={v=>update({time:v})} />
@@ -1524,7 +1620,6 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Field label="Below day" value={el.allYear} onChange={v=>update({allYear:v})} />
       </React.Fragment>}
       {el.type==='matchup' && <React.Fragment>
-        <div className="rs-sech">Content</div>
         <Field label="Competition / round" value={el.comp} onChange={v=>update({comp:v})} />
         <div className="rs-rowflex">
           <Field label="Team A" value={el.teamA} onChange={v=>update({teamA:v})} />
@@ -1535,133 +1630,270 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <Field label="Time" value={el.time} onChange={v=>update({time:v})} />
         </div>
         <Field label="Centre mark" value={el.vs} onChange={v=>update({vs:v})} />
-        <div className="rs-mini" style={{ marginTop:-2 }}>Team names auto-fit and stay matched in size. Want flags or crests? Drop in Partner-logo elements over the photo.</div>
+        <Hint tight>Team names auto-fit and stay matched in size. Want flags or crests? Drop in Partner-logo elements over the photo.</Hint>
       </React.Fragment>}
       {caps.list && <React.Fragment>
-        <div className="rs-sech">Heading</div>
         <Field label="Heading" value={el.heading} onChange={v=>update({heading:v})} />
         <Slider label="Heading size" val={el.headingSize!=null?el.headingSize:(el.type==='specials'?26:15)} min={11} max={56} step={1} suffix="px" onChange={v=>update({headingSize:v})} />
       </React.Fragment>}
+    </React.Fragment>
+  );
+  const hasContent = ['title','tagline','info','when','cost','stamp','host','ticket','qr','badge','wordmark','weekly','matchup'].indexOf(el.type)>=0 || !!caps.list;
 
-      {/* main-text formatting */}
-      {caps.size && <ScaleControl label={sizeLabel} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
-      {caps.sizePreset && <Chips label="Size preset" options={[{v:'lg',l:'Large'},{v:'md',l:'Medium'},{v:'sm',l:'Small'}]}
-        value={el.fontSize>=40?'lg':el.fontSize>=30?'md':'sm'}
-        onChange={v=>update(v==='lg'?{fontSize:46,h:180}:v==='md'?{fontSize:32,h:135}:{fontSize:26,h:90})} />}
-      {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
-      {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
-      {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
-      {/* the text types already sit under their own Text/Name section; the list
-          and composite blocks don't, so give the dial a home of its own */}
-      {caps.align && !caps.size && <div className="rs-sech">Alignment</div>}
-      {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={inset.align} onChange={v=>update({align:v})} />}
-      {caps.align && inset.applies &&
-        <Slider label={'Edge offset · from the '+inset.side} val={inset.val} min={0} max={inset.max} step={1}
-          onChange={v=>update({textInset:v})} suffix="px" />}
-      {caps.align && caps.list && <div className="rs-mini" style={{ margin:'-2px 0 8px' }}>Aligns the heading and row text. Two-column rows (name · time) keep their columns — that spread is the layout.</div>}
-      {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
-      {(caps.surface || caps.textColor) && !caps.list && <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':el.type==='weekly'?'Bar text colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
-        onChange={v=>update({textColor:v})} autoTitle="Auto — the readable neutral for this fill (ink, or cream on purple)" />}
+  return (
+    <React.Fragment>
+      {selCount>=2 &&
+        <Fold id="f-arrange" title={'Arrange · '+selCount+' selected'} open>
+          <div className="rs-lab" style={{ marginTop:0 }}>Align on a vertical line</div>
+          <div className="rs-actions">
+            <button className="rs-iconbtn" onClick={()=>align('x','left')} title="Align left edges">Left</button>
+            <button className="rs-iconbtn" onClick={()=>align('x','center')} title="Align horizontal centres">Centre</button>
+            <button className="rs-iconbtn" onClick={()=>align('x','right')} title="Align right edges">Right</button>
+          </div>
+          <div className="rs-lab">Align on a horizontal line</div>
+          <div className="rs-actions">
+            <button className="rs-iconbtn" onClick={()=>align('y','top')} title="Align top edges">Top</button>
+            <button className="rs-iconbtn" onClick={()=>align('y','middle')} title="Align vertical centres">Middle</button>
+            <button className="rs-iconbtn" onClick={()=>align('y','bottom')} title="Align bottom edges">Bottom</button>
+          </div>
+
+          {/* Distribute needs something BETWEEN the two extremes to move, so it
+              can't do anything at 2 — but HIDING it there just read as "distribute
+              is missing". Always shown from 2, disabled until 3, and the hint says
+              why. */}
+          {(()=>{ const off = selCount<3; return <React.Fragment>
+            <div className="rs-lab">Distribute — even gaps</div>
+            <div className="rs-actions">
+              <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('x','gaps')} title="Equal gaps left-to-right">⇄ Across</button>
+              <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('y','gaps')} title="Equal gaps top-to-bottom">⇕ Down</button>
+            </div>
+            <div className="rs-lab">Distribute — even centres</div>
+            <div className="rs-actions">
+              <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('x','centres')} title="Equal spacing of centres, left-to-right">⇄ Across</button>
+              <button className="rs-iconbtn" disabled={off} onClick={()=>distribute('y','centres')} title="Equal spacing of centres, top-to-bottom">⇕ Down</button>
+            </div>
+            <div className="rs-mini" style={{ margin:'4px 0 12px' }}>
+              {off
+                ? <React.Fragment>Select a <b>third</b> box to distribute — with two there's nothing between them to space.</React.Fragment>
+                : <React.Fragment>The outermost two stay put. <b>Gaps</b> evens the space between boxes; <b>centres</b> evens their midpoints — they differ once the boxes are different sizes.</React.Fragment>}
+            </div>
+          </React.Fragment>; })()}
+
+          <div className="rs-lab">Centre the group on the canvas</div>
+          <div className="rs-actions">
+            <button className="rs-iconbtn" onClick={()=>centre('x')} title="Centre the group left-to-right on the canvas">⇄ Across</button>
+            <button className="rs-iconbtn" onClick={()=>centre('y')} title="Centre the group top-to-bottom on the canvas">⇕ Down</button>
+            <button className="rs-iconbtn" onClick={()=>centre('both')} title="Centre the group on both axes">⊕ Both</button>
+          </div>
+          <Hint tight>Moves the whole selection as one onto the {formatLabel} centre — the boxes keep their positions relative to each other.</Hint>
+          <button className="rs-iconbtn rs-del" style={{ width:'100%', justifyContent:'center', marginTop:8, marginBottom:10 }} onClick={del}>Delete {selCount}</button>
+        </Fold>}
+
+      {/* ---- actions: always bare, always first ---- */}
+      <div className="rs-sech" style={{ display:'flex', justifyContent:'space-between' }}>
+        <span>{el.type}{el._overridden && <span className="rs-ovtag"> · overridden</span>}</span>
+        {selCount>=2 && <span style={{ fontSize:9, opacity:.6 }}>last of {selCount}</span>}
+      </div>
+      {/* Two rows: stacking order, then the destructive pair. Six buttons on one
+          row crushed "Duplicate"/"Delete" to illegible at 312px. */}
+      <div className="rs-actions" style={{ marginBottom:6 }}>
+        <button className="rs-iconbtn" onClick={()=>layer('back')} title="Send to back">⤓ Back</button>
+        <button className="rs-iconbtn" onClick={()=>layer(-1)} title="Send back one">▼</button>
+        <button className="rs-iconbtn" onClick={()=>layer(1)} title="Bring forward one">▲</button>
+        <button className="rs-iconbtn" onClick={()=>layer('front')} title="Bring to front">⤒ Front</button>
+      </div>
+      <div className="rs-actions">
+        <button className="rs-iconbtn" onClick={dup} title="Duplicate (Ctrl-D)">Duplicate</button>
+        <button className="rs-iconbtn rs-del" onClick={del} title="Delete">Delete</button>
+      </div>
+
+      {/* ===================== CONTENT ===================== */}
+      {/* A photo's content IS its image + press panels, which bring their own
+          folds — wrapping them in one more would be a fold inside a fold for
+          no gain. Everything else gets a Content fold of its own. */}
+      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
+      {el.type==='block' && <Fold id="f-content" title="Block" dirty={dContent}><BlockControls el={el} doc={doc} update={update} /></Fold>}
+      {el.type==='shape' && <Fold id="f-content" title="Shape" dirty={dContent}><ShapeControls el={el} doc={doc} update={update} /></Fold>}
+      {el.type==='icon'  && <Fold id="f-content" title="Icon"  dirty={dContent}><IconControls  el={el} doc={doc} update={update} /></Fold>}
+      {el.type==='rule'  && <Fold id="f-content" title="Rule"  dirty={dContent}><RuleControls  el={el} doc={doc} update={update} /></Fold>}
+      {el.type==='burst' && <Fold id="f-content" title="Burst" dirty={dContent}><BurstControls el={el} doc={doc} update={update} /></Fold>}
+      {el.type==='inkmark' && <Fold id="f-content" title="Ink mark" open><InkmarkControls el={el} doc={doc} update={update} /></Fold>}
+      {hasContent && <Fold id="f-content" title="Content" open dirty={dContent}>{contentBody}</Fold>}
+
+      {/* ===================== TYPE ===================== */}
+      {(caps.size || caps.sizePreset || caps.weight || caps.align || isText) &&
+        <Fold id="f-type" title="Type" open dirty={dType}>
+          {caps.size && <ScaleControl label={sizeLabel} val={el.fontSize} onChange={v=>update({fontSize:v})} />}
+          {caps.sizePreset && <Chips label="Size preset" options={[{v:'lg',l:'Large'},{v:'md',l:'Medium'},{v:'sm',l:'Small'}]}
+            value={el.fontSize>=40?'lg':el.fontSize>=30?'md':'sm'}
+            onChange={v=>update(v==='lg'?{fontSize:46,h:180}:v==='md'?{fontSize:32,h:135}:{fontSize:26,h:90})} />}
+          {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
+          {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
+          {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
+          {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={inset.align} onChange={v=>update({align:v})} />}
+          {caps.align && inset.applies &&
+            <Slider label={'Edge offset · from the '+inset.side} val={inset.val} min={0} max={inset.max} step={1}
+              onChange={v=>update({textInset:v})} suffix="px" />}
+          {caps.align && caps.list && <Hint tight>Aligns the heading and row text. Two-column rows (name · time) keep their columns — that spread is the layout.</Hint>}
+          {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
+          {(caps.surface || caps.textColor) && !caps.list &&
+            <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':el.type==='weekly'?'Bar text colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
+              onChange={v=>update({textColor:v})} autoTitle="Auto — the readable neutral for this fill (ink, or cream on purple)" />}
+        </Fold>}
 
       {/* ===================== SUBTEXT ===================== */}
-      {caps.subtitle && <React.Fragment>
-        <div className="rs-sech">Subtitle</div>
-        <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
-        {(el.subtitle||'').trim()
-          ? <React.Fragment>
-              <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
-              <ScaleControl label={'Subtitle size'+(isOutput?' · '+activeLabel+' only':'')} val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
-              <Chips label="Subtitle weight" options={WEIGHTS_MONT} value={el.subWeight||600} onChange={v=>update({subWeight:v})} />
-              <Slider label="Subtitle tracking" val={el.subTracking!=null?el.subTracking:0.02} min={-0.05} max={0.6} step={0.005} onChange={v=>update({subTracking:v})} suffix="em" />
-              <Swatches label="Subtitle colour" value={el.subColor!=null?el.subColor:'fg'} onChange={v=>update({subColor:v})} autoTitle="Auto — follows the title" />
-            </React.Fragment>
-          : <div className="rs-mini" style={{ marginTop:-2 }}>Add a line to sit under the title, inside the same box.</div>}
-      </React.Fragment>}
-      {el.type==='host' && <React.Fragment>
-        <div className="rs-sech">Kicker</div>
-        <Field label="Kicker (optional)" value={el.kicker} onChange={v=>update({kicker:v})} />
-        <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'} onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-      </React.Fragment>}
-      {caps.list && <React.Fragment>
-        <div className="rs-sech">Rows</div>
-        {(el.type==='lineup'||el.type==='specials') && <React.Fragment>
-          <div className="rs-lab">Items</div>
-          {el.items.map((it,i)=>(
-            <div className="rs-itemrow" key={i}>
-              <input className="rs-input" value={el.type==='lineup'?it.n:it.l}
-                onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,n:e.target.value}:{...it,l:e.target.value}; setItems(items); }} />
-              <input className="rs-input" style={{ maxWidth:80 }} value={el.type==='lineup'?it.t:it.p}
-                onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,t:e.target.value}:{...it,p:e.target.value}; setItems(items); }} />
-              <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
-            </div>
-          ))}
-          <button className="rs-addrow" onClick={()=>setItems([...el.items, el.type==='lineup'?{n:'New act',t:'00:00'}:{l:'Item',p:'₫0'}])}>+ Add row</button>
-          <div style={{ height:10 }} />
-        </React.Fragment>}
-        {el.type==='sessions' && <React.Fragment>
-          <div className="rs-row">
-            <div className="rs-lab">Sessions — one per line</div>
-            <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
-              placeholder={'001 — Session title — 3.6.26'}
-              onChange={e=>update({ raw:e.target.value })} />
-          </div>
-          <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Paste columns split by <b>tabs, dashes or 2+ spaces</b> — date, time, a label and the fixture, in any order. End a line with a symbol (<b>&lt;</b> <b>~</b> …) to tag its category below.</div>
-        </React.Fragment>}
-        {el.type==='agenda' && <React.Fragment>
-          <div className="rs-lab">Days — colour follows the weekday</div>
-          {el.items.map((it,i)=>(
-            <div key={i} style={{ marginBottom:8, paddingBottom:8, borderBottom:'1px solid rgba(120,110,90,.14)' }}>
-              <div className="rs-itemrow">
-                <input className="rs-input" style={{ maxWidth:104 }} placeholder="Day" value={it.day||''}
-                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,day:e.target.value}; setItems(items); }} />
-                <input className="rs-input" placeholder="Event" value={it.name||''}
-                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,name:e.target.value}; setItems(items); }} />
-                <input className="rs-input" style={{ maxWidth:64 }} placeholder="Time" value={it.time||''}
-                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,time:e.target.value}; setItems(items); }} />
+      {caps.subtitle &&
+        <Fold id="f-sub" title="Subtitle" dirty={dSub}>
+          <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
+          {(el.subtitle||'').trim()
+            ? <React.Fragment>
+                <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
+                <ScaleControl label={'Subtitle size'+(isOutput?' · '+activeLabel+' only':'')} val={el.subSize!=null?el.subSize:30} onChange={v=>update({subSize:v})} />
+                <Chips label="Subtitle weight" options={WEIGHTS_MONT} value={el.subWeight||600} onChange={v=>update({subWeight:v})} />
+                <Slider label="Subtitle tracking" val={el.subTracking!=null?el.subTracking:0.02} min={-0.05} max={0.6} step={0.005} onChange={v=>update({subTracking:v})} suffix="em" />
+                <Swatches label="Subtitle colour" value={el.subColor!=null?el.subColor:'fg'} onChange={v=>update({subColor:v})} autoTitle="Auto — follows the title" />
+              </React.Fragment>
+            : <div className="rs-mini" style={{ marginTop:-2, marginBottom:10 }}>Add a line to sit under the title, inside the same box.</div>}
+        </Fold>}
+      {el.type==='host' &&
+        <Fold id="f-kicker" title="Kicker" dirty={dKicker}>
+          <Field label="Kicker (optional)" value={el.kicker} onChange={v=>update({kicker:v})} />
+          <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'} onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+        </Fold>}
+
+      {/* ===================== ROWS ===================== */}
+      {caps.list &&
+        <Fold id="f-rows" title="Rows" open dirty={dRows}>
+          {(el.type==='lineup'||el.type==='specials') && <React.Fragment>
+            <div className="rs-lab">Items</div>
+            {el.items.map((it,i)=>(
+              <div className="rs-itemrow" key={i}>
+                <input className="rs-input" value={el.type==='lineup'?it.n:it.l}
+                  onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,n:e.target.value}:{...it,l:e.target.value}; setItems(items); }} />
+                <input className="rs-input" style={{ maxWidth:80 }} value={el.type==='lineup'?it.t:it.p}
+                  onChange={e=>{ const items=el.items.slice(); items[i]=el.type==='lineup'?{...it,t:e.target.value}:{...it,p:e.target.value}; setItems(items); }} />
                 <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
               </div>
-              <input className="rs-input" style={{ marginTop:4, width:'100%' }} placeholder="Description (optional)" value={it.desc||''}
-                onChange={e=>{ const items=el.items.slice(); items[i]={...it,desc:e.target.value}; setItems(items); }} />
+            ))}
+            <button className="rs-addrow" onClick={()=>setItems([...el.items, el.type==='lineup'?{n:'New act',t:'00:00'}:{l:'Item',p:'₫0'}])}>+ Add row</button>
+            <div style={{ height:10 }} />
+          </React.Fragment>}
+          {el.type==='sessions' && <React.Fragment>
+            <div className="rs-row">
+              <div className="rs-lab">Sessions — one per line</div>
+              <textarea className="rs-area" style={{ minHeight:160 }} value={el.raw} spellCheck={false}
+                placeholder={'001 — Session title — 3.6.26'}
+                onChange={e=>update({ raw:e.target.value })} />
             </div>
-          ))}
-          <button className="rs-addrow" onClick={()=>setItems([...el.items, {day:'Monday',name:'New event',time:'19:00',desc:''}])}>+ Add day</button>
-          <div className="rs-mini" style={{ margin:'2px 0 8px' }}>Each day auto-colours by the weekly schedule — <b>Mon</b> green · <b>Tue</b> blue · <b>Wed</b> purple · <b>Thu</b> pink · <b>Fri</b> red · <b>Sat</b> amber · <b>Sun</b> yellow.</div>
-          <div style={{ height:6 }} />
-        </React.Fragment>}
-        <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
-        <Chips label="Row weight" options={WEIGHTS_MONT} value={el.rowWeight||700} onChange={v=>update({rowWeight:v})} />
-        <Slider label="Row tracking" val={el.rowTracking!=null?el.rowTracking:(el.type==='specials'?0.03:0.01)} min={-0.05} max={0.4} step={0.005} suffix="em" onChange={v=>update({rowTracking:v})} />
-        <Slider label="Line spacing" val={el.rowGap!=null?el.rowGap:(el.type==='specials'?5:7)} min={0} max={24} step={1} suffix="px" onChange={v=>update({rowGap:v})} />
-        <Swatches label="Row text colour" value={el.textColor!=null?el.textColor:el.color} onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
-        {el.type==='sessions' && (()=>{
-          const marks = window.parseSessions(el.raw).reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
-          if(!marks.length) return <div className="rs-mini" style={{ marginTop:6 }}>Tip: end a line with a symbol — <b>&lt;</b>, <b>~</b>, <b>^</b>, <b>●</b> — to tag it. Name + colour the categories here once they appear, and rows get a dot + a legend.</div>;
-          const DEFCAT=['blue','green','pink','amber','purple','red','yellow'];
-          return <React.Fragment>
-            <div className="rs-lab" style={{ marginTop:8 }}>Categories — line-end markers</div>
-            {marks.map(m=>{
-              const k=(el.markerKey&&el.markerKey[m])||{};
-              const setK=(patch)=>update({ markerKey: Object.assign({}, el.markerKey||{}, { [m]: Object.assign({}, k, patch) }) });
-              const cur=k.color||DEFCAT[marks.indexOf(m)%7];
-              return <div key={m} style={{ marginBottom:8 }}>
+            <Hint tight>Paste columns split by <b>tabs, dashes or 2+ spaces</b> — date, time, a label and the fixture, in any order. End a line with a symbol (<b>&lt;</b> <b>~</b> …) to tag its category below.</Hint>
+          </React.Fragment>}
+          {el.type==='agenda' && <React.Fragment>
+            <div className="rs-lab">Days — colour follows the weekday</div>
+            {el.items.map((it,i)=>(
+              <div key={i} style={{ marginBottom:8, paddingBottom:8, borderBottom:'1px solid rgba(120,110,90,.14)' }}>
                 <div className="rs-itemrow">
-                  <span style={{ flex:'none', width:24, textAlign:'center', fontFamily:'Montserrat', fontWeight:800 }}>{m}</span>
-                  <input className="rs-input" placeholder="Name (e.g. Projector)" value={k.name||''} onChange={e=>setK({name:e.target.value})} />
+                  <input className="rs-input" style={{ maxWidth:104 }} placeholder="Day" value={it.day||''}
+                    onChange={e=>{ const items=el.items.slice(); items[i]={...it,day:e.target.value}; setItems(items); }} />
+                  <input className="rs-input" placeholder="Event" value={it.name||''}
+                    onChange={e=>{ const items=el.items.slice(); items[i]={...it,name:e.target.value}; setItems(items); }} />
+                  <input className="rs-input" style={{ maxWidth:64 }} placeholder="Time" value={it.time||''}
+                    onChange={e=>{ const items=el.items.slice(); items[i]={...it,time:e.target.value}; setItems(items); }} />
+                  <button onClick={()=>setItems(el.items.filter((_,j)=>j!==i))}>×</button>
                 </div>
-                <div className="rs-swatches" style={{ marginTop:4 }}>
-                  {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(cur===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>setK({color:a})} />))}
-                </div>
-              </div>;
-            })}
-          </React.Fragment>;
-        })()}
-      </React.Fragment>}
+                <input className="rs-input" style={{ marginTop:4, width:'100%' }} placeholder="Description (optional)" value={it.desc||''}
+                  onChange={e=>{ const items=el.items.slice(); items[i]={...it,desc:e.target.value}; setItems(items); }} />
+              </div>
+            ))}
+            <button className="rs-addrow" onClick={()=>setItems([...el.items, {day:'Monday',name:'New event',time:'19:00',desc:''}])}>+ Add day</button>
+            <Hint tight>Each day auto-colours by the weekly schedule — <b>Mon</b> green · <b>Tue</b> blue · <b>Wed</b> purple · <b>Thu</b> pink · <b>Fri</b> red · <b>Sat</b> amber · <b>Sun</b> yellow.</Hint>
+            <div style={{ height:6 }} />
+          </React.Fragment>}
+          <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
+          <Chips label="Row weight" options={WEIGHTS_MONT} value={el.rowWeight||700} onChange={v=>update({rowWeight:v})} />
+          <Slider label="Row tracking" val={el.rowTracking!=null?el.rowTracking:(el.type==='specials'?0.03:0.01)} min={-0.05} max={0.4} step={0.005} suffix="em" onChange={v=>update({rowTracking:v})} />
+          <Slider label="Line spacing" val={el.rowGap!=null?el.rowGap:(el.type==='specials'?5:7)} min={0} max={24} step={1} suffix="px" onChange={v=>update({rowGap:v})} />
+          <Swatches label="Row text colour" value={el.textColor!=null?el.textColor:el.color} onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
+          {el.type==='sessions' && (()=>{
+            const marks = window.parseSessions(el.raw).reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
+            if(!marks.length) return <Hint>Tip: end a line with a symbol — <b>&lt;</b>, <b>~</b>, <b>^</b>, <b>●</b> — to tag it. Name + colour the categories here once they appear, and rows get a dot + a legend.</Hint>;
+            const DEFCAT=['blue','green','pink','amber','purple','red','yellow'];
+            return <React.Fragment>
+              <div className="rs-lab" style={{ marginTop:8 }}>Categories — line-end markers</div>
+              {marks.map(m=>{
+                const k=(el.markerKey&&el.markerKey[m])||{};
+                const setK=(patch)=>update({ markerKey: Object.assign({}, el.markerKey||{}, { [m]: Object.assign({}, k, patch) }) });
+                const cur=k.color||DEFCAT[marks.indexOf(m)%7];
+                return <div key={m} style={{ marginBottom:8 }}>
+                  <div className="rs-itemrow">
+                    <span style={{ flex:'none', width:24, textAlign:'center', fontFamily:'Montserrat', fontWeight:800 }}>{m}</span>
+                    <input className="rs-input" placeholder="Name (e.g. Projector)" value={k.name||''} onChange={e=>setK({name:e.target.value})} />
+                  </div>
+                  <div className="rs-swatches" style={{ marginTop:4 }}>
+                    {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(cur===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>setK({color:a})} />))}
+                  </div>
+                </div>;
+              })}
+            </React.Fragment>;
+          })()}
+        </Fold>}
+
+      {/* ===================== COLOUR & SURFACE ===================== */}
+      {caps.surface &&
+        <Fold id="f-surface" title="Colour & surface" dirty={dSurface}>
+          <Chips label="Surface" options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
+          <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
+            onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+          <Hint tight>Fill colours an <b>Accent</b> surface and the element’s accent highlights (heading, first row…).</Hint>
+        </Fold>}
+      {el.type==='weekly' &&
+        <Fold id="f-surface" title="Accent" dirty={dSurface}>
+          <Swatches label="Bar + day" value={el.fill!=null?el.fill:el.color} onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+          <Hint tight>The badge stays a white circle; the bar and day follow the accent.</Hint>
+        </Fold>}
+
+      {/* ===================== SHADOW ===================== */}
+      {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
+
+      {/* ===================== TRANSFORM ===================== */}
+      <Fold id="f-transform" title={'Transform'+(isOutput?' · '+activeLabel:'')} dirty={dTransform}>
+        {/* Numbers first: nudging a slider to an exact 540 is a fight, and
+            these are the same X/Y/W/H fields Print Studio has. */}
+        <div className="rs-numgrid" style={{ marginBottom:12 }}>
+          <NumField label="X" value={Math.round(el.x)} onChange={v=>update({x:Math.round(v)})} />
+          <NumField label="Y" value={Math.round(el.y)} onChange={v=>update({y:Math.round(v)})} />
+          <NumField label="W" value={Math.round(el.w)} min={60} onChange={v=>update({w:Math.round(v)})} />
+          <NumField label="H" value={Math.round(el.h)} min={40} onChange={v=>update({h:Math.round(v)})} />
+          <NumField label="Rot°" value={Math.round(el.rot||0)} onChange={v=>update({rot:Math.round(v)})} />
+        </div>
+        {selCount<2 && <CentreRow label="Centre on the canvas" centre={centre}
+          hint={'Exact centre of the '+formatLabel+' canvas — never snapped to the grid.'} />}
+        <Chips label="Tilt presets" options={[{v:0,l:'0°'},{v:-3,l:'-3°'},{v:3,l:'+3°'},{v:-6,l:'-6°'},{v:6,l:'+6°'}]} value={el.rot||0} onChange={v=>update({rot:v})} />
+        <Slider label="Rotation" val={el.rot||0} min={-45} max={45} onChange={v=>update({rot:v})} suffix="°" />
+        <Slider label="Width" val={el.w} min={120} max={1080} step={6} onChange={v=>update({w:v})} suffix="px" />
+        {caps.widthPreset && <Chips label="Width presets" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />}
+        {showHeight && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
+        {caps.height && <Chips label="Height presets — match across tags" options={TAG_HEIGHTS} value={el.h} onChange={v=>update({h:v})} />}
+        <Chips label="Anchor (all formats)" options={[{v:'safe',l:'Safe cluster'},{v:'bottom',l:'Pin to base'}]} value={el.anchor||'safe'} onChange={v=>update({anchor:v})} />
+      </Fold>
+
+      {/* ===================== PER-FORMAT OVERRIDE ===================== */}
+      {isOutput &&
+        <Fold id="f-override" title={activeLabel+' only'} open badge={el._overridden?'detached':null}>
+          <Chips label={'Visibility · '+activeLabel} options={[{v:false,l:'Shown'},{v:true,l:'Hidden'}]} value={!!el.hidden} onChange={v=>toggleHidden(el.id, v)} />
+          {el._overridden
+            ? <React.Fragment>
+                <button className="rs-addrow" onClick={()=>resetOverride(el.id)}>↺ Reset to Master</button>
+                <div className="rs-mini" style={{ margin:'6px 0 10px' }}>Layout detached for {activeLabel}. Reset to follow Master again.</div>
+              </React.Fragment>
+            : <div className="rs-mini" style={{ marginBottom:10 }}>Following Master. Move, resize, rotate{el.type==='photo'?', reframe the photo':''}{isText?', resize text':''} to override just {activeLabel}.</div>}
+        </Fold>}
     </React.Fragment>
   );
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, onCloudSignIn, onCloudSignOut, onExportToEvent }){
+function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, onCloudSignIn, onCloudSignOut, onExportToEvent,
+                  canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
@@ -1672,6 +1904,7 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
   const slug = slugify(name) || 'reality-poster';
   const kind = doc.exportFormat||'png';
   const printDef = (AP_FMT[doc.activeFormat]||{}).print;   // A1 / standee print-res descriptor
+  const printOn = ['a4','a1'].concat(AP_STD).concat(AP_HND).indexOf(doc.activeFormat)>=0;
   const scope = isOutput ? AP_FMT[doc.activeFormat].label+' only' : 'All formats';
   const outName = isOutput
     ? `${storyStem(doc.activeFormat, slug, doc.accent)}.${kind}`
@@ -1696,12 +1929,15 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
         {/* Print options — A4 / A1 XL / standees / handouts collapsed into one menu
             to save menubar space. A4 stays in the Save-All bundle; the rest are
             on-demand print views captured at true print resolution. */}
-        <select className={'rs-stsel'+(['a4','a1'].concat(AP_STD).concat(AP_HND).indexOf(doc.activeFormat)>=0?' on':'')}
+        {/* The label used to read "Print options…" even while you were LOOKING at
+            an A1 — the selected size was only discoverable by opening the menu.
+            Now the closed state names what's active. */}
+        <select className={'rs-stsel'+(printOn?' on':'')}
           aria-label="Print options"
-          value={['a4','a1'].concat(AP_STD).concat(AP_HND).indexOf(doc.activeFormat)>=0 ? doc.activeFormat : ''}
+          value={printOn ? doc.activeFormat : ''}
           onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
           title="Print outputs — A4, A1 XL, roll-up standees, and handout flyers. A4 rides the Save-All bundle; the rest are on-demand at true print resolution (PDF as a real-world mm page a shop runs 1:1).">
-          <option value="">Print options…</option>
+          <option value="">{printOn ? 'Print · '+AP_FMT[doc.activeFormat].label : 'Print options…'}</option>
           <option value="a4">{AP_FMT['a4'].label} · {AP_FMT['a4'].sub}</option>
           <option value="a1">{AP_FMT['a1'].label} · {AP_FMT['a1'].sub}</option>
           <optgroup label="Standees">{AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}</optgroup>
@@ -1710,7 +1946,7 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
         {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
           title="Clear all overrides for this format">↺ {overrideCount||0}</button>}
       </div>
-      <div className="rs-tgroup"><span className="gl">Palette</span>
+      <div className="rs-tgroup">
         <div className="rs-seg">
           {[{v:'day',l:'Day'},{v:'night',l:'Night'}].map(o=>(
             <button key={o.v} className={doc.theme===o.v?'on':''} onClick={()=>setDoc(d=>({...d, theme:o.v}))}>{o.l}</button>
@@ -1726,8 +1962,38 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           ); })}
         </div>
       </div>
+      <div className="rs-tgroup">
+        <div className="rs-seg">
+          <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
+          <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
+        </div>
+      </div>
+      <div className="rs-tgroup">
+        <div className="rs-seg">
+          <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
+          <button onClick={onZoomFit} title="Fit the poster to the pane">{zoomPct}</button>
+          <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
+        </div>
+      </div>
+      <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
+      <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
+      <HintsToggle />
       <div className="spacer" />
-      <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
+      {/* WP9: cloud sync + poster write-back. Hidden entirely if RCloud failed to
+          load; otherwise a sign-in toggle + an "Export to event…" affordance.
+          Sign-in/out and the picker are fully best-effort (no-op when dormant). */}
+      {hasCloud && <div className="rs-tgroup"><span className="gl">Cloud</span>
+        {cloudUser
+          ? <React.Fragment>
+              <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
+                title="Send this poster's 4:5 / 9:16 / 1:1 to an event's poster slots">→ Event</button>
+              <button className="rs-iconbtn" onClick={onCloudSignOut}
+                title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
+            </React.Fragment>
+          : <button className="rs-iconbtn" onClick={onCloudSignIn}
+              title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
+      </div>}
+      <div className="rs-tgroup rs-export"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
         <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
           onChange={e=>setName(e.target.value)} onBlur={commit}
           onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
@@ -1747,23 +2013,6 @@ function Topbar({ doc, setDoc, count, overrideCount, resetFormat, onExport, expo
           Save Images<small>{scope}</small>
         </button>
       </div>
-      {/* WP9: cloud sync + poster write-back. Hidden entirely if RCloud failed to
-          load; otherwise a sign-in toggle + an "Export to event…" affordance.
-          Sign-in/out and the picker are fully best-effort (no-op when dormant). */}
-      {hasCloud && <div className="rs-tgroup"><span className="gl">Cloud</span>
-        {cloudUser
-          ? <React.Fragment>
-              <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
-                title="Send this poster's 4:5 / 9:16 / 1:1 to an event's poster slots">→ Event</button>
-              <button className="rs-iconbtn" onClick={onCloudSignOut}
-                title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
-            </React.Fragment>
-          : <button className="rs-iconbtn" onClick={onCloudSignIn}
-              title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
-      </div>}
-      <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
-      <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
-      <span className="gl" style={{ fontFamily:'Montserrat', fontWeight:700, letterSpacing:'.1em', fontSize:9, color:'#6f6553' }}>{count} EL</span>
     </div>
   );
 }
@@ -1776,7 +2025,6 @@ function App(){
   const [scale, setScale] = React.useState(0.4);
   const [spawn, setSpawn] = React.useState(null);
   const [tplOpen, setTplOpen] = React.useState(false);
-  const [dayOpen, setDayOpen] = React.useState({});   // My-templates day sub-menus (by accent → weekday)
   const [exporting, setExporting] = React.useState(false);
   const [plateOnly, setPlateOnly] = React.useState(false);   // image-only/text-less render for the 'feed' slot
   const [sliceMode, setSliceMode] = React.useState(false);   // editing the feed-slice band
@@ -1800,6 +2048,43 @@ function App(){
   const docRef = React.useRef(doc); docRef.current = doc;
 
   React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }, [doc]);
+
+  /* ---- undo / redo ----
+     Poster Studio never had this, which is a strange thing to say about a tool
+     whose whole job is trying things. Same model as Print Studio's: every doc
+     change starts a 350ms timer, and the timer is what commits a history entry
+     — so dragging a slider across forty values is ONE undo, not forty. `skip`
+     stops the undo's own setDoc from being recorded as a new edit. */
+  const [histVer, setHistVer] = React.useState(0);
+  const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });
+  React.useEffect(()=>{
+    const h = hist.current;
+    if(h.skip){ h.skip=false; h.prev=doc; return; }
+    if(h.prev==null){ h.prev=doc; return; }
+    if(h.pending==null) h.pending=h.prev;
+    h.prev=doc;
+    clearTimeout(h.timer);
+    h.timer=setTimeout(()=>{
+      h.past.push(h.pending); if(h.past.length>80) h.past.shift();
+      h.future=[]; h.pending=null; setHistVer(v=>v+1);
+    }, 350);
+  }, [doc]);
+  const undo = React.useCallback(()=>{
+    const h = hist.current;
+    clearTimeout(h.timer);
+    if(h.pending!=null){ h.past.push(h.pending); h.pending=null; h.future=[]; }
+    const prev = h.past.pop(); if(!prev) return;
+    h.future.push(docRef.current); h.skip=true;
+    setDoc(prev); setHistVer(v=>v+1);
+    setSelectedIds(ids=>ids.filter(id=>prev.elements.some(e=>e.id===id)));
+  }, []);
+  const redo = React.useCallback(()=>{
+    const h = hist.current;
+    const nxt = h.future.pop(); if(!nxt) return;
+    h.past.push(docRef.current); h.skip=true;
+    setDoc(nxt); setHistVer(v=>v+1);
+    setSelectedIds(ids=>ids.filter(id=>nxt.elements.some(e=>e.id===id)));
+  }, []);
 
   /* ---- WP9 cloud sign-in state (best-effort; localStorage stays the source of
      truth). `cloudUser` is just for the toolbar label; null = local-only. ---- */
@@ -1871,24 +2156,63 @@ function App(){
      window-level paste handler always sees the live selection + edit routing. */
   const selRef = React.useRef(null);
   const updateElRef = React.useRef(null);
+  /* Resolved elements (Master values with this format's overrides folded in) —
+     the arrow-nudge needs the positions you can actually SEE, then writes back
+     through updateEl so the edit lands in the right place: on Master, or as an
+     override for the format you're looking at. */
+  const resolvedRef = React.useRef([]);
   React.useEffect(()=>{
     function onKey(e){
-      if(e.key!=='Delete' && e.key!=='Backspace') return;
-      const ids = selIdsRef.current; if(!ids.length) return;
       const ae = document.activeElement;
-      if(ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable)) return;
-      e.preventDefault();
-      setDoc(d=>{ const overrides=Object.assign({}, d.overrides);
-        Object.keys(overrides).forEach(f=>{ let fo=overrides[f]; if(!fo) return; let changed=false;
-          ids.forEach(id=>{ if(fo[id]){ if(!changed){ fo=Object.assign({},fo); changed=true; } delete fo[id]; } });
-          if(changed) overrides[f]=fo; });
-        return {...d, elements:d.elements.filter(e=>ids.indexOf(e.id)<0), overrides};
-      });
-      setSelectedIds([]);
+      const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable);
+      const mod = e.ctrlKey||e.metaKey;
+      if(mod && (e.key==='z'||e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
+      if(mod && (e.key==='y'||e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
+      if(typing) return;
+      const ids = selIdsRef.current;
+
+      if(mod && (e.key==='a'||e.key==='A')){ e.preventDefault(); setSelectedIds(docRef.current.elements.map(x=>x.id)); return; }
+      if(mod && (e.key==='d'||e.key==='D')){
+        e.preventDefault();
+        if(!ids.length) return;
+        const cur = docRef.current, copies = [];
+        ids.forEach(id=>{ const src = cur.elements.find(x=>x.id===id);
+          if(src) copies.push(Object.assign(JSON.parse(JSON.stringify(src)), { id:window.uid(), x:src.x+40, y:src.y+40 })); });
+        if(copies.length){ setDoc(d=>({ ...d, elements:[...d.elements, ...copies] })); setSelectedIds(copies.map(c=>c.id)); }
+        return;
+      }
+      if(e.key==='Escape'){ setSelectedIds([]); return; }
+
+      if(e.key==='Delete' || e.key==='Backspace'){
+        if(!ids.length) return;
+        e.preventDefault();
+        setDoc(d=>{ const overrides=Object.assign({}, d.overrides);
+          Object.keys(overrides).forEach(f=>{ let fo=overrides[f]; if(!fo) return; let changed=false;
+            ids.forEach(id=>{ if(fo[id]){ if(!changed){ fo=Object.assign({},fo); changed=true; } delete fo[id]; } });
+            if(changed) overrides[f]=fo; });
+          return {...d, elements:d.elements.filter(e=>ids.indexOf(e.id)<0), overrides};
+        });
+        setSelectedIds([]);
+        return;
+      }
+
+      if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
+        if(!ids.length) return;
+        e.preventDefault();
+        // 6px = one grid step, so a nudge lands on the same armature a drag
+        // snaps to. Shift moves five steps.
+        const st = e.shiftKey?30:6;
+        const dx = e.key==='ArrowLeft'?-st : e.key==='ArrowRight'?st : 0;
+        const dy = e.key==='ArrowUp'?-st : e.key==='ArrowDown'?st : 0;
+        const up = updateElRef.current;
+        ids.forEach(id=>{ const r = resolvedRef.current.find(x=>x.id===id);
+          if(r) up(id, { x:r.x+dx, y:r.y+dy }); });
+        return;
+      }
     }
     window.addEventListener('keydown', onKey);
     return ()=>window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [undo, redo]);
 
   /* Ctrl/⌘-V over a selected photo replaces its image — same downscale → JPEG
      pipeline as the upload button. Ignored while typing in an inspector field,
@@ -1908,17 +2232,32 @@ function App(){
     return ()=>window.removeEventListener('paste', onPaste);
   }, []);
 
+  /* Zoom. The stage has always fitted the poster to the pane and left it there,
+     which is fine until you're nudging a 6px inset on a 1080px canvas rendered
+     at 0.4. `fit` stays the auto-computed scale; `zoom` multiplies it, and
+     changing format or resizing the pane refits without discarding the zoom. */
+  const [fit, setFit] = React.useState(0.4);
+  const [zoom, setZoom] = React.useState(1);
   React.useLayoutEffect(()=>{
     function recompute(){
       const s = stageRef.current; if(!s) return;
       const pad = 96, f = AP_FMT[viewFormat];
-      setScale(Math.min((s.clientWidth-pad)/f.w, (s.clientHeight-pad)/f.h));
+      setFit(Math.min((s.clientWidth-pad)/f.w, (s.clientHeight-pad)/f.h));
     }
     recompute();
     const ro = new ResizeObserver(recompute);
     if(stageRef.current) ro.observe(stageRef.current);
     return ()=>ro.disconnect();
   }, [viewFormat]);
+  React.useEffect(()=>{ setScale(fit*zoom); }, [fit, zoom]);
+  const ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3];
+  const zoomStep = (dir)=>setZoom(z=>{
+    const i = ZOOMS.findIndex(v=>v>z+0.001);
+    const at = dir>0 ? (i<0 ? ZOOMS.length-1 : i)
+                     : (i<=0 ? 0 : (Math.abs(ZOOMS[i-1]-z)<0.001 ? Math.max(0,i-2) : i-1));
+    return ZOOMS[Math.max(0, Math.min(ZOOMS.length-1, at))];
+  });
+  const zoomPct = Math.round(fit*zoom*100)+'%';
 
   /* resolved elements for the current view */
   const resolved = React.useMemo(()=> doc.activeFormat==='master'
@@ -1926,6 +2265,7 @@ function App(){
     : apResolve(doc, doc.activeFormat)
   , [doc]);
   const sel = resolved.find(e=>e.id===selectedId) || null;
+  resolvedRef.current = resolved;
   selRef.current = sel;
   const overrideCount = isOutput ? Object.keys((doc.overrides[doc.activeFormat])||{}).length : 0;
 
@@ -2625,11 +2965,39 @@ function App(){
     setExporting(false); setExportMsg('');
   }
 
+  const h = hist.current;
+
+  /* Ctrl-K. The Fold index covers every inspector control on its own; these are
+     the poster-level commands, which otherwise live only as 10px buttons in a
+     topbar that has run out of room. */
+  const [palOpen, setPalOpen] = RUI.usePalette();
+  React.useEffect(()=>{
+    RUI.setActions([].concat(
+      [{ label:'View · Master (source)', group:'Format', run:()=>setDoc(d=>({...d, activeFormat:'master'})) }],
+      AP_OUT.filter(f=>f!=='a4').map(f=>({ label:'View · '+AP_FMT[f].label+' ('+AP_FMT[f].sub+')', group:'Format', run:()=>setDoc(d=>({...d, activeFormat:f})) })),
+      ['a4','a1'].concat(AP_STD).concat(AP_HND).map(f=>({ label:'Print · '+AP_FMT[f].label, group:'Format', run:()=>setDoc(d=>({...d, activeFormat:f})) })),
+      AP_ABYDAY.map((a,i)=>({ label:'Day · '+AP_DNAMES[i]+' ('+a+')', group:'Accent', run:()=>setDoc(d=>({...d, accent:a})) })),
+      [{ label:'Palette · Day', group:'Theme', run:()=>setDoc(d=>({...d, theme:'day'})) },
+       { label:'Palette · Night', group:'Theme', run:()=>setDoc(d=>({...d, theme:'night'})) },
+       { label:'Toggle grid', group:'View', run:()=>setDoc(d=>({...d, showGrid:!d.showGrid})) },
+       { label:'Toggle snap', group:'View', run:()=>setDoc(d=>({...d, snap:!d.snap})) },
+       { label:'Toggle hints', group:'View', run:()=>RUI.setHints(!RUI.hintsOn()) },
+       { label:'Zoom to fit', group:'View', run:()=>setZoom(1) },
+       { label:'Undo', group:'Edit', run:undo },
+       { label:'Redo', group:'Edit', run:redo },
+       { label:'Select all', group:'Edit', run:()=>setSelectedIds(docRef.current.elements.map(x=>x.id)) },
+       { label:'Save current poster as a template', group:'Templates', run:saveUserTpl },
+       { label:'Save images', group:'Export', run:()=>doExport(docRef.current.title||'') }]
+    ));
+  }, [doc.activeFormat, doc.theme, doc.showGrid, doc.snap, undo, redo]);
+
   return (
     <div className="rs-app">
-      <Topbar doc={doc} setDoc={setDoc} count={doc.elements.length} overrideCount={overrideCount} resetFormat={resetFormat}
+      <Topbar doc={doc} setDoc={setDoc} overrideCount={overrideCount} resetFormat={resetFormat}
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
-        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker} />
+        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
+        canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
+        zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)} />
       <div className="rs-body">
         <div className="rs-lib">
           {/* ---- In queue — upcoming app events still missing a poster ---- */}
@@ -2682,98 +3050,57 @@ function App(){
               {tplReady && userTpls.length===0 &&
                 <div className="rs-mini" style={{ margin:'2px 0 6px' }}>None yet — build a poster, then keep it here for next time.</div>}
               {/* A saved preset is filed under the weekday its accent codes for
-                  (green→Mon … yellow→Sun). Each day is its own collapsible menu;
-                  days start open only if they hold something. */}
+                  (green→Mon … yellow→Sun), plus drawers for the ones with no day
+                  colour and the ones tucked away. All three are the same Sec the
+                  rest of the library uses now, and the card is a real render of
+                  the poster rather than a line of text about it. */}
               {tplReady && userTpls.length>0 && AP_DNAMES.map((day,di)=>{
                 const dayAccent = AP_ABYDAY[di];
                 const items = userTpls.filter(t=> !t.archived && AP_DAYS[t.doc && t.doc.accent] === day);
-                const isOpen = dayOpen[day]!==undefined ? dayOpen[day] : items.length>0;
                 return (
-                  <React.Fragment key={day}>
-                    <div className="rs-dayhdr" onClick={()=>setDayOpen(o=>({...o, [day]:!isOpen}))}
-                      style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'5px 2px',
-                        userSelect:'none', borderBottom:'1px solid rgba(120,110,90,.12)' }}>
-                      <span style={{ width:11, height:11, borderRadius:'50%', flex:'none', background:AP_PAL[dayAccent], border:'1px solid rgba(0,0,0,.25)' }} />
-                      <span style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:11, letterSpacing:'.09em', textTransform:'uppercase' }}>{AP_DABBR[di]}</span>
-                      <span style={{ fontSize:10, opacity:.45 }}>{day}</span>
-                      <span style={{ marginLeft:'auto', fontFamily:'Montserrat', fontWeight:700, fontSize:10, opacity: items.length?0.6:0.3 }}>{items.length}</span>
-                      <span style={{ fontSize:10, opacity:.55, width:10, textAlign:'center' }}>{isOpen?'▾':'▸'}</span>
-                    </div>
-                    {isOpen && items.map(t=>(
-                      <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
-                        style={{ cursor:'pointer', position:'relative', paddingRight:60, marginLeft:11 }}>
-                        <span className="ln">{t.name}</span>
-                        <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
-                        <button className="rs-tplx" style={{ right:34, borderColor:'#3a2f1f', color:'#b6ab97' }} title="Archive this template — tuck it into the Archive drawer below"
-                          onClick={e=>{ e.stopPropagation(); setTplArchived(t.id, true); }}>⤓</button>
-                        <button className="rs-tplx" title="Delete this template"
-                          onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
-                      </div>
-                    ))}
-                    {isOpen && items.length===0 &&
-                      <div className="rs-mini" style={{ margin:'3px 0 5px 19px', opacity:.45 }}>Set a poster’s accent to {dayAccent} to file it here.</div>}
-                  </React.Fragment>
+                  <Sec key={day} id={'my:'+day} title={AP_DABBR[di]} sub={day} count={items.length}
+                    dot={AP_PAL[dayAccent]} open={items.length>0}>
+                    {items.length>0
+                      ? <div className="rs-tplgrid">
+                          {items.map(t=>(
+                            <UserTplCard key={t.id} t={t} onApply={()=>applyUserTpl(t)}
+                              onArchive={()=>setTplArchived(t.id, true)} onDelete={()=>delUserTpl(t.id)} />
+                          ))}
+                        </div>
+                      : <div className="rs-mini" style={{ margin:'3px 0 8px 12px', opacity:.45 }}>Set a poster’s accent to {dayAccent} to file it here.</div>}
+                  </Sec>
                 );
               })}
-              {tplReady && userTpls.some(t=> !t.archived && !AP_DAYS[t.doc && t.doc.accent]) && (()=>{
+              {tplReady && (()=>{
                 const items = userTpls.filter(t=> !t.archived && !AP_DAYS[t.doc && t.doc.accent]);
-                const isOpen = dayOpen._other!==undefined ? dayOpen._other : true;
+                if(!items.length) return null;
                 return (
-                  <React.Fragment>
-                    <div className="rs-dayhdr" onClick={()=>setDayOpen(o=>({...o, _other:!isOpen}))}
-                      style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'5px 2px',
-                        userSelect:'none', borderBottom:'1px solid rgba(120,110,90,.12)' }}>
-                      <span style={{ width:11, height:11, borderRadius:'50%', flex:'none', background:'transparent', border:'1px dashed rgba(120,110,90,.7)' }} />
-                      <span style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:11, letterSpacing:'.09em', textTransform:'uppercase' }}>Other</span>
-                      <span style={{ fontSize:10, opacity:.45 }}>no day colour</span>
-                      <span style={{ marginLeft:'auto', fontFamily:'Montserrat', fontWeight:700, fontSize:10, opacity:.6 }}>{items.length}</span>
-                      <span style={{ fontSize:10, opacity:.55, width:10, textAlign:'center' }}>{isOpen?'▾':'▸'}</span>
+                  <Sec id="my:other" title="Other" sub="no day colour" count={items.length} open>
+                    <div className="rs-tplgrid">
+                      {items.map(t=>(
+                        <UserTplCard key={t.id} t={t} onApply={()=>applyUserTpl(t)}
+                          onArchive={()=>setTplArchived(t.id, true)} onDelete={()=>delUserTpl(t.id)} />
+                      ))}
                     </div>
-                    {isOpen && items.map(t=>(
-                      <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
-                        style={{ cursor:'pointer', position:'relative', paddingRight:60, marginLeft:11 }}>
-                        <span className="ln">{t.name}</span>
-                        <span className="lh">{t.doc.elements.length} parts · saved {new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
-                        <button className="rs-tplx" style={{ right:34, borderColor:'#3a2f1f', color:'#b6ab97' }} title="Archive this template — tuck it into the Archive drawer below"
-                          onClick={e=>{ e.stopPropagation(); setTplArchived(t.id, true); }}>⤓</button>
-                        <button className="rs-tplx" title="Delete this template"
-                          onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
-                      </div>
-                    ))}
-                  </React.Fragment>
+                  </Sec>
                 );
               })()}
-              {/* ---- Archive — templates tucked out of the day-filed library ---- */}
               {tplReady && (()=>{
                 const arch = userTpls.filter(t=>t.archived);
-                const isOpen = dayOpen._archive!==undefined ? dayOpen._archive : false;
                 return (
-                  <React.Fragment>
-                    <div className="rs-dayhdr" onClick={()=>setDayOpen(o=>({...o, _archive:!isOpen}))}
-                      style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'5px 2px',
-                        userSelect:'none', borderBottom:'1px solid rgba(120,110,90,.12)' }}>
-                      <span style={{ width:11, height:11, flex:'none', border:'1px solid rgba(120,110,90,.7)', borderRadius:2, background:'transparent' }} />
-                      <span style={{ fontFamily:'Montserrat', fontWeight:700, fontSize:11, letterSpacing:'.09em', textTransform:'uppercase' }}>Archive</span>
-                      <span style={{ fontSize:10, opacity:.45 }}>tucked away</span>
-                      <span style={{ marginLeft:'auto', fontFamily:'Montserrat', fontWeight:700, fontSize:10, opacity: arch.length?0.6:0.3 }}>{arch.length}</span>
-                      <span style={{ fontSize:10, opacity:.55, width:10, textAlign:'center' }}>{isOpen?'▾':'▸'}</span>
-                    </div>
-                    {isOpen && arch.length===0 &&
-                      <div className="rs-mini" style={{ margin:'3px 0 5px 19px', opacity:.45 }}>Nothing archived — the ⤓ on any template tucks it away here.</div>}
-                    {isOpen && arch.map(t=>(
-                      <div key={t.id} className="rs-libitem" onClick={()=>applyUserTpl(t)}
-                        style={{ cursor:'pointer', position:'relative', paddingRight:60, marginLeft:11, opacity:.75 }}>
-                        <span className="ln">{t.name}</span>
-                        <span className="lh">{t.doc.elements.length} parts · archived</span>
-                        <button className="rs-tplx" style={{ right:34, borderColor:'#3a2f1f', color:'#b6ab97' }} title="Restore to My templates"
-                          onClick={e=>{ e.stopPropagation(); setTplArchived(t.id, false); }}>↩</button>
-                        <button className="rs-tplx" title="Delete this template"
-                          onClick={e=>{ e.stopPropagation(); delUserTpl(t.id); }}>×</button>
-                      </div>
-                    ))}
-                  </React.Fragment>
+                  <Sec id="my:archive" title="Archive" sub="tucked away" count={arch.length}>
+                    {arch.length
+                      ? <div className="rs-tplgrid">
+                          {arch.map(t=>(
+                            <UserTplCard key={t.id} t={t} archived onApply={()=>applyUserTpl(t)}
+                              onArchive={()=>setTplArchived(t.id, false)} onDelete={()=>delUserTpl(t.id)} />
+                          ))}
+                        </div>
+                      : <div className="rs-mini" style={{ margin:'3px 0 8px 12px', opacity:.45 }}>Nothing archived — the ⤓ on any template tucks it away here.</div>}
+                  </Sec>
                 );
               })()}
+
               <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6, marginTop:8 }}>＋ Save current poster as template</button>
               <div className="rs-rowflex" style={{ marginBottom:6 }}>
                 <button className="rs-addrow" onClick={exportUserTpls} title="Download all My templates (photos included) as one .json">⬇ Export all</button>
@@ -2781,47 +3108,47 @@ function App(){
               </div>
               <input ref={tplFileRef} type="file" accept=".json,application/json" style={{ display:'none' }}
                 onChange={e=>{ const f=e.target.files[0]; if(f) importUserTpls(f); e.target.value=''; }} />
-              <div className="rs-mini" style={{ margin:'0 0 12px' }}>Saved in this browser (IndexedDB — room for plenty now). Export a .json to back them up or carry them to another computer, photos and all.</div>
-              {AP_TPLG.map(grp=>(
-                <React.Fragment key={grp}>
-                  <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>{grp}</div>
-                  {AP_TPL.filter(tp=>tp.group===grp).map(tp=>(
-                    <div key={tp.id} className="rs-libitem" onClick={()=>applyTemplate(tp)} style={{ cursor:'pointer' }}>
-                      <span className="ln">{tp.name}</span>
-                      <span className="lh">{tp.els.length} parts · click to load</span>
+              <Hint tight>Saved in this browser (IndexedDB — room for plenty now). Export a .json to back them up or carry them to another computer, photos and all.</Hint>
+              <div className="rs-libtitle" style={{ marginTop:14 }}>Starters<span className="hint">click to load</span></div>
+              {AP_TPLG.map(grp=>{
+                const items = AP_TPL.filter(tp=>tp.group===grp);
+                return (
+                  <Sec key={grp} id={'t:'+grp} title={grp} count={items.length}>
+                    <div className="rs-tplgrid">
+                      {items.map(tp=><TplCard key={tp.id} tpl={tp} onApply={()=>applyTemplate(tp)} />)}
                     </div>
-                  ))}
-                </React.Fragment>
-              ))}
-              <div className="rs-mini" style={{ margin:'8px 0 14px' }}>Click a template to load it (replaces the poster).</div>
+                  </Sec>
+                );
+              })}
+              <Hint>Loading a starter replaces the poster.</Hint>
             </React.Fragment>}
           </React.Fragment>}
+          <div className="rs-libtitle">Parts<span className="hint">drag onto the poster</span></div>
           {AP_CAT.map(g=>(
-            <React.Fragment key={g.group}>
-              <div className="rs-sech">{g.group}</div>
-              {g.items.map((it,i)=>(
+            <Sec key={g.group} id={'c:'+g.group} title={g.group} count={g.items.length}>
+              {g.items.map(it=>(
                 <div key={it.label} className="rs-libitem" onPointerDown={e=>startSpawn(e, it)}>
                   <span className="ln">{it.label}</span>
                   <span className="lh">{it.hint}</span>
                 </div>
               ))}
-            </React.Fragment>
+            </Sec>
           ))}
 
           {/* GRAPHICS — four families that differ only by one prop, so they're
-              folds of silhouette grids rather than 60 more library rows. Drag a
-              tile out exactly like a part; it lands with that kind preset. */}
-          <div className="rs-sech">Graphics</div>
+              grids of silhouettes rather than 60 more library rows. Drag a tile
+              out exactly like a part; it lands with that kind preset. */}
+          <div className="rs-libtitle">Graphics<span className="hint">drag a silhouette</span></div>
           {AP_GFX.map(g=>(
-            <Fold key={g.id} id={g.id} title={g.title} open={g.open}>
+            <Sec key={g.id} id={'g:'+g.id} title={g.title} count={g.items?g.items.length:null}>
               {g.groups
                 ? <IconPicker value={null} onSpawn={startSpawn} />
                 : <GfxGrid type={g.type} prop={g.prop} items={g.items} onSpawn={startSpawn} />}
-              <div className="rs-mini" style={{ marginTop:8 }}>{g.hint}</div>
-            </Fold>
+              <Hint>{g.hint}</Hint>
+            </Sec>
           ))}
 
-          <div className="rs-mini" style={{ marginTop:16 }}>Drag a part onto the poster — it snaps to the grid and joins the Master layout.</div>
+          <Hint>Drag a part onto the poster — it snaps to the grid and joins the Master layout.</Hint>
         </div>
 
         <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent}
@@ -2835,29 +3162,20 @@ function App(){
               ? <React.Fragment><b>{activeLabel}</b> output · layout edits override Master{overrideCount?` · ${overrideCount} overridden`:''}</React.Fragment>
               : <React.Fragment><b>Master</b> source · edits flow to every format</React.Fragment>}
           </div>
+          {/* Feed slice moved INTO the inspector's no-selection panel — it's a
+              whole-poster setting, and riding along under every element edit
+              was three controls of tax on every selection. */}
           <Inspector el={sel} doc={doc} update={update} dup={dup} del={del} layer={layer}
             clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel}
             resetOverride={resetOverride} toggleHidden={toggleHidden}
             selCount={selectedIds.length} align={alignSel} distribute={distributeSel} centre={centreSel}
-            formatLabel={activeLabel} />
-          {/* Feed slice — the text-less strip that fills the calendar's "This week"
-              cards. Toggle to drag the band on the poster; sliders for precision. */}
-          <div className="rs-sech" style={{ marginTop:16 }}>Feed slice</div>
-          <div className="rs-mini" style={{ marginBottom:6 }}>The text-less strip used on the calendar’s “This week” cards (a thin band — far smaller than a full poster). Pick which part of the image to use.</div>
-          <button className="rs-addrow" onClick={()=>{ const on=!sliceMode; setSliceMode(on);
-            if(on) setDoc(d=>({ ...d, activeFormat:'master', feedSlice:d.feedSlice||{ yFrac:0.4, hFrac:0.2 } })); }}>
-            {sliceMode ? '✓ Done selecting' : '◧ Select feed slice…'}</button>
-          {sliceMode && <React.Fragment>
-            <Slider label="Top" val={Math.round(((doc.feedSlice&&doc.feedSlice.yFrac)||0.4)*100)} min={0} max={92} step={1}
-              onChange={v=>setFeedSlice({ yFrac:v/100, hFrac:(doc.feedSlice&&doc.feedSlice.hFrac)||0.2 })} suffix="%" />
-            <Slider label="Height" val={Math.round(((doc.feedSlice&&doc.feedSlice.hFrac)||0.2)*100)} min={8} max={60} step={1}
-              onChange={v=>setFeedSlice({ yFrac:(doc.feedSlice&&doc.feedSlice.yFrac)||0.4, hFrac:v/100 })} suffix="%" />
-            <button className="rs-addrow" style={{ marginTop:6 }} onClick={()=>setFeedSlice({ yFrac:0.4, hFrac:0.2 })}>Center · 4:1 band</button>
-          </React.Fragment>}
+            formatLabel={activeLabel}
+            sliceMode={sliceMode} setSliceMode={setSliceMode} setFeedSlice={setFeedSlice} />
         </div>
       </div>
 
       {spawn && <div className="rs-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}
+      {palOpen && <RUI.Palette onClose={()=>setPalOpen(false)} />}
 
       {eventPicker && eventPicker.open &&
         <EventPickerModal picker={eventPicker} onPick={exportToEvent} onClose={()=>setEventPicker(null)} onRetry={openEventPicker} />}

@@ -11,8 +11,14 @@ body{ background:#0e0c09; overflow:hidden; }
   background:#0e0c09; color:#efe7d8; font-family:var(--rs-grot); }
 
 /* ---- TOPBAR ---- */
-.rs-top{ display:flex; align-items:center; gap:18px; padding:0 18px; height:60px;
-  border-bottom:1px solid #2a2318; background:#15110b; }
+/* gap was 18px with fewer groups in here; History, Zoom and Hints have joined
+   since, so it tightens and scrolls rather than crushing the export controls on
+   a narrower screen (the same thing Print Studio's topbar does). */
+.rs-top{ display:flex; align-items:center; gap:12px; padding:0 14px; height:60px;
+  border-bottom:1px solid #2a2318; background:#15110b; overflow-x:auto; }
+.rs-top::-webkit-scrollbar{ height:0; }
+.rs-brand, .rs-tgroup .gl, .rs-iconbtn, .rs-savebtn, .rs-seg button{ white-space:nowrap; }
+.rs-top .spacer{ min-width:8px; }
 .rs-brand{ font-family:'Montserrat Alternates',sans-serif; font-weight:600; text-transform:uppercase;
   letter-spacing:.02em; font-size:26px; line-height:1; color:#fffbf1; }
 .rs-brand small{ display:block; font-family:var(--rs-mont); font-weight:700; font-size:8.5px;
@@ -57,7 +63,11 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-iconbtn.on{ background:#241a10; border-color:#ed1b72; color:#fff; }
 
 /* export controls — poster name, format select, save button */
-.rs-tname{ width:168px; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
+/* Sticky so a narrow window scrolls the view/accent groups UNDER the export
+   controls instead of pushing Save off the edge. */
+.rs-top .rs-export{ position:sticky; right:0; background:#15110b; padding-left:12px; z-index:3;
+  box-shadow:-16px 0 16px -8px #15110b; }
+.rs-tname{ width:132px; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
   color:#fffbf1; font-family:var(--rs-grot); font-size:12.5px; padding:8px 10px; outline:none; transition:.12s; }
 .rs-tname:focus{ border-color:#ed1b72; }
 .rs-tname::placeholder{ color:#6a6051; }
@@ -89,21 +99,28 @@ body{ background:#0e0c09; overflow:hidden; }
   font-size:9.5px; color:#7d7260; margin:18px 0 10px; }
 .rs-sech:first-child{ margin-top:0; }
 
-/* collapsible inspector sections (photo panel) */
-.rs-fold{ border-top:1px solid #2a2318; }
-.rs-fold:first-child{ border-top:none; }
-.rs-foldhead{ display:flex; align-items:center; gap:7px; width:100%; background:none; border:none;
-  cursor:pointer; padding:11px 0 9px; text-align:left;
-  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+/* Collapsible inspector sections. These used to be a photo-panel-only device
+   drawn as hairline dividers; now every section of every element type is one,
+   so they're boxed — at a dozen folds in a column, a rule between them isn't
+   enough edge to tell "closed section" from "end of the panel". */
+.rs-fold{ border:1px solid #33291b; border-radius:9px; margin-bottom:7px; background:#15110b; }
+.rs-fold.open{ border-color:#4a3d29; }
+.rs-foldhead{ display:flex; align-items:center; gap:8px; width:100%; background:#1b1610; border:none;
+  border-radius:8px; cursor:pointer; padding:9px 10px; text-align:left;
+  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.11em;
   font-size:10px; color:#b6ab97; transition:.12s; }
 .rs-foldhead:hover{ color:#fffbf1; }
 .rs-foldhead .chev{ color:#7d7260; width:10px; flex:none; font-size:9px; }
 .rs-foldhead .t{ flex:1 1 auto; min-width:0; }
-.rs-foldhead .badge{ flex:none; background:#2a2318; color:#e9ddc5; border-radius:9px;
-  padding:2px 8px; font-size:9px; letter-spacing:.08em; }
-.rs-fold.open .rs-foldhead{ color:#e9ddc5; }
-.rs-foldbody{ padding:2px 0 10px; }
+/* The badge is the count of props inside that differ from this element's
+   defaults — a closed fold still says whether anything in it is set. */
+.rs-foldhead .badge{ flex:none; background:#ed1b72; color:#0d0905; border-radius:9px;
+  padding:1px 7px; font-family:var(--rs-grot); font-weight:600; font-size:9px; letter-spacing:.04em; }
+.rs-fold.open .rs-foldhead{ color:#e9ddc5; border-radius:8px 8px 0 0; }
+.rs-fold.open .rs-foldhead .chev{ color:#ed1b72; }
+.rs-foldbody{ padding:12px 10px 2px; border-top:1px solid #2a2318; }
 .rs-foldbody .rs-sech:first-child{ margin-top:0; }
+.rs-foldbody > .rs-row:last-child, .rs-foldbody > .rs-actions:last-child{ margin-bottom:10px; }
 
 /* library items */
 .rs-libitem{ display:flex; flex-direction:column; gap:2px; padding:11px 12px; margin-bottom:7px;
@@ -226,3 +243,78 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-context.master{ background:#241d10; border:1px solid #5a4a1c; color:#fdcf6a; }
 .rs-context.out{ background:#2a1422; border:1px solid #5a2348; color:#f59ac9; }
 .rs-ovtag{ color:#ed7aa8; font-weight:700; }
+
+/* ============================================================
+   COLLAPSIBLE LIBRARY — sections that start closed, with counts.
+   ============================================================
+   The parts list used to be 3,195px of always-open rows: every
+   catalog group, every template, the queue, the graphics grids,
+   all expanded, all the time. Print Studio already had the right
+   shape for this, so these are its .ps-sec / .ps-tplcard rules
+   in Poster's register (rounded, hairline, warm dark). */
+.rs-libtitle{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.16em;
+  font-size:9px; color:#6f6553; margin:18px 0 9px; display:flex; justify-content:space-between; align-items:baseline; }
+.rs-libtitle:first-child{ margin-top:0; }
+.rs-libtitle .hint{ font-weight:600; letter-spacing:.03em; font-size:8.5px; color:#6f6553; text-transform:none; }
+.rs-sec{ width:100%; display:flex; align-items:center; gap:8px; padding:9px 10px; margin-bottom:5px;
+  border:1px solid #33291b; border-radius:8px; background:#1b1610; cursor:pointer; transition:.12s;
+  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+  font-size:11px; color:#fffbf1; text-align:left; }
+.rs-sec:hover{ border-color:#6f6553; transform:translateY(-1px); }
+.rs-sec.open{ border-color:#ed1b72; }
+.rs-sec .caret{ flex:none; width:10px; font-size:9px; color:#8a7f6c; }
+.rs-sec.open .caret{ color:#ed1b72; }
+.rs-sec .t{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-sec .dot{ flex:none; width:11px; height:11px; border-radius:50%; border:1px solid rgba(0,0,0,.25); }
+.rs-sec .n{ flex:none; font-family:var(--rs-grot); font-weight:600; font-size:10px; color:#8a7f6c;
+  background:#0e0b07; padding:1px 7px; border:1px solid #33291b; border-radius:8px; }
+
+/* template preview cards — a real mini render beats "4 parts · click to load" */
+.rs-tplgrid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin:2px 0 10px; }
+.rs-tplcard{ display:flex; flex-direction:column; gap:4px; padding:6px; border:1px solid #33291b;
+  border-radius:8px; background:#1b1610; cursor:pointer; position:relative; transition:.12s; }
+.rs-tplcard:hover{ border-color:#ed1b72; transform:translateY(-2px); }
+.rs-tplcard .tn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.02em;
+  font-size:9.5px; color:#fffbf1; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rs-tplcard .ts{ font-family:var(--rs-grot); font-size:9px; color:#8a7f6c; }
+.rs-thumbbox{ overflow:hidden; border:1px solid rgba(255,251,241,.12); border-radius:4px; margin:0 auto; }
+
+/* numeric arrange fields — the precise cousin of the position sliders */
+.rs-numgrid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
+.rs-num{ display:flex; flex-direction:column; gap:3px; }
+.rs-num span{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+  font-size:8px; color:#8a7f6c; }
+.rs-num input{ width:100%; background:#0e0b07; border:1px solid #33291b; border-radius:6px; color:#fffbf1;
+  font-family:var(--rs-grot); font-size:12px; padding:5px; outline:none; -moz-appearance:textfield; }
+.rs-num input::-webkit-outer-spin-button, .rs-num input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.rs-num input:focus{ border-color:#ed1b72; }
+
+/* ============================================================
+   COMMAND PALETTE (Ctrl-K) + the flash it lands on.
+   ============================================================
+   With ~300 controls across a dozen folds, "where does dot gain
+   live" stopped being answerable from memory. The palette
+   searches every label the inspector has ever built, opens the
+   fold it's in, scrolls to it and flashes it. */
+.rs-palwrap{ position:fixed; inset:0; z-index:10000; background:rgba(8,6,3,.62);
+  display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; }
+.rs-pal{ width:min(560px, 92vw); background:#15110b; border:1px solid #4a3d29; border-radius:12px;
+  box-shadow:0 24px 60px rgba(0,0,0,.55); overflow:hidden; display:flex; flex-direction:column; max-height:70vh; }
+.rs-palq{ width:100%; background:#0e0b07; border:none; border-bottom:1px solid #2a2318; color:#fffbf1;
+  font-family:var(--rs-grot); font-size:15px; padding:15px 17px; outline:none; }
+.rs-palq::placeholder{ color:#6a6051; }
+.rs-pallist{ overflow-y:auto; padding:6px; }
+.rs-palrow{ width:100%; display:flex; align-items:baseline; gap:10px; padding:9px 11px; border:none;
+  border-radius:7px; background:none; cursor:pointer; text-align:left; font-family:var(--rs-grot); }
+.rs-palrow .l{ flex:1 1 auto; font-size:13px; color:#efe7d8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-palrow .g{ flex:none; font-family:var(--rs-mont); font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; font-size:8.5px; color:#7d7260; }
+.rs-palrow.on{ background:#241a10; }
+.rs-palrow.on .l{ color:#fff; }
+.rs-palrow.on .g{ color:#ed1b72; }
+.rs-palempty{ padding:18px 14px; font-size:12px; line-height:1.5; color:#7d7260; }
+.rs-palfoot{ border-top:1px solid #2a2318; padding:8px 14px; font-family:var(--rs-mont); font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em; font-size:8.5px; color:#6a6051; }
+@keyframes rs-flashkf{ 0%,100%{ background:transparent; } 22%{ background:rgba(237,27,114,.22); } }
+.rs-flash{ animation:rs-flashkf 1.25s ease-out; border-radius:7px; }
+@media (prefers-reduced-motion: reduce){ .rs-flash{ animation:none; box-shadow:0 0 0 2px #ed1b72; } }

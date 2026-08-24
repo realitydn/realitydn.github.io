@@ -30,6 +30,8 @@ const ENTRY = 'index.html';
 // this maps that one request back to the real file.
 const SHARED = {
   '/print/print-icons.js': path.resolve(__dirname, '..', 'public', 'print', 'print-icons.js'),
+  // The shared control kit (window.RUI) — one copy, both Studios.
+  '/studio-shared/studio-ui.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-ui.js'),
 };
 
 const MIME = {

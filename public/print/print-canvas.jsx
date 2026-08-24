@@ -13,11 +13,55 @@ const PC_GRID = '#18a7e0';             // layout grid blue
 
 function pcSnap(v, step){ return Math.round(v/step)*step; }
 
+/* ============================================================
+   IN-PLACE TEXT EDITING — matches Poster Studio's.
+   ============================================================
+   A textarea laid over the element's box in POINT coordinates,
+   styled to that element's type so it reads as editing the sheet
+   rather than a form about it. Writes through the same onChange
+   the drag handles use. */
+const PC_EDITABLE = ['headline','body','kicker','bignum','numeral'];
+const PC_FAMS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
+function pcEditFont(el){
+  return {
+    fontFamily: PC_FAMS[el.fam||'mont'] || PC_FAMS.mont,
+    fontWeight: el.weight!=null ? el.weight : ((el.fam||'mont')==='grot' ? 400 : 800),
+    fontSize: (el.fontSize||24),
+    lineHeight: el.leading!=null ? el.leading : (el.type==='body'?1.32:0.95),
+    letterSpacing: ((el.tracking!=null?el.tracking:0))+'em',
+    textAlign: el.align||'left',
+    textTransform: el.upper!==false ? 'uppercase' : 'none',
+  };
+}
+function PcTextEditor({ el, onChange, onDone }){
+  const ref = React.useRef(null);
+  React.useEffect(()=>{ const n=ref.current; if(n){ n.focus(); n.select(); } }, []);
+  return (
+    <textarea ref={ref} value={el.text||''} spellCheck={false}
+      onChange={e=>onChange(el.id, { text:e.target.value })}
+      onBlur={onDone}
+      onKeyDown={e=>{
+        e.stopPropagation();                       // keep nudge/delete off the canvas
+        if(e.key==='Escape'){ e.preventDefault(); onDone(); }
+        if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); onDone(); }
+      }}
+      style={Object.assign({
+        position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h,
+        transform: el.rot ? 'rotate('+el.rot+'deg)' : null,
+        background:'rgba(237,27,114,.08)', border:'2px solid '+PC_GUIDE, outline:'none',
+        color:'#111111', padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
+        caretColor:PC_GUIDE,
+      }, pcEditFont(el))} />
+  );
+}
+
 function PrintCanvas({ elements, wpt, hpt, accent, grid, bleedPt, showGrid, showBleed, snap, scale,
                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onChangeMany, onCommit, onZoomWheel }){
   const accentHex = PC_PAL[accent] || PC_PAL.pink;
   const [guides, setGuides] = React.useState([]);
+  const [editId, setEditId] = React.useState(null);
   const dragRef = React.useRef(null);
+  React.useEffect(()=>{ if(editId && editId!==selectedId) setEditId(null); }, [selectedId]);
   const marginPt = grid ? grid.m : 17;
 
   /* snap target lists — margins, centre, layout grid lines, sibling edges */
@@ -144,10 +188,20 @@ function PrintCanvas({ elements, wpt, hpt, accent, grid, bleedPt, showGrid, show
           <div data-bg="1" style={{ position:'absolute', inset:0, background:'#ffffff' }} />
 
           {elements.map(el=>(
-            <PCElement key={el.id} el={el} docAccentHex={accentHex} docAccent={accent}
-              selected={el.id===selectedId} dragging={dragRef.current && dragRef.current.id===el.id}
-              onElPointerDown={startMove} />
+            <div key={el.id}
+              onDoubleClick={e=>{ if(PC_EDITABLE.indexOf(el.type)>=0){ e.stopPropagation(); onSelect(el.id, false); setEditId(el.id); } }}>
+              <PCElement el={el} docAccentHex={accentHex} docAccent={accent}
+                selected={el.id===selectedId} dragging={dragRef.current && dragRef.current.id===el.id}
+                onElPointerDown={startMove} />
+            </div>
           ))}
+
+          {/* the in-place text editor, above the artwork and below the guides */}
+          {(()=>{
+            const el = editId ? elements.find(x=>x.id===editId) : null;
+            if(!el || PC_EDITABLE.indexOf(el.type)<0) return null;
+            return <PcTextEditor el={el} onChange={onChange} onDone={()=>setEditId(null)} />;
+          })()}
 
           {/* layout grid — column/row bands + a fine dot lattice */}
           {showGrid && <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:38 }}>

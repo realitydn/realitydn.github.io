@@ -21,6 +21,7 @@ public/print/print-element.js
 public/print/print-canvas.js
 public/print/print-export.js
 public/print/print-app.js
+public/studio-shared/studio-ui.js
 
 # Vite's transient config-loader artifacts (left behind if a build is killed)
 vite.config.js.timestamp-*.mjs

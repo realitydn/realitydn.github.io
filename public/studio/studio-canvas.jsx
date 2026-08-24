@@ -9,6 +9,64 @@ const SC_MONT = "'Montserrat',sans-serif";
 
 function scSnap(v, step){ return Math.round(v/step)*step; }
 
+/* ============================================================
+   IN-PLACE TEXT EDITING
+   ============================================================
+   Changing a headline used to mean: click the box, find Content
+   in the inspector, click into the field, type. Four moves and a
+   scroll for the single most common edit in the tool. Now you
+   double-click the words on the poster.
+
+   The editor is a textarea laid over the element's own box in
+   canvas coordinates and styled to match its type, so it reads
+   as editing the artwork rather than a dialog about it. It writes
+   through the same onChange the drag handles use, which means the
+   Master/override routing is whatever it already was.
+
+   Which prop each type holds its words in — `host` keeps the name
+   separate from its kicker, everything else is plain `text`. */
+const SC_EDITABLE = {
+  title:'text', tagline:'text', info:'text', when:'text', cost:'text', stamp:'text', host:'name',
+};
+function scEditFont(el){
+  const grot = el.type==='tagline'||el.type==='info'||el.type==='when'||el.type==='cost'||el.type==='host';
+  return {
+    fontFamily: grot ? "'Space Grotesk',sans-serif" : SC_MONT,
+    fontWeight: el.weight!=null ? el.weight : (grot?400:800),
+    fontSize: (el.fontSize||48),
+    lineHeight: el.lineHeight!=null ? el.lineHeight : (el.type==='title'?0.84:1.3),
+    letterSpacing: ((el.letterSpacing!=null?el.letterSpacing:0))+'em',
+    textAlign: el.align||'left',
+    textTransform: (el.type==='title'||el.type==='stamp') ? 'uppercase' : 'none',
+  };
+}
+function ScTextEditor({ el, value, onChange, onDone }){
+  const ref = React.useRef(null);
+  React.useEffect(()=>{
+    const n = ref.current; if(!n) return;
+    n.focus(); n.select();
+  }, []);
+  return (
+    <textarea ref={ref} value={value} spellCheck={false}
+      onChange={e=>onChange(e.target.value)}
+      onBlur={onDone}
+      onKeyDown={e=>{
+        e.stopPropagation();                                  // never let a nudge/delete key reach the canvas
+        if(e.key==='Escape'){ e.preventDefault(); onDone(); }
+        // Enter breaks the line (titles are multi-line by design); ⌘/Ctrl-Enter
+        // and Escape are how you leave.
+        if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); onDone(); }
+      }}
+      style={Object.assign({
+        position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h,
+        transform: el.rot ? 'rotate('+el.rot+'deg)' : null,
+        background:'rgba(237,27,114,.10)', border:'2px solid #ed1b72', outline:'none',
+        color:'inherit', padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
+        caretColor:'#ed1b72', WebkitTextFillColor:'currentColor',
+      }, scEditFont(el))} />
+  );
+}
+
 function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
                         stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly,
                         sliceMode, feedSlice, onSliceChange }){
@@ -17,7 +75,12 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
   const safe = scSafe(format);
   const accentHex = SC_PAL[accent];
   const [guides, setGuides] = React.useState([]);
+  const [editId, setEditId] = React.useState(null);
   const dragRef = React.useRef(null);
+  // Leaving the element (or the format) drops the editor rather than stranding
+  // it over whatever is now in that spot.
+  React.useEffect(()=>{ if(editId && editId!==selectedId) setEditId(null); }, [selectedId]);
+  React.useEffect(()=>{ setEditId(null); }, [format]);
 
   function toCanvas(e){
     const r = canvasRef.current.getBoundingClientRect();
@@ -174,12 +237,22 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
           /* hidden-in-this-format: ghosted while editing as an aid, but fully
              dropped from exports (don't bake a 22% element into the image) */
           (exporting && el.hidden) ? null :
-          <div key={el.id} style={ el.hidden ? { opacity:.22, filter:'grayscale(.4)' } : null }>
+          <div key={el.id} style={ el.hidden ? { opacity:.22, filter:'grayscale(.4)' } : null }
+            onDoubleClick={e=>{ if(SC_EDITABLE[el.type]){ e.stopPropagation(); onSelect(el.id, false); setEditId(el.id); } }}>
             <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent}
               selected={el.id===selectedId} dragging={isDragging(el.id)}
               onElPointerDown={startMove} exporting={exporting} />
           </div>
         ))}
+
+        {/* the in-place text editor, above the artwork and below the guides */}
+        {!exporting && (()=>{
+          const el = editId ? elements.find(x=>x.id===editId) : null;
+          const key = el && SC_EDITABLE[el.type];
+          if(!el || !key) return null;
+          return <ScTextEditor el={el} value={el[key]||''}
+            onChange={v=>onChange(el.id, { [key]:v })} onDone={()=>setEditId(null)} />;
+        })()}
 
         {/* Grid + safe-zone guides sit ABOVE the artwork (incl. photos) so they
             actually guide placement over imagery; never captured in exports. */}

@@ -36,6 +36,12 @@
 <script src="print-store.js"></script>
 <script src="print-icons.js"></script>
 
+<!-- Shared control kit (window.RUI) — Fold, Slider, Chips, the persisted fold
+     state, the hints mode and the Ctrl-K palette. One copy, shared verbatim
+     with Poster Studio so the two can't drift to different components. Must
+     load before the app scripts, which alias its atoms at top level. -->
+<script src="../studio-shared/studio-ui.js"></script>
+
 <!-- Precompiled from the sibling .jsx by scripts/build-studios.mjs. Edit the
      .jsx — the local launcher transpiles it on the fly, the build emits these. -->
 <script src="print-data.js"></script>

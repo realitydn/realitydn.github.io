@@ -27,52 +27,16 @@ function starterDoc(){
 function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign(starterDoc(), d); } }catch(e){} return starterDoc(); }
 function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
 
-/* ---------- small controls ---------- */
-function Field({ label, value, onChange, area, mono }){
-  return (
-    <div className="ps-row">
-      {label && <div className="ps-lab">{label}</div>}
-      {area
-        ? <textarea className="ps-area" value={value||''} onChange={e=>onChange(e.target.value)} spellCheck={false} />
-        : <input className={'ps-input'+(mono?' mono':'')} value={value||''} onChange={e=>onChange(e.target.value)} spellCheck={false} />}
-    </div>
-  );
-}
-function Slider({ label, val, min, max, step, onChange, suffix }){
-  return (
-    <div className="ps-row">
-      <div className="ps-lab">{label}<span className="val">{val}{suffix||''}</span></div>
-      <input className="ps-slider" type="range" min={min} max={max} step={step||1} value={val}
-        onChange={e=>onChange(parseFloat(e.target.value))} />
-    </div>
-  );
-}
-function ScaleControl({ label, val, onChange }){
-  const idx = AP_SCALE.indexOf(apSnap(val));
-  return (
-    <div className="ps-row">
-      <div className="ps-lab">{label}<span className="val">{val}pt</span></div>
-      <div className="ps-stepper">
-        <button onClick={()=>onChange(apStep(val,-1))}>A−</button>
-        <input className="ps-slider" type="range" min={0} max={AP_SCALE.length-1} step={1} value={idx<0?0:idx}
-          onChange={e=>onChange(AP_SCALE[parseInt(e.target.value)])} />
-        <button onClick={()=>onChange(apStep(val,1))}>A+</button>
-      </div>
-    </div>
-  );
-}
-function Chips({ label, options, value, onChange }){
-  return (
-    <div className="ps-row">
-      {label && <div className="ps-lab">{label}</div>}
-      <div className="ps-chips">
-        {options.map(o=>(
-          <button key={String(o.v)} className={'ps-chip'+(value===o.v?' on':'')} onClick={()=>onChange(o.v)}>{o.l}</button>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ---------- small controls ----------
+   Field / Slider / Chips / ScaleControl / NumField / Fold now come from the
+   shared kit (public/studio-shared/studio-ui.jsx) so Poster and Print can't
+   drift to different components again. The prefix is the only local part —
+   every class the kit builds is `ps-…` from here. Swatches stays local: its
+   fixed swatches are print's (K-only ink, paper white), not Poster's. */
+RUI.configure({ prefix:'ps', storeKey:'reality-print' });
+const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
+const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap} step={apStep} suffix="pt" />;
+
 function Swatches({ label, value, onChange, auto, white }){
   const fixed = [];
   if(auto)  fixed.push({ v:'auto',  bg:'linear-gradient(135deg,#111 0 50%,#fff 50% 100%)', title:'Auto — readable on the surface' });
@@ -93,37 +57,7 @@ function Swatches({ label, value, onChange, auto, white }){
     </div>
   );
 }
-/* numeric field — the precise cousin of the position sliders */
-function NumField({ label, value, onChange, min, step }){
-  const [txt, setTxt] = React.useState(null);
-  const shown = txt!=null ? txt : String(value!=null?value:0);
-  const commit = (s)=>{ const v=parseFloat(s); if(!isNaN(v)) onChange(min!=null?Math.max(min,v):v); setTxt(null); };
-  return (
-    <label className="ps-num">
-      <span>{label}</span>
-      <input type="number" step={step||1} value={shown}
-        onChange={e=>{ setTxt(e.target.value); const v=parseFloat(e.target.value); if(!isNaN(v)) onChange(min!=null?Math.max(min,v):v); }}
-        onBlur={e=>commit(e.target.value)}
-        onKeyDown={e=>{ if(e.key==='Enter'){ commit(e.currentTarget.value); e.currentTarget.blur(); } }} />
-    </label>
-  );
-}
-/* ---------- collapsible inspector section (open state kept per session) ---------- */
-const _foldOpen = {};
-function Fold({ id, title, open, badge, children }){
-  const [isOpen,setOpen] = React.useState(_foldOpen[id]!=null ? _foldOpen[id] : !!open);
-  const toggle=()=>{ _foldOpen[id]=!isOpen; setOpen(!isOpen); };
-  return (
-    <div className={'ps-fold'+(isOpen?' open':'')}>
-      <button type="button" className="ps-foldhead" onClick={toggle}>
-        <span className="chev">{isOpen?'▾':'▸'}</span><span className="t">{title}</span>
-        {(badge!=null && badge!=='') ? <span className="badge">{badge}</span> : null}
-      </button>
-      {isOpen && <div className="ps-foldbody">{children}</div>}
-    </div>
-  );
-}
-const SURFACES = [{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
+const SURFACES =[{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'},{v:'custom',l:'Custom'}];
 const ECHOABLE = ['headline','numeral','bignum','kicker','body','block','slab','sticker','shape','rule','stripes','dotfield','burst','icon'];
@@ -209,7 +143,7 @@ function ImageControls({ el, update, onFile }){
     <React.Fragment>
       <Fold id="im-img" title="Image" open>
         <PhotoUpload onFile={onFile} />
-        <div className="ps-mini" style={{ margin:'2px 0 8px' }}>…or copy any image and paste with <b>Ctrl-V</b> / <b>⌘V</b>.</div>
+        <Hint>…or copy any image and paste with <b>Ctrl-V</b> / <b>⌘V</b>.</Hint>
         <Chips label="Fit" options={[{v:'cover',l:'Fill'},{v:'contain',l:'Contain'}]} value={el.fit||'cover'} onChange={v=>update({fit:v})} />
         <Slider label="Zoom" val={el.imgScale!=null?el.imgScale:1} min={0.5} max={3} step={0.02} onChange={v=>update({imgScale:v})} suffix="×" />
         <div className="ps-rowflex">
@@ -372,7 +306,7 @@ function ShadowControls({ el, update }){
           ))}
         </div>
         <Slider label="Opacity" val={el.shadowAlpha!=null?el.shadowAlpha:((el.shadowColor||'k')==='k'?0.12:1)} min={0.05} max={1} step={0.01} onChange={v=>update({shadowAlpha:v})} />
-        <div className="ps-mini" style={{ marginTop:-2 }}>Hard accent shadow — distance up, full opacity. Very riso. Soft K prints as a grey tint on the black plate.</div>
+        <Hint tight>Hard accent shadow — distance up, full opacity. Very riso. Soft K prints as a grey tint on the black plate.</Hint>
       </React.Fragment>}
     </React.Fragment>
   );
@@ -423,7 +357,7 @@ function AlignBar({ count, align, distribute }){
         <button className="ps-iconbtn" style={{ flex:1 }} onClick={()=>distribute('x')} title="Equal horizontal gaps">Distribute ↔</button>
         <button className="ps-iconbtn" style={{ flex:1 }} onClick={()=>distribute('y')} title="Equal vertical gaps">Distribute ↕</button>
       </div>}
-      <div className="ps-mini" style={{ marginBottom:10 }}>Shift-click adds to the selection. Drag any selected part to move the whole set.</div>
+      <Hint>Shift-click adds to the selection. Drag any selected part to move the whole set.</Hint>
     </React.Fragment>
   );
 }
@@ -579,7 +513,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
         value={el.markForm||'auto'} onChange={v=>update({markForm:v})} />}
       {el.mark!=='off' && <Chips label="Mark mode" options={[{v:'full',l:'Full'},{v:'majors',l:'Majors'},{v:'ink',l:'Ink'}]}
         value={el.markMode||(((el.markForm||'auto')==='square'||((el.markForm||'auto')==='auto'&&el.showQR!==false))?'full':'majors')} onChange={v=>update({markMode:v})} />}
-      <div className="ps-mini" style={{ marginBottom:8 }}>Auto pairs the canon square with the QR (flush — its quiet zone is the gap) and a short strip with a bare band; Square / Strip / Full strip force one form. Mode unset keeps each form's classic ink (square Full · strip Majors). Stock cells stay unprinted.</div>
+      <Hint>Auto pairs the canon square with the QR (flush — its quiet zone is the gap) and a short strip with a bare band; Square / Strip / Full strip force one form. Mode unset keeps each form's classic ink (square Full · strip Majors). Stock cells stay unprinted.</Hint>
       <Chips label="Top rule" options={[{v:true,l:'On'},{v:false,l:'Off'}]} value={el.rule!==false} onChange={v=>update({rule:v})} />
     </React.Fragment>
   );
@@ -733,13 +667,23 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
         value={el.day||'fri'} onChange={v=>update({day:v})} />}
       <Slider label="Module" val={m} min={floor} max={60} step={1} suffix="pt"
         onChange={v=>update(fit({}, v))} />
-      <div className="ps-mini" style={{ margin:'4px 0 8px' }}>Cell order is canon — recolour by mode/day only. Stock cells are the paper: <b>unprinted</b> in the PDF, never a cream fill. One mark per surface.</div>
+      <Hint>Cell order is canon — recolour by mode/day only. Stock cells are the paper: <b>unprinted</b> in the PDF, never a cream fill. One mark per surface.</Hint>
     </React.Fragment>;
   })();
 
   /* the ink mark's palette is canon-fixed — no colour/surface dials for it */
   const showColour = el.type!=='image' && el.type!=='inkmark';
   const showBorder = (el.type==='block' || (SURFACED_BOX.indexOf(el.type)>=0 && el.surface && el.surface!=='none'));
+
+  /* Fold badges + auto-open, counted against what this element type is BORN
+     with (DEFAULTS[type].props). A collapsed fold showing "3" is the whole
+     point of collapsing them: you can still see where the edits are. */
+  const base = (AP_DEF[el.type]||{}).props || {};
+  const dirt = (keys)=>RUI.dirtyCount(el, keys, base);
+  const dType   = dirt(['fontSize','fam','weight','align','tracking','leading','upper','fit','orient']);
+  const dColour = dirt(['ink','fill','surface']);
+  const dTreat  = dirt(['lift','echo','echoAccent','echoDx','echoDy','blend']);
+  const dBorder = dirt(['border','borderPattern','borderColor','radius']);
 
   return (
     <React.Fragment>
@@ -756,7 +700,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
         ? content   /* the photo panel brings its own Folds */
         : <Fold id={'c-'+el.type} title="Content" open>{content}</Fold>)}
 
-      {isText && <Fold id="f-type" title="Type" open>
+      {isText && <Fold id="f-type" title="Type" open dirty={dType}>
         <ScaleControl label="Size" val={el.fontSize} onChange={v=>update({fontSize:v})} />
         <Chips label="Typeface" options={FAMS} value={el.fam||'mont'} onChange={v=>update({fam:v})} />
         {el.fam==='grot'
@@ -770,7 +714,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
         {ORIENTABLE.indexOf(el.type)>=0 && <Chips label="Orientation" options={ORIENTS} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       </Fold>}
 
-      {showColour && <Fold id="f-colour" title="Colour & surface" open>
+      {showColour && <Fold id="f-colour" title="Colour & surface" open dirty={dColour}>
         {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee','arctext','icon','punchgrid'].indexOf(el.type)>=0 &&
           <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white />}
         {['block','rule','slab','stripes','dotfield','badge','seal','marquee','sticker','burst','shape'].indexOf(el.type)>=0 &&
@@ -782,7 +726,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
       </Fold>}
 
       {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0) &&
-        <Fold id="f-treat" title="Treatment" badge={(el.lift&&el.lift!=='none')||el.echo||(el.blend&&el.blend!=='normal')?'on':null}>
+        <Fold id="f-treat" title="Treatment" dirty={dTreat}>
           {LIFTABLE.indexOf(el.type)>=0 && <ShadowControls el={el} update={update} />}
           {ECHOABLE.indexOf(el.type)>=0 && <React.Fragment>
             <Chips label="Echo · misregistration" options={[{v:false,l:'Off'},{v:true,l:'On'}]} value={!!el.echo} onChange={v=>update({echo:v})} />
@@ -799,7 +743,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
 
       {showBorder && (()=>{
         const bw = el.border!=null?el.border:(el.type==='block'?0:2);
-        return <Fold id="f-border" title="Border" badge={bw>0?bw+'pt':null}>
+        return <Fold id="f-border" title="Border" badge={bw>0?bw+'pt':null} dirty={dBorder}>
           <Slider label="Border width" val={bw} min={0} max={12} step={0.5} onChange={v=>update({border:v})} suffix="pt" />
           {bw>0 && <React.Fragment>
             <Chips label="Border pattern" options={BORDER_PATTERNS} value={el.borderPattern||'solid'} onChange={v=>update({borderPattern:v})} />
@@ -852,7 +796,7 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
           ))}
         </div>
       </div>
-      <div className="ps-tgroup"><span className="gl">Orient</span>
+      <div className="ps-tgroup">
         <div className="ps-seg">
           {[{v:'portrait',l:'Portrait'},{v:'landscape',l:'Landscape'}].map(o=>(
             <button key={o.v} className={doc.orient===o.v?'on':''} onClick={()=>setDoc(d=>({...d, orient:o.v}))}>{o.l}</button>
@@ -868,13 +812,13 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
         </div>
       </div>
 
-      <div className="ps-tgroup"><span className="gl">History</span>
+      <div className="ps-tgroup">
         <div className="ps-seg">
           <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
           <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
         </div>
       </div>
-      <div className="ps-tgroup"><span className="gl">Zoom</span>
+      <div className="ps-tgroup">
         <div className="ps-seg">
           <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
           <button onClick={onZoomFit} title="Fit the sheet">{zoomPct}</button>
@@ -882,9 +826,13 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
         </div>
       </div>
 
+      <button className={'ps-iconbtn'+(doc.showBleed?' on':'')} onClick={()=>setDoc(d=>({...d,showBleed:!d.showBleed}))} title="Show bleed + crop marks">Bleed</button>
+      <button className={'ps-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))} title="Show the layout grid">Grid</button>
+      <button className={'ps-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))} title="Snap to grid + guides">Snap</button>
+      <HintsToggle />
       <div className="spacer" />
 
-      <div className="ps-tgroup"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('Export · '+dims.wmm+'×'+dims.hmm+'mm')}</span>
+      <div className="ps-tgroup ps-export"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('Export · '+dims.wmm+'×'+dims.hmm+'mm')}</span>
         <input className="ps-tname" placeholder="File name…" value={name} spellCheck={false}
           onChange={e=>setName(e.target.value)} onBlur={commit}
           onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }} />
@@ -898,9 +846,6 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
         </button>
       </div>
 
-      <button className={'ps-iconbtn'+(doc.showBleed?' on':'')} onClick={()=>setDoc(d=>({...d,showBleed:!d.showBleed}))} title="Show bleed + crop marks">Bleed</button>
-      <button className={'ps-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))} title="Show the layout grid">Grid</button>
-      <button className={'ps-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))} title="Snap to grid + guides">Snap</button>
     </div>
   );
 }
@@ -1182,6 +1127,28 @@ function App(){
   const gridS = window.gridSpec(doc, dims);
   const h = hist.current;
 
+  /* Ctrl-K. The palette searches every inspector label the Fold index has
+     harvested, plus these — the sheet-level commands that live in the topbar
+     and are otherwise only reachable by aiming at a 10px segmented button. */
+  const [palOpen, setPalOpen] = RUI.usePalette();
+  React.useEffect(()=>{
+    RUI.setActions([].concat(
+      AP_ORD.map(sz=>({ label:'Size · '+AP_SZ[sz].label+' ('+AP_SZ[sz].mm.join('×')+' mm)', group:'Sheet', run:()=>onResize(sz) })),
+      [{ label:'Orientation · Portrait', group:'Sheet', run:()=>setDoc(d=>({...d, orient:'portrait'})) },
+       { label:'Orientation · Landscape', group:'Sheet', run:()=>setDoc(d=>({...d, orient:'landscape'})) }],
+      AP_ACC.map(a=>({ label:'Accent · '+a, group:'Sheet', run:()=>setDoc(d=>({...d, accent:a})) })),
+      [{ label:'Toggle bleed + crop marks', group:'View', run:()=>setDoc(d=>({...d, showBleed:!d.showBleed})) },
+       { label:'Toggle layout grid', group:'View', run:()=>setDoc(d=>({...d, showGrid:!d.showGrid})) },
+       { label:'Toggle snap', group:'View', run:()=>setDoc(d=>({...d, snap:!d.snap})) },
+       { label:'Toggle hints', group:'View', run:()=>RUI.setHints(!RUI.hintsOn()) },
+       { label:'Zoom to fit', group:'View', run:onZoomFit },
+       { label:'Undo', group:'Edit', run:undo },
+       { label:'Redo', group:'Edit', run:redo },
+       { label:'Save PDF — 1 up', group:'Export', run:()=>onExport('single') },
+       { label:'Save PDF — gang on A4', group:'Export', run:()=>onExport('gang') }]
+    ));
+  }, [doc.size, doc.orient, doc.showBleed, doc.showGrid, doc.snap]);
+
   return (
     <div className="ps-app">
       <Topbar doc={doc} setDoc={setDoc} onResize={onResize} onExport={onExport} exporting={exporting} exportMsg={exportMsg}
@@ -1254,6 +1221,7 @@ function App(){
         </div>
       </div>
       {spawn && <div className="ps-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}
+      {palOpen && <RUI.Palette onClose={()=>setPalOpen(false)} />}
     </div>
   );
 }

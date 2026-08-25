@@ -8,6 +8,7 @@
     "prebuild": "node scripts/fetch-feed.mjs && node scripts/build-studios.mjs && node tools/verify-day-colours.mjs",
     "build": "vite build",
     "build:no-prerender": "SKIP_PRERENDER=1 vite build",
+    "og": "node scripts/build-og-card.mjs",
     "preview": "vite preview",
     "selftest": "node scripts/selftest.mjs",
     "selftest:schedule": "node scripts/selftest-schedule.mjs",

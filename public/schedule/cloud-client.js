@@ -322,6 +322,42 @@
     });
   }
 
+  /* ---- daily digest card ------------------------------------------------- */
+  // putDigestStory(date, blob, contentType) → { ok, date, url } | null
+  //
+  // Files one day's 9:16 schedule card against that date's row in the app's daily
+  // digest (/staff/digest), so whoever posts the morning WhatsApp message finds the
+  // picture sitting beside the prose instead of hunting a zip in Downloads.
+  //
+  // Best-effort by design, exactly like putPoster: signed out, hub dormant, or a
+  // rejected token all resolve null rather than throwing. Nothing about a Studio
+  // EXPORT is allowed to fail because Backstage was unreachable.
+  function putDigestStory(date, blob, contentType) {
+    if (!isSignedIn()) { return Promise.resolve(null); }
+    if (!date || !blob) { return Promise.resolve(null); }
+    var fd;
+    try {
+      fd = new FormData();
+      fd.append('date', String(date));
+      var ct = contentType || (blob && blob.type) || 'image/png';
+      var ext = ct.indexOf('webp') >= 0 ? 'webp'
+        : (ct.indexOf('jpeg') >= 0 || ct.indexOf('jpg') >= 0 ? 'jpg' : 'png');
+      fd.append('file', blob, 'story-' + date + '.' + ext);
+    } catch (e) {
+      console.info(LOG, 'putDigestStory: could not build form data; skipping');
+      return Promise.resolve(null);
+    }
+    return call('POST', '/api/studio/digest-story', {
+      body: fd, // browser sets multipart Content-Type + boundary
+    }).then(function (r) {
+      if (!r || !r.ok || !r.json) {
+        console.info(LOG, 'putDigestStory', date, '→', r ? r.status : 'no-response');
+        return null;
+      }
+      return r.json;
+    });
+  }
+
   /* ---- feed read --------------------------------------------------------- */
   // fetchFeed({from, to, location, tag}) → the events.json document | null.
   // Anonymous public read — does NOT require sign-in (no bearer sent).
@@ -354,6 +390,7 @@
     putDoc: putDoc,
     delDoc: delDoc,
     putPoster: putPoster,
+    putDigestStory: putDigestStory,
     optimizeImage: optimizeImage,
     fetchFeed: fetchFeed,
   };

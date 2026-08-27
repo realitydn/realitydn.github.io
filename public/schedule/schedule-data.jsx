@@ -45,7 +45,13 @@ function dShort(iso){ const d = dToDate(iso); return d.getUTCDate() + '.' + (d.g
 function dShortYr(iso){ const d = dToDate(iso); return d.getUTCDate() + '.' + (d.getUTCMonth()+1) + '.' + String(d.getUTCFullYear()).slice(2); }
 function rangeDates(range){ const out=[]; for(let i=0;i<range.days;i++) out.push(dAdd(range.start,i)); return out; }
 function rangeLabel(range){ const end = dAdd(range.start, range.days-1); return dShortYr(range.start) + ' - ' + dShortYr(end); }
-function nextMonday(){ const t = new Date(); const iso = dToISO(new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate(),12)));
+/* Today's LOCAL calendar date. Routed through NOON UTC of the local Y/M/D rather
+   than a bare toISOString(): in ICT (UTC+7) the naive version returns YESTERDAY
+   between midnight and 07:00 — which is exactly when someone finishing next
+   week's schedule is most likely to be sitting here. */
+function todayIso(){ const t = new Date();
+  return dToISO(new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate(),12))); }
+function nextMonday(){ const iso = todayIso();
   const w = dWeekday(iso); return dAdd(iso, w===1 ? 7 : 8-w); }
 
 let _sid = 1;
@@ -652,7 +658,7 @@ function SchQR({ size, dark, light, quiet }){
 Object.assign(window, {
   INK, CREAM, WHITE, MONT, ALT, GROT,
   DAY_COLORS, DAY_TEXT, DAY_ABBR, DAY_FULL, LOCATIONS, FLAGS,
-  dToDate, dToISO, dAdd, dWeekday, dShort, dShortYr, rangeDates, rangeLabel, nextMonday,
+  dToDate, dToISO, dAdd, dWeekday, dShort, dShortYr, rangeDates, rangeLabel, nextMonday, todayIso,
   suid, blankEvent, newDoc, starterDoc, normalizeDoc,
   timeKey, eventsOn, dayInfo, timeLabel, usedLegend, partDates,
   parseQuickLine, parsePasteBlock, parseCSV, serializeCSV,

@@ -7,6 +7,7 @@ const { CHANNELS:A_CH, channelById:a_ch, computeCapacity:a_cap, PartCanvas:APart
         partCount:a_partCount, partSize:a_partSize,
         DAY_COLORS:A_DC, DAY_TEXT:A_DT, DAY_ABBR:A_DA, LOCATIONS:A_LOCS,
         rangeDates:a_dates, rangeLabel:a_rangeLabel, dAdd:a_dAdd, dWeekday:a_wd, dShort:a_dshort,
+        todayIso:a_today,
         eventsOn:a_eventsOn, dayInfo:a_dayInfo, blankEvent:a_blank, suid:a_uid,
         parseQuickLine:a_quick, parsePasteBlock:a_paste, parseCSV:a_csv, serializeCSV:a_serCSV,
         buildDocFromFeed:a_buildFeed, mergeFeedIntoDoc:a_mergeFeed,
@@ -16,6 +17,35 @@ const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
 
 function dl(href, name){ const a=document.createElement('a'); a.href=href; a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
 function dlBlob(blob, name){ const u=URL.createObjectURL(blob); dl(u, name); setTimeout(()=>URL.revokeObjectURL(u), 4000); }
+
+/* A capture comes back as a data: URL; the hub wants bytes. */
+function dataUrlToBlob(dataUrl){
+  const type = (/^data:([^;,]+)/.exec(dataUrl) || [,'image/png'])[1];
+  const bin = atob(dataUrl.slice(dataUrl.indexOf(',')+1));
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+/* Downsample a captured daily card to its own 1080x1920 before sending it to
+   Backstage. The capture is 2x (pixelRatio 2 on a 1080-wide node) — four times the
+   pixels Instagram or WhatsApp will ever use, and enough on a dense day to run at
+   the hub's 10MB ceiling. Stays PNG on purpose: the card is flat colour and hard
+   type, which is exactly what RCloud.optimizeImage's lossy path rings on. */
+async function toStoryBlob(dataUrl){
+  const src = dataUrlToBlob(dataUrl);
+  if(typeof createImageBitmap !== 'function') return src;
+  try{
+    const bmp = await createImageBitmap(src);
+    const w = Math.min(1080, bmp.width), h = Math.round(bmp.height * (w / bmp.width));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bmp, 0, 0, w, h);
+    try{ bmp.close(); }catch(e){}
+    const out = await new Promise(res => c.toBlob(res, 'image/png'));
+    return out || src;
+  }catch(err){ console.info('[Studio] story downsample failed; sending the capture', err); return src; }
+}
 
 /* ---------- small controls ---------- */
 function SField({ label, value, onChange, area, ph }){
@@ -543,7 +573,7 @@ function ImportModal({ doc, setDoc, onClose }){
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, count, cloudUser, onCloudSignIn, onCloudSignOut }){
+function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg, count, cloudUser, onCloudSignIn, onCloudSignOut }){
   const fileRef = React.useRef(null);
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   return (
@@ -568,6 +598,10 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, count, 
           <button disabled={exporting} onClick={()=>onExport('channel')}>This channel</button>
           <button disabled={exporting} onClick={()=>onExport('all')} title="Every channel + dailies + archive, zipped">Everything</button>
         </div>
+        {/* Says what the last export sent to the app's daily digest. Left standing
+            until the next export rather than timed out — it describes that export,
+            and "did the cards go?" is a question you ask minutes later. */}
+        {!exporting && hubMsg && <span className="ss-mini" style={{ marginLeft:10 }}>{hubMsg}</span>}
       </div>
       {/* WP9: cloud sign-in toggle (drives doc sync + the feed pull). Hidden if
           RCloud failed to load; best-effort, no-op when the hub is dormant. */}
@@ -599,6 +633,7 @@ function App(){
   const [importOpen, setImportOpen] = React.useState(false);
   const [exporting, setExporting] = React.useState(false);
   const [exportMsg, setExportMsg] = React.useState('');
+  const [hubMsg, setHubMsg] = React.useState('');
   const [exportJob, setExportJob] = React.useState(null);
   const [scale, setScale] = React.useState(0.3);
   const [fitReport, setFitReport] = React.useState(null);   /* rendered truth, beats the estimate */
@@ -825,10 +860,40 @@ function App(){
     pdf.addImage(url, 'PNG', 0, 0, 297, 210, undefined, 'SLOW');
     return pdf;
   }
+  /* ---- Backstage propagation ----
+     Every export that renders daily cards also files them against their dates in
+     the app's daily digest (/staff/digest), so the morning WhatsApp post has its
+     picture waiting beside its prose instead of living in someone's Downloads.
+     Runs AFTER the download, and can only ever report on itself: the export is the
+     job, this is the errand on the way back, and a dormant hub must never cost you
+     the zip you actually asked for. */
+  async function pushDigestCards(cards){
+    if(!window.RCloud || !window.RCloud.isSignedIn()) return 'Backstage: sign in to Cloud to send day cards';
+    /* A card for a day that has already happened has no digest left to sit under,
+       and would only push a dead date to the top of Backstage's Recent list. */
+    const today = a_today();
+    const due = cards.filter(c => c.date >= today);
+    if(!due.length) return 'Backstage: nothing to send — this week has already been';
+    let sent = 0, failed = 0;
+    for(let i=0;i<due.length;i++){
+      setExportMsg('Backstage ' + (i+1) + '/' + due.length + '…');
+      try{
+        const blob = await toStoryBlob(due[i].dataUrl);
+        const r = await window.RCloud.putDigestStory(due[i].date, blob, blob.type);
+        if(r && r.ok) sent++; else failed++;
+      }catch(err){ console.error('[Studio] digest card push failed', due[i].date, err); failed++; }
+    }
+    if(!sent) return 'Backstage: could not send day cards (' + failed + ' failed)';
+    return 'Backstage: ' + sent + ' day card' + (sent===1?'':'s') + ' sent'
+      + (failed ? ' · ' + failed + ' failed' : '');
+  }
+
   async function doExport(scope){
     if(exporting || !window.htmlToImage) return;
-    setSelId(null); setExporting(true); setExportMsg('Rendering…');
+    setSelId(null); setExporting(true); setExportMsg('Rendering…'); setHubMsg('');
     const base = 'reality-schedule-' + doc.range.start;
+    /* 9:16 day cards picked up on the way past, sent to Backstage below. */
+    const cards = [];
     try{
       if(scope==='channel'){
         const ch = a_ch(channelId);
@@ -843,6 +908,17 @@ function App(){
             setExportMsg('Daily ' + (i+1) + '/' + open.length + '…');
             const url = await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant }, ch);
             zip.file(pngName('daily',0,1,dailyVariant,open[i]), url.split(',')[1], { base64:true });
+            if(dailyVariant==='story') cards.push({ date:open[i], dataUrl:url });
+          }
+          /* Exporting the feed or cover variant still propagates — Backstage wants
+             the 9:16 whatever you happened to be looking at. Quietly sending
+             nothing is how you find out on Thursday morning that nothing sent. */
+          if(dailyVariant!=='story'){
+            for(let i=0;i<open.length;i++){
+              setExportMsg('Story card ' + (i+1) + '/' + open.length + '…');
+              cards.push({ date:open[i],
+                dataUrl:await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant:'story' }, ch) });
+            }
           }
           setExportMsg('Zipping…');
           dlBlob(await zip.generateAsync({ type:'blob' }), 'reality-daily-' + doc.range.start + '-' + dailyVariant + '.zip');
@@ -884,6 +960,7 @@ function App(){
           setExportMsg('Daily ' + (i+1) + '/' + open.length + '…');
           const url = await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant:'story' }, a_ch('daily'));
           zip.file(pngName('daily',0,1,'story',open[i]), url.split(',')[1], { base64:true });
+          cards.push({ date:open[i], dataUrl:url });
         }
         for(let i=0;i<open.length;i++){
           setExportMsg('FB cover ' + (i+1) + '/' + open.length + '…');
@@ -894,6 +971,12 @@ function App(){
         zip.file(base + '.csv', a_serCSV(doc));
         setExportMsg('Zipping…');
         dlBlob(await zip.generateAsync({ type:'blob' }), base + '.zip');
+      }
+      if(cards.length){
+        /* Its own try: the zip is already on disk by now, so a Backstage hiccup
+           must not come back to the user as "Export failed". */
+        try{ setHubMsg(await pushDigestCards(cards)); }
+        catch(err){ console.error('[Studio] Backstage push failed', err); setHubMsg('Backstage: send failed'); }
       }
     }catch(err){ console.error('export failed', err); setExportMsg('Export failed'); await new Promise(r=>setTimeout(r,1500)); }
     setExportJob(null); setExporting(false); setExportMsg('');
@@ -906,7 +989,7 @@ function App(){
         background:'#0d0905', color:'#fffbf1', fontFamily:"'Montserrat',sans-serif", fontWeight:700, fontSize:12,
         letterSpacing:'.04em', padding:'7px 14px', borderRadius:999, boxShadow:'0 8px 24px rgba(0,0,0,.35)', pointerEvents:'none' }}>{syncNote}</div>}
       <Topbar doc={doc} setDoc={setDoc} count={doc.events.length}
-        onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg}
+        onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg} hubMsg={hubMsg}
         cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} />
       <DayStrip doc={doc} setDoc={setDoc} capacity={capacity} selDate={selDate}
         onPickDate={d=>{ setSelDate(d); if(channelId==='daily') setDailyDate(d); }} />

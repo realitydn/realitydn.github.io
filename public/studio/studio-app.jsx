@@ -1892,7 +1892,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, onCloudSignIn, onCloudSignOut, onExportToEvent,
+function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
                   canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
@@ -1982,7 +1982,12 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
       {/* WP9: cloud sync + poster write-back. Hidden entirely if RCloud failed to
           load; otherwise a sign-in toggle + an "Export to event…" affordance.
           Sign-in/out and the picker are fully best-effort (no-op when dormant). */}
-      {hasCloud && <div className="rs-tgroup"><span className="gl">Cloud</span>
+      {hasCloud && <div className="rs-tgroup">
+        {/* The group label names the ACCOUNT once signed in. Templates are stored
+            per account, so signing in with the other Google account looks exactly
+            like an empty library — this is where you notice. */}
+        <span className="gl" title={cloudUser ? 'Signed in as '+cloudUser : undefined}>
+          {cloudMsg || (cloudUser ? String(cloudUser).split('@')[0] : 'Cloud')}</span>
         {cloudUser
           ? <React.Fragment>
               <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
@@ -2089,6 +2094,12 @@ function App(){
   /* ---- WP9 cloud sign-in state (best-effort; localStorage stays the source of
      truth). `cloudUser` is just for the toolbar label; null = local-only. ---- */
   const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
+  /* Restoring a library onto a new computer is one request per template — say so,
+     rather than looking idle for a few minutes. */
+  const [cloudMsg, setCloudMsg] = React.useState(null);
+  const cloudProgress = React.useCallback((done, total)=>{
+    setCloudMsg(done>=total ? null : 'Restoring '+done+'/'+total+'…');
+  }, []);
   async function cloudSignIn(){
     try{
       if(!window.RCloud) return;
@@ -2099,8 +2110,9 @@ function App(){
       // the account has that this browser lacks. Both best-effort; never throw.
       if(email && window.RStore){
         try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-        try{ if(window.RStore.cloudPull){ const all = await window.RStore.cloudPull();
+        try{ if(window.RStore.cloudPull){ const all = await window.RStore.cloudPull(cloudProgress);
           if(Array.isArray(all)) setUserTpls(all.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0))); } }catch(e){}
+        finally{ setCloudMsg(null); }
       }
     }catch(e){ /* never throws into render */ }
   }
@@ -2507,7 +2519,8 @@ function App(){
          templates this browser is missing. IndexedDB stays the source of truth —
          both calls never throw and no-op when signed-out / hub dormant. */
       try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-      try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
+      try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(cloudProgress); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
+      finally{ setCloudMsg(null); }
       all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
       if(!live) return;
       setUserTpls(all);
@@ -2995,7 +3008,7 @@ function App(){
     <div className="rs-app">
       <Topbar doc={doc} setDoc={setDoc} overrideCount={overrideCount} resetFormat={resetFormat}
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
-        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
+        cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
         canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
         zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)} />
       <div className="rs-body">

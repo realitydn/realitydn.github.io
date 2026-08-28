@@ -81,8 +81,17 @@
   /* Pull cloud templates and upsert any the local store is missing (by id).
      Returns the merged, locally-stored list (or the local list unchanged on any
      failure). Best-effort: never throws, returns local-only when RCloud is
-     absent / signed-out / dormant. */
-  async function cloudPull(){
+     absent / signed-out / dormant.
+
+     TWO STEPS, deliberately. The hub's list is metadata only — a template embeds
+     its photos as data URLs (~2.5 MB each), so asking for a whole library's
+     bodies in one response killed the query on the hub side and this returned
+     local-only forever: sign in on a second computer, see an empty library. So:
+     list (cheap), then fetch ONLY the ids this browser is missing, one at a time,
+     newest first, writing each one down as it lands. A failure part-way through
+     keeps everything already fetched, and the next pull picks up the rest.
+     `onProgress(done, total)` is optional. */
+  async function cloudPull(onProgress){
     let local = [];
     try{ local = await tplGetAll(); }catch(e){ local = []; }
     try{
@@ -91,40 +100,92 @@
       const docs = await rc.listDocs('poster');
       if(!Array.isArray(docs) || !docs.length) return local;
       const haveIds = {}; local.forEach(t=>{ if(t&&t.id) haveIds[t.id]=1; });
-      const missing = [];
+      const wanted = [];
       docs.forEach(d=>{
         try{
           const docId = d && (d.doc_id || d.docId);
           if(!docId || docId.indexOf('tpl:')!==0) return;
           const id = docId.slice(4);
           if(haveIds[id]) return;
-          let tpl = d.json;
-          if(typeof tpl==='string'){ try{ tpl = JSON.parse(tpl); }catch(e2){ tpl=null; } }
-          if(tpl && tpl.doc && Array.isArray(tpl.doc.elements)){
-            if(!tpl.id) tpl.id = id;
-            if(!tpl.savedAt) tpl.savedAt = d.updatedAt ? (Date.parse(d.updatedAt)||Date.now()) : Date.now();
-            missing.push(tpl);
-          }
+          wanted.push({ id: id, docId: docId, meta: d });
         }catch(e3){}
       });
-      if(missing.length){
-        await tplBulkPut(missing);   // local write only — do NOT re-mirror back up
-        return await tplGetAll();
+      if(!wanted.length) return local;
+      let done = 0, fetched = 0;
+      for(let i=0;i<wanted.length;i++){
+        const w = wanted[i];
+        try{
+          // The list carries no body — one doc per request is the only way up.
+          const full = await rc.getDoc('poster', w.docId);
+          const tpl = _tplFromDoc(full || w.meta, w.id);
+          if(tpl){ await tplBulkPut([tpl]); fetched++; }
+        }catch(e4){ /* skip this one; the rest still come down */ }
+        done++;
+        if(typeof onProgress==='function'){ try{ onProgress(done, wanted.length); }catch(e5){} }
       }
+      if(fetched) return await tplGetAll();
     }catch(e){ /* any failure → local-only */ }
     return local;
   }
 
-  /* Push EVERY local template UP to the account (best-effort upsert) — the inverse
-     of cloudPull. Used on sign-in / load so a browser's existing library migrates
-     into the account, not only templates saved after signing in. putDoc is an
-     upsert (last-write-wins), so this is idempotent. No-ops when signed-out. */
+  /* A hub doc → a template record, or null if it isn't one we can use. The hub
+     returns snake_case (`updated_at`) and `json` as a string. */
+  function _tplFromDoc(d, id){
+    try{
+      if(!d) return null;
+      let tpl = d.json;
+      if(typeof tpl==='string'){ try{ tpl = JSON.parse(tpl); }catch(e){ return null; } }
+      if(!tpl || !tpl.doc || !Array.isArray(tpl.doc.elements)) return null;
+      if(!tpl.id) tpl.id = id;
+      if(!tpl.savedAt){
+        const u = d.updated_at != null ? d.updated_at : d.updatedAt;
+        tpl.savedAt = typeof u==='number' ? u : (Date.parse(u||'')||Date.now());
+      }
+      return tpl;
+    }catch(e){ return null; }
+  }
+
+  /* Push local templates UP to the account (best-effort upsert) — the inverse of
+     cloudPull. Used on sign-in / load so a browser's existing library migrates
+     into the account, not only templates saved after signing in.
+
+     It pushes only what the account is MISSING or holds an older copy of. This
+     runs on every load, and a full library is ~86 MB of inline photo data: sending
+     all of it every time cost real bandwidth on a Vietnamese connection and wrote
+     the same rows over and over. The cheap metadata list makes the comparison
+     free. If that list can't be had, fall back to pushing everything — that's the
+     old behaviour, and it's better than a template that never reaches the cloud. */
   async function cloudPushAll(){
     try{
       const rc = _rc();
       if(!rc || !rc.isSignedIn()) return;
       let local = []; try{ local = await tplGetAll(); }catch(e){ local = []; }
-      cloudPutMany(local);
+      if(!local.length) return;
+      let remoteAt = null;
+      try{
+        if(typeof rc.listDocs==='function'){
+          const docs = await rc.listDocs('poster');
+          if(Array.isArray(docs)){
+            remoteAt = {};
+            docs.forEach(d=>{
+              const docId = d && (d.doc_id || d.docId);
+              if(!docId || docId.indexOf('tpl:')!==0) return;
+              const u = d.updated_at != null ? d.updated_at : d.updatedAt;
+              remoteAt[docId.slice(4)] = typeof u==='number' ? u : (Date.parse(u||'')||0);
+            });
+          }
+        }
+      }catch(e){ remoteAt = null; }
+      local.forEach(t=>{
+        if(!t || !t.id) return;
+        if(remoteAt){
+          const have = remoteAt[t.id];
+          // putDoc stamps max(client, now) server-side, so a doc that round-tripped
+          // reads back NEWER than its savedAt — only push when we're clearly ahead.
+          if(have != null && have >= (t.savedAt||0)) return;
+        }
+        cloudPutTpl(t);
+      });
     }catch(e){}
   }
 

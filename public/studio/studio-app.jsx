@@ -2629,6 +2629,55 @@ function App(){
   /* Non-null when the IndexedDB library could not be read — the panel is then
      showing the legacy localStorage backup, and says so. */
   const [tplStoreErr, setTplStoreErr] = React.useState(null);
+  /* Recently deleted — the last few templates that left the library by any
+     route (Delete, saved over, displaced by an import). */
+  const [tplBin, setTplBin] = React.useState([]);
+  const refreshBin = React.useCallback(async ()=>{
+    try{ const b = await window.RStore.binGetAll(); setTplBin(Array.isArray(b)?b:[]); }catch(e){}
+  }, []);
+  /* Put one back. If its id has since been taken by a different template, the
+     restored copy gets a new one rather than overwriting the sitting tenant. */
+  async function restoreFromBin(entry){
+    if(!entry || !entry.tpl) return;
+    const taken = userTpls.some(t=>t.id===entry.tpl.id);
+    const t = Object.assign({}, entry.tpl, taken ? { id: tplId() } : null);
+    try{ await window.RStore.tplPut(t); }
+    catch(e){ console.error(e); window.alert('Couldn’t put that template back right now — try again.'); return; }
+    try{ await window.RStore.binDelete(entry.id); }catch(e){}
+    setUserTpls(prev=>{
+      const i = prev.findIndex(p=>p.id===t.id);
+      if(i<0) return [t, ...prev];
+      const next = prev.slice(); next[i]=t; return next;
+    });
+    refreshBin();
+  }
+  /* Ask the account for everything it has that this browser hasn't. The load
+     path already tries this quietly and gives up silently on any hub error;
+     this one reports what it found, so "the hub hasn't got it either" is
+     something you can see rather than infer. */
+  const [restoring, setRestoring] = React.useState(false);
+  async function restoreFromCloud(){
+    if(restoring) return;
+    if(!window.RCloud || !window.RCloud.isSignedIn()){
+      window.alert('Sign in to the REALITY hub first (top right) — that’s where the off-machine copies live.');
+      return;
+    }
+    setRestoring(true); setCloudMsg('Checking the hub…');
+    try{
+      const r = await window.RStore.cloudRestore((done,total)=>setCloudMsg('Restoring '+done+'/'+total+'…'));
+      try{ const after = await window.RStore.tplGetAll();
+        if(Array.isArray(after) && after.length) setUserTpls(sortTpls(after)); }catch(e){}
+      window.alert(r.restored
+        ? 'Restored '+r.restored+' template'+(r.restored===1?'':'s')+' from the hub.'
+          +(r.failed? ' '+r.failed+' couldn’t be read.':'')
+        : 'Nothing to restore — the hub holds '+r.hub+' template'+(r.hub===1?'':'s')
+          +' and this browser already has all of them.'
+          +(r.hub? '\n\nIf something is still missing it was never mirrored to the hub (a photo-heavy template can exceed the hub’s per-document cap) or it was deleted from both. Check Recently deleted.' : ''));
+    }catch(e){
+      console.error(e);
+      window.alert('Couldn’t reach the hub just now — nothing was changed. Check the connection and try again.');
+    }finally{ setRestoring(false); setCloudMsg(null); }
+  }
   /* Card pictures, { [id]: {src,w,h} } — a derived, local-only cache (see
      RStore's thumbnail notes). Missing ones are shot by the card that wants
      them, so an existing library fills itself in as you open its days. */
@@ -2664,6 +2713,7 @@ function App(){
       /* One read for the whole library's card pictures. Best-effort: without
          them every card just renders itself live, exactly as it used to. */
       try{ const thumbs = await window.RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
+      if(live) refreshBin();
       /* WP9: migrate this browser's library UP to the account, then pull any cloud
          templates this browser is missing. IndexedDB stays the source of truth —
          both calls never throw and no-op when signed-out / hub dormant. */
@@ -2795,6 +2845,9 @@ function App(){
     const t = { id: existing? existing.id : tplId(), name, savedAt: Date.now(),
       eventId: (d.eventRef && d.eventRef.key) || (existing && existing.eventId) || null,
       archived: false, doc: snap };
+    /* Saving over a template overwrites a finished poster. Keep the version it
+       replaces in Recently deleted first, so "replace it?" is undoable. */
+    if(existing){ try{ await window.RStore.binPut(existing, 'saved over'); }catch(e){} }
     try{ await window.RStore.tplPut(t); }
     catch(e){ console.error(e); window.alert('Couldn’t save the template — the browser blocked writing to storage. Your other templates are unaffected.'); return; }
     /* Saving over a template replaces its artwork, so its card picture is now a
@@ -2812,6 +2865,7 @@ function App(){
       if(i<0) return [t, ...prev];
       const next = prev.slice(); next[i] = t; return next;
     });
+    if(existing) refreshBin();
   }
   function applyUserTpl(t){
     if(docRef.current.elements.length &&
@@ -2845,10 +2899,14 @@ function App(){
   async function delUserTpl(id){
     const t = userTpls.find(x=>x.id===id);
     if(t && !window.confirm('Delete the template “'+t.name+'”?')) return;
+    /* Into Recently deleted first — a mis-click on a 20px × next to a 20px ⤓
+       used to be the end of that poster. */
+    if(t){ try{ await window.RStore.binPut(t, 'deleted'); }catch(e){} }
     try{ await window.RStore.tplDelete(id); }
     catch(e){ console.error(e); window.alert('Couldn’t delete that template right now — try again.'); return; }
     forgetTplThumb(id);
     setUserTpls(prev=>prev.filter(x=>x.id!==id));
+    refreshBin();
   }
 
   /* ---- template portability — templates live in this browser's localStorage
@@ -2856,10 +2914,16 @@ function App(){
      data URLs included) and Import merges a file back in on another machine.
      Same name or id replaces; anything else is added. */
   const tplFileRef = React.useRef(null);
-  function exportUserTpls(){
-    if(!userTpls.length){ window.alert('No saved templates to export yet.'); return; }
+  async function exportUserTpls(){
+    /* Read the STORE. This used to write out whatever the panel was showing, so
+       a backup taken while the library was still syncing was short — and a short
+       backup imported later used to take the rest of the library with it. */
+    let all = userTpls;
+    try{ const fresh = await window.RStore.tplGetAll(); if(Array.isArray(fresh) && fresh.length) all = fresh; }
+    catch(e){ console.error(e); }
+    if(!all.length){ window.alert('No saved templates to export yet.'); return; }
     const payload = { kind:'reality-studio-templates', version:1,
-      exportedAt:new Date().toISOString(), templates:userTpls };
+      exportedAt:new Date().toISOString(), templates:sortTpls(all) };
     const blob = new Blob([JSON.stringify(payload)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const d = new Date(), pad = n=>(n<10?'0':'')+n;
@@ -2884,23 +2948,49 @@ function App(){
                    doc: Object.assign({ masterFormat:'4x5', theme:'day', accent:'blue', overrides:{}, title:'' }, t.doc) }));
       if(!incoming.length){ window.alert('No usable templates in that file.'); return; }
       const skipped = list.length - incoming.length;
-      const next = userTpls.slice(); let replaced = 0;
+      /* Merge against the STORE, never against the on-screen list.
+         This used to build its result from `userTpls` and hand it to
+         tplReplaceAll, which CLEARED the store and wrote back exactly that
+         list — so importing while the library was short (it stayed empty for
+         the whole of a cloud restore) permanently deleted every template that
+         wasn't on screen at that instant. Nothing here clears anything, and
+         an unreadable library aborts rather than guessing. */
+      let current = [];
+      try{ current = await window.RStore.tplGetAll(); }
+      catch(e){ console.error(e);
+        window.alert('Couldn’t read your library, so nothing was imported and nothing was changed. Reload the page and try again.');
+        return; }
+      /* A record the import supersedes by NAME under a different id has to go,
+         or the same name sits in the library twice. Those go to Recently
+         deleted first, and their cloud copies are left alone. */
+      const drop = [];
       incoming.forEach(t=>{
-        const i = next.findIndex(p=>p.id===t.id || p.name.toLowerCase()===t.name.toLowerCase());
-        if(i>=0){ next[i]=t; replaced++; } else next.unshift(t);
+        const clash = current.find(p=>p.id!==t.id && p.name.toLowerCase()===t.name.toLowerCase());
+        if(clash && drop.indexOf(clash.id)<0) drop.push(clash.id);
       });
-      try{ await window.RStore.tplReplaceAll(next); }
+      const replaced = drop.length + incoming.filter(t=>current.some(p=>p.id===t.id)).length;
+      for(const id of drop){
+        const old = current.find(p=>p.id===id);
+        if(old){ try{ await window.RStore.binPut(old, 'replaced by an import'); }catch(e){} }
+      }
+      try{ await window.RStore.tplApply(incoming, drop); }
       catch(e){ console.error(e); window.alert('Couldn’t save the imported templates to storage — nothing was changed.'); return; }
-      /* Everything the file touched carries new artwork under a name or id that
-         may already have a card picture — keep only the untouched ones. */
-      const fresh = {}; incoming.forEach(t=>{ fresh[t.id]=1; });
-      const keep = next.filter(t=>!fresh[t.id]).map(t=>t.id);
-      try{ await window.RStore.thumbPrune(keep); }catch(e){}
-      setTplThumbs(m=>{ const n={}; keep.forEach(id=>{ if(m[id]) n[id]=m[id]; }); return n; });
-      setUserTpls(next);
+      /* Everything the file touched carries new artwork under an id that may
+         already have a card picture — drop those, keep the rest. */
+      try{
+        const after = await window.RStore.tplGetAll();
+        const touched = {}; incoming.forEach(t=>{ touched[t.id]=1; }); drop.forEach(id=>{ touched[id]=1; });
+        const keep = after.filter(t=>!touched[t.id]).map(t=>t.id);
+        await window.RStore.thumbPrune(keep);
+        setTplThumbs(m=>{ const n={}; keep.forEach(id=>{ if(m[id]) n[id]=m[id]; }); return n; });
+        setUserTpls(sortTpls(after));
+      }catch(e){ console.error(e); }
+      await refreshBin();
       window.alert('Imported '+incoming.length+' template'+(incoming.length===1?'':'s')
-        +(replaced? ' — '+replaced+' replaced an existing one':'')
-        +(skipped? ' ('+skipped+' unreadable, skipped)':'')+'.');
+        +(replaced? ' — '+replaced+' replaced an existing one'+(replaced===1?'':'s'):'')
+        +(skipped? ' ('+skipped+' unreadable, skipped)':'')
+        +'.\n\nNothing else in your library was touched'
+        +(drop.length? ', and the '+drop.length+' it replaced went to Recently deleted.':'.'));
     };
     fr.readAsText(file);
   }
@@ -3329,12 +3419,36 @@ function App(){
                   </Sec>
                 );
               })()}
+              {/* Recently deleted — every route out of the library now leaves a
+                  copy here first, so Delete, "replace it?" and a bad import are
+                  all undoable. Capped at the last 10; oldest out. */}
+              {tplReady && tplBin.length>0 &&
+                <Sec id="my:bin" title="Recently deleted" sub="restorable" count={tplBin.length}>
+                  <div className="rs-tplgrid">
+                    {tplBin.map(e=>(
+                      <div key={e.id} className="rs-tplcard" title={e.tpl.name+' — '+e.reason}
+                        onClick={()=>restoreFromBin(e)} style={{ opacity:.8 }}>
+                        <TplThumb doc={e.tpl.doc} w={88} />
+                        <span className="tn">{e.tpl.name}</span>
+                        <span className="ts">{e.reason} · {new Date(e.at).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                        <button className="rs-tplx" style={{ top:4, width:20, height:20, fontSize:11, borderColor:'#3a2f1f', color:'#b6ab97' }}
+                          title={'Put “'+e.tpl.name+'” back in My templates'}
+                          onClick={ev=>{ ev.stopPropagation(); restoreFromBin(e); }}>↩</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rs-mini" style={{ margin:'0 0 8px 12px', opacity:.45 }}>Click one to put it back. Only the last 10 are kept.</div>
+                </Sec>}
 
               <button className="rs-addrow" onClick={saveUserTpl} style={{ marginBottom:6, marginTop:8 }}>＋ Save current poster as template</button>
               <div className="rs-rowflex" style={{ marginBottom:6 }}>
-                <button className="rs-addrow" onClick={exportUserTpls} title="Download all My templates (photos included) as one .json">⬇ Export all</button>
-                <button className="rs-addrow" onClick={()=>tplFileRef.current.click()} title="Load templates from an exported .json — same names update, new names add">⬆ Import…</button>
+                <button className="rs-addrow" onClick={exportUserTpls} title="Download every saved template (photos included) as one .json — read straight from storage, not from what's on screen">⬇ Export all</button>
+                <button className="rs-addrow" onClick={()=>tplFileRef.current.click()} title="Merge templates in from an exported .json — same name updates, new names add, nothing else is touched">⬆ Import…</button>
               </div>
+              <button className="rs-addrow" onClick={restoreFromCloud} disabled={restoring}
+                style={{ marginBottom:6 }}
+                title="Ask your REALITY hub account for every template this browser hasn't got, and say what it found">
+                {restoring ? '↻ Checking the hub…' : '↻ Restore from cloud'}</button>
               <input ref={tplFileRef} type="file" accept=".json,application/json" style={{ display:'none' }}
                 onChange={e=>{ const f=e.target.files[0]; if(f) importUserTpls(f); e.target.value=''; }} />
               <Hint tight>Saved in this browser (IndexedDB — room for plenty now). Export a .json to back them up or carry them to another computer, photos and all.</Hint>

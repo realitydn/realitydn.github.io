@@ -206,16 +206,97 @@
     return txDone(s.transaction);
   }
 
-  /* Make the store exactly equal `arr`, atomically — clear + put all ride one
-     transaction, so any failure rolls the whole thing back (nothing is half
-     written). Used by Import. */
-  async function tplReplaceAll(arr){
+  /* Fold `incoming` into the library and remove exactly the ids in `dropIds`,
+     in one transaction. Nothing else is touched.
+
+     This replaces tplReplaceAll, which Import used to call: that CLEARED the
+     store and wrote back whatever list it was handed. The list came from the
+     on-screen library, and the on-screen library could be short — it stayed
+     empty for the whole of a cloud restore, and any sync could leave it behind.
+     So an import run at the wrong moment permanently deleted every template
+     that wasn't on screen at that instant, with no dialog and no way back. A
+     clear() has no business anywhere near this store; there is no longer one.
+
+     Dropped ids are NOT deleted from the hub. The caller stashes them in the
+     bin first, so a bad import stays recoverable from two places rather than
+     none. */
+  async function tplApply(incoming, dropIds){
     await open();
     const s = store(T_STORE, 'readwrite');
-    s.clear();
-    (arr||[]).forEach(t=>s.put(t));
+    (dropIds||[]).forEach(id=>{ if(id) s.delete(id); });
+    (incoming||[]).forEach(t=>{ if(t && t.id) s.put(t); });
     await txDone(s.transaction);
-    cloudPutMany(arr);   // best-effort mirror of the imported set
+    cloudPutMany(incoming);   // best-effort mirror of the imported set
+  }
+
+  /* ---- recently deleted ----------------------------------------------------
+     Every way a saved poster can leave the library — Delete, saving over it,
+     being displaced by an import — puts a copy in here first, capped and oldest
+     out. A template is a couple of hours of work and until now every one of
+     those routes was final. Same meta-store trick as the thumbnails: a 'bin:'
+     key, no schema change, local only. */
+  const BIN_PREFIX = 'bin:', BIN_CAP = 10;
+  function binRange(){ return IDBKeyRange.bound(BIN_PREFIX, BIN_PREFIX + '\uffff'); }
+  async function binRows(){ await open(); return reqVal(store(M_STORE, 'readonly').getAll(binRange())); }
+  async function binPut(t, reason){
+    if(!t || !t.id) return;
+    await metaPut(BIN_PREFIX + t.id, { at: Date.now(), reason: reason || 'removed', tpl: t });
+    try{
+      const rows = await binRows();
+      if(rows.length > BIN_CAP){
+        rows.sort((a,b)=>((a.v&&a.v.at)||0)-((b.v&&b.v.at)||0));
+        const s = store(M_STORE, 'readwrite');
+        rows.slice(0, rows.length - BIN_CAP).forEach(r=>s.delete(r.k));
+        await txDone(s.transaction);
+      }
+    }catch(e){ /* an over-full bin is not worth failing a delete over */ }
+  }
+  async function binGetAll(){
+    const rows = await binRows();
+    return (rows||[]).filter(r=>r && r.v && r.v.tpl)
+      .map(r=>({ id: r.k.slice(BIN_PREFIX.length), at: r.v.at||0, reason: r.v.reason||'removed', tpl: r.v.tpl }))
+      .sort((a,b)=>b.at-a.at);
+  }
+  async function binDelete(id){
+    if(!id) return;
+    await open();
+    const s = store(M_STORE, 'readwrite'); s.delete(BIN_PREFIX + id);
+    return txDone(s.transaction);
+  }
+
+  /* ---- restore from the account, on demand ---------------------------------
+     cloudPull does this quietly on load and gives up silently on any failure;
+     this is the button you press when something is missing, and it reports what
+     it actually found so "the hub hasn't got it either" is an answer you can
+     see rather than infer. Throws on a hub error — the caller says so. */
+  async function cloudRestore(onProgress){
+    const report = { signedIn:false, hub:0, missing:0, restored:0, failed:0 };
+    const rc = _rc();
+    if(!rc || !rc.isSignedIn() || typeof rc.listDocs!=='function') return report;
+    report.signedIn = true;
+    let local = []; try{ local = await tplGetAll(); }catch(e){}
+    const have = {}; local.forEach(t=>{ if(t && t.id) have[t.id]=1; });
+    const docs = await rc.listDocs('poster');
+    const wanted = [];
+    (docs||[]).forEach(d=>{
+      const docId = d && (d.doc_id || d.docId);
+      if(!docId || docId.indexOf('tpl:')!==0) return;
+      report.hub++;
+      const id = docId.slice(4);
+      if(!have[id]) wanted.push({ id: id, docId: docId, meta: d });
+    });
+    report.missing = wanted.length;
+    for(let i=0;i<wanted.length;i++){
+      const w = wanted[i];
+      try{
+        const full = await rc.getDoc('poster', w.docId);
+        const tpl = _tplFromDoc(full || w.meta, w.id);
+        if(tpl){ await tplBulkPut([tpl]); report.restored++; }
+        else report.failed++;
+      }catch(e){ report.failed++; }
+      if(typeof onProgress==='function'){ try{ onProgress(i+1, wanted.length); }catch(e){} }
+    }
+    return report;
   }
 
   /* ---- library thumbnails (derived, local-only) ----------------------------
@@ -284,7 +365,8 @@
     return { migrated: arr.length };
   }
 
-  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll,
+  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplApply,
+                    binPut, binGetAll, binDelete,
                     thumbGetAll, thumbPut, thumbDelete, thumbPrune,
-                    metaGet, metaPut, migrate, cloudPull, cloudPushAll, LS_TPL_KEY };
+                    metaGet, metaPut, migrate, cloudPull, cloudPushAll, cloudRestore, LS_TPL_KEY };
 })();

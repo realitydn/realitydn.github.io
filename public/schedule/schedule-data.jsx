@@ -36,6 +36,12 @@ const FLAGS = [
   { key:'fee',    glyph:'$', label:'Has Fee Beyond Purchase' },
 ];
 
+/* Daily-card layout ids. Duplicated from DAILY_CARDS in schedule-render.jsx for
+   the same reason DAY_COLORS is duplicated from the token sheet: this file is
+   loaded first and must be able to normalise a document on its own. An archive
+   naming a layout we no longer ship falls back to classic rather than blank. */
+const DAILY_CARD_IDS = ['classic','flood','misreg','spine','chrono'];
+
 /* ---- dates (all ISO yyyy-mm-dd strings; UTC-noon anchor avoids TZ drift) ---- */
 function dToDate(iso){ return new Date(iso + 'T12:00:00Z'); }
 function dToISO(d){ return d.toISOString().slice(0,10); }
@@ -77,7 +83,10 @@ function newDoc(startIso){
     style:{ look:'ledger', theme:'day', inkSaver:false },
     sizing:{},   /* per-channel weekly text sizing: { feed|stories: { base:'auto'|step, perDay:{date:step} } } */
     cover:{ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' },   /* FB cover: styling + text-size bias, columns, title handling */
-    daily:{ story:0, feed:0 },   /* discrete per-day-card text-size bias (9:16 story / 4:5 feed) */
+    /* daily card: discrete per-variant text-size bias, plus the LAYOUT — one
+       choice for the whole document, because a week of cards posted a morning
+       at a time has to look like one week. */
+    daily:{ story:0, feed:0, card:'classic' },
   };
 }
 
@@ -144,7 +153,8 @@ function normalizeDoc(d){
     doc.sizing[chId] = { base:(s.base==null ? 'auto' : s.base), perDay };
   });
   doc.cover = Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, (d && d.cover) || {});
-  doc.daily = Object.assign({ story:0, feed:0 }, (d && d.daily) || {});
+  doc.daily = Object.assign({ story:0, feed:0, card:'classic' }, (d && d.daily) || {});
+  if(DAILY_CARD_IDS.indexOf(doc.daily.card) < 0) doc.daily.card = 'classic';
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
     { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[],
       repeat:ev.repeat==='weekly'?'weekly':null, exceptions:(ev.exceptions||[]).slice() }));

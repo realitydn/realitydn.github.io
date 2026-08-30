@@ -429,7 +429,7 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
             <b>Wrap</b> shows full titles on two lines — nothing is cropped. <b>Short</b> uses each event's short title; <b>Crop</b> is one line with an ellipsis. Size auto-fits the previewed day; nudge it bigger or smaller here.
           </div>
           <div className="ss-mini" style={{ marginBottom:10 }}>
-            Every cover ends on <b>{window.QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned, and one big enough to scan off a desktop screen costs the events list about {window.COVER_QR_LIFT||54}px of its {315}px. Turn it on for a cover that will be projected or seen on desktop; the text steps down a size to make room.
+            Every cover ends on <b>{window.QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned. On <b>Sidebar</b>, <b>Slice</b> and <b>Halftone</b> it sits in the colour panel and costs the events list nothing; on the other six it rides the footer and the text steps down a size to make room. Turn it on for a cover that will be projected or seen on desktop.
           </div>
         </React.Fragment>}
       <div className="ss-sech">Header</div>
@@ -813,7 +813,12 @@ function App(){
   const capMsg = (()=>{
     /* the rendered preview reports its measured truth — trust it over estimates */
     if(fitReport){
-      if(fitReport.over) return { tone:'over', text:'Over capacity — rows are being cut off. Move a split on the day strip, shorten titles, or hide a row on this channel.' };
+      /* A cover is one day on one canvas — there is no split to move, so the
+         carousel's advice is noise there. What actually helps is a layout that
+         gives the list the full width. */
+      if(fitReport.over) return { tone:'over', text: channelId==='daily' && dailyVariant==='cover'
+        ? 'Over capacity — rows are being cut off. Banner, Sidebar or Flood give the list more room on a heavy day; or shorten titles, or hide a row on this channel.'
+        : 'Over capacity — rows are being cut off. Move a split on the day strip, shorten titles, or hide a row on this channel.' };
       if(fitReport.level>=3 || fitReport.denIdx>0){
         const bits = [];
         if(fitReport.level>=3) bits.push('type at the compact floor (short titles in use)');

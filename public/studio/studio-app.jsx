@@ -55,6 +55,20 @@ function storyStem(fmt, base, accent){
   return base+'-'+fmt;
 }
 
+/* A template's id is a PERSISTED primary key: two records sharing one means the
+   second silently overwrites the first, and there is no way back. uid() is not
+   good enough for that — its counter restarts at 1 on every page load, so the
+   Nth element of one session and the Nth of the next differ only by four random
+   characters. Elements are fine with that (they live and die inside one doc);
+   a saved poster is not. */
+function tplId(){
+  try{ if(window.crypto && window.crypto.randomUUID) return 'tpl_'+window.crypto.randomUUID(); }catch(e){}
+  return 'tpl_'+Date.now().toString(36)+'_'
+    +Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);
+}
+/* Newest first — the library's one order, in one place. */
+function sortTpls(list){ return (list||[]).slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)); }
+
 /* My-templates store — full poster snapshots (elements, overrides, theme),
    saved by name in localStorage, separate from the working doc. */
 function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
@@ -1390,21 +1404,107 @@ function Sec({ id, title, count, dot, sub, open, children }){
   );
 }
 
+/* ---- library thumbnails ----------------------------------------------------
+   Rasterising a card is main-thread work, so captures run ONE AT A TIME: open a
+   day with eight posters in it and the tiles fill in one after another instead
+   of the panel locking up. Ordering also buys every card after the first a long
+   settle before its own turn comes round. */
+let _thumbQ = Promise.resolve();
+function queueThumb(fn){
+  _thumbQ = _thumbQ.then(fn, fn).catch(()=>{});
+  return _thumbQ;
+}
+/* html-to-image inlines the web fonts into every capture, and re-reads the
+   stylesheets to do it. The answer is the same for all of them, so it's fetched
+   once and handed to each.
+
+   Time-boxed, and that matters more than the saving: the fetch is of Google's
+   font files, and when they're slow to answer html-to-image simply waits — which
+   would park the whole capture queue behind them for as long as the connection
+   is bad. Past the deadline (or on an older build with no helper) captures go
+   ahead with '' and fall back to system type, which at 88px is a wash. */
+let _thumbFontCss = null;
+function thumbFontCss(node){
+  if(_thumbFontCss) return _thumbFontCss;
+  const hti = window.htmlToImage;
+  _thumbFontCss = (hti && typeof hti.getFontEmbedCSS==='function')
+    ? Promise.race([
+        Promise.resolve(hti.getFontEmbedCSS(node)).catch(()=>''),
+        new Promise(r=>setTimeout(()=>r(''), 4000)),
+      ]).then(css=>typeof css==='string'?css:'')
+    : Promise.resolve('');
+  return _thumbFontCss;
+}
+/* The press only paints a photo once its source has decoded, so a capture taken
+   on mount catches empty frames. Warm the sources first (RISO.loadImage is
+   cached), then wait one fully painted frame — same shape as settleFormat, rAF
+   raced against a timeout so a backgrounded tab can't stall the queue. */
+async function settleThumb(doc){
+  try{
+    const srcs = [];
+    (doc.elements||[]).forEach(el=>{ if(el && el.src) srcs.push(el.src); if(el && el.src2) srcs.push(el.src2); });
+    if(srcs.length && window.RISO && window.RISO.loadImage)
+      await Promise.all(srcs.map(s=>window.RISO.loadImage(s).catch(()=>null)));
+  }catch(e){}
+  await new Promise(r=>{ let done=false; const fin=()=>{ if(!done){ done=true; r(); } };
+    requestAnimationFrame(()=>requestAnimationFrame(fin)); setTimeout(fin, 400); });
+  await new Promise(r=>setTimeout(r, 180));
+}
+
 /* A template drawn at ~1/12 scale by the SAME element renderer the canvas
-   uses, so the preview cannot lie about what loading it gives you. */
-function TplThumb({ doc, w }){
+   uses, so the preview cannot lie about what loading it gives you.
+
+   Drawn ONCE, though. Every card used to be a live poster: its photos went back
+   through the riso press on every open, and — because the card passed a bare
+   `exporting` — at the export grid's 2x, so an 88px tile paid for a 2,160px
+   render. Two things changed. The press is now told the tile's real ratio, and
+   the first painted frame is captured to a small JPEG (`onCapture`) that every
+   later open draws instead of the poster. `thumb` is that capture; a card
+   without one renders live exactly as before and takes its picture. */
+function TplThumb({ doc, w, thumb, onCapture }){
   const f = AP_FMT[doc.masterFormat||'4x5'];
   const tw = w||88, sc = tw/f.w, th = Math.round(f.h*sc);
   const t = window.themeColors(doc.theme||'day');
   const accentHex = AP_PAL[doc.accent] || AP_PAL.blue;
+  const inner = React.useRef(null);
   const noop = ()=>{};
+  /* Capture the live render once, then hand it up to be filed. Keyed on `thumb`
+     alone: a re-render for any other reason must not re-shoot a card, and a
+     capture that lands flips this to the <img> branch. */
+  React.useEffect(()=>{
+    if(thumb || !onCapture || !window.htmlToImage) return;
+    let alive = true;
+    queueThumb(async ()=>{
+      if(!alive || !inner.current) return;
+      await settleThumb(doc);
+      const node = inner.current;
+      if(!alive || !node) return;
+      /* Captured at the tile's own scale (pixelRatio sc*2 over the poster's real
+         1080px box) — a ~176px JPEG, which is what the card wants and all it
+         should ever have cost. */
+      const src = await window.htmlToImage.toJpeg(node, {
+        width:f.w, height:f.h, pixelRatio:sc*2, quality:0.82, backgroundColor:t.bg,
+        fontEmbedCSS: await thumbFontCss(node),
+        style:{ transform:'none', transformOrigin:'0 0' } });
+      if(alive && src) onCapture({ src, w:tw, h:th });
+    });
+    return ()=>{ alive=false; };
+  }, [thumb]);
+
+  if(thumb && thumb.src){
+    /* Height rides the capture, not this doc — a thumbnail shot at another tile
+       width still lands on its own aspect rather than being squashed into it. */
+    const ih = thumb.w ? Math.round((thumb.h||th) * (tw/thumb.w)) : th;
+    return <img className="rs-thumbbox" src={thumb.src} alt="" loading="lazy" decoding="async"
+      style={{ width:tw, height:ih, background:t.bg, display:'block' }} />;
+  }
   return (
     <div className="rs-thumbbox" style={{ width:tw, height:th }}>
-      <div style={{ width:f.w, height:f.h, transform:'scale('+sc+')', transformOrigin:'0 0',
+      <div ref={inner} style={{ width:f.w, height:f.h, transform:'scale('+sc+')', transformOrigin:'0 0',
         background:t.bg, position:'relative', overflow:'hidden', pointerEvents:'none' }}>
         {doc.elements.map(el=>(
           <StudioElement key={el.id} el={el} theme={doc.theme||'day'} posterAccentHex={accentHex}
-            posterAccent={doc.accent} selected={false} dragging={false} onElPointerDown={noop} exporting />
+            posterAccent={doc.accent} selected={false} dragging={false} onElPointerDown={noop} exporting={sc*2} />
         ))}
       </div>
     </div>
@@ -1420,10 +1520,10 @@ function TplCard({ tpl, onApply }){
     </div>
   );
 }
-function UserTplCard({ t, onApply, onArchive, onDelete, archived }){
+function UserTplCard({ t, onApply, onArchive, onDelete, archived, thumb, onCapture }){
   return (
     <div className="rs-tplcard" onClick={onApply} title={t.name} style={archived?{ opacity:.75 }:null}>
-      <TplThumb doc={t.doc} w={88} />
+      <TplThumb doc={t.doc} w={88} thumb={thumb} onCapture={onCapture} />
       <span className="tn">{t.name}</span>
       <span className="ts">{archived ? 'archived' : new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
       <button className="rs-tplx" style={{ right:28, top:4, width:20, height:20, fontSize:11, borderColor:'#3a2f1f', color:'#b6ab97' }}
@@ -1893,7 +1993,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 
 /* ---------- topbar ---------- */
 function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
-                  canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
+                  onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
@@ -1998,25 +2098,35 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
           : <button className="rs-iconbtn" onClick={onCloudSignIn}
               title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
       </div>}
-      <div className="rs-tgroup rs-export"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
-        <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
-          onChange={e=>setName(e.target.value)} onBlur={commit}
-          onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
-          title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
-        <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
-          onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
-          <option value="png">PNG</option>
-          <option value="jpg">JPG</option>
-          <option value="pdf">PDF</option>
-        </select>
-        <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
-          title={(printDef
-            ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
-            : isOutput
-              ? 'Export the format you’re viewing'
-              : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
-          Save Images<small>{scope}</small>
-        </button>
+      {/* Keeping the poster and exporting it are the two things you finish on, so
+          they share the sticky right-hand block — Save template used to live
+          only at the foot of the template list, a scroll away down the library. */}
+      <div className="rs-export">
+        <div className="rs-tgroup">
+          <button className="rs-iconbtn" onClick={onSaveTpl} disabled={!doc.elements.length}
+            title="Keep this poster in My templates — filed under the weekday its accent codes for (also the ＋ at the foot of the template list)">
+            ⤓ Save template</button>
+        </div>
+        <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
+          <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
+            onChange={e=>setName(e.target.value)} onBlur={commit}
+            onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
+            title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
+          <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
+            onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="pdf">PDF</option>
+          </select>
+          <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
+            title={(printDef
+              ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
+              : isOutput
+                ? 'Export the format you’re viewing'
+                : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
+            Save Images<small>{scope}</small>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2110,8 +2220,13 @@ function App(){
       // the account has that this browser lacks. Both best-effort; never throw.
       if(email && window.RStore){
         try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-        try{ if(window.RStore.cloudPull){ const all = await window.RStore.cloudPull(cloudProgress);
-          if(Array.isArray(all)) setUserTpls(all.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0))); } }catch(e){}
+        try{ if(window.RStore.cloudPull) await window.RStore.cloudPull(cloudProgress); }catch(e){}
+        /* Re-read the store rather than taking the pull's own list — same reason
+           as the loader: that list predates the round-trip, and signing in
+           mid-session must not roll the library back over a save made while the
+           restore was running. */
+        try{ const after = await window.RStore.tplGetAll();
+          if(Array.isArray(after) && after.length) setUserTpls(sortTpls(after)); }catch(e){}
         finally{ setCloudMsg(null); }
       }
     }catch(e){ /* never throws into render */ }
@@ -2511,24 +2626,67 @@ function App(){
      copy read-only so nothing is ever hidden. ---- */
   const [userTpls, setUserTpls] = React.useState([]);
   const [tplReady, setTplReady] = React.useState(false);
+  /* Non-null when the IndexedDB library could not be read — the panel is then
+     showing the legacy localStorage backup, and says so. */
+  const [tplStoreErr, setTplStoreErr] = React.useState(null);
+  /* Card pictures, { [id]: {src,w,h} } — a derived, local-only cache (see
+     RStore's thumbnail notes). Missing ones are shot by the card that wants
+     them, so an existing library fills itself in as you open its days. */
+  const [tplThumbs, setTplThumbs] = React.useState({});
+  const captureTplThumb = React.useCallback((id, thumb)=>{
+    if(!id || !thumb) return;
+    setTplThumbs(m => m[id] ? m : Object.assign({}, m, { [id]:thumb }));
+    try{ Promise.resolve(window.RStore.thumbPut(id, thumb)).catch(()=>{}); }catch(e){}
+  }, []);
+  /* Forget a card's picture — the template it drew is gone or has been saved
+     over, and a stale thumbnail showing the poster it replaced is worse than a
+     card that simply redraws itself. */
+  const forgetTplThumb = React.useCallback((id)=>{
+    setTplThumbs(m=>{ if(!m[id]) return m; const n = Object.assign({}, m); delete n[id]; return n; });
+  }, []);
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
       const m = await window.RStore.migrate();
-      let all = await window.RStore.tplGetAll();
+      const local = await window.RStore.tplGetAll();
+      /* Show what's on THIS disk immediately, before the cloud round-trip.
+         That trip spends one request per template it has to restore and can run
+         for minutes; the library used to stay empty for all of it, and two
+         things went wrong in that window. A save made during it was checked for
+         a name clash against an empty list — so it made a SECOND copy under the
+         same name instead of replacing the first — and was then wiped off the
+         list by `setUserTpls(all)`, a snapshot read before the save happened.
+         From the outside that is a save that didn't take. Local disk is the
+         source of truth and it is right here, so it goes up first. */
+      if(!live) return;
+      setUserTpls(sortTpls(local));
+      setTplReady(true);
+      if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
+      /* One read for the whole library's card pictures. Best-effort: without
+         them every card just renders itself live, exactly as it used to. */
+      try{ const thumbs = await window.RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
       /* WP9: migrate this browser's library UP to the account, then pull any cloud
          templates this browser is missing. IndexedDB stays the source of truth —
          both calls never throw and no-op when signed-out / hub dormant. */
       try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-      try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(cloudProgress); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
-      finally{ setCloudMsg(null); }
-      all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
-      if(!live) return;
-      setUserTpls(all);
-      if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
+      try{ if(window.RStore.cloudPull) await window.RStore.cloudPull(cloudProgress); }catch(e){}
+      if(live) setCloudMsg(null);
+      /* Re-READ rather than trust what the pull returned: its list was taken
+         before the round-trip, so a template saved while it ran is on disk but
+         not in it. A non-empty read is the disk and replaces the list outright;
+         an empty one is left alone, since Delete and Import are the only ways to
+         empty the store and both update the list themselves. */
+      try{
+        const after = await window.RStore.tplGetAll();
+        if(live && Array.isArray(after) && after.length) setUserTpls(sortTpls(after));
+      }catch(e){}
     }catch(e){
       console.error('[studio] IndexedDB template store unavailable — showing the localStorage copy read-only.', e);
-      if(live) setUserTpls(loadUserTpls());
-    }finally{ if(live) setTplReady(true); }
+      /* Say so on screen. This used to be a console line only, so a single
+         IndexedDB hiccup silently swapped the real library for the pre-migration
+         localStorage copy — every template saved since the move to IndexedDB
+         just wasn't there, with nothing on screen to say why. */
+      if(live){ setTplStoreErr(String((e && e.message) || e || 'unknown error')); setUserTpls(loadUserTpls()); }
+    }finally{ if(live){ setTplReady(true); setCloudMsg(null); } }
   })(); return ()=>{ live=false; }; }, []);
 
   /* ---- In queue — app-calendar events that still need a poster ----
@@ -2618,7 +2776,15 @@ function App(){
     if(!d.elements.length){ window.alert('Nothing on the poster to save yet.'); return; }
     const name = (window.prompt('Save this poster as a template called:', d.title || 'My layout') || '').trim();
     if(!name) return;
-    const existing = userTpls.find(t=>t.name.toLowerCase()===name.toLowerCase());
+    /* The name match decides replace-vs-new, so it has to be made against the
+       REAL library. Normally that's the on-screen list; if it hasn't landed yet
+       ask the store instead of matching against nothing, which is how you end up
+       with two templates under one name and one of them apparently missing. */
+    let library = userTpls;
+    if(!tplReady){
+      try{ const fresh = await window.RStore.tplGetAll(); if(Array.isArray(fresh)) library = fresh; }catch(e){}
+    }
+    const existing = library.find(t=>t.name.toLowerCase()===name.toLowerCase());
     if(existing && !window.confirm('A template called “'+existing.name+'” already exists. Replace it?')) return;
     const snap = JSON.parse(JSON.stringify({ elements:d.elements, overrides:d.overrides||{},
       masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'',
@@ -2626,12 +2792,26 @@ function App(){
     /* eventId claims the queue entry that spawned this poster — saving files the
        template under its day and takes the event off "In queue". Saving always
        lands the template in the active library (never straight into Archive). */
-    const t = { id: existing? existing.id : window.uid(), name, savedAt: Date.now(),
+    const t = { id: existing? existing.id : tplId(), name, savedAt: Date.now(),
       eventId: (d.eventRef && d.eventRef.key) || (existing && existing.eventId) || null,
       archived: false, doc: snap };
     try{ await window.RStore.tplPut(t); }
     catch(e){ console.error(e); window.alert('Couldn’t save the template — the browser blocked writing to storage. Your other templates are unaffected.'); return; }
-    setUserTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
+    /* Saving over a template replaces its artwork, so its card picture is now a
+       photo of the poster you just overwrote — drop it and let the card reshoot.
+       (Which also makes re-saving the way to fix a thumbnail you don't like.) */
+    try{ await window.RStore.thumbDelete(t.id); }catch(e){}
+    forgetTplThumb(t.id);
+    /* Functional, like every other list write below. `userTpls` here is whatever
+       this handler closed over when it started — and a save waits on a prompt, a
+       confirm and an IndexedDB write, which is plenty of time for the loader or
+       a sign-in to have replaced the list underneath it. Folding into `prev`
+       means the two can't overwrite each other. */
+    setUserTpls(prev=>{
+      const i = prev.findIndex(p=>p.id===t.id);
+      if(i<0) return [t, ...prev];
+      const next = prev.slice(); next[i] = t; return next;
+    });
   }
   function applyUserTpl(t){
     if(docRef.current.elements.length &&
@@ -2660,14 +2840,15 @@ function App(){
     const next = Object.assign({}, t, { archived: !!val });
     try{ await window.RStore.tplPut(next); }
     catch(e){ console.error(e); window.alert('Couldn’t update that template right now — try again.'); return; }
-    setUserTpls(userTpls.map(x=>x.id===id? next : x));
+    setUserTpls(prev=>prev.map(x=>x.id===id? next : x));
   }
   async function delUserTpl(id){
     const t = userTpls.find(x=>x.id===id);
     if(t && !window.confirm('Delete the template “'+t.name+'”?')) return;
     try{ await window.RStore.tplDelete(id); }
     catch(e){ console.error(e); window.alert('Couldn’t delete that template right now — try again.'); return; }
-    setUserTpls(userTpls.filter(x=>x.id!==id));
+    forgetTplThumb(id);
+    setUserTpls(prev=>prev.filter(x=>x.id!==id));
   }
 
   /* ---- template portability — templates live in this browser's localStorage
@@ -2698,7 +2879,7 @@ function App(){
       if(!list){ window.alert('Couldn’t read that file — it doesn’t look like a Poster Studio template export.'); return; }
       const incoming = list
         .filter(t=>t && typeof t.name==='string' && t.name.trim() && t.doc && Array.isArray(t.doc.elements))
-        .map(t=>({ id: t.id || window.uid(), name: t.name.trim(), savedAt: t.savedAt || Date.now(),
+        .map(t=>({ id: t.id || tplId(), name: t.name.trim(), savedAt: t.savedAt || Date.now(),
                    eventId: t.eventId || null, archived: !!t.archived,
                    doc: Object.assign({ masterFormat:'4x5', theme:'day', accent:'blue', overrides:{}, title:'' }, t.doc) }));
       if(!incoming.length){ window.alert('No usable templates in that file.'); return; }
@@ -2710,6 +2891,12 @@ function App(){
       });
       try{ await window.RStore.tplReplaceAll(next); }
       catch(e){ console.error(e); window.alert('Couldn’t save the imported templates to storage — nothing was changed.'); return; }
+      /* Everything the file touched carries new artwork under a name or id that
+         may already have a card picture — keep only the untouched ones. */
+      const fresh = {}; incoming.forEach(t=>{ fresh[t.id]=1; });
+      const keep = next.filter(t=>!fresh[t.id]).map(t=>t.id);
+      try{ await window.RStore.thumbPrune(keep); }catch(e){}
+      setTplThumbs(m=>{ const n={}; keep.forEach(id=>{ if(m[id]) n[id]=m[id]; }); return n; });
       setUserTpls(next);
       window.alert('Imported '+incoming.length+' template'+(incoming.length===1?'':'s')
         +(replaced? ' — '+replaced+' replaced an existing one':'')
@@ -3009,6 +3196,7 @@ function App(){
       <Topbar doc={doc} setDoc={setDoc} overrideCount={overrideCount} resetFormat={resetFormat}
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
+        onSaveTpl={saveUserTpl}
         canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
         zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)} />
       <div className="rs-body">
@@ -3057,7 +3245,32 @@ function App(){
               <span>Templates</span><span style={{ fontSize:11, opacity:.6 }}>{tplOpen?'▾':'▸'}</span>
             </div>
             {tplOpen && <React.Fragment>
-              <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>My templates · filed by day (accent colour)</div>
+              {/* A count of everything saved, and of the two places a template
+                  goes when it ISN'T under the weekday you expect: the Archive
+                  drawer (one click of ⤓ on a card puts it there) and Other (the
+                  poster's accent isn't a day colour). Without this, a template
+                  that had merely moved read as a template that was gone. */}
+              {(()=>{
+                const arch = userTpls.filter(t=>t.archived).length;
+                const other = userTpls.filter(t=>!t.archived && !AP_DAYS[t.doc && t.doc.accent]).length;
+                return (
+                  <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>
+                    My templates · filed by day (accent colour)
+                    {tplReady && <React.Fragment> · {userTpls.length} saved
+                      {arch>0 && <span title="Archived — open the Archive drawer below to restore them">, {arch} archived</span>}
+                      {other>0 && <span title="No day colour — these are under Other">, {other} in Other</span>}
+                    </React.Fragment>}
+                  </div>
+                );
+              })()}
+              {tplStoreErr &&
+                <div className="rs-mini" style={{ margin:'4px 0 8px', padding:'7px 9px', borderRadius:7,
+                  border:'1px solid #5a2326', background:'#2a1416', color:'#ffb3b8', opacity:1 }}>
+                  <b>This browser couldn’t open the template store</b> ({tplStoreErr}). What’s listed below is
+                  the older localStorage backup, not your full library — anything saved since the move to
+                  IndexedDB is missing from it. Don’t delete or import over these; reload the page first, and
+                  if it says this again, tell Donald before saving anything else.
+                </div>}
               {!tplReady &&
                 <div className="rs-mini" style={{ margin:'2px 0 6px' }}>Loading your templates…</div>}
               {tplReady && userTpls.length===0 &&
@@ -3077,6 +3290,7 @@ function App(){
                       ? <div className="rs-tplgrid">
                           {items.map(t=>(
                             <UserTplCard key={t.id} t={t} onApply={()=>applyUserTpl(t)}
+                              thumb={tplThumbs[t.id]} onCapture={th=>captureTplThumb(t.id, th)}
                               onArchive={()=>setTplArchived(t.id, true)} onDelete={()=>delUserTpl(t.id)} />
                           ))}
                         </div>
@@ -3092,6 +3306,7 @@ function App(){
                     <div className="rs-tplgrid">
                       {items.map(t=>(
                         <UserTplCard key={t.id} t={t} onApply={()=>applyUserTpl(t)}
+                          thumb={tplThumbs[t.id]} onCapture={th=>captureTplThumb(t.id, th)}
                           onArchive={()=>setTplArchived(t.id, true)} onDelete={()=>delUserTpl(t.id)} />
                       ))}
                     </div>
@@ -3106,6 +3321,7 @@ function App(){
                       ? <div className="rs-tplgrid">
                           {arch.map(t=>(
                             <UserTplCard key={t.id} t={t} archived onApply={()=>applyUserTpl(t)}
+                              thumb={tplThumbs[t.id]} onCapture={th=>captureTplThumb(t.id, th)}
                               onArchive={()=>setTplArchived(t.id, false)} onDelete={()=>delUserTpl(t.id)} />
                           ))}
                         </div>

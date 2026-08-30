@@ -55,6 +55,20 @@ function storyStem(fmt, base, accent){
   return base+'-'+fmt;
 }
 
+/* A template's id is a PERSISTED primary key: two records sharing one means the
+   second silently overwrites the first, and there is no way back. uid() is not
+   good enough for that — its counter restarts at 1 on every page load, so the
+   Nth element of one session and the Nth of the next differ only by four random
+   characters. Elements are fine with that (they live and die inside one doc);
+   a saved poster is not. */
+function tplId(){
+  try{ if(window.crypto && window.crypto.randomUUID) return 'tpl_'+window.crypto.randomUUID(); }catch(e){}
+  return 'tpl_'+Date.now().toString(36)+'_'
+    +Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);
+}
+/* Newest first — the library's one order, in one place. */
+function sortTpls(list){ return (list||[]).slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)); }
+
 /* My-templates store — full poster snapshots (elements, overrides, theme),
    saved by name in localStorage, separate from the working doc. */
 function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
@@ -2206,8 +2220,13 @@ function App(){
       // the account has that this browser lacks. Both best-effort; never throw.
       if(email && window.RStore){
         try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-        try{ if(window.RStore.cloudPull){ const all = await window.RStore.cloudPull(cloudProgress);
-          if(Array.isArray(all)) setUserTpls(all.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0))); } }catch(e){}
+        try{ if(window.RStore.cloudPull) await window.RStore.cloudPull(cloudProgress); }catch(e){}
+        /* Re-read the store rather than taking the pull's own list — same reason
+           as the loader: that list predates the round-trip, and signing in
+           mid-session must not roll the library back over a save made while the
+           restore was running. */
+        try{ const after = await window.RStore.tplGetAll();
+          if(Array.isArray(after) && after.length) setUserTpls(sortTpls(after)); }catch(e){}
         finally{ setCloudMsg(null); }
       }
     }catch(e){ /* never throws into render */ }
@@ -2607,6 +2626,9 @@ function App(){
      copy read-only so nothing is ever hidden. ---- */
   const [userTpls, setUserTpls] = React.useState([]);
   const [tplReady, setTplReady] = React.useState(false);
+  /* Non-null when the IndexedDB library could not be read — the panel is then
+     showing the legacy localStorage backup, and says so. */
+  const [tplStoreErr, setTplStoreErr] = React.useState(null);
   /* Card pictures, { [id]: {src,w,h} } — a derived, local-only cache (see
      RStore's thumbnail notes). Missing ones are shot by the card that wants
      them, so an existing library fills itself in as you open its days. */
@@ -2625,26 +2647,46 @@ function App(){
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
       const m = await window.RStore.migrate();
-      let all = await window.RStore.tplGetAll();
+      const local = await window.RStore.tplGetAll();
+      /* Show what's on THIS disk immediately, before the cloud round-trip.
+         That trip spends one request per template it has to restore and can run
+         for minutes; the library used to stay empty for all of it, and two
+         things went wrong in that window. A save made during it was checked for
+         a name clash against an empty list — so it made a SECOND copy under the
+         same name instead of replacing the first — and was then wiped off the
+         list by `setUserTpls(all)`, a snapshot read before the save happened.
+         From the outside that is a save that didn't take. Local disk is the
+         source of truth and it is right here, so it goes up first. */
+      if(!live) return;
+      setUserTpls(sortTpls(local));
+      setTplReady(true);
+      if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
+      /* One read for the whole library's card pictures. Best-effort: without
+         them every card just renders itself live, exactly as it used to. */
+      try{ const thumbs = await window.RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
       /* WP9: migrate this browser's library UP to the account, then pull any cloud
          templates this browser is missing. IndexedDB stays the source of truth —
          both calls never throw and no-op when signed-out / hub dormant. */
       try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-      try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(cloudProgress); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
-      finally{ setCloudMsg(null); }
-      all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
-      /* One read for the whole library's card pictures. Best-effort: without
-         them every card just renders itself live, exactly as it used to. */
-      let thumbs = null;
-      try{ thumbs = await window.RStore.thumbGetAll(); }catch(e){}
-      if(!live) return;
-      if(thumbs) setTplThumbs(thumbs);
-      setUserTpls(all);
-      if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
+      try{ if(window.RStore.cloudPull) await window.RStore.cloudPull(cloudProgress); }catch(e){}
+      if(live) setCloudMsg(null);
+      /* Re-READ rather than trust what the pull returned: its list was taken
+         before the round-trip, so a template saved while it ran is on disk but
+         not in it. A non-empty read is the disk and replaces the list outright;
+         an empty one is left alone, since Delete and Import are the only ways to
+         empty the store and both update the list themselves. */
+      try{
+        const after = await window.RStore.tplGetAll();
+        if(live && Array.isArray(after) && after.length) setUserTpls(sortTpls(after));
+      }catch(e){}
     }catch(e){
       console.error('[studio] IndexedDB template store unavailable — showing the localStorage copy read-only.', e);
-      if(live) setUserTpls(loadUserTpls());
-    }finally{ if(live) setTplReady(true); }
+      /* Say so on screen. This used to be a console line only, so a single
+         IndexedDB hiccup silently swapped the real library for the pre-migration
+         localStorage copy — every template saved since the move to IndexedDB
+         just wasn't there, with nothing on screen to say why. */
+      if(live){ setTplStoreErr(String((e && e.message) || e || 'unknown error')); setUserTpls(loadUserTpls()); }
+    }finally{ if(live){ setTplReady(true); setCloudMsg(null); } }
   })(); return ()=>{ live=false; }; }, []);
 
   /* ---- In queue — app-calendar events that still need a poster ----
@@ -2734,7 +2776,15 @@ function App(){
     if(!d.elements.length){ window.alert('Nothing on the poster to save yet.'); return; }
     const name = (window.prompt('Save this poster as a template called:', d.title || 'My layout') || '').trim();
     if(!name) return;
-    const existing = userTpls.find(t=>t.name.toLowerCase()===name.toLowerCase());
+    /* The name match decides replace-vs-new, so it has to be made against the
+       REAL library. Normally that's the on-screen list; if it hasn't landed yet
+       ask the store instead of matching against nothing, which is how you end up
+       with two templates under one name and one of them apparently missing. */
+    let library = userTpls;
+    if(!tplReady){
+      try{ const fresh = await window.RStore.tplGetAll(); if(Array.isArray(fresh)) library = fresh; }catch(e){}
+    }
+    const existing = library.find(t=>t.name.toLowerCase()===name.toLowerCase());
     if(existing && !window.confirm('A template called “'+existing.name+'” already exists. Replace it?')) return;
     const snap = JSON.parse(JSON.stringify({ elements:d.elements, overrides:d.overrides||{},
       masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'',
@@ -2742,7 +2792,7 @@ function App(){
     /* eventId claims the queue entry that spawned this poster — saving files the
        template under its day and takes the event off "In queue". Saving always
        lands the template in the active library (never straight into Archive). */
-    const t = { id: existing? existing.id : window.uid(), name, savedAt: Date.now(),
+    const t = { id: existing? existing.id : tplId(), name, savedAt: Date.now(),
       eventId: (d.eventRef && d.eventRef.key) || (existing && existing.eventId) || null,
       archived: false, doc: snap };
     try{ await window.RStore.tplPut(t); }
@@ -2752,7 +2802,16 @@ function App(){
        (Which also makes re-saving the way to fix a thumbnail you don't like.) */
     try{ await window.RStore.thumbDelete(t.id); }catch(e){}
     forgetTplThumb(t.id);
-    setUserTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
+    /* Functional, like every other list write below. `userTpls` here is whatever
+       this handler closed over when it started — and a save waits on a prompt, a
+       confirm and an IndexedDB write, which is plenty of time for the loader or
+       a sign-in to have replaced the list underneath it. Folding into `prev`
+       means the two can't overwrite each other. */
+    setUserTpls(prev=>{
+      const i = prev.findIndex(p=>p.id===t.id);
+      if(i<0) return [t, ...prev];
+      const next = prev.slice(); next[i] = t; return next;
+    });
   }
   function applyUserTpl(t){
     if(docRef.current.elements.length &&
@@ -2781,7 +2840,7 @@ function App(){
     const next = Object.assign({}, t, { archived: !!val });
     try{ await window.RStore.tplPut(next); }
     catch(e){ console.error(e); window.alert('Couldn’t update that template right now — try again.'); return; }
-    setUserTpls(userTpls.map(x=>x.id===id? next : x));
+    setUserTpls(prev=>prev.map(x=>x.id===id? next : x));
   }
   async function delUserTpl(id){
     const t = userTpls.find(x=>x.id===id);
@@ -2789,7 +2848,7 @@ function App(){
     try{ await window.RStore.tplDelete(id); }
     catch(e){ console.error(e); window.alert('Couldn’t delete that template right now — try again.'); return; }
     forgetTplThumb(id);
-    setUserTpls(userTpls.filter(x=>x.id!==id));
+    setUserTpls(prev=>prev.filter(x=>x.id!==id));
   }
 
   /* ---- template portability — templates live in this browser's localStorage
@@ -2820,7 +2879,7 @@ function App(){
       if(!list){ window.alert('Couldn’t read that file — it doesn’t look like a Poster Studio template export.'); return; }
       const incoming = list
         .filter(t=>t && typeof t.name==='string' && t.name.trim() && t.doc && Array.isArray(t.doc.elements))
-        .map(t=>({ id: t.id || window.uid(), name: t.name.trim(), savedAt: t.savedAt || Date.now(),
+        .map(t=>({ id: t.id || tplId(), name: t.name.trim(), savedAt: t.savedAt || Date.now(),
                    eventId: t.eventId || null, archived: !!t.archived,
                    doc: Object.assign({ masterFormat:'4x5', theme:'day', accent:'blue', overrides:{}, title:'' }, t.doc) }));
       if(!incoming.length){ window.alert('No usable templates in that file.'); return; }
@@ -3186,7 +3245,32 @@ function App(){
               <span>Templates</span><span style={{ fontSize:11, opacity:.6 }}>{tplOpen?'▾':'▸'}</span>
             </div>
             {tplOpen && <React.Fragment>
-              <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>My templates · filed by day (accent colour)</div>
+              {/* A count of everything saved, and of the two places a template
+                  goes when it ISN'T under the weekday you expect: the Archive
+                  drawer (one click of ⤓ on a card puts it there) and Other (the
+                  poster's accent isn't a day colour). Without this, a template
+                  that had merely moved read as a template that was gone. */}
+              {(()=>{
+                const arch = userTpls.filter(t=>t.archived).length;
+                const other = userTpls.filter(t=>!t.archived && !AP_DAYS[t.doc && t.doc.accent]).length;
+                return (
+                  <div className="rs-mini" style={{ margin:'6px 0 2px', opacity:.7 }}>
+                    My templates · filed by day (accent colour)
+                    {tplReady && <React.Fragment> · {userTpls.length} saved
+                      {arch>0 && <span title="Archived — open the Archive drawer below to restore them">, {arch} archived</span>}
+                      {other>0 && <span title="No day colour — these are under Other">, {other} in Other</span>}
+                    </React.Fragment>}
+                  </div>
+                );
+              })()}
+              {tplStoreErr &&
+                <div className="rs-mini" style={{ margin:'4px 0 8px', padding:'7px 9px', borderRadius:7,
+                  border:'1px solid #5a2326', background:'#2a1416', color:'#ffb3b8', opacity:1 }}>
+                  <b>This browser couldn’t open the template store</b> ({tplStoreErr}). What’s listed below is
+                  the older localStorage backup, not your full library — anything saved since the move to
+                  IndexedDB is missing from it. Don’t delete or import over these; reload the page first, and
+                  if it says this again, tell Donald before saving anything else.
+                </div>}
               {!tplReady &&
                 <div className="rs-mini" style={{ margin:'2px 0 6px' }}>Loading your templates…</div>}
               {tplReady && userTpls.length===0 &&

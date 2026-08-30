@@ -324,7 +324,7 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
   /* document settings */
   const setStyle = patch => setDoc(d=>Object.assign({}, d, { style:Object.assign({}, d.style, patch) }));
   const setCover = patch => setDoc(d=>Object.assign({}, d, { cover:Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, d.cover, patch) }));
-  const setDaily = patch => setDoc(d=>Object.assign({}, d, { daily:Object.assign({ story:0, feed:0 }, d.daily, patch) }));
+  const setDaily = patch => setDoc(d=>Object.assign({}, d, { daily:Object.assign({ story:0, feed:0, card:'classic' }, d.daily, patch) }));
   return (
     <React.Fragment>
       <div className="ss-sech">Layout</div>
@@ -369,6 +369,18 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
       {channelId==='daily' && dailyVariant!=='cover' &&
         <React.Fragment>
           <div className="ss-sech">Daily card · {dailyVariant==='story'?'9:16 Story':'4:5 Feed'}</div>
+          <div className="ss-lab" style={{ marginBottom:6 }}>Layout</div>
+          <div className="ss-chips" style={{ marginBottom:8 }}>
+            {window.DAILY_CARDS.map(dcd=>(
+              <button key={dcd.id} className={'ss-chip'+(window.dailyCardOf(doc)===dcd.id?' on':'')}
+                title={dcd.hint} onClick={()=>setDaily({ card:dcd.id })}>{dcd.name}</button>
+            ))}
+          </div>
+          <div className="ss-mini" style={{ marginBottom:12 }}>
+            One layout for the whole document — every day you export uses it, so a week
+            of cards reads as one week. Each gives the day colour a different structural
+            job; all of them hold from two events to ten.
+          </div>
           <div className="ss-row">
             <div className="ss-lab"><span>Text size</span><span>{dailyInfo ? dailyInfo.px+'px' : ''}</span></div>
             <div className="ss-sizebar">

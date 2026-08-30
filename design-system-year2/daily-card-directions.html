@@ -1,0 +1,906 @@
+<title>Daily Card Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   REALITY — Daily Card Directions
+   Page chrome runs the REALITY token layer: Day palette on a light
+   host, Night palette on a dark one. The CARDS carry their own theme,
+   set from the console, independent of the viewer's.
+   ============================================================ */
+:root{
+  --bg:#fffbf1; --surface:#fffbf1; --surface-2:#f4ecd7; --paper-shade:#ece2c9;
+  --fg:#0d0905; --fg-dim:rgba(13,9,5,.72); --fg-faint:rgba(13,9,5,.56);
+  --hairline:rgba(13,9,5,.16); --accent:#18a7e0; --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.10);
+  --sh-default:0 8px 2px rgba(13,9,5,.16);
+  --sh-heavy:0 13px 3px rgba(13,9,5,.23);
+  --mont:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --grot:'Space Grotesk',ui-monospace,'SF Mono',Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0703; --surface:#171109; --surface-2:#241a10; --paper-shade:#1c140b;
+    --fg:#fffbf1; --fg-dim:rgba(255,251,241,.60); --fg-faint:rgba(255,251,241,.48);
+    --hairline:#3a2c1c; --accent:#ed1b72; --on-ink:#fffbf1;
+    --sh-light:0 4px 1px rgba(255,251,241,.14);
+    --sh-default:0 9px 2px rgba(255,251,241,.18);
+    --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0703; --surface:#171109; --surface-2:#241a10; --paper-shade:#1c140b;
+  --fg:#fffbf1; --fg-dim:rgba(255,251,241,.60); --fg-faint:rgba(255,251,241,.48);
+  --hairline:#3a2c1c; --accent:#ed1b72; --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);
+  --sh-default:0 9px 2px rgba(255,251,241,.18);
+  --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--grot); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; text-wrap:balance}
+
+/* ---------- masthead ---------- */
+.masthead{
+  border-bottom:3px solid var(--fg);
+  padding:44px 32px 34px;
+  max-width:1560px; margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--mont); font-weight:700; font-size:13px;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+}
+.masthead h1{
+  font-family:var(--mont); font-weight:700;
+  font-size:clamp(30px,4.4vw,46px); letter-spacing:.025em;
+  text-transform:uppercase; line-height:1.1; margin-top:12px;
+}
+.standfirst{
+  max-width:64ch; margin-top:16px; color:var(--fg-dim);
+  font-size:17px; line-height:1.7;
+}
+.standfirst strong{color:var(--fg); font-weight:600}
+
+/* ---------- console ---------- */
+.console{
+  position:sticky; top:0; z-index:20;
+  background:var(--surface-2);
+  border-bottom:2px solid var(--fg);
+}
+.console-inner{
+  max-width:1560px; margin:0 auto; padding:18px 32px;
+  display:flex; flex-wrap:wrap; align-items:flex-end; gap:28px 40px;
+}
+.ctrl{display:flex; flex-direction:column; gap:9px}
+.ctrl > label, .ctrl > .ctrl-label{
+  font-family:var(--mont); font-weight:700; font-size:11px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--fg-dim);
+}
+.days{display:flex; gap:6px; flex-wrap:wrap}
+.day-chip{
+  width:52px; height:48px; border:2px solid var(--fg); background:transparent;
+  cursor:pointer; padding:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:4px;
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.08em;
+  color:var(--fg); transition:transform 120ms cubic-bezier(.3,0,.2,1), box-shadow 120ms;
+}
+.day-chip .swatch{width:26px; height:8px}
+.day-chip[aria-pressed="true"]{box-shadow:var(--sh-default); transform:translateY(-3px)}
+.day-chip:hover{transform:translateY(-2px)}
+.day-chip:active{transform:translateY(2px); box-shadow:var(--sh-light)}
+
+.count-row{display:flex; align-items:center; gap:16px}
+input[type=range]{
+  width:230px; accent-color:var(--accent); height:44px; cursor:pointer;
+}
+.count-read{
+  font-family:var(--mont); font-weight:800; font-size:30px;
+  min-width:2ch; text-align:center; font-variant-numeric:tabular-nums;
+}
+.count-sub{font-size:12px; color:var(--fg-faint); font-family:var(--mont);
+  font-weight:600; letter-spacing:.08em; text-transform:uppercase}
+
+.seg{display:flex; border:2px solid var(--fg)}
+.seg button{
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.11em;
+  text-transform:uppercase; padding:12px 16px; min-height:44px;
+  background:transparent; color:var(--fg); border:0; cursor:pointer;
+  border-right:2px solid var(--fg);
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--fg); color:var(--bg)}
+
+.readout{
+  margin-left:auto; border-left:2px solid var(--hairline); padding-left:24px;
+  font-size:13px; line-height:1.5; color:var(--fg-dim); max-width:30ch;
+}
+.readout b{
+  font-family:var(--mont); font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; font-size:11px; color:var(--fg);
+  display:block; margin-bottom:4px;
+}
+
+/* ---------- the wall ---------- */
+.wall{
+  max-width:1560px; margin:0 auto; padding:44px 32px 20px;
+  display:grid; gap:52px 34px;
+  grid-template-columns:repeat(auto-fill,minmax(min(var(--card-w,320px),100%),1fr));
+  justify-items:start;
+}
+.option{width:min(var(--card-w,320px),100%); display:flex; flex-direction:column; gap:0}
+.plate{display:flex; align-items:baseline; gap:8px 10px; margin-bottom:12px; flex-wrap:wrap}
+.plate .num{
+  font-family:var(--mont); font-weight:800; font-size:11px; letter-spacing:.06em;
+  background:var(--fg); color:var(--bg); padding:4px 7px; line-height:1;
+  align-self:center;
+}
+.plate h2{
+  font-family:var(--mont); font-weight:700; font-size:19px;
+  letter-spacing:.09em; text-transform:uppercase;
+}
+.plate .tag{
+  font-family:var(--grot); font-weight:500; font-size:13px; color:var(--fg-faint);
+  min-width:0; overflow-wrap:anywhere;
+}
+.plate .status{
+  margin-left:auto; font-family:var(--mont); font-weight:700; font-size:10px;
+  letter-spacing:.1em; text-transform:uppercase; padding:4px 8px;
+  border:2px solid var(--fg); white-space:nowrap; align-self:center;
+}
+.plate .status.built{background:var(--fg); color:var(--bg)}
+.plate .status.passed{border-color:var(--hairline); color:var(--fg-faint)}
+.stagewrap{
+  width:100%; aspect-ratio:1080/1920; position:relative; overflow:hidden;
+  border:2px solid var(--fg); box-shadow:var(--sh-default);
+}
+.stage{
+  width:1080px; height:1920px; transform-origin:top left; position:absolute;
+  top:0; left:0;
+}
+.notes{margin-top:16px; font-size:13.5px; line-height:1.65; color:var(--fg-dim)}
+.notes p{margin:0 0 9px}
+.notes .lede{color:var(--fg); font-weight:500}
+.notes dl{margin:10px 0 0; display:grid; grid-template-columns:auto 1fr; gap:5px 12px}
+.notes dt{
+  font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--fg-faint); padding-top:3px;
+}
+.notes dd{margin:0; font-size:13px}
+
+/* ---------- closing ---------- */
+.closing{
+  max-width:1560px; margin:0 auto; padding:20px 32px 80px;
+}
+.closing-inner{
+  border-top:3px solid var(--fg); padding-top:32px;
+  display:grid; gap:34px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+}
+.closing h3{
+  font-family:var(--mont); font-weight:700; font-size:14px; letter-spacing:.12em;
+  text-transform:uppercase; margin-bottom:12px;
+}
+.closing p{margin:0 0 10px; font-size:14px; line-height:1.7; color:var(--fg-dim)}
+.closing ul{margin:0; padding-left:18px; font-size:14px; line-height:1.7; color:var(--fg-dim)}
+.closing li{margin-bottom:7px}
+.closing strong{color:var(--fg); font-weight:600}
+
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+@media (max-width:640px){
+  .masthead,.console-inner,.wall,.closing{padding-left:18px; padding-right:18px}
+  .readout{margin-left:0; border-left:0; padding-left:0}
+  .day-chip{width:42px}
+  input[type=range]{width:min(230px,42vw)}
+}
+</style>
+
+<div class="masthead">
+  <div class="eyebrow">Schedule Studio · Daily card · Year 2</div>
+  <h1>Five directions for the daily card</h1>
+  <p class="standfirst">
+    The card that goes out alone, every morning. Each direction below gives the
+    <strong>day colour</strong> a structural job rather than a hat, holds its shape from
+    <strong>two events to ten</strong>, and lands a <strong>call to action</strong> at the
+    base. Drive the console — the cards are live at full 1080&#215;1920 geometry, so what
+    you see is what exports.
+  </p>
+  <p class="standfirst">
+    <strong>Decided.</strong> Four of the five are now in the Studio, chosen per document
+    in the Daily inspector so a whole week exports in one layout. Stub was passed over and
+    stays here as a record of the exploration.
+  </p>
+</div>
+
+<div class="console">
+  <div class="console-inner">
+    <div class="ctrl">
+      <span class="ctrl-label" id="day-label">Day</span>
+      <div class="days" role="group" aria-labelledby="day-label" id="days"></div>
+    </div>
+
+    <div class="ctrl">
+      <label for="count">Events in the day</label>
+      <div class="count-row">
+        <input type="range" id="count" min="2" max="10" step="1" value="5">
+        <div>
+          <div class="count-read" id="count-read">5</div>
+          <div class="count-sub" id="count-tier">normal</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="theme-label">Card palette</span>
+      <div class="seg" role="group" aria-labelledby="theme-label" id="theme">
+        <button type="button" data-v="day" aria-pressed="true">Day</button>
+        <button type="button" data-v="night" aria-pressed="false">Night</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="size-label">View</span>
+      <div class="seg" role="group" aria-labelledby="size-label" id="size">
+        <button type="button" data-v="190" aria-pressed="false">Thumb</button>
+        <button type="button" data-v="320" aria-pressed="true">Review</button>
+        <button type="button" data-v="470" aria-pressed="false">Detail</button>
+      </div>
+    </div>
+
+    <div class="readout" id="readout"></div>
+  </div>
+</div>
+
+<div class="wall" id="wall"></div>
+
+<div class="closing">
+  <div class="closing-inner">
+    <div>
+      <h3>What every direction holds to</h3>
+      <ul>
+        <li><strong>Day colour leads.</strong> Not a header band — a flood, a misprint, a
+          full-height spine, a stub pair, or a repeating time chip.</li>
+        <li><strong>Radius 0, 2px ink, flat down-shadow.</strong> No rounding, no glow.</li>
+        <li><strong>Montserrat names, Space Grotesk states facts.</strong> Times, titles and
+          rooms are all Grotesk; only the day name and labels take Montserrat caps.</li>
+        <li><strong>Mandatory furniture.</strong> Wordmark in a box, 86 Mai Thúc Lân,
+          the real QR to app.realitydn.com.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>How the CTA gives way</h3>
+      <p>The brief says the call to action stands down on crowded days. That's a ladder,
+        not a switch, and it is the same in all five:</p>
+      <dl class="notes" style="margin-top:0">
+        <dt>2–7</dt><dd><b>Full.</b> Sentence, wordmark, address and a 128px code.</dd>
+        <dt>8–9</dt><dd><b>Compact.</b> One line, 96px code, address folded in.</dd>
+        <dt>10</dt><dd><b>Minimal.</b> Wordmark, bare host, 72px code. The sentence goes.</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Where they landed</h3>
+      <p><strong>Flood, Misregister, Spine and Chrono are built.</strong> They sit beside
+        Classic as a layout picker in the Daily inspector. The choice is a document
+        setting, so every day you export carries it and a week reads as one week.</p>
+      <p>Banner emphasis, closed-day states and the 4:5 feed geometry came with them —
+        each layout honours all three rather than dropping to a plain row.</p>
+      <p><strong>Stub was passed over.</strong> It stays on this page as a record of the
+        exploration, not as something you can select.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Tokens — mirrored from schedule-data.jsx / schedule-render.jsx.
+   A canvas renderer can't read CSS custom properties, and neither
+   can this page's card layer, so the values are literals here for
+   the same reason they are literals in the Studio.
+   ============================================================ */
+var INK='#0d0905', CREAM='#fffbf1';
+var MONT="'Montserrat',system-ui,sans-serif";
+var GROT="'Space Grotesk',ui-monospace,monospace";
+
+var DAY_COLORS={1:'#43b02a',2:'#18a7e0',3:'#6e3179',4:'#ed1b72',5:'#ed2224',6:'#fdb515',7:'#fddf00'};
+var DAY_TEXT  ={1:INK,2:INK,3:CREAM,4:INK,5:INK,6:INK,7:INK};
+var DAY_ABBR  ={1:'MON',2:'TUE',3:'WED',4:'THU',5:'FRI',6:'SAT',7:'SUN'};
+var DAY_FULL  ={1:'MONDAY',2:'TUESDAY',3:'WEDNESDAY',4:'THURSDAY',5:'FRIDAY',6:'SATURDAY',7:'SUNDAY'};
+var DATES     ={1:'08.06.26',2:'09.06.26',3:'10.06.26',4:'11.06.26',5:'12.06.26',6:'13.06.26',7:'14.06.26'};
+
+function themeTokens(id){
+  if(id==='night') return {
+    id:'night', bg:'#0a0703', paper:'#171109', fg:CREAM,
+    fgStrong:'rgba(255,251,241,.88)', dim:'rgba(255,251,241,.60)',
+    faint:'rgba(255,251,241,.48)', hairline:'#3a2c1c',
+    shadow:'0 9px 2px rgba(255,251,241,.18)', shadowSm:'0 4px 1px rgba(255,251,241,.14)',
+    dc:Object.assign({},DAY_COLORS,{3:'#9a4faa'}), dt:DAY_TEXT };
+  return {
+    id:'day', bg:CREAM, paper:CREAM, fg:INK,
+    fgStrong:'rgba(13,9,5,.85)', dim:'rgba(13,9,5,.58)',
+    faint:'rgba(13,9,5,.44)', hairline:'rgba(13,9,5,.16)',
+    shadow:'0 8px 2px rgba(13,9,5,.16)', shadowSm:'0 4px 1px rgba(13,9,5,.10)',
+    dc:DAY_COLORS, dt:DAY_TEXT };
+}
+
+/* ---- the wordmark. Montserrat 600 with Alternates forms on A / I / Y —
+   the mixed-font mark can't come from one font-family, so the vector ships. ---- */
+var WM=[
+ 'M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z',
+ 'M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z',
+ 'M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z',
+ 'M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z',
+ 'M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z',
+ 'M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z',
+ 'M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z'];
+function wordmark(h,color){
+  return '<svg viewBox="72.4 12.3 374.2 60.1" height="'+h+'" role="img" aria-label="REALITY" '+
+    'style="display:block"><g fill="'+color+'">'+
+    WM.map(function(d){return '<path d="'+d+'"/>';}).join('')+'</g></svg>';
+}
+
+/* ---- the real QR — v2 EC M, encodes https://app.realitydn.com. Verbatim from
+   schedule-data.jsx, so these mock-ups scan exactly as an export would. ---- */
+var QR=['1111111000011100001111111','1000001010001010101000001','1011101011010001001011101',
+'1011101011010101101011101','1011101001100110101011101','1000001000101000001000001',
+'1111111010101010101111111','0000000011000010100000000','1000001011000110011001110',
+'1010110100010011010111110','1110111100000011101101011','0100000001110000001001001',
+'1010001100001001101100001','1001010101100101110100010','1000101110111111101111011',
+'1001000100010010001101101','1000111011011101111110100','0000000011101100100010000',
+'1111111001110000101010001','1000001001000001100010011','1011101000111111111110100',
+'1011101001110010001000011','1011101000000101000001101','1000001001110011110110001',
+'1111111010001000110001001'].map(function(r){return r.split('').map(Number);});
+var QUIET_SPEC=4, QUIET_TIGHT=2, _qrCache={};
+/* A code's light modules must stay light or it will not scan. On a light ground
+   the 4-module quiet zone is the sheet colour and costs nothing; on ink it has
+   to be real cream, so it tightens to 2 rather than drawing a slab. */
+function qrURL(dark,light,quiet){
+  var key=dark+'|'+light+'|'+quiet;
+  if(_qrCache[key]) return _qrCache[key];
+  var n=QR.length, q=quiet, m=n+2*q, px=8;
+  var c=document.createElement('canvas'); c.width=c.height=m*px;
+  var g=c.getContext('2d');
+  g.fillStyle=light; g.fillRect(0,0,m*px,m*px);
+  g.fillStyle=dark;
+  for(var y=0;y<n;y++) for(var x=0;x<n;x++) if(QR[y][x]) g.fillRect((x+q)*px,(y+q)*px,px,px);
+  return (_qrCache[key]=c.toDataURL());
+}
+function qrImg(size,dark,light,quiet){
+  return '<img src="'+qrURL(dark,light,quiet==null?QUIET_SPEC:quiet)+'" width="'+size+
+    '" height="'+size+'" alt="" style="display:block;flex:none;image-rendering:pixelated">';
+}
+
+/* ============================================================
+   The day. Ten real REALITY events; ADD_ORDER grows the day the way a
+   real week does — an evening first, then the afternoon, then the
+   morning — so every count from 2 to 10 is a plausible day rather
+   than the first N rows of a busy one.
+   ============================================================ */
+var POOL=[
+ {s:'11:00',e:null,  t:'Coffee + Conversation: Starting Over', loc:['2L'], pre:0,fee:0},
+ {s:'11:30',e:null,  t:'Mandarin Fun Club',                    loc:['2E'], pre:0,fee:0},
+ {s:'13:30',e:null,  t:'Nutrition: Protein + Exercise',        loc:['2E'], pre:0,fee:1},
+ {s:'15:00',e:null,  t:'Teen Hangout',                         loc:['1L'], pre:0,fee:0},
+ {s:'17:00',e:'21:00',t:'Happy Hour: Buy1Get1 Cocktails',      loc:['1L','2E'], pre:0,fee:0},
+ {s:'17:30',e:null,  t:'AI Meetup',                            loc:['2E'], pre:0,fee:0},
+ {s:'18:30',e:null,  t:'Spill It w/Dr. Steph: Desire, Intimacy',loc:['2L'], pre:0,fee:0},
+ {s:'19:30',e:null,  t:'GeoGuessr Battle Night',               loc:['2E'], pre:1,fee:0},
+ {s:'20:00',e:null,  t:'Grounded: A Men’s Wellness Talk', loc:['3P'], pre:0,fee:0},
+ {s:'21:30',e:'late',t:'Karaoke',                              loc:['2E'], pre:0,fee:0}];
+var ADD_ORDER=[6,9,4,2,7,0,5,8,3,1];
+var LOC_LABEL={'1L':'1st-Floor Lounge','2L':'2nd-Floor Lounge','2E':'Event Space','3P':'3rd-Floor Patio'};
+
+function dayEvents(n){
+  var keep=ADD_ORDER.slice(0,n).sort(function(a,b){return a-b;});
+  return keep.map(function(i){return POOL[i];});
+}
+function timeLabel(ev){
+  if(ev.e==='late') return ev.s+' - ALL NIGHT';
+  if(ev.e) return ev.s+' - '+ev.e;
+  return ev.s;
+}
+function codes(ev){
+  var t=ev.loc.join('/');
+  if(ev.pre) t+=(t?' ':'')+'*';
+  if(ev.fee) t+=(t?' ':'')+'$';
+  return t;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ---- density. One ladder, five layouts. ---- */
+function tier(n){ return n<=4?0 : n<=7?1 : n<=9?2 : 3; }          /* airy · normal · tight · packed */
+function ctaTier(n){ return n<=7?'full' : n<=9?'compact' : 'minimal'; }
+var TIER_NAME=['airy','normal','tight','packed'];
+function S(n,arr){ return arr[tier(n)]; }
+/* Rooms spelled out only where there is room to spell them. */
+function longLocs(n){ return n<=4; }
+
+/* Type ladder, one step per event rather than one per tier — the Studio's own
+   principle, that a light day should read BIG rather than leave the card half
+   empty. Each layout scales this by how much width its structure leaves for a
+   title, so the ladder stays one shared decision. */
+var LADDER={2:54,3:50,4:46,5:42,6:39,7:36,8:34,9:32,10:30};
+function rowFont(n,factor){ return Math.round(LADDER[Math.min(10,Math.max(2,n))]*(factor||1)); }
+/* Whatever slack the ladder leaves goes into the row gaps at EVERY count, never
+   to the floor — a stack packed to the top over half a card of dead paper is
+   exactly what makes the current card look thin, and ten events leave slack too. */
+function spread(){ return 'space-evenly'; }
+/* WEDNESDAY is two glyphs longer than any other name and will not fit at the
+   size SUNDAY wants. Step the display down instead of letting it clip. */
+function fitName(base,name,avail){
+  var est=name.length*base*0.75;                 /* Montserrat 800 caps advance */
+  return est<=avail ? base : Math.floor(base*avail/est);
+}
+
+/* ============================================================
+   Shared CTA. Same ladder in all five, dressed for its ground.
+   ============================================================ */
+function ctaCopy(t){
+  if(t==='full')    return 'See full event details at app.realitydn.com';
+  if(t==='compact') return 'Full event details — app.realitydn.com';
+  return 'app.realitydn.com';
+}
+function ctaQR(t){ return t==='full'?128 : t==='compact'?96 : 72; }
+function ctaWM(t){ return t==='full'?46 : t==='compact'?38 : 32; }
+
+/* A CTA laid on an arbitrary ground. The code is ALWAYS ink on cream — never
+   inverted, per canon, and a cream-on-ink code would not scan anyway. What the
+   ground changes is only the quiet zone: on light stock it is the sheet colour
+   and the spec's 4 modules are free, on ink it has to be real cream, so it
+   tightens to 2 and reads as a deliberate tile rather than a slab. */
+function ctaBlock(n,fg,dim,lightGround){
+  var t=ctaTier(n), qs=ctaQR(t);
+  var quiet = lightGround ? QUIET_SPEC : QUIET_TIGHT;
+  var lines='<div style="display:flex;flex-direction:column;gap:'+(t==='full'?14:10)+'px;min-width:0">'+
+    wordmark(ctaWM(t),fg)+
+    '<div style="font-family:'+GROT+';font-weight:600;font-size:'+(t==='full'?27:t==='compact'?24:22)+
+      'px;color:'+fg+';line-height:1.35">'+esc(ctaCopy(t))+'</div>'+
+    (t==='minimal'?'':'<div style="font-family:'+GROT+';font-weight:500;font-size:'+(t==='full'?22:20)+
+      'px;color:'+dim+';line-height:1.4">86 Mai Thúc Lân, Đà Nẵng</div>')+
+    '</div>';
+  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:34px">'+
+    lines+qrImg(qs,INK,CREAM,quiet)+'</div>';
+}
+
+/* ============================================================
+   01 — FLOOD
+   The day colour is the paper. A cream slab carries the list and
+   flexes with the count, so the colour's share of the card runs from
+   about three-quarters on a two-event day to a wide margin on a ten.
+   A full-bleed ink footer anchors the base on every one of them.
+   ============================================================ */
+function cardFlood(T,w,n){
+  var dc=T.dc[w], dt=T.dt[w], evs=dayEvents(n);
+  var dim = dt===CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.66)';
+  var f=rowFont(n,1.0), gap=S(n,[30,23,17,13]);
+  var nameSize=fitName(S(n,[150,132,114,102]),DAY_FULL[w],1080-152);
+  var slabPad=S(n,[52,44,36,32]);
+
+  var rows=evs.map(function(ev,i){
+    var last=i===evs.length-1;
+    return '<div style="padding-bottom:'+(last?0:gap)+'px;'+
+      (last?'':'border-bottom:1.5px solid '+T.hairline+';margin-bottom:'+gap+'px;')+'">'+
+      '<div style="display:flex;align-items:baseline;gap:'+Math.round(f*0.62)+'px">'+
+        '<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.88)+
+          'px;color:'+T.fgStrong+';font-variant-numeric:tabular-nums;flex:none">'+esc(timeLabel(ev))+'</span>'+
+        '<span style="font-family:'+GROT+';font-weight:600;font-size:'+f+'px;line-height:1.28;color:'+T.fg+
+          '">'+esc(ev.t)+'</span>'+
+        (longLocs(n)?'':'<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.8)+
+          'px;color:'+T.dim+';margin-left:auto;white-space:nowrap;flex:none">'+esc(codes(ev))+'</span>')+
+      '</div>'+
+      (longLocs(n)?'<div style="display:flex;gap:11px;margin-top:15px;flex-wrap:wrap">'+
+        ev.loc.map(function(c){return '<span style="border:2px solid '+T.fg+';padding:4px 13px;font-family:'+
+          GROT+';font-weight:500;font-size:'+Math.round(f*0.56)+'px;color:'+T.fg+'">'+LOC_LABEL[c]+'</span>';}).join('')+
+        (ev.pre?'<span style="font-family:'+GROT+';font-weight:600;font-size:'+Math.round(f*0.6)+
+          'px;color:'+T.fg+';padding:4px 0">* pre-register</span>':'')+
+        (ev.fee?'<span style="font-family:'+GROT+';font-weight:600;font-size:'+Math.round(f*0.6)+
+          'px;color:'+T.fg+';padding:4px 0">$ fee</span>':'')+
+      '</div>':'')+
+    '</div>';
+  }).join('');
+
+  return '<div style="width:1080px;height:1920px;background:'+dc+';display:flex;flex-direction:column;overflow:hidden">'+
+    '<div style="flex:1;min-height:0;padding:78px 76px 0;display:flex;flex-direction:column">'+
+      '<div style="font-family:'+MONT+';font-weight:700;font-size:25px;letter-spacing:.22em;color:'+dim+'">TODAY AT REALITY</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px">'+
+        '<div style="font-family:'+MONT+';font-weight:800;font-size:'+nameSize+'px;line-height:.9;letter-spacing:-.01em;color:'+dt+'">'+DAY_FULL[w]+'</div>'+
+      '</div>'+
+      '<div style="font-family:'+GROT+';font-weight:500;font-size:44px;color:'+dim+';margin-top:18px">'+DATES[w]+'</div>'+
+      /* auto margins float the slab in the colour field: a light day is a small
+         card on a lot of ink, a heavy one nearly fills the sheet. */
+      '<div style="background:'+T.bg+';border:2px solid '+T.fg+';box-shadow:0 12px 0 rgba(13,9,5,.30);'+
+        'margin:auto 0;min-height:'+S(n,[52,42,34,30])+'px;padding:'+slabPad+'px;'+
+        'display:flex;flex-direction:column">'+rows+'</div>'+
+    '</div>'+
+    '<div style="flex:none;background:'+INK+';padding:44px 76px">'+
+      ctaBlock(n,CREAM,'rgba(255,251,241,.62)',false)+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   02 — MISREGISTER
+   The house misprint at card scale: an ink masthead and a day-colour
+   plate the same size, shifted, bleeding off three edges. The colour
+   carries down the list as a 6px rule under every row, and the CTA
+   ticket repeats the offset at the base.
+   ============================================================ */
+function cardMisreg(T,w,n){
+  var dc=T.dc[w], evs=dayEvents(n);
+  var headH=S(n,[700,560,470,410]);
+  var f=rowFont(n,0.96), gap=S(n,[34,26,19,15]);
+  var nameSize=fitName(S(n,[164,142,124,110]),DAY_FULL[w],1080-118-132-76);
+  var OX=30, OY=20;                       /* the misregistration, static per canon */
+  /* The plate is the OTHER ink: on cream stock it prints black, on night stock
+     it prints cream. Taking it from the tokens rather than a literal is what
+     keeps the misprint legible after dark — a black plate on near-black paper
+     is just a hole. */
+  var plateBg=T.fg, plateFg=T.bg;
+  var plateDim = T.id==='night' ? 'rgba(13,9,5,.66)' : 'rgba(255,251,241,.62)';
+
+  var rows=evs.map(function(ev){
+    return '<div style="padding-bottom:'+Math.round(gap*0.55)+'px;margin-bottom:'+gap+
+      'px;border-bottom:6px solid '+dc+'">'+
+      '<div style="display:flex;align-items:baseline;gap:'+Math.round(f*0.62)+'px">'+
+        '<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.88)+
+          'px;color:'+T.fgStrong+';font-variant-numeric:tabular-nums;flex:none;min-width:'+
+          Math.round(f*3.05)+'px">'+esc(ev.s)+'</span>'+
+        '<span style="font-family:'+GROT+';font-weight:600;font-size:'+f+'px;line-height:1.26;color:'+T.fg+'">'+esc(ev.t)+
+          (ev.e?'<span style="font-weight:500;color:'+T.dim+'"> — '+(ev.e==='late'?'all night':'til '+ev.e)+'</span>':'')+
+        '</span>'+
+        '<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.78)+
+          'px;color:'+T.dim+';margin-left:auto;white-space:nowrap;flex:none">'+
+          esc(longLocs(n)?ev.loc.map(function(c){return LOC_LABEL[c];}).join(' + ')+(ev.pre?' *':'')+(ev.fee?' $':''):codes(ev))+
+        '</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div style="width:1080px;height:1920px;background:'+T.bg+';display:flex;flex-direction:column;'+
+    'overflow:hidden;position:relative;isolation:isolate">'+
+    /* masthead: colour plate under, ink plate over, offset */
+    '<div style="flex:none;position:relative;height:'+headH+'px">'+
+      '<div style="position:absolute;left:'+(-56+OX)+'px;top:'+(-70+OY)+'px;width:'+(1080+56)+'px;height:'+
+        (headH-30)+'px;background:'+dc+'"></div>'+
+      '<div style="position:absolute;left:-56px;top:-70px;width:'+(1080-118)+'px;height:'+(headH-30)+
+        'px;background:'+plateBg+';padding:'+(96)+'px 76px 0 132px;display:flex;flex-direction:column;justify-content:flex-end">'+
+        '<div style="font-family:'+MONT+';font-weight:700;font-size:25px;letter-spacing:.22em;'+
+          'color:'+plateDim+'">TODAY AT REALITY</div>'+
+        '<div style="font-family:'+MONT+';font-weight:800;font-size:'+nameSize+'px;line-height:.88;'+
+          'letter-spacing:-.012em;color:'+plateFg+';margin-top:20px">'+DAY_FULL[w]+'</div>'+
+        '<div style="font-family:'+GROT+';font-weight:500;font-size:42px;color:'+plateDim+';'+
+          'margin:22px 0 '+Math.round(headH*0.09)+'px">'+DATES[w]+'</div>'+
+      '</div>'+
+    '</div>'+
+    /* list */
+    '<div style="flex:1;min-height:0;padding:'+S(n,[70,54,42,34])+'px 76px 0;display:flex;'+
+      'flex-direction:column;justify-content:'+spread()+'">'+rows+'</div>'+
+    /* CTA ticket, with its own echo */
+    '<div style="flex:none;position:relative;margin:0 76px '+S(n,[76,64,54,46])+'px;">'+
+      '<div style="position:absolute;left:'+OX+'px;top:'+OY+'px;right:'+(-OX)+'px;bottom:'+(-OY)+'px;background:'+dc+'"></div>'+
+      '<div style="position:relative;background:'+plateBg+';padding:38px 40px">'+
+        ctaBlock(n,plateFg,plateDim,T.id==='night')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   03 — SPINE
+   A full-height colour rail carrying the day name set vertically. The
+   rail never changes, whatever the count — so a two-event day and a
+   ten-event day are the same card with different weather. Times align
+   down a fixed column against the rail's inner edge.
+   ============================================================ */
+function cardSpine(T,w,n){
+  var dc=T.dc[w], dt=T.dt[w], evs=dayEvents(n);
+  var dim = dt===CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.62)';
+  var RAIL=210;
+  var f=rowFont(n,0.94), gap=S(n,[38,27,20,15]);
+  var timeW=S(n,[172,150,134,120]);
+
+  var rows=evs.map(function(ev,i){
+    var last=i===evs.length-1;
+    return '<div style="display:flex;gap:26px;align-items:baseline;padding-bottom:'+(last?0:gap)+'px;'+
+      (last?'':'margin-bottom:'+gap+'px;border-bottom:1.5px solid '+T.hairline+';')+'">'+
+      '<div style="flex:none;width:'+timeW+'px;font-family:'+GROT+';font-weight:500;font-size:'+
+        Math.round(f*0.88)+'px;color:'+T.fgStrong+';font-variant-numeric:tabular-nums;line-height:1.25">'+
+        esc(ev.s)+
+        (ev.e?'<div style="font-size:'+Math.round(f*0.62)+'px;color:'+T.dim+';margin-top:4px">'+
+          (ev.e==='late'?'all night':'til '+ev.e)+'</div>':'')+
+      '</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-family:'+GROT+';font-weight:600;font-size:'+f+'px;line-height:1.26;color:'+T.fg+'">'+esc(ev.t)+'</div>'+
+        '<div style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.66)+'px;color:'+T.dim+
+          ';margin-top:'+S(n,[12,9,7,5])+'px">'+
+          esc(longLocs(n)?ev.loc.map(function(c){return LOC_LABEL[c];}).join(' + ')+(ev.pre?'  * pre-register':'')+(ev.fee?'  $ fee':''):codes(ev))+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div style="width:1080px;height:1920px;background:'+T.bg+';display:flex;overflow:hidden">'+
+    /* the rail — edge to edge, top to bottom, in every density */
+    '<div style="flex:none;width:'+RAIL+'px;background:'+dc+';display:flex;flex-direction:column;'+
+      'align-items:center;justify-content:flex-end;padding:56px 0 64px">'+
+      '<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:'+MONT+
+        ';font-weight:800;font-size:128px;letter-spacing:.01em;line-height:1;color:'+dt+'">'+DAY_FULL[w]+'</div>'+
+      '<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:'+GROT+
+        ';font-weight:500;font-size:40px;color:'+dim+';margin-bottom:26px">'+DATES[w]+'</div>'+
+    '</div>'+
+    /* the cream column */
+    '<div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:78px 76px 0 62px">'+
+      '<div style="flex:none">'+
+        '<div style="font-family:'+MONT+';font-weight:700;font-size:24px;letter-spacing:.22em;color:'+T.dim+'">TODAY AT REALITY</div>'+
+        '<div style="height:6px;background:'+dc+';margin-top:20px"></div>'+
+      '</div>'+
+      '<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:'+S(n,[62,46,36,30])+'px 0;'+
+        'justify-content:'+spread()+'">'+rows+'</div>'+
+      '<div style="flex:none;border-top:3px solid '+T.fg+';padding:'+S(n,[36,32,28,24])+'px 0 '+
+        S(n,[70,60,52,44])+'px">'+
+        ctaBlock(n,T.fg,T.dim,T.id==='day')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   04 — STUB
+   Ticket grammar, straight off the poster system. A colour stub at the
+   head, a colour tear-off at the foot, and every event its own bordered
+   stub with a solid colour tab. Shadows lighten above seven so a full
+   day reads as a stack, not a pile.
+   ============================================================ */
+function cardStub(T,w,n){
+  var dc=T.dc[w], dt=T.dt[w], evs=dayEvents(n);
+  var dim = dt===CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.66)';
+  var f=rowFont(n,0.92), gap=S(n,[24,18,13,10]);
+  var headH=S(n,[430,370,320,288]);
+  var padY=S(n,[28,21,16,12]), tab=S(n,[20,16,13,11]);
+  var sh = n<=7 ? T.shadow : T.shadowSm;
+  /* the perforation — square ink dashes, no radius anywhere */
+  var perf='repeating-linear-gradient(to right,'+T.fg+' 0 16px,transparent 16px 30px)';
+
+  var rows=evs.map(function(ev){
+    return '<div style="display:flex;background:'+T.paper+';border:2px solid '+T.fg+';box-shadow:'+sh+
+      ';margin-bottom:'+gap+'px;align-items:stretch">'+
+      '<div style="flex:none;width:'+tab+'px;background:'+dc+'"></div>'+
+      '<div style="flex:1;min-width:0;padding:'+padY+'px '+S(n,[30,24,20,17])+'px;display:flex;'+
+        'align-items:'+(longLocs(n)?'flex-start':'baseline')+';gap:'+Math.round(f*0.6)+'px">'+
+        '<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.88)+
+          'px;color:'+T.fgStrong+';font-variant-numeric:tabular-nums;flex:none;min-width:'+
+          Math.round(f*3.0)+'px">'+esc(ev.s)+'</span>'+
+        '<span style="flex:1;min-width:0">'+
+          '<span style="font-family:'+GROT+';font-weight:600;font-size:'+f+'px;line-height:1.24;color:'+T.fg+
+            ';display:block">'+esc(ev.t)+'</span>'+
+          (longLocs(n)?'<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.62)+
+            'px;color:'+T.dim+';display:block;margin-top:9px">'+
+            esc(ev.loc.map(function(c){return LOC_LABEL[c];}).join(' + ')+(ev.e?'  ·  '+(ev.e==='late'?'all night':'til '+ev.e):'')+
+              (ev.pre?'  ·  * pre-register':'')+(ev.fee?'  ·  $ fee':''))+'</span>':'')+
+        '</span>'+
+        (longLocs(n)?'':'<span style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.78)+
+          'px;color:'+T.dim+';white-space:nowrap;flex:none">'+esc(codes(ev))+'</span>')+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  var t=ctaTier(n), qs=ctaQR(t);
+  return '<div style="width:1080px;height:1920px;background:'+T.bg+';display:flex;flex-direction:column;overflow:hidden">'+
+    /* head stub */
+    '<div style="flex:none;height:'+headH+'px;background:'+dc+';padding:70px 72px 0;position:relative;'+
+      'display:flex;flex-direction:column;justify-content:center">'+
+      '<div style="font-family:'+MONT+';font-weight:700;font-size:25px;letter-spacing:.22em;color:'+dim+'">TODAY AT REALITY</div>'+
+      '<div style="font-family:'+MONT+';font-weight:800;font-size:'+
+        fitName(S(n,[142,124,108,96]),DAY_FULL[w],1080-144)+
+        'px;line-height:.94;letter-spacing:-.01em;color:'+dt+';margin-top:16px">'+DAY_FULL[w]+'</div>'+
+      '<div style="font-family:'+GROT+';font-weight:500;font-size:42px;color:'+dim+';margin-top:14px">'+DATES[w]+'</div>'+
+      '<div style="position:absolute;left:0;right:0;bottom:0;height:4px;background:'+perf+'"></div>'+
+    '</div>'+
+    /* the stubs */
+    '<div style="flex:1;min-height:0;padding:'+S(n,[54,42,32,26])+'px 72px '+S(n,[30,22,14,10])+'px;display:flex;'+
+      'flex-direction:column;justify-content:'+spread()+'">'+rows+'</div>'+
+    /* tear-off */
+    '<div style="flex:none;background:'+dc+';padding:44px 72px;position:relative">'+
+      '<div style="position:absolute;left:0;right:0;top:0;height:4px;background:'+perf+'"></div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:34px">'+
+        '<div style="display:flex;flex-direction:column;gap:'+(t==='full'?14:10)+'px;min-width:0">'+
+          wordmark(ctaWM(t),dt)+
+          '<div style="font-family:'+GROT+';font-weight:600;font-size:'+(t==='full'?27:t==='compact'?24:22)+
+            'px;color:'+dt+';line-height:1.35">'+esc(ctaCopy(t))+'</div>'+
+          (t==='minimal'?'':'<div style="font-family:'+GROT+';font-weight:500;font-size:'+(t==='full'?22:20)+
+            'px;color:'+dim+'">86 Mai Thúc Lân, Đà Nẵng</div>')+
+        '</div>'+
+        /* the code keeps its own cream ground on a colour field so it still scans */
+        '<div style="flex:none;background:'+CREAM+';border:2px solid '+INK+';padding:12px">'+
+          qrImg(qs,INK,CREAM,QUIET_TIGHT)+'</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   05 — CHRONO
+   The day colour as the time axis. A filled bar runs 11:00 to 02:00
+   with a notch at every start, so the shape of the day reads before a
+   word does — and because each row carries a colour time chip, the
+   card gets MORE colour as it fills rather than less.
+   ============================================================ */
+var OPEN_MIN=11*60, CLOSE_MIN=26*60;      /* 11:00 → 02:00, the daily span */
+function minutes(hhmm){ var p=hhmm.split(':'); return (+p[0])*60+(+p[1]); }
+function cardChrono(T,w,n){
+  var dc=T.dc[w], dt=T.dt[w], evs=dayEvents(n);
+  var f=rowFont(n,0.95), gap=S(n,[32,24,17,13]);
+  var barH=S(n,[86,76,66,58]);
+  var BARW=1080-152;
+
+  var notches=evs.map(function(ev){
+    var m=Math.max(OPEN_MIN,Math.min(CLOSE_MIN,minutes(ev.s)));
+    var x=(m-OPEN_MIN)/(CLOSE_MIN-OPEN_MIN)*(BARW-6);
+    return '<div style="position:absolute;left:'+x.toFixed(1)+'px;top:0;bottom:0;width:6px;background:'+T.fg+'"></div>';
+  }).join('');
+  var ticks=[['11:00',0],['15:00',4/15],['19:00',8/15],['23:00',12/15],['02:00',1]].map(function(t){
+    return '<div style="position:absolute;left:'+(t[1]*100)+'%;transform:translateX('+(t[1]===0?'0':t[1]===1?'-100%':'-50%')+
+      ');font-family:'+GROT+';font-weight:500;font-size:21px;color:'+T.dim+';font-variant-numeric:tabular-nums">'+t[0]+'</div>';
+  }).join('');
+
+  var rows=evs.map(function(ev,i){
+    var last=i===evs.length-1;
+    return '<div style="display:flex;gap:'+S(n,[26,22,18,15])+'px;align-items:flex-start;'+
+      'padding-bottom:'+(last?0:gap)+'px;'+(last?'':'margin-bottom:'+gap+'px;border-bottom:1.5px solid '+T.hairline+';')+'">'+
+      '<span style="flex:none;background:'+dc+';color:'+dt+';font-family:'+GROT+';font-weight:600;font-size:'+
+        Math.round(f*0.8)+'px;font-variant-numeric:tabular-nums;padding:'+S(n,[10,8,6,5])+'px '+
+        S(n,[16,14,12,10])+'px;line-height:1.15">'+esc(ev.s)+'</span>'+
+      '<div style="flex:1;min-width:0;padding-top:'+S(n,[6,5,4,3])+'px">'+
+        '<div style="font-family:'+GROT+';font-weight:600;font-size:'+f+'px;line-height:1.26;color:'+T.fg+'">'+esc(ev.t)+'</div>'+
+        '<div style="font-family:'+GROT+';font-weight:500;font-size:'+Math.round(f*0.66)+'px;color:'+T.dim+
+          ';margin-top:'+S(n,[11,8,6,5])+'px">'+
+          esc((longLocs(n)?ev.loc.map(function(c){return LOC_LABEL[c];}).join(' + '):codes(ev))+
+            (ev.e?'  ·  '+(ev.e==='late'?'all night':'til '+ev.e):''))+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div style="width:1080px;height:1920px;background:'+T.bg+';display:flex;flex-direction:column;overflow:hidden">'+
+    '<div style="flex:none;padding:78px 76px 0">'+
+      '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px">'+
+        '<div>'+
+          '<div style="font-family:'+MONT+';font-weight:700;font-size:24px;letter-spacing:.22em;color:'+T.dim+'">TODAY AT REALITY</div>'+
+          '<div style="font-family:'+MONT+';font-weight:800;font-size:'+
+            fitName(S(n,[132,118,104,94]),DAY_FULL[w],1080-152-210)+
+            'px;line-height:.94;letter-spacing:-.012em;color:'+T.fg+';margin-top:14px">'+DAY_FULL[w]+'</div>'+
+        '</div>'+
+        '<div style="flex:none;background:'+dc+';color:'+dt+';font-family:'+GROT+';font-weight:600;'+
+          'font-size:34px;padding:12px 20px;margin-bottom:10px">'+DATES[w]+'</div>'+
+      '</div>'+
+      /* the axis */
+      '<div style="margin-top:'+S(n,[46,38,32,28])+'px">'+
+        '<div style="position:relative;height:'+barH+'px;background:'+dc+'">'+notches+'</div>'+
+        '<div style="position:relative;height:26px;margin-top:12px">'+ticks+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="flex:1;min-height:0;padding:'+S(n,[58,44,34,28])+'px 76px 0;display:flex;'+
+      'flex-direction:column;justify-content:'+spread()+'">'+rows+'</div>'+
+    '<div style="flex:none;margin:0 76px '+S(n,[72,62,52,44])+'px;border-top:3px solid '+T.fg+
+      ';padding-top:'+S(n,[36,32,28,24])+'px">'+
+      ctaBlock(n,T.fg,T.dim,T.id==='day')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   Wiring
+   ============================================================ */
+var OPTIONS=[
+  { built:true, id:'flood', num:'01', name:'Flood', tag:'colour is the paper', fn:cardFlood,
+    lede:'The day colour stops being a header and becomes the sheet. A bordered cream slab holds the list and grows into it.',
+    density:'The slab flexes, so the colour runs from roughly three-quarters of the card at two events down to a wide margin at ten. Neither end looks like a mistake.',
+    cta:'Full-bleed ink footer, always present, always the same height. It is the only part that never moves.',
+    risk:'The loudest of the five, and Sunday yellow at full field is very loud. Ink on it clears contrast easily, but a week of these in a row is a week of shouting.' },
+  { built:true, id:'misreg', num:'02', name:'Misregister', tag:'the house misprint', fn:cardMisreg,
+    lede:'The signature off-register plate, blown up to card scale: ink masthead, colour plate the same size and shifted, both bleeding off the edges.',
+    density:'The masthead takes the slack — 700px tall on a two-event day, 410px on a ten. The list below never changes its grammar, only its step.',
+    cta:'An ink ticket with its own colour echo, so the misprint reads at both ends of the card.',
+    risk:'The offset has to stay static and identical everywhere or it stops reading as a print and starts reading as a bug. Least tolerant of hand-tuning.' },
+  { built:true, id:'spine', num:'03', name:'Spine', tag:'full-height rail', fn:cardSpine,
+    lede:'A 210px colour rail edge to edge with the day name set vertically, and the list hung off a fixed time column beside it.',
+    density:'The rail is invariant, so the card’s identity is fixed before a single event is placed. Two events and ten produce the same object at different weights.',
+    cta:'Sits in the cream column under a 3px rule; the rail runs past it to the bottom edge, so the colour is full-bleed height at every count.',
+    risk:'The quietest, and closest to what exists today. Vertical type is a real commitment — it is excellent large and worthless at thumbnail.' },
+  { built:false, id:'stub', num:'04', name:'Stub', tag:'ticket grammar', fn:cardStub,
+    lede:'Straight off the poster system’s ticket. Colour stub at the head, colour tear-off at the foot, and every event its own bordered stub with a solid colour tab.',
+    density:'Above seven events the shadow drops to the light token and the tabs thin, so a full day reads as a stack rather than a pile.',
+    cta:'The tear-off is the CTA — the one place in the five where the call to action is a physical part of the object rather than a footer.',
+    risk:'Ten shadowed boxes is the most fragile case in the set. It survives here, but it is the direction most likely to need a hard cap.' },
+  { built:true, id:'chrono', num:'05', name:'Chrono', tag:'colour as time axis', fn:cardChrono,
+    lede:'The colour becomes the day’s span: a filled bar from 11:00 to 02:00 with a notch at every start time, then a colour time chip on every row.',
+    density:'This one inverts the usual problem — because each row carries a chip, the card gains colour as it fills. A ten-event day is the best-looking one.',
+    cta:'Cream footer under a 3px rule. The plainest of the five, deliberately, because the axis is already doing the talking.',
+    risk:'A two-event day leans hard on the bar to carry it. And the axis is a promise: it has to stay honest when a day runs outside 11:00–02:00.' }
+];
+
+var state={ w:4, n:5, theme:'day', size:320 };
+
+function buildDays(){
+  var host=document.getElementById('days');
+  host.innerHTML=[1,2,3,4,5,6,7].map(function(d){
+    return '<button type="button" class="day-chip" data-d="'+d+'" aria-pressed="'+(d===state.w)+'">'+
+      '<span class="swatch" style="background:'+DAY_COLORS[d]+'"></span>'+DAY_ABBR[d]+'</button>';
+  }).join('');
+  host.querySelectorAll('.day-chip').forEach(function(b){
+    b.addEventListener('click',function(){
+      state.w=+b.dataset.d;
+      host.querySelectorAll('.day-chip').forEach(function(o){
+        o.setAttribute('aria-pressed', String(+o.dataset.d===state.w));
+      });
+      render();
+    });
+  });
+}
+
+function buildWall(){
+  document.getElementById('wall').innerHTML=OPTIONS.map(function(o){
+    return '<section class="option" id="opt-'+o.id+'">'+
+      '<div class="plate"><span class="num">'+o.num+'</span><h2>'+o.name+'</h2>'+
+        '<span class="tag">'+o.tag+'</span>'+
+        '<span class="status '+(o.built?'built':'passed')+'">'+(o.built?'In the Studio':'Passed over')+'</span></div>'+
+      '<div class="stagewrap"><div class="stage" id="stage-'+o.id+'"></div></div>'+
+      '<div class="notes">'+
+        '<p class="lede">'+o.lede+'</p>'+
+        '<dl><dt>2–10</dt><dd>'+o.density+'</dd>'+
+          '<dt>CTA</dt><dd>'+o.cta+'</dd>'+
+          '<dt>Watch</dt><dd>'+o.risk+'</dd></dl>'+
+      '</div>'+
+    '</section>';
+  }).join('');
+}
+
+function render(){
+  var T=themeTokens(state.theme);
+  var scale=state.size/1080;
+  document.documentElement.style.setProperty('--card-w', state.size+'px');
+  OPTIONS.forEach(function(o){
+    var el=document.getElementById('stage-'+o.id);
+    el.style.transform='scale('+scale+')';
+    el.innerHTML=o.fn(T,state.w,state.n);
+  });
+  document.getElementById('count-read').textContent=state.n;
+  document.getElementById('count-tier').textContent=TIER_NAME[tier(state.n)];
+  var ct=ctaTier(state.n);
+  document.getElementById('readout').innerHTML='<b>Now showing</b>'+
+    DAY_FULL[state.w].charAt(0)+DAY_FULL[state.w].slice(1).toLowerCase()+', '+state.n+
+    ' event'+(state.n===1?'':'s')+' · '+TIER_NAME[tier(state.n)]+' step · '+
+    '<strong style="color:var(--fg)">'+ct+'</strong> call to action'+
+    (ct==='minimal'?' (the sentence is gone — this is the crowded-day case)':'')+'.';
+}
+
+document.getElementById('count').addEventListener('input',function(e){
+  state.n=+e.target.value; render();
+});
+document.getElementById('theme').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  state.theme=b.dataset.v;
+  this.querySelectorAll('button').forEach(function(o){
+    o.setAttribute('aria-pressed', String(o.dataset.v===state.theme));
+  });
+  render();
+});
+document.getElementById('size').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  state.size=+b.dataset.v;
+  this.querySelectorAll('button').forEach(function(o){
+    o.setAttribute('aria-pressed', String(+o.dataset.v===state.size));
+  });
+  render();
+});
+
+buildDays(); buildWall(); render();
+/* Fonts land after first paint; re-render so the measured layouts settle on the
+   real faces rather than the fallback metrics. */
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+</script>

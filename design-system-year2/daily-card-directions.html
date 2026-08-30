@@ -135,7 +135,7 @@ input[type=range]{
   justify-items:start;
 }
 .option{width:min(var(--card-w,320px),100%); display:flex; flex-direction:column; gap:0}
-.plate{display:flex; align-items:baseline; gap:10px; margin-bottom:12px}
+.plate{display:flex; align-items:baseline; gap:8px 10px; margin-bottom:12px; flex-wrap:wrap}
 .plate .num{
   font-family:var(--mont); font-weight:800; font-size:11px; letter-spacing:.06em;
   background:var(--fg); color:var(--bg); padding:4px 7px; line-height:1;
@@ -147,7 +147,15 @@ input[type=range]{
 }
 .plate .tag{
   font-family:var(--grot); font-weight:500; font-size:13px; color:var(--fg-faint);
+  min-width:0; overflow-wrap:anywhere;
 }
+.plate .status{
+  margin-left:auto; font-family:var(--mont); font-weight:700; font-size:10px;
+  letter-spacing:.1em; text-transform:uppercase; padding:4px 8px;
+  border:2px solid var(--fg); white-space:nowrap; align-self:center;
+}
+.plate .status.built{background:var(--fg); color:var(--bg)}
+.plate .status.passed{border-color:var(--hairline); color:var(--fg-faint)}
 .stagewrap{
   width:100%; aspect-ratio:1080/1920; position:relative; overflow:hidden;
   border:2px solid var(--fg); box-shadow:var(--sh-default);
@@ -202,6 +210,11 @@ input[type=range]{
     <strong>two events to ten</strong>, and lands a <strong>call to action</strong> at the
     base. Drive the console — the cards are live at full 1080&#215;1920 geometry, so what
     you see is what exports.
+  </p>
+  <p class="standfirst">
+    <strong>Decided.</strong> Four of the five are now in the Studio, chosen per document
+    in the Daily inspector so a whole week exports in one layout. Stub was passed over and
+    stays here as a record of the exploration.
   </p>
 </div>
 
@@ -271,12 +284,14 @@ input[type=range]{
       </dl>
     </div>
     <div>
-      <h3>What isn't decided here</h3>
-      <p>Banner emphasis, closed-day states and the 4:5 feed crop are drawn from the
-        chosen direction, not chosen alongside it — each of the five has an obvious path
-        for all three, and pinning them now would only be guessing at a layout that hasn't
-        been picked.</p>
-      <p>Pick one to develop, or name the two you want crossed.</p>
+      <h3>Where they landed</h3>
+      <p><strong>Flood, Misregister, Spine and Chrono are built.</strong> They sit beside
+        Classic as a layout picker in the Daily inspector. The choice is a document
+        setting, so every day you export carries it and a week reads as one week.</p>
+      <p>Banner emphasis, closed-day states and the 4:5 feed geometry came with them —
+        each layout honours all three rather than dropping to a plain row.</p>
+      <p><strong>Stub was passed over.</strong> It stays on this page as a record of the
+        exploration, not as something you can select.</p>
     </div>
   </div>
 </div>
@@ -782,27 +797,27 @@ function cardChrono(T,w,n){
    Wiring
    ============================================================ */
 var OPTIONS=[
-  { id:'flood', num:'01', name:'Flood', tag:'colour is the paper', fn:cardFlood,
+  { built:true, id:'flood', num:'01', name:'Flood', tag:'colour is the paper', fn:cardFlood,
     lede:'The day colour stops being a header and becomes the sheet. A bordered cream slab holds the list and grows into it.',
     density:'The slab flexes, so the colour runs from roughly three-quarters of the card at two events down to a wide margin at ten. Neither end looks like a mistake.',
     cta:'Full-bleed ink footer, always present, always the same height. It is the only part that never moves.',
     risk:'The loudest of the five, and Sunday yellow at full field is very loud. Ink on it clears contrast easily, but a week of these in a row is a week of shouting.' },
-  { id:'misreg', num:'02', name:'Misregister', tag:'the house misprint', fn:cardMisreg,
+  { built:true, id:'misreg', num:'02', name:'Misregister', tag:'the house misprint', fn:cardMisreg,
     lede:'The signature off-register plate, blown up to card scale: ink masthead, colour plate the same size and shifted, both bleeding off the edges.',
     density:'The masthead takes the slack — 700px tall on a two-event day, 410px on a ten. The list below never changes its grammar, only its step.',
     cta:'An ink ticket with its own colour echo, so the misprint reads at both ends of the card.',
     risk:'The offset has to stay static and identical everywhere or it stops reading as a print and starts reading as a bug. Least tolerant of hand-tuning.' },
-  { id:'spine', num:'03', name:'Spine', tag:'full-height rail', fn:cardSpine,
+  { built:true, id:'spine', num:'03', name:'Spine', tag:'full-height rail', fn:cardSpine,
     lede:'A 210px colour rail edge to edge with the day name set vertically, and the list hung off a fixed time column beside it.',
     density:'The rail is invariant, so the card’s identity is fixed before a single event is placed. Two events and ten produce the same object at different weights.',
     cta:'Sits in the cream column under a 3px rule; the rail runs past it to the bottom edge, so the colour is full-bleed height at every count.',
     risk:'The quietest, and closest to what exists today. Vertical type is a real commitment — it is excellent large and worthless at thumbnail.' },
-  { id:'stub', num:'04', name:'Stub', tag:'ticket grammar', fn:cardStub,
+  { built:false, id:'stub', num:'04', name:'Stub', tag:'ticket grammar', fn:cardStub,
     lede:'Straight off the poster system’s ticket. Colour stub at the head, colour tear-off at the foot, and every event its own bordered stub with a solid colour tab.',
     density:'Above seven events the shadow drops to the light token and the tabs thin, so a full day reads as a stack rather than a pile.',
     cta:'The tear-off is the CTA — the one place in the five where the call to action is a physical part of the object rather than a footer.',
     risk:'Ten shadowed boxes is the most fragile case in the set. It survives here, but it is the direction most likely to need a hard cap.' },
-  { id:'chrono', num:'05', name:'Chrono', tag:'colour as time axis', fn:cardChrono,
+  { built:true, id:'chrono', num:'05', name:'Chrono', tag:'colour as time axis', fn:cardChrono,
     lede:'The colour becomes the day’s span: a filled bar from 11:00 to 02:00 with a notch at every start time, then a colour time chip on every row.',
     density:'This one inverts the usual problem — because each row carries a chip, the card gains colour as it fills. A ten-event day is the best-looking one.',
     cta:'Cream footer under a 3px rule. The plainest of the five, deliberately, because the axis is already doing the talking.',
@@ -832,7 +847,8 @@ function buildWall(){
   document.getElementById('wall').innerHTML=OPTIONS.map(function(o){
     return '<section class="option" id="opt-'+o.id+'">'+
       '<div class="plate"><span class="num">'+o.num+'</span><h2>'+o.name+'</h2>'+
-        '<span class="tag">'+o.tag+'</span></div>'+
+        '<span class="tag">'+o.tag+'</span>'+
+        '<span class="status '+(o.built?'built':'passed')+'">'+(o.built?'In the Studio':'Passed over')+'</span></div>'+
       '<div class="stagewrap"><div class="stage" id="stage-'+o.id+'"></div></div>'+
       '<div class="notes">'+
         '<p class="lede">'+o.lede+'</p>'+

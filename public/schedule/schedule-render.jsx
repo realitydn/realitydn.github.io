@@ -1862,12 +1862,20 @@ function coverFit(doc, date, areaW, areaH, maxCols){
   return { cols, colGap, titles, useShort, colItems, font:COVER_LAD[idx], px:Math.round(COVER_LAD[idx]), isAuto: off===0 };
 }
 /* cover stylings + their event-area rectangle (shared by render + the editor) */
+/* The first five are cover-native arrangements; the last four are the daily
+   card's layouts re-cut for landscape, so a document can carry one visual idea
+   across the story, the feed and the page cover. Names match DAILY_CARDS on
+   purpose — Spine means the same thing on both surfaces. */
 const COVER_STYLES = [
   { id:'banner',   name:'Banner' },
   { id:'sidebar',  name:'Sidebar' },
   { id:'slice',    name:'Slice' },
   { id:'halftone', name:'Halftone' },
   { id:'centered', name:'Centered' },
+  { id:'flood',    name:'Flood' },
+  { id:'misreg',   name:'Misreg' },
+  { id:'spine',    name:'Spine' },
+  { id:'chrono',   name:'Chrono' },
 ];
 function coverArea(layout){
   const v = DAILY_VARIANTS.cover, sp = v.bleed + 24;
@@ -1876,6 +1884,11 @@ function coverArea(layout){
     case 'centered': return { w:430,           h:160,          cols:1 };
     case 'slice':    return { w:v.w-430-8-sp,  h:v.h-26-22,    cols:1 };
     case 'halftone': return { w:v.w-430-6-sp,  h:v.h-26-22,    cols:1 };
+    /* the slab sits inside the safe centre and carries its own border+padding */
+    case 'flood':    return { w:v.w-(v.bleed+12)*2-36, h:v.h-88-26-32, cols:2 };
+    case 'misreg':   return { w:v.w-sp*2,      h:v.h-130-8-20-8, cols:2 };
+    case 'spine':    return { w:v.w-196-26-(v.bleed+24), h:v.h-18-12-16-4-12-18, cols:2 };
+    case 'chrono':   return { w:v.w-sp*2,      h:v.h-16-52-11-39-10-20-10, cols:2 };
     default:         return { w:v.w-sp*2,      h:v.h-78-18-26, cols:2 };
   }
 }
@@ -1886,7 +1899,7 @@ function coverInfo(doc, date){
   return { px:fit.px, isAuto:fit.isAuto, layout };
 }
 const COVER_ADDR = 'realitydn.com · 86 Mai Thúc Lân, Đà Nẵng';
-function CoverEvents({ fit, T, w, justify }){
+function CoverEvents({ fit, T, w, justify, chip }){
   const f = fit.font;
   return (
     <div style={{ flex:1, minHeight:0, display:'flex', gap:fit.colGap, width:'100%', height:'100%' }}>
@@ -1901,9 +1914,12 @@ function CoverEvents({ fit, T, w, justify }){
             if(fit.titles==='crop') Object.assign(tStyle, { whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' });
             else Object.assign(tStyle, { lineHeight:1.16, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' });
             return (
-              <div key={ev.id} style={{ display:'flex', alignItems:'baseline', gap:f*0.5, minWidth:0,
+              <div key={ev.id} style={{ display:'flex', alignItems:chip?'flex-start':'baseline', gap:f*0.5, minWidth:0,
                 borderLeft: ev.emphasis==='banner' ? ('4px solid '+T.dc[w]) : 'none', paddingLeft: ev.emphasis==='banner' ? f*0.45 : 0 }}>
-                <span style={{ fontFamily:R_GROT, fontWeight:500, fontSize:f*0.86, color:T.fgStrong, flex:'none', fontVariantNumeric:'tabular-nums' }}>{ev.start}</span>
+                <span style={chip
+                  ? { fontFamily:R_GROT, fontWeight:600, fontSize:f*0.8, background:T.dc[w], color:T.dt[w],
+                      padding:(f*0.13)+'px '+(f*0.32)+'px', flex:'none', lineHeight:1.18, fontVariantNumeric:'tabular-nums' }
+                  : { fontFamily:R_GROT, fontWeight:500, fontSize:f*0.86, color:T.fgStrong, flex:'none', fontVariantNumeric:'tabular-nums' }}>{ev.start}</span>
                 <span style={tStyle}>{title}</span>
               </div>
             );
@@ -1913,13 +1929,13 @@ function CoverEvents({ fit, T, w, justify }){
     </div>
   );
 }
-function CoverBody({ doc, date, T, w, fit, justify }){
+function CoverBody({ doc, date, T, w, fit, justify, chip }){
   const info = r_dayInfo(doc, date);
   if(info.status==='closed') return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center',
     fontFamily:R_MONT, fontWeight:700, fontSize:36, letterSpacing:'.05em', textTransform:'uppercase', color:T.fg }}>{info.note||'CLOSED'}</div>;
   if(fit.colItems.every(c=>!c.length)) return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
     fontFamily:R_MONT, fontWeight:600, fontSize:22, letterSpacing:'.08em', textTransform:'uppercase', color:T.dim }}>Open · come hang out</div>;
-  return <CoverEvents fit={fit} T={T} w={w} justify={justify} />;
+  return <CoverEvents fit={fit} T={T} w={w} justify={justify} chip={chip} />;
 }
 function CoverId({ T, w, date, color, dayFs, kFs }){
   return (
@@ -2043,7 +2059,182 @@ function CoverCentered({ doc, date, T, w }){
     </div>
   );
 }
-const COVER_COMPS = { banner:CoverBanner, sidebar:CoverSidebar, slice:CoverSlice, halftone:CoverHalftone, centered:CoverCentered };
+/* ---- the four daily-card layouts, adapted to the cover ----
+   851×315 is a different problem from a 9:16 story: a fifth of the height and
+   nearly three times the width, with the outer 106px cropped away on mobile.
+   So these are not the story layouts scaled — they are the same STRUCTURAL
+   idea re-cut for landscape. Flood keeps its floating slab but lays it wide;
+   Misregister moves its plate from a masthead to a band, which is the same
+   off-register gesture in the direction this canvas actually has room for;
+   Spine keeps a full-height rail, which landscape suits better than portrait
+   did; Chrono is the one that gains — a time axis wants width, and here it
+   finally gets it. Graphics may bleed to the true edges, text never does. */
+
+/* The day's span as a bar, with a notch at every start. Shared by the cover's
+   Chrono; the story version draws its own at story scale. */
+function CoverAxis({ doc, date, T, w, h }){
+  const evs = r_eventsOn(doc, date, 'daily');
+  const barH = h || 22;
+  const at = ev=>{
+    const m = Math.max(DAILY_OPEN_MIN, Math.min(DAILY_CLOSE_MIN, dailyMinutes(ev.start)));
+    return (m - DAILY_OPEN_MIN) / (DAILY_CLOSE_MIN - DAILY_OPEN_MIN);
+  };
+  const ticks = [['11:00',0],['15:00',4/15],['19:00',8/15],['23:00',12/15],['02:00',1]];
+  return (
+    <div style={{ flex:'none' }}>
+      <div style={{ position:'relative', height:barH, background:T.dc[w] }}>
+        {evs.map(ev=>(
+          <div key={ev.id} style={{ position:'absolute', left:'calc('+(at(ev)*100)+'% - '+(at(ev)*3)+'px)',
+            top:0, bottom:0, width:3, background:T.fg }} />
+        ))}
+      </div>
+      <div style={{ position:'relative', height:14, marginTop:5 }}>
+        {ticks.map(t=>(
+          <div key={t[0]} style={{ position:'absolute', left:(t[1]*100)+'%',
+            transform:'translateX('+(t[1]===0?'0':t[1]===1?'-100%':'-50%')+')',
+            fontFamily:R_GROT, fontWeight:500, fontSize:11, color:T.dim,
+            fontVariantNumeric:'tabular-nums' }}>{t[0]}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* 6 — Flood: the day colour is the sheet; a bordered slab floats on it.
+   The slab stays inside the mobile-safe centre rather than bleeding, because
+   a card that reads as a card is the whole point of this one — clipped edges
+   would turn it into a background. */
+function CoverFlood({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, a = coverArea('flood');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  const dt = T.dt[w], dim = dt===R_CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.62)';
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', inset:0, background:T.dc[w] }} />
+      <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, top:14, height:66,
+        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <CoverId T={T} w={w} date={date} color={dt} dayFs={38} kFs={12.5} />
+        <RWordmark tight height={24} color={dt} />
+      </div>
+      <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, top:88, bottom:26,
+        background:T.bg, border:'2px solid '+T.fg, boxShadow:'0 6px 0 rgba(13,9,5,.28)',
+        padding:'14px 18px', boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex' }}>
+          <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
+        </div>
+      </div>
+      <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, bottom:7, textAlign:'right',
+        fontFamily:R_GROT, fontWeight:500, fontSize:11, color:dim }}>{COVER_ADDR}</div>
+    </React.Fragment>
+  );
+}
+
+/* 7 — Misregister: the house misprint. On a story this is a masthead; here it
+   is a band, because 315px of height has none to spare and the offset reads
+   just as clearly across the long edge. Offsets are STATIC per canon. */
+function CoverMisreg({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('misreg');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  const P = dailyPlate(T);
+  const bandH = 96, OX = 26, OY = 20;
+  return (
+    <React.Fragment>
+      {/* colour plate, offset and bleeding off the top and both sides */}
+      <div style={{ position:'absolute', left:-20+OX, right:-20-OX, top:-26+OY, height:bandH+26, background:T.dc[w] }} />
+      <div style={{ position:'absolute', left:-20, right:-20, top:-26, height:bandH+26, background:P.bg,
+        display:'flex', alignItems:'flex-end', justifyContent:'space-between',
+        paddingLeft:sp, paddingRight:sp, paddingBottom:12, boxSizing:'border-box' }}>
+        <CoverId T={T} w={w} date={date} color={P.fg} dayFs={38} kFs={12.5} />
+        <RWordmark tight height={24} color={P.fg} />
+      </div>
+      <div style={{ position:'absolute', left:0, right:0, top:bandH+OY+14, bottom:0,
+        paddingLeft:sp, paddingRight:sp, paddingBottom:8, boxSizing:'border-box',
+        display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex' }}>
+          <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
+        </div>
+        <CoverFootR T={T} />
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* 8 — Spine: a full-height colour rail, day name set vertically. Landscape
+   suits this better than portrait — the rail's run is the short edge, so the
+   name sits at a size that reads without swallowing the canvas. The rail
+   bleeds to the left edge; its type stays inside the safe centre. */
+function CoverSpine({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, rail = 196, padR = v.bleed+24, a = coverArea('spine');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  const dt = T.dt[w], dim = dt===R_CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.6)';
+  /* the name runs down the SHORT edge, so it is sized against 315, not 851 */
+  const vName = dailyFitName(42, R_DF[w], v.h-58);
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:rail, background:T.dc[w],
+        boxShadow:T.shadow, display:'flex', alignItems:'center', justifyContent:'flex-end',
+        gap:6, paddingRight:16, boxSizing:'border-box' }}>
+        <div style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', fontFamily:R_MONT,
+          fontWeight:800, fontSize:vName, letterSpacing:'.01em', lineHeight:1,
+          textTransform:'uppercase', color:dt }}>{R_DF[w]}</div>
+        <div style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', fontFamily:R_GROT,
+          fontWeight:500, fontSize:15, color:dim }}>{r_dshort(date)}</div>
+      </div>
+      <div style={{ position:'absolute', left:rail, right:0, top:0, bottom:0,
+        paddingLeft:26, paddingRight:padR, paddingTop:18, paddingBottom:12,
+        boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:'none', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:12, letterSpacing:'.2em',
+            textTransform:'uppercase', color:T.dim }}>TODAY AT REALITY</div>
+          <RWordmark tight height={22} color={T.fg} />
+        </div>
+        <div style={{ flex:'none', height:4, background:T.dc[w], margin:'10px 0 0' }} />
+        <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:12 }}>
+          <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
+        </div>
+        <CoverFootR T={T} text="realitydn.com" />
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* 9 — Chrono: the colour as the day's time axis. This is the layout the cover
+   format actually flatters — an axis wants width, and 851px is the widest
+   surface the Studio has. The chip on every row means the card gains colour
+   as the day fills rather than losing it. */
+function CoverChrono({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('chrono');
+  const fit = coverFit(doc, date, a.w, a.h, a.cols);
+  const open = r_dayInfo(doc, date).status!=='closed';
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:0, right:0, top:0, bottom:0,
+        paddingLeft:sp, paddingRight:sp, paddingTop:16, paddingBottom:10,
+        boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:'none', display:'flex', alignItems:'flex-end', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'baseline', gap:12 }}>
+            <div>
+              <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:12, letterSpacing:'.2em',
+                textTransform:'uppercase', color:T.dim }}>TODAY AT REALITY</div>
+              <div style={{ fontFamily:R_MONT, fontWeight:800, fontSize:38, lineHeight:1,
+                textTransform:'uppercase', color:T.fg, marginTop:3 }}>{R_DF[w]}</div>
+            </div>
+            <span style={{ background:T.dc[w], color:T.dt[w], fontFamily:R_GROT, fontWeight:600,
+              fontSize:16, padding:'4px 9px' }}>{r_dshort(date)}</span>
+          </div>
+          <RWordmark tight height={24} color={T.fg} />
+        </div>
+        {open && <div style={{ marginTop:11 }}><CoverAxis doc={doc} date={date} T={T} w={w} h={20} /></div>}
+        <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:10 }}>
+          <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} chip />
+        </div>
+        <CoverFootR T={T} />
+      </div>
+    </React.Fragment>
+  );
+}
+const COVER_COMPS = { banner:CoverBanner, sidebar:CoverSidebar, slice:CoverSlice, halftone:CoverHalftone,
+                      centered:CoverCentered, flood:CoverFlood, misreg:CoverMisreg, spine:CoverSpine, chrono:CoverChrono };
 function CoverCard({ doc, date }){
   const T = themeTokens(doc.style.theme);
   const w = r_wd(date);

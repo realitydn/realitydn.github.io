@@ -323,7 +323,7 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
   }
   /* document settings */
   const setStyle = patch => setDoc(d=>Object.assign({}, d, { style:Object.assign({}, d.style, patch) }));
-  const setCover = patch => setDoc(d=>Object.assign({}, d, { cover:Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, d.cover, patch) }));
+  const setCover = patch => setDoc(d=>Object.assign({}, d, { cover:Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap', qr:false }, d.cover, patch) }));
   const setDaily = patch => setDoc(d=>Object.assign({}, d, { daily:Object.assign({ story:0, feed:0, card:'classic' }, d.daily, patch) }));
   return (
     <React.Fragment>
@@ -423,8 +423,13 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
             value={doc.cover.cols||'auto'} onChange={v=>setCover({ cols:v })} />
           <SChips label="Long titles" options={[{v:'wrap',l:'Wrap'},{v:'short',l:'Short'},{v:'crop',l:'Crop'}]}
             value={doc.cover.titles||'wrap'} onChange={v=>setCover({ titles:v })} />
+          <SChips label="QR code" options={[{v:false,l:'Off'},{v:true,l:'On'}]}
+            value={!!doc.cover.qr} onChange={v=>setCover({ qr:!!v })} />
           <div className="ss-mini" style={{ marginBottom:10 }}>
             <b>Wrap</b> shows full titles on two lines — nothing is cropped. <b>Short</b> uses each event's short title; <b>Crop</b> is one line with an ellipsis. Size auto-fits the previewed day; nudge it bigger or smaller here.
+          </div>
+          <div className="ss-mini" style={{ marginBottom:10 }}>
+            Every cover ends on <b>{window.QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned, and one big enough to scan off a desktop screen costs the events list about {window.COVER_QR_LIFT||54}px of its {315}px. Turn it on for a cover that will be projected or seen on desktop; the text steps down a size to make room.
           </div>
         </React.Fragment>}
       <div className="ss-sech">Header</div>

@@ -1866,7 +1866,8 @@ function coverFit(doc, date, areaW, areaH, maxCols){
   for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],1.0)){ maxIdx=i; break; } }
   const off = Math.max(-5, Math.min(5, cfg.sizeOffset|0));
   const idx = Math.max(0, Math.min(baseIdx + off, Math.max(maxIdx, 0)));
-  return { cols, colGap, titles, useShort, colItems, font:COVER_LAD[idx], px:Math.round(COVER_LAD[idx]), isAuto: off===0 };
+  return { cols, colGap, titles, useShort, colItems, font:COVER_LAD[idx],
+    px:Math.round(COVER_LAD[idx]), isAuto: off===0 };
 }
 /* cover stylings + their event-area rectangle (shared by render + the editor) */
 /* The first five are cover-native arrangements; the last four are the daily
@@ -1891,40 +1892,111 @@ const COVER_STYLES = [
    holding), and the code costs the events list real height. On, it is a
    deliberate choice for the desktop-and-projector case.
 
-   COVER_QR_LIFT is what the footer row grows by when the code is in it — the
-   code's height less the plain line it replaces — and every layout's budget
-   below gives that back, so turning it on steps the type down rather than
-   running the list through the footer. */
-const COVER_QR = 72, COVER_QR_LIFT = COVER_QR - 18;
+   Where the code rides in the footer, the footer's declared height simply
+   becomes the code's, and every budget below subtracts that — so turning it on
+   steps the type down rather than running the list through the address. */
+/* Two sizes, because the two homes cost different things. In a colour panel the
+   code is free — nothing else wants that space — so it takes the comfortable
+   72px. In a footer every pixel is bought from the events list, and measuring
+   showed 72 there clips a FIVE-event day; 56 costs 22px instead of 38 and still
+   reads off a desktop screen, which is the case the code is on for. */
+const COVER_QR_PANEL = 72, COVER_QR = 56;
+/* The footer is a DECLARED height, not whatever the text happens to occupy.
+   It was the latter, and that is what broke: the CTA is longer than the bare
+   host it replaced, so in the narrow right-hand column of Slice and Halftone it
+   wrapped to a second line, and the events — which had no clip — simply painted
+   over it. Two fixed nowrap lines, one known number, and every budget below
+   subtracts exactly that. */
+const COVER_FOOT_H = 34;
+/* Sidebar, Slice and Halftone each carry a wide colour panel with dead space in
+   it, and each has the NARROWEST event column of the nine. Spending 72px of
+   their footer on a code is taking height from the one part that needs it while
+   room sits unused a few hundred pixels to the left — so on those three the
+   code goes in the panel and the list pays nothing. */
+/* Measuring the real containers settled where the code belongs. Put in the
+   footer it costs the list 38px — enough to clip a FIVE-event day on Flood,
+   Misregister and Chrono, and five events is an ordinary Tuesday. But every
+   layout already stands its wordmark in a band or a panel with room beside it,
+   and the poster ticket has always set wordmark, address and code as one block.
+   So the code rides with the wordmark, where seven of the nine layouts have the
+   space already and it costs their list nothing.
+
+   Centered is the exception by construction — everything on the axis, no band
+   to put it in — so there the footer carries it and pays the 38px. */
+const COVER_QR_WITH_MARK = { sidebar:1, slice:1, halftone:1 };
 function coverQrOn(doc){ return !!(doc && doc.cover && doc.cover.qr); }
+function coverQrInPanel(layout){ return !!COVER_QR_WITH_MARK[layout]; }
+/* The footer is two lines everywhere except Centered-with-a-code. */
+function coverFootH(layout, qrOn){
+  return (qrOn && !coverQrInPanel(layout)) ? COVER_QR : COVER_FOOT_H;
+}
+/* Every height below is now derived the same way — canvas, minus the chrome
+   above the list, minus the footer's declared height, minus the bottom pad —
+   rather than a magic number carrying an unstated footer allowance. */
 function coverArea(layout, qrOn){
-  const v = DAILY_VARIANTS.cover, sp = v.bleed + 24;
-  const q = qrOn ? COVER_QR_LIFT : 0;
+  const v = DAILY_VARIANTS.cover, sp = v.bleed + 24, f = coverFootH(layout, qrOn);
   switch(layout){
-    case 'sidebar':  return { w:v.w-326-28-sp, h:v.h-22-14-30-q, cols:1 };
-    case 'centered': return { w:430,           h:160-q,        cols:1 };
-    case 'slice':    return { w:v.w-430-8-sp,  h:v.h-26-22-q,  cols:1 };
-    case 'halftone': return { w:v.w-430-6-sp,  h:v.h-26-22-q,  cols:1 };
+    case 'sidebar':  return { w:v.w-326-28-sp,          h:v.h-20-22-8-14-f,       cols:1 };
+    case 'centered': return { w:430,                    h:190-f,                  cols:1 };
+    case 'slice':    return { w:v.w-430-8-sp,           h:v.h-26-22-8-14-f,       cols:1 };
+    case 'halftone': return { w:v.w-430-6-sp,           h:v.h-26-22-8-14-f,       cols:1 };
     /* the slab sits inside the safe centre and carries its own border+padding */
-    case 'flood':    return { w:v.w-(v.bleed+12)*2-36, h:v.h-88-26-32-q, cols:2 };
-    case 'misreg':   return { w:v.w-sp*2,      h:v.h-130-8-20-8-q, cols:2 };
-    case 'spine':    return { w:v.w-196-26-(v.bleed+24), h:v.h-18-12-16-4-12-18-q, cols:2 };
-    case 'chrono':   return { w:v.w-sp*2,      h:v.h-16-52-11-39-10-20-10-q, cols:2 };
-    default:         return { w:v.w-sp*2,      h:v.h-78-18-26-q, cols:2 };
+    case 'flood':    return { w:v.w-(v.bleed+12)*2-36,  h:v.h-88-13-32-f,         cols:2 };
+    case 'misreg':   return { w:v.w-sp*2,               h:v.h-130-8-f,            cols:2 };
+    case 'spine':    return { w:v.w-196-26-(v.bleed+24),h:v.h-18-16-14-12-12-f,   cols:2 };
+    /* Chrono is the one layout whose header is SHORTER than the code (Banner's
+       strip is 78, Misreg's band 96 — the code disappears inside those). Its
+       header row grows to the code's height, so the list gives that back. */
+    case 'chrono':   return { w:v.w-sp*2,
+                              h:v.h-16-(qrOn?44:52)-(qrOn?6:11)-(qrOn?35:39)-10-10-f, cols:2 };
+    default:         return { w:v.w-sp*2,               h:v.h-78-18-8-f,          cols:2 };
   }
+}
+/* The code, dropped into a layout's colour panel. The ground is a day colour —
+   any of the seven — and a QR's light modules have to stay light on all of
+   them, so QRBlock is handed an ink ground and draws its own cream tile rather
+   than taking the panel for its quiet zone. */
+function CoverPanelQR({ doc, T }){
+  if(!coverQrOn(doc)) return null;
+  return (
+    <ThemeCtx.Provider value={Object.assign({}, T, { bg:R_INK })}>
+      <QRBlock size={COVER_QR_PANEL} label={false} align="flex-start" />
+    </ThemeCtx.Provider>
+  );
 }
 function coverInfo(doc, date){
   const layout = (doc.cover && doc.cover.layout) || 'banner';
   const a = coverArea(layout, coverQrOn(doc));
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
-  return { px:fit.px, isAuto:fit.isAuto, layout };
+  return { px:fit.px, isAuto:fit.isAuto, layout, cols:fit.cols };
 }
 const COVER_ADDR = 'realitydn.com · 86 Mai Thúc Lân, Đà Nẵng';
 const COVER_ADDR_ONLY = '86 Mai Thúc Lân, Đà Nẵng';
+/* The cover reports its capacity the way every other surface does — by
+   MEASURING the rendered DOM, not by trusting the estimate. The estimate is
+   deliberately conservative about wrapping, which made it call Sidebar and
+   Flood over-capacity on days that fit exactly; a warning wrong two times in
+   nine is one the user learns to ignore. Context rather than a prop so the
+   report does not have to be threaded through all nine layouts. */
+const CoverFitCtx = React.createContext(null);
 function CoverEvents({ fit, T, w, justify, chip }){
   const f = fit.font;
+  const report = React.useContext(CoverFitCtx);
+  const boxRef = React.useRef(null);
+  React.useLayoutEffect(()=>{
+    if(!report || !boxRef.current) return;
+    const box = boxRef.current;
+    let need = 0;
+    for(let i=0;i<box.children.length;i++) need = Math.max(need, box.children[i].scrollHeight);
+    report({ over: need > box.clientHeight + 1, level:0, denIdx:0 });
+  });
   return (
-    <div style={{ flex:1, minHeight:0, display:'flex', gap:fit.colGap, width:'100%', height:'100%' }}>
+    /* overflow:hidden is the backstop the contract needs: the ladder has a
+       legibility floor, so on a heavy enough day the estimate can still come up
+       short — and when it does the honest failure is a clipped last row, not a
+       row printed across the address. */
+    <div ref={boxRef} style={{ flex:1, minHeight:0, display:'flex', gap:fit.colGap, width:'100%',
+      height:'100%', overflow:'hidden' }}>
       {fit.colItems.map((items,ci)=>(
         <div key={ci} style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column',
           justifyContent: justify || (items.length<=3 ? 'center' : 'space-between'), gap:f*0.5 }}>
@@ -1953,6 +2025,9 @@ function CoverEvents({ fit, T, w, justify, chip }){
 }
 function CoverBody({ doc, date, T, w, fit, justify, chip }){
   const info = r_dayInfo(doc, date);
+  const report = React.useContext(CoverFitCtx);
+  const quiet = info.status==='closed' || fit.colItems.every(c=>!c.length);
+  React.useLayoutEffect(()=>{ if(report && quiet) report({ over:false, level:0, denIdx:0 }); });
   if(info.status==='closed') return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center',
     fontFamily:R_MONT, fontWeight:700, fontSize:36, letterSpacing:'.05em', textTransform:'uppercase', color:T.fg }}>{info.note||'CLOSED'}</div>;
   if(fit.colItems.every(c=>!c.length)) return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
@@ -1986,28 +2061,33 @@ function CoverIdStacked({ w, date, color, dayFs, kFs }){   /* weekday on its own
    The offer is set in --fg at weight 600 and the address trails it dim: on a
    surface this short the eye gets one line, and the half of it worth reading is
    the destination. `doc.cover.qr` adds the code beside it (see COVER_QR). */
-function CoverFootR({ T, doc, text, strong, dim, centred }){
+function CoverFootR({ T, doc, text, strong, dim, centred, layout }){
   const qr = coverQrOn(doc);
+  const inPanel = coverQrInPanel(layout);
   const muted = dim || T.dim;
   const lead = strong || T.fg;
   /* One line normally. With the code beside it the row is ~72px narrower, and
      letting the address wrap where it lands broke "Đà Nẵng" onto its own line
      on the narrower layouts — so there it stacks on purpose: offer, address. */
-  const line = qr ? (
-    <div style={{ fontFamily:R_GROT, fontSize:12, lineHeight:1.4, textAlign: centred ? 'center' : 'left' }}>
-      <div style={{ fontWeight:600, color:lead }}>{text || R_QR_CTA}</div>
-      <div style={{ fontWeight:500, color:muted }}>{COVER_ADDR_ONLY}</div>
-    </div>
-  ) : (
-    <div style={{ fontFamily:R_GROT, fontSize:12, lineHeight:1.35,
-      textAlign: centred ? 'center' : 'right' }}>
-      <span style={{ fontWeight:600, color:lead }}>{text || R_QR_CTA}</span>
-      <span style={{ fontWeight:500, color:muted }}>{'  ·  ' + COVER_ADDR_ONLY}</span>
+  /* Always two lines, always nowrap, always COVER_FOOT_H tall. The offer and the
+     address each get their own line on every layout, so the block is the same
+     shape whether it sits under 851px of banner or a 390px column — and the fit
+     engine above can subtract a number that is actually true. */
+  const line = (
+    <div style={{ fontFamily:R_GROT, fontSize:12, lineHeight:1.4,
+      textAlign: centred ? 'center' : (qr ? 'left' : 'right') }}>
+      <div style={{ fontWeight:600, color:lead, whiteSpace:'nowrap' }}>{text || R_QR_CTA}</div>
+      <div style={{ fontWeight:500, color:muted, whiteSpace:'nowrap' }}>{COVER_ADDR_ONLY}</div>
     </div>
   );
-  if(!qr) return <div style={{ flex:'none', marginTop:6 }}>{line}</div>;
+  if(!qr || inPanel) return (
+    <div style={{ flex:'none', height:COVER_FOOT_H, marginTop:6,
+      display:'flex', flexDirection:'column',
+      justifyContent:'flex-end', alignItems: centred ? 'center' : (qr?'flex-start':'flex-end') }}>{line}</div>
+  );
   return (
-    <div style={{ flex:'none', marginTop:6, display:'flex', alignItems:'flex-end',
+    <div style={{ flex:'none', height:COVER_QR, marginTop:6, display:'flex',
+      alignItems: centred ? 'center' : 'flex-end',
       justifyContent: centred ? 'center' : 'space-between', gap:16 }}>
       <div style={{ minWidth:0 }}>{line}</div>
       <QRBlock size={COVER_QR} label={false} />
@@ -2030,7 +2110,7 @@ function CoverBanner({ doc, date, T, w }){
       </div>
       <div style={{ position:'absolute', left:0, right:0, top:stripH, bottom:0, paddingLeft:sp, paddingRight:sp, paddingTop:18, paddingBottom:8, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:1, minHeight:0, display:'flex' }}><CoverBody doc={doc} date={date} T={T} w={w} fit={fit} /></div>
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="banner" />
       </div>
     </React.Fragment>
   );
@@ -2045,10 +2125,13 @@ function CoverSidebar({ doc, date, T, w }){
         display:'flex', flexDirection:'column', justifyContent:'center', paddingLeft:v.bleed+18, paddingRight:20, paddingBottom:40, boxSizing:'border-box' }}>
         <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={30} kFs={12} />
       </div>
+      <div style={{ position:'absolute', left:v.bleed+18, bottom:18 }}>
+        <CoverPanelQR doc={doc} T={T} />
+      </div>
       <div style={{ position:'absolute', left:panel, right:0, top:0, bottom:0, paddingLeft:28, paddingRight:padR, paddingTop:20, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
         {COVER_SIDE(doc,date,T,w,fit)}
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="sidebar" />
       </div>
     </React.Fragment>
   );
@@ -2065,10 +2148,13 @@ function CoverSlice({ doc, date, T, w }){
         display:'flex', flexDirection:'column', justifyContent:'center', paddingBottom:20, boxSizing:'border-box' }}>
         <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={37} kFs={12.5} />
       </div>
+      <div style={{ position:'absolute', left:v.bleed+8, bottom:20 }}>
+        <CoverPanelQR doc={doc} T={T} />
+      </div>
       <div style={{ position:'absolute', left:430, right:0, top:0, bottom:0, paddingLeft:8, paddingRight:padR, paddingTop:26, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
         {COVER_SIDE(doc,date,T,w,fit)}
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="slice" />
       </div>
     </React.Fragment>
   );
@@ -2085,13 +2171,16 @@ function CoverHalftone({ doc, date, T, w }){
         display:'flex', flexDirection:'column', justifyContent:'center', paddingLeft:v.bleed+16, paddingRight:12, paddingBottom:34, boxSizing:'border-box' }}>
         <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={28} kFs={12} />
       </div>
+      <div style={{ position:'absolute', left:v.bleed+16, bottom:18 }}>
+        <CoverPanelQR doc={doc} T={T} />
+      </div>
       <div style={Object.assign({ position:'absolute', left:solidW, top:0, bottom:0, width:40 }, dots(11,4.2))} />
       <div style={Object.assign({ position:'absolute', left:solidW+40, top:0, bottom:0, width:40 }, dots(15,3.3))} />
       <div style={Object.assign({ position:'absolute', left:solidW+80, top:0, bottom:0, width:42 }, dots(20,2.4))} />
       <div style={{ position:'absolute', left:430, right:0, top:0, bottom:0, paddingLeft:6, paddingRight:padR, paddingTop:26, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
         {COVER_SIDE(doc,date,T,w,fit)}
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="halftone" />
       </div>
     </React.Fragment>
   );
@@ -2109,14 +2198,14 @@ function CoverCentered({ doc, date, T, w }){
         <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:24, color:T.dim }}>{r_dshort(date)}</span>
       </div>
       <div style={{ width:60, height:4, background:T.dc[w], margin:'9px 0 12px' }} />
-      <div style={{ flex:'none', width:a.w, maxHeight:162-(coverQrOn(doc)?COVER_QR_LIFT:0), display:'flex' }}>
+      <div style={{ flex:'none', width:a.w, maxHeight:a.h, overflow:'hidden', display:'flex' }}>
         <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
       </div>
       {/* Centered was the one cover layout that named neither the site nor the
           address — it ended on the last event. It closes like the rest now,
           centred to match rather than right-aligned. */}
       <div style={{ marginTop:10, textAlign:'center' }}>
-        <CoverFootR T={T} doc={doc} centred />
+        <CoverFootR T={T} doc={doc} centred layout="centered" />
       </div>
     </div>
   );
@@ -2181,7 +2270,7 @@ function CoverFlood({ doc, date, T, w }){
       {/* the slab clears the footer: with a code down there it has to clear the
           code, not just the line, or the two share the same 72px */}
       <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, top:88,
-        bottom: coverQrOn(doc) ? 26+COVER_QR_LIFT : 26,
+        bottom: 13 + coverFootH('flood', coverQrOn(doc)),
         background:T.bg, border:'2px solid '+T.fg, boxShadow:'0 6px 0 rgba(13,9,5,.28)',
         padding:'14px 18px', boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:1, minHeight:0, display:'flex' }}>
@@ -2197,7 +2286,7 @@ function CoverFlood({ doc, date, T, w }){
           same on Sunday's yellow as on Wednesday's purple. */}
       <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, bottom:7 }}>
         <ThemeCtx.Provider value={Object.assign({}, T, { bg:R_INK })}>
-          <CoverFootR T={T} doc={doc} strong={dt} dim={dim} />
+          <CoverFootR T={T} doc={doc} strong={dt} dim={dim} layout="flood" />
         </ThemeCtx.Provider>
       </div>
     </React.Fragment>
@@ -2228,7 +2317,7 @@ function CoverMisreg({ doc, date, T, w }){
         <div style={{ flex:1, minHeight:0, display:'flex' }}>
           <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
         </div>
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="misreg" />
       </div>
     </React.Fragment>
   );
@@ -2267,7 +2356,7 @@ function CoverSpine({ doc, date, T, w }){
         <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:12 }}>
           <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
         </div>
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="spine" />
       </div>
     </React.Fragment>
   );
@@ -2281,6 +2370,12 @@ function CoverChrono({ doc, date, T, w }){
   const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('chrono', coverQrOn(doc));
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   const open = r_dayInfo(doc, date).status!=='closed';
+  /* Chrono is the only layout carrying a third structural element — header,
+     AXIS, footer — so it is the only one where a code in the footer does not
+     simply fit. Rather than clip, it answers the way the daily cards answer a
+     heavy day: it steps its own chrome down. The axis is the layout and stays;
+     the day name and the gap above the bar give up the pixels. */
+  const tight = coverQrOn(doc);
   return (
     <React.Fragment>
       <div style={{ position:'absolute', left:0, right:0, top:0, bottom:0,
@@ -2291,7 +2386,7 @@ function CoverChrono({ doc, date, T, w }){
             <div>
               <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:12, letterSpacing:'.2em',
                 textTransform:'uppercase', color:T.dim }}>TODAY AT REALITY</div>
-              <div style={{ fontFamily:R_MONT, fontWeight:800, fontSize:38, lineHeight:1,
+              <div style={{ fontFamily:R_MONT, fontWeight:800, fontSize:tight?30:38, lineHeight:1,
                 textTransform:'uppercase', color:T.fg, marginTop:3 }}>{R_DF[w]}</div>
             </div>
             <span style={{ background:T.dc[w], color:T.dt[w], fontFamily:R_GROT, fontWeight:600,
@@ -2299,27 +2394,30 @@ function CoverChrono({ doc, date, T, w }){
           </div>
           <RWordmark tight height={24} color={T.fg} />
         </div>
-        {open && <div style={{ marginTop:11 }}><CoverAxis doc={doc} date={date} T={T} w={w} h={20} /></div>}
+        {open && <div style={{ marginTop:tight?6:11 }}>
+          <CoverAxis doc={doc} date={date} T={T} w={w} h={tight?16:20} /></div>}
         <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:10 }}>
           <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} chip />
         </div>
-        <CoverFootR T={T} doc={doc} />
+        <CoverFootR T={T} doc={doc} layout="chrono" />
       </div>
     </React.Fragment>
   );
 }
 const COVER_COMPS = { banner:CoverBanner, sidebar:CoverSidebar, slice:CoverSlice, halftone:CoverHalftone,
                       centered:CoverCentered, flood:CoverFlood, misreg:CoverMisreg, spine:CoverSpine, chrono:CoverChrono };
-function CoverCard({ doc, date }){
+function CoverCard({ doc, date, onFitReport }){
   const T = themeTokens(doc.style.theme);
   const w = r_wd(date);
   const v = DAILY_VARIANTS.cover;
   const Comp = COVER_COMPS[(doc.cover && doc.cover.layout) || 'banner'] || CoverBanner;
   return (
     <ThemeCtx.Provider value={T}>
-      <div style={{ width:v.w, height:v.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden', boxSizing:'border-box' }}>
-        <Comp doc={doc} date={date} T={T} w={w} />
-      </div>
+      <CoverFitCtx.Provider value={onFitReport||null}>
+        <div style={{ width:v.w, height:v.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden', boxSizing:'border-box' }}>
+          <Comp doc={doc} date={date} T={T} w={w} />
+        </div>
+      </CoverFitCtx.Provider>
     </ThemeCtx.Provider>
   );
 }
@@ -2329,7 +2427,7 @@ function PartCanvas({ doc, channelId, partIndex, dailyDate, dailyVariant, onFitR
   if(channelId==='print') return <PrintSheet doc={doc} onFitReport={onFitReport} />;
   if(channelId==='wa') return <WACard doc={doc} onFitReport={onFitReport} />;
   if(channelId==='daily') return dailyVariant==='cover'
-    ? <CoverCard doc={doc} date={dailyDate} />
+    ? <CoverCard doc={doc} date={dailyDate} onFitReport={onFitReport} />
     : <DailyCard doc={doc} date={dailyDate} variant={dailyVariant} />;
   return <CarouselPart doc={doc} channelId={channelId} partIndex={partIndex||0} onFitReport={onFitReport} />;
 }
@@ -2345,7 +2443,7 @@ function partSize(channelId, dailyVariant){
 }
 
 Object.assign(window, {
-  CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST, PALETTES, COVER_STYLES, COVER_QR, COVER_QR_LIFT,
+  CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST, PALETTES, COVER_STYLES, COVER_QR, COVER_FOOT_H,
   DAILY_CARDS, dailyCardOf,
   computeCapacity, bestSplit, resolveFit, computeStackSizing, coverInfo, dailySizing,
   PartCanvas, partCount, partSize, ArrowChip,

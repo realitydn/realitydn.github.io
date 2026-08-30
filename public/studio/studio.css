@@ -62,11 +62,12 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-iconbtn:disabled, .rs-iconbtn:disabled:hover{ opacity:.4; cursor:default; border-color:#3a2f1f; color:#cbc1ad; }
 .rs-iconbtn.on{ background:#241a10; border-color:#ed1b72; color:#fff; }
 
-/* export controls — poster name, format select, save button */
-/* Sticky so a narrow window scrolls the view/accent groups UNDER the export
-   controls instead of pushing Save off the edge. */
+/* The block you finish on — Save template, then the export controls (poster
+   name, format select, Save Images). Sticky so a narrow window scrolls the
+   view/accent groups UNDER it instead of pushing Save off the edge, and a flex
+   row of its own since two groups ride it rather than one. */
 .rs-top .rs-export{ position:sticky; right:0; background:#15110b; padding-left:12px; z-index:3;
-  box-shadow:-16px 0 16px -8px #15110b; }
+  box-shadow:-16px 0 16px -8px #15110b; display:flex; align-items:center; gap:12px; }
 .rs-tname{ width:132px; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
   color:#fffbf1; font-family:var(--rs-grot); font-size:12.5px; padding:8px 10px; outline:none; transition:.12s; }
 .rs-tname:focus{ border-color:#ed1b72; }
@@ -270,14 +271,23 @@ body{ background:#0e0c09; overflow:hidden; }
   background:#0e0b07; padding:1px 7px; border:1px solid #33291b; border-radius:8px; }
 
 /* template preview cards — a real mini render beats "4 parts · click to load" */
-.rs-tplgrid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin:2px 0 10px; }
+/* minmax(0,1fr), not 1fr: a bare 1fr column still takes its MIN size from the
+   widest thing in it, so one long template name pushed the column past the
+   236px library — taking the card's archive/delete buttons (absolute, off its
+   right edge) out of the panel with it. */
+.rs-tplgrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin:2px 0 10px; }
 .rs-tplcard{ display:flex; flex-direction:column; gap:4px; padding:6px; border:1px solid #33291b;
-  border-radius:8px; background:#1b1610; cursor:pointer; position:relative; transition:.12s; }
+  border-radius:8px; background:#1b1610; cursor:pointer; position:relative; transition:.12s; min-width:0; }
 .rs-tplcard:hover{ border-color:#ed1b72; transform:translateY(-2px); }
+/* Names wrap (to three lines, then ellipsis) rather than running off in one
+   line — "Thứ Tư Acoustic — Mai Thúc Lân" is a normal template name here, and a
+   card is 100px wide. Nothing collides: the buttons sit over the thumbnail. */
 .rs-tplcard .tn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.02em;
-  font-size:9.5px; color:#fffbf1; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  font-size:9.5px; color:#fffbf1; line-height:1.2; overflow-wrap:anywhere;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .rs-tplcard .ts{ font-family:var(--rs-grot); font-size:9px; color:#8a7f6c; }
-.rs-thumbbox{ overflow:hidden; border:1px solid rgba(255,251,241,.12); border-radius:4px; margin:0 auto; }
+.rs-thumbbox{ overflow:hidden; border:1px solid rgba(255,251,241,.12); border-radius:4px; margin:0 auto;
+  max-width:100%; }
 
 /* numeric arrange fields — the precise cousin of the position sliders */
 .rs-numgrid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }

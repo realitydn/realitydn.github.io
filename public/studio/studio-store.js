@@ -193,7 +193,9 @@
 
   async function tplPut(t){ await open(); const s = store(T_STORE, 'readwrite'); s.put(t); await txDone(s.transaction); cloudPutTpl(t); }
 
-  async function tplDelete(id){ await open(); const s = store(T_STORE, 'readwrite'); s.delete(id); await txDone(s.transaction); cloudDelTpl(id); }
+  async function tplDelete(id){ await open(); const s = store(T_STORE, 'readwrite'); s.delete(id); await txDone(s.transaction);
+    try{ await thumbDelete(id); }catch(e){}   // the card's cached picture goes with the record
+    cloudDelTpl(id); }
 
   /* Upsert many in one transaction without clearing — used by migrate() so a
      re-run can never drop records added after the first migration. */
@@ -216,6 +218,52 @@
     cloudPutMany(arr);   // best-effort mirror of the imported set
   }
 
+  /* ---- library thumbnails (derived, local-only) ----------------------------
+     A card in "My templates" used to be a LIVE render of the poster: opening a
+     day re-developed every photo in it through the riso press just to fill an
+     88px tile. A card is captured once now — a small JPEG — and read back from
+     here on every later open.
+
+     Thumbnails are DERIVED data, so they sit apart from the template record:
+     • They ride the `meta` store behind a 'thumb:' key rather than a store of
+       their own, so this needs no DB_VER bump — and therefore no upgrade that
+       a second open tab could block (see open()'s onblocked).
+     • They are LOCAL ONLY, never mirrored to the hub. A thumbnail is ~10 KB and
+       regenerates itself on any machine that hasn't got one, whereas attaching
+       it to the record would mean re-uploading that template's whole ~2.5 MB
+       body (photos and all) every time a card first drew.
+     -------------------------------------------------------------------------- */
+  const TH_PREFIX = 'thumb:';
+  function thumbRange(){ return IDBKeyRange.bound(TH_PREFIX, TH_PREFIX + '\uffff'); }
+  async function thumbRows(mode){ await open(); return reqVal(store(M_STORE, mode||'readonly').getAll(thumbRange())); }
+
+  /* { [templateId]: {src,w,h} } for the whole library — one read on load. */
+  async function thumbGetAll(){
+    const rows = await thumbRows();
+    const out = {};
+    (rows||[]).forEach(r=>{ if(r && r.k && r.v) out[r.k.slice(TH_PREFIX.length)] = r.v; });
+    return out;
+  }
+  async function thumbPut(id, thumb){ if(!id || !thumb) return; return metaPut(TH_PREFIX + id, thumb); }
+  async function thumbDelete(id){
+    if(!id) return;
+    await open();
+    const s = store(M_STORE, 'readwrite'); s.delete(TH_PREFIX + id);
+    return txDone(s.transaction);
+  }
+  /* Keep only the ids the library still holds. Import can put DIFFERENT artwork
+     under an id that already has a thumbnail, and a card that goes on showing
+     the poster it replaced is worse than no card picture at all. */
+  async function thumbPrune(keepIds){
+    const keep = {}; (keepIds||[]).forEach(id=>{ if(id) keep[id]=1; });
+    const rows = await thumbRows();
+    const drop = (rows||[]).map(r=>r && r.k).filter(k=>k && !keep[k.slice(TH_PREFIX.length)]);
+    if(!drop.length) return;
+    const s = store(M_STORE, 'readwrite');
+    drop.forEach(k=>s.delete(k));
+    return txDone(s.transaction);
+  }
+
   async function metaGet(k){ await open(); const v = await reqVal(store(M_STORE, 'readonly').get(k)); return v ? v.v : undefined; }
   async function metaPut(k, v){ await open(); const s = store(M_STORE, 'readwrite'); s.put({ k, v }); return txDone(s.transaction); }
 
@@ -236,5 +284,7 @@
     return { migrated: arr.length };
   }
 
-  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll, metaGet, metaPut, migrate, cloudPull, cloudPushAll, LS_TPL_KEY };
+  window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplReplaceAll,
+                    thumbGetAll, thumbPut, thumbDelete, thumbPrune,
+                    metaGet, metaPut, migrate, cloudPull, cloudPushAll, LS_TPL_KEY };
 })();

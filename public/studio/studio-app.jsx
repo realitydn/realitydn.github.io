@@ -1390,21 +1390,107 @@ function Sec({ id, title, count, dot, sub, open, children }){
   );
 }
 
+/* ---- library thumbnails ----------------------------------------------------
+   Rasterising a card is main-thread work, so captures run ONE AT A TIME: open a
+   day with eight posters in it and the tiles fill in one after another instead
+   of the panel locking up. Ordering also buys every card after the first a long
+   settle before its own turn comes round. */
+let _thumbQ = Promise.resolve();
+function queueThumb(fn){
+  _thumbQ = _thumbQ.then(fn, fn).catch(()=>{});
+  return _thumbQ;
+}
+/* html-to-image inlines the web fonts into every capture, and re-reads the
+   stylesheets to do it. The answer is the same for all of them, so it's fetched
+   once and handed to each.
+
+   Time-boxed, and that matters more than the saving: the fetch is of Google's
+   font files, and when they're slow to answer html-to-image simply waits — which
+   would park the whole capture queue behind them for as long as the connection
+   is bad. Past the deadline (or on an older build with no helper) captures go
+   ahead with '' and fall back to system type, which at 88px is a wash. */
+let _thumbFontCss = null;
+function thumbFontCss(node){
+  if(_thumbFontCss) return _thumbFontCss;
+  const hti = window.htmlToImage;
+  _thumbFontCss = (hti && typeof hti.getFontEmbedCSS==='function')
+    ? Promise.race([
+        Promise.resolve(hti.getFontEmbedCSS(node)).catch(()=>''),
+        new Promise(r=>setTimeout(()=>r(''), 4000)),
+      ]).then(css=>typeof css==='string'?css:'')
+    : Promise.resolve('');
+  return _thumbFontCss;
+}
+/* The press only paints a photo once its source has decoded, so a capture taken
+   on mount catches empty frames. Warm the sources first (RISO.loadImage is
+   cached), then wait one fully painted frame — same shape as settleFormat, rAF
+   raced against a timeout so a backgrounded tab can't stall the queue. */
+async function settleThumb(doc){
+  try{
+    const srcs = [];
+    (doc.elements||[]).forEach(el=>{ if(el && el.src) srcs.push(el.src); if(el && el.src2) srcs.push(el.src2); });
+    if(srcs.length && window.RISO && window.RISO.loadImage)
+      await Promise.all(srcs.map(s=>window.RISO.loadImage(s).catch(()=>null)));
+  }catch(e){}
+  await new Promise(r=>{ let done=false; const fin=()=>{ if(!done){ done=true; r(); } };
+    requestAnimationFrame(()=>requestAnimationFrame(fin)); setTimeout(fin, 400); });
+  await new Promise(r=>setTimeout(r, 180));
+}
+
 /* A template drawn at ~1/12 scale by the SAME element renderer the canvas
-   uses, so the preview cannot lie about what loading it gives you. */
-function TplThumb({ doc, w }){
+   uses, so the preview cannot lie about what loading it gives you.
+
+   Drawn ONCE, though. Every card used to be a live poster: its photos went back
+   through the riso press on every open, and — because the card passed a bare
+   `exporting` — at the export grid's 2x, so an 88px tile paid for a 2,160px
+   render. Two things changed. The press is now told the tile's real ratio, and
+   the first painted frame is captured to a small JPEG (`onCapture`) that every
+   later open draws instead of the poster. `thumb` is that capture; a card
+   without one renders live exactly as before and takes its picture. */
+function TplThumb({ doc, w, thumb, onCapture }){
   const f = AP_FMT[doc.masterFormat||'4x5'];
   const tw = w||88, sc = tw/f.w, th = Math.round(f.h*sc);
   const t = window.themeColors(doc.theme||'day');
   const accentHex = AP_PAL[doc.accent] || AP_PAL.blue;
+  const inner = React.useRef(null);
   const noop = ()=>{};
+  /* Capture the live render once, then hand it up to be filed. Keyed on `thumb`
+     alone: a re-render for any other reason must not re-shoot a card, and a
+     capture that lands flips this to the <img> branch. */
+  React.useEffect(()=>{
+    if(thumb || !onCapture || !window.htmlToImage) return;
+    let alive = true;
+    queueThumb(async ()=>{
+      if(!alive || !inner.current) return;
+      await settleThumb(doc);
+      const node = inner.current;
+      if(!alive || !node) return;
+      /* Captured at the tile's own scale (pixelRatio sc*2 over the poster's real
+         1080px box) — a ~176px JPEG, which is what the card wants and all it
+         should ever have cost. */
+      const src = await window.htmlToImage.toJpeg(node, {
+        width:f.w, height:f.h, pixelRatio:sc*2, quality:0.82, backgroundColor:t.bg,
+        fontEmbedCSS: await thumbFontCss(node),
+        style:{ transform:'none', transformOrigin:'0 0' } });
+      if(alive && src) onCapture({ src, w:tw, h:th });
+    });
+    return ()=>{ alive=false; };
+  }, [thumb]);
+
+  if(thumb && thumb.src){
+    /* Height rides the capture, not this doc — a thumbnail shot at another tile
+       width still lands on its own aspect rather than being squashed into it. */
+    const ih = thumb.w ? Math.round((thumb.h||th) * (tw/thumb.w)) : th;
+    return <img className="rs-thumbbox" src={thumb.src} alt="" loading="lazy" decoding="async"
+      style={{ width:tw, height:ih, background:t.bg, display:'block' }} />;
+  }
   return (
     <div className="rs-thumbbox" style={{ width:tw, height:th }}>
-      <div style={{ width:f.w, height:f.h, transform:'scale('+sc+')', transformOrigin:'0 0',
+      <div ref={inner} style={{ width:f.w, height:f.h, transform:'scale('+sc+')', transformOrigin:'0 0',
         background:t.bg, position:'relative', overflow:'hidden', pointerEvents:'none' }}>
         {doc.elements.map(el=>(
           <StudioElement key={el.id} el={el} theme={doc.theme||'day'} posterAccentHex={accentHex}
-            posterAccent={doc.accent} selected={false} dragging={false} onElPointerDown={noop} exporting />
+            posterAccent={doc.accent} selected={false} dragging={false} onElPointerDown={noop} exporting={sc*2} />
         ))}
       </div>
     </div>
@@ -1420,10 +1506,10 @@ function TplCard({ tpl, onApply }){
     </div>
   );
 }
-function UserTplCard({ t, onApply, onArchive, onDelete, archived }){
+function UserTplCard({ t, onApply, onArchive, onDelete, archived, thumb, onCapture }){
   return (
     <div className="rs-tplcard" onClick={onApply} title={t.name} style={archived?{ opacity:.75 }:null}>
-      <TplThumb doc={t.doc} w={88} />
+      <TplThumb doc={t.doc} w={88} thumb={thumb} onCapture={onCapture} />
       <span className="tn">{t.name}</span>
       <span className="ts">{archived ? 'archived' : new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
       <button className="rs-tplx" style={{ right:28, top:4, width:20, height:20, fontSize:11, borderColor:'#3a2f1f', color:'#b6ab97' }}
@@ -1893,7 +1979,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
 
 /* ---------- topbar ---------- */
 function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
-                  canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
+                  onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
@@ -1998,25 +2084,35 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
           : <button className="rs-iconbtn" onClick={onCloudSignIn}
               title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
       </div>}
-      <div className="rs-tgroup rs-export"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
-        <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
-          onChange={e=>setName(e.target.value)} onBlur={commit}
-          onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
-          title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
-        <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
-          onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
-          <option value="png">PNG</option>
-          <option value="jpg">JPG</option>
-          <option value="pdf">PDF</option>
-        </select>
-        <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
-          title={(printDef
-            ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
-            : isOutput
-              ? 'Export the format you’re viewing'
-              : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
-          Save Images<small>{scope}</small>
-        </button>
+      {/* Keeping the poster and exporting it are the two things you finish on, so
+          they share the sticky right-hand block — Save template used to live
+          only at the foot of the template list, a scroll away down the library. */}
+      <div className="rs-export">
+        <div className="rs-tgroup">
+          <button className="rs-iconbtn" onClick={onSaveTpl} disabled={!doc.elements.length}
+            title="Keep this poster in My templates — filed under the weekday its accent codes for (also the ＋ at the foot of the template list)">
+            ⤓ Save template</button>
+        </div>
+        <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
+          <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
+            onChange={e=>setName(e.target.value)} onBlur={commit}
+            onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
+            title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
+          <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
+            onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="pdf">PDF</option>
+          </select>
+          <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
+            title={(printDef
+              ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
+              : isOutput
+                ? 'Export the format you’re viewing'
+                : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
+            Save Images<small>{scope}</small>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2511,6 +2607,21 @@ function App(){
      copy read-only so nothing is ever hidden. ---- */
   const [userTpls, setUserTpls] = React.useState([]);
   const [tplReady, setTplReady] = React.useState(false);
+  /* Card pictures, { [id]: {src,w,h} } — a derived, local-only cache (see
+     RStore's thumbnail notes). Missing ones are shot by the card that wants
+     them, so an existing library fills itself in as you open its days. */
+  const [tplThumbs, setTplThumbs] = React.useState({});
+  const captureTplThumb = React.useCallback((id, thumb)=>{
+    if(!id || !thumb) return;
+    setTplThumbs(m => m[id] ? m : Object.assign({}, m, { [id]:thumb }));
+    try{ Promise.resolve(window.RStore.thumbPut(id, thumb)).catch(()=>{}); }catch(e){}
+  }, []);
+  /* Forget a card's picture — the template it drew is gone or has been saved
+     over, and a stale thumbnail showing the poster it replaced is worse than a
+     card that simply redraws itself. */
+  const forgetTplThumb = React.useCallback((id)=>{
+    setTplThumbs(m=>{ if(!m[id]) return m; const n = Object.assign({}, m); delete n[id]; return n; });
+  }, []);
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
       const m = await window.RStore.migrate();
@@ -2522,7 +2633,12 @@ function App(){
       try{ if(window.RStore.cloudPull){ const merged = await window.RStore.cloudPull(cloudProgress); if(Array.isArray(merged)&&merged.length>=all.length) all = merged; } }catch(e){}
       finally{ setCloudMsg(null); }
       all.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+      /* One read for the whole library's card pictures. Best-effort: without
+         them every card just renders itself live, exactly as it used to. */
+      let thumbs = null;
+      try{ thumbs = await window.RStore.thumbGetAll(); }catch(e){}
       if(!live) return;
+      if(thumbs) setTplThumbs(thumbs);
       setUserTpls(all);
       if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
     }catch(e){
@@ -2631,6 +2747,11 @@ function App(){
       archived: false, doc: snap };
     try{ await window.RStore.tplPut(t); }
     catch(e){ console.error(e); window.alert('Couldn’t save the template — the browser blocked writing to storage. Your other templates are unaffected.'); return; }
+    /* Saving over a template replaces its artwork, so its card picture is now a
+       photo of the poster you just overwrote — drop it and let the card reshoot.
+       (Which also makes re-saving the way to fix a thumbnail you don't like.) */
+    try{ await window.RStore.thumbDelete(t.id); }catch(e){}
+    forgetTplThumb(t.id);
     setUserTpls(existing ? userTpls.map(p=>p.id===t.id? t : p) : [t, ...userTpls]);
   }
   function applyUserTpl(t){
@@ -2667,6 +2788,7 @@ function App(){
     if(t && !window.confirm('Delete the template “'+t.name+'”?')) return;
     try{ await window.RStore.tplDelete(id); }
     catch(e){ console.error(e); window.alert('Couldn’t delete that template right now — try again.'); return; }
+    forgetTplThumb(id);
     setUserTpls(userTpls.filter(x=>x.id!==id));
   }
 
@@ -2710,6 +2832,12 @@ function App(){
       });
       try{ await window.RStore.tplReplaceAll(next); }
       catch(e){ console.error(e); window.alert('Couldn’t save the imported templates to storage — nothing was changed.'); return; }
+      /* Everything the file touched carries new artwork under a name or id that
+         may already have a card picture — keep only the untouched ones. */
+      const fresh = {}; incoming.forEach(t=>{ fresh[t.id]=1; });
+      const keep = next.filter(t=>!fresh[t.id]).map(t=>t.id);
+      try{ await window.RStore.thumbPrune(keep); }catch(e){}
+      setTplThumbs(m=>{ const n={}; keep.forEach(id=>{ if(m[id]) n[id]=m[id]; }); return n; });
       setUserTpls(next);
       window.alert('Imported '+incoming.length+' template'+(incoming.length===1?'':'s')
         +(replaced? ' — '+replaced+' replaced an existing one':'')
@@ -3009,6 +3137,7 @@ function App(){
       <Topbar doc={doc} setDoc={setDoc} overrideCount={overrideCount} resetFormat={resetFormat}
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
+        onSaveTpl={saveUserTpl}
         canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
         zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)} />
       <div className="rs-body">
@@ -3077,6 +3206,7 @@ function App(){
                       ? <div className="rs-tplgrid">
                           {items.map(t=>(
                             <UserTplCard key={t.id} t={t} onApply={()=>applyUserTpl(t)}
+                              thumb={tplThumbs[t.id]} onCapture={th=>captureTplThumb(t.id, th)}
                               onArchive={()=>setTplArchived(t.id, true)} onDelete={()=>delUserTpl(t.id)} />
                           ))}
                         </div>
@@ -3092,6 +3222,7 @@ function App(){
                     <div className="rs-tplgrid">
                       {items.map(t=>(
                         <UserTplCard key={t.id} t={t} onApply={()=>applyUserTpl(t)}
+                          thumb={tplThumbs[t.id]} onCapture={th=>captureTplThumb(t.id, th)}
                           onArchive={()=>setTplArchived(t.id, true)} onDelete={()=>delUserTpl(t.id)} />
                       ))}
                     </div>
@@ -3106,6 +3237,7 @@ function App(){
                       ? <div className="rs-tplgrid">
                           {arch.map(t=>(
                             <UserTplCard key={t.id} t={t} archived onApply={()=>applyUserTpl(t)}
+                              thumb={tplThumbs[t.id]} onCapture={th=>captureTplThumb(t.id, th)}
                               onArchive={()=>setTplArchived(t.id, false)} onDelete={()=>delUserTpl(t.id)} />
                           ))}
                         </div>

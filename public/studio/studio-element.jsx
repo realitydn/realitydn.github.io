@@ -145,7 +145,10 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
     /* `exporting` may carry the capture's pixelRatio as a number (A1 print is
        ~3.25×); rendering the riso 1:1 with that grid keeps dots crisp in print. */
     const xr = typeof exporting==='number' ? exporting : 2;
-    const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w),900);
+    /* Math.max(1,…): the library's thumbnails pass a ratio well UNDER 1 (an 88px
+       card off a 1080px poster is ~0.16), and a zero-width canvas throws out of
+       the engine's getImageData. */
+    const W = Math.max(1, exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w),900));
     const H=Math.max(1,Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
     const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
@@ -315,7 +318,7 @@ function BlockEl({ el, theme, fillHex, exporting }){
     if(!grainy) return;
     const cv=ref.current; if(!cv||!window.RISO) return;
     const xr = typeof exporting==='number' ? exporting : 2;   // print captures pass their ratio
-    const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w), 900);
+    const W = Math.max(1, exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w), 900));
     const H = Math.max(1, Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
     const cx=cv.getContext('2d');
@@ -351,7 +354,7 @@ function ShapeGrain({ el, fillHex, path, exporting }){
   React.useEffect(()=>{
     const cv=ref.current; if(!cv||!window.RISO) return;
     const xr = typeof exporting==='number' ? exporting : 2;
-    const W = exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w), 900);
+    const W = Math.max(1, exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w), 900));
     const H = Math.max(1, Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
     const cx=cv.getContext('2d'), s=W/el.w;

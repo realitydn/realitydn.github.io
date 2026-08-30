@@ -1837,8 +1837,11 @@ function DailyCard({ doc, date, variant }){
    so nothing is cropped; the auto-fit shrinks type to suit the day. doc.cover lets
    the editor bias the size, force the column count, or switch title handling. */
 const COVER_LAD = [14,15,16,17,18,19,20,22,24,26,29,32,36];
-/* event-area sizing for an arbitrary rectangle — wrap-aware, honours doc.cover */
-function coverFit(doc, date, areaW, areaH, maxCols){
+/* How the list splits and how tall it stands at a given size. Split out of
+   coverFit so the PLANNER below can ask "what does the schedule need?" using the
+   same arithmetic the fitter uses to answer "what size fits?" — one measurement,
+   so the two can never disagree. */
+function coverStack(doc, date, areaW, maxCols){
   const evs = r_eventsOn(doc, date, 'daily');
   const cfg = doc.cover || {};
   const titles = (cfg.titles==='crop' || cfg.titles==='short') ? cfg.titles : 'wrap';
@@ -1860,7 +1863,16 @@ function coverFit(doc, date, areaW, areaH, maxCols){
   }
   function colHeight(items, f){ const lh=f*1.3, gap=f*0.5; let h=0;
     items.forEach((ev,i)=>{ h += lh*lineCount(ev,f) + (i<items.length-1?gap:0); }); return h; }
-  const fits = (f, m) => colItems.every(it => colHeight(it,f) <= areaH*m);
+  return { cols, colGap, titles, useShort, colItems,
+    /* the tallest column at size f — what the schedule needs */
+    at: f => Math.max.apply(null, colItems.map(it=>colHeight(it,f)).concat([0])) };
+}
+/* event-area sizing for an arbitrary rectangle — wrap-aware, honours doc.cover */
+function coverFit(doc, date, areaW, areaH, maxCols){
+  const cfg = doc.cover || {};
+  const st = coverStack(doc, date, areaW, maxCols);
+  const { cols, colGap, titles, useShort, colItems } = st;
+  const fits = (f, m) => st.at(f) <= areaH*m;
   let baseIdx=0, maxIdx=0;
   for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],0.94)){ baseIdx=i; break; } }
   for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],1.0)){ maxIdx=i; break; } }
@@ -1926,18 +1938,54 @@ const COVER_FOOT_H = 34;
 const COVER_QR_WITH_MARK = { sidebar:1, slice:1, halftone:1 };
 function coverQrOn(doc){ return !!(doc && doc.cover && doc.cover.qr); }
 function coverQrInPanel(layout){ return !!COVER_QR_WITH_MARK[layout]; }
-/* The footer is two lines everywhere except Centered-with-a-code. */
-function coverFootH(layout, qrOn){
-  return (qrOn && !coverQrInPanel(layout)) ? COVER_QR : COVER_FOOT_H;
+/* PRIORITY, in order: the schedule · one piece of branding · the notes.
+   A schedule with its last rows sliced off fails at the one job the card has,
+   and a card that fails at its job is worse for the brand than a missing
+   address line. So the footer is no longer a fixed reservation the list has to
+   work around — it is the first thing to give way, and it gives way in this
+   order: the code, then the address, then the offer. The wordmark never goes;
+   it lives in a header band or a colour panel on every layout and costs the
+   list nothing, so there is always branding on the card. */
+const COVER_FOOT_TIERS = ['full','compact','line','none'];
+function coverFootH(layout, qrOn, tier){
+  if(coverQrInPanel(layout)) return 0;          /* the panel carries it all */
+  switch(tier){
+    case 'none':    return 0;
+    case 'line':    return 18;                  /* the offer alone */
+    case 'compact': return COVER_FOOT_H;        /* offer + address, no code */
+    default:        return qrOn ? COVER_QR : COVER_FOOT_H;
+  }
+}
+/* Richest footer this day can afford without the schedule losing a row. The
+   schedule is measured at the legibility floor: if it cannot fit even there,
+   no footer tier will save it and the leanest is chosen so the list keeps
+   every pixel there is. */
+function coverPlan(doc, date, layout){
+  const qrOn = coverQrOn(doc);
+  /* Order of sacrifice. A smaller day name loses nothing — the word is still
+     there — so the card's own chrome gives way one step before any note is
+     dropped. Only Chrono and Centered have a tighter setting; for the rest the
+     tight option is identical to the loose one and the list simply falls
+     through to the footer ladder. */
+  const opts = [ ['full',false], ['full',true], ['compact',true], ['line',true], ['none',true] ];
+  for(let i=0;i<opts.length;i++){
+    const tier = opts[i][0], tight = opts[i][1];
+    const a = coverArea(layout, qrOn, tier, tight);
+    if(coverStack(doc, date, a.w, a.cols).at(COVER_LAD[0]) <= a.h)
+      return { tier, tight, a, qrOn };
+  }
+  const last = opts[opts.length-1];
+  return { tier:last[0], tight:last[1], a:coverArea(layout, qrOn, last[0], last[1]), qrOn };
 }
 /* Every height below is now derived the same way — canvas, minus the chrome
    above the list, minus the footer's declared height, minus the bottom pad —
    rather than a magic number carrying an unstated footer allowance. */
-function coverArea(layout, qrOn){
-  const v = DAILY_VARIANTS.cover, sp = v.bleed + 24, f = coverFootH(layout, qrOn);
+function coverArea(layout, qrOn, tier, tight){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed + 24, f = coverFootH(layout, qrOn, tier||'full');
+  const g = tight ? 1 : 0;
   switch(layout){
     case 'sidebar':  return { w:v.w-326-28-sp,          h:v.h-20-22-8-14-f,       cols:1 };
-    case 'centered': return { w:430,                    h:190-f,                  cols:1 };
+    case 'centered': return { w:430,                    h:190-f+(g?31:0),         cols:1 };
     case 'slice':    return { w:v.w-430-8-sp,           h:v.h-26-22-8-14-f,       cols:1 };
     case 'halftone': return { w:v.w-430-6-sp,           h:v.h-26-22-8-14-f,       cols:1 };
     /* the slab sits inside the safe centre and carries its own border+padding */
@@ -1947,28 +1995,20 @@ function coverArea(layout, qrOn){
     /* Chrono is the one layout whose header is SHORTER than the code (Banner's
        strip is 78, Misreg's band 96 — the code disappears inside those). Its
        header row grows to the code's height, so the list gives that back. */
+    /* Header heights here are the MEASURED ones, not the sum of their parts —
+       the date chip and the wordmark make the row taller than the day name
+       alone suggests, and a planner working from the wrong number picks a
+       footer the list cannot actually afford. */
     case 'chrono':   return { w:v.w-sp*2,
-                              h:v.h-16-(qrOn?44:52)-(qrOn?6:11)-(qrOn?35:39)-10-10-f, cols:2 };
+                              h:v.h-16-(g?62:70)-(g?6:11)-(g?35:39)-10-10-f, cols:2 };
     default:         return { w:v.w-sp*2,               h:v.h-78-18-8-f,          cols:2 };
   }
 }
-/* The code, dropped into a layout's colour panel. The ground is a day colour —
-   any of the seven — and a QR's light modules have to stay light on all of
-   them, so QRBlock is handed an ink ground and draws its own cream tile rather
-   than taking the panel for its quiet zone. */
-function CoverPanelQR({ doc, T }){
-  if(!coverQrOn(doc)) return null;
-  return (
-    <ThemeCtx.Provider value={Object.assign({}, T, { bg:R_INK })}>
-      <QRBlock size={COVER_QR_PANEL} label={false} align="flex-start" />
-    </ThemeCtx.Provider>
-  );
-}
 function coverInfo(doc, date){
   const layout = (doc.cover && doc.cover.layout) || 'banner';
-  const a = coverArea(layout, coverQrOn(doc));
-  const fit = coverFit(doc, date, a.w, a.h, a.cols);
-  return { px:fit.px, isAuto:fit.isAuto, layout, cols:fit.cols };
+  const plan = coverPlan(doc, date, layout);
+  const fit = coverFit(doc, date, plan.a.w, plan.a.h, plan.a.cols);
+  return { px:fit.px, isAuto:fit.isAuto, layout, cols:fit.cols, footTier:plan.tier };
 }
 const COVER_ADDR = 'realitydn.com · 86 Mai Thúc Lân, Đà Nẵng';
 const COVER_ADDR_ONLY = '86 Mai Thúc Lân, Đà Nẵng';
@@ -2061,29 +2101,24 @@ function CoverIdStacked({ w, date, color, dayFs, kFs }){   /* weekday on its own
    The offer is set in --fg at weight 600 and the address trails it dim: on a
    surface this short the eye gets one line, and the half of it worth reading is
    the destination. `doc.cover.qr` adds the code beside it (see COVER_QR). */
-function CoverFootR({ T, doc, text, strong, dim, centred, layout }){
-  const qr = coverQrOn(doc);
-  const inPanel = coverQrInPanel(layout);
+function CoverFootR({ T, doc, text, strong, dim, centred, layout, tier }){
+  const t = tier || 'full';
+  if(t==='none' || coverQrInPanel(layout)) return null;
+  const qr = coverQrOn(doc) && t==='full';
   const muted = dim || T.dim;
   const lead = strong || T.fg;
-  /* One line normally. With the code beside it the row is ~72px narrower, and
-     letting the address wrap where it lands broke "Đà Nẵng" onto its own line
-     on the narrower layouts — so there it stacks on purpose: offer, address. */
-  /* Always two lines, always nowrap, always COVER_FOOT_H tall. The offer and the
-     address each get their own line on every layout, so the block is the same
-     shape whether it sits under 851px of banner or a 390px column — and the fit
-     engine above can subtract a number that is actually true. */
   const line = (
     <div style={{ fontFamily:R_GROT, fontSize:12, lineHeight:1.4,
       textAlign: centred ? 'center' : (qr ? 'left' : 'right') }}>
       <div style={{ fontWeight:600, color:lead, whiteSpace:'nowrap' }}>{text || R_QR_CTA}</div>
-      <div style={{ fontWeight:500, color:muted, whiteSpace:'nowrap' }}>{COVER_ADDR_ONLY}</div>
+      {t!=='line' &&
+        <div style={{ fontWeight:500, color:muted, whiteSpace:'nowrap' }}>{COVER_ADDR_ONLY}</div>}
     </div>
   );
-  if(!qr || inPanel) return (
-    <div style={{ flex:'none', height:COVER_FOOT_H, marginTop:6,
-      display:'flex', flexDirection:'column',
-      justifyContent:'flex-end', alignItems: centred ? 'center' : (qr?'flex-start':'flex-end') }}>{line}</div>
+  if(!qr) return (
+    <div style={{ flex:'none', height:coverFootH(layout, false, t), marginTop:6,
+      display:'flex', flexDirection:'column', justifyContent:'flex-end',
+      alignItems: centred ? 'center' : 'flex-end' }}>{line}</div>
   );
   return (
     <div style={{ flex:'none', height:COVER_QR, marginTop:6, display:'flex',
@@ -2094,12 +2129,32 @@ function CoverFootR({ T, doc, text, strong, dim, centred, layout }){
     </div>
   );
 }
+/* Sidebar, Slice and Halftone hand the WHOLE block to their colour panel — code,
+   offer and address — so none of it is bought from the narrowest event column on
+   the board. Wrapping is allowed here: a panel has vertical room to spare, which
+   is the whole reason the notes were moved into it. */
+function CoverPanelFoot({ doc, T, w, width }){
+  const dt = T.dt[w];
+  const dim = dt===R_CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.62)';
+  return (
+    <div style={{ width:width, display:'flex', flexDirection:'column', gap:9 }}>
+      {coverQrOn(doc) &&
+        <ThemeCtx.Provider value={Object.assign({}, T, { bg:R_INK })}>
+          <QRBlock size={COVER_QR_PANEL} label={false} align="flex-start" />
+        </ThemeCtx.Provider>}
+      <div style={{ fontFamily:R_GROT, fontSize:12, lineHeight:1.35 }}>
+        <div style={{ fontWeight:600, color:dt }}>{R_QR_CTA}</div>
+        <div style={{ fontWeight:500, color:dim, marginTop:2 }}>{COVER_ADDR_ONLY}</div>
+      </div>
+    </div>
+  );
+}
 const COVER_SIDE = (doc,date,T,w,fit,padR) => (
   <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:8 }}><CoverBody doc={doc} date={date} T={T} w={w} fit={fit} /></div>
 );
 /* 1 — Banner: full-bleed colour strip on top, events below */
 function CoverBanner({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, stripH = 78, a = coverArea('banner', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, stripH = 78, plan = coverPlan(doc, date, 'banner'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   return (
     <React.Fragment>
@@ -2110,69 +2165,73 @@ function CoverBanner({ doc, date, T, w }){
       </div>
       <div style={{ position:'absolute', left:0, right:0, top:stripH, bottom:0, paddingLeft:sp, paddingRight:sp, paddingTop:18, paddingBottom:8, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:1, minHeight:0, display:'flex' }}><CoverBody doc={doc} date={date} T={T} w={w} fit={fit} /></div>
-        <CoverFootR T={T} doc={doc} layout="banner" />
+        <CoverFootR T={T} doc={doc} layout="banner"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );
 }
 /* 2 — Sidebar: full-height colour panel left, events right */
 function CoverSidebar({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, panel = 326, padR = v.bleed+24, a = coverArea('sidebar', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, panel = 326, padR = v.bleed+24, plan = coverPlan(doc, date, 'sidebar'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   return (
     <React.Fragment>
+      {/* one column, not a centred identity with a block floating under it —
+          on a heavy day the block grows and the two collided. */}
       <div style={{ position:'absolute', left:0, top:0, bottom:0, width:panel, background:T.dc[w], color:T.dt[w], boxShadow:T.shadow,
-        display:'flex', flexDirection:'column', justifyContent:'center', paddingLeft:v.bleed+18, paddingRight:20, paddingBottom:40, boxSizing:'border-box' }}>
-        <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={30} kFs={12} />
-      </div>
-      <div style={{ position:'absolute', left:v.bleed+18, bottom:18 }}>
-        <CoverPanelQR doc={doc} T={T} />
+        display:'flex', flexDirection:'column', paddingLeft:v.bleed+18, paddingRight:18,
+        paddingTop:20, paddingBottom:16, boxSizing:'border-box' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex', alignItems:'center' }}>
+          <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={30} kFs={12} />
+        </div>
+        <CoverPanelFoot doc={doc} T={T} w={w} width={panel-(v.bleed+18)-18} />
       </div>
       <div style={{ position:'absolute', left:panel, right:0, top:0, bottom:0, paddingLeft:28, paddingRight:padR, paddingTop:20, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
         {COVER_SIDE(doc,date,T,w,fit)}
-        <CoverFootR T={T} doc={doc} layout="sidebar" />
+        <CoverFootR T={T} doc={doc} layout="sidebar"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );
 }
 /* 3 — Slice: a day-colour band skewed across the left, events right */
 function CoverSlice({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, padR = v.bleed+24, a = coverArea('slice', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, padR = v.bleed+24, plan = coverPlan(doc, date, 'slice'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   return (
     <React.Fragment>
       <div style={{ position:'absolute', left:-110, top:-50, bottom:-50, width:530, background:T.dc[w],
         transform:'skewX(-7deg)', transformOrigin:'top left', boxShadow:T.shadow }} />
-      <div style={{ position:'absolute', left:v.bleed+8, top:0, bottom:0, width:300, color:T.dt[w],
-        display:'flex', flexDirection:'column', justifyContent:'center', paddingBottom:20, boxSizing:'border-box' }}>
-        <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={37} kFs={12.5} />
-      </div>
-      <div style={{ position:'absolute', left:v.bleed+8, bottom:20 }}>
-        <CoverPanelQR doc={doc} T={T} />
+      <div style={{ position:'absolute', left:v.bleed+8, top:0, bottom:0, width:296, color:T.dt[w],
+        display:'flex', flexDirection:'column', paddingTop:20, paddingBottom:18, boxSizing:'border-box' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex', alignItems:'center' }}>
+          <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={37} kFs={12.5} />
+        </div>
+        <CoverPanelFoot doc={doc} T={T} w={w} width={286} />
       </div>
       <div style={{ position:'absolute', left:430, right:0, top:0, bottom:0, paddingLeft:8, paddingRight:padR, paddingTop:26, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
         {COVER_SIDE(doc,date,T,w,fit)}
-        <CoverFootR T={T} doc={doc} layout="slice" />
+        <CoverFootR T={T} doc={doc} layout="slice"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );
 }
 /* 4 — Halftone: solid colour block dissolving into a dot field, events right */
 function CoverHalftone({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, padR = v.bleed+24, solidW = 308, a = coverArea('halftone', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, padR = v.bleed+24, solidW = 308, plan = coverPlan(doc, date, 'halftone'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   const acc = T.dc[w];
   const dots = (size, r) => ({ backgroundImage:'radial-gradient(circle, '+acc+' '+r+'px, transparent '+(r+0.6)+'px)', backgroundSize:size+'px '+size+'px', backgroundPosition:'center' });
   return (
     <React.Fragment>
       <div style={{ position:'absolute', left:0, top:0, bottom:0, width:solidW, background:acc, color:T.dt[w], boxShadow:T.shadowSm,
-        display:'flex', flexDirection:'column', justifyContent:'center', paddingLeft:v.bleed+16, paddingRight:12, paddingBottom:34, boxSizing:'border-box' }}>
-        <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={28} kFs={12} />
-      </div>
-      <div style={{ position:'absolute', left:v.bleed+16, bottom:18 }}>
-        <CoverPanelQR doc={doc} T={T} />
+        display:'flex', flexDirection:'column', paddingLeft:v.bleed+16, paddingRight:14,
+        paddingTop:18, paddingBottom:16, boxSizing:'border-box' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex', alignItems:'center' }}>
+          <CoverIdStacked w={w} date={date} color={T.dt[w]} dayFs={28} kFs={12} />
+        </div>
+        <CoverPanelFoot doc={doc} T={T} w={w} width={solidW-(v.bleed+16)-14} />
       </div>
       <div style={Object.assign({ position:'absolute', left:solidW, top:0, bottom:0, width:40 }, dots(11,4.2))} />
       <div style={Object.assign({ position:'absolute', left:solidW+40, top:0, bottom:0, width:40 }, dots(15,3.3))} />
@@ -2180,24 +2239,24 @@ function CoverHalftone({ doc, date, T, w }){
       <div style={{ position:'absolute', left:430, right:0, top:0, bottom:0, paddingLeft:6, paddingRight:padR, paddingTop:26, paddingBottom:14, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:'none', display:'flex', justifyContent:'flex-end' }}><RWordmark tight height={22} color={T.fg} /></div>
         {COVER_SIDE(doc,date,T,w,fit)}
-        <CoverFootR T={T} doc={doc} layout="halftone" />
+        <CoverFootR T={T} doc={doc} layout="halftone"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );
 }
 /* 5 — Centered: everything on the axis, corner-safe */
 function CoverCentered({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('centered', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, plan = coverPlan(doc, date, 'centered'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   return (
     <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-      paddingLeft:sp, paddingRight:sp, paddingTop:18, paddingBottom:18, boxSizing:'border-box' }}>
+      paddingLeft:sp, paddingRight:sp, paddingTop:plan.tight?10:18, paddingBottom:plan.tight?10:18, boxSizing:'border-box' }}>
       <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:12, letterSpacing:'.3em', color:T.dim, textTransform:'uppercase' }}>TODAY AT REALITY</div>
       <div style={{ display:'flex', alignItems:'baseline', gap:14, marginTop:4 }}>
-        <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:34, textTransform:'uppercase', color:T.fg }}>{R_DF[w]}</span>
-        <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:24, color:T.dim }}>{r_dshort(date)}</span>
+        <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:plan.tight?26:34, textTransform:'uppercase', color:T.fg }}>{R_DF[w]}</span>
+        <span style={{ fontFamily:R_MONT, fontWeight:500, fontSize:plan.tight?19:24, color:T.dim }}>{r_dshort(date)}</span>
       </div>
-      <div style={{ width:60, height:4, background:T.dc[w], margin:'9px 0 12px' }} />
+      <div style={{ width:60, height:4, background:T.dc[w], margin:(plan.tight?'6px 0 8px':'9px 0 12px') }} />
       <div style={{ flex:'none', width:a.w, maxHeight:a.h, overflow:'hidden', display:'flex' }}>
         <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
       </div>
@@ -2205,7 +2264,7 @@ function CoverCentered({ doc, date, T, w }){
           address — it ended on the last event. It closes like the rest now,
           centred to match rather than right-aligned. */}
       <div style={{ marginTop:10, textAlign:'center' }}>
-        <CoverFootR T={T} doc={doc} centred layout="centered" />
+        <CoverFootR T={T} doc={doc} centred layout="centered"  tier={plan.tier} />
       </div>
     </div>
   );
@@ -2256,7 +2315,7 @@ function CoverAxis({ doc, date, T, w, h }){
    a card that reads as a card is the whole point of this one — clipped edges
    would turn it into a background. */
 function CoverFlood({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, a = coverArea('flood', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, plan = coverPlan(doc, date, 'flood'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   const dt = T.dt[w], dim = dt===R_CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.62)';
   return (
@@ -2270,7 +2329,7 @@ function CoverFlood({ doc, date, T, w }){
       {/* the slab clears the footer: with a code down there it has to clear the
           code, not just the line, or the two share the same 72px */}
       <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, top:88,
-        bottom: 13 + coverFootH('flood', coverQrOn(doc)),
+        bottom: 13 + coverFootH('flood', plan.qrOn, plan.tier),
         background:T.bg, border:'2px solid '+T.fg, boxShadow:'0 6px 0 rgba(13,9,5,.28)',
         padding:'14px 18px', boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
         <div style={{ flex:1, minHeight:0, display:'flex' }}>
@@ -2286,7 +2345,7 @@ function CoverFlood({ doc, date, T, w }){
           same on Sunday's yellow as on Wednesday's purple. */}
       <div style={{ position:'absolute', left:v.bleed+12, right:v.bleed+12, bottom:7 }}>
         <ThemeCtx.Provider value={Object.assign({}, T, { bg:R_INK })}>
-          <CoverFootR T={T} doc={doc} strong={dt} dim={dim} layout="flood" />
+          <CoverFootR T={T} doc={doc} strong={dt} dim={dim} layout="flood"  tier={plan.tier} />
         </ThemeCtx.Provider>
       </div>
     </React.Fragment>
@@ -2297,7 +2356,7 @@ function CoverFlood({ doc, date, T, w }){
    is a band, because 315px of height has none to spare and the offset reads
    just as clearly across the long edge. Offsets are STATIC per canon. */
 function CoverMisreg({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('misreg', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, plan = coverPlan(doc, date, 'misreg'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   const P = dailyPlate(T);
   const bandH = 96, OX = 26, OY = 20;
@@ -2317,7 +2376,7 @@ function CoverMisreg({ doc, date, T, w }){
         <div style={{ flex:1, minHeight:0, display:'flex' }}>
           <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
         </div>
-        <CoverFootR T={T} doc={doc} layout="misreg" />
+        <CoverFootR T={T} doc={doc} layout="misreg"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );
@@ -2328,7 +2387,7 @@ function CoverMisreg({ doc, date, T, w }){
    name sits at a size that reads without swallowing the canvas. The rail
    bleeds to the left edge; its type stays inside the safe centre. */
 function CoverSpine({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, rail = 196, padR = v.bleed+24, a = coverArea('spine', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, rail = 196, padR = v.bleed+24, plan = coverPlan(doc, date, 'spine'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   const dt = T.dt[w], dim = dt===R_CREAM ? 'rgba(255,251,241,.72)' : 'rgba(13,9,5,.6)';
   /* the name runs down the SHORT edge, so it is sized against 315, not 851 */
@@ -2356,7 +2415,7 @@ function CoverSpine({ doc, date, T, w }){
         <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:12 }}>
           <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} />
         </div>
-        <CoverFootR T={T} doc={doc} layout="spine" />
+        <CoverFootR T={T} doc={doc} layout="spine"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );
@@ -2367,7 +2426,7 @@ function CoverSpine({ doc, date, T, w }){
    surface the Studio has. The chip on every row means the card gains colour
    as the day fills rather than losing it. */
 function CoverChrono({ doc, date, T, w }){
-  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, a = coverArea('chrono', coverQrOn(doc));
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, plan = coverPlan(doc, date, 'chrono'), a = plan.a;
   const fit = coverFit(doc, date, a.w, a.h, a.cols);
   const open = r_dayInfo(doc, date).status!=='closed';
   /* Chrono is the only layout carrying a third structural element — header,
@@ -2375,7 +2434,7 @@ function CoverChrono({ doc, date, T, w }){
      simply fit. Rather than clip, it answers the way the daily cards answer a
      heavy day: it steps its own chrome down. The axis is the layout and stays;
      the day name and the gap above the bar give up the pixels. */
-  const tight = coverQrOn(doc);
+  const tight = plan.tight;
   return (
     <React.Fragment>
       <div style={{ position:'absolute', left:0, right:0, top:0, bottom:0,
@@ -2399,7 +2458,7 @@ function CoverChrono({ doc, date, T, w }){
         <div style={{ flex:1, minHeight:0, display:'flex', paddingTop:10 }}>
           <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} chip />
         </div>
-        <CoverFootR T={T} doc={doc} layout="chrono" />
+        <CoverFootR T={T} doc={doc} layout="chrono"  tier={plan.tier} />
       </div>
     </React.Fragment>
   );

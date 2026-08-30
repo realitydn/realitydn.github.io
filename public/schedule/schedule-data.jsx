@@ -82,7 +82,7 @@ function newDoc(startIso){
       wifi:'auto', wifiName:'REALITY', wifiPass:'thankyou', density:'auto' },
     style:{ look:'ledger', theme:'day', inkSaver:false },
     sizing:{},   /* per-channel weekly text sizing: { feed|stories: { base:'auto'|step, perDay:{date:step} } } */
-    cover:{ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' },   /* FB cover: styling + text-size bias, columns, title handling */
+    cover:{ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap', qr:false },   /* FB cover: styling + text-size bias, columns, title handling, optional QR */
     /* daily card: discrete per-variant text-size bias, plus the LAYOUT — one
        choice for the whole document, because a week of cards posted a morning
        at a time has to look like one week. */
@@ -152,7 +152,7 @@ function normalizeDoc(d){
     Object.keys(s.perDay || {}).forEach(date=>{ if(_inRange.indexOf(date)>=0) perDay[date] = s.perDay[date]|0; });
     doc.sizing[chId] = { base:(s.base==null ? 'auto' : s.base), perDay };
   });
-  doc.cover = Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap' }, (d && d.cover) || {});
+  doc.cover = Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap', qr:false }, (d && d.cover) || {});
   doc.daily = Object.assign({ story:0, feed:0, card:'classic' }, (d && d.daily) || {});
   if(DAILY_CARD_IDS.indexOf(doc.daily.card) < 0) doc.daily.card = 'classic';
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
@@ -619,6 +619,12 @@ const QR_HOST   = 'app.realitydn.com';
    stamp, nothing at all when even that won't sit. */
 const QR_LABEL      = 'Full schedule + event details';
 const QR_LABEL_SHORT= 'Full schedule';
+/* The same offer as a sentence, for surfaces that carry the words WITHOUT a
+   code beside them — the FB cover, where 315px of height has no room for a
+   scannable one, and any daily card whose footer is a line rather than a block.
+   One constant so the host is spelled one way everywhere: bare, no scheme, no
+   www (canon D5). */
+const QR_CTA        = 'Full schedule + details at ' + QR_HOST;
 const _SQR = [
   '1111111000011100001111111','1000001010001010101000001','1011101011010001001011101',
   '1011101011010101101011101','1011101001100110101011101','1000001000101000001000001',
@@ -674,7 +680,7 @@ Object.assign(window, {
   parseQuickLine, parsePasteBlock, parseCSV, serializeCSV,
   buildDocFromFeed, mergeFeedIntoDoc, ictHHMM, ictDate,
   loadStoredDoc, storeDoc,
-  Wordmark, SchQR, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT,
+  Wordmark, SchQR, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT, QR_CTA,
   PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex, SchInkMark,
 });
 

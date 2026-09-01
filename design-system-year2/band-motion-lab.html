@@ -478,17 +478,17 @@ var RIGS_DEF = [
     tag:'Big blocks keep re-printing, each coming back a new colour.',
     kind:'DOM · blocks',
     defaults:{
-      cols:12, rows:6, jitter:0, adapt:'on',
-      cycle:11000, stagger:530, hold:.3, order:'diagonal', ease:'stamp', quiet:'off',
+      cols:8, rows:4, jitter:0, adapt:'on',
+      cycle:5300, stagger:420, hold:.72, order:'diagonal', ease:'snap', quiet:'off',
       colourMode:'weights',
       sequence:['blue','yellow','blue','red'],
-      weights:{ blue:7, red:1, yellow:2, stock:0 }
+      weights:{ blue:10, red:1, yellow:1, stock:0 }
     },
     notes:{
       Loop:'A block holds, punches out to nothing, <strong>takes its new colour while it is at zero</strong>, and stamps back in. Because the swap happens invisibly the field never flickers — blocks simply keep coming back different.',
-      Tuning:'These are the tuned defaults: <strong>12 × 6 on a diagonal wave</strong>, an eleven-second cycle at 30% hold, jitter off. <strong>Stock is weighted to zero</strong>, so every cell is always an ink — the cream you see is the base showing through blocks that are mid-print, not unprinted cells. Give stock any weight and the field gains permanent paper gaps instead.',
-      Grid:'Columns and rows are really a <strong>block size</strong> — 12 × 6 is a 120×91px block on a wide band. With <strong>Keep blocks square</strong> on, a narrower band re-counts the grid to hold that size, so a phone gets fewer chunky blocks rather than twelve vertical slivers. Turn it off to pin the count and let blocks stretch. The line above shows what the grid actually is at this width.',
-      Watch:'At 30% hold a block is moving for most of its cycle, so it is the long cycle and the 530ms diagonal stagger doing the calming. Shorten either and it gets busy quickly.'
+      Tuning:'These are the shipped defaults, and they are what the live bands run: <strong>8 × 4 on a diagonal wave</strong>, a 5.3-second cycle at <strong>72% hold</strong>, snap easing, jitter off. <strong>Stock is weighted to zero</strong>, so every cell is always an ink — the cream you see is the base showing through blocks that are mid-print, not unprinted cells. Give stock any weight and the field gains permanent paper gaps instead.',
+      Grid:'Columns and rows are really a <strong>block size</strong> — 8 × 4 is a 180×136px block on a wide band. With <strong>Keep blocks square</strong> on, a narrower band re-counts the grid to hold that size, so a phone gets two chunky columns rather than eight vertical slivers. Turn it off to pin the count and let blocks stretch. The line above shows what the grid actually is at this width.',
+      Watch:'At 72% hold a block is still for about four seconds of every five, and blue at weight 10 against 1 and 1 means most blocks come back the same colour they left. That is what keeps a permanent loop quiet enough to read over — drop the hold or level the weights and it turns into a slot machine.'
     }
   },
   {

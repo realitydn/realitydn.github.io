@@ -30,9 +30,9 @@ const KEYS = ['blue', 'red', 'yellow', 'stock'];
 /* The tuned config. Weights are expressed by ROLE — the band's own ink
    leads, so one recipe serves every coloured band. */
 const CFG = {
-  cols: 12, rows: 6, jitter: 0,
-  cycle: 11000, stagger: 530, hold: 0.3,
-  lead: 7, second: 2, third: 1, stock: 0,
+  cols: 8, rows: 4, jitter: 0,
+  cycle: 5300, stagger: 420, hold: 0.72,
+  lead: 10, second: 1, third: 1, stock: 0,
 };
 const SECOND = { blue: 'yellow', red: 'yellow', yellow: 'red' };
 const THIRD  = { blue: 'red',    red: 'blue',   yellow: 'blue' };
@@ -63,6 +63,11 @@ function bez(x1, y1, x2, y2) {
 }
 const EASE_STAMP = bez(0.2, 1.4, 0.45, 1);
 const EASE_SNAP = bez(0.3, 0, 0.2, 1);
+/* Leaving is always a quick snap; the PRINT stroke is where a direction's
+   character lives. Tuned to --ease-snap: these blocks arrive square and
+   settle rather than overshooting, which at 72% hold reads as a press
+   laying a sheet down, not a stamp bouncing. */
+const PRINT = EASE_SNAP;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /* The un-print has to have frames to happen in, or a block would visibly pop
@@ -83,7 +88,7 @@ function phase(delay, t) {
   if (u < h) return { a: 1, idx, inbound: false };
   const v = (u - h) / (1 - h);
   if (v < 0.45) return { a: 1 - EASE_SNAP(v / 0.45), idx, inbound: false };
-  return { a: EASE_STAMP((v - 0.45) / 0.55), idx, inbound: true };
+  return { a: PRINT((v - 0.45) / 0.55), idx, inbound: true };
 }
 
 function pickColour(lead) {

@@ -1,4 +1,5 @@
 import React from 'react';
+import BandField from './BandField';
 import { Icons } from './Icons';
 import Reveal from './Reveal';
 import { URLS, STR } from '../data/translations';
@@ -11,6 +12,7 @@ export default function VisitSection({ lang, t }) {
     // buttons fall out of the band tokens (primary = ink fill, secondary =
     // ink outline) with no local patches.
     <section id="visit" className="band b-wayfind section">
+      <BandField lead="blue" />
       <div className="max-w-7xl mx-auto px-4 py-16">
         <Reveal stagger className="grid grid-cols-12 gap-6 items-start">
           <div className="col-span-12 md:col-span-5">

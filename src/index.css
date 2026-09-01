@@ -950,6 +950,29 @@ section[id], div[id="proposal"] {
   color: #fffbf1;
 }
 .b-paper { background: var(--bg); }
+
+/* ── Band field — the Press Loop (src/components/BandField.jsx), tuned on
+   design-system-year2/band-motion-lab.html.
+
+   The flat band is the DEFAULT and the fallback: these rules only bite once
+   BandField has mounted and added .band-live, which it does on the client
+   only. Pre-rendered HTML, crawlers, reduced-motion visitors and anyone
+   without JS keep the plain coloured band above.
+
+   Live, the band's own colour steps back to unprinted STOCK and the ink is
+   laid on it in blocks. Stock is a colour, not an absence, and it follows
+   the substrate rather than the theme — hence the literal, not var(--bg),
+   which on .b-act resolves to ink. */
+.band-live { position: relative; isolation: isolate; overflow: hidden; background: #fffbf1; }
+.band-fld { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.band-fld > i { display: block; position: absolute; will-change: transform; }
+/* the content rides above the field, and stays ink on every block colour */
+.band-live > *:not(.band-fld) { position: relative; z-index: 1; }
+/* ON-RED, LIVE: the sanctioned cream display type is a hole over a field
+   that also prints yellow and stock, so on a live act band the display
+   drops back to ink like the rest of the band's copy. */
+.b-act.band-live.band-live :is(.disp, .h-display, .reg-far),
+.b-act.band-live.band-live :is(.disp, .h-display, .reg-far) * { color: #0d0905; }
 /* ON-RED CONTRACT: on a red field EVERYTHING is ink; only display-size type
    (≥32px, far register) is re-creamed — .btn-action's AA exception extended
    by size, never generalised. Doubled specificity so later component rules

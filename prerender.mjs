@@ -105,6 +105,13 @@ async function prerender() {
           { name: 'prefers-color-scheme', value: 'light' },
         ]);
 
+        // The capture is a STILL, so ambient motion must not be in it.
+        // BandField reads this and declines to mount, leaving the flat
+        // coloured band in the shipped HTML — otherwise every band would
+        // bake in ~70 <i> elements frozen at whatever random frame the
+        // 500ms settle happened to land on.
+        await page.evaluateOnNewDocument(() => { window.__PRERENDER__ = true; });
+
         await page.goto(url, { waitUntil: 'networkidle0', timeout });
 
         // Wait a beat for any React effects to settle

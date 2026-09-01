@@ -1,0 +1,1039 @@
+<title>Band Motion Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   REALITY — Band Motion Lab
+   Press Run, Halftone Bloom and Cut Stack (01 / 05 / 06 on the
+   directions page) rebuilt as AMBIENT LOOPS with every dial
+   exposed: grid, timing, stagger order, easing, and colour as
+   either a sequence or a set of weights.
+
+   One engine drives all three. Every element runs the same
+   phase model — hold, un-print, RECOLOUR while it is invisible,
+   re-print — so a loop never shows a colour change happening.
+   Nothing animates opacity; a cell is either printed or it is
+   not.
+
+   The readability contract is unchanged from the directions
+   page and is what makes a LOOP safe under copy: the band's
+   base is unprinted stock, colour is laid on it, and the type
+   sits above in ink. The field palette is therefore blue, red,
+   yellow and stock — ink is deliberately not in it, because an
+   ink cell under ink type is the one combination that would
+   cost a word.
+   ============================================================ */
+:root{
+  --yellow:#fddf00; --red:#ed2224; --blue:#18a7e0;
+  --bg:#fffbf1; --surface:#fffbf1; --surface-2:#f4ecd7; --paper-shade:#ece2c9;
+  --fg:#0d0905; --fg-dim:rgba(13,9,5,.72); --fg-faint:rgba(13,9,5,.56);
+  --hairline:rgba(13,9,5,.16); --accent:#18a7e0; --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.10);
+  --sh-default:0 8px 2px rgba(13,9,5,.16);
+  --sh-heavy:0 13px 3px rgba(13,9,5,.23);
+  --mont:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --grot:'Space Grotesk',ui-monospace,'SF Mono',Menlo,monospace;
+  --ease-snap:cubic-bezier(.3,0,.2,1);
+  --dur-tap:120ms;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0703; --surface:#171109; --surface-2:#241a10; --paper-shade:#1c140b;
+    --fg:#fffbf1; --fg-dim:rgba(255,251,241,.60); --fg-faint:rgba(255,251,241,.48);
+    --hairline:#3a2c1c; --accent:#ed1b72; --on-ink:#fffbf1;
+    --sh-light:0 4px 1px rgba(255,251,241,.14);
+    --sh-default:0 9px 2px rgba(255,251,241,.18);
+    --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0703; --surface:#171109; --surface-2:#241a10; --paper-shade:#1c140b;
+  --fg:#fffbf1; --fg-dim:rgba(255,251,241,.60); --fg-faint:rgba(255,251,241,.48);
+  --hairline:#3a2c1c; --accent:#ed1b72; --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);
+  --sh-default:0 9px 2px rgba(255,251,241,.18);
+  --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--grot); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; text-wrap:balance}
+
+.masthead{border-bottom:3px solid var(--fg); padding:44px 32px 34px; max-width:1560px; margin:0 auto}
+.eyebrow{font-family:var(--mont); font-weight:700; font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+.masthead h1{font-family:var(--mont); font-weight:700; font-size:clamp(30px,4.4vw,46px); letter-spacing:.025em; text-transform:uppercase; line-height:1.1; margin-top:12px}
+.standfirst{max-width:70ch; margin-top:16px; color:var(--fg-dim); font-size:17px; line-height:1.7}
+.standfirst strong{color:var(--fg); font-weight:600}
+.standfirst code{font-family:var(--grot); background:var(--surface-2); padding:1px 5px}
+
+/* ---------- global console ---------- */
+.console{position:sticky; top:0; z-index:30; background:var(--surface-2); border-bottom:2px solid var(--fg)}
+.console-inner{max-width:1560px; margin:0 auto; padding:14px 32px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px 34px}
+.ctrl{display:flex; flex-direction:column; gap:8px}
+.ctrl > label, .ctrl > .ctrl-label{font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--fg-dim)}
+.seg{display:flex; border:2px solid var(--fg)}
+.seg button{
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.11em; text-transform:uppercase;
+  padding:11px 14px; min-height:44px; background:transparent; color:var(--fg);
+  border:0; border-right:2px solid var(--fg); cursor:pointer;
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--fg); color:var(--bg)}
+.act{
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.11em; text-transform:uppercase;
+  padding:11px 18px; min-height:44px; cursor:pointer; border:2px solid var(--fg);
+  background:var(--fg); color:var(--bg); box-shadow:var(--sh-default);
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.act.ghost{background:transparent; color:var(--fg); box-shadow:none}
+.act:hover{transform:translateY(-3px); box-shadow:var(--sh-heavy)}
+.act:active{transform:translateY(2px); box-shadow:var(--sh-light)}
+.readout{margin-left:auto; border-left:2px solid var(--hairline); padding-left:24px; font-size:13px; line-height:1.5; color:var(--fg-dim); max-width:36ch}
+.readout b{font-family:var(--mont); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:11px; color:var(--fg); display:block; margin-bottom:4px}
+
+/* ---------- one rig ---------- */
+.rig{border-bottom:2px solid var(--hairline)}
+.rig-h{max-width:1560px; margin:0 auto; padding:34px 32px 16px; display:flex; align-items:baseline; gap:10px 14px; flex-wrap:wrap}
+.rig-h .num{font-family:var(--mont); font-weight:800; font-size:11px; letter-spacing:.06em; background:var(--fg); color:var(--bg); padding:4px 7px; line-height:1; align-self:center}
+.rig-h h2{font-family:var(--mont); font-weight:700; font-size:20px; letter-spacing:.09em; text-transform:uppercase}
+.rig-h .tag{font-size:13.5px; color:var(--fg-faint)}
+.rig-h .kind{font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:4px 8px; border:2px solid var(--hairline); color:var(--fg-faint); align-self:center; white-space:nowrap}
+.rig-h .rig-act{margin-left:auto; display:flex; gap:8px; align-self:center}
+
+/* ============================================================
+   THE BAND — base is unprinted stock, .fld carries the ink,
+   type sits above it in ink. Identical contract to the
+   directions page; it is what lets these run forever without
+   ever costing a word.
+   ============================================================ */
+.band{
+  position:relative; isolation:isolate; overflow:hidden;
+  border-top:3px solid #0d0905; border-bottom:3px solid #0d0905;
+  background:#fffbf1; color:#0d0905;
+}
+.fld{position:absolute; inset:0; z-index:0; pointer-events:none}
+.fld > i{display:block; position:absolute; background:#18a7e0; will-change:transform}
+.fld > canvas{display:block; width:100%; height:100%}
+.band .inner{
+  position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:56px 32px;
+  display:grid; grid-template-columns:1fr 1fr; gap:34px; align-items:center;
+}
+.band .eyebrow{color:#0d0905; font-size:12px; margin-bottom:14px}
+.band .disp{font-family:var(--mont); text-transform:uppercase; line-height:1.05; letter-spacing:.015em; font-size:clamp(28px,3.6vw,46px); color:#0d0905}
+.band .disp .thin{font-weight:100; display:block}
+.band .disp .slam{font-weight:800; display:block}
+.band .sub{margin:18px 0 0; font-size:16px; line-height:1.65; max-width:44ch; color:#0d0905}
+.band .btns{margin-top:24px; display:flex; gap:14px; flex-wrap:wrap}
+.band .btn{
+  font-family:var(--mont); font-weight:700; font-size:13px; letter-spacing:.11em; text-transform:uppercase;
+  padding:14px 24px; border:2px solid #0d0905; background:#0d0905; color:#fffbf1;
+  box-shadow:var(--sh-default); cursor:pointer;
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.band .btn.alt{background:transparent; color:#0d0905}
+.band .btn:hover{transform:translateY(-3px); box-shadow:var(--sh-heavy)}
+.band .btn:active{transform:translateY(2px); box-shadow:var(--sh-light)}
+.band .shot{
+  border:2px solid #0d0905; box-shadow:0 13px 3px rgba(13,9,5,.23); background:#ece2c9;
+  aspect-ratio:5/4; display:grid; place-items:center;
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:rgba(13,9,5,.5);
+}
+@media (max-width:860px){
+  .band .inner{grid-template-columns:1fr; padding:40px 20px; gap:26px}
+  .band .shot{aspect-ratio:16/10}
+}
+
+/* ---------- the dials ---------- */
+.panel{max-width:1560px; margin:0 auto; padding:22px 32px 34px}
+.dials{
+  display:grid; gap:20px 30px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  align-items:start;
+}
+.dial{display:flex; flex-direction:column; gap:8px; min-width:0}
+.dial > .lab{
+  font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--fg-dim);
+  display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+}
+.dial > .lab b{font-family:var(--grot); font-weight:600; font-size:13px; letter-spacing:0; text-transform:none; color:var(--fg); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; accent-color:var(--accent); height:34px; cursor:pointer; margin:0}
+/* Panel segs carry their own borders, fill the row and wrap. A shared-border
+   strip clipped its last button — four options never fit one 230px column. */
+.dial .seg{border:0; gap:4px; flex-wrap:wrap}
+.dial .seg button{
+  border:2px solid var(--fg); flex:1 1 auto; min-width:0;
+  padding:9px 8px; min-height:40px; font-size:10px; letter-spacing:.07em;
+}
+.dial .seg button:last-child{border-right:2px solid var(--fg)}
+
+/* colour dials */
+.swatches{display:flex; gap:6px; flex-wrap:wrap}
+.sw{
+  width:54px; height:40px; border:2px solid var(--fg); cursor:pointer; padding:0;
+  font-family:var(--mont); font-weight:800; font-size:9px; letter-spacing:.06em; color:#0d0905;
+  display:grid; place-items:end center; padding-bottom:3px;
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.sw:hover{transform:translateY(-3px); box-shadow:var(--sh-default)}
+.sw:active{transform:translateY(2px); box-shadow:none}
+.sw[data-c="blue"]{background:#18a7e0} .sw[data-c="red"]{background:#ed2224}
+.sw[data-c="yellow"]{background:#fddf00} .sw[data-c="stock"]{background:#fffbf1}
+.seq{display:flex; gap:4px; flex-wrap:wrap; align-items:center; min-height:34px; padding:4px; border:2px solid var(--hairline)}
+.seq:empty::after{content:'empty — falls back to blue'; font-size:12px; color:var(--fg-faint); padding:2px 4px}
+.seq button{
+  width:30px; height:26px; border:2px solid var(--fg); cursor:pointer; padding:0;
+  position:relative; transition:transform var(--dur-tap) var(--ease-snap);
+}
+.seq button:hover{transform:translateY(-2px)}
+.seq button::after{content:'×'; position:absolute; inset:0; display:grid; place-items:center; font-family:var(--mont); font-weight:800; font-size:13px; color:#0d0905; opacity:0}
+.seq button:hover::after{opacity:1}
+.wt{display:grid; grid-template-columns:auto 1fr auto; gap:6px 10px; align-items:center}
+.wt .chip{width:26px; height:18px; border:2px solid var(--fg)}
+.wt .n{font-family:var(--grot); font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; min-width:3ch; text-align:right; color:var(--fg)}
+.wt input[type=range]{height:28px}
+.wt .pct{font-size:11px; color:var(--fg-faint); font-variant-numeric:tabular-nums}
+
+/* config i/o */
+.cfg{margin-top:22px; border-top:2px solid var(--hairline); padding-top:18px; display:grid; gap:12px; grid-template-columns:1fr auto; align-items:start}
+.cfg textarea{
+  width:100%; min-height:168px; resize:vertical;
+  font-family:var(--grot); font-size:12.5px; line-height:1.55;
+  background:var(--surface-2); color:var(--fg); border:2px solid var(--hairline); padding:12px 14px;
+}
+.cfg textarea:focus{border-color:var(--fg); outline:none}
+.cfg-side{display:flex; flex-direction:column; gap:8px}
+.cfg-note{font-size:12px; color:var(--fg-faint); max-width:22ch; line-height:1.5}
+
+.notes{max-width:1560px; margin:0 auto; padding:0 32px 30px}
+.notes dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:7px 16px; max-width:104ch}
+.notes dt{font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-faint); padding-top:3px}
+.notes dd{margin:0; font-size:14px; line-height:1.6; color:var(--fg-dim)}
+.notes dd strong{color:var(--fg); font-weight:600}
+.notes code{font-family:var(--grot); background:var(--surface-2); padding:1px 5px}
+
+.closing{max-width:1560px; margin:0 auto; padding:36px 32px 90px}
+.closing-inner{border-top:3px solid var(--fg); padding-top:32px; display:grid; gap:34px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.closing h3{font-family:var(--mont); font-weight:700; font-size:14px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:12px}
+.closing p{margin:0 0 10px; font-size:14.5px; line-height:1.7; color:var(--fg-dim)}
+.closing ul{margin:0; padding-left:18px; font-size:14.5px; line-height:1.7; color:var(--fg-dim)}
+.closing li{margin-bottom:8px}
+.closing strong{color:var(--fg); font-weight:600}
+.closing code{font-family:var(--grot); background:var(--surface-2); padding:1px 5px}
+
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.band :focus-visible{outline-color:#0d0905}
+
+/* THE CONTRACT — under reduced motion no loop is ever started; the engine
+   paints one settled frame and stops. These rules are the belt to that brace. */
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+
+@media (max-width:860px){
+  .console{position:static}
+  .console-inner{gap:12px 22px; padding:14px 18px}
+}
+@media (max-width:640px){
+  .masthead,.console-inner,.rig-h,.panel,.notes,.closing{padding-left:18px; padding-right:18px}
+  .readout{margin-left:0; border-left:0; padding-left:0; max-width:none}
+  .rig-h .rig-act{margin-left:0}
+  .cfg{grid-template-columns:1fr}
+  .cfg-note{max-width:none}
+  .notes dl{grid-template-columns:1fr; gap:2px 0}
+  .notes dt{padding-top:10px}
+}
+</style>
+
+<div class="masthead">
+  <div class="eyebrow">Website · Coloured bands · Year 2</div>
+  <h1>Band Motion Lab</h1>
+  <p class="standfirst">
+    <strong>Press Run, Halftone Bloom and Cut Stack</strong> — 01, 05 and 06 from the
+    directions page — rebuilt as <strong>ambient loops</strong> rather than one-shot
+    entrances, with every dial exposed. Set the grid, the timing, the stagger order and the
+    easing; drive colour either as a <strong>sequence</strong> the field cycles through or as
+    a set of <strong>weights</strong> it draws from at random.
+  </p>
+  <p class="standfirst">
+    <strong>Why a loop stays readable.</strong> The contract is the one from the directions
+    page, and it is what makes running forever safe under copy: the band's base is unprinted
+    stock, the colour is laid <em>on</em> it, and the type sits above in ink. Every cell is
+    ink-on-colour or ink-on-cream at every instant. The field palette is therefore
+    <strong>blue, red, yellow and stock</strong> — ink is deliberately not in it, since an ink
+    cell under ink type is the one combination that would cost a word.
+  </p>
+  <p class="standfirst">
+    <strong>Recolouring is invisible by construction.</strong> Every cell runs the same phase —
+    hold, un-print, take its new colour <em>while it is at zero</em>, re-print. You never see a
+    colour change happen, only a cell that comes back different. Nothing animates opacity.
+  </p>
+  <p class="standfirst">
+    Each rig's settings are live JSON at the bottom of its panel: <strong>edit it and press
+    Apply</strong>, or copy it out when you land on something. Send me a config and I can build
+    exactly that.
+  </p>
+</div>
+
+<div class="console">
+  <div class="console-inner">
+    <div class="ctrl">
+      <span class="ctrl-label">Run</span>
+      <div style="display:flex; gap:8px">
+        <button type="button" class="act" id="playpause">Pause all</button>
+        <button type="button" class="act ghost" id="resetall">Reset all</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="speed-label">Speed</span>
+      <div class="seg" role="group" aria-labelledby="speed-label" id="speed">
+        <button type="button" data-v="0.25" aria-pressed="false">0.25&#215;</button>
+        <button type="button" data-v="0.5" aria-pressed="false">0.5&#215;</button>
+        <button type="button" data-v="1" aria-pressed="true">1&#215;</button>
+        <button type="button" data-v="2" aria-pressed="false">2&#215;</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="theme-label">Page</span>
+      <div class="seg" role="group" aria-labelledby="theme-label" id="theme">
+        <button type="button" data-v="light" aria-pressed="true">Day</button>
+        <button type="button" data-v="dark" aria-pressed="false">Night</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="motion-label">Motion</span>
+      <div class="seg" role="group" aria-labelledby="motion-label" id="motion">
+        <button type="button" data-v="full" aria-pressed="true">Full</button>
+        <button type="button" data-v="reduced" aria-pressed="false">Reduced</button>
+      </div>
+    </div>
+
+    <div class="readout" id="readout"></div>
+  </div>
+</div>
+
+<div id="wall"></div>
+
+<div class="closing">
+  <div class="closing-inner">
+    <div>
+      <h3>What the dials mean</h3>
+      <ul>
+        <li><strong>Cycle</strong> is one cell's whole round trip. <strong>Hold</strong> is how
+          much of that it spends printed and still — at 80% a cell is stationary four fifths of
+          the time, which is what separates ambient from busy.</li>
+        <li><strong>Stagger</strong> is the gap between neighbours, and <strong>Order</strong>
+          decides who counts as a neighbour. Diagonal gives a wave, Scan a sweep, Shuffle a
+          scatter that never repeats its pattern.</li>
+        <li><strong>Stock</strong> in the palette is unprinted paper, so its weight is really a
+          <em>coverage</em> dial: more stock, more cream showing through, calmer band.</li>
+        <li><strong>Quiet zone</strong> freezes the cells behind the text column. Motion
+          continues around the copy and stops under it.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What ambient costs</h3>
+      <p>An entrance is free once it lands. A loop is not — it holds a frame budget for as long
+        as the band is on screen, so all three rigs <strong>pause themselves when scrolled out
+        of view</strong> and resume on the way back. That behaviour ships with the direction,
+        not just with this page.</p>
+      <p>Press and Cut are DOM — a handful of rectangles, one transform each per frame. Halftone
+        is a <strong>canvas</strong>: at cell 30 on a wide band it is roughly 900 dots, which is
+        far past what DOM nodes want to do sixty times a second.</p>
+      <p>Under reduced motion no loop starts at all. The engine paints one settled frame and
+        stops, so the band is simply a printed field.</p>
+    </div>
+    <div>
+      <h3>Where this goes next</h3>
+      <p>Still nothing adopted — <code>src/index.css</code> and the band components are
+        untouched. The twelve directions stay on
+        <code>band-motion-directions.html</code> as the record; this page is the tuning bench
+        for the three you kept.</p>
+      <p>When a config looks right, copy it out of the rig's JSON box and send it over. Landing
+        it on the real bands is then small: the engine moves into a module, the config becomes
+        a constant per band, and the field layer plus the pause-when-offscreen observer go into
+        <code>Hero.jsx</code> and <code>DarkCTA.jsx</code>.</p>
+      <p><strong>Worth a look while you tune:</strong> whether one config carries every band, or
+        whether the hero wants a slow high-hold loop and the red act band a shorter, busier one.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Palette. Stock is a COLOUR — the substrate's own cream, not
+   an absence and not transparency. Ink is absent on purpose:
+   the type on these bands is ink, so an ink cell is the one
+   fill that could swallow a word.
+   ============================================================ */
+var INKS = { blue:'#18a7e0', red:'#ed2224', yellow:'#fddf00', stock:'#fffbf1' };
+var INK_KEYS = ['blue','red','yellow','stock'];
+
+/* Canon easings, solved rather than approximated — `stamp` overshoots past
+   1, which is the whole point of it, so the solver must return y outside
+   the unit range. */
+function bez(x1,y1,x2,y2){
+  function A(a,b){return 1-3*b+3*a} function B(a,b){return 3*b-6*a} function C(a){return 3*a}
+  function calc(t,a,b){return ((A(a,b)*t+B(a,b))*t+C(a))*t}
+  function slope(t,a,b){return 3*A(a,b)*t*t+2*B(a,b)*t+C(a)}
+  return function(x){
+    if(x<=0) return 0;
+    if(x>=1) return 1;
+    var t=x;
+    for(var i=0;i<8;i++){
+      var s=slope(t,x1,x2); if(Math.abs(s)<1e-6) break;
+      var e=calc(t,x1,x2)-x; if(Math.abs(e)<1e-7) break;
+      t-=e/s;
+    }
+    return calc(t,y1,y2);
+  };
+}
+var EASE = { stamp:bez(.2,1.4,.45,1), snap:bez(.3,0,.2,1), out:bez(.16,1,.3,1) };
+
+/* Seeded, so nudging the cycle does not reshuffle a layout you liked. */
+function rng(seed){ var s=(seed>>>0)||1; return function(){ s=(s*1664525+1013904223)>>>0; return s/4294967296; }; }
+function norm(a){ var s=a.reduce(function(x,y){return x+y},0)||1; return a.map(function(x){return x/s}); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+/* ============================================================
+   THE PHASE MODEL — every cell in every rig runs this.
+
+     hold ──────────────▶ un-print ─┬─ re-print ──────▶ (repeat)
+                                    └─ RECOLOUR here, at zero
+
+   `a` is how printed the cell is, 0…1 (past 1 while the stamp
+   overshoots). Leaving is always a quick snap; the chosen ease
+   is the PRINT stroke, which is where a direction's character
+   actually lives. `idx` identifies the cycle, so a cell can be
+   recoloured exactly once per round while it is invisible.
+   ============================================================ */
+var MIN_SWAP = 220;   /* ms — see below */
+function phase(cfg, delay, t){
+  var cyc = Math.max(120, cfg.cycle);
+  var h = clamp(cfg.hold, 0, .95);
+  /* The invisible recolour is only invisible if the un-print actually has
+     frames to happen in. A short cycle at a high hold would squeeze the
+     whole transition into one or two frames, and a cell would visibly pop
+     from old colour to new. Floor the transition at MIN_SWAP so no
+     combination of dials can break the guarantee — the hold dial gives up
+     its last few percent rather than the promise. */
+  var minH = 1 - MIN_SWAP / cyc;
+  if (h > minH) h = Math.max(0, minH);
+  var rel = t - delay;
+  var idx = Math.floor(rel / cyc);
+  var u = ((rel % cyc) + cyc) % cyc / cyc;
+  if (u < h) return { a:1, idx:idx, inbound:false };
+  var v = (u - h) / (1 - h);
+  if (v < .45) return { a: 1 - EASE.snap(v / .45), idx:idx, inbound:false };
+  return { a: (EASE[cfg.ease] || EASE.snap)((v - .45) / .55), idx:idx, inbound:true };
+}
+
+/* Colour draw. Sequence walks a shared counter, so assignments made in
+   stagger order sweep the sequence across the field rather than scattering
+   it. Weights are a plain weighted pick. */
+function pickColour(rig){
+  var cfg = rig.cfg;
+  if (cfg.colourMode === 'sequence'){
+    var s = (cfg.sequence && cfg.sequence.length) ? cfg.sequence : ['blue'];
+    return s[(rig.seqI++) % s.length];
+  }
+  var tot = 0, i;
+  for (i=0;i<INK_KEYS.length;i++) tot += Math.max(0, cfg.weights[INK_KEYS[i]] || 0);
+  if (tot <= 0) return 'stock';
+  var r = Math.random() * tot;
+  for (i=0;i<INK_KEYS.length;i++){
+    r -= Math.max(0, cfg.weights[INK_KEYS[i]] || 0);
+    if (r <= 0) return INK_KEYS[i];
+  }
+  return 'stock';
+}
+
+/* Stagger order. This is what turns the same cells into a wave, a sweep or
+   a scatter, so it earns a dial of its own. */
+function orderIndex(cfg, cell, cols, rows){
+  switch (cfg.order){
+    case 'diagonal': return cell.r + cell.c;
+    case 'shuffle':  return cell.shuf;
+    case 'radial':   return Math.round(Math.hypot((cell.c - (cols-1)/2) / Math.max(1,cols), (cell.r - (rows-1)/2) / Math.max(1,rows)) * Math.max(cols, rows) * 1.6);
+    default:         return cell.r * cols + cell.c;   /* scan */
+  }
+}
+
+/* ============================================================
+   The three rigs. `defaults` is exactly the JSON the panel
+   round-trips, so what you copy out is the whole state.
+   ============================================================ */
+var RIGS_DEF = [
+  {
+    key:'press', n:'01', name:'Press Loop', from:'Press Run',
+    tag:'Big blocks keep re-printing, each coming back a new colour.',
+    kind:'DOM · blocks',
+    defaults:{
+      cols:5, rows:3, jitter:.45,
+      cycle:5200, stagger:220, hold:.74, order:'shuffle', ease:'stamp', quiet:'off',
+      colourMode:'weights',
+      sequence:['blue','yellow','blue','red'],
+      weights:{ blue:7, red:1, yellow:2, stock:3 }
+    },
+    notes:{
+      Loop:'A block holds, punches out to nothing, <strong>takes its new colour while it is at zero</strong>, and stamps back in. Because the swap happens invisibly, the field never flickers — blocks simply keep coming back different.',
+      Tuning:'<strong>Hold</strong> is the calm dial: at 74% each block is still for about four seconds of a five-second round. <strong>Jitter</strong> breaks the grid off square, which is most of what makes it read as a press rather than a table. Shuffle order keeps the scatter from ever settling into a visible pattern.',
+      Watch:'Low hold plus short cycle turns it into a slot machine. If it feels busy, raise Hold before you slow the cycle.'
+    }
+  },
+  {
+    key:'halftone', n:'05', name:'Halftone Drift', from:'Halftone Bloom',
+    tag:'A dot field breathing on a travelling wave.',
+    kind:'Canvas · dots',
+    defaults:{
+      cell:30,
+      cycle:4400, stagger:60, hold:.42, order:'diagonal', ease:'snap', quiet:'off',
+      colourMode:'weights',
+      sequence:['blue','blue','yellow'],
+      weights:{ blue:8, red:1, yellow:1, stock:2 }
+    },
+    notes:{
+      Loop:'Every dot runs the same phase, and <strong>Order</strong> plus <strong>Stagger</strong> set who moves when — diagonal gives the wave rolling across the field, radial gives a pulse out of the centre. Dots grow past contact, so a fully printed patch closes solid with no seams.',
+      Tuning:'<strong>Dot cell</strong> is the texture: 16–22px is fine riso grain, 40px+ is big graphic spots. Stock weight is really a coverage dial — push it up and you get scattered dots on cream instead of a solid field breathing.',
+      Cost:'<strong>Canvas, not DOM.</strong> At cell 30 on a wide band that is around 900 dots, which is far past what elements want to do sixty times a second. Stock dots are not drawn at all — unprinted is unprinted.'
+    }
+  },
+  {
+    key:'cut', n:'06', name:'Cut Cycle', from:'Cut Stack',
+    tag:'Strips run off one side and return from the other, recoloured.',
+    kind:'DOM · strips',
+    defaults:{
+      rows:7,
+      cycle:6400, stagger:430, hold:.7, order:'scan', ease:'out', quiet:'off',
+      colourMode:'sequence',
+      sequence:['blue','blue','yellow','blue','red'],
+      weights:{ blue:6, red:2, yellow:2, stock:2 }
+    },
+    notes:{
+      Loop:'A strip slides off its side, swaps colour off-band, and comes back in from the other — a conveyor rather than a retreat. Odd and even strips run opposite ways, so the band never drifts as a whole.',
+      Tuning:'Set to <strong>Sequence</strong> by default, because this is the rig where you actually read the order: the strips deal out blue, blue, yellow, blue, red like a print run. Add and remove swatches below and watch it change on the next pass.',
+      Watch:'Strips crossing the full width is the most movement of the three. Long cycle, high hold and a big stagger keep it to one strip travelling at a time.'
+    }
+  }
+];
+
+/* ---------- layout ---------- */
+function buildCells(rig){
+  var cfg = rig.cfg, cells = [], r, c;
+  if (rig.key === 'press'){
+    var rnd = rng(9);
+    var hs = norm(Array.from({length:cfg.rows}, function(){ return 1 + (rnd()*2-1)*cfg.jitter*.6; }));
+    var y = 0;
+    for (r=0;r<cfg.rows;r++){
+      var ws = norm(Array.from({length:cfg.cols}, function(){ return 1 + (rnd()*2-1)*cfg.jitter*.6; }));
+      var x = 0;
+      for (c=0;c<cfg.cols;c++){ cells.push({ r:r, c:c, x:x, y:y, w:ws[c], h:hs[r] }); x += ws[c]; }
+      y += hs[r];
+    }
+    rig.cols = cfg.cols; rig.rows = cfg.rows;
+  } else if (rig.key === 'cut'){
+    var n = cfg.rows;
+    for (r=0;r<n;r++) cells.push({ r:r, c:0, x:0, y:r/n, w:1, h:1/n });
+    rig.cols = 1; rig.rows = n;
+  } else {
+    var w = rig.band.clientWidth || 1180, h = rig.band.clientHeight || 420;
+    var cell = Math.max(8, cfg.cell);
+    var cols = Math.ceil(w / cell) + 1, rows = Math.ceil(h / cell) + 1;
+    for (r=0;r<rows;r++) for (c=0;c<cols;c++) cells.push({ r:r, c:c, px:c*cell + cell/2, py:r*cell + cell/2 });
+    rig.cols = cols; rig.rows = rows; rig.cell = cell;
+  }
+  /* one stable shuffle per layout, so Shuffle order is a scatter and not
+     a different scatter every frame */
+  var sr = rng(23), perm = cells.map(function(_,i){ return i; });
+  for (var i=perm.length-1;i>0;i--){ var j=Math.floor(sr()*(i+1)); var t=perm[i]; perm[i]=perm[j]; perm[j]=t; }
+  cells.forEach(function(cl,i){ cl.shuf = perm[i]; });
+
+  rig.seqI = 0;
+  cells.forEach(function(cl){
+    cl.delay = orderIndex(cfg, cl, rig.cols, rig.rows) * cfg.stagger;
+    cl.col = pickColour(rig);
+    cl.mark = -1;
+  });
+  rig.cells = cells;
+  markQuiet(rig);
+  if (rig.key !== 'halftone') buildNodes(rig);
+  sizeCanvas(rig);
+  /* Paint one frame NOW, before anything asks whether the band is on
+     screen. The loop is gated on visibility, so without this a band built
+     below the fold would sit there completely unprinted until it was
+     scrolled to — the blank-band failure the whole approach exists to
+     avoid. At t=0 this is simply the settled field. */
+  draw(rig, clock, reduced());
+}
+
+/* Quiet zone — the cells whose centre falls inside the text column hold
+   still and keep their colour, so motion happens around the copy. */
+function markQuiet(rig){
+  var on = rig.cfg.quiet === 'on';
+  var box = null;
+  if (on && rig.textEl){
+    var b = rig.band.getBoundingClientRect(), t = rig.textEl.getBoundingClientRect();
+    if (b.width && b.height) box = {
+      x0:(t.left - b.left)/b.width, x1:(t.right - b.left)/b.width,
+      y0:(t.top - b.top)/b.height, y1:(t.bottom - b.top)/b.height
+    };
+  }
+  var W = rig.band.clientWidth || 1, H = rig.band.clientHeight || 1;
+  rig.cells.forEach(function(cl){
+    if (!box){ cl.quiet = false; return; }
+    var cx = (rig.key === 'halftone') ? cl.px / W : cl.x + cl.w/2;
+    var cy = (rig.key === 'halftone') ? cl.py / H : cl.y + cl.h/2;
+    cl.quiet = cx >= box.x0 && cx <= box.x1 && cy >= box.y0 && cy <= box.y1;
+  });
+}
+
+function buildNodes(rig){
+  var html = '';
+  rig.cells.forEach(function(cl){
+    html += '<i style="left:' + (cl.x*100) + '%; top:' + (cl.y*100) + '%; width:calc(' +
+            (cl.w*100) + '% + 1px); height:calc(' + (cl.h*100) + '% + 1px)"></i>';
+  });
+  rig.fld.innerHTML = html;
+  rig.nodes = Array.prototype.slice.call(rig.fld.children);
+}
+
+function sizeCanvas(rig){
+  if (rig.key !== 'halftone') return;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var w = rig.band.clientWidth || 1180, h = rig.band.clientHeight || 420;
+  rig.canvas.width = Math.round(w * dpr);
+  rig.canvas.height = Math.round(h * dpr);
+  rig.ctx = rig.canvas.getContext('2d');
+  rig.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+/* ============================================================
+   Painting. `freeze` forces every cell fully printed and skips
+   recolouring — that is the reduced-motion frame, and also what
+   a quiet-zone cell gets every frame.
+   ============================================================ */
+var HELD = { a:1, idx:-1, inbound:false };
+
+function draw(rig, t, freeze){
+  var cfg = rig.cfg, i;
+  if (rig.key === 'halftone'){
+    var ctx = rig.ctx; if (!ctx) return;
+    var w = rig.band.clientWidth, h = rig.band.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    var maxR = rig.cell * .72, groups = {};
+    for (i=0;i<rig.cells.length;i++){
+      var d = rig.cells[i];
+      var pd = (freeze || d.quiet) ? HELD : phase(cfg, d.delay, t);
+      if (!freeze && !d.quiet && pd.inbound && d.mark !== pd.idx){ d.mark = pd.idx; d.col = pickColour(rig); }
+      if (d.col === 'stock') continue;               /* unprinted is unprinted */
+      var rr = pd.a * maxR;
+      if (rr < .35) continue;
+      (groups[d.col] || (groups[d.col] = [])).push(d.px, d.py, rr);
+    }
+    Object.keys(groups).forEach(function(k){
+      var a = groups[k];
+      ctx.fillStyle = INKS[k];
+      ctx.beginPath();
+      for (var j=0;j<a.length;j+=3){ ctx.moveTo(a[j] + a[j+2], a[j+1]); ctx.arc(a[j], a[j+1], a[j+2], 0, 6.283185307); }
+      ctx.fill();
+    });
+    return;
+  }
+  for (i=0;i<rig.cells.length;i++){
+    var cl = rig.cells[i], node = rig.nodes[i];
+    if (!node) continue;
+    var p = (freeze || cl.quiet) ? HELD : phase(cfg, cl.delay, t);
+    if (!freeze && !cl.quiet && p.inbound && cl.mark !== p.idx){ cl.mark = p.idx; cl.col = pickColour(rig); }
+    var col = INKS[cl.col] || INKS.blue;
+    if (node._c !== col){ node.style.background = col; node._c = col; }
+    if (rig.key === 'press'){
+      node.style.transform = 'scale(' + p.a.toFixed(4) + ')';
+    } else {
+      var dir = (cl.r % 2) ? 1 : -1;                 /* neighbours run opposite ways */
+      node.style.transform = 'translateX(' + ((1 - p.a) * 102 * (p.inbound ? -dir : dir)).toFixed(3) + '%)';
+    }
+  }
+}
+
+/* ---------- the clock ----------
+   One rAF for the page. `clock` only advances while running, so Pause
+   freezes the phase rather than letting it run on invisibly, and the
+   speed dial scales time itself rather than every duration. */
+var RIGS = [], clock = 0, lastT = 0, running = true, speed = 1, rafId = null;
+
+function frame(now){
+  rafId = requestAnimationFrame(frame);
+  var dt = lastT ? Math.min(now - lastT, 80) : 16;   /* clamp: a backgrounded tab must not jump */
+  lastT = now;
+  if (!running || reduced()) return;
+  clock += dt * speed;
+  for (var i=0;i<RIGS.length;i++) if (RIGS[i].visible) draw(RIGS[i], clock, false);
+}
+function startClock(){ if (rafId === null){ lastT = 0; rafId = requestAnimationFrame(frame); } }
+function stopClock(){ if (rafId !== null){ cancelAnimationFrame(rafId); rafId = null; } }
+function reduced(){
+  return document.body.dataset.motion === 'reduced' ||
+         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function settleAll(){ RIGS.forEach(function(r){ draw(r, 0, true); }); }
+
+/* ============================================================
+   The dials
+   ============================================================ */
+var COMMON_DIALS = [
+  { k:'cycle',   type:'range', min:900, max:14000, step:100, label:'Cycle',      fmt:function(v){ return (v/1000).toFixed(1) + 's'; } },
+  { k:'stagger', type:'range', min:0,   max:700,   step:10,  label:'Stagger',    fmt:function(v){ return v + 'ms'; } },
+  { k:'hold',    type:'range', min:0,   max:.95,   step:.01, label:'Hold',       fmt:function(v){ return Math.round(v*100) + '%'; } },
+  { k:'order',   type:'seg',   opts:['scan','diagonal','shuffle','radial'],      label:'Order' },
+  { k:'ease',    type:'seg',   opts:['stamp','snap','out'],  label:'Print ease' },
+  { k:'quiet',   type:'seg',   opts:['off','on'],            label:'Quiet zone' }
+];
+var GEO_DIALS = {
+  press:[
+    { k:'cols',   type:'range', min:2, max:12, step:1,   label:'Columns' },
+    { k:'rows',   type:'range', min:1, max:6,  step:1,   label:'Rows' },
+    { k:'jitter', type:'range', min:0, max:1,  step:.05, label:'Jitter', fmt:function(v){ return Math.round(v*100) + '%'; } }
+  ],
+  halftone:[ { k:'cell', type:'range', min:12, max:64, step:2, label:'Dot cell', fmt:function(v){ return v + 'px'; } } ],
+  cut:[ { k:'rows', type:'range', min:3, max:18, step:1, label:'Strips' } ]
+};
+var REBUILD = ['cols','rows','jitter','cell'];
+var REDELAY = ['stagger','order'];
+
+function dialEl(rig, d){
+  var wrap = document.createElement('div');
+  wrap.className = 'dial';
+  var val = rig.cfg[d.k];
+  if (d.type === 'range'){
+    var id = rig.key + '-' + d.k;
+    wrap.innerHTML = '<label class="lab" for="' + id + '">' + d.label + '<b></b></label>' +
+      '<input type="range" id="' + id + '" min="' + d.min + '" max="' + d.max + '" step="' + d.step + '" value="' + val + '">';
+    var out = wrap.querySelector('b'), inp = wrap.querySelector('input');
+    var show = function(v){ out.textContent = d.fmt ? d.fmt(v) : v; };
+    show(val);
+    inp.addEventListener('input', function(){
+      var v = parseFloat(inp.value);
+      rig.cfg[d.k] = v; show(v);
+      applyChange(rig, d.k);
+    });
+    rig.sync[d.k] = function(v){ inp.value = v; show(v); };
+  } else {
+    var btns = d.opts.map(function(o){
+      return '<button type="button" data-v="' + o + '" aria-pressed="' + (o === val) + '">' + o + '</button>';
+    }).join('');
+    wrap.innerHTML = '<span class="lab">' + d.label + '</span><div class="seg" role="group" aria-label="' + d.label + '">' + btns + '</div>';
+    var box = wrap.querySelector('.seg');
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if (!b) return;
+      box.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      rig.cfg[d.k] = b.dataset.v;
+      applyChange(rig, d.k);
+    });
+    rig.sync[d.k] = function(v){
+      box.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.v === v)); });
+    };
+  }
+  return wrap;
+}
+
+function applyChange(rig, key){
+  if (REBUILD.indexOf(key) >= 0) buildCells(rig);
+  else if (REDELAY.indexOf(key) >= 0) rig.cells.forEach(function(cl){ cl.delay = orderIndex(rig.cfg, cl, rig.cols, rig.rows) * rig.cfg.stagger; });
+  else if (key === 'quiet') markQuiet(rig);
+  writeCfg(rig);
+  if (reduced()) draw(rig, 0, true);
+}
+
+/* ---------- colour dials ---------- */
+function renderSeq(rig){
+  rig.seqEl.innerHTML = rig.cfg.sequence.map(function(c, i){
+    return '<button type="button" data-i="' + i + '" style="background:' + INKS[c] +
+           '" aria-label="Remove ' + c + ' at position ' + (i+1) + '"></button>';
+  }).join('');
+}
+function renderPct(rig){
+  var w = rig.cfg.weights, tot = 0;
+  INK_KEYS.forEach(function(k){ tot += Math.max(0, w[k] || 0); });
+  rig.pctEl.textContent = tot <= 0 ? 'all zero — falls back to stock' :
+    INK_KEYS.filter(function(k){ return w[k] > 0; })
+      .map(function(k){ return k + ' ' + Math.round(w[k] / tot * 100) + '%'; }).join(' · ');
+}
+function colourDials(rig){
+  var frag = document.createDocumentFragment();
+
+  frag.appendChild(dialEl(rig, { k:'colourMode', type:'seg', opts:['sequence','weights'], label:'Colour from' }));
+
+  var seqD = document.createElement('div');
+  seqD.className = 'dial';
+  seqD.innerHTML = '<span class="lab">Sequence <b></b></span><div class="seq"></div>' +
+    '<div class="swatches">' + INK_KEYS.map(function(k){
+      return '<button type="button" class="sw" data-c="' + k + '">' + k + '</button>';
+    }).join('') + '</div>';
+  rig.seqEl = seqD.querySelector('.seq');
+  seqD.querySelector('.seq').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    rig.cfg.sequence.splice(+b.dataset.i, 1);
+    renderSeq(rig); writeCfg(rig);
+  });
+  seqD.querySelector('.swatches').addEventListener('click', function(e){
+    var b = e.target.closest('.sw'); if (!b) return;
+    rig.cfg.sequence.push(b.dataset.c);
+    renderSeq(rig); writeCfg(rig);
+  });
+  frag.appendChild(seqD);
+
+  var wtD = document.createElement('div');
+  wtD.className = 'dial';
+  wtD.innerHTML = '<span class="lab">Weights</span><div class="wt">' + INK_KEYS.map(function(k){
+    return '<span class="chip" style="background:' + INKS[k] + '"></span>' +
+           '<input type="range" data-k="' + k + '" min="0" max="10" step="1" value="' + (rig.cfg.weights[k] || 0) + '" aria-label="' + k + ' weight">' +
+           '<span class="n" data-n="' + k + '">' + (rig.cfg.weights[k] || 0) + '</span>';
+  }).join('') + '</div><div class="pct"></div>';
+  rig.pctEl = wtD.querySelector('.pct');
+  wtD.querySelector('.wt').addEventListener('input', function(e){
+    var inp = e.target.closest('input'); if (!inp) return;
+    var k = inp.dataset.k, v = parseFloat(inp.value);
+    rig.cfg.weights[k] = v;
+    wtD.querySelector('[data-n="' + k + '"]').textContent = v;
+    renderPct(rig); writeCfg(rig);
+  });
+  rig.sync.weights = function(w){
+    INK_KEYS.forEach(function(k){
+      wtD.querySelector('input[data-k="' + k + '"]').value = w[k] || 0;
+      wtD.querySelector('[data-n="' + k + '"]').textContent = w[k] || 0;
+    });
+    renderPct(rig);
+  };
+  frag.appendChild(wtD);
+  return frag;
+}
+
+/* ---------- config i/o ---------- */
+var CFG_KEYS = ['cols','rows','jitter','cell','cycle','stagger','hold','order','ease','quiet','colourMode','sequence','weights'];
+function cfgJSON(rig){
+  var o = {};
+  CFG_KEYS.forEach(function(k){ if (rig.cfg[k] !== undefined) o[k] = rig.cfg[k]; });
+  return JSON.stringify(o, null, 2);
+}
+function writeCfg(rig){
+  if (rig.cfgEl && document.activeElement !== rig.cfgEl) rig.cfgEl.value = cfgJSON(rig);
+}
+function say(rig, msg){
+  rig.msgEl.textContent = msg;
+  clearTimeout(rig._say);
+  rig._say = setTimeout(function(){ rig.msgEl.textContent = rig.msgHint; }, 2600);
+}
+
+/* Everything from the textarea is coerced against the dial definitions
+   before it reaches the engine — a typo should say so, not wedge a rig. */
+function sanitise(rig, o){
+  var lim = {};
+  GEO_DIALS[rig.key].concat(COMMON_DIALS).forEach(function(d){ lim[d.k] = d; });
+  Object.keys(o).forEach(function(k){
+    if (CFG_KEYS.indexOf(k) < 0 || rig.cfg[k] === undefined) return;
+    var v = o[k], d = lim[k];
+    if (d && d.type === 'range'){ var n = parseFloat(v); if (isFinite(n)) rig.cfg[k] = clamp(n, d.min, d.max); }
+    else if (d && d.type === 'seg'){ if (d.opts.indexOf(v) >= 0) rig.cfg[k] = v; }
+    else if (k === 'colourMode'){ if (v === 'sequence' || v === 'weights') rig.cfg[k] = v; }
+    else if (k === 'sequence'){ if (Array.isArray(v)) rig.cfg[k] = v.filter(function(x){ return INK_KEYS.indexOf(x) >= 0; }); }
+    else if (k === 'weights' && v && typeof v === 'object'){
+      var w = {};
+      INK_KEYS.forEach(function(K){ var n2 = parseFloat(v[K]); w[K] = isFinite(n2) ? clamp(n2, 0, 10) : 0; });
+      rig.cfg.weights = w;
+    }
+  });
+}
+function syncDials(rig){
+  Object.keys(rig.sync).forEach(function(k){ if (rig.cfg[k] !== undefined) rig.sync[k](rig.cfg[k]); });
+  renderSeq(rig); renderPct(rig);
+}
+function applyCfg(rig){
+  var parsed;
+  try { parsed = JSON.parse(rig.cfgEl.value); }
+  catch (e){ say(rig, 'Not valid JSON — ' + e.message); return; }
+  if (!parsed || typeof parsed !== 'object'){ say(rig, 'Expected a JSON object.'); return; }
+  sanitise(rig, parsed);
+  syncDials(rig);
+  buildCells(rig);
+  writeCfg(rig);
+  if (reduced()) draw(rig, 0, true);
+  say(rig, 'Applied.');
+}
+function resetRig(rig){
+  rig.cfg = JSON.parse(JSON.stringify(rig.def.defaults));
+  syncDials(rig);
+  buildCells(rig);
+  writeCfg(rig);
+  if (reduced()) draw(rig, 0, true);
+}
+
+/* ============================================================
+   Assembly
+   ============================================================ */
+var HERO = {
+  eyebrow:'86 Mai Thúc Lân · Đà Nẵng',
+  thin:'coffee / cocktails /', slam:'community',
+  sub:"We're on a mission to become the easiest place in Đà Nẵng to make friends.",
+  a:'Events', b:'Menus'
+};
+var wall = document.getElementById('wall');
+
+RIGS_DEF.forEach(function(def){
+  var rig = {
+    key:def.key, def:def, sync:{}, cells:[], nodes:[], visible:true, seqI:0,
+    cfg: JSON.parse(JSON.stringify(def.defaults))
+  };
+
+  var sec = document.createElement('section');
+  sec.className = 'rig';
+  sec.innerHTML =
+    '<div class="rig-h">' +
+      '<span class="num">' + def.n + '</span>' +
+      '<h2>' + def.name + '</h2>' +
+      '<span class="kind">' + def.kind + '</span>' +
+      '<span class="tag">' + def.tag + ' <em>Was ' + def.from + '.</em></span>' +
+      '<div class="rig-act"><button type="button" class="act ghost" data-reset>Reset this rig</button></div>' +
+    '</div>' +
+    '<div class="band">' +
+      '<div class="fld">' + (def.key === 'halftone' ? '<canvas></canvas>' : '') + '</div>' +
+      '<div class="inner">' +
+        '<div class="col-text">' +
+          '<p class="eyebrow">' + HERO.eyebrow + '</p>' +
+          '<h3 class="disp"><span class="thin">' + HERO.thin + '</span><span class="slam">' + HERO.slam + '</span></h3>' +
+          '<p class="sub">' + HERO.sub + '</p>' +
+          '<div class="btns"><button type="button" class="btn">' + HERO.a + '</button>' +
+            '<button type="button" class="btn alt">' + HERO.b + '</button></div>' +
+        '</div>' +
+        '<div class="shot">Hero photograph</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel">' +
+      '<div class="dials"></div>' +
+      '<div class="cfg">' +
+        '<textarea spellcheck="false" aria-label="' + def.name + ' config JSON"></textarea>' +
+        '<div class="cfg-side">' +
+          '<button type="button" class="act" data-apply>Apply</button>' +
+          '<button type="button" class="act ghost" data-copy>Copy</button>' +
+          '<div class="cfg-note" data-msg></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="notes"><dl>' +
+      Object.keys(def.notes).map(function(k){ return '<dt>' + k + '</dt><dd>' + def.notes[k] + '</dd>'; }).join('') +
+    '</dl></div>';
+  wall.appendChild(sec);
+
+  rig.band   = sec.querySelector('.band');
+  rig.fld    = sec.querySelector('.fld');
+  rig.canvas = sec.querySelector('canvas');
+  rig.textEl = sec.querySelector('.col-text');
+  rig.cfgEl  = sec.querySelector('textarea');
+  rig.msgEl  = sec.querySelector('[data-msg]');
+  rig.msgHint = 'Edit and Apply, or Copy when you land on something.';
+  rig.msgEl.textContent = rig.msgHint;
+
+  var dials = sec.querySelector('.dials');
+  GEO_DIALS[def.key].concat(COMMON_DIALS).forEach(function(d){ dials.appendChild(dialEl(rig, d)); });
+  dials.appendChild(colourDials(rig));
+
+  sec.querySelector('[data-apply]').addEventListener('click', function(){ applyCfg(rig); });
+  sec.querySelector('[data-reset]').addEventListener('click', function(){ resetRig(rig); say(rig, 'Back to defaults.'); });
+  sec.querySelector('[data-copy]').addEventListener('click', function(){
+    var text = cfgJSON(rig);
+    var done = function(){ say(rig, 'Copied.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ rig.cfgEl.select(); say(rig, 'Selected — copy with your keyboard.'); });
+    } else { rig.cfgEl.select(); say(rig, 'Selected — copy with your keyboard.'); }
+  });
+
+  RIGS.push(rig);
+  buildCells(rig);
+  renderSeq(rig); renderPct(rig); writeCfg(rig);
+});
+
+/* Ambient means it runs forever, so it must not run where nobody is
+   looking: a rig off screen stops being drawn and picks the phase back up
+   on return. This behaviour belongs to the direction, not to this page. */
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    var rig = RIGS.filter(function(r){ return r.band === e.target; })[0];
+    if (rig) rig.visible = e.isIntersecting;
+  });
+}, { rootMargin:'80px' });
+RIGS.forEach(function(r){ io.observe(r.band); });
+
+/* The halftone grid is measured in pixels, so it is the one rig a resize
+   has to rebuild; the other two are laid out in percentages. */
+var rt;
+if (window.ResizeObserver){
+  var ro = new ResizeObserver(function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){
+      RIGS.forEach(function(r){
+        if (r.key === 'halftone') buildCells(r); else { markQuiet(r); }
+      });
+      if (reduced()) settleAll();
+    }, 160);
+  });
+  RIGS.forEach(function(r){ ro.observe(r.band); });
+}
+
+/* ---------- console ---------- */
+function seg(id, fn){
+  var box = document.getElementById(id);
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    box.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    fn(b.dataset.v);
+    readout();
+  });
+}
+var state = { speed:'1', theme:'light', motion:'full' };
+
+seg('speed', function(v){ state.speed = v; speed = parseFloat(v); });
+seg('theme', function(v){ state.theme = v; document.documentElement.dataset.theme = v; });
+seg('motion', function(v){
+  state.motion = v;
+  document.body.dataset.motion = v;
+  if (reduced()){ settleAll(); }
+  else { lastT = 0; startClock(); }
+});
+
+var pp = document.getElementById('playpause');
+pp.addEventListener('click', function(){
+  running = !running;
+  pp.textContent = running ? 'Pause all' : 'Play all';
+  readout();
+});
+document.getElementById('resetall').addEventListener('click', function(){
+  RIGS.forEach(resetRig);
+  readout();
+});
+
+function readout(){
+  var sp = { '0.25':'0.25×', '0.5':'0.5×', '1':'1×', '2':'2×' }[state.speed] || state.speed + '×';
+  document.getElementById('readout').innerHTML =
+    '<b>Three ambient loops · ' + sp + (running ? '' : ' · paused') + '</b>' +
+    (reduced()
+      ? 'Reduced motion: no loop is started. Each band paints one settled frame and stops.'
+      : 'Blue, red, yellow and stock only. Cells recolour at zero, so a swap is never seen happening.');
+}
+readout();
+
+if (reduced()) settleAll(); else startClock();
+
+/* A tab in the background gets no frames anyway; stopping the loop makes
+   that explicit rather than leaving a rAF queued against a hidden page. */
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) stopClock();
+  else if (!reduced()){ lastT = 0; startClock(); }
+});
+</script>

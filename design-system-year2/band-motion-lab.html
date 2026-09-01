@@ -200,6 +200,7 @@ input[type=range]{width:100%; accent-color:var(--accent); height:34px; cursor:po
 .wt .n{font-family:var(--grot); font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; min-width:3ch; text-align:right; color:var(--fg)}
 .wt input[type=range]{height:28px}
 .wt .pct{font-size:11px; color:var(--fg-faint); font-variant-numeric:tabular-nums}
+.gridinfo{font-size:12.5px; line-height:1.5; color:var(--fg-dim); font-variant-numeric:tabular-nums}
 
 /* config i/o */
 .cfg{margin-top:22px; border-top:2px solid var(--hairline); padding-top:18px; display:grid; gap:12px; grid-template-columns:1fr auto; align-items:start}
@@ -477,16 +478,17 @@ var RIGS_DEF = [
     tag:'Big blocks keep re-printing, each coming back a new colour.',
     kind:'DOM · blocks',
     defaults:{
-      cols:5, rows:3, jitter:.45,
-      cycle:5200, stagger:220, hold:.74, order:'shuffle', ease:'stamp', quiet:'off',
+      cols:12, rows:6, jitter:0, adapt:'on',
+      cycle:11000, stagger:530, hold:.3, order:'diagonal', ease:'stamp', quiet:'off',
       colourMode:'weights',
       sequence:['blue','yellow','blue','red'],
-      weights:{ blue:7, red:1, yellow:2, stock:3 }
+      weights:{ blue:7, red:1, yellow:2, stock:0 }
     },
     notes:{
-      Loop:'A block holds, punches out to nothing, <strong>takes its new colour while it is at zero</strong>, and stamps back in. Because the swap happens invisibly, the field never flickers — blocks simply keep coming back different.',
-      Tuning:'<strong>Hold</strong> is the calm dial: at 74% each block is still for about four seconds of a five-second round. <strong>Jitter</strong> breaks the grid off square, which is most of what makes it read as a press rather than a table. Shuffle order keeps the scatter from ever settling into a visible pattern.',
-      Watch:'Low hold plus short cycle turns it into a slot machine. If it feels busy, raise Hold before you slow the cycle.'
+      Loop:'A block holds, punches out to nothing, <strong>takes its new colour while it is at zero</strong>, and stamps back in. Because the swap happens invisibly the field never flickers — blocks simply keep coming back different.',
+      Tuning:'These are the tuned defaults: <strong>12 × 6 on a diagonal wave</strong>, an eleven-second cycle at 30% hold, jitter off. <strong>Stock is weighted to zero</strong>, so every cell is always an ink — the cream you see is the base showing through blocks that are mid-print, not unprinted cells. Give stock any weight and the field gains permanent paper gaps instead.',
+      Grid:'Columns and rows are really a <strong>block size</strong> — 12 × 6 is a 120×91px block on a wide band. With <strong>Keep blocks square</strong> on, a narrower band re-counts the grid to hold that size, so a phone gets fewer chunky blocks rather than twelve vertical slivers. Turn it off to pin the count and let blocks stretch. The line above shows what the grid actually is at this width.',
+      Watch:'At 30% hold a block is moving for most of its cycle, so it is the long cycle and the 530ms diagonal stagger doing the calming. Shorten either and it gets busy quickly.'
     }
   },
   {
@@ -525,20 +527,48 @@ var RIGS_DEF = [
   }
 ];
 
-/* ---------- layout ---------- */
+/* ---------- layout ----------
+   The band these dials were authored against. Columns and rows are really a
+   CELL SIZE — 12x6 here is a 120x91 block — and it is the block that has to
+   survive a narrow screen, not the column count. Holding 12 columns on a
+   390px band would give 32px-wide cells against ~117px rows: vertical
+   slivers, not blocks. So the grid re-counts to keep the authored block
+   size, and the band gets fewer, still-chunky cells instead. */
+var REF_W = 1440, REF_H = 545;
+function showGrid(rig){
+  if (!rig.gridEl) return;
+  var w = rig.band.clientWidth || REF_W, h = rig.band.clientHeight || REF_H;
+  var same = rig.cols === rig.cfg.cols && rig.rows === rig.cfg.rows;
+  rig.gridEl.textContent = rig.cols + ' × ' + rig.rows + ' · blocks ' +
+    Math.round(w / rig.cols) + '×' + Math.round(h / rig.rows) + 'px' +
+    (same ? '' : ' (authored ' + rig.cfg.cols + ' × ' + rig.cfg.rows + ')');
+}
+function pressGrid(rig){
+  var cfg = rig.cfg;
+  if (cfg.adapt !== 'on') return { cols:cfg.cols, rows:cfg.rows };
+  var w = rig.band.clientWidth || REF_W, h = rig.band.clientHeight || REF_H;
+  var cw = REF_W / cfg.cols, ch = REF_H / cfg.rows;
+  return {
+    cols: clamp(Math.round(w / cw), 1, 40),
+    rows: clamp(Math.round(h / ch), 1, 40)
+  };
+}
+
 function buildCells(rig){
   var cfg = rig.cfg, cells = [], r, c;
   if (rig.key === 'press'){
+    var g = pressGrid(rig);
     var rnd = rng(9);
-    var hs = norm(Array.from({length:cfg.rows}, function(){ return 1 + (rnd()*2-1)*cfg.jitter*.6; }));
+    var hs = norm(Array.from({length:g.rows}, function(){ return 1 + (rnd()*2-1)*cfg.jitter*.6; }));
     var y = 0;
-    for (r=0;r<cfg.rows;r++){
-      var ws = norm(Array.from({length:cfg.cols}, function(){ return 1 + (rnd()*2-1)*cfg.jitter*.6; }));
+    for (r=0;r<g.rows;r++){
+      var ws = norm(Array.from({length:g.cols}, function(){ return 1 + (rnd()*2-1)*cfg.jitter*.6; }));
       var x = 0;
-      for (c=0;c<cfg.cols;c++){ cells.push({ r:r, c:c, x:x, y:y, w:ws[c], h:hs[r] }); x += ws[c]; }
+      for (c=0;c<g.cols;c++){ cells.push({ r:r, c:c, x:x, y:y, w:ws[c], h:hs[r] }); x += ws[c]; }
       y += hs[r];
     }
-    rig.cols = cfg.cols; rig.rows = cfg.rows;
+    rig.cols = g.cols; rig.rows = g.rows;
+    showGrid(rig);
   } else if (rig.key === 'cut'){
     var n = cfg.rows;
     for (r=0;r<n;r++) cells.push({ r:r, c:0, x:0, y:r/n, w:1, h:1/n });
@@ -624,6 +654,13 @@ var HELD = { a:1, idx:-1, inbound:false };
 
 function draw(rig, t, freeze){
   var cfg = rig.cfg, i;
+  /* First frame back after the rig was paused off screen. The clock kept
+     running without it, so this draw jumps the phase forward — and a cell
+     landing mid-print would take its new colour at a visible size, which is
+     the one thing the loop promises never to do. Adopt the current cycle
+     instead: colours carry over untouched and the next real zero-crossing
+     recolours as normal. */
+  var resync = rig.resync; rig.resync = false;
   if (rig.key === 'halftone'){
     var ctx = rig.ctx; if (!ctx) return;
     var w = rig.band.clientWidth, h = rig.band.clientHeight;
@@ -632,7 +669,7 @@ function draw(rig, t, freeze){
     for (i=0;i<rig.cells.length;i++){
       var d = rig.cells[i];
       var pd = (freeze || d.quiet) ? HELD : phase(cfg, d.delay, t);
-      if (!freeze && !d.quiet && pd.inbound && d.mark !== pd.idx){ d.mark = pd.idx; d.col = pickColour(rig); }
+      if (!freeze && !d.quiet && pd.inbound && d.mark !== pd.idx){ d.mark = pd.idx; if (!resync) d.col = pickColour(rig); }
       if (d.col === 'stock') continue;               /* unprinted is unprinted */
       var rr = pd.a * maxR;
       if (rr < .35) continue;
@@ -651,7 +688,7 @@ function draw(rig, t, freeze){
     var cl = rig.cells[i], node = rig.nodes[i];
     if (!node) continue;
     var p = (freeze || cl.quiet) ? HELD : phase(cfg, cl.delay, t);
-    if (!freeze && !cl.quiet && p.inbound && cl.mark !== p.idx){ cl.mark = p.idx; cl.col = pickColour(rig); }
+    if (!freeze && !cl.quiet && p.inbound && cl.mark !== p.idx){ cl.mark = p.idx; if (!resync) cl.col = pickColour(rig); }
     var col = INKS[cl.col] || INKS.blue;
     if (node._c !== col){ node.style.background = col; node._c = col; }
     if (rig.key === 'press'){
@@ -698,14 +735,15 @@ var COMMON_DIALS = [
 ];
 var GEO_DIALS = {
   press:[
-    { k:'cols',   type:'range', min:2, max:12, step:1,   label:'Columns' },
-    { k:'rows',   type:'range', min:1, max:6,  step:1,   label:'Rows' },
-    { k:'jitter', type:'range', min:0, max:1,  step:.05, label:'Jitter', fmt:function(v){ return Math.round(v*100) + '%'; } }
+    { k:'cols',   type:'range', min:2, max:24, step:1,   label:'Columns' },
+    { k:'rows',   type:'range', min:1, max:12, step:1,   label:'Rows' },
+    { k:'jitter', type:'range', min:0, max:1,  step:.05, label:'Jitter', fmt:function(v){ return Math.round(v*100) + '%'; } },
+    { k:'adapt',  type:'seg',   opts:['off','on'], label:'Keep blocks square' }
   ],
   halftone:[ { k:'cell', type:'range', min:12, max:64, step:2, label:'Dot cell', fmt:function(v){ return v + 'px'; } } ],
   cut:[ { k:'rows', type:'range', min:3, max:18, step:1, label:'Strips' } ]
 };
-var REBUILD = ['cols','rows','jitter','cell'];
+var REBUILD = ['cols','rows','jitter','cell','adapt'];
 var REDELAY = ['stagger','order'];
 
 function dialEl(rig, d){
@@ -817,7 +855,7 @@ function colourDials(rig){
 }
 
 /* ---------- config i/o ---------- */
-var CFG_KEYS = ['cols','rows','jitter','cell','cycle','stagger','hold','order','ease','quiet','colourMode','sequence','weights'];
+var CFG_KEYS = ['cols','rows','jitter','adapt','cell','cycle','stagger','hold','order','ease','quiet','colourMode','sequence','weights'];
 function cfgJSON(rig){
   var o = {};
   CFG_KEYS.forEach(function(k){ if (rig.cfg[k] !== undefined) o[k] = rig.cfg[k]; });
@@ -941,7 +979,15 @@ RIGS_DEF.forEach(function(def){
   rig.msgEl.textContent = rig.msgHint;
 
   var dials = sec.querySelector('.dials');
-  GEO_DIALS[def.key].concat(COMMON_DIALS).forEach(function(d){ dials.appendChild(dialEl(rig, d)); });
+  GEO_DIALS[def.key].forEach(function(d){ dials.appendChild(dialEl(rig, d)); });
+  if (def.key === 'press'){
+    var gd = document.createElement('div');
+    gd.className = 'dial';
+    gd.innerHTML = '<span class="lab">On this band</span><div class="gridinfo"></div>';
+    rig.gridEl = gd.querySelector('.gridinfo');
+    dials.appendChild(gd);
+  }
+  COMMON_DIALS.forEach(function(d){ dials.appendChild(dialEl(rig, d)); });
   dials.appendChild(colourDials(rig));
 
   sec.querySelector('[data-apply]').addEventListener('click', function(){ applyCfg(rig); });
@@ -956,6 +1002,7 @@ RIGS_DEF.forEach(function(def){
 
   RIGS.push(rig);
   buildCells(rig);
+  showGrid(rig);
   renderSeq(rig); renderPct(rig); writeCfg(rig);
 });
 
@@ -965,7 +1012,9 @@ RIGS_DEF.forEach(function(def){
 var io = new IntersectionObserver(function(entries){
   entries.forEach(function(e){
     var rig = RIGS.filter(function(r){ return r.band === e.target; })[0];
-    if (rig) rig.visible = e.isIntersecting;
+    if (!rig) return;
+    if (e.isIntersecting && !rig.visible) rig.resync = true;
+    rig.visible = e.isIntersecting;
   });
 }, { rootMargin:'80px' });
 RIGS.forEach(function(r){ io.observe(r.band); });
@@ -978,7 +1027,7 @@ if (window.ResizeObserver){
     clearTimeout(rt);
     rt = setTimeout(function(){
       RIGS.forEach(function(r){
-        if (r.key === 'halftone') buildCells(r); else { markQuiet(r); }
+        if (r.key === 'halftone' || r.key === 'press') buildCells(r); else markQuiet(r);
       });
       if (reduced()) settleAll();
     }, 160);
@@ -1034,6 +1083,10 @@ if (reduced()) settleAll(); else startClock();
    that explicit rather than leaving a rAF queued against a hidden page. */
 document.addEventListener('visibilitychange', function(){
   if (document.hidden) stopClock();
-  else if (!reduced()){ lastT = 0; startClock(); }
+  else if (!reduced()){
+    lastT = 0;
+    RIGS.forEach(function(r){ r.resync = true; });
+    startClock();
+  }
 });
 </script>

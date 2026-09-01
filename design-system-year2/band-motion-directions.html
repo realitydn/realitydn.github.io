@@ -1,0 +1,919 @@
+<title>Band Motion Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;500;600;700;800&family=Montserrat+Alternates:wght@600&family=Space+Grotesk:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   REALITY — Band Motion Directions
+   Twelve ways the coloured bands could move instead of sitting
+   flat. Page chrome runs the token layer (Day on a light host,
+   Night on a dark one). The BANDS are theme-fixed, exactly like
+   the real hero: a major ink never dims after dark.
+
+   The shared trick, and the reason all twelve stay readable:
+   THE BAND'S BASE IS UNPRINTED STOCK. Colour is laid ON it, and
+   the type sits ABOVE the colour in ink. Mid-animation the type
+   is ink-on-cream; landed it is ink-on-blue / red / yellow. Both
+   are readable, so there is no frame where the content is lost.
+   Nothing anywhere animates opacity — a silkscreen either
+   printed or it didn't.
+   ============================================================ */
+:root{
+  --yellow:#fddf00; --red:#ed2224; --blue:#18a7e0;
+  --bg:#fffbf1; --surface:#fffbf1; --surface-2:#f4ecd7; --paper-shade:#ece2c9;
+  --fg:#0d0905; --fg-dim:rgba(13,9,5,.72); --fg-faint:rgba(13,9,5,.56);
+  --hairline:rgba(13,9,5,.16); --accent:#18a7e0; --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(13,9,5,.10);
+  --sh-default:0 8px 2px rgba(13,9,5,.16);
+  --sh-heavy:0 13px 3px rgba(13,9,5,.23);
+  --mont:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --grot:'Space Grotesk',ui-monospace,'SF Mono',Menlo,monospace;
+  --ease-stamp:cubic-bezier(.2,1.4,.45,1);
+  --ease-snap:cubic-bezier(.3,0,.2,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-tap:120ms; --dur-quick:200ms; --dur-settle:350ms; --dur-enter:700ms;
+  --stagger:90ms;
+  /* the console's speed dial — every duration below is × this */
+  --sp:1;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0703; --surface:#171109; --surface-2:#241a10; --paper-shade:#1c140b;
+    --fg:#fffbf1; --fg-dim:rgba(255,251,241,.60); --fg-faint:rgba(255,251,241,.48);
+    --hairline:#3a2c1c; --accent:#ed1b72; --on-ink:#fffbf1;
+    --sh-light:0 4px 1px rgba(255,251,241,.14);
+    --sh-default:0 9px 2px rgba(255,251,241,.18);
+    --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0703; --surface:#171109; --surface-2:#241a10; --paper-shade:#1c140b;
+  --fg:#fffbf1; --fg-dim:rgba(255,251,241,.60); --fg-faint:rgba(255,251,241,.48);
+  --hairline:#3a2c1c; --accent:#ed1b72; --on-ink:#fffbf1;
+  --sh-light:0 4px 1px rgba(255,251,241,.14);
+  --sh-default:0 9px 2px rgba(255,251,241,.18);
+  --sh-heavy:0 14px 3px rgba(255,251,241,.26);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--grot); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; text-wrap:balance}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:3px solid var(--fg); padding:44px 32px 34px; max-width:1560px; margin:0 auto}
+.eyebrow{
+  font-family:var(--mont); font-weight:700; font-size:13px;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+}
+.masthead h1{
+  font-family:var(--mont); font-weight:700; font-size:clamp(30px,4.4vw,46px);
+  letter-spacing:.025em; text-transform:uppercase; line-height:1.1; margin-top:12px;
+}
+.standfirst{max-width:68ch; margin-top:16px; color:var(--fg-dim); font-size:17px; line-height:1.7}
+.standfirst strong{color:var(--fg); font-weight:600}
+
+/* ---------- console ---------- */
+.console{position:sticky; top:0; z-index:20; background:var(--surface-2); border-bottom:2px solid var(--fg)}
+.console-inner{
+  max-width:1560px; margin:0 auto; padding:16px 32px;
+  display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px 34px;
+}
+.ctrl{display:flex; flex-direction:column; gap:9px}
+.ctrl > label, .ctrl > .ctrl-label{
+  font-family:var(--mont); font-weight:700; font-size:11px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--fg-dim);
+}
+.seg{display:flex; border:2px solid var(--fg)}
+.seg button{
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.11em;
+  text-transform:uppercase; padding:12px 15px; min-height:44px;
+  background:transparent; color:var(--fg); border:0; border-right:2px solid var(--fg); cursor:pointer;
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--fg); color:var(--bg)}
+.seg.inks button[aria-pressed="true"][data-v="blue"]{background:var(--blue); color:#0d0905}
+.seg.inks button[aria-pressed="true"][data-v="red"]{background:var(--red); color:#0d0905}
+.seg.inks button[aria-pressed="true"][data-v="yellow"]{background:var(--yellow); color:#0d0905}
+.act{
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.11em;
+  text-transform:uppercase; padding:12px 18px; min-height:44px; cursor:pointer;
+  border:2px solid var(--fg); background:var(--fg); color:var(--bg); box-shadow:var(--sh-default);
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.act:hover{transform:translateY(-3px); box-shadow:var(--sh-heavy)}
+.act:active{transform:translateY(2px); box-shadow:var(--sh-light)}
+.readout{
+  margin-left:auto; border-left:2px solid var(--hairline); padding-left:24px;
+  font-size:13px; line-height:1.5; color:var(--fg-dim); max-width:34ch;
+}
+.readout b{
+  font-family:var(--mont); font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  font-size:11px; color:var(--fg); display:block; margin-bottom:4px;
+}
+
+/* ---------- one direction ---------- */
+.wall{max-width:1560px; margin:0 auto; padding:0 0 20px}
+.dir{border-bottom:2px solid var(--hairline)}
+.dir-h{
+  max-width:1560px; margin:0 auto; padding:34px 32px 16px;
+  display:flex; align-items:baseline; gap:10px 14px; flex-wrap:wrap;
+}
+.dir-h .num{
+  font-family:var(--mont); font-weight:800; font-size:11px; letter-spacing:.06em;
+  background:var(--fg); color:var(--bg); padding:4px 7px; line-height:1; align-self:center;
+}
+.dir-h h2{font-family:var(--mont); font-weight:700; font-size:20px; letter-spacing:.09em; text-transform:uppercase}
+.dir-h .tag{font-size:13.5px; color:var(--fg-faint); min-width:0}
+.dir-h .kind{
+  font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; padding:4px 8px; border:2px solid var(--fg); align-self:center; white-space:nowrap;
+}
+.kind.entrance{background:var(--fg); color:var(--bg)}
+.kind.ambient{border-color:var(--hairline); color:var(--fg-faint)}
+.kind.interactive{border-style:dashed}
+.dir-h .replay{
+  margin-left:auto; align-self:center;
+  font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; padding:9px 14px; min-height:44px; cursor:pointer;
+  border:2px solid var(--fg); background:transparent; color:var(--fg);
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.dir-h .replay:hover{transform:translateY(-3px); box-shadow:var(--sh-default)}
+.dir-h .replay:active{transform:translateY(2px); box-shadow:none}
+.notes{max-width:1560px; margin:0 auto; padding:18px 32px 34px}
+.notes dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:7px 16px; max-width:104ch}
+.notes dt{
+  font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--fg-faint); padding-top:3px;
+}
+.notes dd{margin:0; font-size:14px; line-height:1.6; color:var(--fg-dim)}
+.notes dd strong{color:var(--fg); font-weight:600}
+
+/* ============================================================
+   THE BAND — the live surface every direction animates.
+   Base is unprinted stock. .fld is the ink layer (z 0), the
+   content sits above it (z 1) and is INK throughout, so no
+   frame of any animation costs legibility.
+   ============================================================ */
+.band{
+  position:relative; isolation:isolate; overflow:hidden;
+  border-top:3px solid #0d0905; border-bottom:3px solid #0d0905;
+  background:#fffbf1; color:#0d0905;
+  --ink:var(--blue); --ink2:var(--yellow);
+}
+.band[data-ink="blue"]  {--ink:#18a7e0; --ink2:#fddf00}
+.band[data-ink="red"]   {--ink:#ed2224; --ink2:#fddf00}
+.band[data-ink="yellow"]{--ink:#fddf00; --ink2:#ed2224}
+.fld{position:absolute; inset:0; z-index:0; pointer-events:none}
+.fld > i{display:block; position:absolute; background:var(--ink)}
+.fld .plate{inset:0}
+.band .inner{
+  position:relative; z-index:1;
+  max-width:1180px; margin:0 auto; padding:56px 32px;
+  display:grid; grid-template-columns:1fr 1fr; gap:34px; align-items:center;
+}
+.band .eyebrow{color:#0d0905; font-size:12px; margin-bottom:14px}
+.band .disp{
+  font-family:var(--mont); text-transform:uppercase; line-height:1.05;
+  letter-spacing:.015em; font-size:clamp(28px,3.6vw,46px); color:#0d0905;
+  transition:color var(--dur-tap) var(--ease-snap);
+}
+.band .disp .thin{font-weight:100; display:block}
+.band .disp .slam{font-weight:800; display:block}
+.band .sub{margin:18px 0 0; font-size:16px; line-height:1.65; max-width:44ch; color:#0d0905}
+.band .btns{margin-top:24px; display:flex; gap:14px; flex-wrap:wrap}
+.band .btn{
+  font-family:var(--mont); font-weight:700; font-size:13px; letter-spacing:.11em;
+  text-transform:uppercase; padding:14px 24px; border:2px solid #0d0905;
+  background:#0d0905; color:#fffbf1; box-shadow:var(--sh-default); cursor:pointer;
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.band .btn.alt{background:transparent; color:#0d0905}
+.band .btn:hover{transform:translateY(-3px); box-shadow:var(--sh-heavy)}
+.band .btn:active{transform:translateY(2px); box-shadow:var(--sh-light)}
+.band .shot{
+  border:2px solid #0d0905; box-shadow:0 13px 3px rgba(13,9,5,.23);
+  background:#ece2c9; aspect-ratio:5/4; display:grid; place-items:center;
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:rgba(13,9,5,.5);
+}
+/* ON-RED CONTRACT — display type re-creams, but only once the field has
+   LANDED. Cream on unprinted stock would be a hole mid-run, so the flip
+   rides the landing, not the start. */
+.band[data-ink="red"].is-landed .disp{color:#fffbf1}
+@media (max-width:860px){
+  .band .inner{grid-template-columns:1fr; padding:40px 20px; gap:26px}
+  .band .shot{aspect-ratio:16/10}
+}
+
+/* ============================================================
+   THE TWELVE. Default (no .run) is always the LANDED state —
+   .run is added by JS only, so a prerendered page, a crawler
+   and a reduced-motion visitor all get the end state and never
+   a blank band. Reduced motion additionally kills .run outright.
+   ============================================================ */
+
+/* 01 PRESS RUN — big blocks stamped out, one after another. */
+@keyframes stampBlock{0%{transform:scale(0)}62%{transform:scale(1.06)}100%{transform:scale(1)}}
+.a-press > i{transform-origin:var(--o,center)}
+.band.run .a-press > i{animation:stampBlock calc(300ms * var(--sp)) var(--ease-stamp) both; animation-delay:calc(var(--d,0ms) * var(--sp))}
+
+/* 02 SQUEEGEE — one hard edge pulls the ink across, blade and all. */
+@keyframes squeegee{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes blade{from{transform:translateX(-14px)}to{transform:translateX(calc(100% + 14px))}}
+.a-squeegee .blade{position:absolute; top:0; bottom:0; left:0; width:11px; background:#0d0905; transform:translateX(calc(100% + 14px))}
+.band.run .a-squeegee .plate{animation:squeegee calc(620ms * var(--sp)) var(--ease-snap) both}
+.band.run .a-squeegee .blade{animation:blade calc(620ms * var(--sp)) var(--ease-snap) both}
+
+/* 03 REGISTER — three plates land out of true and pull into register,
+   keeping the signature sliver. Misprint as the resting state. */
+@keyframes regA{from{transform:translate(-54px,-34px)}to{transform:translate(0,0)}}
+@keyframes regB{from{transform:translate(58px,40px)}to{transform:translate(0,0)}}
+@keyframes regC{from{transform:translate(0,-72px)}to{transform:translate(0,0)}}
+/* The plates land in true but are CUT SHORT of each other — 8px and 16px of
+   inset — so the misprint edge survives as the resting state. Offsetting them
+   by transform instead would put the slivers outside the trim, where the
+   band's own overflow clips them away and the landed field is plain. */
+.a-register .p1{inset:0; background:var(--ink2)}
+.a-register .p2{inset:0 0 0 8px; background:#ed2224}
+.a-register .p3{inset:7px 0 0 16px; background:var(--ink)}
+/* p1 is the partner ink, p2 is the third major — on a yellow band the partner
+   IS red, so p2 has to move off it or two plates print the same colour. */
+.band[data-ink="red"] .a-register .p2,
+.band[data-ink="yellow"] .a-register .p2{background:#18a7e0}
+.band.run .a-register .p1{animation:regA calc(520ms * var(--sp)) var(--ease-stamp) both}
+.band.run .a-register .p2{animation:regB calc(520ms * var(--sp)) var(--ease-stamp) both; animation-delay:calc(70ms * var(--sp))}
+.band.run .a-register .p3{animation:regC calc(480ms * var(--sp)) var(--ease-stamp) both; animation-delay:calc(150ms * var(--sp))}
+
+/* 04 SEPARATION — the landed field splits into its inks and re-merges.
+   Hard-edged plates in z-order, never a blend: no fourth colour appears. */
+@keyframes sepL{0%,100%{transform:translateX(0)}42%{transform:translateX(-26px)}}
+@keyframes sepR{0%,100%{transform:translateX(0)}42%{transform:translateX(26px)}}
+.a-separate .p1{inset:0; background:var(--ink2)}
+.a-separate .p2{inset:0; background:#ed2224}
+.a-separate .p3{inset:0; background:var(--ink)}
+.band[data-ink="red"] .a-separate .p2,
+.band[data-ink="yellow"] .a-separate .p2{background:#18a7e0}
+.band.run .a-separate .p1{animation:sepL calc(900ms * var(--sp)) var(--ease-out) both}
+.band.run .a-separate .p2{animation:sepR calc(900ms * var(--sp)) var(--ease-out) both}
+
+/* 05 HALFTONE BLOOM — a dot grid opens on a diagonal wave and closes
+   solid. Dots overshoot past contact, so the field genuinely fills. */
+@keyframes dotBloom{0%{transform:scale(0)}100%{transform:scale(1.45)}}
+.a-halftone .dots{position:absolute; inset:-16px; display:grid; grid-auto-rows:var(--cell,32px); grid-template-columns:repeat(var(--cols,40),var(--cell,32px))}
+.a-halftone .dots i{position:static; width:var(--cell,32px); height:var(--cell,32px); background:var(--ink); border-radius:50%; transform:scale(1.45)}
+.band.run .a-halftone .dots i{animation:dotBloom calc(340ms * var(--sp)) var(--ease-snap) both; animation-delay:calc(var(--d,0ms) * var(--sp))}
+
+/* 06 CUT STACK — strips butt in from alternating sides and meet. */
+@keyframes cutL{from{transform:translateX(-102%)}to{transform:translateX(0)}}
+@keyframes cutR{from{transform:translateX(102%)}to{transform:translateX(0)}}
+.band.run .a-cut > i{animation:cutL calc(460ms * var(--sp)) var(--ease-out) both; animation-delay:calc(var(--d,0ms) * var(--sp))}
+.band.run .a-cut > i:nth-child(even){animation-name:cutR}
+
+/* 07 SHUTTER — vertical slats snap open left to right. */
+@keyframes slat{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.a-shutter > i{transform-origin:left center}
+.band.run .a-shutter > i{animation:slat calc(280ms * var(--sp)) var(--ease-snap) both; animation-delay:calc(var(--d,0ms) * var(--sp))}
+
+/* 08 TWO-PASS — first ink floods, second lands short of the trim and
+   leaves a margin of the first. A two-colour job, register visible. */
+@keyframes flood{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+.a-twopass .p1{inset:0; background:var(--ink2)}
+.a-twopass .p2{inset:13px; background:var(--ink)}
+.band.run .a-twopass .p1{animation:flood calc(420ms * var(--sp)) var(--ease-snap) both}
+.band.run .a-twopass .p2{animation:stampBlock calc(340ms * var(--sp)) var(--ease-stamp) both; animation-delay:calc(300ms * var(--sp))}
+
+/* 09 MARQUEE RULE — ambient. The band's own rules become a three-ink
+   ticker running opposite ways. The field never moves; content is
+   untouched, so this one is free of readability risk by construction. */
+@keyframes tickL{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+@keyframes tickR{from{transform:translateX(-120px)}to{transform:translateX(0)}}
+.a-marquee .plate{inset:0; background:var(--ink)}
+.a-marquee .rule{position:absolute; left:-140px; right:-140px; height:12px; background:repeating-linear-gradient(90deg,#18a7e0 0 40px,#ed2224 40px 80px,#fddf00 80px 120px)}
+.a-marquee .rule.top{top:0} .a-marquee .rule.bot{bottom:0}
+.band.run .a-marquee .rule.top{animation:tickL calc(2600ms * var(--sp)) linear infinite}
+.band.run .a-marquee .rule.bot{animation:tickR calc(2600ms * var(--sp)) linear infinite}
+
+/* 10 SCROLL WIPE — no keyframes. --p is written by the scroll handler,
+   so the ink is laid down as you arrive and lifts as you leave. */
+.a-scroll .plate{inset:0; background:var(--ink); clip-path:inset(0 calc((1 - var(--p,1)) * 100%) 0 0)}
+
+/* 11 POINTER ECHO — a misregistered plate trails the pointer BEHIND the
+   content. --mx/--my are written by the pointer handler; with no pointer
+   it rests at the static hero offset (13/6) and reads as a print. */
+.a-pointer .plate{inset:0; background:var(--ink)}
+.a-pointer .echo{
+  position:absolute; width:46%; height:74%;
+  left:calc(var(--mx,42%) - 23%); top:calc(var(--my,50%) - 37%);
+  background:var(--ink2); border:2px solid #0d0905;
+  transition:left 260ms var(--ease-out), top 260ms var(--ease-out);
+}
+
+/* 12 STANDING PULSE — the quietest. The field is flat; a 4×4 ink square
+   in the corner re-stamps cell by cell on a slow loop. Nothing else moves. */
+@keyframes cellPulse{0%,72%,100%{transform:scale(1)}80%{transform:scale(0)}92%{transform:scale(1.1)}}
+.a-pulse .plate{inset:0; background:var(--ink)}
+.a-pulse .mark{position:absolute; right:26px; top:26px; display:grid; grid-template-columns:repeat(4,15px); grid-auto-rows:15px; background:#0d0905; gap:2px; padding:2px}
+.a-pulse .mark i{position:static; width:15px; height:15px}
+.band.run .a-pulse .mark i{animation:cellPulse calc(5200ms * var(--sp)) var(--ease-stamp) infinite; animation-delay:calc(var(--d,0ms) * var(--sp))}
+
+/* ---------- closing ---------- */
+.closing{max-width:1560px; margin:0 auto; padding:36px 32px 90px}
+.closing-inner{border-top:3px solid var(--fg); padding-top:32px; display:grid; gap:34px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.closing h3{font-family:var(--mont); font-weight:700; font-size:14px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:12px}
+.closing p{margin:0 0 10px; font-size:14.5px; line-height:1.7; color:var(--fg-dim)}
+.closing ul{margin:0; padding-left:18px; font-size:14.5px; line-height:1.7; color:var(--fg-dim)}
+.closing li{margin-bottom:8px}
+.closing strong{color:var(--fg); font-weight:600}
+
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.band :focus-visible{outline-color:#0d0905}
+
+/* THE CONTRACT — reduced motion shows every end state immediately and
+   starts no loop. .run is never added; these rules are the belt to that
+   brace, including for the two handler-driven directions. */
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important}
+  .band .fld *, .band .fld{animation:none !important}
+  .a-scroll .plate{clip-path:none !important}
+  .a-pointer .echo{left:auto !important; right:8%; top:13% !important}
+}
+body[data-motion="reduced"] .band .fld *,
+body[data-motion="reduced"] .band .fld{animation:none !important}
+body[data-motion="reduced"] .a-scroll .plate{clip-path:none !important}
+body[data-motion="reduced"] .a-pointer .echo{left:auto; right:8%; top:13%; transition:none}
+body[data-motion="reduced"] *{transition:none !important}
+
+/* On a phone the console is taller than half the screen, so pinning it would
+   leave almost nothing to review through. It scrolls away instead. */
+@media (max-width:860px){
+  .console{position:static}
+  .console-inner{gap:14px 22px; padding:16px 18px}
+}
+@media (max-width:640px){
+  .masthead,.console-inner,.dir-h,.notes,.closing{padding-left:18px; padding-right:18px}
+  .readout{margin-left:0; border-left:0; padding-left:0; max-width:none}
+  .dir-h .replay{margin-left:0}
+  .notes dl{grid-template-columns:1fr; gap:2px 0}
+  .notes dt{padding-top:10px}
+}
+</style>
+
+<div class="masthead">
+  <div class="eyebrow">Website · Coloured bands · Year 2</div>
+  <h1>Twelve ways the bands could move</h1>
+  <p class="standfirst">
+    The blue wayfinding band and the one red act band currently arrive flat and stay flat.
+    Each direction below gives that field a <strong>press event</strong> instead — it prints,
+    rather than simply being there. All twelve run on the three majors only
+    (<strong>blue, red, yellow</strong>), hold radius 0 and the 2px/3px ink rules, and
+    animate <strong>transform and clip only — never opacity</strong>. A silkscreen either
+    printed or it didn't.
+  </p>
+  <p class="standfirst">
+    <strong>Readability is structural here, not a setting.</strong> Every band's base is
+    unprinted stock and the colour is laid <em>on</em> it, with the type sitting above in ink.
+    Mid-run the type is ink-on-cream; landed it is ink-on-colour. There is no frame where the
+    content is washed out, so the "fun" and the "readable" aren't trading against each other.
+  </p>
+  <p class="standfirst">
+    Drive the console. Switch the ink to see each direction do the blue hero, the red act band
+    and a yellow notice; slow it to <strong>0.5×</strong> to read the mechanics; flip
+    <strong>Motion</strong> to Reduced to check the contract every one of them has to honour.
+  </p>
+  <p class="standfirst">
+    <strong>Where it went.</strong> Three were kept — <strong>01 Press Run, 05 Halftone Bloom
+    and 06 Cut Stack</strong> — and rebuilt as <em>ambient loops</em> rather than one-shot
+    entrances, with the grid, timing, stagger order and colour all made adjustable. They now
+    live on <code>band-motion-lab.html</code>, which is the bench for tuning them. This page
+    stays as the record of all twelve.
+  </p>
+</div>
+
+<div class="console">
+  <div class="console-inner">
+    <div class="ctrl">
+      <span class="ctrl-label" id="ink-label">Ink</span>
+      <div class="seg inks" role="group" aria-labelledby="ink-label" id="ink">
+        <button type="button" data-v="blue" aria-pressed="true">Blue</button>
+        <button type="button" data-v="red" aria-pressed="false">Red</button>
+        <button type="button" data-v="yellow" aria-pressed="false">Yellow</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="speed-label">Speed</span>
+      <div class="seg" role="group" aria-labelledby="speed-label" id="speed">
+        <button type="button" data-v="3" aria-pressed="false">0.33&#215;</button>
+        <button type="button" data-v="2" aria-pressed="false">0.5&#215;</button>
+        <button type="button" data-v="1" aria-pressed="true">1&#215;</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="theme-label">Page</span>
+      <div class="seg" role="group" aria-labelledby="theme-label" id="theme">
+        <button type="button" data-v="light" aria-pressed="true">Day</button>
+        <button type="button" data-v="dark" aria-pressed="false">Night</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label" id="motion-label">Motion</span>
+      <div class="seg" role="group" aria-labelledby="motion-label" id="motion">
+        <button type="button" data-v="full" aria-pressed="true">Full</button>
+        <button type="button" data-v="reduced" aria-pressed="false">Reduced</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl-label">&nbsp;</span>
+      <button type="button" class="act" id="replay-all">Replay all</button>
+    </div>
+
+    <div class="readout" id="readout"></div>
+  </div>
+</div>
+
+<div class="wall" id="wall"></div>
+
+<div class="closing">
+  <div class="closing-inner">
+    <div>
+      <h3>What all twelve hold to</h3>
+      <ul>
+        <li><strong>Three majors only.</strong> Blue, red, yellow on ink and stock. No minor
+          takes a band job, and no two inks are ever blended — the overlaps are hard-edged
+          plates in z-order, so a fourth colour can't appear.</li>
+        <li><strong>Transform and clip, never opacity.</strong> Every move is scale, translate
+          or a hard clip edge. Nothing anywhere fades.</li>
+        <li><strong>The end state is the default.</strong> The animation only exists once JS
+          adds <code>.run</code>, so the prerendered HTML, a crawler and a reduced-motion
+          visitor all get the landed band — never a blank one.</li>
+        <li><strong>Type stays ink the whole way.</strong> The one exception is red's
+          display type, which re-creams on landing rather than at the start; cream on
+          unprinted stock would be a hole mid-run.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>How to read the three kinds</h3>
+      <dl class="notes" style="margin:0; padding:0">
+        <dt>Entrance</dt><dd>Plays once when the band scrolls in, then it is a flat band
+          forever. Highest wow, zero standing cost, and it is the only kind that can carry
+          the hero.</dd>
+        <dt>Ambient</dt><dd>Runs forever. Has to stay off the content and stay cheap — both
+          here are edge furniture, not field motion.</dd>
+        <dt>Interactive</dt><dd>Driven by scroll or pointer. Best on a band you pass through
+          rather than one you stop and read.</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Where these landed</h3>
+      <p><strong>01 Press Run, 05 Halftone Bloom and 06 Cut Stack were kept</strong>, and were
+        wanted as loops rather than entrances. They were rebuilt that way on
+        <code>band-motion-lab.html</code> — same three moves, running continuously, with every
+        dial exposed: grid, cycle, hold, stagger order, easing, and colour as either a sequence
+        or a set of weights.</p>
+      <p>The other nine stay here as the record of the exploration, not as anything you can
+        select. Still <strong>nothing adopted</strong>: the live bands
+        (<code>.b-wayfind</code>, <code>.b-act</code>, <code>.b-notice</code> in
+        <code>src/index.css</code>) are untouched.</p>
+      <p>Turning a loop into a shipped band is small from there: the engine becomes a module,
+        the tuned config becomes a constant per band, and the field layer plus the
+        pause-when-offscreen observer go into <code>Hero.jsx</code> and
+        <code>DarkCTA.jsx</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   The twelve. Each entry owns its field builder — the plates,
+   strips, slats, dots or cells the CSS then animates — plus the
+   settle time after which the band counts as landed (red's
+   display type re-creams on that beat).
+
+   kind: entrance | ambient | interactive
+   settle: 0 means the field is present from the first frame.
+   ============================================================ */
+var DIRS = [
+  {
+    key:'press', n:'01', name:'Press Run', kind:'entrance', settle:900,
+    tag:'Eight blocks stamp out in sequence and become the field.',
+    notes:{
+      What:'The band is not one rectangle, it is <strong>eight big blocks in two rows of irregular widths</strong>. Each punches in from scale 0 with the stamp overshoot, out of left-to-right order, so it reads as sheets landing on a press rather than a wipe. They butt together into one flat field and stay there.',
+      Timing:'300ms per block, 70ms apart, 790ms end to end. <code>--ease-stamp</code>, the same overshoot the ink mark already uses.',
+      Reads:'The loudest of the twelve and the most obviously <em>printed</em>. Text is ink on stock until a block arrives under it, then ink on colour — legible at every frame, and the movement is behind the words, never on them.',
+      Cost:'Eight elements, transform only, one run. Cheap enough for the hero.'
+    }
+  },
+  {
+    key:'squeegee', n:'02', name:'Squeegee', kind:'entrance', settle:700,
+    tag:'One hard edge pulls the ink across, blade and all.',
+    notes:{
+      What:'A single clip edge crosses the band left to right with an <strong>11px ink blade riding just ahead of it</strong>. The blade exits the trim; the colour it laid down stays. Literally the squeegee pass.',
+      Timing:'620ms, <code>--ease-snap</code>. One gesture, no stagger.',
+      Reads:'The calmest way to make the band an event. Because the edge is hard rather than a gradient, it never looks like a fade — it looks like ink being pulled. The strongest candidate for a band you actually stop and read.',
+      Cost:'Two elements, <code>clip-path</code> and one transform. The cheapest entrance here.'
+    }
+  },
+  {
+    key:'register', n:'03', name:'Register', kind:'entrance', settle:750,
+    tag:'Three plates land out of true, then pull into register.',
+    notes:{
+      What:'Three plates — the partner ink, the third major and the role colour — fly in from three directions badly out of register and pull together. They are <strong>cut 8px and 16px short of each other</strong>, so when they land the misprint survives: a yellow sliver and a red sliver down the left edge, a red one along the top, permanently.',
+      Timing:'520ms each, 70ms apart, top plate last at 150ms. <code>--ease-stamp</code>.',
+      Reads:'The most on-brand of the twelve — misregistration is the house energy lever, and this is the lever being pulled in front of you. The landed sliver also gives the flat band a permanent edge detail it does not currently have.',
+      Cost:'Three plates, transform only. The band needs <code>overflow:hidden</code> or the fly-in escapes the trim — which is also why the resting slivers come from the plates’ insets rather than from stopping the transforms short.'
+    }
+  },
+  {
+    key:'separate', n:'04', name:'Separation', kind:'entrance', settle:1000,
+    tag:'The landed field splits into its inks and re-merges.',
+    notes:{
+      What:'The band starts landed. Then the colour separation <strong>opens for a beat and closes</strong> — a plate slides left, another right, the role colour holds the middle — as if the press slipped. Hard-edged plates in z-order, never a blend, so no fourth colour is ever created.',
+      Timing:'900ms round trip, out at 42% and back. <code>--ease-out</code>.',
+      Reads:'A wink rather than an entrance. Good on a second or third band where a full stamp would be repetitive, and the only one here that could survive being re-triggered on an interaction.',
+      Cost:'Three plates, transform only. Retriggerable without a rebuild.'
+    }
+  },
+  {
+    key:'halftone', n:'05', name:'Halftone Bloom', kind:'entrance', settle:1400,
+    tag:'A dot grid opens on a diagonal wave and closes solid.',
+    notes:{
+      What:'The field arrives as a <strong>halftone dot grid</strong> that scales up on a diagonal wave from the top-left. The dots overshoot past contact, so what starts as visible newsprint texture closes into a genuinely solid field with no seams.',
+      Timing:'340ms per dot, 26ms per diagonal step, roughly 1.2s across a wide band. <code>--ease-snap</code>.',
+      Reads:'The most spectacular and the most expensive. The mid-run texture is real riso grit rather than an effect, and it is the one direction that will make someone say "wow" out loud. Watch it at 0.33&#215;.',
+      Cost:'<strong>The heavy one.</strong> A few hundred elements, rebuilt on resize. Fine as a one-shot on a single band; do not put it on three.'
+    }
+  },
+  {
+    key:'cut', n:'06', name:'Cut Stack', kind:'entrance', settle:820,
+    tag:'Strips butt in from alternating sides and meet.',
+    notes:{
+      What:'Six full-width strips slide in from <strong>alternating sides</strong> and butt together. The band assembles like cut stock being stacked on a bench.',
+      Timing:'460ms per strip, 55ms apart, 735ms total. <code>--ease-out</code>, no overshoot — these slide and stop rather than punch.',
+      Reads:'Mechanical and orderly where Press Run is exuberant. The horizontal banding is briefly visible through the text, which is the one thing to check at 0.33&#215; before committing to it on a text-heavy band.',
+      Cost:'Six elements, transform only. Cheap.'
+    }
+  },
+  {
+    key:'shutter', n:'07', name:'Shutter', kind:'entrance', settle:780,
+    tag:'Fourteen vertical slats snap open, left to right.',
+    notes:{
+      What:'Fourteen vertical slats scale out from their left edge in a fast left-to-right run. Nothing travels — each slat opens in place, so the whole field resolves without anything crossing the band.',
+      Timing:'280ms per slat, 32ms apart, ~700ms total. <code>--ease-snap</code>.',
+      Reads:'Quick and precise. The tightest stagger of the twelve, so it reads as one gesture rather than fourteen. Sits comfortably under body copy because the motion is vertical-edged and brief.',
+      Cost:'Fourteen elements, one transform each. Cheap.'
+    }
+  },
+  {
+    key:'twopass', n:'08', name:'Two-Pass', kind:'entrance', settle:720,
+    tag:'First ink floods, second lands short and leaves a margin.',
+    notes:{
+      What:'A genuine two-colour job. The partner ink floods down the full bleed, then the role colour <strong>stamps in 13px short of the trim on all four sides</strong>, leaving a hairline margin of the first pass framing the band.',
+      Timing:'420ms flood, 340ms stamp starting at 300ms. Flood is <code>--ease-snap</code>, the stamp is <code>--ease-stamp</code>.',
+      Reads:'The most useful landed state on the page — that 13px margin is a permanent second-ink frame the flat band cannot give you, and it costs nothing after the run. Yellow under blue is the strongest pairing; check red under yellow before using it on the notice band.',
+      Cost:'Two elements, clip and transform. Cheap.'
+    }
+  },
+  {
+    key:'marquee', n:'09', name:'Marquee Rule', kind:'ambient', settle:0,
+    tag:"The band's own rules become a three-ink ticker.",
+    notes:{
+      What:"The field never moves. The band's top and bottom rules become a <strong>12px three-ink ticker</strong> — blue, red, yellow in hard 40px steps — running in opposite directions.",
+      Timing:'2.6s per 120px cycle, linear, forever.',
+      Reads:'The only direction with <em>no</em> readability question at all, because nothing happens anywhere near the content. It gives the page a pulse without asking anything of it. The obvious answer if the ambitious ones feel like too much on a page people are trying to read.',
+      Cost:'Two elements on an infinite loop. Cheap, but it never stops — pin it to one band, and make sure it is off under reduced motion.'
+    }
+  },
+  {
+    key:'scroll', n:'10', name:'Scroll Wipe', kind:'interactive', settle:0,
+    tag:'Ink is laid down as you arrive and lifted as you leave.',
+    notes:{
+      What:'No keyframes at all. The clip edge is <strong>bound to the band’s progress through the viewport</strong> — scroll down and the ink is laid across the field, scroll back up and it lifts. You are the squeegee.',
+      Timing:'None. It is exactly as fast as the reader is.',
+      Reads:'Best on a band you <em>pass through</em>. On one you stop and read, the field freezes half-printed wherever you stopped, which is either a nice arrested-print look or an unfinished one — a real judgement call, and the reason it is worth seeing in place.',
+      Cost:'One element, one rAF-throttled scroll listener writing a single custom property. Under reduced motion the clip is dropped entirely and the band is simply flat.'
+    }
+  },
+  {
+    key:'pointer', n:'11', name:'Pointer Echo', kind:'interactive', settle:0,
+    tag:'A misregistered plate trails the pointer behind the content.',
+    notes:{
+      What:'The field is flat. A <strong>hard-edged second-ink plate with a 2px ink border</strong> drifts after the pointer, behind everything — the misregistration echo made live. It lags by 260ms so it follows rather than tracks.',
+      Timing:'260ms <code>--ease-out</code> chase. No loop.',
+      Reads:'Playful and genuinely surprising, and it puts a second colour on the band permanently. The catch is that it does nothing on a phone — with no pointer it rests at the static hero offset and reads as an ordinary printed plate, which is a fine fallback but means the effect is desktop-only.',
+      Cost:'One extra element and a pointer listener. Cheap, but consider whether an effect most visitors never see earns its code.'
+    }
+  },
+  {
+    key:'pulse', n:'12', name:'Standing Pulse', kind:'ambient', settle:0,
+    tag:'A 4×4 ink square re-stamps in the corner. Nothing else moves.',
+    notes:{
+      What:'The quietest by a distance. The field is flat colour; the existing <strong>4&#215;4 ink square</strong> sits in the corner and re-stamps one cell at a time on a slow loop, cell by cell, forever.',
+      Timing:'5.2s cycle, 260ms apart per cell, <code>--ease-stamp</code>.',
+      Reads:'Barely an animation — a sign of life on an otherwise static band. Uses a mark the system already owns rather than inventing motion, so it is the lowest-risk thing on this page. Worth keeping in the running as the answer for <em>every</em> band that is not the hero.',
+      Cost:'Sixteen tiny elements on a slow infinite loop. Negligible, but still a loop — it must stop under reduced motion.'
+    }
+  }
+];
+
+/* ---------- field builders ---------- */
+var B = {};
+
+/* 01 — two rows of irregular blocks; the stamping order is deliberately
+   not left-to-right so it reads as a press, not a wipe. */
+B.press = function(){
+  var rows = [[26,22,30,22],[18,34,20,28]];
+  var order = [2,0,5,3,7,1,6,4];
+  var origins = ['top left','bottom right','center','top right','bottom left','center','top left','bottom right'];
+  var html = '', idx = 0;
+  rows.forEach(function(widths, r){
+    var left = 0;
+    widths.forEach(function(w){
+      var pos = order.indexOf(idx);
+      html += '<i style="left:' + left + '%; width:calc(' + w + '% + 1px); top:' + (r ? 52 : 0) +
+              '%; height:calc(' + (r ? 48 : 52) + '% + 1px); --d:' + (pos * 70) + 'ms; --o:' + origins[idx] + '"></i>';
+      left += w; idx++;
+    });
+  });
+  return html;
+};
+
+B.squeegee = function(){ return '<i class="plate"></i><i class="blade"></i>'; };
+B.register = function(){ return '<i class="p1"></i><i class="p2"></i><i class="p3"></i>'; };
+B.separate = function(){ return '<i class="p1"></i><i class="p2"></i><i class="p3"></i>'; };
+
+/* 05 — the grid is sized to the band, so it is rebuilt on resize. The
+   delay runs on the diagonal (col + row), which is what makes it a wave
+   rather than a sweep. */
+B.halftone = function(band){
+  var cell = 32;
+  var w = band.offsetWidth || 1180, h = band.offsetHeight || 320;
+  var cols = Math.ceil((w + 32) / cell), rows = Math.ceil((h + 32) / cell);
+  var html = '<div class="dots" style="--cell:' + cell + 'px; --cols:' + cols + '">';
+  for (var r = 0; r < rows; r++)
+    for (var c = 0; c < cols; c++)
+      html += '<i style="--d:' + ((r + c) * 26) + 'ms"></i>';
+  return html + '</div>';
+};
+
+B.cut = function(){
+  var n = 6, html = '';
+  for (var i = 0; i < n; i++)
+    html += '<i style="left:0; width:100%; top:' + (i * (100 / n)) + '%; height:calc(' +
+            (100 / n) + '% + 1px); --d:' + (i * 55) + 'ms"></i>';
+  return html;
+};
+
+B.shutter = function(){
+  var n = 14, html = '';
+  for (var i = 0; i < n; i++)
+    html += '<i style="top:0; height:100%; left:' + (i * (100 / n)) + '%; width:calc(' +
+            (100 / n) + '% + 1px); --d:' + (i * 32) + 'ms"></i>';
+  return html;
+};
+
+B.twopass = function(){ return '<i class="p1"></i><i class="p2"></i>'; };
+B.marquee = function(){ return '<i class="plate"></i><i class="rule top"></i><i class="rule bot"></i>'; };
+B.scroll  = function(){ return '<i class="plate"></i>'; };
+B.pointer = function(){ return '<i class="plate"></i><i class="echo"></i>'; };
+
+/* 12 — the ink square, majors + stock only (the minors sit this one out,
+   the brief is blue/red/yellow). Cell order is fixed; recolouring is the
+   only parameter the mark allows. */
+B.pulse = function(){
+  var C = ['#18a7e0','#fffbf1','#ed2224','#fddf00',
+           '#fffbf1','#ed2224','#fddf00','#18a7e0',
+           '#fddf00','#18a7e0','#fffbf1','#ed2224',
+           '#ed2224','#fddf00','#18a7e0','#fffbf1'];
+  var html = '<i class="plate"></i><div class="mark">';
+  for (var i = 0; i < 16; i++)
+    html += '<i style="background:' + C[i] + '; --d:' + (i * 260) + 'ms"></i>';
+  return html + '</div>';
+};
+
+/* ============================================================
+   The wall
+   ============================================================ */
+var wall = document.getElementById('wall');
+var HERO = {
+  eyebrow: '86 Mai Thúc Lân · Đà Nẵng',
+  thin: 'coffee / cocktails /',
+  slam: 'community',
+  sub: "We're on a mission to become the easiest place in Đà Nẵng to make friends.",
+  a: 'Events', b: 'Menus'
+};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function bandMarkup(d){
+  return '' +
+    '<div class="band" data-ink="blue" data-anim="' + d.key + '" data-settle="' + d.settle + '">' +
+      '<div class="fld a-' + d.key + '"></div>' +
+      '<div class="inner">' +
+        '<div>' +
+          '<p class="eyebrow">' + HERO.eyebrow + '</p>' +
+          '<h3 class="disp"><span class="thin">' + HERO.thin + '</span>' +
+            '<span class="slam">' + HERO.slam + '</span></h3>' +
+          '<p class="sub">' + HERO.sub + '</p>' +
+          '<div class="btns">' +
+            '<button type="button" class="btn">' + HERO.a + '</button>' +
+            '<button type="button" class="btn alt">' + HERO.b + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="shot">Hero photograph</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function notesMarkup(d){
+  var html = '<dl>';
+  for (var k in d.notes) html += '<dt>' + k + '</dt><dd>' + d.notes[k] + '</dd>';
+  return html + '</dl>';
+}
+
+DIRS.forEach(function(d){
+  var sec = document.createElement('section');
+  sec.className = 'dir';
+  sec.innerHTML =
+    '<div class="dir-h">' +
+      '<span class="num">' + d.n + '</span>' +
+      '<h2>' + d.name + '</h2>' +
+      '<span class="kind ' + d.kind + '">' + d.kind + '</span>' +
+      '<span class="tag">' + esc(d.tag) + '</span>' +
+      '<button type="button" class="replay">Replay</button>' +
+    '</div>' +
+    bandMarkup(d) +
+    '<div class="notes">' + notesMarkup(d) + '</div>';
+  wall.appendChild(sec);
+
+  var band = sec.querySelector('.band');
+  sec.querySelector('.replay').addEventListener('click', function(){ run(band); });
+});
+
+var bands = Array.prototype.slice.call(wall.querySelectorAll('.band'));
+
+/* ---------- fields ---------- */
+function buildField(band){
+  var key = band.dataset.anim;
+  band.querySelector('.fld').innerHTML = B[key] ? B[key](band) : '';
+}
+bands.forEach(buildField);
+
+/* ============================================================
+   Running a band. The end state is the CSS default, so `run`
+   is purely additive — and under reduced motion it is skipped
+   entirely and the band is simply declared landed.
+   ============================================================ */
+function speed(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sp')) || 1; }
+function reduced(){
+  return document.body.dataset.motion === 'reduced' ||
+         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function run(band){
+  clearTimeout(band._t);
+  if (reduced()){
+    band.classList.remove('run');
+    band.classList.add('is-landed');
+    return;
+  }
+  band.classList.remove('run', 'is-landed');
+  void band.offsetWidth;                 /* reflow, so a replay actually restarts */
+  band.classList.add('run');
+  var s = +band.dataset.settle || 0;
+  if (s) band._t = setTimeout(function(){ band.classList.add('is-landed'); }, s * speed());
+  else band.classList.add('is-landed');
+}
+
+/* Entrances arm on arrival, once — exactly as they would on the site.
+   Ambient and interactive bands are armed the moment they exist. */
+var seen = new WeakSet();
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if (!e.isIntersecting || seen.has(e.target)) return;
+    seen.add(e.target);
+    run(e.target);
+  });
+}, { threshold: 0.28 });
+
+bands.forEach(function(band){
+  var d = DIRS.filter(function(x){ return x.key === band.dataset.anim; })[0];
+  if (d.kind === 'entrance') io.observe(band);
+  else run(band);
+});
+
+/* ---------- 10 · scroll wipe ---------- */
+var scrollBands = bands.filter(function(b){ return b.dataset.anim === 'scroll'; });
+var ticking = false;
+function updateScroll(){
+  ticking = false;
+  if (reduced()) return;
+  scrollBands.forEach(function(band){
+    var r = band.getBoundingClientRect(), vh = window.innerHeight || 800;
+    /* 0 as the band's top clears the fold, 1 once it is properly in the room */
+    var p = (vh - r.top) / (vh * 0.55 + r.height * 0.35);
+    p = Math.max(0, Math.min(1, p));
+    band.style.setProperty('--p', p.toFixed(3));
+    band.classList.toggle('is-landed', p > 0.9);
+  });
+}
+function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(updateScroll); } }
+window.addEventListener('scroll', onScroll, { passive: true });
+
+/* ---------- 11 · pointer echo ---------- */
+bands.filter(function(b){ return b.dataset.anim === 'pointer'; }).forEach(function(band){
+  band.addEventListener('pointermove', function(e){
+    if (reduced() || e.pointerType === 'touch') return;
+    var r = band.getBoundingClientRect();
+    band.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(2) + '%');
+    band.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(2) + '%');
+  });
+});
+
+/* ---------- console ---------- */
+function seg(id, fn){
+  var box = document.getElementById(id);
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    box.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    fn(b.dataset.v);
+    readout();
+  });
+}
+
+var state = { ink: 'blue', sp: '1', theme: 'light', motion: 'full' };
+
+seg('ink', function(v){
+  state.ink = v;
+  bands.forEach(function(band){ band.dataset.ink = v; });
+});
+
+seg('speed', function(v){
+  state.sp = v;
+  document.documentElement.style.setProperty('--sp', v);
+});
+
+seg('theme', function(v){
+  state.theme = v;
+  document.documentElement.dataset.theme = v;
+});
+
+seg('motion', function(v){
+  state.motion = v;
+  document.body.dataset.motion = v;
+  /* Leaving Reduced must not leave the page mid-nothing: re-land every
+     band, then let the entrances arm again on their next arrival. */
+  bands.forEach(function(band){
+    band.classList.remove('run');
+    band.classList.add('is-landed');
+    seen.delete(band);
+  });
+  if (v === 'full'){
+    bands.forEach(function(band){
+      var d = DIRS.filter(function(x){ return x.key === band.dataset.anim; })[0];
+      if (d.kind !== 'entrance') run(band);
+    });
+    updateScroll();
+  }
+});
+
+document.getElementById('replay-all').addEventListener('click', function(){
+  bands.forEach(function(band, i){ setTimeout(function(){ run(band); }, i * 90); });
+});
+
+function readout(){
+  var names = { blue: 'Blue · wayfinding', red: 'Red · the one act band', yellow: 'Yellow · notices' };
+  var sp = { '1': '1×', '2': '0.5×', '3': '0.33×' };
+  document.getElementById('readout').innerHTML =
+    '<b>' + names[state.ink] + ' · ' + sp[state.sp] + '</b>' +
+    (state.motion === 'reduced'
+      ? 'Reduced motion: every band shows its end state, no loop runs, and nothing is armed on scroll.'
+      : 'Twelve directions, three majors, no opacity anywhere. Entrances arm as they scroll in — Replay to see one again.');
+}
+readout();
+
+/* The halftone grid is sized to its band, so it is the one field that
+   has to be rebuilt when the band changes size. */
+var rt;
+window.addEventListener('resize', function(){
+  clearTimeout(rt);
+  rt = setTimeout(function(){
+    bands.filter(function(b){ return b.dataset.anim === 'halftone'; }).forEach(function(band){
+      var wasRun = band.classList.contains('run');
+      buildField(band);
+      if (wasRun && !reduced()) band.classList.add('run');
+    });
+    updateScroll();
+  }, 180);
+});
+
+updateScroll();
+</script>

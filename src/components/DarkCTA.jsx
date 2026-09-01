@@ -1,4 +1,5 @@
 import React from 'react';
+import BandField from './BandField';
 import { Icons } from './Icons';
 import Reveal from './Reveal';
 import { URLS, STR } from '../data/translations';
@@ -16,6 +17,11 @@ export default function DarkCTA({ lang }) {
     // Band separation belongs to the NEXT band's top rule (the .band stack
     // idiom) — no own bottom border, or the seam doubles to 6px.
     <section className="section band b-act py-16">
+      {/* Red leads here, so the one act band still reads red. While the
+          field is live the display type drops back to ink (see index.css):
+          the cream exception is a hole over a mosaic that also prints
+          yellow and stock. */}
+      <BandField lead="red" />
       <Reveal stagger className="max-w-7xl mx-auto px-4 grid md:grid-cols-12 gap-6 items-center">
         <div className="md:col-span-7">
           <h2 className="font-display-bold reg-far text-3xl md:text-5xl">

@@ -1,4 +1,5 @@
 import React from 'react';
+import BandField from './BandField';
 
 export default function Hero({ t }) {
   // "coffee / cocktails / community" → Thin lines + an 800 slam on the last
@@ -16,6 +17,10 @@ export default function Hero({ t }) {
     // theme scope. The band is opaque, so the parallax planes never show
     // through it — the field stays flat.
     <section className="band b-wayfind section">
+      {/* The Press Loop, led by this band's own ink so blue still wayfinds.
+          Renders nothing until it decides to run, so the flat blue band
+          remains the pre-rendered and reduced-motion state. */}
+      <BandField lead="blue" />
       <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid grid-cols-12 gap-6 items-center">
         {/* Text content — straight on the field; the band IS the surface. */}
         <div className="col-span-12 md:col-span-6 lg:col-span-5">

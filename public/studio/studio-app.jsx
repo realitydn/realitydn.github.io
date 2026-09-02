@@ -104,6 +104,18 @@ function eventMatches(ev, terms){
   for(let i=0;i<terms.length;i++){ if(hay.indexOf(terms[i])<0) return false; }
   return true;
 }
+/* Does ONE poster cover the whole series, or does this date own its artwork?
+   The hub answers it per event (feed v1 `posterScope`) with the same rule its
+   poster write-back applies: a series date shares the series poster only while
+   it is neither hand-edited nor part of a series whose content changes every
+   week (Film Club, Coffee + Conversation). Hubs deployed before that field
+   don't send it — fall back to the old read, where any series meant one shared
+   weekly poster. */
+function seriesWidePoster(ev){
+  if(!ev) return false;
+  if(ev.posterScope) return ev.posterScope === 'series';
+  return !!ev.seriesId;
+}
 /* One queue row per SERIES for weekly events; dismiss/claim key by the series
    so next week's instance doesn't resurrect a dismissed row. */
 function queueKey(ev){ return (ev && (ev.seriesId || ev.id)) || null; }
@@ -2596,11 +2608,14 @@ function App(){
     const built = apBuildTpl(tpl);
     const di = feedDayIdx(ev.startsAt);
     const accent = di!=null ? AP_ABYDAY[di] : built.accent;
-    /* weekly series read "Thu · 19:00"; one-offs pin the date: "Thu 9.7 · 19:00".
+    /* A poster that covers every date of a weekly stays date-less ("Thu · 19:00");
+       one that belongs to THIS date pins it: "Thu 9.7 · 19:00". That's one-offs,
+       hand-edited dates, and series whose topic changes weekly — Film Club and
+       Storyteller print a date because their artwork is only true for one night.
        Sentence case, not caps: the chip is a FACT and renders in Grotesk, which
        is never uppercased (canon M3) — AP_DABBR is already in the house form. */
     const when = ((di!=null?AP_DABBR[di]:'')
-      + (ev.seriesId ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
+      + (seriesWidePoster(ev) ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
     /* Fill every box the feed can populate: the day·time chip, the host credit,
        and the price chip. Host keeps the template placeholder when the event has
        none; cost reads "Free" when the event carries no price (the feed's null

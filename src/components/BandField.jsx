@@ -30,9 +30,16 @@ const KEYS = ['blue', 'red', 'yellow', 'stock'];
 /* The tuned config. Weights are expressed by ROLE — the band's own ink
    leads, so one recipe serves every coloured band. */
 const CFG = {
-  cols: 8, rows: 4, jitter: 0,
-  cycle: 5300, stagger: 420, hold: 0.72,
-  lead: 10, second: 1, third: 1, stock: 0,
+  cols: 15, rows: 7, jitter: 0,
+  cycle: 10500, stagger: 420, hold: 0.72,
+  lead: 10, second: 2, third: 1, stock: 0,
+  /* Wave shaping — a pure diagonal reads as mechanical, because every cell
+     on an anti-diagonal fires in lockstep and every cycle repeats the last.
+     JAG frays the front with static per-cell noise (same fray every pass);
+     DRIFT is a smooth noise field that MOVES, so patches run early or late
+     and the wave is never the same twice; WARP bends the whole front on a
+     slow sine. Tuned on band-motion-lab.html. */
+  jag: 1.2, drift: 2.2, driftRate: 0.22, warp: 1.2,
 };
 const SECOND = { blue: 'yellow', red: 'yellow', yellow: 'red' };
 const THIRD  = { blue: 'red',    red: 'blue',   yellow: 'blue' };
@@ -70,6 +77,48 @@ const EASE_SNAP = bez(0.3, 0, 0.2, 1);
 const PRINT = EASE_SNAP;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+/* Trilinear value noise on a hashed lattice — smooth in space AND in time,
+   so the drift field slides rather than flickering between states. */
+function hash1(n) {
+  n = (n ^ 61) ^ (n >>> 16); n = n + (n << 3); n = n ^ (n >>> 4);
+  n = Math.imul(n, 0x27d4eb2d); n = n ^ (n >>> 15);
+  return (n >>> 0) / 4294967295;
+}
+function hash3(x, y, z) {
+  return hash1((Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(z | 0, 1274126177)) | 0);
+}
+const sstep = (t) => t * t * (3 - 2 * t);
+function noise3(x, y, z) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+  const xf = sstep(x - xi), yf = sstep(y - yi), zf = sstep(z - zi);
+  const L = (a, b, t) => a + (b - a) * t;
+  return L(
+    L(L(hash3(xi, yi, zi), hash3(xi + 1, yi, zi), xf), L(hash3(xi, yi + 1, zi), hash3(xi + 1, yi + 1, zi), xf), yf),
+    L(L(hash3(xi, yi, zi + 1), hash3(xi + 1, yi, zi + 1), xf), L(hash3(xi, yi + 1, zi + 1), hash3(xi + 1, yi + 1, zi + 1), xf), yf),
+    zf
+  );
+}
+
+/* A drifting delay must never move faster than time itself, or `t - delay`
+   stops increasing and a block runs its phase BACKWARDS — re-entering the
+   recolour window mid-print and popping. Slew-limiting makes that impossible
+   at any setting, and smooths the drift as a side effect. */
+const SLEW = 0.35;
+
+function shapedDelay(cell, t) {
+  let step = cell.step0;                              /* order + static jag */
+  if (CFG.drift > 0) step += CFG.drift * (noise3(cell.nx, cell.ny, (t * CFG.driftRate) / 1000) * 2 - 1);
+  if (CFG.warp > 0) step += CFG.warp * Math.sin((cell.c - cell.r) * 0.55 + t * 0.00042);
+  return step * CFG.stagger;
+}
+function liveDelay(cell, t, slew) {
+  if (!CFG.drift && !CFG.warp) return cell.delay;
+  const target = shapedDelay(cell, t);
+  const d = target - cell.delayNow;
+  cell.delayNow += Math.abs(d) <= slew ? d : (d < 0 ? -slew : slew);
+  return cell.delayNow;
+}
+
 /* The un-print has to have frames to happen in, or a block would visibly pop
    from its old colour to its new one instead of swapping while invisible. */
 const MIN_SWAP = 220;
@@ -87,8 +136,19 @@ function phase(delay, t) {
   const u = (((rel % cyc) + cyc) % cyc) / cyc;
   if (u < h) return { a: 1, idx, inbound: false };
   const v = (u - h) / (1 - h);
-  if (v < 0.45) return { a: 1 - EASE_SNAP(v / 0.45), idx, inbound: false };
-  return { a: PRINT((v - 0.45) / 0.55), idx, inbound: true };
+  /* A short DWELL AT ZERO around the swap. The recolour fires on the first
+     frame past the midpoint, so without it the frames either side land
+     wherever they happen to — a few percent of a block under drift, where
+     the phase advances unevenly. Holding a hard 0 for ~40ms (never under a
+     frame or two, never over a fifth of the transition) makes "the swap is
+     invisible" a property of the model, not of where frames fall. The block
+     is already gone; the pause cannot be seen. */
+  const z = Math.min(0.2, 40 / Math.max(1, (1 - h) * cyc));
+  const lo = 0.45 - z, hi = 0.45 + z;
+  if (v < lo) return { a: 1 - EASE_SNAP(v / lo), idx, inbound: false };
+  if (v < 0.45) return { a: 0, idx, inbound: false };
+  if (v < hi) return { a: 0, idx, inbound: true };
+  return { a: PRINT((v - hi) / (1 - hi)), idx, inbound: true };
 }
 
 function pickColour(lead) {
@@ -117,7 +177,7 @@ function frame(now) {
   const dt = last ? Math.min(now - last, 80) : 16;   /* a backgrounded tab must not jump */
   last = now;
   clock += dt;
-  rigs.forEach((r) => { if (r.visible) paint(r, clock); });
+  rigs.forEach((r) => { if (r.visible) paint(r, clock, dt); });
 }
 function start() { if (raf === null) { last = 0; raf = requestAnimationFrame(frame); } }
 function stop() { if (raf !== null) { cancelAnimationFrame(raf); raf = null; } }
@@ -141,32 +201,44 @@ function layout(rig) {
   const nodes = Array.from(el.children);
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
+      /* The static half of a block's place in the wave: its diagonal order,
+         plus a fixed seeded fray. Noise coords are normalised to the GRID,
+         so the drift field keeps the same patch size whatever the band's
+         size re-counts the grid to. */
+      const step0 = (r + c) + (CFG.jag > 0 ? CFG.jag * (hash3(c + 1, r + 1, 7) * 2 - 1) : 0);
       rig.cells.push({
         node: nodes[r * cols + c],
-        delay: (r + c) * CFG.stagger,          /* diagonal wave */
+        c, r, step0,
+        nx: (c / Math.max(1, cols)) * 3.5,
+        ny: (r / Math.max(1, rows)) * 3.5,
+        delay: step0 * CFG.stagger,
+        delayNow: step0 * CFG.stagger,
         col: pickColour(rig.lead),
         mark: -1,
       });
     }
   }
-  paint(rig, clock);                            /* never leave the band unpainted */
+  paint(rig, clock, 16);                        /* never leave the band unpainted */
 }
 
-function paint(rig, t) {
+function paint(rig, t, dt) {
+  const slew = SLEW * (dt || 16);
   /* First frame back after this band was paused off screen. The clock kept
      running without it, so this draw jumps the phase forward — and a block
      landing mid-print would take its new colour at a visible size. Adopt the
      current cycle instead: colours carry over untouched. */
   const resync = rig.resync; rig.resync = false;
   for (const cell of rig.cells) {
-    const p = phase(cell.delay, t);
+    const p = phase(resync ? cell.delay : liveDelay(cell, t, slew), t);
+    let a = p.a;
     if (p.inbound && cell.mark !== p.idx) {
       cell.mark = p.idx;
       if (!resync) cell.col = pickColour(rig.lead);
+      a = 0;                                          /* belt to the dwell's brace */
     }
     const col = INKS[cell.col];
     if (cell.node._c !== col) { cell.node.style.background = col; cell.node._c = col; }
-    cell.node.style.transform = `scale(${p.a.toFixed(4)})`;
+    cell.node.style.transform = `scale(${a.toFixed(4)})`;
   }
 }
 

@@ -201,6 +201,19 @@ input[type=range]{width:100%; accent-color:var(--accent); height:34px; cursor:po
 .wt input[type=range]{height:28px}
 .wt .pct{font-size:11px; color:var(--fg-faint); font-variant-numeric:tabular-nums}
 .gridinfo{font-size:12.5px; line-height:1.5; color:var(--fg-dim); font-variant-numeric:tabular-nums}
+/* personality presets — the first thing to reach for on a panel */
+.waves{display:flex; align-items:center; gap:10px 16px; flex-wrap:wrap; margin-bottom:22px; padding-bottom:18px; border-bottom:2px solid var(--hairline)}
+.waves-lab{font-family:var(--mont); font-weight:700; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--fg-dim)}
+.waves-row{display:flex; gap:6px; flex-wrap:wrap}
+.waves-row button{
+  font-family:var(--mont); font-weight:700; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+  padding:10px 14px; min-height:42px; cursor:pointer; border:2px solid var(--fg); background:transparent; color:var(--fg);
+  transition:transform var(--dur-tap) var(--ease-snap), box-shadow var(--dur-tap) var(--ease-snap);
+}
+.waves-row button[aria-pressed="true"]{background:var(--fg); color:var(--bg)}
+.waves-row button:hover{transform:translateY(-3px); box-shadow:var(--sh-default)}
+.waves-row button:active{transform:translateY(2px); box-shadow:none}
+.waves-note{font-size:13px; color:var(--fg-faint)}
 
 /* config i/o */
 .cfg{margin-top:22px; border-top:2px solid var(--hairline); padding-top:18px; display:grid; gap:12px; grid-template-columns:1fr auto; align-items:start}
@@ -405,6 +418,65 @@ function norm(a){ var s=a.reduce(function(x,y){return x+y},0)||1; return a.map(f
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 
 /* ============================================================
+   WAVE SHAPING — where the personality lives.
+
+   A pure diagonal is mathematically perfect and it shows: every
+   cell on an anti-diagonal fires in exact lockstep, and every
+   cycle is identical to the last. Two different kinds of clean,
+   so two different dials.
+
+     JAG   per-cell white noise, static and seeded. Frays the
+           wavefront into something ragged. Repeats identically
+           each pass — the shape is broken, the loop is not.
+     DRIFT a smooth noise FIELD that moves. Low frequency, so it
+           shifts whole patches early or late rather than
+           individual cells, and because it travels the wave is
+           never the same twice.
+     WARP  a slow sine bend across the front. Where jag frays and
+           drift wanders, this makes the whole line flex.
+   ============================================================ */
+function hash1(n){
+  n = (n ^ 61) ^ (n >>> 16); n = n + (n << 3); n = n ^ (n >>> 4);
+  n = Math.imul(n, 0x27d4eb2d); n = n ^ (n >>> 15);
+  return (n >>> 0) / 4294967295;
+}
+function hash3(x, y, z){
+  return hash1(Math.imul(x|0, 374761393) + Math.imul(y|0, 668265263) + Math.imul(z|0, 1274126177) | 0);
+}
+function sstep(t){ return t * t * (3 - 2 * t); }
+/* Trilinear value noise. Smooth in space AND in time, so the field slides
+   rather than flickering between states. */
+function noise3(x, y, z){
+  var xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+  var xf = sstep(x - xi), yf = sstep(y - yi), zf = sstep(z - zi);
+  function L(a, b, t){ return a + (b - a) * t; }
+  var c000 = hash3(xi, yi, zi),       c100 = hash3(xi+1, yi, zi);
+  var c010 = hash3(xi, yi+1, zi),     c110 = hash3(xi+1, yi+1, zi);
+  var c001 = hash3(xi, yi, zi+1),     c101 = hash3(xi+1, yi, zi+1);
+  var c011 = hash3(xi, yi+1, zi+1),   c111 = hash3(xi+1, yi+1, zi+1);
+  return L(L(L(c000,c100,xf), L(c010,c110,xf), yf),
+           L(L(c001,c101,xf), L(c011,c111,xf), yf), zf);
+}
+
+/* The drifting delay must never move faster than time itself, or `t - delay`
+   stops increasing and a cell can run its phase BACKWARDS — re-entering the
+   recolour window mid-print and popping. Slew-limiting the delay makes that
+   impossible for any combination of dials, and smooths the drift as a bonus. */
+var SLEW = 0.35;
+
+function shapedDelay(rig, cell, t){
+  var cfg = rig.cfg;
+  var step = cell.step0;                       /* order + static jag */
+  if (cfg.drift > 0){
+    step += cfg.drift * (noise3(cell.nx, cell.ny, t * cfg.driftRate / 1000) * 2 - 1);
+  }
+  if (cfg.warp > 0){
+    step += cfg.warp * Math.sin((cell.c - cell.r) * 0.55 + t * 0.00042);
+  }
+  return step * cfg.stagger;
+}
+
+/* ============================================================
    THE PHASE MODEL — every cell in every rig runs this.
 
      hold ──────────────▶ un-print ─┬─ re-print ──────▶ (repeat)
@@ -433,8 +505,20 @@ function phase(cfg, delay, t){
   var u = ((rel % cyc) + cyc) % cyc / cyc;
   if (u < h) return { a:1, idx:idx, inbound:false };
   var v = (u - h) / (1 - h);
-  if (v < .45) return { a: 1 - EASE.snap(v / .45), idx:idx, inbound:false };
-  return { a: (EASE[cfg.ease] || EASE.snap)((v - .45) / .55), idx:idx, inbound:true };
+  /* A short DWELL AT ZERO around the swap point. The recolour fires on the
+     first frame past .45, so without it the frames either side land wherever
+     they happen to — a few percent of a block at a short cycle, or under
+     drift, where the phase advances unevenly. Holding a hard 0 across ~40ms
+     (never less than a frame or two, never more than a fifth of the
+     transition) makes "the swap is invisible" a property of the model rather
+     than of where frames happen to fall. The block is already gone; the
+     pause cannot be seen. */
+  var z = Math.min(.2, 40 / Math.max(1, (1 - h) * cyc));
+  var lo = .45 - z, hi = .45 + z;
+  if (v < lo)  return { a: 1 - EASE.snap(v / lo), idx:idx, inbound:false };
+  if (v < .45) return { a: 0, idx:idx, inbound:false };
+  if (v < hi)  return { a: 0, idx:idx, inbound:true };
+  return { a: (EASE[cfg.ease] || EASE.snap)((v - hi) / (1 - hi)), idx:idx, inbound:true };
 }
 
 /* Colour draw. Sequence walks a shared counter, so assignments made in
@@ -468,6 +552,16 @@ function orderIndex(cfg, cell, cols, rows){
   }
 }
 
+/* The static half of a cell's place in the wave: its order, plus a fixed
+   seeded fray. Recomputed only when the grid or a dial changes, never per
+   frame — jag is meant to be the SAME raggedness every pass. */
+function setStep0(rig, cell){
+  var cfg = rig.cfg;
+  var step = orderIndex(cfg, cell, rig.cols, rig.rows);
+  if (cfg.jag > 0) step += cfg.jag * (hash3(cell.c + 1, cell.r + 1, 7) * 2 - 1);
+  cell.step0 = step;
+}
+
 /* ============================================================
    The three rigs. `defaults` is exactly the JSON the panel
    round-trips, so what you copy out is the whole state.
@@ -478,17 +572,18 @@ var RIGS_DEF = [
     tag:'Big blocks keep re-printing, each coming back a new colour.',
     kind:'DOM · blocks',
     defaults:{
-      cols:8, rows:4, jitter:0, adapt:'on',
-      cycle:5300, stagger:420, hold:.72, order:'diagonal', ease:'snap', quiet:'off',
+      cols:15, rows:7, jitter:0, adapt:'on', jag:1.2, drift:2.2, driftRate:.22, warp:1.2,
+      cycle:10500, stagger:420, hold:.72, order:'diagonal', ease:'snap', quiet:'off',
       colourMode:'weights',
       sequence:['blue','yellow','blue','red'],
-      weights:{ blue:10, red:1, yellow:1, stock:0 }
+      weights:{ blue:10, red:1, yellow:2, stock:0 }
     },
     notes:{
       Loop:'A block holds, punches out to nothing, <strong>takes its new colour while it is at zero</strong>, and stamps back in. Because the swap happens invisibly the field never flickers — blocks simply keep coming back different.',
-      Tuning:'These are the shipped defaults, and they are what the live bands run: <strong>8 × 4 on a diagonal wave</strong>, a 5.3-second cycle at <strong>72% hold</strong>, snap easing, jitter off. <strong>Stock is weighted to zero</strong>, so every cell is always an ink — the cream you see is the base showing through blocks that are mid-print, not unprinted cells. Give stock any weight and the field gains permanent paper gaps instead.',
-      Grid:'Columns and rows are really a <strong>block size</strong> — 8 × 4 is a 180×136px block on a wide band. With <strong>Keep blocks square</strong> on, a narrower band re-counts the grid to hold that size, so a phone gets two chunky columns rather than eight vertical slivers. Turn it off to pin the count and let blocks stretch. The line above shows what the grid actually is at this width.',
-      Watch:'At 72% hold a block is still for about four seconds of every five, and blue at weight 10 against 1 and 1 means most blocks come back the same colour they left. That is what keeps a permanent loop quiet enough to read over — drop the hold or level the weights and it turns into a slot machine.'
+      Tuning:'These are the shipped defaults, and they are what the live bands run: <strong>15 × 7 on a shaped diagonal</strong>, a 10.5-second cycle at <strong>72% hold</strong>, snap easing, jitter off. <strong>Stock is weighted to zero</strong>, so every cell is always an ink — the cream you see is the base showing through blocks that are mid-print, not unprinted cells. Give stock any weight and the field gains permanent paper gaps instead.',
+      Grid:'Columns and rows are really a <strong>block size</strong> — 15 × 7 is a 96×78px block on a wide band. With <strong>Keep blocks square</strong> on, a narrower band re-counts the grid to hold that size, so a phone gets two chunky columns rather than eight vertical slivers. Turn it off to pin the count and let blocks stretch. The line above shows what the grid actually is at this width.',
+      Watch:'At 72% hold a block is still for about four seconds of every five, and blue at weight 10 against 1 and 1 means most blocks come back the same colour they left. That is what keeps a permanent loop quiet enough to read over — drop the hold or level the weights and it turns into a slot machine.',
+      Personality:'<strong>This is what the live bands run now.</strong> The wave used to be a pure diagonal, which was the complaint: every cell on a diagonal fired in exact lockstep and every cycle repeated the last. <strong>Jag</strong> frays the front with static per-cell noise — ragged, but the same raggedness every pass. <strong>Drift</strong> is a smooth noise field that MOVES, so whole patches run early or late and the wave is never the same twice. <strong>Warp</strong> bends the front on a slow sine. Start with the preset row above; the three dials are there to push it further.'
     }
   },
   {
@@ -496,7 +591,7 @@ var RIGS_DEF = [
     tag:'A dot field breathing on a travelling wave.',
     kind:'Canvas · dots',
     defaults:{
-      cell:30,
+      cell:30, jag:.4, drift:1.4, driftRate:.1, warp:.8,
       cycle:4400, stagger:60, hold:.42, order:'diagonal', ease:'snap', quiet:'off',
       colourMode:'weights',
       sequence:['blue','blue','yellow'],
@@ -513,7 +608,7 @@ var RIGS_DEF = [
     tag:'Strips run off one side and return from the other, recoloured.',
     kind:'DOM · strips',
     defaults:{
-      rows:7,
+      rows:7, jag:.6, drift:1.2, driftRate:.09, warp:0,
       cycle:6400, stagger:430, hold:.7, order:'scan', ease:'out', quiet:'off',
       colourMode:'sequence',
       sequence:['blue','blue','yellow','blue','red'],
@@ -588,7 +683,14 @@ function buildCells(rig){
 
   rig.seqI = 0;
   cells.forEach(function(cl){
-    cl.delay = orderIndex(cfg, cl, rig.cols, rig.rows) * cfg.stagger;
+    setStep0(rig, cl);
+    /* Noise coords are normalised to the GRID, not the cell index, so the
+       field keeps the same patch size whether the band is 8 blocks across
+       or 45 halftone dots. */
+    cl.nx = (cl.c / Math.max(1, rig.cols)) * 3.5;
+    cl.ny = (cl.r / Math.max(1, rig.rows)) * 3.5;
+    cl.delay = cl.step0 * cfg.stagger;
+    cl.delayNow = cl.delay;
     cl.col = pickColour(rig);
     cl.mark = -1;
   });
@@ -601,7 +703,7 @@ function buildCells(rig){
      below the fold would sit there completely unprinted until it was
      scrolled to — the blank-band failure the whole approach exists to
      avoid. At t=0 this is simply the settled field. */
-  draw(rig, clock, reduced());
+  draw(rig, clock, reduced(), 16);
 }
 
 /* Quiet zone — the cells whose centre falls inside the text column hold
@@ -652,8 +754,20 @@ function sizeCanvas(rig){
    ============================================================ */
 var HELD = { a:1, idx:-1, inbound:false };
 
-function draw(rig, t, freeze){
+/* Move a cell's delay toward its shaped target without ever outrunning the
+   slew limit. Returns the delay to use this frame. */
+function liveDelay(rig, cell, t, slew, freeze){
+  if (freeze || (!rig.cfg.drift && !rig.cfg.warp)) return cell.delay;
+  var target = shapedDelay(rig, cell, t);
+  var d = target - cell.delayNow;
+  cell.delayNow += (Math.abs(d) <= slew) ? d : (d < 0 ? -slew : slew);
+  return cell.delayNow;
+}
+
+
+function draw(rig, t, freeze, dt){
   var cfg = rig.cfg, i;
+  var slew = SLEW * (dt || 16);
   /* First frame back after the rig was paused off screen. The clock kept
      running without it, so this draw jumps the phase forward — and a cell
      landing mid-print would take its new colour at a visible size, which is
@@ -668,10 +782,15 @@ function draw(rig, t, freeze){
     var maxR = rig.cell * .72, groups = {};
     for (i=0;i<rig.cells.length;i++){
       var d = rig.cells[i];
-      var pd = (freeze || d.quiet) ? HELD : phase(cfg, d.delay, t);
-      if (!freeze && !d.quiet && pd.inbound && d.mark !== pd.idx){ d.mark = pd.idx; if (!resync) d.col = pickColour(rig); }
+      var pd = (freeze || d.quiet) ? HELD : phase(cfg, liveDelay(rig, d, t, slew, freeze), t);
+      var da = pd.a;
+      if (!freeze && !d.quiet && pd.inbound && d.mark !== pd.idx){
+        d.mark = pd.idx;
+        if (!resync) d.col = pickColour(rig);
+        da = 0;                                      /* see note on the DOM branch */
+      }
       if (d.col === 'stock') continue;               /* unprinted is unprinted */
-      var rr = pd.a * maxR;
+      var rr = da * maxR;
       if (rr < .35) continue;
       (groups[d.col] || (groups[d.col] = [])).push(d.px, d.py, rr);
     }
@@ -687,15 +806,25 @@ function draw(rig, t, freeze){
   for (i=0;i<rig.cells.length;i++){
     var cl = rig.cells[i], node = rig.nodes[i];
     if (!node) continue;
-    var p = (freeze || cl.quiet) ? HELD : phase(cfg, cl.delay, t);
-    if (!freeze && !cl.quiet && p.inbound && cl.mark !== p.idx){ cl.mark = p.idx; if (!resync) cl.col = pickColour(rig); }
+    var p = (freeze || cl.quiet) ? HELD : phase(cfg, liveDelay(rig, cl, t, slew, freeze), t);
+    var a = p.a;
+    if (!freeze && !cl.quiet && p.inbound && cl.mark !== p.idx){
+      cl.mark = p.idx;
+      if (!resync) cl.col = pickColour(rig);
+      /* Pin this one frame to zero. The trigger is a phase boundary, so the
+         frame that lands on it can sit a hair past zero — at a short cycle
+         or under drift, a few percent of a block. Drawing the swap frame at
+         exactly 0 makes the guarantee absolute rather than a function of
+         where frames happen to fall, and costs one frame of the print. */
+      a = 0;
+    }
     var col = INKS[cl.col] || INKS.blue;
     if (node._c !== col){ node.style.background = col; node._c = col; }
     if (rig.key === 'press'){
-      node.style.transform = 'scale(' + p.a.toFixed(4) + ')';
+      node.style.transform = 'scale(' + a.toFixed(4) + ')';
     } else {
       var dir = (cl.r % 2) ? 1 : -1;                 /* neighbours run opposite ways */
-      node.style.transform = 'translateX(' + ((1 - p.a) * 102 * (p.inbound ? -dir : dir)).toFixed(3) + '%)';
+      node.style.transform = 'translateX(' + ((1 - a) * 102 * (p.inbound ? -dir : dir)).toFixed(3) + '%)';
     }
   }
 }
@@ -712,7 +841,7 @@ function frame(now){
   lastT = now;
   if (!running || reduced()) return;
   clock += dt * speed;
-  for (var i=0;i<RIGS.length;i++) if (RIGS[i].visible) draw(RIGS[i], clock, false);
+  for (var i=0;i<RIGS.length;i++) if (RIGS[i].visible) draw(RIGS[i], clock, false, dt * speed);
 }
 function startClock(){ if (rafId === null){ lastT = 0; rafId = requestAnimationFrame(frame); } }
 function stopClock(){ if (rafId !== null){ cancelAnimationFrame(rafId); rafId = null; } }
@@ -720,7 +849,7 @@ function reduced(){
   return document.body.dataset.motion === 'reduced' ||
          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
-function settleAll(){ RIGS.forEach(function(r){ draw(r, 0, true); }); }
+function settleAll(){ RIGS.forEach(function(r){ draw(r, 0, true, 16); }); }
 
 /* ============================================================
    The dials
@@ -731,7 +860,22 @@ var COMMON_DIALS = [
   { k:'hold',    type:'range', min:0,   max:.95,   step:.01, label:'Hold',       fmt:function(v){ return Math.round(v*100) + '%'; } },
   { k:'order',   type:'seg',   opts:['scan','diagonal','shuffle','radial'],      label:'Order' },
   { k:'ease',    type:'seg',   opts:['stamp','snap','out'],  label:'Print ease' },
-  { k:'quiet',   type:'seg',   opts:['off','on'],            label:'Quiet zone' }
+  { k:'quiet',   type:'seg',   opts:['off','on'],            label:'Quiet zone' },
+  { k:'jag',       type:'range', min:0, max:3,   step:.1,  label:'Jag',        fmt:function(v){ return v ? v.toFixed(1) + ' steps' : 'off'; } },
+  { k:'drift',     type:'range', min:0, max:3,   step:.1,  label:'Drift',      fmt:function(v){ return v ? v.toFixed(1) + ' steps' : 'off'; } },
+  { k:'driftRate', type:'range', min:.02, max:.5, step:.01, label:'Drift rate', fmt:function(v){ return v.toFixed(2); } },
+  { k:'warp',      type:'range', min:0, max:3,   step:.1,  label:'Warp',       fmt:function(v){ return v ? v.toFixed(1) + ' steps' : 'off'; } }
+];
+
+/* Personalities — one click sets the three shaping dials. Everything else
+   (grid, cycle, hold, colour) is left exactly as you have it, so a preset
+   changes the CHARACTER of the wave and nothing else. */
+var WAVE_PRESETS = [
+  { id:'clean',     name:'Clean',     jag:0,   drift:0,   driftRate:.12, warp:0,   note:'the pure diagonal — what is live now' },
+  { id:'ragged',    name:'Ragged',    jag:1.4, drift:0,   driftRate:.12, warp:0,   note:'frayed front, identical every pass' },
+  { id:'drift',     name:'Drift',     jag:.5,  drift:1.6, driftRate:.12, warp:0,   note:'patches run early and late, and it wanders' },
+  { id:'breathing', name:'Breathing', jag:.4,  drift:.9,  driftRate:.07, warp:1.6, note:'the whole front flexes slowly' },
+  { id:'weather',   name:'Weather',   jag:1.2, drift:2.2, driftRate:.22, warp:1.2, note:'all three up — barely a wave any more' }
 ];
 var GEO_DIALS = {
   press:[
@@ -744,7 +888,7 @@ var GEO_DIALS = {
   cut:[ { k:'rows', type:'range', min:3, max:18, step:1, label:'Strips' } ]
 };
 var REBUILD = ['cols','rows','jitter','cell','adapt'];
-var REDELAY = ['stagger','order'];
+var REDELAY = ['stagger','order','jag'];
 
 function dialEl(rig, d){
   var wrap = document.createElement('div');
@@ -784,10 +928,11 @@ function dialEl(rig, d){
 
 function applyChange(rig, key){
   if (REBUILD.indexOf(key) >= 0) buildCells(rig);
-  else if (REDELAY.indexOf(key) >= 0) rig.cells.forEach(function(cl){ cl.delay = orderIndex(rig.cfg, cl, rig.cols, rig.rows) * rig.cfg.stagger; });
+  else if (REDELAY.indexOf(key) >= 0) rig.cells.forEach(function(cl){ setStep0(rig, cl); cl.delay = cl.step0 * rig.cfg.stagger; });
   else if (key === 'quiet') markQuiet(rig);
   writeCfg(rig);
-  if (reduced()) draw(rig, 0, true);
+  markWave(rig);
+  if (reduced()) draw(rig, 0, true, 16);
 }
 
 /* ---------- colour dials ---------- */
@@ -855,7 +1000,7 @@ function colourDials(rig){
 }
 
 /* ---------- config i/o ---------- */
-var CFG_KEYS = ['cols','rows','jitter','adapt','cell','cycle','stagger','hold','order','ease','quiet','colourMode','sequence','weights'];
+var CFG_KEYS = ['cols','rows','jitter','adapt','cell','jag','drift','driftRate','warp','cycle','stagger','hold','order','ease','quiet','colourMode','sequence','weights'];
 function cfgJSON(rig){
   var o = {};
   CFG_KEYS.forEach(function(k){ if (rig.cfg[k] !== undefined) o[k] = rig.cfg[k]; });
@@ -889,6 +1034,19 @@ function sanitise(rig, o){
     }
   });
 }
+/* Light the preset whose three dials the rig currently matches; a hand-tuned
+   set matches none, and says so rather than pretending. */
+function markWave(rig){
+  if (!rig.wavesEl) return;
+  var hit = WAVE_PRESETS.filter(function(w){
+    return ['jag','drift','driftRate','warp'].every(function(k){ return Math.abs(rig.cfg[k] - w[k]) < 0.001; });
+  })[0];
+  rig.wavesEl.querySelectorAll('button').forEach(function(b){
+    b.setAttribute('aria-pressed', String(!!hit && b.dataset.w === hit.id));
+  });
+  rig.wnoteEl.textContent = hit ? hit.note : 'hand-tuned';
+}
+
 function syncDials(rig){
   Object.keys(rig.sync).forEach(function(k){ if (rig.cfg[k] !== undefined) rig.sync[k](rig.cfg[k]); });
   renderSeq(rig); renderPct(rig);
@@ -902,7 +1060,8 @@ function applyCfg(rig){
   syncDials(rig);
   buildCells(rig);
   writeCfg(rig);
-  if (reduced()) draw(rig, 0, true);
+  markWave(rig);
+  if (reduced()) draw(rig, 0, true, 16);
   say(rig, 'Applied.');
 }
 function resetRig(rig){
@@ -910,7 +1069,8 @@ function resetRig(rig){
   syncDials(rig);
   buildCells(rig);
   writeCfg(rig);
-  if (reduced()) draw(rig, 0, true);
+  markWave(rig);
+  if (reduced()) draw(rig, 0, true, 16);
 }
 
 /* ============================================================
@@ -978,6 +1138,27 @@ RIGS_DEF.forEach(function(def){
   rig.msgHint = 'Edit and Apply, or Copy when you land on something.';
   rig.msgEl.textContent = rig.msgHint;
 
+  var waves = document.createElement('div');
+  waves.className = 'waves';
+  waves.innerHTML = '<span class="waves-lab">Personality</span><div class="waves-row">' +
+    WAVE_PRESETS.map(function(w){
+      return '<button type="button" data-w="' + w.id + '" title="' + w.note + '">' + w.name + '</button>';
+    }).join('') + '</div><div class="waves-note" data-wnote></div>';
+  sec.querySelector('.panel').insertBefore(waves, sec.querySelector('.dials'));
+  var wnote = waves.querySelector('[data-wnote]');
+  waves.querySelector('.waves-row').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    var w = WAVE_PRESETS.filter(function(x){ return x.id === b.dataset.w; })[0];
+    if (!w) return;
+    ['jag','drift','driftRate','warp'].forEach(function(k){ rig.cfg[k] = w[k]; });
+    syncDials(rig);
+    rig.cells.forEach(function(cl){ setStep0(rig, cl); cl.delay = cl.step0 * rig.cfg.stagger; });
+    writeCfg(rig);
+    markWave(rig);
+    if (reduced()) draw(rig, 0, true, 16);
+  });
+  rig.wavesEl = waves; rig.wnoteEl = wnote;
+
   var dials = sec.querySelector('.dials');
   GEO_DIALS[def.key].forEach(function(d){ dials.appendChild(dialEl(rig, d)); });
   if (def.key === 'press'){
@@ -1003,7 +1184,7 @@ RIGS_DEF.forEach(function(def){
   RIGS.push(rig);
   buildCells(rig);
   showGrid(rig);
-  renderSeq(rig); renderPct(rig); writeCfg(rig);
+  renderSeq(rig); renderPct(rig); writeCfg(rig); markWave(rig);
 });
 
 /* Ambient means it runs forever, so it must not run where nobody is

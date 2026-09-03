@@ -700,36 +700,70 @@ section[id], div[id="proposal"] {
    text flips with it (canon tokens, 19.08.26). */
 [data-theme="dark"] .d-wed { --on-day: #0d0905; }
 
-/* The scroll pane — the widget shows a phone-feed's worth of calendar and
-   scrolls inside itself, so the section stops eating the page. The wrapper
-   paints a paper fade at the bottom edge as the "more below" affordance. */
-.cal-feed-wrap { position: relative; }
-.cal-feed-wrap::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 12px; bottom: 0;
-  height: 56px;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--bg));
-}
-.cal-feed-pane {
-  max-height: clamp(480px, 74vh, 820px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  /* side padding so the hover lift + misregister prints aren't clipped */
-  padding: 4px 6px 64px 4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--fg) transparent;
-}
-.cal-feed-pane::-webkit-scrollbar { width: 8px; }
-.cal-feed-pane::-webkit-scrollbar-thumb { background: var(--fg); border: 2px solid var(--bg); }
-.cal-feed-pane::-webkit-scrollbar-track { background: transparent; }
+/* The feed has TWO modes, chosen by the pointer, not by JS (so the
+   prerendered HTML and the hydrated tree never disagree):
 
-/* Section labels — the app's SectionLabel, sticky so UP NEXT / COMING UP
-   ride along while the pane scrolls. */
+   FLOW (default — every touch device, and anything under 768px): the feed
+   is ordinary page content. Five poster cards, then the first COMING UP
+   rows; the rest fold behind a "Show all N events" button (.cal-more) so
+   the page keeps scrolling and the count still says how much is on. A
+   nested scroller on a phone was a trap (03.09.26: a visitor sent over from
+   the app for the proposal form swiped through every event and never got
+   past the schedule) — the inner pane ate every swipe until it ran out,
+   and overscroll-behavior: contain stopped the fling from ever chaining to
+   the page.
+
+   PANE (mouse + ≥768px only): the original self-scrolling widget — a
+   phone-feed's worth of calendar that scrolls inside itself, so the
+   section stops eating the page. The wrapper paints a paper fade at the
+   bottom edge as the "more below" affordance; the labels stick inside. */
+.cal-feed-wrap { position: relative; }
+.cal-feed-pane { padding: 4px 6px 4px 4px; }
+.cal-more {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 18px;
+  min-height: 44px;
+  width: 100%;
+  justify-content: center;
+}
+/* Flow mode (the complement of the pane query below) folds the rows past
+   the cap (.ev-extra) until .is-open, and shows the button. */
+@media (max-width: 767.98px), (hover: none), (pointer: coarse) {
+  .wk-capped:not(.is-open) .ev-extra { display: none; }
+  .cal-more { display: inline-flex; }
+}
+
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .cal-feed-wrap::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 12px; bottom: 0;
+    height: 56px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+  }
+  .cal-feed-pane {
+    max-height: clamp(480px, 74vh, 820px);
+    overflow-y: auto;
+    /* side padding so the hover lift + misregister prints aren't clipped */
+    padding: 4px 6px 64px 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--fg) transparent;
+  }
+  .cal-feed-pane::-webkit-scrollbar { width: 8px; }
+  .cal-feed-pane::-webkit-scrollbar-thumb { background: var(--fg); border: 2px solid var(--bg); }
+  .cal-feed-pane::-webkit-scrollbar-track { background: transparent; }
+  /* Labels ride along while the pane scrolls (the app's SectionLabel). */
+  .cal-label { position: sticky; top: 0; }
+}
+
+/* Section labels — the app's SectionLabel. Static in flow mode (a sticky
+   label would slide under the masthead); sticky inside the pane (set in the
+   pane query above — no position here, or this later rule would win). */
 .cal-label {
-  position: sticky;
-  top: 0;
   z-index: 6;
   display: flex;
   align-items: center;

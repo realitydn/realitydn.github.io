@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from './Icons';
 import { URLS, STR } from '../data/translations';
 import { FEED_ICS_URL } from '../data/feed';
@@ -73,6 +73,36 @@ export default function Calendar({ lang }) {
   const all = [...soon, ...later];
   const wall = all.slice(0, 5);
   const rest = all.slice(5);
+
+  // Flow mode (touch / narrow — see index.css "The feed has TWO modes"):
+  // only the first ROW_CAP rows print; the rest fold behind "Show all N
+  // events" so the page keeps scrolling. The pane mode ignores the fold
+  // in CSS, so the markup is the same in both and prerender stays honest.
+  const ROW_CAP = 6;
+  const [rowsOpen, setRowsOpen] = useState(false);
+  const comingUpRef = useRef(null);
+  const reanchor = useRef(false);
+  const folded = rest.length > ROW_CAP;
+  const toggleRows = () => {
+    reanchor.current = rowsOpen; // folding back up → re-anchor after commit
+    setRowsOpen((v) => !v);
+  };
+  // Folding the list back up while scrolled deep would strand the viewport
+  // below the section (the page just lost a few thousand pixels) — once the
+  // collapse has committed, snap back to COMING UP if its label has left
+  // the top. An effect, not a rAF in the handler: the handler's frame can
+  // run before React commits, and then the measurement is of the old page.
+  useEffect(() => {
+    if (!reanchor.current || rowsOpen) return;
+    reanchor.current = false;
+    const el = comingUpRef.current;
+    if (!el || el.getBoundingClientRect().top >= 0) return;
+    const root = document.documentElement;
+    const prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    el.scrollIntoView({ block: 'start' });
+    root.style.scrollBehavior = prev;
+  }, [rowsOpen]);
 
   // One canon event card — the ink pass's Events-page .ev-card (canon
   // 22.08.26): a day-owned block of TEXT beside the event's 4:5 poster at its
@@ -174,7 +204,7 @@ export default function Calendar({ lang }) {
   // one arrow. The weekday hue survives as plate + spine only, and the price
   // rides as TEXT, never a colour block. Same sources as the slices, so all
   // six languages flow through unchanged.
-  const row = (ev) => {
+  const row = (ev, i) => {
     const title = pickTitle(ev, lang) || 'REALITY event';
     const qualifier = pickQualifier(ev, lang);
     const loc = pickLocName(ev.location, lang);
@@ -189,7 +219,7 @@ export default function Calendar({ lang }) {
       <button
         key={ev.id}
         type="button"
-        className={`ev ${dayClassFromISO(ev.startsAt)}`}
+        className={`ev ${dayClassFromISO(ev.startsAt)}${i >= ROW_CAP ? ' ev-extra' : ''}`}
         onClick={() => setOverlayEvent(ev)}
         aria-label={title}
       >
@@ -292,8 +322,26 @@ export default function Calendar({ lang }) {
               )}
               {rest.length > 0 && (
                 <>
-                  <div className="cal-label mt-6">{CF.comingUp}</div>
-                  <div className="wk">{rest.map(row)}</div>
+                  <div className="cal-label mt-6 scroll-mt-24" ref={comingUpRef}>{CF.comingUp}</div>
+                  <div className={`wk${folded ? ' wk-capped' : ''}${rowsOpen ? ' is-open' : ''}`}>
+                    {rest.map(row)}
+                  </div>
+                  {/* Flow-mode fold (CSS hides this in the desktop pane): the
+                      count is the point — "Show all 38 events" says how much
+                      is on without making the page swallow 38 rows. */}
+                  {folded && (
+                    <button
+                      type="button"
+                      className="btn-secondary cal-more text-xs"
+                      onClick={toggleRows}
+                      aria-expanded={rowsOpen}
+                    >
+                      {rowsOpen
+                        ? CF.showFewer
+                        : CF.showAll.replace('{n}', String(total))}
+                      <span aria-hidden="true">{rowsOpen ? '↑' : '↓'}</span>
+                    </button>
+                  )}
                 </>
               )}
             </div>

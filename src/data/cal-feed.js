@@ -95,6 +95,10 @@ const CF_STR = {
     freeEvent: 'Free event',
     entry: 'Entry: {cost}',
     upcomingCount: '{n} upcoming events',
+    // Flow mode (touch / narrow): the rows past the first few fold behind
+    // this button so the page keeps scrolling; the count carries the scope.
+    showAll: 'Show all {n} events',
+    showFewer: 'Show fewer',
   },
   VN: {
     upNext: 'Sắp diễn ra',
@@ -103,6 +107,8 @@ const CF_STR = {
     freeEvent: 'Sự kiện miễn phí',
     entry: 'Vé vào: {cost}',
     upcomingCount: '{n} sự kiện sắp tới',
+    showAll: 'Xem tất cả {n} sự kiện',
+    showFewer: 'Thu gọn',
   },
   RU: {
     upNext: 'Скоро',
@@ -111,6 +117,8 @@ const CF_STR = {
     freeEvent: 'Вход свободный',
     entry: 'Вход: {cost}',
     upcomingCount: 'Предстоящих событий: {n}',
+    showAll: 'Показать все события ({n})',
+    showFewer: 'Свернуть',
   },
   UK: {
     upNext: 'Незабаром',
@@ -119,6 +127,8 @@ const CF_STR = {
     freeEvent: 'Вхід вільний',
     entry: 'Вхід: {cost}',
     upcomingCount: 'Подій попереду: {n}',
+    showAll: 'Показати всі події ({n})',
+    showFewer: 'Згорнути',
   },
   KO: {
     upNext: '곧 시작',
@@ -127,6 +137,8 @@ const CF_STR = {
     freeEvent: '무료 이벤트',
     entry: '입장료: {cost}',
     upcomingCount: '예정 이벤트 {n}개',
+    showAll: '이벤트 {n}개 모두 보기',
+    showFewer: '접기',
   },
   JA: {
     upNext: 'まもなく',
@@ -135,6 +147,8 @@ const CF_STR = {
     freeEvent: '無料イベント',
     entry: '入場料: {cost}',
     upcomingCount: '今後のイベント{n}件',
+    showAll: 'イベント{n}件をすべて表示',
+    showFewer: '閉じる',
   },
 };
 

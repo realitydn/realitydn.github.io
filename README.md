@@ -61,6 +61,29 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 
 Proposal forms POST to the REALITY app hub (`app.realitydn.com/api/proposals`) — the Control Room inbox is the review surface. The same-origin Worker (`/api/event-proposal`, `/api/art-exhibition`) remains a fire-and-forget backup writing Notion/Sheets/Resend. See the app repo's `docs/WEBSITE_APP_INTEGRATION.md` for the sunset plan.
 
+## Deep links (anchors)
+
+The homepage honours these hashes on every language route (`/#proposal`,
+`/vn/#proposal`, …). The app's "hold an event" button links `#proposal`;
+posters, QR codes and the guidelines page can use the rest. Query strings
+before the hash (UTMs) are fine.
+
+| Hash | Lands on |
+|------|----------|
+| `#events` (`#calendar`, `#schedule`, `#whatson`) | the schedule |
+| `#info` | Info & Host, welcome panel |
+| `#rules` | Info & Host, house rules panel |
+| `#host` (`#hosting`) | Info & Host, host panel |
+| `#proposal` (`#propose`) | host panel with the proposal form open |
+| `#menus` (`#menu`, `#food`, `#drinks`) | menus |
+| `#visit` (`#location`, `#find`) | visit / find us |
+| `#gallery` (`#photos`) | gallery |
+
+`src/hooks/useHashLanding.js` does the landing: it waits for the target to
+exist (the form only renders after the panel switches), then re-anchors once
+the calendar feed arrives and once fonts settle — unless the visitor has
+already started scrolling. Add an alias there, not in the components.
+
 ## Deployment
 
 Cloudflare Pages (project `realitydn`). Every push to `main` triggers

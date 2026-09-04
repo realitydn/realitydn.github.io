@@ -17,6 +17,8 @@ import HostGuide from "./pages/HostGuide";
 import EventGuidelines from "./pages/EventGuidelines";
 import { STR } from "./data/translations";
 import { LANGS, pathFor } from "./data/languages";
+import useFeed from "./hooks/useFeed";
+import useHashLanding from "./hooks/useHashLanding";
 
 // Builds the `t` helper from a language code. Callers use `t.use('path.to.key')`.
 // Missing keys fall back to the EN catalogue (the reference copy), then to the
@@ -41,6 +43,11 @@ function HomePage({ lang }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = makeT(lang);
   const seo = seoOf(lang);
+  // Deep links (/#proposal from the app, /#events, /#menus…) land where they
+  // point, and stay there once the feed has arrived. useFeed here is the
+  // same shared load Calendar/EventsSchema use — no extra fetch.
+  const { loading: feedLoading } = useFeed();
+  useHashLanding({ settled: !feedLoading });
 
   return (
     <div className="min-h-screen">

@@ -14,9 +14,10 @@ import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel } f
 // EVENT CARDS under UP NEXT — the ink pass's .ev-card shape, text beside the
 // event's 4:5 poster at its NATIVE aspect (never a cropped slice) — then
 // everything after sets as typographic canon rows (.wk/.ev) under COMING UP.
-// The labels stick while the pane scrolls INSIDE itself (the section no
-// longer eats the page). Tapping a card OR a row opens the event in the
-// EventOverlay — details + the open-in-app door.
+// On mouse the pane scrolls INSIDE itself with sticky labels; on touch the
+// feed flows with the page and stops at ROW_CAP rows, where the app door
+// takes over (index.css, "The feed has TWO modes"). Tapping a card OR a row
+// opens the event in the EventOverlay — details + the open-in-app door.
 //
 // Graceful states (never a blank box):
 //   loading                → card-shaped skeleton
@@ -73,6 +74,14 @@ export default function Calendar({ lang }) {
   const all = [...soon, ...later];
   const wall = all.slice(0, 5);
   const rest = all.slice(5);
+
+  // Flow mode (touch / narrow — see index.css "The feed has TWO modes"):
+  // only the first ROW_CAP rows print; past that the app is the calendar,
+  // so the door below replaces them rather than expanding the page. The
+  // pane mode ignores the fold in CSS, so the markup is the same in both
+  // and prerender stays honest.
+  const ROW_CAP = 6;
+  const folded = rest.length > ROW_CAP;
 
   // One canon event card — the ink pass's Events-page .ev-card (canon
   // 22.08.26): a day-owned block of TEXT beside the event's 4:5 poster at its
@@ -174,7 +183,7 @@ export default function Calendar({ lang }) {
   // one arrow. The weekday hue survives as plate + spine only, and the price
   // rides as TEXT, never a colour block. Same sources as the slices, so all
   // six languages flow through unchanged.
-  const row = (ev) => {
+  const row = (ev, i) => {
     const title = pickTitle(ev, lang) || 'REALITY event';
     const qualifier = pickQualifier(ev, lang);
     const loc = pickLocName(ev.location, lang);
@@ -189,7 +198,7 @@ export default function Calendar({ lang }) {
       <button
         key={ev.id}
         type="button"
-        className={`ev ${dayClassFromISO(ev.startsAt)}`}
+        className={`ev ${dayClassFromISO(ev.startsAt)}${i >= ROW_CAP ? ' ev-extra' : ''}`}
         onClick={() => setOverlayEvent(ev)}
         aria-label={title}
       >
@@ -292,8 +301,26 @@ export default function Calendar({ lang }) {
               )}
               {rest.length > 0 && (
                 <>
-                  <div className="cal-label mt-6">{CF.comingUp}</div>
-                  <div className="wk">{rest.map(row)}</div>
+                  <div className="cal-label mt-6 scroll-mt-24">{CF.comingUp}</div>
+                  <div className={`wk${folded ? ' wk-capped' : ''}`}>
+                    {rest.map(row)}
+                  </div>
+                  {/* Flow-mode door (CSS hides it in the desktop pane, which
+                      shows every row itself). The rest of the calendar lives
+                      in the app, so the end of the phone list IS the app's
+                      front door — the count says how much is behind it. */}
+                  {folded && (
+                    <a
+                      href={`${URLS.APP}/?utm_source=website&utm_medium=schedule_see_all`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-secondary cal-more text-xs"
+                    >
+                      {Icons.app()}
+                      {CF.seeAllInApp.replace('{n}', String(total))}
+                      <span aria-hidden="true">↗</span>
+                    </a>
+                  )}
                 </>
               )}
             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { landingTarget } from '../hooks/useHashLanding';
 import { Link } from 'react-router-dom';
 import { URLS } from '../data/translations';
 import { pathFor } from '../data/languages';
@@ -113,16 +114,16 @@ export default function InfoHostSection({ t, lang }) {
     });
   };
 
-  // Deep link: /#proposal (e.g. from the Event Guidelines CTA) lands on the
-  // host panel with the form open.
+  // Deep link: /#proposal (the app's "hold an event" button, the Event
+  // Guidelines CTA) opens the host panel with the form unfolded; /#host and
+  // /#rules pick their panel. The scrolling itself is useHashLanding's job
+  // (App.jsx) — it waits for the #proposal element to exist and re-anchors
+  // after the calendar feed lands, so this only sets the state.
   useEffect(() => {
-    if (window.location.hash === '#proposal') {
-      setActiveMain('host');
-      setFormOpen(true);
-      requestAnimationFrame(() => {
-        document.getElementById('proposal')?.scrollIntoView({ block: 'start' });
-      });
-    }
+    const target = landingTarget(window.location.hash);
+    if (!target || !target.panel) return;
+    setActiveMain(target.panel);
+    if (target.form) setFormOpen(true);
   }, []);
 
   const openForm = () => {

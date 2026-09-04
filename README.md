@@ -79,6 +79,11 @@ before the hash (UTMs) are fine.
 | `#visit` (`#location`, `#find`) | visit / find us |
 | `#gallery` (`#photos`) | gallery |
 
+On touch (and under 768px) the schedule flows with the page: five poster
+cards, six rows, then **See all N events in the app** — the rest of the
+calendar lives in the app, so that button is the app door, not an expander.
+On mouse at 768px+ the feed keeps its self-scrolling pane and shows every row.
+
 `src/hooks/useHashLanding.js` does the landing: it waits for the target to
 exist (the form only renders after the panel switches), then re-anchors once
 the calendar feed arrives and once fonts settle — unless the visitor has

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icons } from './Icons';
 import { URLS, STR } from '../data/translations';
 import { FEED_ICS_URL } from '../data/feed';
@@ -14,9 +14,10 @@ import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel } f
 // EVENT CARDS under UP NEXT — the ink pass's .ev-card shape, text beside the
 // event's 4:5 poster at its NATIVE aspect (never a cropped slice) — then
 // everything after sets as typographic canon rows (.wk/.ev) under COMING UP.
-// The labels stick while the pane scrolls INSIDE itself (the section no
-// longer eats the page). Tapping a card OR a row opens the event in the
-// EventOverlay — details + the open-in-app door.
+// On mouse the pane scrolls INSIDE itself with sticky labels; on touch the
+// feed flows with the page and stops at ROW_CAP rows, where the app door
+// takes over (index.css, "The feed has TWO modes"). Tapping a card OR a row
+// opens the event in the EventOverlay — details + the open-in-app door.
 //
 // Graceful states (never a blank box):
 //   loading                → card-shaped skeleton
@@ -75,34 +76,12 @@ export default function Calendar({ lang }) {
   const rest = all.slice(5);
 
   // Flow mode (touch / narrow — see index.css "The feed has TWO modes"):
-  // only the first ROW_CAP rows print; the rest fold behind "Show all N
-  // events" so the page keeps scrolling. The pane mode ignores the fold
-  // in CSS, so the markup is the same in both and prerender stays honest.
+  // only the first ROW_CAP rows print; past that the app is the calendar,
+  // so the door below replaces them rather than expanding the page. The
+  // pane mode ignores the fold in CSS, so the markup is the same in both
+  // and prerender stays honest.
   const ROW_CAP = 6;
-  const [rowsOpen, setRowsOpen] = useState(false);
-  const comingUpRef = useRef(null);
-  const reanchor = useRef(false);
   const folded = rest.length > ROW_CAP;
-  const toggleRows = () => {
-    reanchor.current = rowsOpen; // folding back up → re-anchor after commit
-    setRowsOpen((v) => !v);
-  };
-  // Folding the list back up while scrolled deep would strand the viewport
-  // below the section (the page just lost a few thousand pixels) — once the
-  // collapse has committed, snap back to COMING UP if its label has left
-  // the top. An effect, not a rAF in the handler: the handler's frame can
-  // run before React commits, and then the measurement is of the old page.
-  useEffect(() => {
-    if (!reanchor.current || rowsOpen) return;
-    reanchor.current = false;
-    const el = comingUpRef.current;
-    if (!el || el.getBoundingClientRect().top >= 0) return;
-    const root = document.documentElement;
-    const prev = root.style.scrollBehavior;
-    root.style.scrollBehavior = 'auto';
-    el.scrollIntoView({ block: 'start' });
-    root.style.scrollBehavior = prev;
-  }, [rowsOpen]);
 
   // One canon event card — the ink pass's Events-page .ev-card (canon
   // 22.08.26): a day-owned block of TEXT beside the event's 4:5 poster at its
@@ -322,25 +301,25 @@ export default function Calendar({ lang }) {
               )}
               {rest.length > 0 && (
                 <>
-                  <div className="cal-label mt-6 scroll-mt-24" ref={comingUpRef}>{CF.comingUp}</div>
-                  <div className={`wk${folded ? ' wk-capped' : ''}${rowsOpen ? ' is-open' : ''}`}>
+                  <div className="cal-label mt-6 scroll-mt-24">{CF.comingUp}</div>
+                  <div className={`wk${folded ? ' wk-capped' : ''}`}>
                     {rest.map(row)}
                   </div>
-                  {/* Flow-mode fold (CSS hides this in the desktop pane): the
-                      count is the point — "Show all 38 events" says how much
-                      is on without making the page swallow 38 rows. */}
+                  {/* Flow-mode door (CSS hides it in the desktop pane, which
+                      shows every row itself). The rest of the calendar lives
+                      in the app, so the end of the phone list IS the app's
+                      front door — the count says how much is behind it. */}
                   {folded && (
-                    <button
-                      type="button"
+                    <a
+                      href={`${URLS.APP}/?utm_source=website&utm_medium=schedule_see_all`}
+                      target="_blank"
+                      rel="noreferrer"
                       className="btn-secondary cal-more text-xs"
-                      onClick={toggleRows}
-                      aria-expanded={rowsOpen}
                     >
-                      {rowsOpen
-                        ? CF.showFewer
-                        : CF.showAll.replace('{n}', String(total))}
-                      <span aria-hidden="true">{rowsOpen ? '↑' : '↓'}</span>
-                    </button>
+                      {Icons.app()}
+                      {CF.seeAllInApp.replace('{n}', String(total))}
+                      <span aria-hidden="true">↗</span>
+                    </a>
                   )}
                 </>
               )}

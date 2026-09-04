@@ -705,13 +705,13 @@ section[id], div[id="proposal"] {
 
    FLOW (default — every touch device, and anything under 768px): the feed
    is ordinary page content. Five poster cards, then the first COMING UP
-   rows; the rest fold behind a "Show all N events" button (.cal-more) so
-   the page keeps scrolling and the count still says how much is on. A
-   nested scroller on a phone was a trap (03.09.26: a visitor sent over from
-   the app for the proposal form swiped through every event and never got
-   past the schedule) — the inner pane ate every swipe until it ran out,
-   and overscroll-behavior: contain stopped the fling from ever chaining to
-   the page.
+   rows; the rest fold away behind the app door (.cal-more, "See all N
+   events in the app") so the page keeps scrolling and the count still says
+   how much is on. A nested scroller on a phone was a trap (03.09.26: a
+   visitor sent over from the app for the proposal form swiped through every
+   event and never got past the schedule) — the inner pane ate every swipe
+   until it ran out, and overscroll-behavior: contain stopped the fling from
+   ever chaining to the page.
 
    PANE (mouse + ≥768px only): the original self-scrolling widget — a
    phone-feed's worth of calendar that scrolls inside itself, so the
@@ -729,10 +729,11 @@ section[id], div[id="proposal"] {
   width: 100%;
   justify-content: center;
 }
-/* Flow mode (the complement of the pane query below) folds the rows past
-   the cap (.ev-extra) until .is-open, and shows the button. */
+/* Flow mode (the complement of the pane query below): the rows past the cap
+   (.ev-extra) fold away for good and the app door takes their place. The
+   pane mode below shows every row itself, so neither rule applies there. */
 @media (max-width: 767.98px), (hover: none), (pointer: coarse) {
-  .wk-capped:not(.is-open) .ev-extra { display: none; }
+  .wk-capped .ev-extra { display: none; }
   .cal-more { display: inline-flex; }
 }
 

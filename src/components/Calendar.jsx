@@ -317,8 +317,14 @@ export default function Calendar({ lang }) {
                       className="btn-secondary cal-more text-xs"
                     >
                       {Icons.app()}
-                      {CF.seeAllInApp.replace('{n}', String(total))}
-                      <span aria-hidden="true">↗</span>
+                      {/* Label + ↗ in ONE span: on a 375px phone the label
+                          wraps, and a sibling arrow strands itself at the
+                          far right of the second line. Kept together it
+                          follows the last word. */}
+                      <span>
+                        {CF.seeAllInApp.replace('{n}', String(total))}{' '}
+                        <span aria-hidden="true">↗</span>
+                      </span>
                     </a>
                   )}
                 </>

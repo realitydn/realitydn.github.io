@@ -867,33 +867,120 @@
   const TREATMENTS = { duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
                        dither, hatch, photocopy, contour, edges, mosaic };
 
+  /* ---- blend modes ----------------------------------------------------
+     One channel of a separable blend: backdrop `a` (the photograph showing
+     through) under source `b` (the print). W3C compositing formulas, so a
+     multiply here matches a multiply anywhere else the operator has used one.
+     Ported back from the app's Darkroom (src/lib/riso-photo.ts), which took
+     this engine's treatments and finish stack in the first place. */
+  function blendChannel(mode,a,b){
+    switch(mode){
+      case 'multiply':   return a*b;
+      case 'screen':     return a+b-a*b;
+      case 'overlay':    return a<=0.5 ? 2*a*b : 1-2*(1-a)*(1-b);
+      case 'hard-light': return b<=0.5 ? 2*a*b : 1-2*(1-a)*(1-b);
+      case 'soft-light': {
+        if(b<=0.5) return a-(1-2*b)*a*(1-a);
+        const dd = a<=0.25 ? ((16*a-12)*a+4)*a : Math.sqrt(a);
+        return a+(2*b-1)*(dd-a);
+      }
+      case 'darken':     return Math.min(a,b);
+      case 'lighten':    return Math.max(a,b);
+      default:           return b;                    // 'normal' — opaque ink
+    }
+  }
+  /* Every (backdrop, source) byte pair, precomputed. A blend is three
+     evaluations per pixel — near three million on a 900px render — and
+     soft-light alone carries a square root. Both inputs are bytes, so the
+     whole function is 65,536 answers: one 64KB table built once per mode,
+     then a single array read where the arithmetic used to be. */
+  const BLEND_LUTS = new Map();
+  function blendLut(mode){
+    if(!mode || mode==='normal') return null;
+    const hit=BLEND_LUTS.get(mode); if(hit) return hit;
+    const lut=new Uint8Array(65536);
+    for(let base=0;base<256;base++){ const a=base/255;
+      for(let src=0;src<256;src++){ const v=blendChannel(mode,a,src/255);
+        lut[(base<<8)|src] = v<=0?0 : v>=1?255 : Math.round(v*255); } }
+    BLEND_LUTS.set(mode,lut);
+    return lut;
+  }
+
   /* ============================================================
      BLEND-THROUGH — print the press over the REAL photo
-     treatStrength <1 mixes the treatment with the untreated photo
-     underneath (subtle riso); treatWhere confines the print to one
-     tonal end, feathered on the photo's own luminance, so a duotone
-     can sink into just the shadows while faces stay true. Ported from
-     the app's Disposable Camera darkroom (src/lib/riso-photo.ts).
-     Runs after the treatment, before the finish stack — grain, blur
-     and the press artifacts still print over the blended result.
+     ============================================================
+     Three decisions, all of them about the photograph under the ink:
+
+       treatStrength  how far towards the print each pixel travels.
+       treatWhere     which tonal end the print lands on, feathered on
+                      the press's own luminance, so a duotone can sink
+                      into just the shadows while faces stay true.
+       treatBlend     WHAT the print is mixed towards. 'normal' is the
+                      treated pixel itself — opaque ink, the arithmetic
+                      this engine has always done. Any other mode
+                      composites the print onto the photograph FIRST, so
+                      a halftone multiplied over a picture keeps the
+                      picture's own tone under the screen instead of
+                      replacing it. That is what a screen printed over a
+                      photograph actually does, and no amount of
+                      strength gets you there — strength only fades.
+
+     `compOrig` splits the two photographs. Normally the picture showing
+     through is the same one the press read, so Adjust does two jobs at
+     once: it decides what the treatment LOOKS like and it grades
+     whatever is left showing. Turn comp on and the two separate — the
+     press can read a crushed mono version while the photograph
+     underneath stays a full-colour original. With a tonal mask that is
+     the one thing the single-layer version cannot do at any setting:
+     ink sunk into the shadows, faces still photographic.
+
+     Ported from the app's Darkroom (src/lib/riso-photo.ts). Runs after
+     the treatment, before the finish stack — grain, blur and the press
+     artifacts still print over the blended result.
      ============================================================ */
   function blendThrough(cv,o){
     const s=o.treatStrength!=null?o.treatStrength:1, where=o.treatWhere||'all';
-    if(s>=1 && where==='all') return;                 // full-strength everywhere = classic render
+    const mode=o.treatBlend||'normal', comp=!!o.compOrig;
+    /* Opaque ink at full strength everywhere covers the photograph completely:
+       every pixel travels the whole way to the treated one, so the loop below
+       would copy the treated buffer onto itself. That holds however the photo
+       underneath is graded, which is why `compOrig` is deliberately NOT part of
+       this test — comping over an original the print hides is a no-op, and
+       paying for a second full render to prove it is not. */
+    if(s>=1 && where==='all' && mode==='normal') return;
     const w=cv.width,h=cv.height,cx=cv.getContext('2d',{willReadFrequently:true});
     const base=document.createElement('canvas'); base.width=w; base.height=h;
-    untreated(base,o);       // honours Adjust & focus, fit, paper fill, 2nd exposure
-    const L=lumBuffer(w,h,1);                         // adjusted photo tone drives the mask
+    /* the photo showing THROUGH the print — same framing, second exposure and
+       soft focus the press saw, on its own grade when comp is on */
+    untreated(base, comp ? Object.assign({}, o, {
+      brightness:  o.underBright||0,
+      contrast:    o.underContrast!=null?o.underContrast:1,
+      saturation:  o.underSat!=null?o.underSat:1,
+      hue:         o.underHue||0,
+      temperature: o.underTemp||0
+    }) : o);
+    /* the mask reads the PRESS's luminance: where the ink lands is a property
+       of what the press saw, not of how the photo underneath is graded */
+    const L=lumBuffer(w,h,1);
     const bd=base.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
     const out=cx.getImageData(0,0,w,h), d=out.data;
+    const lut=blendLut(mode);
     for(let p=0,i=0;p<L.length;p++,i+=4){
       let mw=1;
       if(where==='shadows') mw=1-smooth(0.3,0.7,L[p]);
       else if(where==='highlights') mw=smooth(0.3,0.7,L[p]);
       const t=s*mw, u=1-t;
-      d[i]  =d[i]*t   + bd[i]*u;
-      d[i+1]=d[i+1]*t + bd[i+1]*u;
-      d[i+2]=d[i+2]*t + bd[i+2]*u;
+      /* d still holds the TREATED pixel until it is written — read it first.
+         Written as t/u rather than the lerp form on purpose: this is exactly
+         the arithmetic that shipped, so every poster already saved at a partial
+         strength renders byte for byte as it did before the blend modes landed.
+         The lerp rounds a hair differently on some inputs. */
+      const r = lut? lut[(bd[i]  <<8)|d[i]  ] : d[i];
+      const g = lut? lut[(bd[i+1]<<8)|d[i+1]] : d[i+1];
+      const b = lut? lut[(bd[i+2]<<8)|d[i+2]] : d[i+2];
+      d[i]  =r*t + bd[i]  *u;
+      d[i+1]=g*t + bd[i+1]*u;
+      d[i+2]=b*t + bd[i+2]*u;
       d[i+3]=d[i+3]*t + bd[i+3]*u;
     }
     cx.putImageData(out,0,0);
@@ -1195,7 +1282,9 @@
   }
 
   const RENDER_DEFAULTS = {
-    treatStrength:1, treatWhere:'all',
+    treatStrength:1, treatWhere:'all', treatBlend:'normal',
+    /* comp over the original — the photo showing through gets its own grade */
+    compOrig:false, underBright:0, underContrast:1, underSat:1, underHue:0, underTemp:0,
     ink:'pink', paper:'night', contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
     softness:0.12, angle:null, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
     shape:'circle', split:0.16, offset:null, blurUnder:0, blurOver:0, grain:0, grainSize:2,

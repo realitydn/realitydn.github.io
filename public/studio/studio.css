@@ -153,6 +153,19 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-gfxtile:hover .gl, .rs-gfxtile.on .gl{ color:inherit; }
 .rs-gfxsearch{ margin-bottom:2px; }
 
+/* treatment strip — every press developed on the operator's own photo, so
+   picking one is a look rather than a word. Same tile as the shape/icon grids
+   (selection, hover and label come for free); only the preview differs: a
+   canvas the engine draws into, sized by the photo's own aspect rather than a
+   fixed box, so a 4:5 crop previews as a 4:5 crop. */
+.rs-treatgrid{ grid-template-columns:repeat(auto-fill, minmax(54px, 1fr)); }
+.rs-treatgrid .rs-gfxtile{ padding:4px 4px 5px; cursor:pointer; gap:4px; }
+/* height follows the frame's own aspect, capped so a 9:16 story crop cannot
+   turn fourteen thumbnails into a column you have to scroll — object-fit
+   letterboxes rather than squashing when the cap bites */
+.rs-treatgrid canvas.tp{ display:block; width:100%; height:auto; max-height:78px;
+  object-fit:contain; border-radius:4px; background:#0e0b07; }
+
 /* stage */
 .rs-stage{ position:relative; overflow:hidden;
   background:

@@ -121,7 +121,8 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
   'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',
   'grainInk','grainBlend','finBright','finContrast','finSat',
-  'treatStrength','treatWhere',
+  'treatStrength','treatWhere','treatBlend',
+  'compOrig','underBright','underContrast','underSat','underHue','underTemp',
   'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
   'mix2','mix2Mode'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120
@@ -129,6 +130,37 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
    what keeps a photo from re-developing on every unrelated re-render.
    Deliberately does NOT include x/y — moving a photo doesn't change its pixels. */
 function risoSig(el){ let s=''; for(let i=0;i<OPT_KEYS.length;i++) s += '|'+el[OPT_KEYS[i]]; return s; }
+
+/* The decoded sources a photo element prints from, out of the same cache the
+   poster uses — so the Inspector's treatment thumbnails and the photo on the
+   canvas are never two different decodes of the same file. Resolves
+   [main, second]; a logo with no file resolves [null, …] and stays blank. */
+function photoSources(el){
+  const getImg=(url)=>{ const c=_imgCache.get(url); if(c) return Promise.resolve(c);
+    return window.RISO.loadImage(url).then(im=>{ _imgCache.set(url,im); return im; }); };
+  const p1 = el.src ? getImg(el.src).catch(()=>getSample(el.sample))
+                    : Promise.resolve(el.type==='logo'? null : getSample(el.sample));
+  const p2 = el.src2 ? getImg(el.src2).catch(()=>null) : Promise.resolve(null);
+  return Promise.all([p1,p2]);
+}
+
+/* Put an element's press onto `cv` at whatever size the caller sized it.
+   The ONE place the engine's globals (source, second exposure, both
+   transforms) are set before a render, so the poster and the Inspector's
+   thumbnails cannot drift apart. `patch` overrides dials for a preview of a
+   click you haven't made yet — the strip renders each treatment at its own
+   TREAT_PRESETS baseline over your paper, inks, framing and exposure. */
+function drawPhotoPress(cv, el, inkKey, theme, src, src2, patch){
+  const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
+    paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null };
+  OPT_KEYS.forEach(k=>{ opts[k]=el[k]; });
+  if(patch) Object.assign(opts, patch);
+  window.RISO.setSource(src);
+  if(window.RISO.setSource2) window.RISO.setSource2(src2||null);
+  if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
+  if(window.RISO.setTransform2) window.RISO.setTransform2({ scale:el.img2Scale, x:el.img2X, y:el.img2Y, rot:el.img2Rot });
+  window.RISO.render(cv, (patch && patch.treatment) || el.treatment, opts);
+}
 
 function PhotoEl({ el, theme, inkKey, selected, exporting }){
   const ref = React.useRef(null);
@@ -151,23 +183,9 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
     const W = Math.max(1, exporting ? Math.min(Math.round(el.w)*xr, xr>2?3840:2400) : Math.min(Math.round(el.w),900));
     const H=Math.max(1,Math.round(W*(el.h/el.w)));
     cv.width=W; cv.height=H;
-    const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
-      paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null };
-    OPT_KEYS.forEach(k=>{ opts[k]=el[k]; });
-    const draw=(src,src2)=>{ if(!alive) return;
-      window.RISO.setSource(src);
-      if(window.RISO.setSource2) window.RISO.setSource2(src2||null);
-      if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
-      if(window.RISO.setTransform2) window.RISO.setTransform2({ scale:el.img2Scale, x:el.img2X, y:el.img2Y, rot:el.img2Rot });
-      window.RISO.render(cv, el.treatment, opts); };
-    const getImg=(url)=>{ const c=_imgCache.get(url); if(c) return Promise.resolve(c);
-      return window.RISO.loadImage(url).then(im=>{ _imgCache.set(url,im); return im; }); };
-    const p1 = el.src ? getImg(el.src).catch(()=>getSample(el.sample))
-                      : Promise.resolve(el.type==='logo'? null : getSample(el.sample));
-    const p2 = el.src2 ? getImg(el.src2).catch(()=>null) : Promise.resolve(null);
-    Promise.all([p1,p2]).then(([s1,s2])=>{ if(!alive) return;
+    photoSources(el).then(([s1,s2])=>{ if(!alive) return;
       if(!s1){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }   // empty logo stays transparent
-      draw(s1,s2); });
+      drawPhotoPress(cv, el, inkKey, theme, s1, s2); });
     return ()=>{ alive=false; };
   /* Dependencies matter enormously here: this effect IS the press, and it used
      to have none — so every re-render of the app (every frame of dragging ANY
@@ -1226,6 +1244,10 @@ function Wrap({ el, wrap, sel, onDown, children }){
 }
 
 window.StudioElement = StudioElement;
+/* The photo press, shared with the Inspector's treatment strip. */
+window.photoSources = photoSources;
+window.drawPhotoPress = drawPhotoPress;
+window.risoSig = risoSig;
 /* The mark at an explicit module, in a shrink-wrapped box — the ticket's own
    renderer, shared with the Inspector's mark editor so a swatch in the panel
    and the mark on the canvas can never be drawn by two different code paths. */

@@ -323,11 +323,104 @@ function PhotoUpload({ onPick, label }){
     <input ref={inp} type="file" accept="image/*" style={{display:'none'}} onChange={handle} />
   </React.Fragment>);
 }
+/* Every press, in the canon order, each carrying the Photo Guidance's own
+   three lines. `tag` is what the treatment IS in four words; best/avoid are
+   transcribed from the guidance card, not written here — they are what makes
+   the strip teachable to somebody who has never heard of a riso. Keep them in
+   step with the card if it revs. */
 const TREATS = [
-  {v:'duotone',l:'Duotone'},{v:'offregister',l:'Off-Reg'},{v:'halftone',l:'Halftone'},
-  {v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'overprint',l:'Overprint'},
-  {v:'spot',l:'Spot'},{v:'dither',l:'Dither'},{v:'hatch',l:'Hatch'},{v:'photocopy',l:'Copier'},
-  {v:'contour',l:'Contour'},{v:'edges',l:'Outline'},{v:'mosaic',l:'Mosaic'},{v:'none',l:'None'}
+  {v:'duotone',l:'Duotone',tag:'two-colour sep · the default',
+   best:'Faces, portraits, anything that has to stay readable.',
+   avoid:'You want maximum graphic punch — go louder below.'},
+  {v:'offregister',l:'Off-Reg',tag:'the signature',
+   best:'Hero DJ / party shots, movement, big sizes.',
+   avoid:'The photo is text-dense or printed small — fringing muddies it.'},
+  {v:'halftone',l:'Halftone',tag:'newsprint grit',
+   best:'Live music, crowds, high-contrast images.',
+   avoid:'The photo is soft and flat — the dots vanish.'},
+  {v:'posterize',l:'Banded',tag:'silkscreen flatness',
+   best:'Bold, simple compositions with one clear subject.',
+   avoid:'The scene is detailed — fine detail collapses.'},
+  {v:'cutout',l:'Cutout',tag:'max punch',
+   best:'One clear subject on a dark background; loud headlines.',
+   avoid:"The background is busy — the subject won't separate."},
+  {v:'overprint',l:'Overprint',tag:'wet overlap',
+   best:'Texture / abstract shots, covers, two-colour richness.',
+   avoid:'Literal clarity matters — it abstracts the image.'},
+  {v:'spot',l:'Spot',tag:'one tone floods',
+   best:'A single flare, face or lamp you want to pick out in flat ink.',
+   avoid:'The tone you want is spread across the frame — it floods everything.'},
+  {v:'dither',l:'Dither',tag:'1-bit zine screen',
+   best:'Photocopied-flyer energy; anything that wants to look duplicated.',
+   avoid:'The subject reads by colour rather than shape — there is no colour left.'},
+  {v:'hatch',l:'Hatch',tag:'engraved lines',
+   best:'Portraits and objects with real form — the strokes follow the light.',
+   avoid:'The photo is flat or busy; the lines have nothing to describe.'},
+  {v:'photocopy',l:'Copier',tag:'toner-crushed mono',
+   best:'Grit, urgency, gig-poster feel. Faces survive it well.',
+   avoid:'You need the midtones — this treatment is mostly about losing them.'},
+  {v:'contour',l:'Contour',tag:'topographic map',
+   best:'Landscapes, crowds, anything with broad tonal shapes to trace.',
+   avoid:'The scene is fine-grained — smooth it hard first or it turns to noise.'},
+  {v:'edges',l:'Outline',tag:'the drawing under the photo',
+   best:'Strong silhouettes and architecture; anything that reads as a drawing.',
+   avoid:'The light is soft — there are no edges to find.'},
+  {v:'mosaic',l:'Mosaic',tag:'tiled to the ramp',
+   best:'Abstraction, backgrounds, covering a photo that is not quite good enough.',
+   avoid:'Anyone needs to be recognisable.'},
+  {v:'none',l:'None',tag:'no plate — the photo as shot',
+   best:'Checking the frame before you print it.',
+   avoid:'It is going on a poster — a raw photo breaks the palette.'}
+];
+
+/* ============================================================
+   HOW THE INK SITS — the press composited onto the photograph.
+   ============================================================
+   Strength only ever FADES a print towards the picture underneath.
+   These change what the print IS: a halftone multiplied over a
+   photograph keeps the photograph's own tone under the screen
+   instead of replacing it, which is what a screen printed over a
+   photograph actually does — and no strength setting gets there.
+
+   Every one is a real ink behaviour before it is a compositing
+   formula, and the copy says which. Ported from the app's Darkroom
+   (src/lib/riso-presets.ts). */
+const PRESS_BLENDS = [
+  { v:'normal',     l:'Opaque',   note:'The print covers the photo. Opaque ink — the classic riso.' },
+  { v:'multiply',   l:'Multiply', note:'Transparent ink over the photograph — the picture reads THROUGH the screen. The one to reach for on a halftone.' },
+  { v:'screen',     l:'Screen',   note:'Ink that only ever lightens. Glows on night stock; nearly invisible on day.' },
+  { v:'overlay',    l:'Overlay',  note:'Multiplies the shadows and screens the lights at once — contrast without losing either end.' },
+  { v:'soft-light', l:'Soft',     note:'The gentlest of them. A tint of the treatment rather than a print of it.' },
+  { v:'hard-light', l:'Hard',     note:"Overlay's opposite — the PRINT decides. Hard, poster-ish, unsubtle." },
+  { v:'darken',     l:'Darken',   note:'Keeps whichever is darker. Ink lands only where it would be seen.' },
+  { v:'lighten',    l:'Lighten',  note:'Keeps whichever is lighter. The night-stock twin of Darken.' }
+];
+
+/* ============================================================
+   NAMED FINISHES — in the order a print acquires wear.
+   ============================================================
+   Named for the object, not the sliders: nobody wants "grain 0.6,
+   dust 0.3, contrast 1.45", they want "off a photocopier". Each
+   look is applied over the neutral stack, so switching between two
+   of them can never accumulate — picking Clean really is clean.
+   Ported from the app's Darkroom, which named these while this
+   engine only ever had the dials. */
+const FINISH_NEUTRAL = {
+  finBright:0, finContrast:1, finSat:1,
+  blurOver:0, blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
+  grain:0, grainSize:2, grainInk:null, grainBlend:'soft',
+  vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35
+};
+const FINISH_LOOKS = [
+  { v:'clean',   l:'Clean',    p:{}, note:'No finishing — a digital print of a riso.' },
+  { v:'stock',   l:'On stock', p:{ paperTex:0.45, grain:0.18 },
+    note:'Paper tooth and a breath of grain. The one for anything published.' },
+  { v:'pressed', l:'Pressed',  p:{ paperTex:0.5, grain:0.25, inkBleed:0.3, vignette:0.35 },
+    note:'Stock, plus wet ink and an edge falloff — a print still in the room.' },
+  { v:'handled', l:'Handled',  p:{ paperTex:0.55, grain:0.35, grainSize:2.5, inkBleed:0.25, vignette:0.4, dust:0.4, misprint:5 },
+    note:'Dust, scratches and a mis-registered pull. A print that has been somewhere.' },
+  { v:'copier',  l:'Copied',   p:{ finContrast:1.45, finSat:0.35, grain:0.6, grainSize:1.5, grainBlend:'dirty', dust:0.3, paperTex:0.3 },
+    note:'Blown contrast, dirty toner grain, no subtlety left.' }
 ];
 /* recommended defaults applied when a treatment is chosen — each looks good out of the box */
 const TREAT_PRESETS = {
@@ -610,10 +703,97 @@ function BlurControls({ el, update, prefix, label, max }){
     </React.Fragment>
   );
 }
-function PhotoControls({ el, update, theme }){
+/* ============================================================
+   TREATMENT STRIP — every press, live on YOUR photo.
+   ============================================================
+   Fourteen words in a row of chips ask you to already know what
+   "Overprint" looks like. Fourteen thumbnails of the photo in your
+   hand do not. Ported from the app's Darkroom, which puts the same
+   strip first because picking the press IS the first decision.
+
+   A thumbnail previews the CLICK, not the current state: each one
+   renders its treatment at the TREAT_PRESETS baseline the chip
+   would apply, over your paper, inks, framing and exposure. So it
+   shows what you would actually get, and nudging a halftone's dot
+   size does not turn the chooser into a second preview.
+
+   Sizes in this engine are design px on a 520-wide frame, so a dot
+   covers the same fraction of a 128px thumbnail as of a 900px
+   render — the strip is honest at any width. 128 is simply where
+   fourteen of them stop costing anything: about a quarter of one
+   full photo render, behind a debounce that a slider drag resets.
+   ============================================================ */
+const THUMB_W = 128;
+const THUMB_DEBOUNCE_MS = 200;
+function TreatmentStrip({ el, inkKey, theme, onPick }){
+  const refs = React.useRef({});
+  /* Everything a thumbnail is a preview OF. risoSig covers every engine dial
+     (the per-treatment ones are overridden by the patch, so they only ever
+     redraw the same image — cheap, and it can never go stale); the rest is
+     what lives outside it: the source, the framing, and the ink. */
+  const sig = [window.risoSig?window.risoSig(el):'', el.src, el.src2, el.sample, el.type,
+    inkKey, theme, el.imgScale, el.imgX, el.imgY, el.imgRot,
+    el.img2Scale, el.img2X, el.img2Y, el.img2Rot, Math.round((el.h/el.w)*1000)].join('|');
+  React.useEffect(()=>{
+    if(!window.RISO || !window.photoSources || !window.drawPhotoPress) return;
+    let alive=true;
+    const timer=setTimeout(()=>{
+      window.photoSources(el).then(([s1,s2])=>{
+        if(!alive || !s1) return;
+        const H=Math.max(24, Math.round(THUMB_W*(el.h/el.w)));
+        for(let i=0;i<TREATS.length;i++){
+          const key=TREATS[i].v, cv=refs.current[key];
+          if(!cv) continue;
+          cv.width=THUMB_W; cv.height=H;
+          /* the engine's globals are set inside drawPhotoPress and consumed
+             synchronously by render(), so these fourteen calls cannot
+             interleave with the poster's own press */
+          window.drawPhotoPress(cv, el, inkKey, theme, s1, s2,
+            Object.assign({ treatment:key }, TREAT_PRESETS[key]||{}));
+        }
+      });
+    }, THUMB_DEBOUNCE_MS);
+    return ()=>{ alive=false; clearTimeout(timer); };
+  }, [sig]);
+  return (
+    <div className="rs-gfxgrid rs-treatgrid">
+      {TREATS.map(tr=>(
+        <button key={tr.v} type="button" title={tr.l+' — '+tr.tag}
+          className={'rs-gfxtile'+(el.treatment===tr.v?' on':'')} onClick={()=>onPick(tr.v)}>
+          <canvas className="tp" ref={c=>{ refs.current[tr.v]=c; }} />
+          <span className="gl">{tr.l}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+function PhotoControls({ el, update, theme, accent }){
   const t = el.treatment;
   const tDef = TREATS.find(x=>x.v===t);
   const pressLabel = tDef? tDef.l : t;
+  /* The ink the press will actually run, resolved exactly the way the canvas
+     resolves it — so a thumbnail in the strip is never a different colour from
+     the photo on the poster. */
+  const inkKey = el.followAccent ? (accent||'pink') : (el.ink||'pink');
+  const pickTreat = v=>update(Object.assign({ treatment:v, look:null }, TREAT_PRESETS[v]||{}));
+  /* The press's own grade, in the under-layer's prop names — what the photo
+     showing through is graded by while the two are joined. */
+  const pressGrade = { underBright:el.brightness||0, underContrast:el.contrast!=null?el.contrast:1,
+    underSat:el.saturation!=null?el.saturation:1, underHue:el.hue||0, underTemp:el.temperature||0 };
+  /* Whether any of the photograph survives the print at all. Opaque ink at full
+     strength everywhere leaves none of it, and the engine skips the whole
+     composite in that case — so the panel says so rather than offering dials
+     that cannot move anything. */
+  const photoShowsThrough = (el.treatStrength!=null && el.treatStrength<1)
+    || (el.treatWhere && el.treatWhere!=='all') || ((el.treatBlend||'normal')!=='normal');
+  const blendDef = PRESS_BLENDS.find(b=>b.v===(el.treatBlend||'normal'));
+  /* The named finish this stack IS — measured against the whole neutral set, so
+     it can never claim "Pressed" about a print that merely shares one dial with
+     it. Undefined once you tune off one, which is the honest answer. */
+  const finishLook = FINISH_LOOKS.find(f=>{
+    const want=Object.assign({}, FINISH_NEUTRAL, f.p);
+    return Object.keys(FINISH_NEUTRAL).every(k=>(el[k]==null?FINISH_NEUTRAL[k]:el[k])===want[k]);
+  });
   const finishCount = [el.blurOver>0, el.grain>0, el.vignette>0, el.paperTex>0, el.inkBleed>0, el.dust>0, el.misprint>0,
                        !!el.finBright, el.finContrast!=null&&el.finContrast!==1, el.finSat!=null&&el.finSat!==1].filter(Boolean).length;
   const nBands = Math.max(2, (el.bands|0)||4);
@@ -637,6 +817,12 @@ function PhotoControls({ el, update, theme }){
   const pressDirty = RUI.dirtyCount(el, Object.keys(TREAT_PRESETS[t]||{}), pressBase);
   const adjustDirty = RUI.dirtyCount(el, ['brightness','contrast','saturation','hue','temperature','blurUnder'], pressBase);
   const frameDirty = RUI.dirtyCount(el, ['imgScale','imgX','imgY','imgRot','frame','bleed','bleedBottom','fit'], photoBase);
+  /* The second grade only counts while it is switched on. Turning comp off
+     leaves the dials where you left them — so flipping back and forth doesn't
+     lose the grade — and a badge that kept counting them would be claiming
+     something is set that changes nothing on the poster. */
+  const blendDirty = RUI.dirtyCount(el, ['treatStrength','treatWhere','treatBlend','compOrig'].concat(
+    el.compOrig ? ['underBright','underContrast','underSat','underHue','underTemp'] : []), photoBase);
   return (
     <React.Fragment>
       <Fold id="ph-img" title="Image" open>
@@ -667,7 +853,13 @@ function PhotoControls({ el, update, theme }){
       </Fold>
 
       <Fold id="ph-treat" title={'Treatment · '+pressLabel} open>
-        <Chips options={TREATS} value={el.treatment} onChange={v=>update(Object.assign({ treatment:v, look:null }, TREAT_PRESETS[v]||{}))} />
+        {/* A logo with no file has nothing to develop, so it keeps the words. */}
+        {(el.type==='logo' && !el.src)
+          ? <Chips options={TREATS} value={el.treatment} onChange={pickTreat} />
+          : <TreatmentStrip el={el} inkKey={inkKey} theme={theme} onPick={pickTreat} />}
+        {tDef && tDef.tag && <Hint tight>
+          <b>{tDef.tag}</b> · <b>Best for</b> {tDef.best} <b>Avoid when</b> {tDef.avoid}
+        </Hint>}
         {/* The variants of this press worth a name. Picking one patches the
             dials below — it isn't a mode, so nudging afterwards is fine and
             the chip simply stops being highlighted. */}
@@ -695,12 +887,37 @@ function PhotoControls({ el, update, theme }){
           </div>
         </React.Fragment>}
 
-        {t!=='none' && <React.Fragment>
-          <div className="rs-sech">Blend with photo</div>
+        {/* Where the print meets the photograph underneath it. Its own fold
+            because it is now three separate decisions plus a second grade —
+            and because it auto-opens the moment any of them is set, so a
+            composited photo never hides behind a collapsed head. */}
+        {t!=='none' && <Fold id="ph-blend" title="Blend with photo" dirty={blendDirty}
+          hint={<React.Fragment><b>Strength</b> fades the print towards the photo, <b>Where</b> feathers it into one tonal end, and <b>how the ink sits</b> changes what the print <i>is</i> — no amount of fading gets you a screen the photograph reads through.</React.Fragment>}>
           <Chips label="Where" options={[{v:'all',l:'Everywhere'},{v:'shadows',l:'Shadows'},{v:'highlights',l:'Lights'}]} value={el.treatWhere||'all'} onChange={v=>update({treatWhere:v})} />
           <Slider label="Strength" val={el.treatStrength!=null?el.treatStrength:1} min={0.1} max={1} step={0.02} onChange={v=>update({treatStrength:v})} />
-          <Hint tight>Below full strength the press prints over the <b>real photo</b>. Shadows / Lights feather the print into one tonal end — the photo shows through everywhere else.</Hint>
-        </React.Fragment>}
+          <Chips label="How the ink sits" options={PRESS_BLENDS.map(b=>({v:b.v,l:b.l,t:b.note}))}
+            value={el.treatBlend||'normal'} onChange={v=>update({treatBlend:v})} />
+          {blendDef && <Hint tight><b>{blendDef.l}</b> — {blendDef.note}</Hint>}
+
+          <div className="rs-sech">The photo underneath</div>
+          {/* Switching on SEEDS the second grade from the press's own, so the
+              toggle itself never moves a pixel — the split starts as a copy and
+              only becomes a decision when you drag one of the dials. */}
+          <Chips options={[{v:false,l:'As the press saw it'},{v:true,l:'Comp over the original'}]}
+            value={!!el.compOrig} onChange={v=>update(v? Object.assign({compOrig:true}, pressGrade) : {compOrig:false})} />
+          {el.compOrig && !photoShowsThrough && <Hint tight>Nothing to comp over yet: at <b>full strength</b> with <b>opaque</b> ink the print covers the photo completely. Drop the strength, feather it into Shadows or Lights, or change how the ink sits.</Hint>}
+          {el.compOrig
+            ? <React.Fragment>
+                <Slider label="Photo brightness" val={el.underBright!=null?el.underBright:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({underBright:v})} />
+                <Slider label="Photo contrast" val={el.underContrast!=null?el.underContrast:1} min={0.7} max={1.9} step={0.01} onChange={v=>update({underContrast:v})} />
+                <Slider label="Photo saturation" val={el.underSat!=null?el.underSat:1} min={0} max={2} step={0.02} onChange={v=>update({underSat:v})} />
+                <Slider label="Photo hue shift" val={el.underHue!=null?el.underHue:0} min={-180} max={180} step={5} onChange={v=>update({underHue:v})} suffix="°" />
+                <Slider label="Photo warmth" val={el.underTemp!=null?el.underTemp:0} min={-1} max={1} step={0.02} onChange={v=>update({underTemp:v})} />
+                <button className="rs-addrow" onClick={()=>update(pressGrade)}>↺ Match the press again</button>
+                <Hint tight>The photograph showing <b>through</b> the print, graded on its own. <b>Adjust &amp; focus</b> still decides what the press sees — so the press can read a crushed mono version while this stays a full-colour photo.{el.treatWhere && el.treatWhere!=='all' ? ' With the print landing on one tonal end only, this is where it gets interesting.' : ''}</Hint>
+              </React.Fragment>
+            : <Hint tight>Off, the photo under the print is the same one the press read, and <b>Adjust &amp; focus</b> grades both at once. Turn it on to split them.</Hint>}
+        </Fold>}
 
         {/* Every dial the chosen press exposes, folded away. Choosing a
             treatment already lands on a good default (TREAT_PRESETS) and the
@@ -956,7 +1173,10 @@ function PhotoControls({ el, update, theme }){
         <Hint tight>Soft focus blurs the photo <b>before</b> the press — motion smears the dots along a direction, zoom rushes them outward. The <b>Finish</b> blur prints over the finished image instead.</Hint>
       </Fold>
 
-      <Fold id="ph-finish" title="Finish" badge={finishCount? String(finishCount) : null}>
+      <Fold id="ph-finish" title="Finish" badge={finishLook && finishLook.v!=='clean' ? finishLook.l : (finishCount? String(finishCount) : null)}>
+        <Chips label="Named finish" options={FINISH_LOOKS.map(f=>({v:f.v,l:f.l,t:f.note}))} value={finishLook? finishLook.v : null}
+          onChange={v=>{ const f=FINISH_LOOKS.find(x=>x.v===v); if(f) update(Object.assign({}, FINISH_NEUTRAL, f.p)); }} />
+        <Hint tight>{finishLook? finishLook.note : 'Tuned off a named finish — the dials below are yours.'} Picking one resets the whole stack, so two of them can never pile up.</Hint>
         <div className="rs-sech">Tone</div>
         <Slider label="Brightness" val={el.finBright!=null?el.finBright:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({finBright:v})} />
         <Slider label="Contrast" val={el.finContrast!=null?el.finContrast:1} min={0.5} max={2} step={0.02} onChange={v=>update({finContrast:v})} />
@@ -1823,7 +2043,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* A photo's content IS its image + press panels, which bring their own
           folds — wrapping them in one more would be a fold inside a fold for
           no gain. Everything else gets a Content fold of its own. */}
-      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} />}
+      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} accent={doc.accent} />}
       {el.type==='block' && <Fold id="f-content" title="Block" dirty={dContent}><BlockControls el={el} doc={doc} update={update} /></Fold>}
       {el.type==='shape' && <Fold id="f-content" title="Shape" dirty={dContent}><ShapeControls el={el} doc={doc} update={update} /></Fold>}
       {el.type==='icon'  && <Fold id="f-content" title="Icon"  dirty={dContent}><IconControls  el={el} doc={doc} update={update} /></Fold>}

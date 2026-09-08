@@ -124,11 +124,26 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'treatStrength','treatWhere','treatBlend',
   'compOrig','underBright','underContrast','underSat','underHue','underTemp',
   'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
-  'mix2','mix2Mode'];
+  'mix2','mix2Mode',
+  /* backfilled from the app's Darkroom, 08.09.26 */
+  'inkDensity','splitTone','treatRegion','regionX','regionY','regionSize','regionSoft','regionAngle','regionInvert'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120
    primitives costs microseconds; re-running the press costs ~25ms, so this is
    what keeps a photo from re-developing on every unrelated re-render.
    Deliberately does NOT include x/y — moving a photo doesn't change its pixels. */
+/* The day colours as inks, at the density each wants — the three bright drums
+   run under-density (see the engine's inkDensity). Mirrors the app's
+   riso-recipe.ts DAY_INK; keep the two in step. */
+const SE_DAY_INK = { mon:{ink:'green',inkDensity:0.85}, tue:{ink:'blue'}, wed:{ink:'purple'}, thu:{ink:'pink'},
+                     fri:{ink:'red'}, sat:{ink:'amber',inkDensity:0.9}, sun:{ink:'yellow',inkDensity:0.72} };
+/* Which weekday a poster is FOR: the linked event's start, read in Đà Nẵng's
+   zone. Null when no event is linked — the Day-colour chip then says so. */
+function posterDayOf(doc){
+  const s = doc && doc.eventRef && doc.eventRef.startsAt; if(!s) return null;
+  const d = new Date(s); if(isNaN(d.getTime())) return null;
+  const wd = new Intl.DateTimeFormat('en-US',{ timeZone:'Asia/Ho_Chi_Minh', weekday:'short' }).format(d).toLowerCase().slice(0,3);
+  return SE_DAY_INK[wd] ? wd : null;
+}
 function risoSig(el){ let s=''; for(let i=0;i<OPT_KEYS.length;i++) s += '|'+el[OPT_KEYS[i]]; return s; }
 
 /* The decoded sources a photo element prints from, out of the same cache the
@@ -162,7 +177,7 @@ function drawPhotoPress(cv, el, inkKey, theme, src, src2, patch){
   window.RISO.render(cv, (patch && patch.treatment) || el.treatment, opts);
 }
 
-function PhotoEl({ el, theme, inkKey, selected, exporting }){
+function PhotoEl({ el, theme, inkKey, inkDensity, selected, exporting }){
   const ref = React.useRef(null);
   const bleedRef = React.useRef(null);
 
@@ -185,7 +200,7 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
     cv.width=W; cv.height=H;
     photoSources(el).then(([s1,s2])=>{ if(!alive) return;
       if(!s1){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }   // empty logo stays transparent
-      drawPhotoPress(cv, el, inkKey, theme, s1, s2); });
+      drawPhotoPress(cv, el, inkKey, theme, s1, s2, inkDensity!=null ? { inkDensity } : undefined); });
     return ()=>{ alive=false; };
   /* Dependencies matter enormously here: this effect IS the press, and it used
      to have none — so every re-render of the app (every frame of dragging ANY
@@ -197,7 +212,7 @@ function PhotoEl({ el, theme, inkKey, selected, exporting }){
      would just move the cost. */
   }, [el.w, el.h, el.type, el.src, el.src2, el.sample, el.treatment, el.ink2, el.paperFill,
       el.imgScale, el.imgX, el.imgY, el.imgRot, el.img2Scale, el.img2X, el.img2Y, el.img2Rot,
-      inkKey, theme, exporting, risoSig(el)]);
+      inkKey, inkDensity, theme, exporting, risoSig(el)]);
 
   /* editing aid: while this photo is selected, show the cropped image OUTSIDE
      the frame, faded — so it's clear what's kept vs cut. Raw source (not riso),
@@ -575,7 +590,7 @@ function WordmarkSVG({ height, color, fill }){
   );
 }
 
-function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dragging, onElPointerDown, exporting }){
+function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, selected, dragging, onElPointerDown, exporting }){
   const t = seTheme(theme);
   // Two independent colour roles, each falling back to the legacy single
   // `color` when its own field is unset — so older docs/templates render
@@ -596,7 +611,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
   const B = el._boost||1;
 
   if(el.type==='photo' || el.type==='logo'){
-    const inkKey = el.followAccent ? (posterAccent||'pink') : (el.ink||'pink');
+    /* Day colour: the linked event's weekday, at that colour's own density.
+       Resolved here exactly as the Inspector shows it, so the canvas and the
+       strip never disagree. */
+    const dayInk = (el.followDay && posterDay) ? SE_DAY_INK[posterDay] : null;
+    const inkKey = dayInk ? dayInk.ink : (el.followAccent ? (posterAccent||'pink') : (el.ink||'pink'));
+    const inkDensity = dayInk ? (dayInk.inkDensity||1) : undefined;
     const pwrap = {
       position:'absolute', left:0, top:0, width:el.w+'px', height:el.h+'px',
       transform:`translate(${el.x}px,${el.y}px) rotate(${el.rot||0}deg)`, transformOrigin:'center center',
@@ -612,7 +632,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, selected, dra
           fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:12, color:seTheme(theme).shadow(0.7), textAlign:'center' }}>
           <span>Partner logo</span><span style={{ fontWeight:600, fontSize:10, opacity:.8 }}>upload a PNG →</span>
         </div>
-      : <PhotoEl el={el} theme={theme} inkKey={inkKey} selected={selected} exporting={exporting} />;
+      : <PhotoEl el={el} theme={theme} inkKey={inkKey} inkDensity={inkDensity} selected={selected} exporting={exporting} />;
     return <Wrap el={el} wrap={pwrap} sel={selected} onDown={onElPointerDown}>{inner}</Wrap>;
   }
 

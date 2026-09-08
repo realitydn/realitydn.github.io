@@ -128,9 +128,20 @@
      ============================================================ */
   function paperRGB(o){ return hex2rgb(PAPER[o.paper]); }
   function inkBaseRGB(o){ return hex2rgb(INK[o.paper]); }
-  function accentRGB(o){ return hex2rgb(PAL[o.ink]); }
+  /* ink density — how much ink the plate lays down, 0.4..1. A drum has one
+     colour; how DARK it prints is coverage, and yellow is run under-density on
+     every real press: at 100% over black it is nearly white in luminance and
+     washes a room; at 72% the same drum prints an ochre. Less than full lets
+     the stock through — darker on night, paler on day. Ported from the app's
+     Darkroom (inkDensity). Absent = 1 = every poster ever saved. */
+  function atDensity(rgb,o){
+    const d = o.inkDensity!=null ? o.inkDensity : 1;
+    if(d>=1) return rgb;
+    return lerp(paperRGB(o), rgb, Math.max(0.2, Math.min(1, d)));
+  }
+  function accentRGB(o){ return atDensity(hex2rgb(PAL[o.ink]), o); }
   /* the second ink: an explicit pick (o.ink2) wins, else the auto partner */
-  function partnerRGB(o){ return hex2rgb(PAL[o.ink2] || PAL[PARTNER[o.ink]||'blue']); }
+  function partnerRGB(o){ return atDensity(hex2rgb(PAL[o.ink2] || PAL[PARTNER[o.ink]||'blue']), o); }
 
   /* 1 · DUOTONE — luminance lerped between two inks
        params: balance (tonal pivot), shadowTint, invert
@@ -143,7 +154,14 @@
     let hi = o.paper==='day'? paperRGB(o)   : accentRGB(o);
     const loTint = lerp(lo, accentRGB(o), (o.paper==='day'?o.shadowTint:o.shadowTint*0.6));
     if(o.hiTint>0) hi = lerp(hi, hex2rgb(PAL[o.hiInk]||PAL[PARTNER[o.ink]||'blue']), Math.min(1,o.hiTint));
-    const stops = o.midInk ? [loTint, inkRGB(o.midInk), hi] : null;   // tritone ramp
+    /* split tone (the app's two-drum ramp): night runs paper → second ink →
+       ink; day runs second ink → ink → paper with NO black plate at all. Wins
+       over the older mid-ink tritone when both are set. */
+    const stops = o.splitTone
+      ? (o.paper==='day'
+          ? [ partnerRGB(o), accentRGB(o), paperRGB(o) ]
+          : [ lerp(paperRGB(o), partnerRGB(o), o.shadowTint*0.6), partnerRGB(o), accentRGB(o) ])
+      : (o.midInk ? [loTint, inkRGB(o.midInk), hi] : null);   // tritone ramp
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<L.length;p++,i+=4){ let l=Math.pow(L[p],k); if(o.invert) l=1-l;
       const c= stops? rampSample(stops,l) : lerp(loTint,hi,l);
@@ -295,7 +313,13 @@
     const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=lumBuffer(w,h,o.contrast*1.1,(o.toneSmooth||0));
     const n=Math.max(2,o.bands|0);
     stretch(L); // histogram stretch so bands always read regardless of image key
-    const stops = o.paper==='day'
+    /* split: the second drum takes the band the paper-tint held — night's second
+       step, day's first — so a three-colour banded print is three plates */
+    const stops = o.splitTone
+      ? (o.paper==='day'
+          ? [ partnerRGB(o), accentRGB(o), lerp(accentRGB(o),paperRGB(o),0.55), paperRGB(o) ]
+          : [ paperRGB(o), partnerRGB(o), accentRGB(o), lerp(accentRGB(o),[255,251,241],0.6) ])
+      : o.paper==='day'
       ? [ inkBaseRGB(o), accentRGB(o), lerp(accentRGB(o),paperRGB(o),0.55), paperRGB(o) ]
       : [ paperRGB(o), lerp(paperRGB(o),accentRGB(o),0.5), accentRGB(o), lerp(accentRGB(o),[255,251,241],0.6) ];
     const cols=[]; for(let b=0;b<n;b++){ const key=o.bandInks&&o.bandInks[b];
@@ -947,8 +971,29 @@
        underneath is graded, which is why `compOrig` is deliberately NOT part of
        this test — comping over an original the print hides is a no-op, and
        paying for a second full render to prove it is not. */
-    if(s>=1 && where==='all' && mode==='normal') return;
+    const regionKind = o.treatRegion||'none';
+    if(s>=1 && where==='all' && mode==='normal' && regionKind==='none') return;
     const w=cv.width,h=cv.height,cx=cv.getContext('2d',{willReadFrequently:true});
+    /* the REGION — a stencil over the print: a disc about a point, a stripe
+       through it, or a sweep across the frame, feathered. Where the stencil
+       is open the graded photograph shows. Coordinates are fractions of the
+       frame from its centre so the same region reads the same at every size.
+       Ported from the app's Darkroom (PhotoEdit.region). */
+    let rw=null;
+    if(regionKind!=='none'){
+      rw=new Float32Array(w*h);
+      const rcx=(w/2)*(1+(o.regionX||0)), rcy=(h/2)*(1+(o.regionY||0));
+      const halfDiag=Math.hypot(w,h)/2, soft=Math.max(0,Math.min(1,o.regionSoft!=null?o.regionSoft:0.5));
+      const size=o.regionSize!=null?o.regionSize:0.6, rad=((o.regionAngle||0)*Math.PI)/180;
+      const dirX=Math.cos(rad), dirY=Math.sin(rad), inv=!!o.regionInvert;
+      for(let y=0,p=0;y<h;y++){ for(let x=0;x<w;x++,p++){
+        const dx=x+0.5-rcx, dy=y+0.5-rcy; let wgt;
+        if(regionKind==='radial'){ const r=Math.max(1,size*halfDiag); wgt=1-smooth(r*(1-soft), r, Math.hypot(dx,dy)); }
+        else if(regionKind==='band'){ const half=Math.max(1,size*(Math.min(w,h)/2)); const dist=Math.abs(dx*-dirY+dy*dirX); wgt=1-smooth(half*(1-soft), half, dist); }
+        else { const sd=dx*dirX+dy*dirY; const fz=Math.max(1,soft*halfDiag); wgt=1-smooth(-fz, fz, sd); }
+        rw[p]= inv? 1-wgt : wgt;
+      } }
+    }
     const base=document.createElement('canvas'); base.width=w; base.height=h;
     /* the photo showing THROUGH the print — same framing, second exposure and
        soft focus the press saw, on its own grade when comp is on */
@@ -969,7 +1014,7 @@
       let mw=1;
       if(where==='shadows') mw=1-smooth(0.3,0.7,L[p]);
       else if(where==='highlights') mw=smooth(0.3,0.7,L[p]);
-      const t=s*mw, u=1-t;
+      const t=s*mw*(rw?rw[p]:1), u=1-t;
       /* d still holds the TREATED pixel until it is written — read it first.
          Written as t/u rather than the lerp form on purpose: this is exactly
          the arithmetic that shipped, so every poster already saved at a partial
@@ -1283,6 +1328,9 @@
 
   const RENDER_DEFAULTS = {
     treatStrength:1, treatWhere:'all', treatBlend:'normal',
+    /* backfilled from the app's Darkroom, 08.09.26 */
+    inkDensity:1, splitTone:false,
+    treatRegion:'none', regionX:0, regionY:0, regionSize:0.6, regionSoft:0.5, regionAngle:0, regionInvert:false,
     /* comp over the original — the photo showing through gets its own grade */
     compOrig:false, underBright:0, underContrast:1, underSat:1, underHue:0, underTemp:0,
     ink:'pink', paper:'night', contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,

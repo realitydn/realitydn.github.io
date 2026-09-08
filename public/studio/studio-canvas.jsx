@@ -67,7 +67,7 @@ function ScTextEditor({ el, value, onChange, onDone }){
   );
 }
 
-function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
+function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, snap, scale,
                         stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly,
                         sliceMode, feedSlice, onSliceChange }){
   const f = SC_FMT[format];
@@ -239,7 +239,7 @@ function StudioCanvas({ elements, format, theme, accent, showGrid, snap, scale,
           (exporting && el.hidden) ? null :
           <div key={el.id} style={ el.hidden ? { opacity:.22, filter:'grayscale(.4)' } : null }
             onDoubleClick={e=>{ if(SC_EDITABLE[el.type]){ e.stopPropagation(); onSelect(el.id, false); setEditId(el.id); } }}>
-            <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent}
+            <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent} posterDay={posterDay}
               selected={el.id===selectedId} dragging={isDragging(el.id)}
               onElPointerDown={startMove} exporting={exporting} />
           </div>

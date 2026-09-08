@@ -424,10 +424,10 @@ const FINISH_LOOKS = [
 ];
 /* recommended defaults applied when a treatment is chosen — each looks good out of the box */
 const TREAT_PRESETS = {
-  duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false, midInk:null, hiTint:0 },
+  duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false, midInk:null, hiTint:0, splitTone:false },
   offregister:{ contrast:1.25, offset:13,    angle:47,        spread:1.25, ink3:null, ghost:0 },
   halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
-  posterize:  { contrast:1.25, bands:4, bandJitter:0, toneSmooth:0 },
+  posterize:  { contrast:1.25, bands:4, bandJitter:0, toneSmooth:0, splitTone:false },
   cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false, cutEdge:0, cutSlip:0, toneSmooth:0 },
   overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0, toneSmooth:0 },
   spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18, spotMode:'tone', spot2:false, toneSmooth:0 },
@@ -767,14 +767,16 @@ function TreatmentStrip({ el, inkKey, theme, onPick }){
     </div>
   );
 }
-function PhotoControls({ el, update, theme, accent }){
+function PhotoControls({ el, update, theme, accent, day }){
   const t = el.treatment;
   const tDef = TREATS.find(x=>x.v===t);
   const pressLabel = tDef? tDef.l : t;
   /* The ink the press will actually run, resolved exactly the way the canvas
      resolves it — so a thumbnail in the strip is never a different colour from
      the photo on the poster. */
-  const inkKey = el.followAccent ? (accent||'pink') : (el.ink||'pink');
+  const dayInk = (el.followDay && day) ? SE_DAY_INK[day] : null;
+  const inkKey = dayInk ? dayInk.ink : (el.followAccent ? (accent||'pink') : (el.ink||'pink'));
+  const DAY_NAME = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
   const pickTreat = v=>update(Object.assign({ treatment:v, look:null }, TREAT_PRESETS[v]||{}));
   /* The press's own grade, in the under-layer's prop names — what the photo
      showing through is graded by while the two are joined. */
@@ -785,7 +787,8 @@ function PhotoControls({ el, update, theme, accent }){
      composite in that case — so the panel says so rather than offering dials
      that cannot move anything. */
   const photoShowsThrough = (el.treatStrength!=null && el.treatStrength<1)
-    || (el.treatWhere && el.treatWhere!=='all') || ((el.treatBlend||'normal')!=='normal');
+    || (el.treatWhere && el.treatWhere!=='all') || ((el.treatBlend||'normal')!=='normal')
+    || ((el.treatRegion||'none')!=='none');
   const blendDef = PRESS_BLENDS.find(b=>b.v===(el.treatBlend||'normal'));
   /* The named finish this stack IS — measured against the whole neutral set, so
      it can never claim "Pressed" about a print that merely shares one dial with
@@ -821,7 +824,7 @@ function PhotoControls({ el, update, theme, accent }){
      leaves the dials where you left them — so flipping back and forth doesn't
      lose the grade — and a badge that kept counting them would be claiming
      something is set that changes nothing on the poster. */
-  const blendDirty = RUI.dirtyCount(el, ['treatStrength','treatWhere','treatBlend','compOrig'].concat(
+  const blendDirty = RUI.dirtyCount(el, ['treatStrength','treatWhere','treatBlend','compOrig','treatRegion'].concat(
     el.compOrig ? ['underBright','underContrast','underSat','underHue','underTemp'] : []), photoBase);
   return (
     <React.Fragment>
@@ -869,16 +872,28 @@ function PhotoControls({ el, update, theme, accent }){
 
         {t!=='none' && <React.Fragment>
           <div className="rs-sech">Main ink</div>
-          <Chips options={[{v:true,l:'Follow poster accent'},{v:false,l:'Custom'}]} value={el.followAccent} onChange={v=>update({ followAccent:v })} />
-          {!el.followAccent &&
+          {/* Day colour: the linked event's weekday, at the density that colour
+              wants (green 85, amber 90, yellow 72) — the app's "Day colour" look,
+              here as an ink choice. Backfilled from the Darkroom, 08.09.26. */}
+          <Chips options={[{v:'accent',l:'Follow poster accent'},{v:'day',l:'Day colour'},{v:'custom',l:'Custom'}]}
+            value={el.followDay ? 'day' : (el.followAccent ? 'accent' : 'custom')}
+            onChange={v=>update(v==='day' ? { followDay:true, followAccent:false } : v==='accent' ? { followDay:false, followAccent:true } : { followDay:false, followAccent:false })} />
+          {el.followDay && <Hint tight>{day
+            ? <React.Fragment>The linked event is on a <b>{DAY_NAME[day]}</b> — {SE_DAY_INK[day].ink}{SE_DAY_INK[day].inkDensity ? ' at '+Math.round(SE_DAY_INK[day].inkDensity*100)+'%' : ''}.</React.Fragment>
+            : <React.Fragment>No event is linked to this poster yet — start one from the <b>In queue</b> list and the ink follows its weekday.</React.Fragment>}</Hint>}
+          {!el.followAccent && !el.followDay &&
             <div className="rs-swatches">
               {AP_INKS.map(a=>(
                 <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
               ))}
             </div>}
+          {!el.followDay && <React.Fragment>
+            <Slider label="Ink density" val={el.inkDensity!=null?el.inkDensity:1} min={0.4} max={1} step={0.02} onChange={v=>update({inkDensity:v})} />
+            <Hint tight>How much ink the plate lays down. Yellow and green blast at 100% on night stock — 70–85% prints them as an ochre and a bottle green; on day stock less ink is a paler tint.</Hint>
+          </React.Fragment>}
         </React.Fragment>}
-        {(t==='offregister'||t==='overprint') && <React.Fragment>
-          <div className="rs-lab">Accent ink <span className="val">{el.ink2||'auto'}</span></div>
+        {(t==='offregister'||t==='overprint'||((t==='duotone'||t==='posterize')&&el.splitTone)) && <React.Fragment>
+          <div className="rs-lab">{(t==='duotone'||t==='posterize') ? 'Second ink' : 'Accent ink'} <span className="val">{el.ink2||'auto'}</span></div>
           <div className="rs-swatches">
             <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ ink2:null })} />
             {AP_INKS.map(a=>(
@@ -898,6 +913,23 @@ function PhotoControls({ el, update, theme, accent }){
           <Chips label="How the ink sits" options={PRESS_BLENDS.map(b=>({v:b.v,l:b.l,t:b.note}))}
             value={el.treatBlend||'normal'} onChange={v=>update({treatBlend:v})} />
           {blendDef && <Hint tight><b>{blendDef.l}</b> — {blendDef.note}</Hint>}
+
+          {/* WHERE on the frame — a stencil over the print. The tonal mask above
+              says which tones take ink; this says which part of the picture.
+              Backfilled from the Darkroom's region, 08.09.26. */}
+          <div className="rs-sech">Where on the frame</div>
+          <Chips options={[{v:'none',l:'Everywhere'},{v:'centre',l:'Centre'},{v:'edges',l:'Edges'},{v:'band',l:'Band'},{v:'linear',l:'Sweep'}]}
+            value={(el.treatRegion||'none')==='radial' ? (el.regionInvert?'edges':'centre') : (el.treatRegion||'none')}
+            onChange={v=>update(v==='none' ? {treatRegion:'none'} : v==='centre' ? {treatRegion:'radial',regionInvert:false} : v==='edges' ? {treatRegion:'radial',regionInvert:true} : {treatRegion:v,regionInvert:false})} />
+          {(el.treatRegion||'none')!=='none' && <React.Fragment>
+            {el.treatRegion!=='linear' && <Slider label={el.treatRegion==='band'?'Width':'Radius'} val={el.regionSize!=null?el.regionSize:0.6} min={0.1} max={1.4} step={0.02} onChange={v=>update({regionSize:v})} />}
+            <Slider label="Feather" val={el.regionSoft!=null?el.regionSoft:0.5} min={0} max={1} step={0.02} onChange={v=>update({regionSoft:v})} />
+            {el.treatRegion!=='radial' && <Slider label="Angle" val={el.regionAngle||0} min={-180} max={180} step={5} onChange={v=>update({regionAngle:v})} suffix="°" />}
+            <Slider label="Across" val={el.regionX||0} min={-1} max={1} step={0.02} onChange={v=>update({regionX:v})} />
+            <Slider label="Up / down" val={el.regionY||0} min={-1} max={1} step={0.02} onChange={v=>update({regionY:v})} />
+            {el.treatRegion!=='radial' && <Chips label="Flip" options={[{v:false,l:'As drawn'},{v:true,l:'Flipped'}]} value={!!el.regionInvert} onChange={v=>update({regionInvert:v})} />}
+            <Hint tight>Off the shape the photograph shows through. Turn on <b>Comp over the original</b> below and pull its saturation to 0 for a mono photograph under a coloured print — a subject left photographic in a room gone to ink.</Hint>
+          </React.Fragment>}
 
           <div className="rs-sech">The photo underneath</div>
           {/* Switching on SEEDS the second grade from the press's own, so the
@@ -929,6 +961,8 @@ function PhotoControls({ el, update, theme, accent }){
           <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
           <Slider label="Shadow tint" val={el.shadowTint} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
           <Chips label="Invert" options={[{v:false,l:'Normal'},{v:true,l:'Inverted'}]} value={el.invert} onChange={v=>update({invert:v})} />
+          <Chips label="Ramp" options={[{v:false,l:'One drum'},{v:true,l:'Split tone'}]} value={!!el.splitTone} onChange={v=>update({splitTone:v})} />
+          {el.splitTone && <Hint tight>Two drums — on night stock paper → second ink → ink; on day stock second ink → ink → paper, with <b>no black plate at all</b>. Pick the second ink above.</Hint>}
           <InkRow label="Mid ink" value={el.midInk} onChange={v=>update({midInk:v})} autoTitle="Off — two-ink ramp" />
           <Slider label="Highlight tint" val={el.hiTint!=null?el.hiTint:0} min={0} max={0.6} step={0.02} onChange={v=>update({hiTint:v})} />
           {el.hiTint>0 && <InkRow label="Highlight ink" value={el.hiInk} onChange={v=>update({hiInk:v})} autoTitle="Auto — warm/cool partner" />}
@@ -987,6 +1021,7 @@ function PhotoControls({ el, update, theme, accent }){
         </React.Fragment>}
         {t==='posterize' && <React.Fragment>
           <Slider label="Bands" val={el.bands} min={2} max={6} step={1} onChange={v=>update({bands:v})} />
+          <Chips label="Ramp" options={[{v:false,l:'One drum'},{v:true,l:'Split tone'}]} value={!!el.splitTone} onChange={v=>update({splitTone:v})} />
           <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
           <Slider label="Torn edges" val={el.bandJitter!=null?el.bandJitter:0} min={0} max={1} step={0.02} onChange={v=>update({bandJitter:v})} />
           <Chips label="Band colours" options={[{v:false,l:'Auto ramp'},{v:true,l:'Custom'}]} value={!!el.bandInks}
@@ -1736,7 +1771,7 @@ function TplThumb({ doc, w, thumb, onCapture }){
         background:t.bg, position:'relative', overflow:'hidden', pointerEvents:'none' }}>
         {doc.elements.map(el=>(
           <StudioElement key={el.id} el={el} theme={doc.theme||'day'} posterAccentHex={accentHex}
-            posterAccent={doc.accent} selected={false} dragging={false} onElPointerDown={noop} exporting={sc*2} />
+            posterAccent={doc.accent} posterDay={posterDayOf(doc)} selected={false} dragging={false} onElPointerDown={noop} exporting={sc*2} />
         ))}
       </div>
     </div>
@@ -2043,7 +2078,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* A photo's content IS its image + press panels, which bring their own
           folds — wrapping them in one more would be a fold inside a fold for
           no gain. Everything else gets a Content fold of its own. */}
-      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} accent={doc.accent} />}
+      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} accent={doc.accent} day={posterDayOf(doc)} />}
       {el.type==='block' && <Fold id="f-content" title="Block" dirty={dContent}><BlockControls el={el} doc={doc} update={update} /></Fold>}
       {el.type==='shape' && <Fold id="f-content" title="Shape" dirty={dContent}><ShapeControls el={el} doc={doc} update={update} /></Fold>}
       {el.type==='icon'  && <Fold id="f-content" title="Icon"  dirty={dContent}><IconControls  el={el} doc={doc} update={update} /></Fold>}
@@ -3729,7 +3764,7 @@ function App(){
           <Hint>Drag a part onto the poster — it snaps to the grid and joins the Master layout.</Hint>
         </div>
 
-        <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent}
+        <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent} posterDay={posterDayOf(doc)}
           showGrid={doc.showGrid} snap={doc.snap} scale={scale} stageRef={stageRef} canvasRef={canvasRef}
           selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} exporting={exporting} plateOnly={plateOnly}
           sliceMode={sliceMode} feedSlice={doc.feedSlice} onSliceChange={setFeedSlice} />

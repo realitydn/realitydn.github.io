@@ -1055,37 +1055,104 @@ const TEMPLATES = [
   ]},
 
   /* ---- QR STANDEE · far register, caps. The code is the whole point, so the
-     footer runs without one and carries the full strip instead. ---- */
-  { id:"qr-checkin-a5", name:"Check in — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"green", els:[
-    {"type":"block","x":0,"y":0,"w":420,"h":170,"p":{"fill":"green"}},
-    {"type":"kicker","x":36,"y":44,"w":348,"h":20,"p":{"text":"REALITY · ĐÀ NẴNG","ink":"ink","align":"left"}},
-    {"type":"headline","x":36,"y":70,"w":348,"h":86,"p":{"text":"CHECK\nIN HERE","fontSize":50,"align":"left","weight":800,"ink":"ink","leading":0.9}},
-    {"type":"qr","x":130,"y":222,"w":160,"h":196,"p":{"data":"https://app.realitydn.com/here","caption":"SCAN ON ARRIVAL","quiet":true}},
-    {"type":"body","x":40,"y":436,"w":340,"h":56,"p":{"text":"One scan when you arrive and you're in tonight's game. No app needed.\nQuét một lần khi đến — check-in và chơi cùng tối nay.","align":"center","fontSize":12,"leading":1.34}},
-    {"type":"footer","x":36,"y":505,"w":348,"h":64,"p":{"showQR":false}}
+     footer runs without one and carries the full strip instead.
+
+     Rebuilt 12.09.26, A6-FIRST. The old set put a thin colour band across the
+     top of an otherwise white card and floated a small code in the middle of
+     it — legible, but it whispered on a loud table. These flood the field,
+     slam the headline and let the QR's own white quiet zone read as a WINDOW
+     punched through the colour. Four rules hold the set together:
+
+       · EVERY FLOOD BLEEDS. Elements are drawn into a page of trim + 3mm, and
+         nothing clips them to the artboard, so a "full-bleed" block at x:0
+         w:297.6 leaves the bleed white and a cut 0.5mm off shows it. Flood
+         geometry is therefore -12 / +12 past the trim on each bled edge.
+       · the colour stops short of the foot. The ink mark's stock cells are
+         UNPRINTED paper (the exporter skips them), so a footer over a flood
+         would render its mark in the flood colour on press while the screen
+         showed white. Every footer here sits on bare stock.
+       · the QR element's `ink` IS the module colour — tinting it to sit on a
+         dark ground would erase the code — so it stays `ink` and the caption
+         moves out to its own kicker, free to go white.
+       · eyeStyle STAYS SQUARE. Verified by decoding the exported PDFs with
+         OpenCV: rounded/dot MODULES decode fine, but a rounded or dot finder
+         eye fails every time — the 1.9-module corner radius in qrGeometry
+         distorts the 1:1:3:1:1 run the detector locks onto, despite the
+         comment there claiming otherwise. moduleStyle:'rounded' + the star
+         centre mark (which forces ECL H) both decode; the eyes must not.
+
+     Six A6 cards, one structure each so the picker doesn't read as six copies
+     — flood · halftone · angled seam · marquee · inset ticket · sunburst —
+     plus the two A5s that genuinely get read across a room. ---- */
+  { id:"qr-checkin-a6", name:"Check in — A6", group:"QR standee", size:"a6", orient:"portrait", accent:"green", els:[
+    {"type":"block","x":-12,"y":-12,"w":322,"h":364,"p":{"fill":"green"}},
+    {"type":"kicker","x":24,"y":24,"w":252,"h":16,"p":{"text":"MỖI TỐI · EVERY NIGHT","ink":"ink","align":"left","fontSize":9}},
+    {"type":"headline","x":24,"y":44,"w":252,"h":116,"p":{"text":"CHECK\nIN","fontSize":62,"align":"left","weight":800,"ink":"ink","leading":0.88,"echo":true,"echoAccent":"purple","echoDx":5,"echoDy":5}},
+    {"type":"qr","x":74,"y":178,"w":150,"h":150,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"kicker","x":24,"y":332,"w":252,"h":16,"p":{"text":"QUÉT KHI ĐẾN · SCAN ON ARRIVAL","ink":"ink","align":"center","fontSize":9}},
+    {"type":"footer","x":24,"y":360,"w":250,"h":48,"p":{"showQR":false}}
   ]},
-  { id:"qr-menu-a6", name:"Menu — table card", group:"QR standee", size:"a6", orient:"portrait", accent:"blue", els:[
-    {"type":"kicker","x":24,"y":30,"w":250,"h":18,"p":{"text":"REALITY · BAR · CAFÉ","ink":"blue","align":"center","fontSize":9}},
-    {"type":"headline","x":24,"y":54,"w":250,"h":40,"p":{"text":"THE MENU","fontSize":30,"align":"center","weight":800}},
-    {"type":"rule","x":114,"y":102,"w":70,"h":4,"p":{"fill":"blue","weight":3}},
-    {"type":"qr","x":79,"y":124,"w":140,"h":172,"p":{"data":"https://app.realitydn.com/menu","caption":"DRINKS + FOOD","quiet":true}},
-    {"type":"body","x":30,"y":304,"w":238,"h":34,"p":{"text":"Scan for the full list and today's specials.\nQuét để xem toàn bộ thực đơn.","align":"center","fontSize":10,"leading":1.3}},
-    {"type":"footer","x":24,"y":344,"w":250,"h":52,"p":{"showQR":false}}
+  { id:"qr-hub-a6", name:"What’s on — A6", group:"QR standee", size:"a6", orient:"portrait", accent:"purple", els:[
+    {"type":"block","x":-12,"y":-12,"w":322,"h":364,"p":{"fill":"purple"}},
+    {"type":"dotfield","x":-12,"y":166,"w":322,"h":162,"p":{"fill":"pink","bg":"none","dot":11,"gap":9,"shape":"circle","grad":"down","ramp":0.8}},
+    {"type":"kicker","x":24,"y":24,"w":252,"h":16,"p":{"text":"30+ SỰ KIỆN MỖI TUẦN","ink":"white","align":"left","fontSize":9}},
+    {"type":"headline","x":24,"y":44,"w":252,"h":116,"p":{"text":"WHAT’S\nON","fontSize":54,"align":"left","weight":800,"ink":"white","leading":0.9,"echo":true,"echoAccent":"amber","echoDx":5,"echoDy":5}},
+    {"type":"qr","x":74,"y":178,"w":150,"h":150,"p":{"data":"https://app.realitydn.com","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"kicker","x":24,"y":332,"w":252,"h":16,"p":{"text":"LỊCH TRỰC TIẾP · THE LIVE LIST","ink":"white","align":"center","fontSize":9}},
+    {"type":"footer","x":24,"y":360,"w":250,"h":48,"p":{"showQR":false}}
   ]},
-  { id:"qr-hub-a5", name:"What's on — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"purple", els:[
-    {"type":"block","x":0,"y":0,"w":420,"h":180,"p":{"fill":"purple"}},
-    {"type":"kicker","x":36,"y":46,"w":348,"h":20,"p":{"text":"MỖI TUẦN · EVERY WEEK","ink":"white","align":"left"}},
-    {"type":"headline","x":36,"y":72,"w":348,"h":92,"p":{"text":"WHAT'S ON\nTHIS WEEK","fontSize":44,"align":"left","weight":800,"ink":"white","leading":0.92}},
-    {"type":"qr","x":130,"y":230,"w":160,"h":196,"p":{"data":"https://app.realitydn.com","caption":"EVERY EVENT, LIVE","quiet":true}},
-    {"type":"body","x":40,"y":444,"w":340,"h":50,"p":{"text":"Thirty-plus events a week — the live list, always current.\nHơn 30 sự kiện mỗi tuần.","align":"center","fontSize":12,"leading":1.34}},
-    {"type":"footer","x":36,"y":505,"w":348,"h":64,"p":{"showQR":false}}
+  { id:"qr-app-a6", name:"The app — A6", group:"QR standee", size:"a6", orient:"portrait", accent:"blue", els:[
+    {"type":"block","x":-12,"y":-12,"w":322,"h":364,"p":{"fill":"blue"}},
+    {"type":"block","x":-30,"y":-80,"w":360,"h":250,"p":{"fill":"pink","rot":-7}},
+    {"type":"kicker","x":24,"y":22,"w":252,"h":16,"p":{"text":"MỌI THỨ Ở MỘT NƠI · ALL IN ONE","ink":"white","align":"left","fontSize":9}},
+    {"type":"headline","x":24,"y":44,"w":252,"h":112,"p":{"text":"THE\nAPP","fontSize":64,"align":"left","weight":800,"ink":"white","leading":0.86}},
+    {"type":"qr","x":74,"y":192,"w":150,"h":150,"p":{"data":"https://app.realitydn.com","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"footer","x":24,"y":360,"w":250,"h":48,"p":{"showQR":false}}
+  ]},
+  { id:"qr-tonight-a6", name:"Tonight — A6", group:"QR standee", size:"a6", orient:"portrait", accent:"red", els:[
+    {"type":"block","x":-12,"y":-12,"w":322,"h":360,"p":{"fill":"red"}},
+    {"type":"block","x":-12,"y":-12,"w":322,"h":38,"p":{"fill":"ink"}},
+    {"type":"marquee","x":-12,"y":0,"w":322,"h":26,"p":{"text":"MỖI TỐI · EVERY NIGHT","sep":"★","surface":"none","ink":"white","fontSize":11}},
+    {"type":"headline","x":24,"y":44,"w":252,"h":100,"p":{"text":"TỐI NAY\nTONIGHT","fontSize":44,"align":"left","weight":800,"ink":"white","leading":0.94}},
+    {"type":"kicker","x":24,"y":152,"w":252,"h":16,"p":{"text":"CẢ LỊCH TỐI NAY · THE WHOLE NIGHT","ink":"white","align":"left","fontSize":9}},
+    {"type":"qr","x":79,"y":176,"w":140,"h":140,"p":{"data":"https://app.realitydn.com","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"marquee","x":-12,"y":322,"w":322,"h":26,"p":{"text":"QUÉT · SCAN","sep":"★","surface":"solid","fontSize":11}},
+    {"type":"footer","x":24,"y":358,"w":250,"h":48,"p":{"showQR":false}}
+  ]},
+  { id:"qr-menu-a6", name:"Menu — table card", group:"QR standee", size:"a6", orient:"portrait", accent:"pink", els:[
+    {"type":"block","x":-12,"y":-12,"w":322,"h":444,"p":{"fill":"pink"}},
+    {"type":"kicker","x":18,"y":26,"w":264,"h":16,"p":{"text":"THỰC ĐƠN · DRINKS + FOOD","ink":"white","align":"center","fontSize":9}},
+    {"type":"headline","x":18,"y":46,"w":264,"h":78,"p":{"text":"MENU","fontSize":72,"align":"center","weight":800,"ink":"white"}},
+    {"type":"block","x":18,"y":134,"w":264,"h":268,"p":{"fill":"white"}},
+    {"type":"qr","x":79,"y":154,"w":140,"h":140,"p":{"data":"https://app.realitydn.com/menu","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"kicker","x":36,"y":302,"w":228,"h":16,"p":{"text":"QUÉT ĐỂ XEM · SCAN THE LIST","ink":"pink","align":"center","fontSize":9}},
+    {"type":"footer","x":36,"y":334,"w":228,"h":46,"p":{"showQR":false}}
   ]},
   { id:"qr-review-a6", name:"Leave a review", group:"QR standee", size:"a6", orient:"portrait", accent:"amber", els:[
-    {"type":"kicker","x":24,"y":30,"w":250,"h":18,"p":{"text":"CẢM ƠN · THANK YOU","ink":"amber","align":"center","fontSize":9}},
-    {"type":"headline","x":24,"y":54,"w":250,"h":66,"p":{"text":"LEAVE US\nA REVIEW","fontSize":26,"align":"center","weight":800,"leading":0.94}},
-    {"type":"qr","x":79,"y":140,"w":140,"h":172,"p":{"data":"https://maps.app.goo.gl/mRQfWUwx3nXT5vsn7","caption":"GOOGLE MAPS","quiet":true}},
-    {"type":"body","x":30,"y":320,"w":238,"h":32,"p":{"text":"Thirty seconds, and it genuinely helps.\nMất 30 giây, và giúp chúng tôi rất nhiều.","align":"center","fontSize":10,"leading":1.3}},
-    {"type":"footer","x":24,"y":356,"w":250,"h":52,"p":{"showQR":false}}
+    {"type":"block","x":-12,"y":-12,"w":322,"h":364,"p":{"fill":"amber"}},
+    {"type":"kicker","x":24,"y":22,"w":252,"h":16,"p":{"text":"CẢM ƠN · THANK YOU","ink":"ink","align":"left","fontSize":9}},
+    {"type":"headline","x":24,"y":42,"w":252,"h":98,"p":{"text":"LEAVE\nA ★","fontSize":52,"align":"left","weight":800,"ink":"ink","leading":0.9}},
+    {"type":"kicker","x":24,"y":148,"w":252,"h":16,"p":{"text":"30 GIÂY THÔI · THIRTY SECONDS","ink":"ink","align":"left","fontSize":9}},
+    {"type":"burst","x":61,"y":170,"w":176,"h":176,"p":{"fill":"red","rays":20,"hub":0}},
+    {"type":"qr","x":93,"y":202,"w":112,"h":112,"p":{"data":"https://maps.app.goo.gl/mRQfWUwx3nXT5vsn7","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"footer","x":24,"y":360,"w":250,"h":48,"p":{"showQR":false}}
+  ]},
+  { id:"qr-checkin-a5", name:"Check in — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"green", els:[
+    {"type":"block","x":-12,"y":-12,"w":444,"h":512,"p":{"fill":"green"}},
+    {"type":"kicker","x":36,"y":40,"w":348,"h":20,"p":{"text":"MỖI TỐI · EVERY NIGHT","ink":"ink","align":"left"}},
+    {"type":"headline","x":36,"y":68,"w":348,"h":162,"p":{"text":"CHECK\nIN","fontSize":86,"align":"left","weight":800,"ink":"ink","leading":0.88,"echo":true,"echoAccent":"purple","echoDx":7,"echoDy":7}},
+    {"type":"qr","x":110,"y":252,"w":200,"h":200,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"kicker","x":36,"y":466,"w":348,"h":20,"p":{"text":"QUÉT KHI ĐẾN · SCAN ON ARRIVAL","ink":"ink","align":"center"}},
+    {"type":"footer","x":36,"y":512,"w":348,"h":60,"p":{"showQR":false}}
+  ]},
+  { id:"qr-hub-a5", name:"What’s on — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"purple", els:[
+    {"type":"block","x":-12,"y":-12,"w":444,"h":512,"p":{"fill":"purple"}},
+    {"type":"dotfield","x":-12,"y":236,"w":444,"h":226,"p":{"fill":"pink","bg":"none","dot":13,"gap":11,"shape":"circle","grad":"down","ramp":0.8}},
+    {"type":"kicker","x":36,"y":40,"w":348,"h":20,"p":{"text":"30+ SỰ KIỆN MỖI TUẦN","ink":"white","align":"left"}},
+    {"type":"headline","x":36,"y":68,"w":348,"h":162,"p":{"text":"WHAT’S\nON","fontSize":74,"align":"left","weight":800,"ink":"white","leading":0.9,"echo":true,"echoAccent":"amber","echoDx":7,"echoDy":7}},
+    {"type":"qr","x":110,"y":252,"w":200,"h":200,"p":{"data":"https://app.realitydn.com","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
+    {"type":"kicker","x":36,"y":466,"w":348,"h":20,"p":{"text":"LỊCH TRỰC TIẾP · THE LIVE LIST","ink":"white","align":"center"}},
+    {"type":"footer","x":36,"y":512,"w":348,"h":60,"p":{"showQR":false}}
   ]},
 
   /* ---- WAYFINDING · far register. Read across a room, so caps throughout and

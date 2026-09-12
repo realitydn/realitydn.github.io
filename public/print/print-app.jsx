@@ -538,6 +538,27 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
     const eyeKey = el.eye&&el.eye!=='auto'?el.eye:modKey;
     const risky = qrLum(modKey)>0.40 || qrLum(eyeKey)>0.40;
     const hasLogo = el.logo && el.logo!=='none';
+    /* PRINTED MODULE SIZE — the other way this tool can silently emit a code
+       nobody can scan (the eye shapes no longer can: qrGeometry keeps the
+       finder frames square, see the note there). A code shrinks two ways —
+       dragging the box down, or pointing it at a longer link, which pushes the
+       QR to a denser version — and both land here as mm per module.
+       Mirrors the exporter's sizing (print-export.jsx, the 'qr' branch) so the
+       figure is the one that actually goes to press. Floor: OpenCV still
+       decodes a clean render at ~4px per module (measured — a 150pt code
+       rendered at 72dpi is 4.05px/module and reads), and a phone
+       photographing a card resolves on the order of 10px/mm, so ~0.4mm/module
+       is the edge. Warn under 0.5mm to leave a press-sized margin. */
+    const MIN_MODULE_MM = 0.5;
+    let modMM = null;
+    try{
+      const g = window.qrGeometry(el.data, { ecl:el.ecl, quiet:el.quiet,
+        moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo });
+      const pad = (el.surface&&el.surface!=='none')?10:0;
+      const qrSize = Math.min(el.w-pad*2, el.h-pad*2-(el.caption?18:0));
+      if(g && qrSize>0) modMM = (qrSize/g.tot)*25.4/72;
+    }catch(e){ /* unencodable data — the canvas already shows that */ }
+    const tooSmall = modMM!=null && modMM < MIN_MODULE_MM;
     return <React.Fragment>
       <div className="ps-row">
         <div className="ps-lab">Destination</div>
@@ -558,6 +579,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
       <Chips label="Centre mark" options={QR_LOGOS} value={el.logo||'none'} onChange={v=>update({logo:v})} />
       {hasLogo && <Swatches label="Mark colour" value={el.logoColor!=null?el.logoColor:'auto'} onChange={v=>update({logoColor:v})} auto white />}
       {risky && <div className="ps-warn">Low contrast on white — test-scan before printing, or set the ink to a dark accent (purple · red · pink).</div>}
+      {tooSmall && <div className="ps-warn">Modules print at {modMM.toFixed(2)}mm — under {MIN_MODULE_MM}mm a phone starts missing the code. Size the box up, or point it at a shorter link.</div>}
 
       <div className="ps-sech">Encode</div>
       {hasLogo

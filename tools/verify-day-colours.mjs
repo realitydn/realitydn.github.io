@@ -13,7 +13,9 @@
 // event-report denylist of retired off-palette hexes · site strings · the
 // TYPE section: the canon tracking ladder on both studios' text presets
 // (print bakes the +.01em offset) and the ticket/footer wordmark staying the
-// baked vector, never a font-family re-typeset.
+// baked vector, never a font-family re-typeset · the QR section: Print
+// Studio's finder eyes keeping a true square outer frame, which is what makes
+// an exported code scannable at all.
 //
 // Run it whenever the studios' data files or day-colours.json change (it's
 // cheap — wire it wherever the precompile step runs). If canon ever changes
@@ -410,8 +412,44 @@ for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"])
   }
 }
 
+// ── 8 · QR: the finder eyes keep a TRUE SQUARE outer frame ──
+// A QR detector locks onto the 1:1:3:1:1 run measured across the 7×7 finder
+// frame, so rounding that frame's corners eats the run at both ends. Print
+// Studio shipped `eyeStyle` rounded/dot as a 1.9-module corner radius until
+// 12.09.26 and those codes DID NOT DECODE AT ALL — verified by exporting the
+// PDF and running OpenCV's QRCodeDetector over it (9.3% of 108 trials, vs
+// 93.5% for a square frame; even a 0.2-module radius dropped it to 88%).
+//
+// The fix keeps both styles but moves them onto the centre PIP, which sits
+// inside the ring and costs nothing. So the frame (w:7) and its knockout (w:5)
+// must stay kind:'rect' with r:0 for EVERY style — only the 3×3 pip may round
+// or become a circle. This is a scannability invariant, not a taste one: a
+// print run of unscannable standees is unrecoverable.
+// Anchored on the loop over the three finder origins, not on a comment —
+// esbuild strips comments, so the generated .js must be matchable too.
+for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {
+  const src = read(rel);
+  const i = src.search(/\[\s*\[\s*0\s*,\s*0\s*\][\s\S]{0,80}?forEach/);
+  if (i < 0) { fail(`${rel}: qrGeometry's finder-eye loop not found`); continue; }
+  const j = src.indexOf("logo", i + 40); // the centre-mark knockout that follows
+  const block = src.slice(i, j > i ? j : i + 1200);
+  const objs = block.match(/\{[^{}]*\}/g) || [];
+  const pick = (re) => objs.find((o) => re.test(o));
+
+  const frame = pick(/role:\s*['"]eye['"][\s\S]*\bw:\s*7\b/);
+  const hole = pick(/role:\s*['"]eyeHole['"]/);
+  for (const [what, obj] of [["7×7 frame", frame], ["5×5 knockout", hole]]) {
+    if (!obj) { fail(`${rel}: qrGeometry's finder ${what} shape not found`); continue; }
+    if (!/kind:\s*['"]rect['"]/.test(obj))
+      fail(`${rel}: finder ${what} is no longer kind:'rect' — the outer frame must stay a true square or the code stops scanning`);
+    // must be exactly 0 — \b would let "r: 0.3" through on the leading zero
+    if (!/\br:\s*0\s*[,}]/.test(obj))
+      fail(`${rel}: finder ${what} carries a corner radius — rounding the frame breaks the 1:1:3:1:1 finder run`);
+  }
+}
+
 if (failures) {
   console.error(`\n${failures} drift(s) against public/tokens/day-colours.json`);
   process.exit(1);
 }
-console.log("day-colours: studios + site strings + type ladder match canon.");
+console.log("day-colours: studios + site strings + type ladder + QR finder eyes match canon.");

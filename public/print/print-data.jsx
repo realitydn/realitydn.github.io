@@ -857,18 +857,34 @@ function qrGeometry(text, opts){
   }
   /* finder eyes: outer ring (7×7) + light knockout (5×5) + inner pip (3×3),
      three of them. Shapes stacked in order so the ring reads. */
-  /* Every eye keeps a (rounded-)square OUTER frame so the 1:1:3:1:1 finder
-     detection stays rock-solid; the style only varies the corner rounding + the
-     centre pip. A pure-circle outer ring drops the finder corners and fails
-     stricter scanners — so "dot" = rounded frame + a round pip, not a full disc. */
-  const oK = eye==='square' ? 'rect' : 'roundrect';
-  const oR = eye==='square' ? 0 : 1.9;
+  /* THE OUTER FRAME AND ITS KNOCKOUT ARE ALWAYS TRUE SQUARES — every style,
+     no exceptions. The 1:1:3:1:1 run a detector locks onto is measured across
+     that ring, and rounding its corners eats the run at the ends: a 1.9-module
+     radius (what this shipped until 12.09.26) made the code UNDECODABLE, and
+     even a 0.2-module radius measurably cut the margin. Verified by exporting
+     one PDF per style and decoding it with OpenCV's QRCodeDetector over a grid
+     of 6 URLs × 6 render resolutions (72–600dpi) × 3 blur levels:
+
+       square frame + square pip .... 93.5% of 108 trials   ← the control
+       square frame + round  pip .... 94.4%   ← ships as 'rounded' / 'dot'
+       frame radius 0.2 ............. 88.0%
+       frame radius 0.6 ............. 83.3%
+       frame radius 1.0 ............. 68.5%
+       frame radius 1.9 ............. 9.3%   ← the old 'rounded' / 'dot'
+
+     So the style rides entirely on the PIP, which sits inside the ring and
+     costs nothing: 'rounded' softens it, 'dot' makes it a disc. Data modules
+     are free too (see dataShape) — only the frame is load-bearing.
+     Enforced by tools/verify-day-colours.mjs §QR — change it there first. */
+  /* 0.9 of the pip's 1.5 half-width: enough to read as a soft square, short of
+     the disc 'dot' draws, so the three styles stay a legible ladder. */
+  const pipR = eye==='rounded' ? 0.9 : 0;
   [[0,0],[0,n-7],[n-7,0]].forEach(([r0,c0])=>{
     const x=quiet+c0, y=quiet+r0;
-    shapes.push({ kind:oK, role:'eye',     x:x,   y:y,   w:7, h:7, r:oR });
-    shapes.push({ kind:oK, role:'eyeHole', x:x+1, y:y+1, w:5, h:5, r:Math.max(0,oR-0.6) });
+    shapes.push({ kind:'rect', role:'eye',     x:x,   y:y,   w:7, h:7, r:0 });
+    shapes.push({ kind:'rect', role:'eyeHole', x:x+1, y:y+1, w:5, h:5, r:0 });
     if(eye==='dot') shapes.push({ kind:'circle', role:'eye', cx:x+3.5, cy:y+3.5, r:1.5 });
-    else            shapes.push({ kind:oK, role:'eye', x:x+2, y:y+2, w:3, h:3, r:Math.max(0,oR-1.2) });
+    else            shapes.push({ kind:pipR>0?'roundrect':'rect', role:'eye', x:x+2, y:y+2, w:3, h:3, r:pipR });
   });
   /* logo knockout patch (light) — sits above data/eyes to guarantee a clean
      quiet ring around the mark; the mark itself is drawn from `logo` below. */
@@ -1074,12 +1090,13 @@ const TEMPLATES = [
        · the QR element's `ink` IS the module colour — tinting it to sit on a
          dark ground would erase the code — so it stays `ink` and the caption
          moves out to its own kicker, free to go white.
-       · eyeStyle STAYS SQUARE. Verified by decoding the exported PDFs with
-         OpenCV: rounded/dot MODULES decode fine, but a rounded or dot finder
-         eye fails every time — the 1.9-module corner radius in qrGeometry
-         distorts the 1:1:3:1:1 run the detector locks onto, despite the
-         comment there claiming otherwise. moduleStyle:'rounded' + the star
-         centre mark (which forces ECL H) both decode; the eyes must not.
+       · the finder eyes carry no frame rounding. These pin eyeStyle square,
+         which is also what every style now draws — qrGeometry keeps the 7×7
+         frame a true square for all three and lets only the centre pip change
+         shape, because rounding the frame measurably costs decode margin (and
+         at the 1.9-module radius this shipped with until 12.09.26, killed it
+         outright). moduleStyle:'rounded' + the star centre mark (which forces
+         ECL H) both decode fine.
 
      Six A6 cards, one structure each so the picker doesn't read as six copies
      — flood · halftone · angled seam · marquee · inset ticket · sunburst —

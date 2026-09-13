@@ -4,7 +4,8 @@
    Year 2 DNA: 2px ink borders, straight-down plane shadows,
    misregistration echo (the second silkscreen layer), geometric
    colour blocking, Thin-100 display, rotated badges/seals.
-   Trim at exact mm + 3mm bleed + vector crop marks. Gang on A4.
+   Page is the exact A-size by default; bleed + vector crop marks are opt-in
+   and declare themselves in TrimBox/BleedBox. Gang on A4.
    Exports: window.PrintExport { single, gang, ready }
    ============================================================ */
 (function(){
@@ -650,9 +651,20 @@ function arrowPoints(dir, w, h){
 function arrowPath(dir,w,h){ const p=arrowPoints(dir,w,h); return 'M '+p.map(q=>q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' L ')+' Z'; }
 const roundedRectPath = window.roundedRectPath;   // shared geometry lives in print-data.jsx
 
-function drawCropMarks(page, B, trimW, trimH, pageH){
-  const len=18, gap=6, th=0.5, col=inkColor();
-  const corners=[[B,B],[B+trimW,B],[B,B+trimH],[B+trimW,B+trimH]];
+/* THE PAGE GEOMETRY, in mm. A printer's prepress reads three boxes: MediaBox
+   (the sheet in the file), BleedBox (how far the flood runs) and TrimBox (the
+   A-size — where the guillotine lands). Only TrimBox answers "is this A6?",
+   so it is always written, even on a trim-only file where all three coincide.
+   Marks sit OUTSIDE the bleed, which is why a marked page's media is bigger
+   than trim+bleed: a mark drawn inside the media edge is a mark the RIP keeps. */
+const BLEED_MM    = 3;   // flood runs this far past the trim
+const MARK_GAP_MM = 3;   // marks begin here, out from the trim — clear of the bleed
+const MARK_LEN_MM = 4;   // and run this far further out
+const MARK_PAD_MM = 1;   // breathing room so no tick dies on the media edge
+
+function drawCropMarks(page, O, trimW, trimH, pageH){
+  const gap=MARK_GAP_MM*PT_PER_MM, len=MARK_LEN_MM*PT_PER_MM, th=0.5, col=inkColor();
+  const corners=[[O,O],[O+trimW,O],[O,O+trimH],[O+trimW,O+trimH]];
   corners.forEach(([cxp,cyTop],i)=>{ const right=(i%2)===1, bottom=i>=2;
     const hx=right?cxp+gap:cxp-gap-len; page.drawRectangle({ x:hx, y:pageH-cyTop-th/2, width:len, height:th, color:col });
     const vyTop=bottom?cyTop+gap:cyTop-gap-len; page.drawRectangle({ x:cxp-th/2, y:pageH-(vyTop+len), width:th, height:len, color:col }); });
@@ -660,22 +672,32 @@ function drawCropMarks(page, B, trimW, trimH, pageH){
 
 async function buildPiece(doc, { bleed, marks }){
   const { PDFDocument } = L();
-  const dims=sizeDims(doc.size,doc.orient), B=bleed?3*PT_PER_MM:0;
-  const pageW=dims.wpt+B*2, pageH=dims.hpt+B*2;
+  const dims=sizeDims(doc.size,doc.orient);
+  const withMarks = !!(bleed && marks);
+  const B = bleed ? BLEED_MM*PT_PER_MM : 0;                  // trim edge → bleed edge
+  /* O = media edge → trim edge. Trim-only puts them on top of each other, so
+     the file IS the A-size: 105×148 mm out, not 111×154 mm with a note. */
+  const O = withMarks ? Math.max(B, (MARK_GAP_MM+MARK_LEN_MM+MARK_PAD_MM)*PT_PER_MM) : B;
+  const pageW=dims.wpt+O*2, pageH=dims.hpt+O*2;
   const pdf=await PDFDocument.create(); const fontFor=await embedFonts(pdf);
   const page=pdf.addPage([pageW,pageH]);
+  page.setTrimBox(O, O, dims.wpt, dims.hpt);
+  if(B) page.setBleedBox(O-B, O-B, dims.wpt+B*2, dims.hpt+B*2);
   page.drawRectangle({ x:0,y:0,width:pageW,height:pageH,color:whiteColor() });
   /* embed photo rasters up front (async) so renderElement can stay synchronous */
   const imgMap={};
   for(const el of (doc.elements||[])){ if(el.type==='image'){ try{ const r=await rasterizeImage(pdf, el, doc.accent); if(r) imgMap[el.id]=r; }catch(e){ console.warn('image embed failed', e); } } }
-  const ctx={ B, pageH, fontFor, accentName:doc.accent, imgMap };
+  const ctx={ B:O, pageH, fontFor, accentName:doc.accent, imgMap };
   (doc.elements||[]).forEach(el=>{ try{ renderElement(page,el,ctx); }catch(e){ console.warn('el render failed',el&&el.type,e); } });
-  if(bleed&&marks) drawCropMarks(page,B,dims.wpt,dims.hpt,pageH);
-  return { pdf, dims, B, pageW, pageH };
+  if(withMarks) drawCropMarks(page,O,dims.wpt,dims.hpt,pageH);
+  return { pdf, dims, B, O, pageW, pageH };
 }
 
+/* Default is the printable area alone — the page reports the A-size and
+   nothing else. Ask for bleed when the piece floods and the shop trims it. */
 async function single(doc, opts){
-  opts=opts||{}; const { pdf }=await buildPiece(doc,{ bleed:opts.bleed!==false, marks:opts.marks!==false });
+  opts=opts||{}; const bleed=opts.bleed===true;
+  const { pdf }=await buildPiece(doc,{ bleed, marks:bleed&&opts.marks!==false });
   return await pdf.save();
 }
 
@@ -688,19 +710,37 @@ async function gang(doc, opts){
   const [embedded]=await a4.embedPdf(pieceBytes);
   const cellW=A4.wpt/g.cols, cellH=A4.hpt/g.rows;
   const pieceLandscape=piece.dims.wpt>piece.dims.hpt, cellLandscape=g.cell==='landscape', rotate=pieceLandscape!==cellLandscape;
-  const pw=rotate?piece.dims.hpt:piece.dims.wpt, ph=rotate?piece.dims.wpt:piece.dims.hpt, sc=Math.min(cellW/pw,cellH/ph);
+  const pw=rotate?piece.dims.hpt:piece.dims.wpt, ph=rotate?piece.dims.wpt:piece.dims.hpt;
+  /* Never scale ABOVE 1. A-paper halves leave a fraction of a mm of slack per
+     cell, and filling it would hand the guillotine an A8 that is 0.3% too wide
+     — the same lie as a "A6" that measures 111 mm. Pieces stay true size and
+     the grid is centred on the sheet; the cut guides ride the real edges. */
+  const sc=Math.min(1,cellW/pw,cellH/ph);
+  const stepX=pw*sc, stepY=ph*sc;
+  const originX=(A4.wpt-g.cols*stepX)/2, originY=(A4.hpt-g.rows*stepY)/2;
   for(let rr=0;rr<g.rows;rr++) for(let cc=0;cc<g.cols;cc++){
-    const cellX=cc*cellW, cellY=A4.hpt-(rr+1)*cellH;
-    if(rotate) sheet.drawPage(embedded,{ x:cellX+piece.dims.hpt*sc, y:cellY, xScale:sc, yScale:sc, rotate:degrees(90) });
+    const cellX=originX+cc*stepX, cellY=originY+(g.rows-1-rr)*stepY;
+    if(rotate) sheet.drawPage(embedded,{ x:cellX+stepX, y:cellY, xScale:sc, yScale:sc, rotate:degrees(90) });
     else sheet.drawPage(embedded,{ x:cellX, y:cellY, xScale:sc, yScale:sc });
   }
   if(opts.marks!==false){
-    for(let c=1;c<g.cols;c++) sheet.drawLine({ start:{x:c*cellW,y:0}, end:{x:c*cellW,y:A4.hpt}, thickness:0.4, color:inkColor() });
-    for(let rr=1;rr<g.rows;rr++) sheet.drawLine({ start:{x:0,y:rr*cellH}, end:{x:A4.wpt,y:rr*cellH}, thickness:0.4, color:inkColor() });
+    for(let c=0;c<=g.cols;c++){ const x=originX+c*stepX;
+      sheet.drawLine({ start:{x,y:0}, end:{x,y:A4.hpt}, thickness:0.4, color:inkColor() }); }
+    for(let rr=0;rr<=g.rows;rr++){ const y=originY+rr*stepY;
+      sheet.drawLine({ start:{x:0,y}, end:{x:A4.wpt,y}, thickness:0.4, color:inkColor() }); }
   }
   return await a4.save();
 }
 
+/* What the emitted page will actually measure, in mm — the topbar reads this
+   rather than doing the sum again, so the label can't claim a size the
+   exporter doesn't write. `offsetMm` is media edge → trim edge. */
+function pageMm(size, orient, bleed){
+  const d=sizeDims(size,orient);
+  const O=bleed ? Math.max(BLEED_MM, MARK_GAP_MM+MARK_LEN_MM+MARK_PAD_MM) : 0;
+  return { wmm:+(d.wmm+O*2).toFixed(1), hmm:+(d.hmm+O*2).toFixed(1), trimWmm:d.wmm, trimHmm:d.hmm, offsetMm:O };
+}
+
 async function ready(){ await loadFontBytes(); return true; }
-window.PrintExport = { single, gang, ready };
+window.PrintExport = { single, gang, ready, pageMm };
 })();

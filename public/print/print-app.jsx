@@ -15,7 +15,10 @@ const TPL_KEY = 'reality-print-templates-v1';
 function starterDoc(){
   return {
     size:'a5', orient:'portrait', accent:'pink',
-    showGrid:false, showBleed:true, snap:true, bleed:true, marks:true,
+    /* withBleed is opt-in: the PDF is the printable area at the exact A-size
+       unless the shop asks for bleed. (It replaces the old always-on `bleed`
+       flag, so docs saved before this default themselves back to trim-only.) */
+    showGrid:false, showBleed:true, snap:true, withBleed:false,
     marginMm:6, grid:{ cols:0, rows:0, gutter:12 },
     title:'', elements:[
       Object.assign(apMake('kicker', 34, 40),  { w:360, text:'REALITY · ĐÀ NẴNG', align:'center', ink:'pink', tracking:0.26 }),
@@ -370,8 +373,9 @@ function SheetPanel({ doc, setDoc, dims, clearAll }){
     <React.Fragment>
       <div className="ps-sech">Sheet</div>
       <div className="ps-mini" style={{ marginBottom:10 }}>
-        <b>{AP_SZ[doc.size].label} {doc.orient}</b> · {dims.wmm}×{dims.hmm} mm · trim + 3 mm bleed.
-        Everything prints as crisp vector — text rides the black plate only.
+        <b>{AP_SZ[doc.size].label} {doc.orient}</b> · {dims.wmm}×{dims.hmm} mm ·{' '}
+        {doc.withBleed===true ? 'exporting with 3 mm bleed + crop marks.' : 'exporting the printable area only.'}
+        {' '}Everything prints as crisp vector — text rides the black plate only.
       </div>
       <Slider label="Safe margin" val={doc.marginMm!=null?doc.marginMm:6} min={0} max={24} step={0.5}
         onChange={v=>setDoc(d=>({ ...d, marginMm:v }))} suffix="mm" />
@@ -783,6 +787,9 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
   const commit = ()=> setDoc(d=> d.title===name ? d : ({...d, title:name}));
   const gang = AP_GANG[doc.size];
   const dims = apDims(doc.size, doc.orient);
+  /* Straight from the exporter, not recomputed here. */
+  const pg = window.PrintExport.pageMm(doc.size, doc.orient, doc.withBleed===true);
+  const pageMm = pg.wmm+'×'+pg.hmm+' mm';
   return (
     <div className="ps-top">
       <div className="ps-brand">Reality<small>PRINT STUDIO</small></div>
@@ -832,12 +839,24 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
       <HintsToggle />
       <div className="spacer" />
 
-      <div className="ps-tgroup ps-export"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('Export · '+dims.wmm+'×'+dims.hmm+'mm')}</span>
+      <div className="ps-tgroup ps-export"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('Export · '+pageMm)}</span>
+        {/* What the PDF measures. Trim-only hands the shop a page that IS the
+            A-size; Bleed grows the page and names the A-size in its TrimBox. */}
+        <div className="ps-seg">
+          {[{v:false,l:'Trim',s:dims.wmm+'×'+dims.hmm},{v:true,l:'Bleed',s:'+3mm'}].map(o=>(
+            <button key={String(o.v)} className={(doc.withBleed===true)===o.v?'on':''}
+              onClick={()=>setDoc(d=>({...d, withBleed:o.v}))}
+              title={o.v ? 'Page grows to carry a 3 mm bleed + crop marks. TrimBox still says '+AP_SZ[doc.size].label+'. For floods the shop will trim.'
+                         : 'Page is exactly '+dims.wmm+'×'+dims.hmm+' mm — the printable area, nothing around it.'}>
+              {o.l}<small>{o.s}</small>
+            </button>
+          ))}
+        </div>
         <input className="ps-tname" placeholder="File name…" value={name} spellCheck={false}
           onChange={e=>setName(e.target.value)} onBlur={commit}
           onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }} />
         <button className="ps-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport('single'); }}
-          title="One print-ready PDF at exact trim size, 3mm bleed + crop marks, K-only black text">
+          title={'One print-ready PDF at '+pageMm+', K-only black text'+(doc.withBleed===true?' — 3 mm bleed + crop marks outside the trim':' — the printable area only')}>
           Save PDF<small>1 UP · {AP_SZ[doc.size].label}</small>
         </button>
         <button className="ps-savebtn alt" disabled={exporting || !gang} onClick={()=>{ commit(); onExport('gang'); }}
@@ -1117,8 +1136,9 @@ function App(){
         dl(bytes, base+'-'+d.size+'-x'+AP_GANG[d.size].per+'-a4.pdf');
       } else {
         setExportMsg('Rendering '+AP_SZ[d.size].label+'…');
-        const bytes = await window.PrintExport.single(d, { bleed:d.bleed!==false, marks:d.marks!==false });
-        dl(bytes, base+'-'+d.size+'.pdf');
+        const withBleed = d.withBleed===true;
+        const bytes = await window.PrintExport.single(d, { bleed:withBleed, marks:true });
+        dl(bytes, base+'-'+d.size+(withBleed?'-bleed':'')+'.pdf');
       }
     }catch(err){ console.error('export failed', err); setExportMsg('Export failed — '+err.message); await new Promise(r=>setTimeout(r,1800)); }
     setExporting(false); setExportMsg('');
@@ -1137,7 +1157,9 @@ function App(){
       [{ label:'Orientation · Portrait', group:'Sheet', run:()=>setDoc(d=>({...d, orient:'portrait'})) },
        { label:'Orientation · Landscape', group:'Sheet', run:()=>setDoc(d=>({...d, orient:'landscape'})) }],
       AP_ACC.map(a=>({ label:'Accent · '+a, group:'Sheet', run:()=>setDoc(d=>({...d, accent:a})) })),
-      [{ label:'Toggle bleed + crop marks', group:'View', run:()=>setDoc(d=>({...d, showBleed:!d.showBleed})) },
+      [{ label:'Export · Trim only (exact '+AP_SZ[doc.size].label+')', group:'Sheet', run:()=>setDoc(d=>({...d, withBleed:false})) },
+       { label:'Export · With 3 mm bleed + crop marks', group:'Sheet', run:()=>setDoc(d=>({...d, withBleed:true})) }],
+      [{ label:'Toggle bleed guide on canvas', group:'View', run:()=>setDoc(d=>({...d, showBleed:!d.showBleed})) },
        { label:'Toggle layout grid', group:'View', run:()=>setDoc(d=>({...d, showGrid:!d.showGrid})) },
        { label:'Toggle snap', group:'View', run:()=>setDoc(d=>({...d, snap:!d.snap})) },
        { label:'Toggle hints', group:'View', run:()=>RUI.setHints(!RUI.hintsOn()) },

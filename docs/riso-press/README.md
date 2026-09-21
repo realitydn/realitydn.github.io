@@ -4,6 +4,97 @@ Rev 1, 21.09.26. Written to be executed by a session that was not present for
 the design conversation. Everything it needs is in this directory or named by
 path below; nothing depends on chat history.
 
+---
+
+## Rev 2 — built, 22.09.26. What changed from the plan, and where things are
+
+Executed in one pass across Poster Studio, Print Studio and the app's
+Darkroom. The plan below is kept as written; this section is what was done
+differently and why, and is the part to read first now.
+
+**One core, not three engines.** The plan ported the prototype into
+`riso-engine.js` (Phase 1) and then again into `riso-photo.ts` (Phase 5),
+and left Print Studio's June fork alone. Instead the physics — separation,
+screening, tone transfer, the press, the run — is ONE pure file,
+`public/studio-shared/riso-press.js` (pixels in, pixels out, no canvas, no
+DOM, UMD). `riso-engine.js` moved next to it and is the canvas engine over
+it; Poster and Print load the same two files and Print's white paper is the
+`white` stock. The app vendors the core verbatim as
+`src/lib/vendor/riso-press.cjs` (`npm run sync:riso`; the prebuild fails on
+drift; `.cjs` because that package is `"type":"module"`). Worker-safety fell
+out of this: the core never touches a canvas, so the plan's `makeCanvas`
+note applies only to the hosts, which already had it.
+
+**Two faults in the prototype, fixed in the core.** (1) The GCR term had the
+wrong sign — `+ λ·a` in the coordinate step rewards ink; it is `− λ·a`.
+(2) The solver separated in Beer-Lambert density (T^a) but the press stacked
+plates by area coverage ((1−a)+a·T). Those disagree hard at low coverage —
+14 % black is a mid grey in one model and a pale tint in the other — so every
+tone printed light and the 1.45 chroma boost was compensating. The solver
+now inverts exactly the model the press applies (Gauss-Newton on the log of
+the product form; the opaque path is affine per plate), a 50 % grey lands at
+L\* 56, black through cream+black+pink reaches L\* 4, and `sepBoost` is 1.15.
+The measured L\* table in §1 is therefore superseded by the core's own
+comment block.
+
+**WYSIWYG on the grain.** The prototype's stochastic screen hashed every
+device pixel, so an export printed finer grain than the preview. The core
+thresholds against an embedded 64×64 blue-noise tile (void-and-cluster —
+interleaved-gradient noise streaks diagonally at grain scale) sampled on a
+design-resolution grid, `grainPitch` design px per cell.
+
+**Night resolves in the defaults, not in a look.** `stock:null` is cream on
+either theme; `inks:null` is accent + partner on day and black + accent +
+partner on night; `sepGCR`/`tac` null = 0.2 / 2.2 on day, 0.12 / 2.8 on
+night. So "follow poster accent" keeps working and the plan's Night look is
+what the default already does.
+
+**Phase 3, the retrofit, is one mechanism plus four hand rebuilds.** Every
+treatment still decides WHAT prints; then `pressThrough()` in
+`riso-engine.js` separates the finished picture back into plates for the
+inks that treatment used (the black drum among them) and presses it FLAT —
+no second screen — so the press curve, the registration miss, the drum, the
+run, the proof view and the pull index apply to all fourteen through one
+seam, and Print Studio inherits them. Four were rebuilt by hand as the plan
+asked: halftone's basic dots are the press's per-pixel chain dot and its
+`two` mode is a real two-ink separation; off-register and overprint stack
+transmittances with real registration (and an opt-in `sep` flag); the
+copier got the xerography. Drum order matters now that wet-on-wet exists —
+the main ink prints first on translucent stock and last on an opaque one —
+and that is what keeps off-register's blue-with-pink-fringe signature.
+
+**Option D on the fourteen.** On a night poster every press treatment
+prints on cream with day polarity; the black drum is in the plate set, and
+the treatments whose print does not already carry the shadows in ink (the
+screens, the hatch, the line treatments, the two-colour misprints) get the
+photograph's shadows printed under them in black — `nightPlate`, a dial.
+The duotone's night ramp is black → accent → cream. The opaque path is the
+`Screenprint` look (`stock:'night'`).
+
+**Where things are.**
+- `harness-diff.cjs` — the zero-pixel gate (232 renders, old = a git ref).
+  `harness-compare.cjs --all-looks` — old-vs-new contact sheets, under
+  `shots/` (gitignored). Both load the shared files from either side.
+- `tokens/stocks.json` — the stock canon; `tools/verify-day-colours.mjs` §8
+  guards the core's PAL / PAPER / INK / PARTNER tables and refuses a
+  reappearing engine fork under `public/studio/` or `public/print/`.
+- Poster Studio: `TREATS` (Press first), `TREAT_PRESETS.separation`,
+  `TREAT_LOOKS.separation`, `SepControls` / `SepPressFold` / `SepProofFold`
+  in `studio-app.jsx`; `OPT_KEYS` carries every dial; `engineRev` is stamped
+  on every save by `stampEngine()`.
+- Print Studio: `PressControls` in `print-app.jsx`; `risoOpts` passes
+  `stock:'white'` and the press dials.
+- App: `docs/VIDEO_DARKROOM_PLAN.md` §13; `verify:riso-press --render` is
+  the gate (27 checks); the seven game treatments are pinned by
+  `verify:riso` and deliberately not retrofitted there.
+
+**Not done, on purpose.** Schedule Studio has no photograph and no engine;
+its cover "halftone" is a CSS dot field. The only thing it shares with the
+press is the stock table, and its `paper` theme is a cover palette, not a
+sheet — left alone. Print Studio's vector separations (one greyscale PDF
+page per drum) are still a different output path; the proof view
+(`proofPlate` + `proofGrey`) is the same plate, on screen.
+
 **What this is.** Poster Studio's riso engine currently *tints* a photograph:
 all fourteen treatments start at `lumBuffer()` — one greyscale channel — and map
 it onto colour. A risograph *separates* one: a colour image becomes N greyscale

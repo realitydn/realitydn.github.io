@@ -35,6 +35,7 @@
     const s=(stops.length-1)*t, i=Math.floor(s); return lerp(stops[i],stops[i+1],s-i);
   }
   function rgbCss(c){ return 'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')'; }
+  function rgbHex(c){ return '#'+[c[0],c[1],c[2]].map(v=>('0'+Math.round(Math.max(0,Math.min(255,v))).toString(16)).slice(-2)).join(''); }
   function inkRGB(key,fallback){ return hex2rgb(PAL[key]||fallback||PAL.pink); }
 
   /* ---- source handling ---- */
@@ -164,11 +165,17 @@
     /* split tone (the app's two-drum ramp): night runs paper → second ink →
        ink; day runs second ink → ink → paper with NO black plate at all. Wins
        over the older mid-ink tritone when both are set. */
+    /* option D — a night poster's duotone is a black plate under an accent
+       plate on cream: the shadows in ink, the mids in the accent, the lights
+       cream. (The day duotone keeps the accent as a tint in the shadows.) */
+    const nightD = o.paper==='night' && !o.stock && !o._dark;
     const stops = o.splitTone
       ? (!o._dark
           ? [ partnerRGB(o), accentRGB(o), paperRGB(o) ]
           : [ lerp(paperRGB(o), partnerRGB(o), o.shadowTint*0.6), partnerRGB(o), accentRGB(o) ])
-      : (o.midInk ? [loTint, inkRGB(o.midInk), hi] : null);   // tritone ramp
+      : o.midInk ? [loTint, inkRGB(o.midInk), hi]                // tritone ramp
+      : nightD ? [ lerp(inkBaseRGB(o), accentRGB(o), o.shadowTint*0.5), accentRGB(o), hi ]
+      : null;
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<L.length;p++,i+=4){ let l=Math.pow(L[p],k); if(o.invert) l=1-l;
       const c= stops? rampSample(stops,l) : lerp(loTint,hi,l);
@@ -179,34 +186,62 @@
   /* 2 · OFF-REGISTER — two ink passes, offset (the misprint)
        params: offset (distance), angle (deg), spread (coverage)
        ink3  — optional third pass, offset off-axis (three-colour drift)
-       ghost — a faint double-hit of the main ink at 1.8× the offset */
+       ghost — a faint double-hit of the main ink at 1.8× the offset
+       sep   — the two plates come from a real separation of the colour
+               photograph instead of one luminance buffer read twice
+     Retrofit (22.09.26): the offset is a real registration miss — the
+     author's shift, plus the press's own drift / skew / stretch when those
+     are set — and the passes stack as transmittances on the stock (opaque on
+     a dark stock) instead of canvas multiply / screen, so the overlap is the
+     colour those two inks actually make. Coverages go through the press
+     curve; ink density is coverage. */
   function offRegister(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const L=lumBuffer(w,h,o.contrast*1.1);
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),K=w/520;
     const night=o._dark;
-    const cov = p => night? L[p] : 1-L[p];          // where ink lands
-    const A=accentRGB(o), B=partnerRGB(o);
-    const mag=(o.offset!=null?o.offset:13) * (w/520);
-    const a=(o.angle!=null?o.angle:47)*Math.PI/180;
-    const dx=Math.round(Math.cos(a)*mag), dy=Math.round(Math.sin(a)*mag);
-    const sp=o.spread!=null?o.spread:1.25;
-    function pass(color,ox,oy,am){
-      const lc=document.createElement('canvas'); lc.width=w; lc.height=h;
-      const lx=lc.getContext('2d'),id=lx.createImageData(w,h),dd=id.data;
-      const aM=am!=null?am:1;
-      for(let p=0,i=0;p<L.length;p++,i+=4){ dd[i]=color[0];dd[i+1]=color[1];dd[i+2]=color[2];
-        dd[i+3]=Math.round(255*Math.min(1,cov(p)*sp)*aM); }
-      lx.putImageData(id,0,0);
-      cx.drawImage(lc,ox,oy);
+    const sp=o.spread!=null?o.spread:1.25, dens=o.inkDensity!=null?Math.max(0.2,Math.min(1,o.inkDensity)):1;
+    const keyA=o.ink||'pink', keyB=o.ink2||PARTNER[o.ink]||'blue';
+    const hexA=PAL[keyA]||PAL.pink, hexB=PAL[keyB]||PAL.blue;
+    const so=sepOpts(o);
+    let plA, plB;
+    if(o.sep){
+      const src=rgbBuffer(w,h);
+      const sep=RP.separate(src.data,w,h,Object.assign({},so,{ inks:[keyA,keyB], stock:o._stock, opaque:o.opaque, contrast:o.contrast, brightness:o.brightness }));
+      plA=sep.plates[0]; plB=sep.plates[1];
+      for(let p=0;p<plA.length;p++){ plA[p]=Math.min(1,plA[p]*sp*dens); plB[p]=Math.min(1,plB[p]*sp*dens); }
+    } else {
+      const L=lumBuffer(w,h,o.contrast*1.1);
+      plA=new Float32Array(w*h); plB=plA;
+      for(let p=0;p<L.length;p++) plA[p]=Math.min(1,(night? L[p] : 1-L[p])*sp)*dens;
     }
-    cx.fillStyle=o._stock; cx.fillRect(0,0,w,h);
-    cx.globalCompositeOperation = night? 'screen':'multiply';
-    if(o.ink3) pass(inkRGB(o.ink3), Math.round(Math.cos(a+2.1)*mag*0.8), Math.round(Math.sin(a+2.1)*mag*0.8), 1);
-    pass(B, dx, dy);
-    if(o.ghost>0) pass(A, Math.round(dx*1.8), Math.round(dy*1.8), Math.min(1,o.ghost)*0.5);
-    pass(A, 0, 0);
-    cx.globalCompositeOperation='source-over';
+    const mag=(o.offset!=null?o.offset:13)*K, a=(o.angle!=null?o.angle:47)*Math.PI/180;
+    const dx=Math.cos(a)*mag, dy=Math.sin(a)*mag;
+    /* the press's own miss (drift / skew / stretch, the run) rides on top of
+       the author's offset; plate 0 of regSet is always true, so the main ink
+       stays where the photo is */
+    const regs=RP.regSet(4, so, w, h, K);
+    const P=[], H=[], reg=[];
+    /* Drum order matters now: a later drum transfers less onto wet ink, and
+       an opaque drum covers what is under it. Translucent stock: the MAIN ink
+       goes down first at full transfer so the shadows keep its colour and the
+       partner is what thins in the overlap (the signature blue-with-pink-
+       fringe). Dark stock (opaque): the main ink goes LAST so it is the one
+       on top where the two coincide. */
+    const opaque = o.opaque!=null ? !!o.opaque : RP.isDark(o._stock);
+    const mainReg=regs[0], partReg=Object.assign({},regs[1],{ dx:regs[1].dx+dx, dy:regs[1].dy+dy });
+    const pushMain=()=>{ P.push(plA); H.push(hexA); reg.push(mainReg); };
+    const pushPart=()=>{ P.push(plB); H.push(hexB); reg.push(partReg); };
+    if(o.ink3){ P.push(plA); H.push(PAL[o.ink3]||hexB); reg.push(Object.assign({},regs[3],{ dx:regs[3].dx+Math.cos(a+2.1)*mag*0.8, dy:regs[3].dy+Math.sin(a+2.1)*mag*0.8 })); }
+    if(opaque) pushPart(); else pushMain();
+    if(o.ghost>0){ const g=Math.min(1,o.ghost)*0.5, pg=new Float32Array(w*h); for(let p=0;p<pg.length;p++) pg[p]=plA[p]*g;
+      P.push(pg); H.push(hexA); reg.push(Object.assign({},regs[2],{ dx:regs[2].dx+dx*1.8, dy:regs[2].dy+dy*1.8 })); }
+    if(opaque) pushMain(); else pushPart();
+    const NK=nightKPlate(w,h,o); if(NK){ P.unshift(NK); H.unshift(PAL.ink); reg.unshift(regs[0]); }
+    o._pressed=true;
+    const out=cx.createImageData(w,h);
+    RP.stackPlates(P, H, o._stock, w, h, Object.assign(so, { reg:reg, opaque:o.opaque }), out.data);
+    cx.putImageData(out,0,0);
   }
+
 
   /* one screen dot at (gx,gy); amt = coverage 0..1 already gained */
   function drawDot(cx,shape,gx,gy,amt,step,pucker){
@@ -242,12 +277,20 @@
        gradient: gradMode tone|frame, gradA/gradB inks, gradAngle (frame)
        field: paper | tint | ink  (+ fieldInk, fieldStrength)
        shape: circle|square|diamond|ring|line · dotGain · jitter · invert
-       params: dot (spacing), angle (deg), screenOffset (two-ink) */
+       params: dot (spacing), angle (deg), screenOffset (two-ink)
+     Retrofit (22.09.26): the basic dots (circle, square, diamond, line) are
+     the press's own per-pixel spot function — antialiased, linking into a
+     chain at 50 %, any angle for the same cost — and the tone goes through
+     the press curve. `two` is a real two-ink separation of the colour
+     photograph, one plate per drum at its own angle, stacked as ink on the
+     field, instead of one luminance buffer screened twice. The drawn dots
+     (ring, cross, hex, star, letter), gradient inking and hand-set jitter
+     keep the per-cell renderer, with the press curve on their tone. */
+  const HT_CORE_SHAPES = { circle:'chain', square:'square', diamond:'diamond', line:'line' };
   function halftone(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const step=Math.max(4, o.dot|0)*(w/520);
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),K=w/520;
+    const step=Math.max(4, o.dot|0)*K;
     GLYPH = (o.glyphChar && String(o.glyphChar).trim()) ? String(o.glyphChar).trim().slice(0,2) : 'R';
-    const L=lumBuffer(w,h,o.contrast);
     const night=o._dark;
     const shape=o.shape||'circle';
     const mode=o.inkMode||'single';
@@ -257,14 +300,48 @@
     const pucker=o.pucker!=null?o.pucker:0.35;   // diamond concavity
     const baseAngle=o.angle!=null?o.angle:-20;
     const accent=accentRGB(o), partner=partnerRGB(o), paper=paperRGB(o);
+    const dens=o.inkDensity!=null?Math.max(0.2,Math.min(1,o.inkDensity)):1;
 
     /* ---- field (the ground the dots print over) ---- */
     const fieldInk = o.fieldInk? inkRGB(o.fieldInk) : accent;
-    if(o.field==='ink'){ cx.fillStyle=rgbCss(fieldInk); }
-    else if(o.field==='tint'){ const s=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12));
-      cx.fillStyle=rgbCss(lerp(paper,fieldInk,s)); }
-    else { cx.fillStyle=o._stock; }
-    cx.fillRect(0,0,w,h);
+    const fieldC = o.field==='ink' ? fieldInk
+                 : o.field==='tint' ? lerp(paper, fieldInk, Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12)))
+                 : paper;
+    const fieldHex = rgbHex(fieldC);
+    const so=sepOpts(o);
+    const tp=RP.pressOpts(so);
+
+    /* ---- the press's own screen: the basic dots, no jitter, one ink or two ---- */
+    if(HT_CORE_SHAPES[shape] && !jit && mode!=='gradient'){
+      let plates, hexes, angles;
+      if(mode==='two'){
+        const src=rgbBuffer(w,h);
+        const keyB=o.ink2||PARTNER[o.ink]||'blue';
+        const sep=RP.separate(src.data,w,h,Object.assign({},so,{ inks:[o.ink||'pink', keyB], stock:fieldHex, opaque:o.opaque, contrast:o.contrast, brightness:o.brightness }));
+        plates=sep.plates; hexes=sep.inkHexes;
+        angles=[baseAngle, baseAngle+(o.screenOffset!=null?o.screenOffset:30)];
+        if(inv) for(const pl of plates) for(let p=0;p<pl.length;p++) pl[p]=1-pl[p];
+      } else {
+        const L=lumBuffer(w,h,o.contrast), pl=new Float32Array(w*h);
+        for(let p=0;p<L.length;p++){ let ink= night? L[p] : 1-L[p]; if(inv) ink=1-ink; pl[p]=Math.min(1,ink*gain); }
+        plates=[pl]; hexes=[ mode==='black' ? o._ink : (PAL[o.ink]||PAL.pink) ]; angles=[baseAngle];
+      }
+      if(dens<1) for(const pl of plates) for(let p=0;p<pl.length;p++) pl[p]*=dens;
+      const opaque = o.opaque!=null ? !!o.opaque : RP.isDark(fieldHex);
+      const NK=nightKPlate(w,h,o);
+      if(NK && !opaque){ plates.unshift(NK); hexes.unshift(PAL.ink); angles.unshift(45); }   // the black drum first, at 45°
+      o._pressed=true;
+      const out=cx.createImageData(w,h);
+      RP.pressPlates({ plates:plates, inkHexes:hexes, inkKeys:null, paperHex:fieldHex, opaque:opaque,
+                       o:Object.assign({}, RP.DEFAULTS, so, { screen:'am', shape:HT_CORE_SHAPES[shape], pitch:Math.max(4,o.dot|0), angles:angles, inks:null }) },
+                     w, h, out.data);
+      cx.putImageData(out,0,0);
+      return;
+    }
+
+    /* ---- the drawn screen: exotic dots, gradient inking, hand-set jitter ---- */
+    const L=lumBuffer(w,h,o.contrast);
+    cx.fillStyle=fieldHex; cx.fillRect(0,0,w,h);
 
     /* draw one rotated screen; `color` is a CSS string (constant) or fn(l,sx,sy) */
     function screen(angleDeg,color,seed){
@@ -283,7 +360,11 @@
           const l=L[(sy|0)*w+(sx|0)];
           let ink= night? l : 1-l; if(inv) ink=1-ink;
           if(ink<0.01) continue;
-          const amt=Math.sqrt(Math.max(0,ink))*gain;
+          /* the press curve decides how much ink lands; the dot's area is that
+             coverage, so its radius is the square root */
+          const cov=RP.press(Math.min(1,ink*gain*dens), tp);
+          if(cov<=0.002) continue;
+          const amt=Math.sqrt(cov);
           if(fn) cx.fillStyle=fn(l,sx,sy);
           drawDot(cx,shape,gx+jx,gy+jy,amt,step,pucker);
         }
@@ -312,6 +393,7 @@
       screen(baseAngle, rgbCss(accent), 0x5c5c5c);                        // single accent ink (default)
     }
   }
+
 
   /* 4 · POSTERIZE — hard tonal bands snapped to a palette ramp
        bandInks   — per-band ink override (array, dark→light; null = ramp)
@@ -376,35 +458,64 @@
   /* 6 · OVERPRINT — two flat ink fields overlap to bloom a third colour
        params: offset, angle (deg), split (gap between the two field thresholds)
        ink3 — optional third field at the midtone, quarter-turn offset
-       fieldTexture — seeded blotch noise thins the ink coverage (roller texture) */
+       fieldTexture — seeded blotch noise thins the ink coverage (roller texture)
+       sep — the fields are cut from a real separation's plates rather than
+             from one luminance buffer
+     Retrofit (22.09.26): the fields stack as transmittances on the stock —
+     and a later drum transfers less onto wet ink — so the overlap is the
+     colour those two drums actually make, not what canvas `multiply` makes
+     of sRGB bytes. Offsets are registration misses (plus the press's own). */
   function overprint(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.15,(o.toneSmooth||0)));
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),K=w/520;
     const night=o._dark;
-    const A=accentRGB(o), B=partnerRGB(o);
-    const mag=(o.offset!=null?o.offset:8)*(w/520);
+    const dens=o.inkDensity!=null?Math.max(0.2,Math.min(1,o.inkDensity)):1;
+    const keyA=o.ink||'pink', keyB=o.ink2||PARTNER[o.ink]||'blue';
+    const hexA=PAL[keyA]||PAL.pink, hexB=PAL[keyB]||PAL.blue;
+    const mag=(o.offset!=null?o.offset:8)*K;
     const a=(o.angle!=null?o.angle:45)*Math.PI/180;
-    const dx=Math.round(Math.cos(a)*mag), dy=Math.round(Math.sin(a)*mag);
+    const dx=Math.cos(a)*mag, dy=Math.sin(a)*mag;
     const split=o.split!=null?o.split:0.16;
     const t1=0.5+split, t2=0.5-split;             // two flat thresholds → solid fields
-    const tex=o.fieldTexture||0, nz= tex>0? valueNoise(w,h,Math.max(4,7*(w/520)),0x0F1E1D+(o.pull|0)*29) : null;
-    function field(color,thr,ox,oy){
-      const lc=document.createElement('canvas'); lc.width=w; lc.height=h;
-      const lx=lc.getContext('2d'),id=lx.createImageData(w,h),dd=id.data;
-      for(let p=0,i=0;p<L.length;p++,i+=4){
-        const lit = night? L[p] : 1-L[p];
-        let on = smooth(thr-0.06,thr+0.06,lit);
-        if(nz && on>0.003) on*= 1-tex*(0.2+0.8*nz(p%w,(p/w)|0));
-        dd[i]=color[0];dd[i+1]=color[1];dd[i+2]=color[2]; dd[i+3]=Math.round(255*on);
-      }
-      lx.putImageData(id,0,0); cx.drawImage(lc,ox,oy);
+    const tex=o.fieldTexture||0, nz= tex>0? valueNoise(w,h,Math.max(4,7*K),0x0F1E1D+(o.pull|0)*29) : null;
+    const so=sepOpts(o);
+    /* what each field is cut from: the luminance (lit → ink), or the
+       separation's own plates */
+    let srcA, srcB, srcC;
+    if(o.sep){
+      const src=rgbBuffer(w,h);
+      const inks=[keyA,keyB]; if(o.ink3) inks.push(o.ink3);
+      const sep=RP.separate(src.data,w,h,Object.assign({},so,{ inks:inks, stock:o._stock, opaque:o.opaque, contrast:o.contrast, brightness:o.brightness }));
+      srcA=sep.plates[0]; srcB=sep.plates[1]; srcC=sep.plates[2]||null;
+    } else {
+      const L=stretch(lumBuffer(w,h,o.contrast*1.15,(o.toneSmooth||0)));
+      const lit=new Float32Array(w*h); for(let p=0;p<L.length;p++) lit[p]= night? L[p] : 1-L[p];
+      srcA=lit; srcB=lit; srcC=lit;
     }
-    cx.fillStyle=o._stock; cx.fillRect(0,0,w,h);
-    cx.globalCompositeOperation = night? 'screen':'multiply';
-    if(o.ink3) field(inkRGB(o.ink3), 0.5, -dy, dx);
-    field(B, t2, dx, dy);
-    field(A, t1, -dx, 0);
-    cx.globalCompositeOperation='source-over';
+    function field(src,thr){
+      const pl=new Float32Array(w*h);
+      for(let p=0;p<pl.length;p++){
+        let on=smooth(thr-0.06,thr+0.06,src[p]);
+        if(nz && on>0.003) on*= 1-tex*(0.2+0.8*nz(p%w,(p/w)|0));
+        pl[p]=on*dens;
+      }
+      return pl;
+    }
+    const regs=RP.regSet(3, so, w, h, K);
+    const P=[], H=[], reg=[];
+    if(o.ink3 && srcC){ P.push(field(srcC, o.sep?0.5:0.5)); H.push(PAL[o.ink3]||hexB); reg.push(Object.assign({},regs[2],{ dx:regs[2].dx-dy, dy:regs[2].dy+dx })); }
+    const opaque = o.opaque!=null ? !!o.opaque : RP.isDark(o._stock);
+    const fA=()=>{ P.push(field(srcA, o.sep?0.5:t1)); H.push(hexA); reg.push(Object.assign({},regs[0],{ dx:regs[0].dx-dx, dy:regs[0].dy })); };
+    const fB=()=>{ P.push(field(srcB, o.sep?0.5:t2)); H.push(hexB); reg.push(Object.assign({},regs[1],{ dx:regs[1].dx+dx, dy:regs[1].dy+dy })); };
+    /* the main ink first on translucent stock (it keeps its colour; the
+       partner thins in the wet overlap), last on an opaque one (it covers) */
+    if(opaque){ fB(); fA(); } else { fA(); fB(); }
+    const NK=nightKPlate(w,h,o); if(NK){ P.unshift(NK); H.unshift(PAL.ink); reg.unshift(regs[0]); }
+    o._pressed=true;
+    const out=cx.createImageData(w,h);
+    RP.stackPlates(P, H, o._stock, w, h, Object.assign(so, { reg:reg, opaque:o.opaque }), out.data);
+    cx.putImageData(out,0,0);
   }
+
 
   /* 7 · UNTREATED — the raw photo in full colour. Brightness/contrast still
        nudge it (via canvas filter), soft-focus + the finish passes still apply.
@@ -645,10 +756,16 @@
   /* 11 · PHOTOCOPY — toner-crushed mono: noise, then an s-curve crush per
         generation (each recopy harder), then roller streaks down the page.
         params: toner, copyNoise, streaks, generations, inkMode
-          field 'tint' + fieldInk/fieldStrength — run the toner on coloured stock */
+          field 'tint' + fieldInk/fieldStrength — run the toner on coloured stock
+     Retrofit (22.09.26) — xerography. A copier moves toner by ELECTRIC
+     FIELD, and the field bends at every edge of the charge image: edges
+     over-develop into a dark rim (copyEdge — an unsharp mask with a physical
+     cause) while the middles of big solids are starved of field and come out
+     grey (copyHollow — big blacks develop grey-centred with a hard rim). Toner
+     flies off the edge as it transfers (copySatellites), and the drum repeats
+     its faults once per circumference (copyDrum / copyDrumPeriod). */
   function photocopy(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    const L=stretch(lumBuffer(w,h,o.contrast));
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),K=w/520;
     const night=o._dark;
     const inkC=(o.inkMode==='single')? accentRGB(o) : inkBaseRGB(o);
     /* tinted copy stock — the page the toner crushes onto */
@@ -661,27 +778,69 @@
     const noiseAmt=(o.copyNoise||0)*0.30;
     /* toner speckle sampled from a fixed design-resolution grid (≈1 design px
        cells) — a bare per-device-pixel rnd() would render finer on the 2×
-       export than in the 900px preview, breaking WYSIWYG */
+       export than in the 900px preview, breaking WYSIWYG. The same grid
+       decides where a satellite lands, for the same reason. */
     const gw=520, gh=Math.max(2,Math.round(520*h/w)), nb=new Float32Array(gw*gh);
     { const rn=mulberry32(0xC0B1E5+(o.pull|0)*331); for(let q=0;q<nb.length;q++) nb[q]=rn()*2-1; }
     const gens=Math.max(1,Math.min(5,(o.generations|0)||2));
     const toner=o.toner!=null?o.toner:0.55;
     const streaks=o.streaks||0;
+    const edge=o.copyEdge!=null?o.copyEdge:0.45;            // fringe-field enhancement
+    const hollow=o.copyHollow!=null?o.copyHollow:0.35;      // solid-area starvation
+    const sat=o.copySatellites!=null?o.copySatellites:0.3;  // toner scatter at edges
+    const drumPer=Math.max(8,(o.copyDrumPeriod||150)*K);   // one OPC circumference
+    const drumAmt=o.copyDrum!=null?o.copyDrum:0.06;
     let sk=null;                                    // 1-D streak profile across x
-    if(streaks>0){ const nz=valueNoise(w,2,Math.max(8,26*(w/520)),0x57EA+(o.pull|0)*61);
+    if(streaks>0){ const nz=valueNoise(w,2,Math.max(8,26*K),0x57EA+(o.pull|0)*61);
       sk=new Float32Array(w); for(let x=0;x<w;x++){ const v=nz(x,0); sk[x]=v*v*streaks*0.5; } }
     const cw=0.5-toner*0.22, bias=(toner-0.5)*0.24;  // harder + darker with more toner
+    const L=stretch(lumBuffer(w,h,o.contrast));
+    /* a blurred copy of the tone gives both the edge term and the
+       solid-interior term for the price of one pass */
+    let near=null, far=null;
+    if(edge>0 || hollow>0 || sat>0){
+      const bc=document.createElement('canvas'); bc.width=w; bc.height=h;
+      const bx=bc.getContext('2d',{willReadFrequently:true});
+      const tmp=bx.createImageData(w,h);
+      for(let p=0,i=0;p<L.length;p++,i+=4){ const v=L[p]*255; tmp.data[i]=tmp.data[i+1]=tmp.data[i+2]=v; tmp.data[i+3]=255; }
+      bx.putImageData(tmp,0,0);
+      const blurTo=(design)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(bc,0,0); blurCanvas(c,design);
+        return x.getImageData(0,0,w,h).data; };
+      near=blurTo(1.6);      // tight — the fringe field
+      far=blurTo(14);        // wide  — "am I inside a big solid?"
+    }
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<L.length;p++,i+=4){
       const x=p%w, y=(p/w)|0;
-      let l=L[p] + nb[Math.min(gh-1,(y*gh/h)|0)*gw + Math.min(gw-1,(x*gw/w)|0)]*noiseAmt;
-      for(let g=0; g<gens; g++) l=smooth(0.5-cw-bias, 0.5+cw-bias, l);
+      const gi=Math.min(gh-1,(y*gh/h)|0)*gw + Math.min(gw-1,(x*gw/w)|0);
+      let l=L[p] + nb[gi]*noiseAmt;
+      if(near){
+        /* FRINGE FIELD: the charge image steps at every edge; the field bends
+           across the step, over-developing the dark side and starving the
+           light one — the crunchy outline on every photocopy */
+        const nearV=near[i]/255, farV=far[i]/255;
+        if(edge>0) l = l - edge*(nearV-l)*2;
+        /* HOLLOW SOLIDS: inside a large dark area the field is weak and
+           perpendicular to the plate, so the middle develops LESS toner */
+        if(hollow>0){ const inSolid=(1-smooth(0.15,0.55,farV)); l += hollow*inSolid*(1-smooth(0.0,0.35,l))*0.55; }
+        for(let g=0; g<gens; g++) l=smooth(0.5-cw-bias, 0.5+cw-bias, l);
+        /* SATELLITES: toner flies off during transfer and lands just outside
+           the edge it came from */
+        if(sat>0){ const grad=Math.abs(nearV-farV); if(grad>0.04 && (nb[gi]+1)*0.5 < sat*grad*0.9) l=l*0.35; }
+      } else {
+        for(let g=0; g<gens; g++) l=smooth(0.5-cw-bias, 0.5+cw-bias, l);
+      }
+      /* the drum repeats its faults once per circumference */
+      if(drumAmt>0) l*= 1 - drumAmt*0.5*(1+Math.cos(6.2831853*y/drumPer));
       if(sk){ const s=sk[x]; l= night? Math.min(1,l+s) : Math.max(0,l-s); }
+      l = l<0?0:l>1?1:l;
       const c= night? lerp(papC,inkC,l) : lerp(inkC,papC,l);
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
     }
     cx.putImageData(out,0,0);
   }
+
 
   /* Line-art WYSIWYG: edge/boundary detection reads a PER-PIXEL slope, so on a
      wider export the same tonal edge spans more pixels, reads weaker, and drops
@@ -958,7 +1117,59 @@
   function stockOf(name,o){
     if(name==='separation') return RP.resolveStock(sepOpts(o));
     if(o.stock) return RP.stockHex(o.stock);          // an explicit stock — Print's white sheet, a kraft job
-    return PAPER[o.paper];
+    if(name==='none') return PAPER[o.paper];          // the photo as shot sits on the theme surface
+    return PAPER.day;                                 // option D: a press treatment prints on cream, on either theme
+  }
+
+  /* ---- the press, under every treatment ----------------------------------
+     Retrofit (22.09.26). Each of the fourteen still decides WHAT prints — its
+     ramp, its bands, its lines, its screen — and the press decides how the
+     ink lands: the finished picture is separated back into plates for the
+     inks that treatment used, with the black drum among them, and pressed
+     FLAT (no second screen), so the press curve, the registration miss, the
+     drum, the run and the proof view apply to all of them alike. On a night
+     poster the black plate also carries the photograph's own shadows
+     (nightPlate), which is what "riso on cream with a black plate" means:
+     the print's darkness follows the subject and reaches the Night surface.
+     Treatments that already stack their own plates (halftone's press screen,
+     off-register, overprint) skip this and add the night plate themselves. */
+  const INK_PROPS=['ink2','ink3','fieldInk','gradA','gradB','cutEdgeInk','edgeInk','edgeEchoInk','contourInk','contourEchoInk','midInk','hiInk','spot2Ink'];
+  function plateSetFor(o){
+    const set=[];
+    const add=k=>{ if(k && PAL[k] && set.indexOf(k)<0 && set.length<5) set.push(k); };
+    if(!o._dark) add('ink'); else add('cream');       // the mono drum for this stock
+    add(o.ink); add(o.ink2||PARTNER[o.ink]);
+    INK_PROPS.forEach(p=>add(o[p]));
+    if(o.bandInks) o.bandInks.forEach(add);
+    return set;
+  }
+  /* the night plate: the photograph's shadows in black, on cream. Only for
+     the treatments whose print does not already carry the shadows in ink — a
+     duotone's ramp, a banded print's darkest band, a cutout's subject and the
+     copier's toner are the black plate already; a screen of accent dots, a
+     hatch, a line drawing or a two-colour misprint are not, and on a night
+     poster they get the photograph's shadows printed under them in black. */
+  const NIGHT_K = { halftone:1, dither:1, hatch:1, contour:1, edges:1, offregister:1, overprint:1 };
+  function nightKPlate(w,h,o){
+    if(o.paper!=='night' || o.stock || o._dark || !NIGHT_K[o._name]) return null;
+    const amt=o.nightPlate!=null?o.nightPlate:1; if(amt<=0) return null;
+    const L=lumBuffer(w,h,o.contrast), pl=new Float32Array(w*h);
+    for(let p=0;p<L.length;p++) pl[p]=Math.min(1, smooth(0.4,0.92,1-L[p])*amt);
+    return pl;
+  }
+  function pressThrough(cv,o){
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d',{willReadFrequently:true});
+    const src=cx.getImageData(0,0,w,h);
+    const inks=plateSetFor(o);
+    const so=Object.assign(sepOpts(o), { inks:inks, stock:o._stock, opaque:o.opaque, contrast:1, brightness:0, saturation:1,
+      invertSource:false, sepBoost:1, sepGCR:0.05, tac:5, flat:true });
+    const sep=RP.separate(src.data,w,h,so);
+    const K=nightKPlate(w,h,o), ki=inks.indexOf('ink');
+    if(K && ki>=0){ const pl=sep.plates[ki]; for(let p=0;p<pl.length;p++) if(K[p]>pl[p]) pl[p]=K[p]; }
+    const out=cx.createImageData(w,h);
+    RP.pressPlates(sep,w,h,out.data);
+    if(o.transparent){ const sd=src.data,d=out.data; for(let i=3;i<d.length;i+=4) d[i]=sd[i]; }
+    cx.putImageData(out,0,0);
   }
 
   const TREATMENTS = { separation, duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
@@ -1424,6 +1635,12 @@
     ditherMode:'bayer', ditherScale:3, ditherAngle:0,
     hatchSpacing:9, hatchWeight:1, hatchCross:false, hatchWobble:0.15,
     toner:0.55, copyNoise:0.35, streaks:0.25, generations:2,
+    /* xerography (retrofit 22.09.26) */
+    copyEdge:0.45, copyHollow:0.35, copySatellites:0.3, copyDrum:0.06, copyDrumPeriod:150,
+    /* off-register + overprint: plates from a real separation */
+    sep:false,
+    /* option D: how much of the photograph's shadows the black plate carries on a night poster */
+    nightPlate:1,
     contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19,
     contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45,
     contourEcho:0, contourEchoAngle:45, contourEchoInk:null,
@@ -1466,9 +1683,12 @@
                 x:o.blurUnderX, y:o.blurUnderY, pos:o.blurUnderPos, width:o.blurUnderWidth };
     MIX2 = { amount: SRC2? (o.mix2||0) : 0, mode:o.mix2Mode||'screen' };
     o._stock = stockOf(name,o); o._dark = RP.isDark(o._stock);
-    o._ink = o.stock ? RP.inkOnStock(o.stock) : (name==='separation' ? (o._dark? PAL.cream : PAL.ink) : INK[o.paper]);
+    /* the mono drum follows the STOCK, not the theme: black on a light sheet, cream on a dark one (Print's white sheet has its own K) */
+    o._ink = o.stock ? RP.inkOnStock(o.stock) : (o._dark ? PAL.cream : PAL.ink);
     cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+    o._pressed=false; o._name=name;
     (TREATMENTS[name]||separation)(cv,o);
+    if(name!=='none' && name!=='separation' && !o._pressed) pressThrough(cv,o);
     if(name!=='none') blendThrough(cv,o);
     /* ---- finish stack: everything below prints over the finished image ---- */
     applyBlur(cv, { amount:o.blurOver||0, type:o.blurOverType, angle:o.blurOverAngle,

@@ -784,7 +784,7 @@ function risoOpts(el, docAccent){
     pitch:el.pitch, grainPitch:el.grainPitch, levels:el.levels, sepGCR:el.sepGCR, sepBoost:el.sepBoost, tac:el.tac,
     gain:el.gain, linear:el.linear, drift:el.drift, skew:el.skew, stretch:el.stretch, drumStreak:el.drumStreak,
     drumBand:el.drumBand, starve:el.starve, wet:el.wet, pull:el.pull, pressRun:el.pressRun,
-    proofPlate:el.proofPlate, proofGrey:el.proofGrey, saturation:el.saturation
+    proofPlate:el.proofPlate, proofGrey:el.proofGrey, saturation:el.saturation, sep:el.sep
   };
 }
 

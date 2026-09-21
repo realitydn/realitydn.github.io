@@ -133,7 +133,10 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'sepGCR','sepBoost','tac','gain','linear','solidity','ceiling','floor','floodCap',
   'drift','driftSeed','skew','stretch','duo','drumBand','bandPeriod','drumStreak','starve','wet',
   'pull','pressRun','pressOff','fountainTo','fountainPlate','fountainAngle','fountainSoft',
-  'screens','pitches','proofPlate','proofGrey'];
+  'screens','pitches','proofPlate','proofGrey',
+  /* the retrofit: separated plates for off-register / overprint, xerography for the copier,
+     and how much of the shadows the night poster's black plate carries */
+  'sep','copyEdge','copyHollow','copySatellites','copyDrum','copyDrumPeriod','nightPlate'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120
    primitives costs microseconds; re-running the press costs ~25ms, so this is
    what keeps a photo from re-developing on every unrelated re-render.

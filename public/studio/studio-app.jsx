@@ -446,15 +446,16 @@ const TREAT_PRESETS = {
                 drift:0, skew:0, stretch:0, duo:true, drumStreak:0, drumBand:0, starve:0, wet:0.25,
                 pull:0, pressRun:true, fountainTo:null, proofPlate:null, proofGrey:false },
   duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false, midInk:null, hiTint:0, splitTone:false },
-  offregister:{ contrast:1.25, offset:13,    angle:47,        spread:1.25, ink3:null, ghost:0 },
+  offregister:{ contrast:1.25, offset:13,    angle:47,        spread:1.25, ink3:null, ghost:0, sep:false },
   halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
   posterize:  { contrast:1.25, bands:4, bandJitter:0, toneSmooth:0, splitTone:false },
   cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false, cutEdge:0, cutSlip:0, toneSmooth:0 },
-  overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0, toneSmooth:0 },
+  overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0, toneSmooth:0, sep:false },
   spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18, spotMode:'tone', spot2:false, toneSmooth:0 },
   dither:     { contrast:1.25, ditherMode:'bayer', ditherScale:3, ditherAngle:0, invert:false, inkMode:'single', gradMode:'tone', gradA:null, gradB:null, gradAngle:90, field:'paper', fieldInk:null, fieldStrength:0.12 },
   hatch:      { contrast:1.25, hatchSpacing:9, angle:-22, hatchWeight:1, hatchCross:false, hatchWobble:0.15, inkMode:'single', toneSmooth:0, gradMode:'tone', gradA:null, gradB:null, gradAngle:90, field:'paper', fieldInk:null, fieldStrength:0.12 },
-  photocopy:  { contrast:1.15, toner:0.55, copyNoise:0.35, streaks:0.25, generations:2, inkMode:'black', field:'paper', fieldInk:null, fieldStrength:0.18 },
+  photocopy:  { contrast:1.15, toner:0.55, copyNoise:0.35, streaks:0.25, generations:2, inkMode:'black', field:'paper', fieldInk:null, fieldStrength:0.18,
+                copyEdge:0.45, copyHollow:0.35, copySatellites:0.3, copyDrum:0.06, copyDrumPeriod:150 },
   contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45, contourEcho:0, contourEchoAngle:45, contourEchoInk:null },
   edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, fieldInk:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null, edgeSlip:0, edgeSlipAngle:45 },
   mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper' },
@@ -535,9 +536,9 @@ const TREAT_LOOKS = {
     { v:'sketch',  l:'Sketch',      p:{ hatchSpacing:11, hatchWeight:1.4, hatchCross:false, hatchWobble:0.5,  angle:-35 } },
   ],
   photocopy: [
-    { v:'clean',   l:'First gen',   p:{ toner:0.55, copyNoise:0.2,  streaks:0.12, generations:1 } },
-    { v:'worn',    l:'Third gen',   p:{ toner:0.42, copyNoise:0.45, streaks:0.35, generations:3 } },
-    { v:'blown',   l:'Blown out',   p:{ toner:0.75, copyNoise:0.5,  streaks:0.5,  generations:4 } },
+    { v:'clean',   l:'First gen',   p:{ toner:0.55, copyNoise:0.2,  streaks:0.12, generations:1, copyEdge:0.35, copyHollow:0.2,  copySatellites:0.12, copyDrum:0.03 } },
+    { v:'worn',    l:'Third gen',   p:{ toner:0.42, copyNoise:0.45, streaks:0.35, generations:3, copyEdge:0.5,  copyHollow:0.4,  copySatellites:0.4,  copyDrum:0.08 } },
+    { v:'blown',   l:'Blown out',   p:{ toner:0.75, copyNoise:0.5,  streaks:0.5,  generations:4, copyEdge:0.7,  copyHollow:0.55, copySatellites:0.55, copyDrum:0.1 } },
   ],
   contour: [
     { v:'map',     l:'Map',         p:{ bands:5, contourWeight:2,   contourFill:'tint', contourTint:0.19, contourSmooth:2.2 } },
@@ -1067,6 +1068,16 @@ function PhotoControls({ el, update, theme, accent, day }){
                 <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
               ))}
             </div>}
+          {/* Option D: on a night poster every press treatment prints on cream
+              with a black plate. The treatments whose print already carries
+              the shadows in ink (a duotone's ramp, a banded print, a cutout,
+              the copier) are that plate; the screens and line treatments get
+              the photograph's shadows printed under them, and this is how
+              much. Day posters and named stocks never show it. */}
+          {theme==='night' && !el.stock && t!=='separation' && ['halftone','dither','hatch','contour','edges','offregister','overprint'].indexOf(t)>=0 && <React.Fragment>
+            <Slider label="Night plate" val={el.nightPlate!=null?el.nightPlate:1} min={0} max={1.5} step={0.02} onChange={v=>update({nightPlate:v})} />
+            <Hint tight>Riso on cream with a black plate: the photograph's shadows print in black under the {pressLabel.toLowerCase()}, so the print's darkness follows the subject and reaches the Night surface. 0 leaves the accent alone on cream.</Hint>
+          </React.Fragment>}
           {/* Density is a tinting dial: the separation decides coverage itself, so
               the slider would do nothing there and is not offered. */}
           {!el.followDay && t!=='separation' && <React.Fragment>
@@ -1157,7 +1168,8 @@ function PhotoControls({ el, update, theme, accent, day }){
           <Slider label="Ink spread" val={el.spread} min={0.8} max={1.8} step={0.02} onChange={v=>update({spread:v})} />
           <InkRow label="Third ink" value={el.ink3} onChange={v=>update({ink3:v})} autoTitle="Off — two passes" />
           <Slider label="Ghost hit" val={el.ghost!=null?el.ghost:0} min={0} max={1} step={0.02} onChange={v=>update({ghost:v})} />
-          <Hint tight>Ghost prints a faint second impression of the main ink — the classic riso double-feed.</Hint>
+          <Chips label="Plates" options={[{v:false,l:'From the tone'},{v:true,l:'Separated'}]} value={!!el.sep} onChange={v=>update({sep:v})} />
+          <Hint tight>Ghost prints a faint second impression of the main ink — the classic riso double-feed. <b>Separated</b> cuts the two plates from the colour photograph, so each ink carries its own part of the picture rather than the same tone twice. The press's own drift, skew and stretch (Tune · Press) ride on top of the offset.</Hint>
         </React.Fragment>}
         {t==='halftone' && <React.Fragment>
           <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'},{v:'gradient',l:'Gradient'},{v:'two',l:'Two-ink'}]} value={el.inkMode||'single'} onChange={v=>update({inkMode:v})} />
@@ -1232,6 +1244,8 @@ function PhotoControls({ el, update, theme, accent, day }){
           <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
           <InkRow label="Third ink" value={el.ink3} onChange={v=>update({ink3:v})} autoTitle="Off — two fields" />
           <Slider label="Ink texture" val={el.fieldTexture!=null?el.fieldTexture:0} min={0} max={1} step={0.02} onChange={v=>update({fieldTexture:v})} />
+          <Chips label="Fields" options={[{v:false,l:'From the tone'},{v:true,l:'Separated'}]} value={!!el.sep} onChange={v=>update({sep:v})} />
+          <Hint tight>The overlap is the colour the two drums actually make — transmittances stacked, a later drum transferring less onto wet ink. <b>Separated</b> cuts each field from the colour photograph's own plate.</Hint>
         </React.Fragment>}
         {t==='spot' && <React.Fragment>
           <Chips label="Select by" options={[{v:'tone',l:'Tone'},{v:'hue',l:'Colour'}]} value={el.spotMode||'tone'} onChange={v=>update({spotMode:v})} />
@@ -1307,6 +1321,13 @@ function PhotoControls({ el, update, theme, accent, day }){
           <Slider label="Copy noise" val={el.copyNoise!=null?el.copyNoise:0.35} min={0} max={1} step={0.02} onChange={v=>update({copyNoise:v})} />
           <Slider label="Streaks" val={el.streaks!=null?el.streaks:0.25} min={0} max={1} step={0.02} onChange={v=>update({streaks:v})} />
           <Slider label="Generations" val={el.generations!=null?el.generations:2} min={1} max={5} step={1} onChange={v=>update({generations:v})} />
+          <div className="rs-sech">The machine</div>
+          <Slider label="Edge burn" val={el.copyEdge!=null?el.copyEdge:0.45} min={0} max={1.2} step={0.02} onChange={v=>update({copyEdge:v})} />
+          <Slider label="Hollow solids" val={el.copyHollow!=null?el.copyHollow:0.35} min={0} max={1} step={0.02} onChange={v=>update({copyHollow:v})} />
+          <Slider label="Satellites" val={el.copySatellites!=null?el.copySatellites:0.3} min={0} max={1} step={0.02} onChange={v=>update({copySatellites:v})} />
+          <Slider label="Drum band" val={el.copyDrum!=null?el.copyDrum:0.06} min={0} max={0.4} step={0.01} onChange={v=>update({copyDrum:v})} />
+          {el.copyDrum>0 && <Slider label="Drum period" val={el.copyDrumPeriod!=null?el.copyDrumPeriod:150} min={40} max={400} step={5} onChange={v=>update({copyDrumPeriod:v})} suffix="px" />}
+          <Hint tight>A copier moves toner by electric field, and the field bends at every edge: edges burn into a dark rim, the middles of big blacks starve and go grey, toner flies off as satellites, and the drum repeats its faults once per turn.</Hint>
           <Chips label="Paper" options={[{v:'paper',l:'Plain'},{v:'tint',l:'Tinted stock'}]} value={el.field==='tint'?'tint':'paper'} onChange={v=>update({field:v})} />
           {el.field==='tint' && <React.Fragment>
             <InkRow label="Stock ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Main ink" />

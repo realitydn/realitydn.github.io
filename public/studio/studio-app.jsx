@@ -24,7 +24,7 @@ function starterDoc(){
        thing anyone dragged jumped. Text still overlaps the photo on purpose;
        every edge is just a multiple of the step now. */
     elements:[
-      Object.assign(apMake('photo', 90, 90), { w:900, h:900, treatment:'duotone', frame:false }),
+      Object.assign(apMake('photo', 90, 90), { w:900, h:900, treatment:'separation', frame:false }),
       apMake('when', 360, 270),
       Object.assign(apMake('title', 135, 405), { text:'Pulse\nSessions', color:'fg' }),
       Object.assign(apMake('host', 270, 720), { kicker:'On the decks', name:'DJ Milk' }),
@@ -68,6 +68,16 @@ function tplId(){
 }
 /* Newest first — the library's one order, in one place. */
 function sortTpls(list){ return (list||[]).slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)); }
+
+/* Which press made this poster. `engineRev` is the riso engine's revision
+   (riso-press.js REV), stamped on every save — the working doc, the cloud
+   copy and each template. Nothing reads it yet; it exists so a reprint years
+   on can tell which press a poster was made on, which is impossible to add
+   retroactively. Absent means "before the separation shipped" (rev 1). */
+function stampEngine(doc){
+  const rev = window.RISO && window.RISO.REV;
+  return rev ? Object.assign({}, doc, { engineRev: rev }) : doc;
+}
 
 /* My-templates store — full poster snapshots (elements, overrides, theme),
    saved by name in localStorage, separate from the working doc. */
@@ -329,7 +339,10 @@ function PhotoUpload({ onPick, label }){
    the strip teachable to somebody who has never heard of a riso. Keep them in
    step with the card if it revs. */
 const TREATS = [
-  {v:'duotone',l:'Duotone',tag:'two-colour sep · the default',
+  {v:'separation',l:'Press',tag:'real separation · the press',
+   best:'Anything. This is what the machine does — start here and reach for the others when you want a specific effect.',
+   avoid:'You want one flat graphic move rather than a photograph.'},
+  {v:'duotone',l:'Duotone',tag:'two-colour tint',
    best:'Faces, portraits, anything that has to stay readable.',
    avoid:'You want maximum graphic punch — go louder below.'},
   {v:'offregister',l:'Off-Reg',tag:'the signature',
@@ -424,6 +437,14 @@ const FINISH_LOOKS = [
 ];
 /* recommended defaults applied when a treatment is chosen — each looks good out of the box */
 const TREAT_PRESETS = {
+  /* the press: null = the paper decides (inks: accent + partner, night adds
+     the black plate first; stock: cream on either theme; GCR / ink limit:
+     day 0.2 / 2.2, night 0.12 / 2.8). See riso-press.js DEFAULTS. */
+  separation: { contrast:1.08, brightness:0, saturation:1, inks:null, stock:null, opaque:null, invertSource:false,
+                screen:'fm', sepShape:'chain', pitch:9, grainPitch:0.5, levels:0, sepGCR:null, sepBoost:1.15, tac:null,
+                gain:0.8, linear:true, solidity:0.97, ceiling:0.98, floor:0.10, floodCap:0,
+                drift:0, skew:0, stretch:0, duo:true, drumStreak:0, drumBand:0, starve:0, wet:0.25,
+                pull:0, pressRun:true, fountainTo:null, proofPlate:null, proofGrey:false },
   duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false, midInk:null, hiTint:0, splitTone:false },
   offregister:{ contrast:1.25, offset:13,    angle:47,        spread:1.25, ink3:null, ghost:0 },
   halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
@@ -452,6 +473,17 @@ const TREAT_PRESETS = {
    `look` is stored on the element only so the chip shows which
    one you picked; nothing renders from it. */
 const TREAT_LOOKS = {
+  /* the press's looks — each is a real job a shop would quote */
+  separation: [
+    { v:'grain',   l:'Grain',        p:{ screen:'fm', inks:null, stock:null, opaque:null, drift:3, skew:5, stretch:7, starve:0.2, drumStreak:0, pull:0 } },
+    { v:'four',    l:'Four colour',  p:{ screen:'fm', inks:['ink','pink','blue','yellow'], stock:null, opaque:null, tac:2.2, sepGCR:0.2, drift:0, skew:0, stretch:0, starve:0 } },
+    { v:'s43',     l:'Screen 43',    p:{ screen:'am', pitch:13, levels:195, sepShape:'chain' } },
+    { v:'s71',     l:'Screen 71',    p:{ screen:'am', pitch:8,  levels:72,  sepShape:'chain' } },
+    { v:'night',   l:'Night',        p:{ inks:['ink','pink','blue'], stock:null, opaque:null, tac:2.8, sepGCR:0.12 } },
+    { v:'kraft',   l:'On kraft',     p:{ stock:'kraft', opaque:null, inks:['ink','pink'] } },
+    { v:'misfed',  l:'Mis-fed',      p:{ drift:8, skew:9, stretch:12, starve:0.35, drumStreak:0.3, pull:40 } },
+    { v:'screen',  l:'Screenprint',  p:{ stock:'night', opaque:true, inks:null, drift:0, skew:0, stretch:0 } },
+  ],
   duotone: [
     { v:'soft',    l:'Soft',        p:{ balance:0.5,  shadowTint:0.18, contrast:1.18, invert:false, hiTint:0 } },
     { v:'deep',    l:'Deep',        p:{ balance:0.38, shadowTint:0.34, contrast:1.38, invert:false, hiTint:0 } },
@@ -704,6 +736,152 @@ function BlurControls({ el, update, prefix, label, max }){
   );
 }
 /* ============================================================
+   THE PRESS — the separation's own dials.
+   ============================================================
+   Plates, stock, screen and the separation in the Tune fold, then
+   the press itself and a proof as folds of their own. Every dial
+   maps one-to-one onto riso-press.js's options (sepOpts in
+   riso-engine.js carries the renames); the physics and the
+   defaults live there, this only exposes them. A null dial means
+   "the paper decides", and the copy says what that resolves to, so
+   Auto is never a mystery.
+   ============================================================ */
+const STOCK_LABEL = { day:'Cream', white:'White', news:'Newsprint', straw:'Straw', kraft:'Kraft', salmon:'Salmon',
+                      grey:'Grey board', flint:'Flint', steel:'Steel', night:'Night' };
+const SEP_SCREENS = [{v:'grain',l:'Grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
+/* What the press will actually run for this element — resolved the same way
+   the engine resolves it, so the panel never describes a different job from
+   the one on the poster. */
+function sepResolved(el, inkKey, theme){
+  const RP = window.RISO && window.RISO.press; if(!RP) return null;
+  const paper = theme==='night' ? 'night' : 'day';
+  const o = { inks:el.inks, ink:inkKey, ink2:el.ink2, paper, stock:el.stock||null };
+  const inks = RP.resolveInks(o);
+  const stockHex = RP.resolveStock(o);
+  const night = paper==='night';
+  return { inks, night, stockKey: el.stock||'day', stockHex,
+    opaque: el.opaque!=null ? !!el.opaque : RP.isDark(stockHex),
+    gcr: el.sepGCR!=null ? el.sepGCR : (night?0.12:0.2),
+    tac: el.tac!=null ? el.tac : (night?2.8:2.2),
+    warn: RP.NEVER_PAIR.filter(p=>inks.indexOf(p[0])>=0 && inks.indexOf(p[1])>=0) };
+}
+function SepControls({ el, update, theme, inkKey }){
+  const RP = window.RISO && window.RISO.press;
+  const r = sepResolved(el, inkKey, theme);
+  if(!RP || !r) return null;
+  const custom = Array.isArray(el.inks) && el.inks.length>0;
+  const plates = custom ? el.inks : r.inks;
+  const setPlate = (i,v)=>{ const arr=plates.slice(); arr[i]=v; update({ inks:arr }); };
+  const dropPlate = (i)=>{ const arr=plates.slice(); arr.splice(i,1); update({ inks:arr }); };
+  const screenKey = el.screen==='am' ? ((el.pitch||9)>=11 ? 's43' : (el.pitch||9)<=6.5 ? 's106' : 's71') : 'grain';
+  const pickScreen = v=>{ const s=RP.SCREENS[v]; update(v==='grain' ? { screen:'fm', levels:0 } : { screen:'am', pitch:s.pitch, levels:s.levels }); };
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Plates</div>
+      <Chips options={[{v:false,l:'Auto'},{v:true,l:'Custom'}]} value={custom} onChange={v=>update({ inks: v ? r.inks.slice() : null })} />
+      {custom
+        ? <React.Fragment>
+            {plates.map((k,i)=>(
+              <React.Fragment key={i}>
+                <div className="rs-lab">Plate {i+1}{i===0?' · first drum':''} <span className="val">{inkTitle(k)}</span></div>
+                <div className="rs-swatches">
+                  {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(k===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>setPlate(i,a)} />))}
+                  {plates.length>1 && <div className="rs-sw" title="Remove this plate" style={{ border:'1.5px solid #3a2f1f', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#cdbfae' }} onClick={()=>dropPlate(i)}>✕</div>}
+                </div>
+              </React.Fragment>
+            ))}
+            {plates.length<5 && <button className="rs-addrow" onClick={()=>update({ inks: plates.concat([RP.PARTNER[plates[plates.length-1]]||'blue']) })}>+ Add a plate</button>}
+            {plates.length>3 && <Hint tight>Studios cap a job at 2–4 passes — every plate past the dual drum is another trip through the feed, and another miss.</Hint>}
+            <Hint tight>Drum order: the first plate prints first; later drums transfer less onto wet ink. <b>Cream</b> only prints as an opaque ink on a dark stock.</Hint>
+          </React.Fragment>
+        : <Hint tight>{r.night
+            ? <React.Fragment><b>{plates.map(inkTitle).join(' → ')}</b> — the black plate first, then the accent and its partner, on cream: the shadows reach the Night surface and the print's darkness follows the subject, not the page.</React.Fragment>
+            : <React.Fragment><b>{plates.map(inkTitle).join(' → ')}</b> — the accent and its partner, the classic two-colour riso.</React.Fragment>}</Hint>}
+      {r.warn.length>0 && <Hint tight>⚠ <b>{r.warn.map(p=>inkTitle(p[0])+' + '+inkTitle(p[1])).join(', ')}</b> — near-tonal pairs the guidance advises against. Allowed; the overlap goes muddy.</Hint>}
+
+      <div className="rs-sech">Stock</div>
+      <div className="rs-swatches">
+        <div className={'rs-sw'+(el.stock==null?' on':'')} title="Auto — cream" style={{ background:RP.PAPER.day, border:'1.5px solid #3a2f1f' }} onClick={()=>update({ stock:null, opaque:null })} />
+        {RP.STOCKS.map(s=>(<div key={s} className={'rs-sw'+(el.stock===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s] }} onClick={()=>update({ stock:s, opaque:null })} />))}
+      </div>
+      <Hint tight><b>{STOCK_LABEL[r.stockKey]||r.stockKey}.</b> {r.opaque
+        ? 'Dark stock — opaque ink, a screenprint rather than a riso: each plate covers what is under it.'
+        : 'Translucent ink: the sheet shows through every plate, so a tinted stock colours the whole print.'}</Hint>
+
+      <div className="rs-sech">Screen</div>
+      <Chips options={SEP_SCREENS} value={screenKey} onChange={pickScreen} />
+      {el.screen==='am'
+        ? <React.Fragment>
+            <Chips label="Dot" options={[{v:'chain',l:'Chain'},{v:'line',l:'Line'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'}]} value={el.sepShape||'chain'} onChange={v=>update({sepShape:v})} />
+            <Slider label="Pitch" val={el.pitch!=null?el.pitch:9} min={3} max={24} step={0.5} onChange={v=>update({pitch:v})} suffix="px" />
+            <Slider label="Tone steps" val={el.levels||0} min={0} max={256} step={1} onChange={v=>update({levels:v})} />
+          </React.Fragment>
+        : <Slider label="Grain size" val={el.grainPitch!=null?el.grainPitch:0.5} min={0.25} max={3} step={0.05} onChange={v=>update({grainPitch:v})} suffix="px" />}
+      <Hint tight>Grain is the machine's own stochastic screen — what a riso does on most jobs. 43 / 71 / 106 are the dot screens, coarse to fine; a fine screen holds fewer tones and bands on a long gradient (Tone steps, 0 = unlimited).</Hint>
+
+      <div className="rs-sech">Separation</div>
+      <Slider label="GCR" val={r.gcr} min={0} max={0.8} step={0.01} onChange={v=>update({sepGCR:v})} />
+      <Slider label="Chroma boost" val={el.sepBoost!=null?el.sepBoost:1.15} min={0.8} max={2} step={0.01} onChange={v=>update({sepBoost:v})} suffix="×" />
+      <Slider label="Ink limit" val={r.tac} min={1} max={4} step={0.05} onChange={v=>update({tac:v})} />
+      <Slider label="Saturation" val={el.saturation!=null?el.saturation:1} min={0} max={2} step={0.02} onChange={v=>update({saturation:v})} />
+      <Chips label="Source" options={[{v:false,l:'Positive'},{v:true,l:'Negative'}]} value={!!el.invertSource} onChange={v=>update({invertSource:v})} />
+      {(el.sepGCR!=null || el.tac!=null) && <button className="rs-addrow" onClick={()=>update({ sepGCR:null, tac:null })}>↺ Let the paper decide GCR &amp; ink limit</button>}
+      <Hint tight><b>GCR</b>: of two mixes that hit a colour, how strongly the press prefers the one laying down less ink. <b>Ink limit</b>: total coverage across the plates — night presses harder (2.8) than day (2.2). <b>Negative</b> prints the inverse: the studio's own advice for a dark poster on light stock.</Hint>
+    </React.Fragment>
+  );
+}
+function SepPressFold({ el, update, plates }){
+  const pressDirty = RUI.dirtyCount(el, ['drift','skew','stretch','duo','drumStreak','drumBand','starve','wet','pull','pressRun','fountainTo','gain','linear','floor','ceiling','solidity','floodCap'], TREAT_PRESETS.separation);
+  const n = Math.max(2, (plates||[]).length);
+  return (
+    <Fold id="ph-sep-press" title="The press" dirty={pressDirty}
+      hint={<React.Fragment>A riso misses register because the <b>paper</b> moves. Each plate gets its own miss — a shift, a fraction of a degree, a shear that opens down the sheet, a stretch along the feed. A dual-drum press lays the first two plates in one pass, so those two register tight.</React.Fragment>}>
+      <div className="rs-sech">Registration</div>
+      <Slider label="Drift" val={el.drift||0} min={0} max={24} step={0.5} onChange={v=>update({drift:v})} suffix="px" />
+      <Slider label="Feed skew" val={el.skew||0} min={0} max={24} step={0.5} onChange={v=>update({skew:v})} suffix="px" />
+      <Slider label="Stretch" val={el.stretch||0} min={0} max={30} step={0.5} onChange={v=>update({stretch:v})} suffix="px" />
+      <Chips label="Drums" options={[{v:true,l:'Dual-drum'},{v:false,l:'One drum'}]} value={el.duo!==false} onChange={v=>update({duo:v})} />
+      <div className="rs-sech">Ink on the drum</div>
+      <Slider label="Streaks" val={el.drumStreak||0} min={0} max={1} step={0.02} onChange={v=>update({drumStreak:v})} />
+      <Slider label="Drum band" val={el.drumBand||0} min={0} max={1} step={0.02} onChange={v=>update({drumBand:v})} />
+      {el.drumBand>0 && <Slider label="Drum period" val={el.bandPeriod!=null?el.bandPeriod:90} min={20} max={260} step={2} onChange={v=>update({bandPeriod:v})} suffix="px" />}
+      <Slider label="Starvation" val={el.starve||0} min={0} max={1} step={0.02} onChange={v=>update({starve:v})} />
+      <Slider label="Wet-on-wet" val={el.wet!=null?el.wet:0.25} min={0} max={0.7} step={0.01} onChange={v=>update({wet:v})} />
+      <Hint tight>Streaks and the band belong to the plate, before the stack — so a starved patch in the pink plate goes green-ish, not grey. Wet-on-wet: a later drum transfers less onto an oily sheet, which is why swapping two inks changes the overprint.</Hint>
+      <div className="rs-sech">The run</div>
+      <Slider label="Pull" val={el.pull||0} min={0} max={400} step={1} onChange={v=>update({pull:v})} />
+      <Chips label="Run" options={[{v:true,l:'Modelled'},{v:false,l:'Reseed only'}]} value={el.pressRun!==false} onChange={v=>update({pressRun:v})} />
+      <Hint tight>Which sheet off the run this is. Pull 0 is the idealised print; pull 1 is the first sheet off a cold drum and prints light; as the run goes the miss opens, the master wears, and the feed tires carry ink onto the head of the sheet.</Hint>
+      <div className="rs-sech">Split fountain</div>
+      <InkRow label="Second ink on a drum" value={el.fountainTo} onChange={v=>update({fountainTo:v})} autoTitle="Off — one ink per drum" />
+      {el.fountainTo && <React.Fragment>
+        <Slider label="Which drum" val={(el.fountainPlate!=null?el.fountainPlate:1)+1} min={1} max={n} step={1} onChange={v=>update({fountainPlate:v-1})} />
+        <Slider label="Blend angle" val={el.fountainAngle||0} min={0} max={360} step={5} onChange={v=>update({fountainAngle:v})} suffix="°" />
+        <Slider label="Blend width" val={el.fountainSoft!=null?el.fountainSoft:1} min={0.1} max={3} step={0.05} onChange={v=>update({fountainSoft:v})} />
+        <Hint tight>One drum loaded with two inks that blend across it — the colour changes with where you are on the sheet, not with what the picture is doing. The blend widens with every pull.</Hint>
+      </React.Fragment>}
+      <div className="rs-sech">Tone transfer</div>
+      <Slider label="Dot gain" val={el.gain!=null?el.gain:0.8} min={0} max={1.2} step={0.02} onChange={v=>update({gain:v})} />
+      <Chips label="RIP" options={[{v:true,l:'Compensated'},{v:false,l:'Straight to press'}]} value={el.linear!==false} onChange={v=>update({linear:v})} />
+      <Slider label="Tone floor" val={el.floor!=null?el.floor:0.10} min={0} max={0.3} step={0.01} onChange={v=>update({floor:v})} />
+      <Slider label="Plate ceiling" val={el.ceiling!=null?el.ceiling:0.98} min={0.7} max={1} step={0.005} onChange={v=>update({ceiling:v})} />
+      <Slider label="Solidity" val={el.solidity!=null?el.solidity:0.97} min={0.7} max={1} step={0.005} onChange={v=>update({solidity:v})} />
+      <Slider label="Flood cap" val={el.floodCap||0} min={0} max={1} step={0.01} onChange={v=>update({floodCap:v})} />
+      <Hint tight>Dot gain is what the press adds back (ISO 12647-3: a 50 % dot prints at 76 %); a compensated RIP pulls the plate down by as much. Straight to press is the darkened, closed-up print of an uncompensated file. The floor is where the master has no hole; the ceiling what a master can carry; solidity how completely ink covers where it lands. Flood cap is design advice about big floods — off by default.</Hint>
+    </Fold>
+  );
+}
+function SepProofFold({ el, update, plates }){
+  return (
+    <Fold id="ph-sep-proof" title="Proof" badge={el.proofPlate!=null && el.proofPlate>=0 ? 'plate '+(el.proofPlate+1) : null}>
+      <Chips options={[{v:-1,l:'The print'}].concat((plates||[]).map((k,i)=>({v:i,l:'Plate '+(i+1)+' · '+inkTitle(k)})))}
+        value={el.proofPlate!=null?el.proofPlate:-1} onChange={v=>update({ proofPlate: v<0?null:v })} />
+      <Chips label="Show as" options={[{v:false,l:'In its ink'},{v:true,l:'Greyscale'}]} value={!!el.proofGrey} onChange={v=>update({proofGrey:v})} />
+      <Hint tight>One plate at a time — the sheet a shop pulls to check a separation. Greyscale is the file you would hand them, one per drum.</Hint>
+    </Fold>
+  );
+}
+/* ============================================================
    TREATMENT STRIP — every press, live on YOUR photo.
    ============================================================
    Fourteen words in a row of chips ask you to already know what
@@ -778,6 +956,8 @@ function PhotoControls({ el, update, theme, accent, day }){
   const inkKey = dayInk ? dayInk.ink : (el.followAccent ? (accent||'pink') : (el.ink||'pink'));
   const DAY_NAME = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
   const pickTreat = v=>update(Object.assign({ treatment:v, look:null }, TREAT_PRESETS[v]||{}));
+  /* the job the press will run — plates, stock, physics — resolved like the engine does */
+  const sepR = t==='separation' ? sepResolved(el, inkKey, theme) : null;
   /* The press's own grade, in the under-layer's prop names — what the photo
      showing through is graded by while the two are joined. */
   const pressGrade = { underBright:el.brightness||0, underContrast:el.contrast!=null?el.contrast:1,
@@ -887,7 +1067,9 @@ function PhotoControls({ el, update, theme, accent, day }){
                 <div key={a} className={'rs-sw'+(el.ink===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink:a })} />
               ))}
             </div>}
-          {!el.followDay && <React.Fragment>
+          {/* Density is a tinting dial: the separation decides coverage itself, so
+              the slider would do nothing there and is not offered. */}
+          {!el.followDay && t!=='separation' && <React.Fragment>
             <Slider label="Ink density" val={el.inkDensity!=null?el.inkDensity:1} min={0.4} max={1} step={0.02} onChange={v=>update({inkDensity:v})} />
             <Hint tight>How much ink the plate lays down. Yellow and green blast at 100% on night stock — 70–85% prints them as an ochre and a bottle green; on day stock less ink is a paler tint.</Hint>
           </React.Fragment>}
@@ -957,6 +1139,7 @@ function PhotoControls({ el, update, theme, accent, day }){
             you go when none of them is quite it. The badge counts how many
             dials you've moved off the preset. */}
         {t!=='none' && <Fold id="ph-press" title={'Tune · '+pressLabel} dirty={pressDirty}>
+        {t==='separation' && <SepControls el={el} update={update} theme={theme} inkKey={inkKey} />}
         {t==='duotone' && <React.Fragment>
           <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
           <Slider label="Shadow tint" val={el.shadowTint} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
@@ -1194,6 +1377,11 @@ function PhotoControls({ el, update, theme, accent, day }){
           <Hint tight>Round and diamond tiles show the grout between them even at 0 — pick a mono grout for a stained-glass read.</Hint>
         </React.Fragment>}
         </Fold>}
+        {/* The press and the proof are folds of their own: the press is a dozen
+            dials that describe a machine, not a look, and the proof changes what
+            the canvas shows — neither belongs under Tune. */}
+        {t==='separation' && sepR && <SepPressFold el={el} update={update} plates={sepR.inks} />}
+        {t==='separation' && sepR && <SepProofFold el={el} update={update} plates={sepR.inks} />}
       </Fold>
 
       <Fold id="ph-adjust" title="Adjust & focus" dirty={adjustDirty}>
@@ -2429,7 +2617,7 @@ function App(){
   const activeLabel = AP_FMT[viewFormat].label;
   const docRef = React.useRef(doc); docRef.current = doc;
 
-  React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }, [doc]);
+  React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(stampEngine(doc))); }catch(e){} }, [doc]);
 
   /* ---- undo / redo ----
      Poster Studio never had this, which is a strange thing to say about a tool
@@ -2509,7 +2697,7 @@ function App(){
     if(!cloudUser || !window.RCloud) return;
     if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
     cloudPushRef.current = setTimeout(()=>{
-      try{ window.RCloud.putDoc('poster','working', docRef.current.title||'', docRef.current, Date.now()); }catch(e){}
+      try{ window.RCloud.putDoc('poster','working', docRef.current.title||'', stampEngine(docRef.current), Date.now()); }catch(e){}
     }, 2000);
     return ()=>{ if(cloudPushRef.current) clearTimeout(cloudPushRef.current); };
   }, [doc, cloudUser]);
@@ -3106,9 +3294,9 @@ function App(){
     }
     const existing = library.find(t=>t.name.toLowerCase()===name.toLowerCase());
     if(existing && !window.confirm('A template called “'+existing.name+'” already exists. Replace it?')) return;
-    const snap = JSON.parse(JSON.stringify({ elements:d.elements, overrides:d.overrides||{},
+    const snap = JSON.parse(JSON.stringify(stampEngine({ elements:d.elements, overrides:d.overrides||{},
       masterFormat:d.masterFormat, theme:d.theme, accent:d.accent, title:d.title||'',
-      eventRef:d.eventRef||null }));
+      eventRef:d.eventRef||null })));
     /* eventId claims the queue entry that spawned this poster — saving files the
        template under its day and takes the event off "In queue". Saving always
        lands the template in the active library (never straight into Archive). */

@@ -410,8 +410,54 @@ for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"])
   }
 }
 
+// ── 8 · The riso press (22.09.26): one core, canon palette, canon stocks ──
+// riso-press.js is the shared separation core (Poster + Print, and vendored
+// into the app). It carries literal copies of the accent palette and of the
+// stock table because a canvas cannot read tokens; both are guarded here.
+{
+  const rel = "public/studio-shared/riso-press.js";
+  const src = read(rel);
+  const stocks = JSON.parse(read("public/tokens/stocks.json"));
+  const parseObj = (name) => {
+    const m = src.match(new RegExp(`const ${name}\\s*=\\s*\\{([\\s\\S]*?)\\};`));
+    if (!m) { fail(`${rel}: ${name} table not found`); return null; }
+    const out = {};
+    for (const g of m[1].replace(/\/\/[^\n]*/g, "").matchAll(/(\w+)\s*:\s*['"](#[0-9a-fA-F]{6})['"]/g)) out[g[1]] = g[2].toLowerCase();
+    return out;
+  };
+  const pal = parseObj("PAL"), paper = parseObj("PAPER"), ink = parseObj("INK");
+  if (pal) {
+    for (const day of DAY_ORDER) {
+      const accent = accentOf(day), want = canon.days[day].hex.toLowerCase();
+      if (pal[accent] !== want) fail(`${rel}: PAL.${accent} is ${pal[accent]}, canon (${DAY_FULL[day]}) says ${want}`);
+    }
+    if (pal.ink !== "#0d0905" || pal.cream !== "#fffbf1") fail(`${rel}: PAL neutrals drifted (ink ${pal.ink}, cream ${pal.cream})`);
+  }
+  if (paper && ink) {
+    for (const [key, s] of Object.entries(stocks.stocks)) {
+      if (paper[key] !== s.hex.toLowerCase()) fail(`${rel}: PAPER.${key} is ${paper[key]}, tokens/stocks.json says ${s.hex}`);
+      if (ink[key] !== s.ink.toLowerCase()) fail(`${rel}: INK.${key} is ${ink[key]}, tokens/stocks.json says ${s.ink}`);
+    }
+    for (const key of Object.keys(paper)) if (!stocks.stocks[key]) fail(`${rel}: PAPER.${key} is not in tokens/stocks.json — add it there first`);
+    const order = (src.match(/const STOCKS\s*=\s*\[([^\]]*)\]/) || [])[1];
+    if (!order || order.replace(/['"\s]/g, "") !== stocks.order.join(","))
+      fail(`${rel}: STOCKS order differs from tokens/stocks.json`);
+    if (paper.white !== canon.print.stock.toLowerCase() || ink.white !== canon.print.ink.toLowerCase())
+      fail(`${rel}: the white stock must be canon.print (${canon.print.stock} / ${canon.print.ink})`);
+  }
+  // the partner map is canon too
+  const pm = src.match(/const PARTNER\s*=\s*\{([\s\S]*?)\};/);
+  if (!pm) fail(`${rel}: PARTNER map not found`);
+  else for (const [a, b] of Object.entries(canon.partners))
+    if (!new RegExp(`\\b${a}\\s*:\\s*['"]${b}['"]`).test(pm[1])) fail(`${rel}: PARTNER.${a} is not '${b}' (canon)`);
+  // and nobody may quietly fork the engine again
+  for (const stale of ["public/studio/riso-engine.js", "public/print/riso-engine.js"]) {
+    try { readFileSync(join(root, stale)); fail(`${stale} exists — the engine lives in public/studio-shared/ only`); } catch { /* good */ }
+  }
+}
+
 if (failures) {
   console.error(`\n${failures} drift(s) against public/tokens/day-colours.json`);
   process.exit(1);
 }
-console.log("day-colours: studios + site strings + type ladder match canon.");
+console.log("day-colours: studios + site strings + type ladder + riso press match canon.");

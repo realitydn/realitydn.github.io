@@ -15,7 +15,7 @@ const REPO = require('path').resolve(__dirname, '../..');
   const gap = job.gap != null ? job.gap : 18;
   const labelH = job.label === false ? 0 : 30;
 
-  const engine = fs.readFileSync(path.join(REPO, 'public/studio/riso-engine.js'), 'utf8');
+  const engine = fs.readFileSync(path.join(REPO, 'public/studio-shared/riso-press.js'), 'utf8') + ';' + fs.readFileSync(path.join(REPO, 'public/studio-shared/riso-engine.js'), 'utf8');
   const extras = (job.extras || []).map(p => fs.readFileSync(path.isAbsolute(p) ? p : (require('fs').existsSync(path.join(__dirname,p)) ? path.join(__dirname,p) : path.join(REPO,p)), 'utf8'));
 
   const photos = {};

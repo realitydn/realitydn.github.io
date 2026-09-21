@@ -73,9 +73,14 @@ const SHAPE_OPTS = (window.SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).
 const BLENDS = [{v:'normal',l:'None'},{v:'multiply',l:'Multiply'},{v:'screen',l:'Screen'},{v:'overlay',l:'Overlay'},{v:'darken',l:'Darken'},{v:'lighten',l:'Lighten'},{v:'hard-light',l:'Hard'}];
 const ORIENTS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}];
 const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image','pricelist','coupon','badge','seal','rule','arrow','contact','wordmark','footer','arctext','icon','punchgrid'];
-const IMG_TREATS = [{v:'none',l:'None'},{v:'duotone',l:'Duotone'},{v:'halftone',l:'Halftone'},{v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'spot',l:'Spot'},{v:'offregister',l:'Off-Reg'},{v:'overprint',l:'Overprint'}];
+const IMG_TREATS = [{v:'none',l:'None'},{v:'separation',l:'Press'},{v:'duotone',l:'Duotone'},{v:'halftone',l:'Halftone'},{v:'posterize',l:'Banded'},{v:'cutout',l:'Cutout'},{v:'spot',l:'Spot'},{v:'offregister',l:'Off-Reg'},{v:'overprint',l:'Overprint'}];
 const IMG_TREAT_PRESETS = {
   none:       { contrast:1.1,  brightness:0 },
+  /* the press — a real separation on the white sheet (Print's stock); null =
+     the engine decides (plates: accent + partner). See riso-press.js DEFAULTS. */
+  separation: { contrast:1.08, brightness:0, inks:null, stock:'white', opaque:null, invertSource:false, screen:'fm', sepShape:'chain',
+                pitch:9, grainPitch:0.5, levels:0, sepGCR:null, sepBoost:1.15, tac:null, gain:0.8, linear:true,
+                drift:0, skew:0, stretch:0, drumStreak:0, drumBand:0, starve:0, wet:0.25, pull:0, pressRun:true, proofPlate:null, proofGrey:false },
   duotone:    { contrast:1.18, balance:0.5,  shadowTint:0.18, invert:false },
   halftone:   { contrast:1.2,  dot:9, angle:15, shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
   posterize:  { contrast:1.25, bands:4 },
@@ -139,8 +144,84 @@ function AccentRow({ value, onChange, nullable, nullTitle }){
     {AP_ACC.map(a=>(<div key={a} className={'ps-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />))}
   </div>);
 }
+/* The separation press on a print piece — the same dials Poster Studio
+   exposes, cut to what a Print job needs. Print's stock is the white sheet by
+   default (the engine's `white`); every other stock is one click away for a
+   piece going on kraft or board. Physics and defaults: riso-press.js. */
+const STOCK_LABEL = { day:'Cream', white:'White', news:'Newsprint', straw:'Straw', kraft:'Kraft', salmon:'Salmon',
+                      grey:'Grey board', flint:'Flint', steel:'Steel', night:'Night' };
+const SEP_SCREENS = [{v:'grain',l:'Grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
+const PLATE_INKS = AP_ACC.concat(['ink','cream']);
+const inkTitle = a => a==='ink' ? 'Ink' : a==='cream' ? 'Cream' : a;
+function PressControls({ el, update, docAccent }){
+  const RP = window.RISO && window.RISO.press; if(!RP) return null;
+  const inkKey = el.followAccent!==false ? docAccent : (el.ink||'pink');
+  const stockKey = el.stock||'white';
+  const resolved = RP.resolveInks({ inks:el.inks, ink:inkKey, ink2:el.ink2, paper:'day' });
+  const custom = Array.isArray(el.inks) && el.inks.length>0;
+  const plates = custom ? el.inks : resolved;
+  const opaque = el.opaque!=null ? !!el.opaque : RP.isDark(RP.stockHex(stockKey));
+  const setPlate = (i,v)=>{ const arr=plates.slice(); arr[i]=v; update({ inks:arr }); };
+  const dropPlate = (i)=>{ const arr=plates.slice(); arr.splice(i,1); update({ inks:arr }); };
+  const screenKey = el.screen==='am' ? ((el.pitch||9)>=11 ? 's43' : (el.pitch||9)<=6.5 ? 's106' : 's71') : 'grain';
+  const pickScreen = v=>{ const s=RP.SCREENS[v]; update(v==='grain' ? { screen:'fm', levels:0 } : { screen:'am', pitch:s.pitch, levels:s.levels }); };
+  const warn = RP.NEVER_PAIR.filter(p=>plates.indexOf(p[0])>=0 && plates.indexOf(p[1])>=0);
+  const sw = (a)=> RP.PAL[a] || AP_PAL[a];
+  return (
+    <React.Fragment>
+      <div className="ps-sech">Plates</div>
+      <Chips options={[{v:false,l:'Auto'},{v:true,l:'Custom'}]} value={custom} onChange={v=>update({ inks: v ? resolved.slice() : null })} />
+      {custom
+        ? <React.Fragment>
+            {plates.map((k,i)=>(
+              <React.Fragment key={i}>
+                <div className="ps-lab">Plate {i+1}{i===0?' · first drum':''}<span className="val">{inkTitle(k)}</span></div>
+                <div className="ps-swatches">
+                  {PLATE_INKS.map(a=>(<div key={a} className={'ps-sw'+(k===a?' on':'')} title={inkTitle(a)} style={{ background:sw(a) }} onClick={()=>setPlate(i,a)} />))}
+                  {plates.length>1 && <div className="ps-sw" title="Remove this plate" style={{ border:'1.5px solid #cfc7b6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10 }} onClick={()=>dropPlate(i)}>✕</div>}
+                </div>
+              </React.Fragment>
+            ))}
+            {plates.length<5 && <button className="ps-addrow" onClick={()=>update({ inks: plates.concat([RP.PARTNER[plates[plates.length-1]]||'blue']) })}>+ Add a plate</button>}
+            {plates.length>3 && <Hint>Studios cap a job at 2–4 passes — every plate past the dual drum is another trip through the feed.</Hint>}
+          </React.Fragment>
+        : <Hint><b>{plates.map(inkTitle).join(' → ')}</b> — the accent and its partner, the classic two-colour riso.</Hint>}
+      {warn.length>0 && <Hint>⚠ <b>{warn.map(p=>inkTitle(p[0])+' + '+inkTitle(p[1])).join(', ')}</b> — near-tonal pairs the guidance advises against. Allowed; the overlap goes muddy.</Hint>}
+      <div className="ps-sech">Stock</div>
+      <div className="ps-swatches">
+        {RP.STOCKS.map(s=>(<div key={s} className={'ps-sw'+(stockKey===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s], border:'1.5px solid #cfc7b6' }} onClick={()=>update({ stock:s, opaque:null })} />))}
+      </div>
+      <Hint><b>{STOCK_LABEL[stockKey]||stockKey}.</b> {opaque ? 'Dark stock — opaque ink, a screenprint rather than a riso.' : 'Translucent ink: the sheet shows through every plate.'} White is the sheet these pieces are run on; the rest are for a piece going on a coloured stock.</Hint>
+      <div className="ps-sech">Screen</div>
+      <Chips options={SEP_SCREENS} value={screenKey} onChange={pickScreen} />
+      {el.screen==='am'
+        ? <React.Fragment>
+            <Chips label="Dot" options={[{v:'chain',l:'Chain'},{v:'line',l:'Line'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'}]} value={el.sepShape||'chain'} onChange={v=>update({sepShape:v})} />
+            <Slider label="Pitch" val={el.pitch!=null?el.pitch:9} min={3} max={24} step={0.5} onChange={v=>update({pitch:v})} suffix="px" />
+          </React.Fragment>
+        : <Slider label="Grain size" val={el.grainPitch!=null?el.grainPitch:0.5} min={0.25} max={3} step={0.05} onChange={v=>update({grainPitch:v})} suffix="px" />}
+      <div className="ps-sech">Separation</div>
+      <Slider label="GCR" val={el.sepGCR!=null?el.sepGCR:0.2} min={0} max={0.8} step={0.01} onChange={v=>update({sepGCR:v})} />
+      <Slider label="Chroma boost" val={el.sepBoost!=null?el.sepBoost:1.15} min={0.8} max={2} step={0.01} onChange={v=>update({sepBoost:v})} suffix="×" />
+      <Slider label="Ink limit" val={el.tac!=null?el.tac:2.2} min={1} max={4} step={0.05} onChange={v=>update({tac:v})} />
+      <Chips label="Source" options={[{v:false,l:'Positive'},{v:true,l:'Negative'}]} value={!!el.invertSource} onChange={v=>update({invertSource:v})} />
+      <div className="ps-sech">The press</div>
+      <Slider label="Drift" val={el.drift||0} min={0} max={24} step={0.5} onChange={v=>update({drift:v})} suffix="px" />
+      <Slider label="Feed skew" val={el.skew||0} min={0} max={24} step={0.5} onChange={v=>update({skew:v})} suffix="px" />
+      <Slider label="Stretch" val={el.stretch||0} min={0} max={30} step={0.5} onChange={v=>update({stretch:v})} suffix="px" />
+      <Slider label="Streaks" val={el.drumStreak||0} min={0} max={1} step={0.02} onChange={v=>update({drumStreak:v})} />
+      <Slider label="Starvation" val={el.starve||0} min={0} max={1} step={0.02} onChange={v=>update({starve:v})} />
+      <Slider label="Pull" val={el.pull||0} min={0} max={400} step={1} onChange={v=>update({pull:v})} />
+      <Hint>A riso misses register because the paper moves; each plate gets its own miss. Pull is which sheet off the run this is — 0 is the idealised print, the miss opens and the master wears as the run goes.</Hint>
+      <div className="ps-sech">Proof</div>
+      <Chips options={[{v:-1,l:'The print'}].concat(plates.map((k,i)=>({v:i,l:'Plate '+(i+1)+' · '+inkTitle(k)})))}
+        value={el.proofPlate!=null?el.proofPlate:-1} onChange={v=>update({ proofPlate: v<0?null:v })} />
+      <Chips label="Show as" options={[{v:false,l:'In its ink'},{v:true,l:'Greyscale'}]} value={!!el.proofGrey} onChange={v=>update({proofGrey:v})} />
+    </React.Fragment>
+  );
+}
 /* the full riso treatment panel, in Folds (ported from Poster Studio) */
-function ImageControls({ el, update, onFile }){
+function ImageControls({ el, update, onFile, docAccent }){
   const t = el.treatment||'none';
   return (
     <React.Fragment>
@@ -169,6 +250,7 @@ function ImageControls({ el, update, onFile }){
         <Slider label="Brightness" val={el.brightness!=null?el.brightness:0} min={-0.5} max={0.5} step={0.02} onChange={v=>update({brightness:v})} />
         <Slider label="Contrast" val={el.contrast!=null?el.contrast:1.1} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
         <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
+        {t==='separation' && <PressControls el={el} update={update} docAccent={docAccent} />}
         {t==='duotone' && <React.Fragment>
           <Slider label="Tone balance" val={el.balance!=null?el.balance:0.5} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
           <Slider label="Shadow tint" val={el.shadowTint!=null?el.shadowTint:0.18} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
@@ -432,7 +514,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
   /* ---- bespoke content per type ---- */
   let content = null;
   if(isText) content = <Field label="Text" value={el.text} onChange={v=>update({text:v})} area />;
-  else if(el.type==='image') content = <ImageControls el={el} update={update} onFile={onPickImage} />;
+  else if(el.type==='image') content = <ImageControls el={el} update={update} onFile={onPickImage} docAccent={doc.accent} />;
   else if(el.type==='icon') content = <IconPicker el={el} update={update} />;
   else if(el.type==='punchgrid') content = (
     <React.Fragment>

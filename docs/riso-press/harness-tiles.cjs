@@ -8,7 +8,7 @@ const REPO = require('path').resolve(__dirname, '../..');
 (async () => {
   const job = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
   const W = job.w || 700, H = job.h || 900;
-  const engine = fs.readFileSync(path.join(REPO, 'public/studio/riso-engine.js'), 'utf8');
+  const engine = fs.readFileSync(path.join(REPO, 'public/studio-shared/riso-press.js'), 'utf8') + ';' + fs.readFileSync(path.join(REPO, 'public/studio-shared/riso-engine.js'), 'utf8');
   const extras = (job.extras || []).map(p => fs.readFileSync(path.isAbsolute(p) ? p : (fs.existsSync(path.join(__dirname,p)) ? path.join(__dirname,p) : path.join(REPO,p)), 'utf8'));
   const photos = {};
   for (const p of new Set([job.photo, ...job.shots.map(s => s.photo)].filter(Boolean))) {

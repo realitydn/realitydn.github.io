@@ -26,7 +26,11 @@
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
 
-<script src="riso-engine.js"></script>
+<!-- The riso press — ONE copy for Poster Studio, Print Studio and (vendored)
+     the app. riso-press.js is the pure separation/press core (window.RisoPress);
+     riso-engine.js is the canvas engine over it (window.RISO). Order matters. -->
+<script src="../studio-shared/riso-press.js"></script>
+<script src="../studio-shared/riso-engine.js"></script>
 <!-- Year 2 glyph set (window.ICON_GLYPHS / ICON_CATEGORIES). Generated from
      design-system-year2/…/icons/icons.jsx and shared verbatim with Print
      Studio — loaded from there on purpose so the two studios can never drift

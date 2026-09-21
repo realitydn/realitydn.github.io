@@ -832,8 +832,14 @@ const DEFAULTS = {
              amp:10, gap:null, cap:'round', tickLen:10, tickDir:'both', term:'none', termAt:'end',
              termScale:1, dotSize:null, opacity:1, color:'fg' } },
   burst:   { w:450, h:450, props:{ fill:'fg', rays:16, hub:0, hubFill:'paper', spin:0, opacity:1, color:'fg' } },
-  photo:   { w:765, h:900, props:{ treatment:'duotone', sample:'spotlight', src:null,
-             followAccent:true, ink:'pink', ink2:null, contrast:1.18, brightness:0, dot:9, bands:4, threshold:0.52,
+  photo:   { w:765, h:900, props:{ treatment:'separation', sample:'spotlight', src:null,
+             /* the press (riso-press.js) — null = the paper decides; see
+                the engine's RENDER_DEFAULTS for what each one means */
+             inks:null, stock:null, opaque:null, invertSource:false, screen:'fm', sepShape:'chain', pitch:9, grainPitch:0.5, levels:0,
+             sepGCR:null, sepBoost:1.15, tac:null, gain:0.8, linear:true, solidity:0.97, ceiling:0.98, floor:0.10, floodCap:0,
+             drift:0, driftSeed:7, skew:0, stretch:0, duo:true, drumBand:0, bandPeriod:90, drumStreak:0, starve:0, wet:0.25,
+             pull:0, pressRun:true, fountainTo:null, fountainPlate:1, fountainAngle:0, fountainSoft:1, proofPlate:null, proofGrey:false,
+             followAccent:true, ink:'pink', ink2:null, contrast:1.08, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
              inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30,
@@ -869,6 +875,10 @@ const DEFAULTS = {
      transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark
      shows. Treatments still available if you want to riso a logo. */
   logo:    { w:315, h:180, props:{ treatment:'none', transparent:true, paperFill:'fg', sample:null, src:null,
+             inks:null, stock:null, opaque:null, invertSource:false, screen:'fm', sepShape:'chain', pitch:9, grainPitch:0.5, levels:0,
+             sepGCR:null, sepBoost:1.15, tac:null, gain:0.8, linear:true, solidity:0.97, ceiling:0.98, floor:0.10, floodCap:0,
+             drift:0, driftSeed:7, skew:0, stretch:0, duo:true, drumBand:0, bandPeriod:90, drumStreak:0, starve:0, wet:0.25,
+             pull:0, pressRun:true, fountainTo:null, fountainPlate:1, fountainAngle:0, fountainSoft:1, proofPlate:null, proofGrey:false,
              followAccent:true, ink:'pink', ink2:null, contrast:1.1, brightness:0, dot:9, bands:4, threshold:0.52,
              softness:0.12, angle:47, balance:0.5, shadowTint:0.18, invert:false, spread:1.25,
              shape:'circle', split:0.16, offset:13, frame:false, surface:'none', color:'fg',
@@ -1002,7 +1012,7 @@ const TEMPLATE_GROUPS = ['Weekly', 'Sports', 'Talk', 'Series', 'Nightlife', 'Ink
    per-format resizing — reserve leaves a bottom band (the banner) untouched.
    Duotone in the poster accent, slightly darkened, keeps cream text readable. */
 const BLEED  = (reserve, extra) => { const r = reserve==null?270:reserve; return ({ type:'photo', x:0, y:0, w:1080, h:1350-r,
-  p:Object.assign({ bleed:true, bleedBottom:r, treatment:'duotone', followAccent:true, contrast:1.22, brightness:-0.06, frame:false }, extra||{}) }); };
+  p:Object.assign({ bleed:true, bleedBottom:r, treatment:'separation', followAccent:true, contrast:1.12, brightness:-0.04, frame:false }, extra||{}) }); };
 /* The two closing bands, authored once so every template that ends in one is
    identical. BANNER matches TICKET_FORMATS.banner exactly (QR on, canon
    square in full ink, column right) — the two must agree, or picking "Banner"

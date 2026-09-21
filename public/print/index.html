@@ -29,10 +29,13 @@
 <script src="vendor/fontkit.umd.min.js"></script>
 <script src="vendor/qrcode.js"></script>
 
-<!-- Plain JS (no JSX): the riso photo engine, the IndexedDB image store and
-     the Year 2 icon glyph data. Loaded before the app modules so
+<!-- Plain JS (no JSX): the riso photo engine (the SAME two files Poster Studio
+     loads — one press, no Print-side fork; Print's true-white stock is the
+     engine's `white` stock, set in print-data's risoOpts), the IndexedDB image
+     store and the Year 2 icon glyph data. Loaded before the app modules so
      window.RISO / window.PrintImg / window.ICON_GLYPHS exist. -->
-<script src="riso-engine.js"></script>
+<script src="../studio-shared/riso-press.js"></script>
+<script src="../studio-shared/riso-engine.js"></script>
 <script src="print-store.js"></script>
 <script src="print-icons.js"></script>
 

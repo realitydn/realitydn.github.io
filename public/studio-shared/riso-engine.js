@@ -1,23 +1,30 @@
 /* ============================================================
    REALITY — RISO PHOTO ENGINE
    Pixel-level riso treatments rendered to <canvas>.
-   No deps. Exposes window.RISO.
+   Exposes window.RISO. ONE copy, at public/studio-shared/, loaded
+   by Poster Studio and Print Studio alike (Print's true-white
+   paper is the press's `white` stock, not a fork of this file).
+
+   Depends on riso-press.js (window.RisoPress) loaded first: the
+   pure separation / screening / press core that this engine and
+   the app's Darkroom both build on. Everything that is physics
+   lives there; everything that is a canvas lives here.
    ============================================================ */
 (function(){
   "use strict";
 
-  /* ---- locked palette (mirror of the system tokens) ---- */
-  const PAL = {
-    blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
-    amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224',
-    /* the two neutrals — pickable anywhere an ink key is stored */
-    ink:'#0d0905', cream:'#fffbf1'
-  };
-  const PAPER = { day:'#fffbf1', night:'#0a0703' };
-  const INK   = { day:'#0d0905', night:'#fffbf1' };
+  const RP = window.RisoPress;
+  if(!RP) throw new Error('riso-engine.js: riso-press.js must be loaded first');
+
+  /* ---- locked palette — the press's tables, one source ----
+     PAL: seven accents + the two neutrals (pickable anywhere an ink key is
+     stored). PAPER: the stocks, `day`/`night` being the keys the themes map
+     to. INK: what the mono drum prints on each stock. */
+  const PAL = RP.PAL;
+  const PAPER = RP.PAPER;
+  const INK   = RP.INK;
   /* warm/cool partner for misregister + overprint passes */
-  const PARTNER = { pink:'blue', red:'blue', amber:'purple', yellow:'pink',
-                    blue:'pink', green:'purple', purple:'amber' };
+  const PARTNER = RP.PARTNER;
 
   /* ---- color helpers ---- */
   function hex2rgb(h){ h=h.replace('#',''); if(h.length===3) h=h.split('').map(c=>c+c).join('');
@@ -126,8 +133,8 @@
      TREATMENTS — each fills `cv` given opts
      opts: { ink, paper('day'|'night'), contrast, dot, bands, threshold }
      ============================================================ */
-  function paperRGB(o){ return hex2rgb(PAPER[o.paper]); }
-  function inkBaseRGB(o){ return hex2rgb(INK[o.paper]); }
+  function paperRGB(o){ return hex2rgb(o._stock||PAPER[o.paper]); }
+  function inkBaseRGB(o){ return hex2rgb(o._ink||INK[o.paper]); }
   /* ink density — how much ink the plate lays down, 0.4..1. A drum has one
      colour; how DARK it prints is coverage, and yellow is run under-density on
      every real press: at 100% over black it is nearly white in luminance and
@@ -150,15 +157,15 @@
   function duotone(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=lumBuffer(w,h,o.contrast*1.05);
     const k=Math.pow(4,(o.balance-0.5)*2);             // gamma pivot from tone balance
-    const lo = o.paper==='day'? inkBaseRGB(o) : paperRGB(o);
-    let hi = o.paper==='day'? paperRGB(o)   : accentRGB(o);
-    const loTint = lerp(lo, accentRGB(o), (o.paper==='day'?o.shadowTint:o.shadowTint*0.6));
+    const lo = !o._dark? inkBaseRGB(o) : paperRGB(o);
+    let hi = !o._dark? paperRGB(o)   : accentRGB(o);
+    const loTint = lerp(lo, accentRGB(o), (!o._dark?o.shadowTint:o.shadowTint*0.6));
     if(o.hiTint>0) hi = lerp(hi, hex2rgb(PAL[o.hiInk]||PAL[PARTNER[o.ink]||'blue']), Math.min(1,o.hiTint));
     /* split tone (the app's two-drum ramp): night runs paper → second ink →
        ink; day runs second ink → ink → paper with NO black plate at all. Wins
        over the older mid-ink tritone when both are set. */
     const stops = o.splitTone
-      ? (o.paper==='day'
+      ? (!o._dark
           ? [ partnerRGB(o), accentRGB(o), paperRGB(o) ]
           : [ lerp(paperRGB(o), partnerRGB(o), o.shadowTint*0.6), partnerRGB(o), accentRGB(o) ])
       : (o.midInk ? [loTint, inkRGB(o.midInk), hi] : null);   // tritone ramp
@@ -176,7 +183,7 @@
   function offRegister(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const L=lumBuffer(w,h,o.contrast*1.1);
-    const night=o.paper==='night';
+    const night=o._dark;
     const cov = p => night? L[p] : 1-L[p];          // where ink lands
     const A=accentRGB(o), B=partnerRGB(o);
     const mag=(o.offset!=null?o.offset:13) * (w/520);
@@ -192,7 +199,7 @@
       lx.putImageData(id,0,0);
       cx.drawImage(lc,ox,oy);
     }
-    cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h);
+    cx.fillStyle=o._stock; cx.fillRect(0,0,w,h);
     cx.globalCompositeOperation = night? 'screen':'multiply';
     if(o.ink3) pass(inkRGB(o.ink3), Math.round(Math.cos(a+2.1)*mag*0.8), Math.round(Math.sin(a+2.1)*mag*0.8), 1);
     pass(B, dx, dy);
@@ -241,7 +248,7 @@
     const step=Math.max(4, o.dot|0)*(w/520);
     GLYPH = (o.glyphChar && String(o.glyphChar).trim()) ? String(o.glyphChar).trim().slice(0,2) : 'R';
     const L=lumBuffer(w,h,o.contrast);
-    const night=o.paper==='night';
+    const night=o._dark;
     const shape=o.shape||'circle';
     const mode=o.inkMode||'single';
     const gain=o.dotGain!=null?o.dotGain:1;
@@ -256,14 +263,14 @@
     if(o.field==='ink'){ cx.fillStyle=rgbCss(fieldInk); }
     else if(o.field==='tint'){ const s=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12));
       cx.fillStyle=rgbCss(lerp(paper,fieldInk,s)); }
-    else { cx.fillStyle=PAPER[o.paper]; }
+    else { cx.fillStyle=o._stock; }
     cx.fillRect(0,0,w,h);
 
     /* draw one rotated screen; `color` is a CSS string (constant) or fn(l,sx,sy) */
     function screen(angleDeg,color,seed){
       const ang=angleDeg*Math.PI/180, cos=Math.cos(ang), sin=Math.sin(ang);
       const diag=Math.ceil(Math.hypot(w,h));
-      const rj=mulberry32(seed||0x9E3779B1);
+      const rj=mulberry32((seed||0x9E3779B1)+(o.pull|0)*7919);
       const fn= typeof color==='function'? color : null;
       if(!fn) cx.fillStyle=color;
       cx.save(); cx.translate(w/2,h/2); cx.rotate(ang); cx.translate(-w/2,-h/2);
@@ -300,7 +307,7 @@
       } else { fn=(l)=>rgbCss(lerp(A,B,l)); }                              // by tone: shadow→A, light→B
       screen(baseAngle,fn,0x3a3a3a);
     } else if(mode==='black'){
-      screen(baseAngle, INK[o.paper], 0x4b4b4b);                          // mono — paper's own ink
+      screen(baseAngle, o._ink, 0x4b4b4b);                          // mono — paper's own ink
     } else {
       screen(baseAngle, rgbCss(accent), 0x5c5c5c);                        // single accent ink (default)
     }
@@ -316,15 +323,15 @@
     /* split: the second drum takes the band the paper-tint held — night's second
        step, day's first — so a three-colour banded print is three plates */
     const stops = o.splitTone
-      ? (o.paper==='day'
+      ? (!o._dark
           ? [ partnerRGB(o), accentRGB(o), lerp(accentRGB(o),paperRGB(o),0.55), paperRGB(o) ]
           : [ paperRGB(o), partnerRGB(o), accentRGB(o), lerp(accentRGB(o),[255,251,241],0.6) ])
-      : o.paper==='day'
+      : !o._dark
       ? [ inkBaseRGB(o), accentRGB(o), lerp(accentRGB(o),paperRGB(o),0.55), paperRGB(o) ]
       : [ paperRGB(o), lerp(paperRGB(o),accentRGB(o),0.5), accentRGB(o), lerp(accentRGB(o),[255,251,241],0.6) ];
     const cols=[]; for(let b=0;b<n;b++){ const key=o.bandInks&&o.bandInks[b];
       cols.push((key&&PAL[key])? inkRGB(key) : rampSample(stops, n===1?0:b/(n-1))); }
-    const jit=o.bandJitter||0, nz= jit>0? valueNoise(w,h,Math.max(6,16*(w/520)),0xBADD) : null;
+    const jit=o.bandJitter||0, nz= jit>0? valueNoise(w,h,Math.max(6,16*(w/520)),0xBADD+(o.pull|0)*17) : null;
     const out=cx.createImageData(w,h),d=out.data;
     for(let p=0,i=0;p<L.length;p++,i+=4){
       let l=L[p];
@@ -343,7 +350,7 @@
   function cutout(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.25,(o.toneSmooth||0)));
     const field=accentRGB(o);
-    const ink = o.paper==='day'? hex2rgb('#0d0905') : hex2rgb('#fffbf1');
+    const ink = inkBaseRGB(o);
     const thr=o.threshold!=null?o.threshold:0.52, soft=Math.max(0.005,o.softness!=null?o.softness:0.12);
     const eW=o.cutEdge||0;
     const eInk = eW>0 ? inkRGB(o.cutEdgeInk||PARTNER[o.ink]||'blue') : null;
@@ -372,14 +379,14 @@
        fieldTexture — seeded blotch noise thins the ink coverage (roller texture) */
   function overprint(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d'),L=stretch(lumBuffer(w,h,o.contrast*1.15,(o.toneSmooth||0)));
-    const night=o.paper==='night';
+    const night=o._dark;
     const A=accentRGB(o), B=partnerRGB(o);
     const mag=(o.offset!=null?o.offset:8)*(w/520);
     const a=(o.angle!=null?o.angle:45)*Math.PI/180;
     const dx=Math.round(Math.cos(a)*mag), dy=Math.round(Math.sin(a)*mag);
     const split=o.split!=null?o.split:0.16;
     const t1=0.5+split, t2=0.5-split;             // two flat thresholds → solid fields
-    const tex=o.fieldTexture||0, nz= tex>0? valueNoise(w,h,Math.max(4,7*(w/520)),0x0F1E1D) : null;
+    const tex=o.fieldTexture||0, nz= tex>0? valueNoise(w,h,Math.max(4,7*(w/520)),0x0F1E1D+(o.pull|0)*29) : null;
     function field(color,thr,ox,oy){
       const lc=document.createElement('canvas'); lc.width=w; lc.height=h;
       const lx=lc.getContext('2d'),id=lx.createImageData(w,h),dd=id.data;
@@ -391,7 +398,7 @@
       }
       lx.putImageData(id,0,0); cx.drawImage(lc,ox,oy);
     }
-    cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h);
+    cx.fillStyle=o._stock; cx.fillRect(0,0,w,h);
     cx.globalCompositeOperation = night? 'screen':'multiply';
     if(o.ink3) field(inkRGB(o.ink3), 0.5, -dy, dx);
     field(B, t2, dx, dy);
@@ -404,7 +411,7 @@
        Honours the in-frame pan / zoom / rotate like every other treatment. */
   function untreated(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
-    if(!o.transparent){ cx.fillStyle=o.paperFill||PAPER[o.paper]; cx.fillRect(0,0,w,h); }   // logos keep their alpha; paperFill tints the card
+    if(!o.transparent){ cx.fillStyle=o.paperFill||o._stock; cx.fillRect(0,0,w,h); }   // logos keep their alpha; paperFill tints the card
     const canFilter = typeof cx.filter==='string';
     if(canFilter){ const b=1+(o.brightness||0), k=o.contrast||1;
       const sat=o.saturation!=null?o.saturation:1, hue=o.hue||0;
@@ -432,7 +439,7 @@
   function spot(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const L=lumBuffer(w,h,o.contrast,(o.toneSmooth||0));
-    const night=o.paper==='night';
+    const night=o._dark;
     const accent=accentRGB(o);
     const lo=o.spotLo!=null?o.spotLo:0.35, hi=o.spotHi!=null?o.spotHi:0.65;
     const soft=Math.max(0.002,o.spotSoft!=null?o.spotSoft:0.08);
@@ -442,7 +449,7 @@
     if(base==='image' || hueMode){                         // sample the raw photo
       const c=document.createElement('canvas'); c.width=w; c.height=h;
       const ix=c.getContext('2d',{willReadFrequently:true});
-      ix.fillStyle=PAPER[o.paper]; ix.fillRect(0,0,w,h); drawCover(ix,w,h);
+      ix.fillStyle=o._stock; ix.fillRect(0,0,w,h); drawCover(ix,w,h);
       applyBlur(c, PREBLUR);
       img=ix.getImageData(0,0,w,h).data;
     }
@@ -496,7 +503,7 @@
     const cell=Math.max(1,(o.ditherScale||3)*(w/520));
     const rw=Math.max(2,Math.round(w/cell)), rh=Math.max(2,Math.round(h/cell));
     const L=stretch(lumBuffer(rw,rh,o.contrast));
-    const night=o.paper==='night';
+    const night=o._dark;
     const inkC=(o.inkMode==='black')? inkBaseRGB(o) : accentRGB(o);
     /* the ground the screen prints over — paper, an ink tint, or solid ink */
     const fieldInkC = o.fieldInk? inkRGB(o.fieldInk) : accentRGB(o);
@@ -524,7 +531,7 @@
         }
       }
     } else {
-      const rnd=mulberry32(0xD17E4);
+      const rnd=mulberry32(0xD17E4+(o.pull|0)*131);
       const ang=(o.ditherAngle||0)*Math.PI/180, ca=Math.cos(ang), sa=Math.sin(ang);
       for(let y=0;y<rh;y++) for(let x=0;x<rw;x++){
         const p=y*rw+x;
@@ -581,7 +588,7 @@
   function hatch(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const L=lumBuffer(w,h,o.contrast,(o.toneSmooth||0));
-    const night=o.paper==='night';
+    const night=o._dark;
     const step=Math.max(3,(o.hatchSpacing||9))*(w/520);
     const wgt=o.hatchWeight!=null?o.hatchWeight:1;
     const wob=(o.hatchWobble||0)*step*0.45;
@@ -589,7 +596,7 @@
     const fieldInkC = o.fieldInk? inkRGB(o.fieldInk) : accentRGB(o);
     if(o.field==='ink'){ cx.fillStyle=rgbCss(fieldInkC); }
     else if(o.field==='tint'){ const fs=Math.max(0,Math.min(1,o.fieldStrength!=null?o.fieldStrength:0.12)); cx.fillStyle=rgbCss(lerp(paperRGB(o),fieldInkC,fs)); }
-    else { cx.fillStyle=PAPER[o.paper]; }
+    else { cx.fillStyle=o._stock; }
     cx.fillRect(0,0,w,h);
     /* gradient inking — stroke colour ramps A→B by tone or across the frame */
     const grad = o.inkMode==='gradient';
@@ -599,7 +606,7 @@
       gFrame=(o.gradMode||'tone')==='frame';
       if(gFrame){ const ga=(o.gradAngle!=null?o.gradAngle:90)*Math.PI/180; gc=Math.cos(ga); gsn=Math.sin(ga); gD=(w*Math.abs(gc)+h*Math.abs(gsn))||1; }
     }
-    cx.fillStyle=(o.inkMode==='black')? INK[o.paper] : rgbCss(accentRGB(o));
+    cx.fillStyle=(o.inkMode==='black')? o._ink : rgbCss(accentRGB(o));
     const sub=Math.max(1.2, step*0.22);
     const baseAng=o.angle!=null?o.angle:-22;
     function pass(angleDeg, shadowOnly, phase){
@@ -642,7 +649,7 @@
   function photocopy(cv,o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const L=stretch(lumBuffer(w,h,o.contrast));
-    const night=o.paper==='night';
+    const night=o._dark;
     const inkC=(o.inkMode==='single')? accentRGB(o) : inkBaseRGB(o);
     /* tinted copy stock — the page the toner crushes onto */
     let papC=paperRGB(o);
@@ -656,12 +663,12 @@
        cells) — a bare per-device-pixel rnd() would render finer on the 2×
        export than in the 900px preview, breaking WYSIWYG */
     const gw=520, gh=Math.max(2,Math.round(520*h/w)), nb=new Float32Array(gw*gh);
-    { const rn=mulberry32(0xC0B1E5); for(let q=0;q<nb.length;q++) nb[q]=rn()*2-1; }
+    { const rn=mulberry32(0xC0B1E5+(o.pull|0)*331); for(let q=0;q<nb.length;q++) nb[q]=rn()*2-1; }
     const gens=Math.max(1,Math.min(5,(o.generations|0)||2));
     const toner=o.toner!=null?o.toner:0.55;
     const streaks=o.streaks||0;
     let sk=null;                                    // 1-D streak profile across x
-    if(streaks>0){ const nz=valueNoise(w,2,Math.max(8,26*(w/520)),0x57EA);
+    if(streaks>0){ const nz=valueNoise(w,2,Math.max(8,26*(w/520)),0x57EA+(o.pull|0)*61);
       sk=new Float32Array(w); for(let x=0;x<w;x++){ const v=nz(x,0); sk[x]=v*v*streaks*0.5; } }
     const cw=0.5-toner*0.22, bias=(toner-0.5)*0.24;  // harder + darker with more toner
     const out=cx.createImageData(w,h),d=out.data;
@@ -718,7 +725,7 @@
     const w=cv.width,h=cv.height,cx=cv.getContext('2d');
     const n=Math.max(2,o.bands|0);
     const accent=accentRGB(o), papC=paperRGB(o);
-    const stops = o.paper==='day'
+    const stops = !o._dark
       ? [ inkBaseRGB(o), accent, lerp(accent,papC,0.55), papC ]
       : [ papC, lerp(papC,accent,0.5), accent, lerp(accent,[255,251,241],0.6) ];
     const smoothPx = o.contourSmooth!=null ? o.contourSmooth : 2.2;
@@ -733,7 +740,7 @@
     for(let p=0,i=0;p<Lf.length;p++,i+=4){
       let c;
       if(fill==='bands') c=cols[Math.min(n-1,(Lf[p]*n)|0)];
-      else if(fill==='tint') c=lerp(papC, accent, tintLo+(tintHi-tintLo)*(o.paper==='night'? Lf[p] : 1-Lf[p]));
+      else if(fill==='tint') c=lerp(papC, accent, tintLo+(tintHi-tintLo)*(o._dark? Lf[p] : 1-Lf[p]));
       else c=papC;
       d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255;
     }
@@ -810,9 +817,9 @@
     if(backdrop==='image'){ untreated(cv, Object.assign({},o,{transparent:false})); }
     else if(backdrop==='duotone'){ duotone(cv,o); }
     else if(backdrop==='ink'){ cx.fillStyle=rgbCss(inkRGB(o.fieldInk||o.ink)); cx.fillRect(0,0,w,h); }
-    else { cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); }
+    else { cx.fillStyle=o._stock; cx.fillRect(0,0,w,h); }
     if(wash>0 && (backdrop==='duotone'||backdrop==='image')){
-      cx.save(); cx.globalAlpha=wash; cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); cx.restore();   // washed pale so the line does the talking
+      cx.save(); cx.globalAlpha=wash; cx.fillStyle=o._stock; cx.fillRect(0,0,w,h); cx.restore();   // washed pale so the line does the talking
     }
     /* Sobel detection on the fixed grid, scaled to the frame — so preview and
        every export width trace the SAME lines (a per-pixel Sobel on the wider
@@ -858,20 +865,20 @@
     const L=stretch(lumBuffer(rw,rh,o.contrast));
     const n=Math.max(2,Math.min(6,(o.mosaicDepth|0)||4));
     const accent=accentRGB(o), papC=paperRGB(o);
-    const stops = o.paper==='day'
+    const stops = !o._dark
       ? [ inkBaseRGB(o), accent, lerp(accent,papC,0.55), papC ]
       : [ papC, lerp(papC,accent,0.5), accent, lerp(accent,[255,251,241],0.6) ];
     const cols=[]; for(let b=0;b<n;b++){ const key=o.bandInks&&o.bandInks[b];
       cols.push((key&&PAL[key])? inkRGB(key) : rampSample(stops, n===1?0:b/(n-1))); }
     const grout=o.mosaicGrout||'paper';
-    cx.fillStyle = grout==='black'? rgbCss(inkBaseRGB(o)) : grout==='accent'? rgbCss(accent) : PAPER[o.paper];
+    cx.fillStyle = grout==='black'? rgbCss(inkBaseRGB(o)) : grout==='accent'? rgbCss(accent) : o._stock;
     cx.fillRect(0,0,w,h);
     const gap=Math.min(0.45,o.mosaicGap||0)*Math.min(w/rw,h/rh);
     const cw2=w/rw, ch2=h/rh;
     const shape=o.mosaicShape||'square';
     const brick=o.mosaicBond==='brick';
     const jit=Math.max(0,Math.min(1,o.mosaicJitter||0));
-    const rj=mulberry32(0x7E55E);
+    const rj=mulberry32(0x7E55E+(o.pull|0)*977);
     for(let y=0;y<rh;y++){
       const off= (brick && (y&1))? 0.5 : 0;               // brick rows shift half a tile
       for(let x=(off? -1:0);x<rw;x++){
@@ -888,7 +895,73 @@
     }
   }
 
-  const TREATMENTS = { duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
+  /* 15 · SEPARATION — the press itself. A colour photograph becomes N
+        greyscale plates (one per drum), each screened at its own angle and
+        printed in its own translucent ink, in its own pass, with its own
+        registration error. The default for photos; the fourteen above are
+        the specific moves you reach for on purpose. All of the physics is in
+        riso-press.js — this function only photographs the source and hands
+        the pixels over.
+        params (engine names → core names where they differ):
+          inks (ordered plate list; null = accent + partner, night adds the
+          black plate first) · stock (null = cream, option D) · opaque
+          screen (fm|am) · sepShape→shape · pitch · grainPitch · levels
+          sepGCR · sepBoost · tac · gain · linear · solidity · ceiling ·
+          floor · floodCap · drift · skew · stretch · duo · drumBand→band ·
+          drumStreak→streak · starve · wet · pull · pressRun→run · pressOff
+          fountainTo/fountainPlate/fountainAngle/fountainSoft → fountain[]
+          proofPlate→only · proofGrey→plateGrey · invertSource */
+  function sepOpts(o){
+    const c = {
+      inks: (Array.isArray(o.inks) && o.inks.length) ? o.inks : null,
+      ink:o.ink, ink2:o.ink2, paper:o.paper, stock:o.stock||null, opaque:o.opaque,
+      sepGCR:o.sepGCR, sepBoost:o.sepBoost, tac:o.tac,
+      contrast:o.contrast, brightness:o.brightness, saturation:o.saturation, invertSource:!!o.invertSource,
+      screen:o.screen, shape:o.sepShape, pitch:o.pitch, grainPitch:o.grainPitch, levels:o.levels,
+      gain:o.gain, linear:o.linear, solidity:o.solidity, ceiling:o.ceiling, floor:o.floor, floodCap:o.floodCap,
+      drift:o.drift, driftSeed:o.driftSeed, skew:o.skew, stretch:o.stretch, duo:o.duo,
+      band:o.drumBand, bandPeriod:o.bandPeriod, streak:o.drumStreak, starve:o.starve, wet:o.wet,
+      pull:o.pull, run:o.pressRun, pressOff:!!o.pressOff,
+      only: o.proofPlate!=null && o.proofPlate>=0 ? o.proofPlate : null, plateGrey:!!o.proofGrey,
+      screens:o.screens, pitches:o.pitches, designW:520
+    };
+    /* the inspector offers one split fountain — a second ink loaded on one
+       drum — which is the case a shop actually runs */
+    if(o.fountainTo){ const f=[]; f[Math.max(0,o.fountainPlate|0)] = { to:o.fountainTo, angle:o.fountainAngle||0, soft:o.fountainSoft!=null?o.fountainSoft:1 }; c.fountain=f; }
+    /* undefined dials must not shadow the core's defaults */
+    for(const k in c) if(c[k]===undefined) delete c[k];
+    return c;
+  }
+  /* what the press photographs, as RGBA over the stock: the framed source +
+     the second exposure + the soft focus, exactly what lumBuffer reads but in
+     colour. Transparent pixels (logos) stay transparent — the core treats them
+     as paper and the alpha is restored after the press. */
+  function rgbBuffer(w,h){
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const cx=c.getContext('2d',{willReadFrequently:true}); drawCover(cx,w,h);
+    applyBlur(c, PREBLUR);
+    return cx.getImageData(0,0,w,h);
+  }
+  function separation(cv,o){
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    const src=rgbBuffer(w,h);
+    const sep=RP.separate(src.data, w, h, sepOpts(o));
+    const out=cx.createImageData(w,h);
+    RP.pressPlates(sep, w, h, out.data);
+    if(o.transparent){ const s=src.data, d=out.data; for(let i=3;i<d.length;i+=4) d[i]=s[i]; }
+    cx.putImageData(out,0,0);
+  }
+  /* the stock a render sits on, and whether it is dark — read by the finish
+     passes (a misprint exposes the STOCK, not the theme paper; on option D a
+     night print is on cream). The fourteen still print on the theme paper
+     until their retrofit lands. */
+  function stockOf(name,o){
+    if(name==='separation') return RP.resolveStock(sepOpts(o));
+    if(o.stock) return RP.stockHex(o.stock);          // an explicit stock — Print's white sheet, a kraft job
+    return PAPER[o.paper];
+  }
+
+  const TREATMENTS = { separation, duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
                        dither, hatch, photocopy, contour, edges, mosaic };
 
   /* ---- blend modes ----------------------------------------------------
@@ -1177,13 +1250,13 @@
      width), so the export reuses the preview's exact pattern */
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   let _noise = {};
-  function noiseTile(nw,nh){
-    const key=nw+'x'+nh;
+  function noiseTile(nw,nh,pull){
+    const key=nw+'x'+nh+'p'+(pull|0);
     if(_noise[key]) return _noise[key];
     if(Object.keys(_noise).length>8) _noise={};
     const c=document.createElement('canvas'); c.width=nw; c.height=nh;
     const x=c.getContext('2d'), id=x.createImageData(nw,nh), d=id.data;
-    const rnd=mulberry32(19770604);
+    const rnd=mulberry32(19770604+(pull|0)*97);
     for(let i=0;i<d.length;i+=4){
       const v=((rnd()+rnd()+rnd())/3)*255|0;   // triangular-ish — filmic, not salt & pepper
       d[i]=d[i+1]=d[i+2]=v; d[i+3]=255;
@@ -1194,12 +1267,12 @@
      in the mids; the faint normal pass keeps deep shadows + highlights grainy.
      inkKey tints the noise (ink-coloured grain); blend 'dirty' presses the
      noise in with multiply — press muck rather than film tooth. */
-  function grain(cv, amount, size, inkKey, blend){
+  function grain(cv, amount, size, inkKey, blend, pull){
     if(!amount || amount<=0.001) return;
     const w=cv.width, h=cv.height, cx=cv.getContext('2d');
     const s=Math.max(0.5, size||2);
     const nw=Math.max(2,Math.ceil(520/s)), nh=Math.max(2,Math.ceil(nw*h/w));
-    let nc=noiseTile(nw,nh);
+    let nc=noiseTile(nw,nh,pull);
     if(inkKey && PAL[inkKey]){
       const t=document.createElement('canvas'); t.width=nw; t.height=nh;
       const tx=t.getContext('2d');
@@ -1274,7 +1347,7 @@
     const t=document.createElement('canvas'); t.width=w; t.height=h;
     t.getContext('2d').drawImage(cv,0,0);
     cx.save();
-    cx.globalCompositeOperation = o.paper==='night' ? 'lighten' : 'darken';
+    cx.globalCompositeOperation = (o._dark!=null ? o._dark : o.paper==='night') ? 'lighten' : 'darken';
     for(let k=0;k<8;k++){ const a=k*Math.PI/4;
       cx.drawImage(t, Math.cos(a)*r, Math.sin(a)*r); }
     cx.restore();
@@ -1283,8 +1356,8 @@
   /* seeded specks + hairline scratches — the same dust every render */
   function dust(cv, amount, o){
     const w=cv.width,h=cv.height,cx=cv.getContext('2d'),k=w/520;
-    const rnd=mulberry32(0xD057);
-    const inkC=INK[o.paper], papC=PAPER[o.paper];
+    const rnd=mulberry32(0xD057+(o.pull|0)*43);
+    const papC=o._stock||PAPER[o.paper], inkC=o._stock? (o._dark? PAL.cream : PAL.ink) : INK[o.paper];
     const n=Math.round(amount*150), ns=Math.round(amount*9);
     cx.save();
     for(let i=0;i<n;i++){
@@ -1312,7 +1385,7 @@
     const t=document.createElement('canvas'); t.width=w; t.height=h;
     t.getContext('2d').drawImage(cv,0,0);
     cx.clearRect(0,0,w,h);
-    if(!o.transparent){ cx.fillStyle=PAPER[o.paper]; cx.fillRect(0,0,w,h); }
+    if(!o.transparent){ cx.fillStyle=o._stock||PAPER[o.paper]; cx.fillRect(0,0,w,h); }
     cx.drawImage(t, Math.cos(a)*mag, Math.sin(a)*mag);
   }
   /* on a transparent logo the texture passes must stay ON the artwork — take
@@ -1367,7 +1440,19 @@
     finBright:0, finContrast:1, finSat:1,
     vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
     /* second exposure */
-    mix2:0, mix2Mode:'screen'
+    mix2:0, mix2Mode:'screen',
+    /* the separation (15) — see sepOpts for the core names; null = the
+       core's own default (riso-press.js DEFAULTS), which the paper decides
+       for the inks, the stock, the GCR and the ink limit */
+    inks:null, stock:null, opaque:null, invertSource:false,
+    screen:'fm', sepShape:'chain', pitch:9, grainPitch:0.5, levels:0,
+    sepGCR:null, sepBoost:1.15, tac:null,
+    gain:0.8, linear:true, solidity:0.97, ceiling:0.98, floor:0.10, floodCap:0,
+    drift:0, driftSeed:7, skew:0, stretch:0, duo:true,
+    drumBand:0, bandPeriod:90, drumStreak:0, starve:0, wet:0.25,
+    pull:0, pressRun:true, pressOff:false,
+    fountainTo:null, fountainPlate:1, fountainAngle:0, fountainSoft:1,
+    screens:null, pitches:null, proofPlate:null, proofGrey:false
   };
 
   function render(cv, name, opts){
@@ -1380,8 +1465,10 @@
     PREBLUR = { amount:o.blurUnder||0, type:o.blurUnderType, angle:o.blurUnderAngle,
                 x:o.blurUnderX, y:o.blurUnderY, pos:o.blurUnderPos, width:o.blurUnderWidth };
     MIX2 = { amount: SRC2? (o.mix2||0) : 0, mode:o.mix2Mode||'screen' };
+    o._stock = stockOf(name,o); o._dark = RP.isDark(o._stock);
+    o._ink = o.stock ? RP.inkOnStock(o.stock) : (name==='separation' ? (o._dark? PAL.cream : PAL.ink) : INK[o.paper]);
     cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
-    (TREATMENTS[name]||duotone)(cv,o);
+    (TREATMENTS[name]||separation)(cv,o);
     if(name!=='none') blendThrough(cv,o);
     /* ---- finish stack: everything below prints over the finished image ---- */
     applyBlur(cv, { amount:o.blurOver||0, type:o.blurOverType, angle:o.blurOverAngle,
@@ -1389,7 +1476,7 @@
     const guard = o.transparent? alphaMaskGuard(cv) : null;
     finishTone(cv,o);
     if(o.inkBleed>0) inkBleed(cv,o);
-    if(o.grain>0) grain(cv, o.grain, o.grainSize!=null?o.grainSize:2, o.grainInk, o.grainBlend);
+    if(o.grain>0) grain(cv, o.grain, o.grainSize!=null?o.grainSize:2, o.grainInk, o.grainBlend, o.pull);
     if(o.paperTex>0) paperTexture(cv, o.paperTex);
     if(o.vignette>0) vignette(cv, o.vignette, o.vignetteSoft);
     if(o.dust>0) dust(cv, o.dust, o);
@@ -1450,6 +1537,12 @@
     return c;
   }
 
-  window.RISO = { PAL, PAPER, PARTNER, setSource, setSource2, setTransform, setTransform2, loadImage, render, sampleCanvas, grain,
+  window.RISO = { PAL, PAPER, PARTNER, INK, setSource, setSource2, setTransform, setTransform2, loadImage, render, sampleCanvas, grain,
+                  /* the press's revision, stamped on documents by the hosts */
+                  REV: RP.REV,
+                  /* the core, for hosts that want the plates themselves (a proof export) */
+                  press: RP,
+                  TREATMENTS: Object.keys(TREATMENTS),
+                  RENDER_DEFAULTS,
                   get source(){ return SRC; } };
 })();

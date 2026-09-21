@@ -126,7 +126,14 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'vignette','vignetteSoft','paperTex','inkBleed','dust','misprint','misprintAngle',
   'mix2','mix2Mode',
   /* backfilled from the app's Darkroom, 08.09.26 */
-  'inkDensity','splitTone','treatRegion','regionX','regionY','regionSize','regionSoft','regionAngle','regionInvert'];
+  'inkDensity','splitTone','treatRegion','regionX','regionY','regionSize','regionSoft','regionAngle','regionInvert',
+  /* the separation press (riso-press.js), 22.09.26 — a dial missing here
+     silently falls back to the engine default, so every one is listed */
+  'inks','stock','opaque','invertSource','screen','sepShape','pitch','grainPitch','levels',
+  'sepGCR','sepBoost','tac','gain','linear','solidity','ceiling','floor','floodCap',
+  'drift','driftSeed','skew','stretch','duo','drumBand','bandPeriod','drumStreak','starve','wet',
+  'pull','pressRun','pressOff','fountainTo','fountainPlate','fountainAngle','fountainSoft',
+  'screens','pitches','proofPlate','proofGrey'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120
    primitives costs microseconds; re-running the press costs ~25ms, so this is
    what keeps a photo from re-developing on every unrelated re-render.

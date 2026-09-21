@@ -32,6 +32,11 @@ const SHARED = {
   '/print/print-icons.js': path.resolve(__dirname, '..', 'public', 'print', 'print-icons.js'),
   // The shared control kit (window.RUI) — one copy, both Studios.
   '/studio-shared/studio-ui.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-ui.js'),
+  // The riso press: the pure core (window.RisoPress) and the canvas engine
+  // over it (window.RISO). One copy for both Studios — and the core is
+  // vendored verbatim into the app, so it must never grow a Studio-side fork.
+  '/studio-shared/riso-press.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-press.js'),
+  '/studio-shared/riso-engine.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-engine.js'),
 };
 
 const MIME = {

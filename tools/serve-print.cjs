@@ -52,6 +52,10 @@ if (!fs.existsSync(path.join(ROOT, ENTRY))) {
 // than a second copy that can drift, so this maps that request to the real one.
 const SHARED = {
   '/studio-shared/studio-ui.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-ui.js'),
+  // The riso press — the pure core and the canvas engine — is one copy shared
+  // with Poster Studio (Print used to carry its own white-paper fork).
+  '/studio-shared/riso-press.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-press.js'),
+  '/studio-shared/riso-engine.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-engine.js'),
 };
 
 const server = http.createServer((req, res) => {

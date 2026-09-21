@@ -761,12 +761,14 @@ function blendPdf(b){ const m={multiply:'Multiply',screen:'Screen',overlay:'Over
 
 /* ---- riso photo options — map a photo element's props onto the RISO engine's
    render opts. Shared by the screen renderer + the PDF rasteriser so the
-   exported image matches the preview exactly. paper is always 'day' (Print's
-   true-white paper); the accent ink follows the doc accent unless overridden. */
+   exported image matches the preview exactly. paper is always 'day' (light
+   polarity) on the engine's `white` STOCK — Print's true-white paper, which
+   used to be a patched fork of the engine and is now just a stock the shared
+   press knows; the accent ink follows the doc accent unless overridden. */
 function risoOpts(el, docAccent){
   const ink = el.followAccent!==false ? docAccent : (el.ink||'pink');
   return {
-    ink, ink2:el.ink2, paper:'day',
+    ink, ink2:el.ink2, paper:'day', stock: el.stock||'white',
     contrast:el.contrast, brightness:el.brightness, dot:el.dot, bands:el.bands, threshold:el.threshold,
     angle:el.angle, softness:el.softness, balance:el.balance, shadowTint:el.shadowTint,
     invert:el.invert, spread:el.spread, shape:el.shape, split:el.split, offset:el.offset,
@@ -775,7 +777,14 @@ function risoOpts(el, docAccent){
     dotGain:el.dotGain, jitter:el.jitter, pucker:el.pucker,
     spotLo:el.spotLo, spotHi:el.spotHi, spotSoft:el.spotSoft, spotInvert:el.spotInvert, spotBase:el.spotBase,
     transparent:false, fit:el.fit||'cover', paperFill:null,
-    blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize
+    blurUnder:el.blurUnder, blurOver:el.blurOver, grain:el.grain, grainSize:el.grainSize,
+    /* the separation press — the dials Print exposes; the rest ride the
+       engine's defaults (see riso-press.js DEFAULTS) */
+    inks:el.inks, opaque:el.opaque, invertSource:el.invertSource, screen:el.screen, sepShape:el.sepShape,
+    pitch:el.pitch, grainPitch:el.grainPitch, levels:el.levels, sepGCR:el.sepGCR, sepBoost:el.sepBoost, tac:el.tac,
+    gain:el.gain, linear:el.linear, drift:el.drift, skew:el.skew, stretch:el.stretch, drumStreak:el.drumStreak,
+    drumBand:el.drumBand, starve:el.starve, wet:el.wet, pull:el.pull, pressRun:el.pressRun,
+    proofPlate:el.proofPlate, proofGrey:el.proofGrey, saturation:el.saturation
   };
 }
 

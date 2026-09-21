@@ -6,7 +6,8 @@ const REPO=require('path').resolve(__dirname,'../..');
   const p=await b.newPage();
   p.on('pageerror',e=>console.error('ERR',e.message));
   await p.setContent('<html><body></body></html>');
-  await p.evaluate(fs.readFileSync(path.join(REPO,'public/studio/riso-engine.js'),'utf8'));
+  await p.evaluate(fs.readFileSync(path.join(REPO,'public/studio-shared/riso-press.js'),'utf8'));
+  await p.evaluate(fs.readFileSync(path.join(REPO,'public/studio-shared/riso-engine.js'),'utf8'));
   await p.evaluate(fs.readFileSync(path.join(__dirname,'prototype-separation.js'),'utf8'));
   const img='data:image/jpeg;base64,'+fs.readFileSync(path.join(REPO,'public/images/gallery/g.jpg')).toString('base64');
   const r=await p.evaluate(async(img)=>{

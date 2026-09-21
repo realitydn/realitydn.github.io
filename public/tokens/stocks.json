@@ -1,0 +1,18 @@
+{
+  "$comment": "Single source of truth for the riso press's STOCKS — the sheets a job can be run on — and what the mono drum prints on each. Canvas and PDF renderers cannot read CSS custom properties, so riso-press.js carries a literal copy of this table (PAPER / INK) and tools/verify-day-colours.mjs fails the build if the two drift. `day` and `night` are the keys the themes map to; `white` is Print Studio's true-white sheet (canon.print.stock in day-colours.json). Order is a picker's display order, light to dark.",
+  "revision": "22.09.26",
+  "order": ["day", "white", "news", "straw", "kraft", "salmon", "grey", "flint", "steel", "night"],
+  "stocks": {
+    "day":    { "hex": "#fffbf1", "ink": "#0d0905", "label": "Cream",      "note": "the house stock — unprinted cream" },
+    "white":  { "hex": "#ffffff", "ink": "#111111", "label": "White",      "note": "Print Studio's true-white sheet; its K is canon.print.ink" },
+    "news":   { "hex": "#e8e2d2", "ink": "#0d0905", "label": "Newsprint",  "note": "groundwood, L*~82 and warm" },
+    "straw":  { "hex": "#e9dcae", "ink": "#0d0905", "label": "Straw",      "note": "Cairn Straw" },
+    "kraft":  { "hex": "#d8c3a0", "ink": "#0d0905", "label": "Kraft",      "note": "recycled brown" },
+    "salmon": { "hex": "#e8b9a0", "ink": "#0d0905", "label": "Salmon",     "note": "Context Salmon" },
+    "grey":   { "hex": "#b9b4ac", "ink": "#0d0905", "label": "Grey board", "note": "board" },
+    "flint":  { "hex": "#9c9a90", "ink": "#0d0905", "label": "Flint",      "note": "Context Flint, warm grey recycled" },
+    "steel":  { "hex": "#5d6a73", "ink": "#fffbf1", "label": "Steel",      "note": "a dark-but-not-black stock — opaque physics, cream drum" },
+    "night":  { "hex": "#0a0703", "ink": "#fffbf1", "label": "Night",      "note": "the Night surface — opaque physics (a screenprint), cream drum" }
+  },
+  "$darkRule": "A stock whose R+G+B sum is below 340 prints OPAQUE (a silkscreen, not a riso): each plate covers what is under it. Everything lighter is translucent ink the sheet shows through. Decided with the separation press, 21–22.09.26."
+}

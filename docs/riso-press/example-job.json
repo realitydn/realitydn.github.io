@@ -1,0 +1,17 @@
+{
+  "out": "shots/example.png",
+  "_note": "output lands in ./shots/ which is gitignored",
+  "photo": "public/images/gallery/c.jpg",
+  "tile": { "w": 330, "h": 420 },
+  "cols": 3,
+  "extras": ["prototype-separation.js", "prototype-retrofit.js"],
+  "shots": [
+    { "label": "engine · halftone two-ink", "treatment": "halftone",
+      "opts": { "ink": "pink", "ink2": "blue", "paper": "day", "inkMode": "two", "dot": 9, "angle": 15, "screenOffset": 30 } },
+    { "label": "retrofit · same treatment", "treatment": "retro:halftone",
+      "opts": { "ink": "pink", "ink2": "blue", "paper": "day", "inkMode": "two", "dot": 9, "contrast": 1.1 } },
+    { "label": "separation · four ink", "treatment": "lab",
+      "opts": { "inks": ["ink","pink","blue","yellow"], "paper": "day", "contrast": 1.08,
+                "lambda": 0.2, "boost": 1.5, "tac": 2.2, "drift": 3, "skew": 5, "stretch": 7, "starve": 0.2 } }
+  ]
+}

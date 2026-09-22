@@ -7,10 +7,11 @@
  * IndexedDB + localStorage coexistence: newer-wins adoption, both-writes).
  *
  * No test runner is installed in any repo (Events Platform build plan §5.4 #9).
- * schedule-data.jsx is a browser <script> (not a module) and contains JSX
- * elsewhere, so we can't `import` it. Instead we extract ONLY the pure
- * functions' source by name and eval them in a sandbox — this tests the EXACT
- * shipped code with zero duplication. Run with:
+ * The data layer is JSX-bearing ES modules written for the Studio's bundle
+ * (public/schedule/data-*.jsx behind schedule-data.jsx), so we can't `import`
+ * it here. Instead we extract ONLY the pure functions' source by name — from
+ * whichever Studio file defines it — and eval them in a sandbox: this tests
+ * the EXACT shipped code with zero duplication. Run with:
  *     node scripts/selftest-schedule.mjs
  * Exits 0 when all checks pass, 1 on any failure.
  */
@@ -20,12 +21,17 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const src = fs.readFileSync(path.join(__dirname, '..', 'public', 'schedule', 'schedule-data.jsx'), 'utf8');
+// Every Studio source file, so a function can move between modules without
+// this test noticing — but never be defined twice (that would be ambiguous).
+const DIR = path.join(__dirname, '..', 'public', 'schedule');
+const src = fs.readdirSync(DIR).filter(f => /\.jsx$/.test(f)).sort()
+  .map(f => fs.readFileSync(path.join(DIR, f), 'utf8')).join('\n');
 
 // Pull each `function NAME(...){ ... }` body out by brace-matching from its start.
 function extract(name) {
   const start = src.indexOf('function ' + name + '(');
   if (start < 0) throw new Error('could not find function ' + name);
+  if (src.indexOf('function ' + name + '(', start + 1) >= 0) throw new Error('function ' + name + ' is defined twice');
   let i = src.indexOf('{', start);
   let depth = 0;
   for (; i < src.length; i++) {
@@ -48,7 +54,7 @@ const FNS = [
   'pickNewerDoc', 'writeBothDocs',
 ];
 const code =
-  // consts the extracted functions read (mirrors schedule-data.jsx)
+  // consts the extracted functions read (mirrors data-model.jsx / data-store.jsx)
   'const NIGHT_ROLLOVER_H = 6;\n' +
   "const SCH_LS = 'reality-schedule-doc-v2';\n" +
   "let _sid = 1; function suid(){ return 'sid' + (_sid++); }\n" +

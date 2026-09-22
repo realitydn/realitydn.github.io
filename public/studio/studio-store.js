@@ -7,40 +7,62 @@
    library into IndexedDB, which is good for gigabytes.
 
    Design notes:
-   • Phase 1 keeps templates in the SAME shape as before — a doc
-     whose elements carry inline data-URL `src`. This is a near
-     verbatim copy into a bigger box: lowest possible risk to an
-     existing library. (Phase 2, later, content-addresses the
-     photos so they're stored once and the records shrink — the
-     shape that maps onto a Cloudflare R2/KV sync.)
-   • migrate(): on first run, copies the old localStorage list
-     (key 'reality-studio-templates-v1') in and never deletes it
-     itself (retireLegacyTpls, later, files that backup verbatim in
-     IndexedDB and only then frees the localStorage copy). A one-time flag
-     means it copies once (so templates you later delete can't
-     come back) and it's idempotent if interrupted.
+   • The first IndexedDB build kept templates in the SAME shape as
+     before — a doc whose elements carry inline data-URL `src` —
+     in 'reality-studio'. Phase 5 (below) content-addresses the
+     photos: stored once, and the records shrink to a few KB.
+   • The old build's migrate() copied the localStorage list (key
+     'reality-studio-templates-v1') in and later retired it. This
+     build never writes anything that build reads, so that is the
+     old build's business now; migrate() here takes the list only
+     on a profile the old build never moved (see below).
    • The {getAll,put,delete,replaceAll} surface is deliberately
      the shape a future cloud sync would expose, so the cloud
      step bolts on without rewriting callers.
    • The IndexedDB plumbing (open, transactions, requests) is
      ../studio-shared/store.js, shared with Print and Schedule.
-     This file is the Poster's schema and what it keeps there;
-     the database, its stores, keys and records are unchanged.
+     This file is the Poster's schema and what it keeps there.
+
+   PHASE 5 — photos by reference (24.09.26).
+   Photos are stored once, by content hash, in the shared blob store
+   (photos.js over ../studio-shared/blobs.js); a doc keeps only
+   'ref:sha256:<hex>'. A build from before this can't draw a reference,
+   and it may still be open in another tab — so the referenced library
+   lives where that build never looks:
+
+     'reality-studio'     v1  templates · meta   ← the OLD build's. This
+                              file only ever READS it (never a write,
+                              never an upgrade): the records stay
+                              byte-for-byte what the old build wrote.
+     'reality-studio-v2'  v1  templates · meta   ← this build's; same
+                              shapes, same keys ('doc:working', 'bin:',
+                              'thumb:'), photos as references.
+
+   migrate() (every load) copies the old library across once and after
+   that picks up anything an old tab saved since — a v1 template whose
+   save is newer than its v2 twin replaces it (the v2 version goes to
+   Recently deleted first), a new one is added; docGet() does the same
+   for the working doc by its 'at'. Deleting in an old tab is NOT
+   carried across (a record that is simply missing is too weak a signal
+   to delete anything on). When v1 can be retired: docs/REFACTOR-PLAN.md,
+   Phase 5.
    ============================================================ */
 import { openDB } from '../studio-shared/store.js';
+import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
 
 (function(){
-  const DB_NAME = 'reality-studio', DB_VER = 1;
   const T_STORE = 'templates';     // keyPath 'id' — one record per saved template
   const M_STORE = 'meta';          // keyPath 'k'  — { k, v } flags (migration, etc.)
   const LS_TPL_KEY = 'reality-studio-templates-v1';   // the legacy localStorage library
-  const db = openDB({
-    name: DB_NAME, version: DB_VER, blockedMessage: 'IndexedDB open blocked',
-    upgrade(d){
-      if(!d.objectStoreNames.contains(T_STORE)) d.createObjectStore(T_STORE, { keyPath:'id' });
-      if(!d.objectStoreNames.contains(M_STORE)) d.createObjectStore(M_STORE, { keyPath:'k' });
-    },
-  });
+  const upgrade = (d)=>{
+    if(!d.objectStoreNames.contains(T_STORE)) d.createObjectStore(T_STORE, { keyPath:'id' });
+    if(!d.objectStoreNames.contains(M_STORE)) d.createObjectStore(M_STORE, { keyPath:'k' });
+  };
+  /* The old build's database — read here, never written. Opened at the version
+     it already has, so nothing about it changes; on a profile that never ran
+     the old build the open just creates it empty, exactly as the old build would. */
+  const V1 = openDB({ name: 'reality-studio', version: 1, blockedMessage: 'IndexedDB open blocked', upgrade });
+  const db = openDB({ name: 'reality-studio-v2', version: 1, blockedMessage: 'IndexedDB open blocked', upgrade });
   const open = db.open;
 
   /* ---- WP9 best-effort cloud mirror (window.RCloud) -------------------------
@@ -48,9 +70,11 @@ import { openDB } from '../studio-shared/store.js';
      fire-and-forget a mirror to the hub: each template is its own doc
      doc_id='tpl:'+id, studio='poster'. Every call is wrapped so it can NEVER
      throw into the caller — if RCloud is absent, not signed in, or the hub is
-     dormant, these silently no-op. TODO(WP9): photos are stored inline as data
-     URLs (content-addressing is out of scope) — large photo-heavy templates may
-     hit the hub's ~5MB doc cap (413) and simply stay local; that's acceptable.
+     dormant, these silently no-op. The hub's docs still carry every photo
+     inline (re-cut to 860px, below) — locally they are references since Phase 5,
+     but the hub stores JSON and old builds read it. A template still over the
+     hub's ~5MB doc cap (413) simply stays local. Follow-up: upload the blobs
+     to R2 through the app and send references (docs/REFACTOR-PLAN.md, Phase 5).
      ------------------------------------------------------------------------ */
   function _rc(){ return (typeof window!=='undefined' && window.RCloud) ? window.RCloud : null; }
 
@@ -69,7 +93,22 @@ import { openDB } from '../studio-shared/store.js';
      photo once, not once per push. */
   const SLIM_EDGE = 860, SLIM_MIN_LEN = 300000;   // below ~220KB of image it isn't worth a decode
   const _slim = new Map();
+  /* A reference goes up as the data URL it stands for — byte for byte the
+     inline photo the old build kept — re-cut exactly as that would have been.
+     So the hub (and any old build reading it) sees the payload it always did.
+     An image missing from the blob store goes up as the reference; nothing
+     better exists to send. */
   function slimSrc(src){
+    if(isRef(src)){
+      if(_slim.has(src)) return _slim.get(src);
+      const p = Photos.toDataUrl(src).then(slimInline, ()=>src);
+      _slim.set(src, p);
+      if(_slim.size > 32) _slim.delete(_slim.keys().next().value);
+      return p;
+    }
+    return slimInline(src);
+  }
+  function slimInline(src){
     if(typeof src!=='string' || src.indexOf('data:image/')!==0 || src.length < SLIM_MIN_LEN) return Promise.resolve(src);
     if(_slim.has(src)) return _slim.get(src);
     const p = new Promise(res=>{
@@ -240,7 +279,10 @@ import { openDB } from '../studio-shared/store.js';
 
   async function tplGetAll(){ return db.getAll(T_STORE); }
 
-  async function tplPut(t){ await db.put(T_STORE, t); cloudPutTpl(t); }
+  /* Every write interns first: whatever reaches the v2 store carries its
+     photos as references (a photo the blob store refuses stays inline — still
+     drawn, just not deduplicated). */
+  async function tplPut(t){ const it = await internTpl(t); await db.put(T_STORE, it); cloudPutTpl(it); return it; }
 
   async function tplDelete(id){ await db.delete(T_STORE, id);
     try{ await thumbDelete(id); }catch(e){}   // the card's cached picture goes with the record
@@ -248,7 +290,7 @@ import { openDB } from '../studio-shared/store.js';
 
   /* Upsert many in one transaction without clearing — used by migrate() so a
      re-run can never drop records added after the first migration. */
-  async function tplBulkPut(arr){ return db.putMany(T_STORE, arr); }
+  async function tplBulkPut(arr){ return db.putMany(T_STORE, await Promise.all((arr||[]).map(internTpl))); }
 
   /* Fold `incoming` into the library and remove exactly the ids in `dropIds`,
      in one transaction. Nothing else is touched.
@@ -265,6 +307,7 @@ import { openDB } from '../studio-shared/store.js';
      bin first, so a bad import stays recoverable from two places rather than
      none. */
   async function tplApply(incoming, dropIds){
+    incoming = await Promise.all((incoming||[]).map(internTpl));
     await db.tx(T_STORE, 'readwrite', s=>{
       (dropIds||[]).forEach(id=>{ if(id) s.delete(id); });
       (incoming||[]).forEach(t=>{ if(t && t.id) s.put(t); });
@@ -283,7 +326,7 @@ import { openDB } from '../studio-shared/store.js';
   async function binRows(){ return db.getAll(M_STORE, binRange()); }
   async function binPut(t, reason){
     if(!t || !t.id) return;
-    await metaPut(BIN_PREFIX + t.id, { at: Date.now(), reason: reason || 'removed', tpl: t });
+    await metaPut(BIN_PREFIX + t.id, { at: Date.now(), reason: reason || 'removed', tpl: await internTpl(t) });
     try{
       const rows = await binRows();
       if(rows.length > BIN_CAP){
@@ -393,74 +436,117 @@ import { openDB } from '../studio-shared/store.js';
      disk's rather than 5MB. Stored as { at, doc } so a reader can tell which of
      two copies is newer. Rejects on failure — the caller shows it. */
   const DOC_PREFIX = 'doc:';
+  const isDocRec = (v)=> !!(v && v.doc && Array.isArray(v.doc.elements));
+  /* The v2 copy — unless an old-build tab has saved the working doc since
+     (its 'at' is newer), in which case that one is taken, interned and filed
+     here under the SAME 'at', so the next load doesn't take it again. */
   async function docGet(k){
-    const v = await metaGet(DOC_PREFIX + (k||'working'));
-    return (v && v.doc && Array.isArray(v.doc.elements)) ? v : null;
+    const key = DOC_PREFIX + (k||'working');
+    const v2 = await metaGet(key);
+    let v1 = null;
+    try{ const r = await V1.get(M_STORE, key); v1 = r ? r.v : null; }catch(e){ v1 = null; }
+    if(isDocRec(v1) && (!isDocRec(v2) || (v1.at||0) > (v2.at||0))){
+      const doc = await internDoc(v1.doc);
+      const rec = { at: v1.at || Date.now(), doc };
+      try{ await metaPut(key, rec); }catch(e){ console.warn('[studio] could not file the older build’s working doc in v2', e); }
+      return Object.assign({ from:'v1' }, rec);
+    }
+    if(!isDocRec(v2)) return null;
+    const doc = await internDoc(v2.doc);
+    return { at: v2.at, doc };
   }
-  async function docPut(k, doc){ return metaPut(DOC_PREFIX + (k||'working'), { at: Date.now(), doc: doc }); }
+  async function docPut(k, doc){ return metaPut(DOC_PREFIX + (k||'working'), { at: Date.now(), doc: await internDoc(doc) }); }
 
-  /* ---- retire the legacy localStorage template backup ----------------------
-     migrate() deliberately left the old library in localStorage as a backup,
-     and it has sat there ever since — often megabytes of inline photos, in the
-     one box the working doc (then) and two other Studios all write to. This
-     files that backup inside IndexedDB, VERBATIM, reads it back, checks that
-     every template id in it is accounted for, and only then frees the
-     localStorage copy. Nothing is ever lost: the exact string is kept under
-     'legacy:<key>', and the report says how many of its ids are still live
-     templates (the rest were deleted on purpose since the move — they're in
-     the archived copy, and some in Recently deleted).
-     Refuses — and leaves localStorage alone — on anything it can't prove:
-     not migrated yet, unparseable, a record without an id, or an archive that
-     doesn't read back identical. */
-  const LEGACY_PREFIX = 'legacy:';
-  async function retireLegacyTpls(){
-    let raw = null;
-    try{ raw = localStorage.getItem(LS_TPL_KEY); }catch(e){ return { kept:'localStorage unreadable' }; }
-    if(!raw) return { none:true };
-    await open();
-    if(!(await metaGet('migrated_v1'))) return { kept:'not migrated yet' };
-    let arr = null;
-    try{ arr = JSON.parse(raw); }catch(e){ return { kept:'backup is not JSON' }; }
-    if(!Array.isArray(arr)) return { kept:'backup is not a list' };
-    if(arr.some(t=>!t || !t.id)) return { kept:'a backed-up template has no id' };
-    const key = LEGACY_PREFIX + LS_TPL_KEY;
-    const prior = await metaGet(key);
-    if(!prior || prior.raw !== raw) await metaPut(key, { at: Date.now(), raw: raw });
-    const back = await metaGet(key);
-    if(!back || back.raw !== raw) return { kept:'archive did not read back identical' };
-    let archived = null;
-    try{ archived = JSON.parse(back.raw); }catch(e){ return { kept:'archive unreadable' }; }
-    const inArchive = {}; (archived||[]).forEach(t=>{ if(t && t.id) inArchive[t.id]=1; });
-    if(arr.some(t=>!inArchive[t.id])) return { kept:'an id is missing from the archive' };
-    const live = {}; (await tplGetAll()).forEach(t=>{ if(t && t.id) live[t.id]=1; });
-    const liveCount = arr.filter(t=>live[t.id]).length;
-    try{ localStorage.removeItem(LS_TPL_KEY); }catch(e){ return { kept:'localStorage refused the delete' }; }
-    return { retired: arr.length, live: liveCount, bytes: raw.length };
-  }
-
-  /* One-time copy of the legacy localStorage library into IndexedDB.
-     • Keeps the localStorage entry intact (an untouched backup) —
-       retireLegacyTpls moves it, once it is provably filed here.
-     • Guarded by the 'migrated_v1' flag: runs the copy once, ever — so a
-       template you delete after migrating can't be resurrected on reload.
-     • Uses bulkPut (upsert by id), so an interrupted run that re-fires can't
-       duplicate or clobber anything.
-     Returns { migrated:n } on the run that copies, else { already:true }. */
+  /* ---- the old build's library → this one ----------------------------------
+     Runs on every load, before the library is read. The first run copies the
+     whole v1 library (templates, Recently deleted, card pictures — and, on a
+     profile the old build never moved out of localStorage, that list too),
+     interning every photo on the way. Every later run picks up what an OLD-build
+     tab saved since: 'v1sync' remembers, per template id, the v1 record it last
+     took (savedAt · name · archived · eventId), so an unchanged record is
+     skipped, a changed one is taken when it is at least as new as the v2 copy
+     (the v2 copy goes to Recently deleted first), and a v1 template deleted
+     here on purpose stays deleted unless an old tab saves it again.
+     v1 is only ever read. Returns { first, imported, replaced } (+ v1err when
+     v1 couldn't be read — nothing is taken then, and nothing is marked done). */
+  const SYNC_KEY = 'v1sync', MIGRATED_KEY = 'migrated_v2';
+  function v1sig(t){ return [t.savedAt||0, t.name||'', t.archived?1:0, t.eventId||''].join('|'); }
   async function migrate(){
     await open();
-    if(await metaGet('migrated_v1')) return { already:true };
-    let arr = [];
-    try{ const r = localStorage.getItem(LS_TPL_KEY); if(r){ const a = JSON.parse(r); if(Array.isArray(a)) arr = a; } }catch(e){}
-    if(arr.length) await tplBulkPut(arr);
-    await metaPut('migrated_v1', true);   // legacy localStorage copy is left in place as a backup
-    return { migrated: arr.length };
+    const report = { first:false, imported:0, replaced:0 };
+    const first = !(await metaGet(MIGRATED_KEY));
+    report.first = first;
+    let v1tpls;
+    try{ v1tpls = await V1.getAll(T_STORE); }
+    catch(e){ console.warn('[studio] the older build’s library could not be read — nothing taken from it this load.', e);
+      return Object.assign(report, { v1err: String((e && e.message) || e) }); }
+    const candidates = (v1tpls||[]).slice();
+    if(first){
+      /* a library still in localStorage (the old build moves it on its first IndexedDB run) */
+      try{
+        const moved = await V1.get(M_STORE, 'migrated_v1');
+        if(!(moved && moved.v)){
+          const r = localStorage.getItem(LS_TPL_KEY);
+          const arr = r ? JSON.parse(r) : null;
+          if(Array.isArray(arr)){
+            const have = {}; candidates.forEach(t=>{ if(t && t.id) have[t.id]=1; });
+            arr.forEach(t=>{ if(t && t.id && !have[t.id]) candidates.push(t); });
+          }
+        }
+      }catch(e){}
+    }
+    const map = Object.assign({}, (await metaGet(SYNC_KEY)) || {});
+    const v2 = {}; (await tplGetAll()).forEach(t=>{ if(t && t.id) v2[t.id] = t; });
+    let v1thumbs = null;
+    const thumbOf = async (id)=>{
+      if(!v1thumbs){ v1thumbs = {};
+        try{ (await V1.getAll(M_STORE, thumbRange())).forEach(r=>{ if(r && r.k) v1thumbs[r.k.slice(TH_PREFIX.length)] = r.v; }); }catch(e){} }
+      return v1thumbs[id] || null;
+    };
+    for(const t1 of candidates){
+      if(!t1 || !t1.id || !t1.doc || !Array.isArray(t1.doc.elements)) continue;
+      const sig = v1sig(t1), prev = map[t1.id], t2 = v2[t1.id];
+      if(prev===sig) continue;                                   // nothing new on the old side
+      const a1 = t1.savedAt||0, a2 = t2 ? (t2.savedAt||0) : -1;
+      if(t2 && (a1 < a2 || (!prev && a1===a2))){ map[t1.id] = sig; continue; }   // v2 is newer, or it's the same save
+      const it = await internTpl(t1);
+      if(t2){ try{ await binPut(t2, 'replaced by a save in an older Poster Studio tab'); }catch(e){} report.replaced++; }
+      await db.put(T_STORE, it);
+      const th = await thumbOf(t1.id);
+      try{ if(th) await thumbPut(t1.id, th); else await thumbDelete(t1.id); }catch(e){}
+      map[t1.id] = sig; report.imported++;
+    }
+    if(first){
+      /* Recently deleted comes across once; after that each build keeps its own */
+      try{
+        const bins = await V1.getAll(M_STORE, binRange());
+        for(const r of (bins||[])){
+          if(!r || !r.k || !r.v || !r.v.tpl) continue;
+          if(await metaGet(r.k)) continue;
+          await metaPut(r.k, Object.assign({}, r.v, { tpl: await internTpl(r.v.tpl) }));
+        }
+      }catch(e){ console.warn('[studio] Recently deleted was not copied from the older build', e); }
+    }
+    await metaPut(SYNC_KEY, map);
+    if(first) await metaPut(MIGRATED_KEY, { at: Date.now(), templates: report.imported });
+    return report;
+  }
+
+  /* A template as a PORTABLE record — photos inline, full size — for the
+     export file, which any build (and any machine) can import. */
+  async function tplInline(t){
+    if(!t || !t.doc) return t;
+    const d = await inlineDoc(t.doc);
+    return d===t.doc ? t : Object.assign({}, t, { doc: d });
   }
 
   window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplApply,
                     binPut, binGetAll, binDelete,
                     thumbGetAll, thumbPut, thumbDelete, thumbPrune,
                     metaGet, metaPut, migrate, cloudPull, cloudPushAll, cloudRestore, LS_TPL_KEY,
-                    docGet, docPut, retireLegacyTpls, slimDocForCloud };
+                    docGet, docPut, slimDocForCloud, tplInline,
+                    /* the blob store the photos live in (stats / gc, for the console) */
+                    photos: Photos };
 })();
 
 // An ES module in Poster Studio's bundle: the app imports RStore from here.

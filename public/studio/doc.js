@@ -5,6 +5,7 @@
    IndexedDB (or the old localStorage copy), filenames, ids, the engine stamp.
    ============================================================ */
 import { RStore } from './studio-store.js';
+import { internDoc } from './photos.js';
 import { FORMATS as AP_FMT, accentDay as apAccentDay, makeElement as apMake, STEP } from './studio-data.jsx';
 const LS_KEY = 'reality-studio-doc-v2';
 const TPL_KEY = 'reality-studio-templates-v1';
@@ -64,16 +65,26 @@ function loadLegacyDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r) retur
    boot: the IndexedDB copy, else the old localStorage one — which
    is then moved across and removed. If both exist (IndexedDB once
    refused a write and the fallback kept it) the newer one wins. */
+/* `bootState.clean` — the IndexedDB read went through without an error. The
+   photo sweep (hooks/usePhotoSweep.js) only runs when it did: a working doc
+   that couldn't be read may still hold references it must not lose. */
+const bootState = { clean:false };
 async function bootDoc(){
   let rec = null;
-  try{ if(RStore && RStore.docGet) rec = await RStore.docGet('working'); }catch(e){ rec = null; }
+  bootState.clean = false;
+  try{ if(RStore && RStore.docGet){ rec = await RStore.docGet('working'); bootState.clean = true; } }catch(e){ rec = null; }
+  if(rec && rec.from==='v1') console.info('[studio] took the working doc from the older build’s store (it was saved there more recently).');
   const legacy = loadLegacyDoc();
   const legacyAt = (legacy && legacy._savedAt) || 0;    // only the fallback writer stamps this
   if(rec && (!legacy || rec.at >= legacyAt)){
     if(legacy){ try{ localStorage.removeItem(LS_KEY); }catch(e){} }
     return normalizeDoc(rec.doc) || starterDoc();
   }
-  const d = normalizeDoc(legacy);
+  /* the localStorage copy is an old build's (inline photos) or this one's
+     fallback (references) — either way it comes in referenced */
+  let legacyIn = legacy;
+  try{ legacyIn = await internDoc(legacy); }catch(e){}
+  const d = normalizeDoc(legacyIn);
   if(d){
     /* Move it across; only drop the localStorage copy once IndexedDB holds it. */
     try{ await RStore.docPut('working', d); localStorage.removeItem(LS_KEY); }catch(e){}
@@ -136,6 +147,6 @@ function stampEngine(doc){
 function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
 
 export {
-  LS_KEY, TPL_KEY, starterDoc, normalizeDoc, NUDGE, loadLegacyDoc, bootDoc, storyStem, tplId, shallowSame,
+  LS_KEY, TPL_KEY, starterDoc, normalizeDoc, NUDGE, loadLegacyDoc, bootDoc, bootState, storyStem, tplId, shallowSame,
   sortTpls, stampEngine, loadUserTpls,
 };

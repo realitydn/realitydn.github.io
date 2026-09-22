@@ -1,7 +1,8 @@
 /* ============================================================
    REALITY POSTER STUDIO — useImageDrop
    ============================================================ */
-import { looksLikeImage, processImageFile } from '../../studio-shared/image-intake.jsx';
+import { looksLikeImage } from '../../studio-shared/image-intake.jsx';
+import { takePhoto } from '../photos.js';
 import { DEFAULTS as AP_DEF, STEP, pointToMaster as apToMaster, makeElement as apMake } from '../studio-data.jsx';
 function useImageDrop({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelectedIds, resolvedRef, updateElRef, exportingRef, say }){
   /* ---- drag-and-drop images ----
@@ -12,8 +13,9 @@ function useImageDrop({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelect
      never navigate — and on the stage it does what the words say:
        • onto a photo (or logo) → replaces its image, like Ctrl-V;
        • anywhere else on the stage → a new photo, centred where it landed.
-     Same processImageFile as upload and paste, so the same 2000px cap and the
-     same message for a file the browser can't open. */
+     Same processImageFile as upload and paste (through photos.js takePhoto, so
+     the photo lands as a reference), so the same 2000px cap and the same
+     message for a file the browser can't open. */
   React.useEffect(()=>{
     const isFiles = (e)=>{ const t = e.dataTransfer && e.dataTransfer.types;
       return !!t && Array.prototype.indexOf.call(t, 'Files')>=0; };
@@ -43,7 +45,7 @@ function useImageDrop({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelect
       const box = hit && hit.closest ? hit.closest('[data-elid]') : null;
       const target = box ? resolvedRef.current.find(x=>x.id===box.getAttribute('data-elid')) : null;
       if(target && (target.type==='photo' || target.type==='logo')){
-        processImageFile(file, ({ data:src })=>{ const fn=updateElRef.current; if(fn) fn(target.id, { src });
+        takePhoto(file, ({ data:src })=>{ const fn=updateElRef.current; if(fn) fn(target.id, { src });
           setSelectedIds([target.id]); }, m=>window.alert(m));
         return;
       }
@@ -52,7 +54,7 @@ function useImageDrop({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelect
       const cv = canvasRef.current; if(!cv) return;
       const cr = cv.getBoundingClientRect(), sc = scaleRef.current, d = AP_DEF.photo;
       const px = (e.clientX-cr.left)/sc, py = (e.clientY-cr.top)/sc;
-      processImageFile(file, ({ data:src })=>{
+      takePhoto(file, ({ data:src })=>{
         const dd = docRef.current;
         let vx = px - d.w/2, vy = py - d.h/2;
         if(dd.snap){ vx=Math.round(vx/STEP)*STEP; vy=Math.round(vy/STEP)*STEP; }

@@ -14,6 +14,7 @@ import { Chips, Slider, Fold, Hint, Swatches } from '../controls.jsx';
 import { TREATS, TREAT_PRESETS, TREAT_LOOKS } from './looks.js';
 import { sepResolved, pressResolved } from './press.jsx';
 import { TreatmentStrip } from './strip.jsx';
+import { adoptResult } from '../../photos.js';
 import { BlendFold } from './blend.jsx';
 import { TuneFold } from './tune.jsx';
 import { AdjustFold, FinishFold } from './finish.jsx';
@@ -57,7 +58,7 @@ function PhotoControls({ el, update, theme, accent, day }){
   return (
     <React.Fragment>
       <Fold id="ph-img" title="Image" open>
-        <PhotoUpload onImage={({ data })=>update({ src:data })} />
+        <PhotoUpload onImage={r=>adoptResult(r).then(({ data })=>update({ src:data }))} />
         <Hint tight>…or copy an image anywhere and paste it here with <b>Ctrl-V</b> / <b>⌘V</b>.</Hint>
         {el.type==='logo'
           ? <React.Fragment>
@@ -71,7 +72,7 @@ function PhotoControls({ el, update, theme, accent, day }){
 
       <Fold id="ph-mix" title="Second exposure" badge={el.src2?'on':null}>
         {!el.src2 && <Hint tight>Blend a second image into the source — the press treats the two as one photo.</Hint>}
-        <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onImage={({ data })=>update({ src2:data })} />
+        <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onImage={r=>adoptResult(r).then(({ data })=>update({ src2:data }))} />
         {el.src2 && <React.Fragment>
           <Slider label="Mix" val={el.mix2!=null?el.mix2:0.6} min={0} max={1} step={0.02} onChange={v=>update({mix2:v})} />
           <Chips label="Blend" options={[{v:'screen',l:'Screen'},{v:'multiply',l:'Multiply'},{v:'lighten',l:'Lighten'},{v:'overlay',l:'Overlay'}]} value={el.mix2Mode||'screen'} onChange={v=>update({mix2Mode:v})} />

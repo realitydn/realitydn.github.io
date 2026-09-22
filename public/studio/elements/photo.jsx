@@ -4,6 +4,7 @@
    ============================================================ */
 import { themeColors as seTheme, shapePath as seShapePath, shapeClip as seShapeClip } from '../studio-data.jsx';
 import { seResolve, seShadow } from './style.js';
+import { Photos, isRef } from '../photos.js';
 /* riso image caches (shared across photo elements).
    The decoded image, keyed by the photo's own data URL. This used to be a
    plain Map that never let go: every photo dropped in during a session stayed
@@ -25,11 +26,15 @@ function imgCachePut(url, im){
   while(_imgCache.size > IMG_CACHE_CAP) _imgCache.delete(_imgCache.keys().next().value);
 }
 /* One decode per source, for everything that draws a photo: the press, the
-   bleed preview, the treatment strip and the library's thumbnail warm-up. */
+   bleed preview, the treatment strip and the library's thumbnail warm-up.
+   `url` is whatever the element holds: a photo reference ('ref:sha256:…',
+   resolved to an objectURL by the blob store — ../photos.js) or an inline
+   data URL (anything saved before photos went by reference). Either way the
+   decode is cached under that same string. */
 function loadCachedImage(url){
   const c = imgCacheGet(url); if(c) return Promise.resolve(c);
   if(_imgPending.has(url)) return _imgPending.get(url);
-  const p = window.RISO.loadImage(url).then(
+  const p = (isRef(url) ? Photos.url(url) : Promise.resolve(url)).then(u=>window.RISO.loadImage(u)).then(
     im=>{ _imgPending.delete(url); imgCachePut(url, im); return im; },
     e=>{ _imgPending.delete(url); throw e; });
   _imgPending.set(url, p);
@@ -158,8 +163,8 @@ function PhotoEl({ el, theme, inkKey, inkDensity, selected, exporting }){
      poster. On a 4:5 with two photos that alone was most of the frame.
      Everything the effect reads is listed; x/y are deliberately absent, which
      is what makes dragging cheap. `src`/`src2` stay identities rather than
-     going through risoSig — they're data URLs and hashing them each render
-     would just move the cost. */
+     going through risoSig — short references now, but an old doc's are data
+     URLs, and hashing those each render would just move the cost. */
   }, [el.w, el.h, el.type, el.src, el.src2, el.sample, el.treatment, el.ink2, el.paperFill,
       el.imgScale, el.imgX, el.imgY, el.imgRot, el.img2Scale, el.img2X, el.img2Y, el.img2Rot,
       inkKey, inkDensity, theme, exporting, risoSig(el)]);

@@ -6,6 +6,7 @@
 import { RCloud } from '../../studio-shared/cloud.js';
 import { RStore } from '../studio-store.js';
 import { stampEngine, sortTpls } from '../doc.js';
+import { internDoc } from '../photos.js';
 function useCloudSession(){
   /* ---- WP9 cloud sign-in state (best-effort; this browser's IndexedDB stays
      the source of truth). `cloudUser` is just for the toolbar label; null =
@@ -58,7 +59,9 @@ function useCloud({ session, doc, docRef, setDoc, setSelectedIds, setUserTpls })
      IndexedDB is the offline source of truth; this is purely additive and
      fully guarded (RCloud no-ops when signed-out / hub dormant). Photos go up
      re-cut to 860px (RStore.slimDocForCloud) — the hub's per-doc cap didn't
-     grow when the local photo size did. ---- */
+     grow when the local photo size did. The doc on screen holds photo
+     references; slimDocForCloud sends each as the inline data URL it stands
+     for, so the cloud copy is exactly what it always was. ---- */
   const cloudPushRef = React.useRef(null);
   React.useEffect(()=>{
     if(!cloudUser || !RCloud) return;
@@ -99,7 +102,11 @@ function useCloud({ session, doc, docRef, setDoc, setSelectedIds, setUserTpls })
         if(remoteDoc && remoteDoc.elements && sig(remoteDoc)===sig(docRef.current)) return;
         if(remoteDoc && remoteDoc.elements && remoteAt > sessionStartRef.current){
           if(window.confirm('A newer Poster Studio working draft was found in the cloud. Load it? (Replaces what’s on screen.)')){
-            setDoc(d=>Object.assign({}, d, remoteDoc));
+            /* the draft's photos are inline — they come in as references */
+            let incoming = remoteDoc;
+            try{ incoming = await internDoc(remoteDoc); }catch(e){}
+            if(!live) return;
+            setDoc(d=>Object.assign({}, d, incoming));
             setSelectedIds([]);
           }
         }

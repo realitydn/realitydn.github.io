@@ -20,6 +20,9 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
   /* Non-null when the IndexedDB library could not be read — the panel is then
      showing the legacy localStorage backup, and says so. */
   const [tplStoreErr, setTplStoreErr] = React.useState(null);
+  /* True once the library came out of the v2 store cleanly — including this
+     load's pick-up from the old build's store. The photo sweep waits on it. */
+  const [libClean, setLibClean] = React.useState(false);
   /* Recently deleted — the last few templates that left the library by any
      route (Delete, saved over, displaced by an import). */
   const [tplBin, setTplBin] = React.useState([]);
@@ -86,6 +89,10 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
   }, []);
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
+      /* What this build already holds goes up at once; the pick-up from the
+         older build's store (below) reads that whole library and can take a
+         moment. tplReady stays false until it's done. */
+      try{ const pre = await RStore.tplGetAll(); if(live && pre && pre.length) setUserTpls(sortTpls(pre)); }catch(e){}
       const m = await RStore.migrate();
       const local = await RStore.tplGetAll();
       /* Show what's on THIS disk immediately, before the cloud round-trip.
@@ -100,17 +107,14 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
       if(!live) return;
       setUserTpls(sortTpls(local));
       setTplReady(true);
-      if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
-      /* That backup has sat in localStorage ever since — megabytes, in the box
-         Print and Schedule Studio still write to. Once it's provably filed in
-         IndexedDB (verbatim, read back, every id present) it's freed there.
-         Best-effort: anything it can't prove, it leaves exactly where it is. */
-      try{
-        const rt = RStore.retireLegacyTpls ? await RStore.retireLegacyTpls() : null;
-        if(rt && rt.retired) console.info('[studio] filed the localStorage template backup ('+rt.retired+' templates, '
-          +Math.round(rt.bytes/1024)+' KB; '+rt.live+' still live) in IndexedDB and freed it from localStorage.');
-        else if(rt && rt.kept) console.info('[studio] kept the localStorage template backup where it is: '+rt.kept+'.');
-      }catch(e){ console.warn('[studio] could not retire the localStorage template backup — left in place.', e); }
+      /* migrate() is the pick-up from the older build's store ('reality-studio',
+         inline photos), which it only ever reads: everything the first time,
+         then whatever an old-build tab has saved since. (The old build's
+         localStorage backup and its retirement are that build's business now —
+         this one never writes to anything the old build reads.) */
+      if(m && m.first) console.info('[studio] photos by reference: copied '+m.imported+' template(s) from the older build’s store; that store is left exactly as it was.');
+      else if(m && m.imported) console.info('[studio] picked up '+m.imported+' template(s) saved in an older Poster Studio tab'+(m.replaced? ' ('+m.replaced+' replaced a copy here — the copy is in Recently deleted)':'')+'.');
+      if(live && !(m && m.v1err)) setLibClean(true);
       /* One read for the whole library's card pictures. Best-effort: without
          them every card just renders itself live, exactly as it used to. */
       try{ const thumbs = await RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
@@ -241,8 +245,13 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
     try{ const fresh = await RStore.tplGetAll(); if(Array.isArray(fresh) && fresh.length) all = fresh; }
     catch(e){ console.error(e); }
     if(!all.length){ window.alert('No saved templates to export yet.'); return; }
+    /* The file carries every photo inline, full size — it has to open on any
+       machine and in any build, none of which have this browser's image store. */
+    let portable = all;
+    try{ portable = await Promise.all(all.map(t=>RStore.tplInline(t))); }
+    catch(e){ console.error(e); window.alert('Couldn’t read every photo out of storage, so the export was not written.'); return; }
     const payload = { kind:'reality-studio-templates', version:1,
-      exportedAt:new Date().toISOString(), templates:sortTpls(all) };
+      exportedAt:new Date().toISOString(), templates:sortTpls(portable) };
     const blob = new Blob([JSON.stringify(payload)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const d = new Date(), pad = n=>(n<10?'0':'')+n;
@@ -326,7 +335,7 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
     setSelectedIds([]);
   }
 
-  return { userTpls, setUserTpls, userTplsRef, tplReady, tplStoreErr, tplBin, restoreFromBin, restoring, restoreFromCloud,
+  return { userTpls, setUserTpls, userTplsRef, tplReady, tplStoreErr, libClean, tplBin, restoreFromBin, restoring, restoreFromCloud,
     tplThumbs, captureTplThumb, saveUserTpl, applyUserTpl, setTplArchived, delUserTpl, tplFileRef, exportUserTpls,
     importUserTpls, applyTemplate };
 }

@@ -3,7 +3,8 @@
    The keyboard, and Ctrl/⌘-V onto a selected photo.
    ============================================================ */
 import { historyKey } from '../../studio-shared/history.js';
-import { imageFromClipboard, processImageFile } from '../../studio-shared/image-intake.jsx';
+import { imageFromClipboard } from '../../studio-shared/image-intake.jsx';
+import { takePhoto } from '../photos.js';
 import { FORMATS as AP_FMT, STEP, uid } from '../studio-data.jsx';
 import { NUDGE } from '../doc.js';
 function useKeys({ undo, redo, say, docRef, setDoc, setSelectedIds, selIdsRef, selRef, updateElRef, resolvedRef, actionsRef }){
@@ -112,7 +113,7 @@ function useKeys({ undo, redo, say, docRef, setDoc, setSelectedIds, selIdsRef, s
       const file = imageFromClipboard(e.clipboardData);
       if(!file) return;
       e.preventDefault();
-      processImageFile(file, ({ data:src })=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); }, m=>window.alert(m));
+      takePhoto(file, ({ data:src })=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); }, m=>window.alert(m));
     }
     window.addEventListener('paste', onPaste);
     return ()=>window.removeEventListener('paste', onPaste);

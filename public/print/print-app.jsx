@@ -8,9 +8,8 @@ const { CATALOG:AP_CAT, DEFAULTS:AP_DEF, PALETTE:AP_PAL, ACCENTS:AP_ACC,
         SIZES:AP_SZ, SIZE_ORDER:AP_ORD, GANG:AP_GANG, sizeDims:apDims, PT_PER_MM:AP_PPM,
         TYPE_SCALE:AP_SCALE, snapToScale:apSnap, scaleStep:apStep,
         makeElement:apMake, uid:apUid, slugify:apSlug,
-        PrintCanvas:APCanvas, PrintElement:APElement, TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl } = window;
-const LS_KEY = 'reality-print-doc-v1';
-const TPL_KEY = 'reality-print-templates-v1';
+        PrintCanvas:APCanvas, PrintElement:APElement, TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl,
+        INK:AP_INK, artPastTrim:apPastTrim, migrateElements:apMigrate, nfcDeep:apNfc } = window;
 
 function starterDoc(){
   return {
@@ -27,8 +26,26 @@ function starterDoc(){
     ]
   };
 }
-function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements) return Object.assign(starterDoc(), d); } }catch(e){} return starterDoc(); }
-function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
+/* The stored doc / templates arrive from PrintDocs.load() (IndexedDB since
+   v2 — see print-store.js) and are brought up to the current rules here:
+   missing sheet keys default in, and old QR eyes go back to square. */
+function hydrateDoc(d){
+  if(!d || !Array.isArray(d.elements)) return starterDoc();
+  const out = Object.assign(starterDoc(), d);
+  out.elements = apMigrate(d.elements);
+  return out;
+}
+function hydrateTpls(a){
+  if(!Array.isArray(a)) return [];
+  return a.filter(t=>t && t.doc && Array.isArray(t.doc.elements))
+          .map(t=>Object.assign({}, t, { doc:Object.assign({}, t.doc, { elements:apMigrate(t.doc.elements) }) }));
+}
+/* storage errors in words a person can act on */
+function storeErrText(e){
+  const n = e && (e.name||''), m = e && (e.message||String(e));
+  if(n==='QuotaExceededError' || /quota/i.test(m||'')) return 'storage full';
+  return m || 'write failed';
+}
 
 /* ---------- small controls ----------
    Field / Slider / Chips / ScaleControl / NumField / Fold now come from the
@@ -42,8 +59,8 @@ const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap
 
 function Swatches({ label, value, onChange, auto, white }){
   const fixed = [];
-  if(auto)  fixed.push({ v:'auto',  bg:'linear-gradient(135deg,#111 0 50%,#fff 50% 100%)', title:'Auto — readable on the surface' });
-  fixed.push({ v:'ink', bg:'#111111', title:'Ink (K-only)' });
+  if(auto)  fixed.push({ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', title:'Auto — readable on the surface' });
+  fixed.push({ v:'ink', bg:AP_INK.rgb, title:'Ink (K-only)' });
   if(white) fixed.push({ v:'white', bg:'#ffffff', title:'White (paper / reverse)' });
   return (
     <div className="ps-row">
@@ -91,8 +108,10 @@ const IMG_TREAT_PRESETS = {
 };
 const FITTABLE = ['headline','numeral','bignum','kicker'];
 const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
+/* Module shape only. Finder EYES used to offer Rounded and Dot too; decoding
+   the exported PDFs, every styled eye failed (print-data qrGeometry) — so the
+   option is gone and the eyes are always square. */
 const QR_MODULES = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
-const QR_EYES    = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
 const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'}];
 const RULE_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'},{v:'dashdot',l:'Dash-dot'},{v:'double',l:'Double'},{v:'triple',l:'Triple'},{v:'ticks',l:'Ticks'},{v:'zigzag',l:'Zigzag'},{v:'wave',l:'Wave'},{v:'square',l:'Square'}];
 const RULE_TERMS = [{v:'none',l:'None'},{v:'dot',l:'Dot'},{v:'arrow',l:'Arrow'},{v:'diamond',l:'Diamond'},{v:'star',l:'★ Star'}];
@@ -103,18 +122,26 @@ const LIST_MARKERS = [{v:'•',l:'•'},{v:'–',l:'–'},{v:'→',l:'→'},{v:'
 const PUNCH_CELLS = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'star',l:'Star'}];
 /* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk. */
 function qrLum(key){
-  const hex = key==='ink'?'#111111' : (key==='white'||key==null||key==='auto')?'#ffffff' : (AP_PAL[key]||'#111111');
+  const hex = key==='ink'?AP_INK.rgb : (key==='white'||key==null||key==='auto')?'#ffffff' : (AP_PAL[key]||AP_INK.rgb);
   const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
   return 0.2126*r+0.7152*g+0.0722*b;
 }
 
-/* ---------- photo helpers ---------- */
+/* ---------- photo helpers ----------
+   Uploads are downscaled to UPLOAD_MAX_PX on the long side. It was 2000 px,
+   with a comment claiming that was 150 dpi — it is, up to ~A3 width; a
+   full-width A1 photo got ~85 dpi. The pixels live in IndexedDB (print-store),
+   not the doc, so the bigger file costs storage we have, not the ~5 MB
+   localStorage bucket. 3500 px is 150 dpi across 593 mm — an A2's long side,
+   an A1's short one — and the exporter's raster cap (4000) sits above it so
+   none of it is thrown away. The preflight names the dpi a photo really gets. */
+const UPLOAD_MAX_PX = 3500;
 function processImageFile(file, onReady){
   if(!file) return;
   const png = file.type==='image/png';
   const fr=new FileReader();
   fr.onload=()=>{ const im=new Image(); im.onload=()=>{
-    const max=2000, sc=Math.min(1, max/Math.max(im.width,im.height));
+    const max=UPLOAD_MAX_PX, sc=Math.min(1, max/Math.max(im.width,im.height));
     const w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc));
     const c=document.createElement('canvas'); c.width=w; c.height=h;
     c.getContext('2d').drawImage(im,0,0,w,h);
@@ -140,7 +167,7 @@ function PhotoUpload({ onFile }){
 /* accent-only swatch row (optional null = auto/partner, for second inks) */
 function AccentRow({ value, onChange, nullable, nullTitle }){
   return (<div className="ps-swatches">
-    {nullable && <div className={'ps-sw'+(value==null?' on':'')} title={nullTitle||'Auto'} style={{ background:'linear-gradient(135deg,#111 0 50%,#fff 50% 100%)', border:'1.5px solid #cfc7b6' }} onClick={()=>onChange(null)} />}
+    {nullable && <div className={'ps-sw'+(value==null?' on':'')} title={nullTitle||'Auto'} style={{ background:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', border:'1.5px solid #cfc7b6' }} onClick={()=>onChange(null)} />}
     {AP_ACC.map(a=>(<div key={a} className={'ps-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />))}
   </div>);
 }
@@ -383,7 +410,7 @@ function ShadowControls({ el, update }){
           <div className={'ps-sw'+((el.shadowColor||'k')==='k'?' on':'')} title="Soft press tint (K)"
             style={{ background:'linear-gradient(135deg,#777 0 50%,#ddd 50% 100%)', border:'1.5px solid #cfc7b6' }}
             onClick={()=>update({shadowColor:'k', shadowAlpha:null})} />
-          <div className={'ps-sw'+(el.shadowColor==='ink'?' on':'')} title="Ink" style={{ background:'#111111' }}
+          <div className={'ps-sw'+(el.shadowColor==='ink'?' on':'')} title="Ink" style={{ background:AP_INK.rgb }}
             onClick={()=>update({shadowColor:'ink', shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:1})} />
           {AP_ACC.map(a=>(
             <div key={a} className={'ps-sw'+(el.shadowColor===a?' on':'')} title={a} style={{ background:AP_PAL[a] }}
@@ -639,7 +666,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
 
       <div className="ps-sech">QR style</div>
       <Chips label="Module shape" options={QR_MODULES} value={el.moduleStyle||'square'} onChange={v=>update({moduleStyle:v})} />
-      <Chips label="Finder eyes" options={QR_EYES} value={el.eyeStyle||'square'} onChange={v=>update({eyeStyle:v})} />
+      <Hint>Finder eyes stay <b>square</b> — rounded or dot eyes break the pattern scanners lock onto. The modules and the centre mark are free.</Hint>
       <Swatches label="Eye colour" value={el.eye!=null?el.eye:'auto'} onChange={v=>update({eye:v})} auto white />
       <Chips label="Centre mark" options={QR_LOGOS} value={el.logo||'none'} onChange={v=>update({logo:v})} />
       {hasLogo && <Swatches label="Mark colour" value={el.logoColor!=null?el.logoColor:'auto'} onChange={v=>update({logoColor:v})} auto white />}
@@ -862,8 +889,56 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
   );
 }
 
-/* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct, onZoomFit, onZoomStep, canUndo, canRedo, onUndo, onRedo }){
+/* ---------- preflight — the chip next to Save PDF, and its list ----------
+   Non-blocking: it never stops an export, it just says what the press will
+   show. Recomputed on every edit (print-data preflight). A row click selects
+   the part it names; the bleed row carries its own fix. */
+function PreflightChip({ items, onPick, onBleedOn }){
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(()=>{
+    if(!open) return;
+    const h = (e)=>{ if(ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const k = (e)=>{ if(e.key==='Escape') setOpen(false); };
+    window.addEventListener('pointerdown', h); window.addEventListener('keydown', k);
+    return ()=>{ window.removeEventListener('pointerdown', h); window.removeEventListener('keydown', k); };
+  }, [open]);
+  const errs = items.filter(i=>i.level==='err').length;
+  const tone = errs ? ' err' : items.length ? ' warn' : ' ok';
+  return (
+    <div className="ps-pf" ref={ref}>
+      <button className={'ps-pfchip'+tone} onClick={()=>setOpen(o=>!o)}
+        title="Preflight — what will go wrong on press, rechecked on every edit. Never blocks an export.">
+        {items.length ? '⚠ Preflight · '+items.length : '✓ Preflight'}
+        <small>{items.length ? (errs ? errs+' to fix' : 'worth a look') : 'print-ready'}</small>
+      </button>
+      {open && <div className="ps-pfpanel" role="list">
+        <div className="ps-pfhead">Preflight<span>{items.length ? items.length+' note'+(items.length===1?'':'s') : 'clear'}</span></div>
+        {items.length===0
+          ? <div className="ps-pfok">Nothing to flag — art inside the bleed, photos sharp enough, codes with their quiet zone, text off the trim, every glyph in the fonts.</div>
+          : items.map((it,i)=>(
+              <div key={i} className={'ps-pfrow '+it.level} role="listitem">
+                <button className="ps-pfmain" onClick={()=>{ onPick(it); }} title={it.ids&&it.ids.length?'Select the part':''}>
+                  <span className="lv">{it.level==='err'?'Fix':'Check'}</span><span className="tx">{it.text}</span>
+                </button>
+                {it.kind==='bleed' && <button className="ps-pffix" onClick={onBleedOn}>Bleed on</button>}
+              </div>
+            ))}
+      </div>}
+    </div>
+  );
+}
+
+/* ---------- topbar ----------
+   Two rows, no overlap. It used to be one 60px row with overflow-x and the
+   export group stuck to the right edge — at 1440 px the row measured 2062 px,
+   so the sticky group painted over the accent, undo, zoom and view toggles and
+   they could not be clicked. The twelve-button size strip (the widest thing
+   in it) is a dropdown now; the sheet controls take the top row, the view
+   toggles and the whole export group the bottom one. Each row may still wrap
+   under ~1200 px — it wraps, it never overlaps. */
+function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct, onZoomFit, onZoomStep, canUndo, canRedo, onUndo, onRedo,
+                  preflight, onPickIssue, pastTrim, status }){
   const [name, setName] = React.useState(doc.title||'');
   React.useEffect(()=>{ setName(doc.title||''); }, [doc.title]);
   const commit = ()=> setDoc(d=> d.title===name ? d : ({...d, title:name}));
@@ -872,99 +947,166 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
   /* Straight from the exporter, not recomputed here. */
   const pg = window.PrintExport.pageMm(doc.size, doc.orient, doc.withBleed===true);
   const pageMm = pg.wmm+'×'+pg.hmm+' mm';
+  const bleedOn = doc.withBleed===true;
+  /* art past the trim with bleed off: the one export setting that silently
+     ruins a flood — so the Trim button itself says it, in the warning colour. */
+  const bleedTrap = pastTrim>0 && !bleedOn;
   return (
     <div className="ps-top">
       <div className="ps-brand">Reality<small>PRINT STUDIO</small></div>
+      <div className="ps-trows">
+        <div className="ps-trow">
+          <div className="ps-tgroup"><span className="gl">Size</span>
+            <select className="ps-select" value={doc.size} onChange={e=>onResize(e.target.value)} title="Paper size — the layout rescales in place">
+              {AP_ORD.map(sz=>(
+                <option key={sz} value={sz}>{AP_SZ[sz].label} · {AP_SZ[sz].sub} — {AP_SZ[sz].mm.join('×')} mm</option>
+              ))}
+            </select>
+          </div>
+          <div className="ps-tgroup">
+            <div className="ps-seg">
+              {[{v:'portrait',l:'Portrait'},{v:'landscape',l:'Landscape'}].map(o=>(
+                <button key={o.v} className={doc.orient===o.v?'on':''} onClick={()=>setDoc(d=>({...d, orient:o.v}))}>{o.l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="ps-tgroup"><span className="gl">Accent</span>
+            <div className="ps-swatches">
+              {AP_ACC.map(a=>(
+                <div key={a} className={'ps-sw'+(doc.accent===a?' on':'')} style={{ background:AP_PAL[a], width:22, height:22 }}
+                  onClick={()=>setDoc(d=>({...d, accent:a}))} title={a} />
+              ))}
+            </div>
+          </div>
+          <div className="ps-tgroup ps-status">{status}</div>
+          <div className="spacer" />
+          <div className="ps-tgroup">
+            <div className="ps-seg">
+              <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
+              <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
+            </div>
+          </div>
+          <div className="ps-tgroup">
+            <div className="ps-seg">
+              <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
+              <button onClick={onZoomFit} title="Fit the sheet">{zoomPct}</button>
+              <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
+            </div>
+          </div>
+        </div>
 
-      <div className="ps-tgroup"><span className="gl">Size</span>
-        <div className="ps-seg">
-          {AP_ORD.map(sz=>(
-            <button key={sz} className={doc.size===sz?'on':''} onClick={()=>onResize(sz)} title={AP_SZ[sz].mm.join('×')+' mm'}>
-              {AP_SZ[sz].label}<small>{AP_SZ[sz].sub}</small>
+        <div className="ps-trow">
+          <div className="ps-tgroup ps-view">
+            <button className={'ps-iconbtn'+(doc.showBleed?' on':'')} onClick={()=>setDoc(d=>({...d,showBleed:!d.showBleed}))} title="Show the bleed + crop-mark guide on the canvas (a guide only — the Trim / Bleed switch decides the PDF)">Guides</button>
+            <button className={'ps-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))} title="Show the layout grid">Grid</button>
+            <button className={'ps-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))} title="Snap to grid + guides">Snap</button>
+            <HintsToggle />
+          </div>
+          <div className="spacer" />
+
+          <div className="ps-tgroup ps-export"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('PDF · '+pageMm)}</span>
+            {/* What the PDF measures. Trim-only hands the shop a page that IS the
+                A-size; Bleed grows the page and names the A-size in its TrimBox. */}
+            <div className="ps-seg">
+              {[{v:false,l:'Trim',s: bleedTrap ? '⚠ art past trim' : dims.wmm+'×'+dims.hmm},{v:true,l:'Bleed',s:'+3mm'}].map(o=>(
+                <button key={String(o.v)} className={(bleedOn===o.v?'on':'')+(!o.v && bleedTrap?' warn':'')}
+                  onClick={()=>setDoc(d=>({...d, withBleed:o.v}))}
+                  title={o.v ? 'Page grows to carry a 3 mm bleed + crop marks. TrimBox still says '+AP_SZ[doc.size].label+'. For floods the shop will trim.'
+                             : (bleedTrap ? pastTrim+' part'+(pastTrim===1?' runs':'s run')+' past the trim — a trim-only page cuts them off at the edge and the guillotine shows white. Switch to Bleed.'
+                                          : 'Page is exactly '+dims.wmm+'×'+dims.hmm+' mm — the printable area, nothing around it.')}>
+                  {o.l}<small>{o.s}</small>
+                </button>
+              ))}
+            </div>
+            <PreflightChip items={preflight} onPick={onPickIssue} onBleedOn={()=>setDoc(d=>({...d, withBleed:true}))} />
+            <input className="ps-tname" placeholder="File name…" value={name} spellCheck={false}
+              onChange={e=>setName(e.target.value)} onBlur={commit}
+              onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }} />
+            <button className="ps-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport('single'); }}
+              title={'One print-ready PDF at '+pageMm+', K-only black text'+(bleedOn?' — 3 mm bleed + crop marks outside the trim':' — the printable area only')}>
+              Save PDF<small>1 UP · {AP_SZ[doc.size].label}{bleedOn?' · BLEED':''}</small>
             </button>
-          ))}
-        </div>
-      </div>
-      <div className="ps-tgroup">
-        <div className="ps-seg">
-          {[{v:'portrait',l:'Portrait'},{v:'landscape',l:'Landscape'}].map(o=>(
-            <button key={o.v} className={doc.orient===o.v?'on':''} onClick={()=>setDoc(d=>({...d, orient:o.v}))}>{o.l}</button>
-          ))}
-        </div>
-      </div>
-      <div className="ps-tgroup"><span className="gl">Accent</span>
-        <div className="ps-swatches">
-          {AP_ACC.map(a=>(
-            <div key={a} className={'ps-sw'+(doc.accent===a?' on':'')} style={{ background:AP_PAL[a], width:22, height:22 }}
-              onClick={()=>setDoc(d=>({...d, accent:a}))} title={a} />
-          ))}
-        </div>
-      </div>
-
-      <div className="ps-tgroup">
-        <div className="ps-seg">
-          <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
-          <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
-        </div>
-      </div>
-      <div className="ps-tgroup">
-        <div className="ps-seg">
-          <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
-          <button onClick={onZoomFit} title="Fit the sheet">{zoomPct}</button>
-          <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
-        </div>
-      </div>
-
-      <button className={'ps-iconbtn'+(doc.showBleed?' on':'')} onClick={()=>setDoc(d=>({...d,showBleed:!d.showBleed}))} title="Show bleed + crop marks">Bleed</button>
-      <button className={'ps-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))} title="Show the layout grid">Grid</button>
-      <button className={'ps-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))} title="Snap to grid + guides">Snap</button>
-      <HintsToggle />
-      <div className="spacer" />
-
-      <div className="ps-tgroup ps-export"><span className="gl">{exporting? (exportMsg||'Rendering…') : ('Export · '+pageMm)}</span>
-        {/* What the PDF measures. Trim-only hands the shop a page that IS the
-            A-size; Bleed grows the page and names the A-size in its TrimBox. */}
-        <div className="ps-seg">
-          {[{v:false,l:'Trim',s:dims.wmm+'×'+dims.hmm},{v:true,l:'Bleed',s:'+3mm'}].map(o=>(
-            <button key={String(o.v)} className={(doc.withBleed===true)===o.v?'on':''}
-              onClick={()=>setDoc(d=>({...d, withBleed:o.v}))}
-              title={o.v ? 'Page grows to carry a 3 mm bleed + crop marks. TrimBox still says '+AP_SZ[doc.size].label+'. For floods the shop will trim.'
-                         : 'Page is exactly '+dims.wmm+'×'+dims.hmm+' mm — the printable area, nothing around it.'}>
-              {o.l}<small>{o.s}</small>
+            <button className="ps-savebtn alt" disabled={exporting || !gang} onClick={()=>{ commit(); onExport('gang'); }}
+              title={gang ? ('Gang '+gang.per+'× '+AP_SZ[doc.size].label+' onto one A4 sheet, trim-only (A-sizes tile A4 edge to edge — no room for bleed), short cut ticks at the corners') : 'Ganging is for A5–A8 (they tile an A4 sheet)'}>
+              Gang on A4<small>{gang ? gang.per+' UP' : '—'}</small>
             </button>
-          ))}
+          </div>
         </div>
-        <input className="ps-tname" placeholder="File name…" value={name} spellCheck={false}
-          onChange={e=>setName(e.target.value)} onBlur={commit}
-          onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }} />
-        <button className="ps-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport('single'); }}
-          title={'One print-ready PDF at '+pageMm+', K-only black text'+(doc.withBleed===true?' — 3 mm bleed + crop marks outside the trim':' — the printable area only')}>
-          Save PDF<small>1 UP · {AP_SZ[doc.size].label}</small>
-        </button>
-        <button className="ps-savebtn alt" disabled={exporting || !gang} onClick={()=>{ commit(); onExport('gang'); }}
-          title={gang ? ('Gang '+gang.per+'× '+AP_SZ[doc.size].label+' onto one A4 sheet with cut guides') : 'Ganging is for A5–A8 (they tile an A4 sheet)'}>
-          Gang on A4<small>{gang ? gang.per+' UP' : '—'}</small>
-        </button>
       </div>
-
     </div>
   );
 }
 
+/* ---------- paper-size change: what scales ----------
+   x/y/w/h and fontSize always did; these are the other LENGTHS (pt) a part
+   carries, which stayed put — so an A6 scaled to A1 kept its 2pt borders and
+   6pt echo offsets. Per type, because the same key means different things
+   (a sticker's `radius` is a fraction, a block's is pt; `weight` is a rule's
+   thickness but a headline's font weight). ECHO_DEF is each renderer's
+   fallback offset, materialised when echo is on so there's a number to scale. */
+const LEN_PROPS = {
+  '*':      ['border','shadowDist'],
+  headline:['radius'], numeral:['radius'], bignum:['radius'], kicker:['radius'], pricelist:['radius'],
+  qr:['radius'], coupon:['radius'], badge:['radius'], marquee:['radius'], arrow:['radius'], block:['radius'],
+  image:['frameW'], sticker:['ringW'], shape:['stroke'], punchgrid:['stroke','gap'],
+  rule:['weight','spacing','amp','gap','tickLen'], dotfield:['dot','gap'], arctext:['radiusAdj'],
+};
+const ECHO_DEF = { headline:4, numeral:5, bignum:4, kicker:4, body:4, icon:5, qr:6, block:8, slab:9, stripes:9, dotfield:8, sticker:7, burst:7, shape:7, rule:5 };
+const round2 = v=>Math.round(v*100)/100;
+function scaleElement(e, k){
+  const o = Object.assign({}, e, {
+    x:Math.round(e.x*k), y:Math.round(e.y*k), w:Math.round(e.w*k), h:Math.round(e.h*k),
+    fontSize: e.fontSize!=null ? Math.max(5, Math.round(e.fontSize*k)) : e.fontSize
+  });
+  LEN_PROPS['*'].concat(LEN_PROPS[e.type]||[]).forEach(p=>{ if(typeof e[p]==='number') o[p]=round2(e[p]*k); });
+  if(e.echo && ECHO_DEF[e.type]!=null){
+    o.echoDx = round2((e.echoDx!=null?e.echoDx:ECHO_DEF[e.type])*k);
+    o.echoDy = round2((e.echoDy!=null?e.echoDy:ECHO_DEF[e.type])*k);
+  }
+  if(e.type==='qr') o.capScale = round2((e.capScale||1)*k);
+  return o;
+}
+
+/* ---------- boot: the stored doc is async now (IndexedDB) ----------
+   Root waits for PrintDocs.load() — a few ms — and only then mounts the app,
+   so the first render IS the saved sheet and the autosave never gets a chance
+   to write the starter doc over it. */
+function Root(){
+  const [boot, setBoot] = React.useState(null);
+  React.useEffect(()=>{
+    let live = true;
+    const p = window.PrintDocs ? window.PrintDocs.load() : Promise.resolve({ doc:null, tpls:null, backend:'none' });
+    p.catch(e=>({ doc:null, tpls:null, backend:'none', error:e })).then(r=>{ if(live) setBoot(r); });
+    return ()=>{ live=false; };
+  }, []);
+  if(!boot) return <div className="ps-boot">Reality · Print Studio</div>;
+  return <App boot={boot} />;
+}
+
 /* ---------- app ---------- */
-function App(){
-  const [doc, setDoc] = React.useState(loadDoc);
+function App({ boot }){
+  const [doc, setDoc] = React.useState(()=>hydrateDoc(boot.doc));
   const [selectedIds, setSelectedIds] = React.useState([]);
   const selectedId = selectedIds.length ? selectedIds[selectedIds.length-1] : null;
   const [fitScale, setFitScale] = React.useState(0.5);
   const [zoom, setZoom] = React.useState(null);           // null = fit
   const [spawn, setSpawn] = React.useState(null);
-  const [openSecs, setOpenSecs] = React.useState({});
+  /* the QR standees are what gets printed most — that group starts open, so
+     a first run lands on real layouts instead of four closed drawers */
+  const [openSecs, setOpenSecs] = React.useState({ 't:QR standee':true });
   const toggleSec = (k)=> setOpenSecs(s=>({ ...s, [k]:!s[k] }));
   const [exporting, setExporting] = React.useState(false);
   const [exportMsg, setExportMsg] = React.useState('');
-  const [userTpls, setUserTpls] = React.useState(loadUserTpls);
+  /* export problems stay until dismissed — they used to vanish after 1.8 s */
+  const [exportErr, setExportErr] = React.useState(null);
+  const [exportNote, setExportNote] = React.useState(null);
+  const [userTpls, setUserTpls] = React.useState(()=>hydrateTpls(boot.tpls));
   const [histVer, setHistVer] = React.useState(0);
+  const [saveSt, setSaveSt] = React.useState('saved');    // saved | saving | failed
+  const [saveErr, setSaveErr] = React.useState(null);
+  const [tplErr, setTplErr] = React.useState(null);
+  const [storeErr, setStoreErr] = React.useState(boot.backend==='ls' ? 'IndexedDB unavailable — saving to localStorage (shared, ~5 MB)' : null);
+  const [otherTab, setOtherTab] = React.useState(false);
 
   const stageRef = React.useRef(null);
   const canvasRef = React.useRef(null);
@@ -975,7 +1117,81 @@ function App(){
   const fitRef = React.useRef(fitScale); fitRef.current = fitScale;
   const zoomRef = React.useRef(zoom); zoomRef.current = zoom;
 
-  React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(doc)); }catch(e){} }, [doc]);
+  /* ---- autosave. Every doc change goes to PrintDocs (IndexedDB; one write in
+     flight, the newest queued), and a failed write SAYS so — the old
+     localStorage write swallowed the error, so a full bucket (shared with
+     Poster and Schedule) meant edits silently stopped persisting. The first
+     render is the doc we just loaded; writing it back would only let a second
+     tab clobber the first by opening. ---- */
+  const saveSeq = React.useRef(0);
+  const firstSave = React.useRef(true);
+  React.useEffect(()=>{
+    if(firstSave.current){ firstSave.current=false; return; }
+    if(!window.PrintDocs) return;
+    const n = ++saveSeq.current;
+    setSaveSt('saving');
+    window.PrintDocs.saveDoc(doc).then(()=>{ if(n===saveSeq.current){ setSaveSt('saved'); setSaveErr(null); } })
+      .catch(e=>{ console.error('autosave failed', e); if(n===saveSeq.current){ setSaveSt('failed'); setSaveErr(storeErrText(e)); } });
+  }, [doc]);
+  const persistTpls = (next)=>{
+    setUserTpls(next);
+    if(!window.PrintDocs) return;
+    window.PrintDocs.saveTpls(next).then(()=>setTplErr(null))
+      .catch(e=>{ console.error('template save failed', e); setTplErr(storeErrText(e)); });
+  };
+  /* the image store reports its own failures (a photo kept in memory only) */
+  React.useEffect(()=>{
+    const h = (e)=>{ const d=e.detail||{}; setStoreErr(d.message||'storage error'); };
+    window.addEventListener('printstore:error', h); return ()=>window.removeEventListener('printstore:error', h);
+  }, []);
+
+  /* ---- two tabs, one working doc. Both autosave to the same record, so the
+     last one to change anything wins and the other's work is gone on reload.
+     Tabs announce themselves on a BroadcastChannel; any other voice on it
+     raises the warning (and a `storage` event covers the localStorage
+     fallback, where a write from the other tab fires one here). ---- */
+  const tabId = React.useRef(Math.random().toString(36).slice(2));
+  const peers = React.useRef(new Set());
+  React.useEffect(()=>{
+    const onStorage = (e)=>{ if(e.key && e.key.indexOf('reality-print')===0) setOtherTab(true); };
+    window.addEventListener('storage', onStorage);
+    if(!('BroadcastChannel' in window)) return ()=>window.removeEventListener('storage', onStorage);
+    const bc = new BroadcastChannel('reality-print-studio'), me = tabId.current;
+    bc.onmessage = (e)=>{
+      const m = e.data||{}; if(!m.id || m.id===me) return;
+      if(m.t==='hello'){ peers.current.add(m.id); bc.postMessage({ t:'here', id:me }); }
+      else if(m.t==='here') peers.current.add(m.id);
+      else if(m.t==='bye') peers.current.delete(m.id);
+      setOtherTab(peers.current.size>0);
+    };
+    bc.postMessage({ t:'hello', id:me });
+    const bye = ()=>{ try{ bc.postMessage({ t:'bye', id:me }); }catch(err){} };
+    window.addEventListener('pagehide', bye);
+    return ()=>{ bye(); window.removeEventListener('pagehide', bye); window.removeEventListener('storage', onStorage); bc.close(); };
+  }, []);
+
+  /* ---- orphaned photos. Nothing ever called delImage, so every upload stayed
+     in IDB for good. Once per load, and only when the doc AND the templates
+     both came out of IndexedDB cleanly and no other tab answered the hello:
+     delete stored images nothing references (the working doc, every "My
+     template", this session's undo history) that are over a day old. ---- */
+  const tplsRef = React.useRef(userTpls); tplsRef.current = userTpls;
+  React.useEffect(()=>{
+    if(boot.backend!=='idb' || boot.error || !window.PrintStore || !window.PrintStore.gcImages) return;
+    const t = setTimeout(()=>{
+      if(peers.current.size>0) return;
+      const keep = new Set();
+      const take = (els)=> (els||[]).forEach(e=>{ if(e && e.imgId) keep.add(e.imgId); });
+      take(docRef.current.elements);
+      tplsRef.current.forEach(tp=> take(tp.doc && tp.doc.elements));
+      const h = hist.current; if(h){ h.past.concat(h.future, h.pending?[h.pending]:[]).forEach(d=>take(d && d.elements)); }
+      window.PrintStore.gcImages(keep, 24*3600*1000)
+        .then(n=>{ if(n) console.info('Print Studio: removed '+n+' orphaned image'+(n===1?'':'s')+' from storage'); })
+        .catch(e=>console.warn('image sweep skipped', e));
+    }, 2500);
+    return ()=>clearTimeout(t);
+  }, []);
+
   React.useEffect(()=>{ if(window.PrintExport) window.PrintExport.ready().catch(()=>{}); }, []);
   /* layouts measured in JS (fitted headlines, the coupon stack) read the webfont
      off a canvas — repaint once the faces land so a cold load isn't laid out
@@ -1088,7 +1304,10 @@ function App(){
 
   const sel = doc.elements.find(e=>e.id===selectedId) || null;
 
-  function updateEl(id, patch){ setDoc(d=>({ ...d, elements:d.elements.map(e=>e.id===id?{...e,...patch}:e) })); }
+  /* every edit lands NFC (nfcDeep) — decomposed Vietnamese pasted into a
+     field is folded to precomposed letters here, before it's saved; the
+     exporter normalises again regardless, for docs saved before this. */
+  function updateEl(id, patch){ patch = apNfc(patch); setDoc(d=>({ ...d, elements:d.elements.map(e=>e.id===id?{...e,...patch}:e) })); }
   function updateMany(patches){ setDoc(d=>({ ...d, elements:d.elements.map(e=> patches[e.id] ? {...e, ...patches[e.id]} : e) })); }
   const update = (patch)=> sel && updateEl(sel.id, patch);
   const del = ()=>{ const ids=selectedIds; if(!ids.length) return; setDoc(d=>({...d, elements:d.elements.filter(e=>ids.indexOf(e.id)<0)})); setSelectedIds([]); };
@@ -1126,15 +1345,24 @@ function App(){
     updateMany(patches);
   }
 
-  /* resize the document to a new A-size: scale every part in place */
+  /* resize the document to a new A-size: scale every part in place.
+     Always from an UNROUNDED basis: each step used to scale the previous
+     step's rounded numbers, so A6 → A1 → A6 did not come back to the A6 you
+     had. resizeBase remembers the elements as they were before the first of a
+     run of size changes; while the sheet is untouched between changes (its
+     elements are still exactly what the last resize produced), the next one
+     scales that original again — so any hop, and any return trip, is one
+     rounding away from the source, not a stack of them. Edit anything and the
+     edited sheet becomes the new basis. */
+  const resizeBase = React.useRef(null);
   function onResize(newSize){
     setDoc(d=>{
       if(d.size===newSize) return d;
-      const o = apDims(d.size, d.orient), n = apDims(newSize, d.orient), k = n.wpt/o.wpt;
-      const elements = d.elements.map(e=>Object.assign({}, e, {
-        x:Math.round(e.x*k), y:Math.round(e.y*k), w:Math.round(e.w*k), h:Math.round(e.h*k),
-        fontSize: e.fontSize!=null ? Math.max(5, Math.round(e.fontSize*k)) : e.fontSize
-      }));
+      const rb = resizeBase.current;
+      const base = (rb && rb.result===d.elements && rb.orient===d.orient) ? rb : { size:d.size, orient:d.orient, elements:d.elements };
+      const o = apDims(base.size, base.orient), n = apDims(newSize, d.orient), k = n.wpt/o.wpt;
+      const elements = newSize===base.size ? base.elements.slice() : base.elements.map(e=>scaleElement(e, k));
+      resizeBase.current = { size:base.size, orient:base.orient, elements:base.elements, result:elements };
       return {...d, size:newSize, elements};
     });
     setZoom(null);
@@ -1181,7 +1409,13 @@ function App(){
   function applyTemplate(tpl){
     if(docRef.current.elements.length && !window.confirm('Replace the current sheet with the “'+tpl.name+'” layout?')) return;
     const b = apBuildTpl(tpl);
-    setDoc(d=>({ ...d, size:b.size, orient:b.orient, accent:b.accent, elements:b.elements })); setSelectedIds([]); setZoom(null);
+    /* A flood template runs its colour 12pt past the trim — which only prints
+       if the PDF carries bleed. withBleed defaults OFF, so applying one used to
+       hand over a trim-only file that guillotines to white slivers. Floods
+       switch it on (the Trim/Bleed control shows it; switch back if the shop
+       wants trim-only); anything else leaves the choice as it was. */
+    const floods = apPastTrim(b.elements, apDims(b.size, b.orient)).length>0;
+    setDoc(d=>({ ...d, size:b.size, orient:b.orient, accent:b.accent, elements:b.elements, withBleed: floods ? true : d.withBleed })); setSelectedIds([]); setZoom(null);
   }
   function saveUserTpl(){
     const d=docRef.current; if(!d.elements.length){ window.alert('Nothing on the sheet to save yet.'); return; }
@@ -1190,14 +1424,15 @@ function App(){
     const existing=userTpls.find(t=>t.name.toLowerCase()===name.toLowerCase());
     const t={ id: existing?existing.id:apUid(), name, savedAt:Date.now(), doc:snap };
     const next = existing ? userTpls.map(p=>p.id===t.id?t:p) : [t, ...userTpls];
-    try{ localStorage.setItem(TPL_KEY, JSON.stringify(next)); setUserTpls(next); }catch(e){ window.alert('Storage full.'); }
+    persistTpls(next);
   }
   function applyUserTpl(t){
     if(docRef.current.elements.length && !window.confirm('Replace the current sheet with “'+t.name+'”?')) return;
-    const snap=JSON.parse(JSON.stringify(t.doc)); snap.elements.forEach(e=>{ e.id=apUid(); });
-    setDoc(d=>({ ...d, size:snap.size, orient:snap.orient, accent:snap.accent, elements:snap.elements })); setSelectedIds([]); setZoom(null);
+    const snap=JSON.parse(JSON.stringify(t.doc)); snap.elements = apMigrate(snap.elements); snap.elements.forEach(e=>{ e.id=apUid(); });
+    const floods = apPastTrim(snap.elements, apDims(snap.size, snap.orient)).length>0;   // same rule as applyTemplate
+    setDoc(d=>({ ...d, size:snap.size, orient:snap.orient, accent:snap.accent, elements:snap.elements, withBleed: floods ? true : d.withBleed })); setSelectedIds([]); setZoom(null);
   }
-  function delUserTpl(id){ const next=userTpls.filter(x=>x.id!==id); try{ localStorage.setItem(TPL_KEY, JSON.stringify(next)); }catch(e){} setUserTpls(next); }
+  function delUserTpl(id){ persistTpls(userTpls.filter(x=>x.id!==id)); }
 
   /* ---- export ---- */
   function dl(bytes, name){
@@ -1208,8 +1443,21 @@ function App(){
   }
   async function onExport(mode){
     if(exporting || !window.PrintExport) return;
-    setSelectedIds([]); setExporting(true);
     const d = docRef.current;
+    /* photos that would print as blank boxes — ask before making a broken PDF
+       rather than after (the preflight shows them too) */
+    const imgs = d.elements.filter(e=>e.type==='image');
+    if(imgs.length && window.PrintImg){
+      const miss = [];
+      for(const e of imgs){
+        if(!e.imgId){ miss.push('an empty image frame'); continue; }
+        const m = await window.PrintImg.meta(e.imgId).catch(()=>null);
+        if(!m) miss.push('a photo missing from storage');
+      }
+      if(miss.length && !window.confirm(miss.length+' image'+(miss.length===1?'':'s')+' will print as a blank white box:\n\n  · '+miss.join('\n  · ')
+          +'\n\nRe-upload '+(miss.length===1?'it':'them')+' first, or export anyway?')) return;
+    }
+    setSelectedIds([]); setExporting(true); setExportErr(null); setExportNote(null);
     const base = apSlug(d.title) || 'reality-print';
     try{
       if(mode==='gang'){
@@ -1222,9 +1470,60 @@ function App(){
         const bytes = await window.PrintExport.single(d, { bleed:withBleed, marks:true });
         dl(bytes, base+'-'+d.size+(withBleed?'-bleed':'')+'.pdf');
       }
-    }catch(err){ console.error('export failed', err); setExportMsg('Export failed — '+err.message); await new Promise(r=>setTimeout(r,1800)); }
+      /* what the exporter could not draw — said out loud, kept until dismissed */
+      const rep = window.PrintExport.report ? window.PrintExport.report() : null;
+      if(rep && (rep.missingImages.length || rep.failed.length)){
+        const bits = [];
+        if(rep.missingImages.length) bits.push(rep.missingImages.length+' image'+(rep.missingImages.length===1?'':'s')+' printed as blank boxes');
+        if(rep.failed.length) bits.push(rep.failed.length+' part'+(rep.failed.length===1?'':'s')+' failed to draw ('+rep.failed.map(f=>f.type).join(', ')+')');
+        setExportNote('PDF saved, but '+bits.join(' and ')+'. Check it before sending.');
+        setSelectedIds(rep.missingImages.map(m=>m.id).concat(rep.failed.map(f=>f.id)).filter(Boolean));
+      }
+    }catch(err){ console.error('export failed', err); setExportErr('Export failed — '+((err&&err.message)||err)); }
     setExporting(false); setExportMsg('');
   }
+
+  /* ---- preflight inputs the pure check can't reach on its own: each photo's
+     stored size (null = gone from storage) and the embedded fonts' cmaps. ---- */
+  const [imgMeta, setImgMeta] = React.useState({});
+  React.useEffect(()=>{
+    if(!window.PrintImg) return;
+    const ids = Array.from(new Set(doc.elements.filter(e=>e.type==='image' && e.imgId).map(e=>e.imgId))).filter(id=>!(id in imgMeta));
+    if(!ids.length) return;
+    let live = true;
+    Promise.all(ids.map(id=>window.PrintImg.meta(id).then(m=>[id,m], ()=>[id,null]))).then(rs=>{
+      if(!live) return;
+      setImgMeta(o=>{ const n=Object.assign({}, o); rs.forEach(([id,m])=>{ n[id]=m; }); return n; });
+    });
+    return ()=>{ live=false; };
+  }, [doc.elements]);
+  const [glyphFn, setGlyphFn] = React.useState(null);
+  React.useEffect(()=>{
+    if(window.PrintExport && window.PrintExport.glyphChecker)
+      window.PrintExport.glyphChecker().then(fn=>setGlyphFn(()=>fn)).catch(e=>console.warn('glyph check unavailable', e));
+  }, []);
+  const preflightItems = React.useMemo(()=>{
+    const items = window.preflight(doc, dims, { images:imgMeta, hasGlyph:glyphFn });
+    /* photos the store could not keep — fine now, gone after a reload */
+    const unsaved = window.PrintImg && window.PrintImg.unsaved ? window.PrintImg.unsaved() : [];
+    doc.elements.forEach(e=>{ if(e.type==='image' && e.imgId && unsaved.indexOf(e.imgId)>=0)
+      items.push({ level:'err', kind:'img', ids:[e.id], text:'Image is in memory only — storage refused it, so it vanishes on reload. Export now, or free space and re-upload.' }); });
+    return items;
+  }, [doc, imgMeta, glyphFn, storeErr]);
+  const pastTrim = React.useMemo(()=>apPastTrim(doc.elements, dims).length, [doc.elements, dims.wpt, dims.hpt]);
+  const pickIssue = (it)=>{ if(it.ids && it.ids.length) setSelectedIds(it.ids.filter(id=>doc.elements.some(e=>e.id===id))); };
+
+  /* ---- status: what the save / the other tab / the store is doing, in the
+     top row, where it can't be missed ---- */
+  const status = (<React.Fragment>
+    {saveSt==='failed'
+      ? <span className="ps-stat bad" title={'The last change did not reach storage: '+saveErr+'. Keep this tab open, free space (or export a PDF), and it retries on the next edit.'}>NOT SAVED — {saveErr}</span>
+      : <span className="ps-stat" title={boot.backend==='ls' ? 'Autosaved to browser localStorage' : 'Autosaved to this browser (IndexedDB)'}>{saveSt==='saving' ? 'Saving…' : '✓ Saved'}</span>}
+    {tplErr && <span className="ps-stat bad" title="The My templates list did not save">TEMPLATES NOT SAVED — {tplErr}</span>}
+    {otherTab && <span className="ps-stat warn" title="Both tabs autosave the same sheet — the last one edited wins, and the other's changes are lost on reload. Close one.">⚠ Open in another tab</span>}
+    {storeErr && <span className="ps-stat warn" title={storeErr}>⚠ {storeErr.length>44 ? storeErr.slice(0,42)+'…' : storeErr}
+      <button className="ps-statx" onClick={()=>setStoreErr(null)} title="Dismiss">×</button></span>}
+  </React.Fragment>);
 
   const gridS = window.gridSpec(doc, dims);
   const h = hist.current;
@@ -1257,7 +1556,8 @@ function App(){
     <div className="ps-app">
       <Topbar doc={doc} setDoc={setDoc} onResize={onResize} onExport={onExport} exporting={exporting} exportMsg={exportMsg}
         zoomPct={zoomPct} onZoomFit={onZoomFit} onZoomStep={onZoomStep}
-        canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo} />
+        canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
+        preflight={preflightItems} onPickIssue={pickIssue} pastTrim={pastTrim} status={status} />
       <div className="ps-body">
         <div className="ps-lib">
           <div className="ps-libtitle">Templates</div>
@@ -1326,8 +1626,12 @@ function App(){
       </div>
       {spawn && <div className="ps-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}
       {palOpen && <RUI.Palette onClose={()=>setPalOpen(false)} />}
+      {(exportErr || exportNote) && <div className={'ps-toast'+(exportErr?' bad':'')} role="alert">
+        <span>{exportErr || exportNote}</span>
+        <button className="ps-statx" onClick={()=>{ setExportErr(null); setExportNote(null); }} title="Dismiss">×</button>
+      </div>}
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);

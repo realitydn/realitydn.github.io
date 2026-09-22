@@ -300,10 +300,11 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const light = PE_WHITE.rgb;   /* QR modules always ride on white (paper) so they scan; `surface` frames it */
     const eyeCol = peInk(el.eye||'auto', textCol);
     const logoCol = peInk(el.logoColor||'auto', eyeCol);
-    const cap = el.caption, qrSize = cap ? Math.min(el.w, el.h-28) : Math.min(el.w, el.h);
+    const cs = el.capScale||1;   // caption follows a paper-size change (mirrors print-export)
+    const cap = el.caption, qrSize = cap ? Math.min(el.w, el.h-28*cs) : Math.min(el.w, el.h);
     const echoCol = el.echo ? echoHex(el, docAccent) : null;
     const qStyle = { moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo };
-    inner = <div style={box({ alignItems:'center', justifyContent:'center', gap:8, padding:0 })}>
+    inner = <div style={box({ alignItems:'center', justifyContent:'center', gap:8*cs, padding:0 })}>
       <div style={{ position:'relative', width:qrSize, height:qrSize }}>
         {echoCol && <div style={{ position:'absolute', inset:0, transform:`translate(${el.echoDx||6}px, ${el.echoDy||6}px)` }}>
           <QRView data={el.data} ecl={el.ecl} dark={echoCol} light={light} quiet={el.quiet} {...qStyle} bg="transparent" ghost />
@@ -312,7 +313,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
           <QRView data={el.data} ecl={el.ecl} dark={textCol} light={light} quiet={el.quiet} {...qStyle} eye={eyeCol} logoColor={logoCol} />
         </div>
       </div>
-      {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:'12px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
+      {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(12*cs)+'px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
     </div>;
   }
   else if(t==='coupon'){

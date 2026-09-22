@@ -43,7 +43,11 @@ const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
 /* Ink = the text/line black. On screen a hair off pure so it sits kindly on
    white; in the PDF it is K-ONLY (CMYK 0,0,0,1) so type rides the black plate
    alone — one ink, crisp registration, no colour fringing on small text.
-   White = the paper; in print it is "no ink" (0,0,0,0), never a fill. */
+   White = the paper; in print it is "no ink" (0,0,0,0), never a fill.
+   The screen hex #111111 is the canon for print (public/tokens/day-colours.json
+   → print.ink, beside true-white stock), not Poster's cream-paper #0d0905;
+   tools/verify-day-colours.mjs holds both to it. The PDF never sees this
+   hex: text and ink fills stay K-only. */
 const INK   = { rgb:'#111111', cmyk:[0,0,0,1] };
 const WHITE = { rgb:'#ffffff', cmyk:[0,0,0,0] };
 
@@ -118,12 +122,26 @@ function faceFor(fam, weight){
   return 'mont-500';
 }
 
-/* ---- colour resolution (screen) ---- */
+/* ---- colour resolution (screen) ----
+   Readable ink for text on a fill — Poster Studio's rule (studio-data.jsx
+   contrastInk), with print's light being the white sheet instead of cream.
+   This used to cut a gamma-less luminance at 0.55, which put WHITE text on
+   pink and red; real relative luminance and whichever neutral actually
+   contrasts better lands on ink for pink (4.72 vs 4.20) and red (4.59 vs
+   4.33), white only on purple — the same answer the Poster gives and the
+   templates' own comment below already claims. Ties go to ink (`>`). */
+function relLuminance(hex){
+  const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
+    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
+}
+function contrastRatio(a, b){
+  const l1=relLuminance(a), l2=relLuminance(b);
+  return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
+}
 function contrastInk(hex){
   if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return INK.rgb;
-  const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
-  const L=0.2126*r+0.7152*g+0.0722*b;
-  return L<0.55 ? WHITE.rgb : INK.rgb;
+  return contrastRatio(hex, WHITE.rgb) > contrastRatio(hex, INK.rgb) ? WHITE.rgb : INK.rgb;
 }
 /* An element's ink choice → screen hex. 'ink'/'white' literal; an accent name
    → its hex; 'auto' → the supplied fallback (surface contrast or doc accent). */
@@ -800,11 +818,24 @@ function slugify(s){
 
 /* ---- QR — encode any text to a module matrix (vector squares in the PDF).
    Uses the vendored qrcode-generator. EC level M, auto type. Returns a square
-   matrix of 0/1, or null. ---- */
+   matrix of 0/1, or null.
+
+   UTF-8, always. The vendored encoder's DEFAULT byte encoder keeps only the
+   low byte of each UTF-16 unit (`c & 0xff`), so "Đà Nẵng" went into the code
+   as garbage and scanned as garbage — a URL survives only because it is
+   ASCII. The same file ships a proper 'UTF-8' encoder (the multibyte block at
+   the foot of vendor/qrcode.js); it is switched on here rather than by
+   editing the vendored copy. Text is NFC first, so a decomposed "ẵ" encodes
+   as the one code point a phone expects. ---- */
+(function(){
+  const q = window.qrcode;
+  if(q && q.stringToBytesFuncs && q.stringToBytesFuncs['UTF-8']) q.stringToBytes = q.stringToBytesFuncs['UTF-8'];
+})();
+function nfc(s){ return (typeof s==='string' && s.normalize) ? s.normalize('NFC') : s; }
 function buildQR(text, ecl){
   try{
     const q = window.qrcode(0, ecl||'M');
-    q.addData(text||'https://realitydn.com');
+    q.addData(nfc(text||'https://realitydn.com'));
     q.make();
     const n = q.getModuleCount();
     const m = [];
@@ -846,7 +877,6 @@ function qrGeometry(text, opts){
   const quiet = opts.quiet!==false ? 4 : 0;
   const tot = n + quiet*2;
   const mod = opts.moduleStyle || 'square';
-  const eye = opts.eyeStyle || 'square';
   const inEye = (r,c)=> (r<7&&c<7) || (r<7&&c>=n-7) || (r>=n-7&&c<7);
   /* centre knockout — an odd-sized module box so it stays centred on the grid */
   let logo=null;
@@ -866,18 +896,20 @@ function qrGeometry(text, opts){
   }
   /* finder eyes: outer ring (7×7) + light knockout (5×5) + inner pip (3×3),
      three of them. Shapes stacked in order so the ring reads. */
-  /* Every eye keeps a (rounded-)square OUTER frame so the 1:1:3:1:1 finder
-     detection stays rock-solid; the style only varies the corner rounding + the
-     centre pip. A pure-circle outer ring drops the finder corners and fails
-     stricter scanners — so "dot" = rounded frame + a round pip, not a full disc. */
-  const oK = eye==='square' ? 'rect' : 'roundrect';
-  const oR = eye==='square' ? 0 : 1.9;
+  /* The eyes are SQUARE, whatever the element asks for. There used to be
+     'rounded' and 'dot' eyes (a 1.9-module corner radius, a round pip), sold
+     here as keeping detection "rock-solid". They didn't: decoding the exported
+     PDFs with OpenCV, every rounded/dot eye failed — the radius eats into the
+     1:1:3:1:1 run the finder detector locks onto (see the QR standee notes in
+     TEMPLATES). Rounded/dot DATA modules and the star centre mark decode fine;
+     the eyes must not be styled. The inspector no longer offers the option and
+     loadDoc maps old docs to square, but the geometry refuses regardless, so
+     no saved file or pasted template can print an unscannable code. */
   [[0,0],[0,n-7],[n-7,0]].forEach(([r0,c0])=>{
     const x=quiet+c0, y=quiet+r0;
-    shapes.push({ kind:oK, role:'eye',     x:x,   y:y,   w:7, h:7, r:oR });
-    shapes.push({ kind:oK, role:'eyeHole', x:x+1, y:y+1, w:5, h:5, r:Math.max(0,oR-0.6) });
-    if(eye==='dot') shapes.push({ kind:'circle', role:'eye', cx:x+3.5, cy:y+3.5, r:1.5 });
-    else            shapes.push({ kind:oK, role:'eye', x:x+2, y:y+2, w:3, h:3, r:Math.max(0,oR-1.2) });
+    shapes.push({ kind:'rect', role:'eye',     x:x,   y:y,   w:7, h:7 });
+    shapes.push({ kind:'rect', role:'eyeHole', x:x+1, y:y+1, w:5, h:5 });
+    shapes.push({ kind:'rect', role:'eye',     x:x+2, y:y+2, w:3, h:3 });
   });
   /* logo knockout patch (light) — sits above data/eyes to guarantee a clean
      quiet ring around the mark; the mark itself is drawn from `logo` below. */
@@ -1086,9 +1118,10 @@ const TEMPLATES = [
        · eyeStyle STAYS SQUARE. Verified by decoding the exported PDFs with
          OpenCV: rounded/dot MODULES decode fine, but a rounded or dot finder
          eye fails every time — the 1.9-module corner radius in qrGeometry
-         distorts the 1:1:3:1:1 run the detector locks onto, despite the
-         comment there claiming otherwise. moduleStyle:'rounded' + the star
-         centre mark (which forces ECL H) both decode; the eyes must not.
+         distorts the 1:1:3:1:1 run the detector locks onto. (qrGeometry now
+         draws square eyes whatever eyeStyle says, and the inspector no longer
+         offers the others.) moduleStyle:'rounded' + the star centre mark
+         (which forces ECL H) both decode; the eyes must not.
 
      Six A6 cards, one structure each so the picker doesn't read as six copies
      — flood · halftone · angled seam · marquee · inset ticket · sunburst —
@@ -1165,9 +1198,12 @@ const TEMPLATES = [
   ]},
 
   /* ---- WAYFINDING · far register. Read across a room, so caps throughout and
-     the arrow label sits on the signage rung. ---- */
+     the arrow label sits on the signage rung. The header bands here (and the
+     happy-hour board's, and the drinks board's marquee) used to stop exactly
+     ON the trim at x:0 — a flood that doesn't bleed, which the preflight now
+     flags. They run -12 / +12 past it like the standees'. ---- */
   { id:"way-toilets-a5", name:"Toilets", group:"Wayfinding", size:"a5", orient:"portrait", accent:"amber", els:[
-    {"type":"block","x":0,"y":0,"w":420,"h":150,"p":{"fill":"amber"}},
+    {"type":"block","x":-12,"y":-12,"w":444,"h":162,"p":{"fill":"amber"}},
     {"type":"kicker","x":36,"y":40,"w":348,"h":20,"p":{"text":"NHÀ VỆ SINH","ink":"ink","align":"center"}},
     {"type":"headline","x":30,"y":64,"w":360,"h":72,"p":{"text":"TOILETS","weight":800,"fontSize":54,"ink":"ink","align":"center"}},
     {"type":"arrow","x":110,"y":200,"w":200,"h":180,"p":{"dir":"down","label":"","ink":"amber"}},
@@ -1175,7 +1211,7 @@ const TEMPLATES = [
     {"type":"footer","x":36,"y":505,"w":348,"h":64,"p":{"showQR":false}}
   ]},
   { id:"way-rooftop-a4", name:"Rooftop upstairs", group:"Wayfinding", size:"a4", orient:"portrait", accent:"red", els:[
-    {"type":"block","x":0,"y":0,"w":595,"h":230,"p":{"fill":"red"}},
+    {"type":"block","x":-12,"y":-12,"w":619,"h":242,"p":{"fill":"red"}},
     {"type":"kicker","x":44,"y":62,"w":507,"h":22,"p":{"text":"TẦNG THƯỢNG","ink":"ink","align":"center"}},
     {"type":"headline","x":44,"y":92,"w":507,"h":118,"p":{"text":"ROOFTOP\nUPSTAIRS","weight":800,"fontSize":60,"ink":"ink","align":"center","leading":0.92}},
     {"type":"arrow","x":198,"y":290,"w":200,"h":210,"p":{"dir":"up","label":"","ink":"red"}},
@@ -1224,7 +1260,7 @@ const TEMPLATES = [
     {"type":"pricelist","x":44,"y":490,"w":507,"h":124,"p":{"heading":"No & low","upper":false,"cols":2,"rowSize":"m","dotLeader":true,"items":[
       {"l":"Soda chanh","p":"40k"},{"l":"Cold brew tonic","p":"50k"},
       {"l":"Kombucha","p":"55k"},{"l":"Juice of the day","p":"45k"}]}},
-    {"type":"marquee","x":0,"y":636,"w":595,"h":36,"p":{"text":"HAPPY HOUR 16–19","sep":"★","surface":"solid","fill":"pink","fontSize":14}},
+    {"type":"marquee","x":-12,"y":636,"w":619,"h":36,"p":{"text":"HAPPY HOUR 16–19","sep":"★","surface":"solid","fill":"pink","fontSize":14}},
     {"type":"body","x":44,"y":690,"w":507,"h":30,"p":{"text":"Prices in nghìn đồng. Ask the bar what's fresh — hỏi quầy bar món hôm nay.","align":"center","fontSize":12}},
     {"type":"footer","x":44,"y":748,"w":507,"h":66,"p":{"showQR":true,"qrData":"https://app.realitydn.com/menu"}}
   ]},
@@ -1241,7 +1277,7 @@ const TEMPLATES = [
     {"type":"footer","x":34,"y":520,"w":352,"h":62,"p":{"showQR":false}}
   ]},
   { id:"menu-happyhour-a3", name:"Happy hour — big board", group:"Menus", size:"a3", orient:"portrait", accent:"red", els:[
-    {"type":"block","x":0,"y":0,"w":842,"h":300,"p":{"fill":"red"}},
+    {"type":"block","x":-12,"y":-12,"w":866,"h":312,"p":{"fill":"red"}},
     {"type":"kicker","x":62,"y":92,"w":718,"h":26,"p":{"text":"MỖI NGÀY · EVERY DAY","ink":"ink","align":"center"}},
     {"type":"headline","x":62,"y":128,"w":718,"h":148,"p":{"text":"HAPPY\nHOUR","weight":800,"fontSize":92,"ink":"ink","align":"center","leading":0.9}},
     {"type":"bignum","x":221,"y":350,"w":400,"h":130,"p":{"text":"16–19","fontSize":96,"align":"center","weight":800}},
@@ -1273,6 +1309,138 @@ function buildTemplate(tpl){
   return { elements, size: tpl.size||'a5', orient: tpl.orient||'portrait', accent: (tpl.accent && ACCENTS.indexOf(tpl.accent)>=0)?tpl.accent:'pink' };
 }
 
+/* ============================================================
+   DOC HYGIENE + PREFLIGHT — what the sheet will actually print,
+   checked before the PDF is. Shared by the app (the preflight
+   list next to Save PDF) and the exporter (NFC, the bleed test).
+   ============================================================ */
+
+/* Unicode NFC, all the way down. Vietnamese pasted from a Mac, a PDF or some
+   web pages arrives DECOMPOSED — "ẵ" as a + ̆ + ̃ — and the exporter sets
+   tracked text one code point at a time, so each combining mark became its
+   own glyph with its own advance, parked beside its letter. NFC folds every
+   Vietnamese letter back to the one precomposed code point the fonts carry. */
+function nfcDeep(v){
+  if(typeof v==='string') return nfc(v);
+  if(Array.isArray(v)) return v.map(nfcDeep);
+  if(v && typeof v==='object'){ const o={}; for(const k in v) o[k]=nfcDeep(v[k]); return o; }
+  return v;
+}
+
+/* Old docs → current rules, on load. Only the QR finder eyes so far: 'rounded'
+   and 'dot' eyes never decoded, so a saved code wearing them is put back to
+   square rather than carried forward (qrGeometry refuses them anyway — this
+   just makes the inspector tell the truth about what prints). */
+function migrateElements(elements){
+  return (elements||[]).map(e=> (e && e.type==='qr' && e.eyeStyle && e.eyeStyle!=='square') ? Object.assign({}, e, { eyeStyle:'square' }) : e);
+}
+
+/* Axis-aligned bounds of an element on the sheet, rotation included (it spins
+   about its centre, like both renderers). */
+function elBounds(el){
+  const r=(el.rot||0)*Math.PI/180, c=Math.abs(Math.cos(r)), s=Math.abs(Math.sin(r));
+  const hw=(el.w*c+el.h*s)/2, hh=(el.w*s+el.h*c)/2, cx=el.x+el.w/2, cy=el.y+el.h/2;
+  return { x0:cx-hw, y0:cy-hh, x1:cx+hw, y1:cy+hh };
+}
+const TRIM_EPS = 0.5;   // pt — a hair past the trim is still ON the trim
+function onSheet(b, dims){ return b.x1>0 && b.y1>0 && b.x0<dims.wpt && b.y0<dims.hpt; }
+/* does any part of the art run past the trim? — the question "should this PDF
+   carry bleed?" answers. Parts wholly off the sheet don't count: they print
+   nothing either way. */
+function crossesTrim(el, dims){
+  const b=elBounds(el); if(!onSheet(b, dims)) return false;
+  return b.x0<-TRIM_EPS || b.y0<-TRIM_EPS || b.x1>dims.wpt+TRIM_EPS || b.y1>dims.hpt+TRIM_EPS;
+}
+function artPastTrim(elements, dims){ return (elements||[]).filter(el=>crossesTrim(el, dims)); }
+
+/* The parts that are FILLS — colour meant to meet the edge. One of these
+   stopping exactly on the trim is a flood that doesn't bleed: the cut lands a
+   hair inside or outside it and shows a white sliver either way. */
+function isFill(el){
+  if(el.type==='block'||el.type==='slab'||el.type==='image') return true;
+  if(el.type==='stripes'||el.type==='dotfield') return el.bg && el.bg!=='none';
+  if(el.type==='marquee') return el.surface==='solid'||el.surface==='accent';
+  return false;
+}
+function touchesTrim(el, dims){
+  const b=elBounds(el), e=TRIM_EPS;
+  return Math.abs(b.x0)<=e || Math.abs(b.y0)<=e || Math.abs(b.x1-dims.wpt)<=e || Math.abs(b.y1-dims.hpt)<=e;
+}
+
+/* Every string an element prints, with the family that sets it — the glyph
+   check asks the embedded face, not the browser, which falls back silently. */
+const TEXT_TYPES = ['headline','body','kicker','bignum','numeral'];
+function elStrings(el){
+  const out=[], up=(s)=> (s||'').toUpperCase();
+  const add=(s, fam)=>{ if(s) out.push({ s:String(s), fam }); };
+  const t=el.type;
+  if(TEXT_TYPES.indexOf(t)>=0) add(el.upper!==false && t!=='body' ? up(el.text) : el.text, el.fam||'mont');
+  else if(t==='pricelist'){ add(el.upper===false?el.heading:up(el.heading),'mont');
+    (el.items||[]).forEach(it=>{ add(el.upper===false?it.l:up(it.l),'mont'); add(it.p,'grot'); });
+    if(el.listStyle==='bulleted') add(el.marker||'•','mont'); }
+  else if(t==='qr') add(up(el.caption),'mont');
+  else if(t==='coupon'){ add(el.heading,'mont'); add(el.big,'mont'); add(el.terms,'mont'); add(el.code,'mont'); }
+  else if(t==='footer'||t==='contact'){ add(up(el.site),'mont'); add(el.addr,'grot'); }
+  else if(t==='badge'||t==='seal'){ add(up(el.top),'mont'); add(t==='seal'?el.big:up(el.big),'mont'); add(up(el.sub),'mont'); }
+  else if(t==='marquee'){ add(up(el.text),'mont'); add(el.sep,'mont'); }
+  else if(t==='arrow') add(up(el.label),'mont');
+  else if(t==='arctext') add(el.upper!==false?up(el.text):el.text, el.fam||'mont');
+  else if(t==='punchgrid' && el.bonus) add(el.bonusLabel,'mont');
+  return out;
+}
+
+/* THE PREFLIGHT. Non-blocking: a list of what will go wrong on press, each
+   naming the part so a click can select it. ctx carries what only the app can
+   know — { images: id → {w,h} | null (null = gone from storage),
+            hasGlyph(fam, weight, codePoint) → bool | null (null = not yet known) }.
+   level 'err' = the PDF will be visibly wrong; 'warn' = worth a look. */
+const SAFE_MM = 3;
+const MIN_DPI = 150;
+function preflight(doc, dims, ctx){
+  ctx = ctx||{};
+  const out=[], els=doc.elements||[], bleed=doc.withBleed===true, safe=SAFE_MM*PT_PER_MM;
+  const past = artPastTrim(els, dims);
+  if(past.length && !bleed) out.push({ level:'err', kind:'bleed', ids:past.map(e=>e.id),
+    text:'Art runs past the trim but bleed is OFF — the page stops at the trim, so the cut shows white. Turn Bleed on.' });
+  els.forEach(el=>{
+    const b=elBounds(el); if(!onSheet(b, dims)) return;
+    const name = el.type;
+    if(isFill(el) && touchesTrim(el, dims) && !crossesTrim(el, dims))
+      out.push({ level:'warn', kind:'edge', ids:[el.id], text:name+' stops exactly on the trim — run it 12pt past the edge (and export with bleed) or the cut shows a white sliver.' });
+    if(el.type==='image'){
+      if(!el.imgId) out.push({ level:'err', kind:'img', ids:[el.id], text:'Image frame is empty — it prints as a white box.' });
+      else if(ctx.images && ctx.images[el.imgId]===null)
+        out.push({ level:'err', kind:'img', ids:[el.id], text:'Image is missing from storage — it prints as a white box. Re-upload it.' });
+      else if(ctx.images && ctx.images[el.imgId]){
+        const m=ctx.images[el.imgId], zoom=el.imgScale||1;
+        const s=(el.fit==='contain' ? Math.min(el.w/m.w, el.h/m.h) : Math.max(el.w/m.w, el.h/m.h))*zoom;   // pt per source px
+        const dpi=Math.round(72/s);
+        if(dpi<MIN_DPI) out.push({ level:'warn', kind:'dpi', ids:[el.id], text:'Image is '+dpi+' dpi at print size (want '+MIN_DPI+'+) — it will look soft.' });
+      }
+    }
+    if(el.type==='qr' && el.quiet===false)
+      out.push({ level:'warn', kind:'qr', ids:[el.id], text:'QR quiet zone is OFF — scanners need 4 clear modules round the code.' });
+    const strs = elStrings(el);
+    if(strs.length && el.type!=='marquee'){
+      if(b.x0<safe || b.y0<safe || b.x1>dims.wpt-safe || b.y1>dims.hpt-safe)
+        out.push({ level:'warn', kind:'safe', ids:[el.id], text:name+' text sits within '+SAFE_MM+' mm of the trim — the cut can nick it.' });
+    }
+    if(ctx.hasGlyph){
+      const miss={};
+      strs.forEach(({s,fam})=>{
+        const w = TEXT_TYPES.indexOf(el.type)>=0||el.type==='arctext' ? (el.weight||700) : 700;
+        for(const ch of Array.from(nfc(s))){
+          if(ch==='★'||/\s/.test(ch)) continue;   // ★ is drawn as a vector star, never a glyph
+          if(ctx.hasGlyph(fam, w, ch.codePointAt(0))===false) miss[ch]=1;
+        }
+      });
+      const ks=Object.keys(miss);
+      if(ks.length) out.push({ level:'err', kind:'glyph', ids:[el.id], text:name+': '+ks.map(c=>'“'+c+'”').join(' ')+' not in the embedded font — prints as a blank box.' });
+    }
+  });
+  return out;
+}
+
 Object.assign(window, {
   PALETTE, PALETTE_CMYK, INK, WHITE, ACCENTS,
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
@@ -1286,5 +1454,6 @@ Object.assign(window, {
   lineBox, wrapTextW, couponLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
   CATALOG, DEFAULTS, makeElement, uid, slugify,
-  TEMPLATES, TEMPLATE_GROUPS, buildTemplate
+  TEMPLATES, TEMPLATE_GROUPS, buildTemplate,
+  nfc, nfcDeep, migrateElements, elBounds, crossesTrim, artPastTrim, elStrings, preflight, SAFE_MM, MIN_DPI
 });

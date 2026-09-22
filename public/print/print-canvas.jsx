@@ -49,7 +49,7 @@ function PcTextEditor({ el, onChange, onDone }){
         position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h,
         transform: el.rot ? 'rotate('+el.rot+'deg)' : null,
         background:'rgba(237,27,114,.08)', border:'2px solid '+PC_GUIDE, outline:'none',
-        color:'#111111', padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
+        color:window.INK.rgb, padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
         caretColor:PC_GUIDE,
       }, pcEditFont(el))} />
   );

@@ -158,6 +158,8 @@ if (brand) {
     "public/studio-shared/shapes.js": ["SHAPE_KINDS", "shapePath", "shapeClip", "roundedRectPath", "starPath",
       "burstRays", "ruleLayout", "RULE_PATTERNS", "iconLayout", "_poly", "_regPoly", "_starPts", "_star",
       "_scalePath", "_scaleSvgPath"],
+    "public/studio-shared/qr.js": ["buildQR", "qrGeometry", "qrTarget", "qrMatrix", "QRGlyph", "nfc",
+      "QUIET_SPEC", "QUIET_TIGHT", "qrPatternOf", "QR_DATA_FRAC", "_QR", "_QR_ROWS"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;

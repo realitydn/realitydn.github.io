@@ -10,8 +10,9 @@
 
    Globals, on purpose (index.html loads them BEFORE the bundle; the
    modules read them as globals, never import them):
-     React, ReactDOM, PDFLib, fontkit, qrcode — the self-hosted builds
-       in vendor/;
+     React, ReactDOM, PDFLib, fontkit — the self-hosted builds in
+       vendor/ (the QR encoder is no longer one of them: it is bundled,
+       from ../studio-shared/vendor/qrcode.cjs via ../studio-shared/qr.js);
      window.RisoPress, window.RISO — ../studio-shared/riso-press.js
        and riso-engine.js (the SAME two files Poster Studio loads).
        riso-press.js is vendored verbatim into the REALITY app (its

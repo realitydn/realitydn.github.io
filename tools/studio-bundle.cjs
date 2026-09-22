@@ -17,8 +17,11 @@
 //
 // What is NOT in the bundle, on purpose — index.html loads these as plain
 // <script>s first, and the bundle reads them as globals:
-//   · vendor/ (React, ReactDOM, html-to-image, jsPDF, JSZip, pdf-lib, fontkit,
-//     qrcode) — self-hosted UMD builds, never imported. The JSX below compiles
+//   · vendor/ (React, ReactDOM, html-to-image, jsPDF, JSZip, pdf-lib, fontkit)
+//     — self-hosted UMD builds, never imported. (The QR encoder is the
+//     exception: studio-shared/vendor/qrcode.cjs is imported by qr.js and
+//     bundled as a CommonJS module — `.cjs` so it stays CJS under the root
+//     package's "type":"module".) The JSX below compiles
 //     to React.createElement against that global React.
 //   · studio-shared/riso-press.js + riso-engine.js (window.RisoPress,
 //     window.RISO). riso-press.js is vendored verbatim into the REALITY app

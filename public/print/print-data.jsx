@@ -23,6 +23,7 @@
 import {
   SHAPE_KINDS, shapePath, roundedRectPath, starPath, burstRays, ruleLayout, iconLayout,
 } from '../studio-shared/shapes.js';
+import { nfc, buildQR, qrGeometry } from '../studio-shared/qr.js';
 /* ---- brand palette (LOCKED) — screen RGB, the weekday coding, contrast,
    the ink mark, the wordmark path and the brand strings: one copy for every
    Studio, in ../studio-shared/brand.js (the hexes derive from
@@ -543,34 +544,10 @@ function slugify(s){
     .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
 }
 
-/* ---- QR — encode any text to a module matrix (vector squares in the PDF).
-   Uses the vendored qrcode-generator. EC level M, auto type. Returns a square
-   matrix of 0/1, or null.
-
-   UTF-8, always. The vendored encoder's DEFAULT byte encoder keeps only the
-   low byte of each UTF-16 unit (`c & 0xff`), so "Đà Nẵng" went into the code
-   as garbage and scanned as garbage — a URL survives only because it is
-   ASCII. The same file ships a proper 'UTF-8' encoder (the multibyte block at
-   the foot of vendor/qrcode.js); it is switched on here rather than by
-   editing the vendored copy. Text is NFC first, so a decomposed "ẵ" encodes
-   as the one code point a phone expects. ---- */
-(function(){
-  const q = window.qrcode;
-  if(q && q.stringToBytesFuncs && q.stringToBytesFuncs['UTF-8']) q.stringToBytes = q.stringToBytesFuncs['UTF-8'];
-})();
-function nfc(s){ return (typeof s==='string' && s.normalize) ? s.normalize('NFC') : s; }
-function buildQR(text, ecl){
-  try{
-    const q = window.qrcode(0, ecl||'M');
-    q.addData(nfc(text||'https://realitydn.com'));
-    q.make();
-    const n = q.getModuleCount();
-    const m = [];
-    for(let r=0;r<n;r++){ const row=[]; for(let c=0;c<n;c++) row.push(q.isDark(r,c)?1:0); m.push(row); }
-    return m;
-  }catch(e){ return null; }
-}
-
+/* ---- QR — the encoder (vendored qrcode-generator, UTF-8 + NFC, EC level M,
+   auto version), nfc and the square-finder-eye geometry the screen SVG and the
+   PDF share (qrGeometry) are ../studio-shared/qr.js — the one copy the Poster
+   now encodes its tickets with too. ---- */
 /* ---- QR destinations — one-tap targets so a standee can be pointed at a real
    REALITY link without retyping. Values verified from the app / confirmed by
    Donald; the inspector fills `data` from these, then it's freely editable. ---- */
@@ -582,66 +559,6 @@ const QR_DESTINATIONS = [
   { id:'instagram',label:'Instagram', data:'https://instagram.com/reality.dn',          hint:'@reality.dn' },
   { id:'reviews',  label:'Reviews',   data:'https://maps.app.goo.gl/mRQfWUwx3nXT5vsn7', hint:'Google Maps · leave a ★' },
 ];
-
-/* ---- QR geometry — the styling brain shared by the screen (SVG) and the PDF
-   (vector), so a stylized code is WYSIWYG. Classifies the module matrix into
-   data cells and the three finder eyes (which are kept structurally whole —
-   solid ring + centre — so any scanner still locks on), applies the chosen
-   module / eye shapes, and reserves an optional centre-logo knockout. Emits
-   renderer-agnostic descriptors in MODULE units (0..tot, quiet zone folded in);
-   each renderer just maps kind→primitive and role→colour. A centre logo forces
-   ECL H so the codewords it covers are always recoverable. ---- */
-function qrGeometry(text, opts){
-  opts = opts||{};
-  const hasLogo = !!opts.logo && opts.logo!=='none';
-  const ecl = hasLogo ? 'H' : (opts.ecl||'M');
-  const m = buildQR(text, ecl); if(!m) return null;
-  const n = m.length;
-  const quiet = opts.quiet!==false ? 4 : 0;
-  const tot = n + quiet*2;
-  const mod = opts.moduleStyle || 'square';
-  const inEye = (r,c)=> (r<7&&c<7) || (r<7&&c>=n-7) || (r>=n-7&&c<7);
-  /* centre knockout — an odd-sized module box so it stays centred on the grid */
-  let logo=null;
-  if(hasLogo){ let s=Math.round(n*0.21); if(s%2===0) s+=1; s=Math.max(5,s);
-    const o=Math.floor((n-s)/2); logo={ r0:o, c0:o, s }; }
-  const inLogo=(r,c)=> logo && r>=logo.r0 && r<logo.r0+logo.s && c>=logo.c0 && c<logo.c0+logo.s;
-
-  const shapes=[];
-  const dataShape=(x,y)=>{
-    if(mod==='dot')     return { kind:'circle',    role:'data', cx:x+0.5, cy:y+0.5, r:0.5 };
-    if(mod==='rounded') return { kind:'roundrect', role:'data', x, y, w:1, h:1, r:0.32 };
-    return { kind:'rect', role:'data', x, y, w:1, h:1 };
-  };
-  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
-    if(!m[r][c] || inEye(r,c) || inLogo(r,c)) continue;
-    shapes.push(dataShape(quiet+c, quiet+r));
-  }
-  /* finder eyes: outer ring (7×7) + light knockout (5×5) + inner pip (3×3),
-     three of them. Shapes stacked in order so the ring reads. */
-  /* The eyes are SQUARE, whatever the element asks for. There used to be
-     'rounded' and 'dot' eyes (a 1.9-module corner radius, a round pip), sold
-     here as keeping detection "rock-solid". They didn't: decoding the exported
-     PDFs with OpenCV, every rounded/dot eye failed — the radius eats into the
-     1:1:3:1:1 run the finder detector locks onto (see the QR standee notes in
-     TEMPLATES). Rounded/dot DATA modules and the star centre mark decode fine;
-     the eyes must not be styled. The inspector no longer offers the option and
-     loadDoc maps old docs to square, but the geometry refuses regardless, so
-     no saved file or pasted template can print an unscannable code. */
-  [[0,0],[0,n-7],[n-7,0]].forEach(([r0,c0])=>{
-    const x=quiet+c0, y=quiet+r0;
-    shapes.push({ kind:'rect', role:'eye',     x:x,   y:y,   w:7, h:7 });
-    shapes.push({ kind:'rect', role:'eyeHole', x:x+1, y:y+1, w:5, h:5 });
-    shapes.push({ kind:'rect', role:'eye',     x:x+2, y:y+2, w:3, h:3 });
-  });
-  /* logo knockout patch (light) — sits above data/eyes to guarantee a clean
-     quiet ring around the mark; the mark itself is drawn from `logo` below. */
-  if(logo){ shapes.push({ kind:'roundrect', role:'logoBg',
-    x:quiet+logo.c0-0.7, y:quiet+logo.r0-0.7, w:logo.s+1.4, h:logo.s+1.4, r:1.4 }); }
-
-  return { n, quiet, tot, shapes, ecl, logoKind: hasLogo ? opts.logo : 'none',
-    logo: logo ? { cx:quiet+logo.c0+logo.s/2, cy:quiet+logo.r0+logo.s/2, s:logo.s } : null };
-}
 
 /* ============================================================
    PARTS CATALOG — draggable components (pt sizing tuned for ~A5)

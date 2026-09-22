@@ -19,6 +19,7 @@ import {
   PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
 } from '../studio-shared/brand.js';
 import { WordmarkSVG as Wordmark } from '../studio-shared/wordmark.jsx';
+import { QRGlyph, qrPatternOf, QUIET_SPEC, QUIET_TIGHT } from '../studio-shared/qr.js';
 
 /* Location registry — editable config, drives the auto-legend. */
 const LOCATIONS = [
@@ -748,41 +749,13 @@ const _SQR = [
   '1111111001110000101010001','1000001001000001100010011','1011101000111111111110100',
   '1011101001110010001000011','1011101000000101000001101','1000001001110011110110001',
   '1111111010001000110001001'].map(r=>r.split('').map(Number));
-/* Fraction of a QR tile that is actual pattern — the spec's 4-module quiet
-   zone per side is inside the tile, so a 25-module code shows 25/33 of the box
-   it occupies as ink. Anything that must LOOK the same size as the code (the
-   canon ink square butted against it) measures against this, not the tile.
-   Mirrors studio-data.jsx's constant of the same name. */
-const QR_DATA_FRAC = _SQR.length / (_SQR.length + 8);
-/* Quiet zone in modules per side. 4 is the spec and is free on a light ground —
-   the zone is the sheet colour, so it is invisible and the code's PATTERN is
-   the whole visible object. On a dark ground it is not free: the zone has to
-   stay light or the code will not scan, and 4 modules draw a cream slab a
-   third wider than the pattern, which outweighs the ink square butted against
-   it. QUIET_TIGHT is the small safe area for that case — enough for a reliable
-   read, little enough that code and square balance. Mirrors studio-data.jsx. */
-const QUIET_SPEC = 4, QUIET_TIGHT = 2;
-/* Visible pattern inside a tile of `tile` px. Callers size the TILE (it has to
-   fit the footer) and read the pattern back out to size the ink square. */
-function qrPatternOf(tile, quiet){
-  const q = quiet==null ? QUIET_SPEC : quiet;
-  return tile * _SQR.length / (_SQR.length + 2*q);
-}
-function SchQR({ size, dark, light, quiet }){
-  const n = _SQR.length;
-  const q = quiet==null ? QUIET_SPEC : quiet;
-  const pad = size * (q / (n + 2*q));
-  return (
-    <div style={{ width:size, height:size, background:light, padding:pad, boxSizing:'border-box', flex:'none' }}>
-      <div style={{ width:'100%', height:'100%', display:'grid',
-        gridTemplateColumns:'repeat('+n+',1fr)', gridTemplateRows:'repeat('+n+',1fr)' }}>
-        {_SQR.flatMap((row,y)=>row.map((c,x)=>
-          <div key={x+'-'+y} style={{ background: c?dark:light }} />
-        ))}
-      </div>
-    </div>
-  );
-}
+/* The quiet-zone maths (QUIET_SPEC / QUIET_TIGHT / qrPatternOf — the pattern
+   inside a tile, which sizes the ink square butted against the code) and the
+   <div>-grid glyph are ../studio-shared/qr.js, the same ones the Poster uses.
+   SchQR keeps its PINNED matrix above: this code was generated once and its
+   exports are goldened; the live encoder draws a different (equally valid)
+   mask for the same URL. flex:none so a footer row never squeezes it. */
+function SchQR(props){ return <QRGlyph {...props} matrix={_SQR} style={{ flex:'none' }} />; }
 
 export {
   INK, CREAM, WHITE, MONT, ALT, GROT,
@@ -794,6 +767,6 @@ export {
   buildDocFromFeed, mergeFeedIntoDoc, applyFeedToDoc, feedWindow, feedPrefKey, ictHHMM, ictDate,
   deleteEventFromDoc, restoreFeedEvent, clearRangeOccurrences, cloneToNextPeriod,
   loadStoredDoc, storeDoc,
-  Wordmark, SchQR, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT, QR_CTA,
+  Wordmark, SchQR, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT, QR_CTA,
   PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex, SchInkMark,
 };

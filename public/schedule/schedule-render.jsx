@@ -11,7 +11,7 @@ import {
   FLAGS as R_FLAGS, rangeDates as r_rangeDates, rangeLabel as r_rangeLabel, dWeekday as r_wd,
   dShort as r_dshort, eventsOn as r_eventsOn, dayInfo as r_dayInfo, timeLabel as r_timeLabel,
   usedLegend as r_usedLegend, partDates as r_partDates, Wordmark as RWordmark, SchQR as RQR,
-  SchInkMark as RInkMark, QR_DATA_FRAC as R_QR_FRAC, qrPatternOf as R_QR_PATTERN,
+  SchInkMark as RInkMark, qrPatternOf as R_QR_PATTERN,
   QUIET_SPEC as R_QUIET_SPEC, QUIET_TIGHT as R_QUIET_TIGHT, INK_MARK as R_INK_MARK,
   QR_HOST as R_QR_HOST, QR_LABEL as R_QR_LABEL, QR_LABEL_SHORT as R_QR_LABEL_SHORT,
   QR_CTA as R_QR_CTA,

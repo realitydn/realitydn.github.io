@@ -13,6 +13,7 @@ import {
   qrPatternOf, parseSessions, DAY_NAMES, DAY_ABBR, ACCENT_BY_DAY, contrastInk,
 } from './studio-data.jsx';
 import { MONT, ALT, GROT } from '../studio-shared/brand.js';
+import { qrTarget, qrMatrix } from '../studio-shared/qr.js';
 import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
 
 /* ---- FACT type — the 5+6 merge, in one place -------------------------
@@ -883,6 +884,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const qrLight = bandIsDark ? '#fffbf1' : bandBg;
     const qrDark  = bandIsDark ? '#0d0905' : surf.color;
     const qrQuiet = bandIsDark ? QUIET_TIGHT : QUIET_SPEC;
+    /* The code encodes the ticket's OWN Website field — qrTarget turns the
+       printed bare host into the URL a phone opens — so editing the site
+       changes the code, not just the caption. qrN is its module count (25 for
+       the site URL), which the pattern maths below needs. */
+    const qrText = qrTarget(el.site);
+    const qrN = (qrMatrix(qrText)||[]).length || 25;
     /* Ink mark on the ticket — DEFAULT ON (an absent prop = on): the ticket
        is the brand carrier, so every saved poster and every template gains
        the mark on next open. Canon (ink-strip.json + the poster exception):
@@ -944,8 +951,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
        quiet zone IS the gap between them, exactly as specified. */
     const qrBlock = (qs)=> (
       <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
-        <SEQR size={qs} dark={qrDark} light={qrLight} quiet={qrQuiet} />
-        {markOn && squareMark && squareEl(qrPatternOf(qs, qrQuiet)/4)}
+        <SEQR size={qs} dark={qrDark} light={qrLight} quiet={qrQuiet} text={qrText} />
+        {markOn && squareMark && squareEl(qrPatternOf(qs, qrQuiet, qrN)/4)}
       </div>
     );
     if(el.variant==='banner'){
@@ -983,7 +990,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
       /* block width = strip (if forced) + QR + its flush square, or whichever
          single mark is showing. The 14px gap matches the row variants'. */
       const markW = (stripOn ? stripCols*bm : 0)
-                  + (el.showQR ? qs + (markOn && squareMark ? qrPatternOf(qs, qrQuiet) : 0) : 0)
+                  + (el.showQR ? qs + (markOn && squareMark ? qrPatternOf(qs, qrQuiet, qrN) : 0) : 0)
                   + (stripOn && el.showQR ? 14 : 0)
                   + (sqSideOn ? 4*sqm : 0);
       const reserve = markW ? markW + 26 : 0;
@@ -1203,7 +1210,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const qrElBg = surf.background==='transparent'? t.paper : surf.background;
     const qrElDark = relLuminance(qrElBg) < 0.5;
     inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, qrPad)))}>
-      {el.showQR && <SEQR size={qrFill}
+      {el.showQR && <SEQR size={qrFill} text={qrTarget(el.site)}
         dark={qrElDark ? '#0d0905' : surf.color}
         light={qrElDark ? '#fffbf1' : qrElBg}
         quiet={qrElDark ? QUIET_TIGHT : QUIET_SPEC} />}

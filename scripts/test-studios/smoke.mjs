@@ -111,8 +111,8 @@ async function posterPanels(page) {
 }
 
 async function printPanels(page) {
-  // ImageControls is a top-level function of print-app.js, i.e. a window
-  // global; render it for every treatment into a scratch root.
+  // ImageControls (print-app.jsx) is a window global — one of the test hooks
+  // print/main.jsx assigns; render it for every treatment into a scratch root.
   return page.evaluate(async () => {
     const notes = [], info = [];
     const host = document.createElement('div');

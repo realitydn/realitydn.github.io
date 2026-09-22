@@ -1,7 +1,7 @@
 # Studio system refactor — plan
 
 Written 23.09.26, after the review + fix pass (commits 2e726e5 … db937ce). Nothing
-here is started. Each phase is a branch that lands on its own, with the studios
+here was started then. Each phase is a branch that lands on its own, with the studios
 working at every step — Donald uses them every week, so there is no "big bang"
 moment and no phase that leaves a studio half-moved.
 
@@ -74,6 +74,20 @@ Switch the studios from ordered globals to ES modules, bundled by esbuild.
 
 Exit: `index.html` of each studio has one script tag; the smoke suite is unchanged; no `window.`
 assignments left except the ones the app or hosts rely on (RISO, RCloud, RStore, documented).
+
+**Done (branch `refactor/studios`).** As built, where it differs from the sketch above:
+- Bundles keep **stable names** beside each `index.html` (`public/<studio>/<studio>.bundle.js`
+  + `.map`, gitignored), written by `build-studios.mjs` in prebuild, so the `?v=` stamping plugin
+  stays and stamps them. The recipe (IIFE, es2019, classic JSX) is `tools/studio-bundle.cjs`,
+  shared with the local servers, which bundle on request.
+- React/ReactDOM and the export libraries stay **vendored globals** (not imported), and
+  `riso-press.js` + `riso-engine.js` stay **classic scripts** loaded before the bundle
+  (`riso-press.js` must remain the standalone UMD file the app vendors; the engine goldens load
+  both directly). So each `index.html` is vendor scripts + the two riso files + one bundle.
+- `print-icons.js` moved to `studio-shared/` (an ES module both studios import).
+- Globals still set on purpose, listed in each `main.jsx`: RISO, RisoPress (riso files), RStore,
+  RCloud, RUI, shadowModel, and the test suite's hooks (TEMPLATES, TEMPLATE_GROUPS, getSample;
+  Print adds makeElement, buildTemplate, ImageControls, IMG_TREATS, IMG_TREAT_PRESETS).
 
 ## Phase 2 — One shared core
 

@@ -60,8 +60,8 @@ Each studio served by its own launcher (`tools/serve-*.cjs`, `PORT` env), at
   `elementFromPoint` at its centre lands on it, and the centre is on screen;
 - at 1440, the key panels: **Poster** — select the starter's photo, wait
   for all 15 treatment-strip tiles to paint, open *The press* and *Proof*;
-  **Print** — render `ImageControls` (a window global, as a top-level function
-  of a classic script) for every treatment and check the separation panel
+  **Print** — render `ImageControls` (a window global — one of the test hooks
+  `public/print/main.jsx` assigns) for every treatment and check the separation panel
   has its press + proof sections; **Schedule** (`?seed=stress`) — preview
   every output channel.
 

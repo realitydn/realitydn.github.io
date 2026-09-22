@@ -5,12 +5,13 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-// Cache-busting for the Studios. Poster / Print / Schedule Studio are classic-
-// script apps copied verbatim from public/ into dist/, so their .js/.css keep
-// stable, unhashed names — and the CDN caches those for hours. After a deploy a
-// browser could pair a fresh studio-data.js with a stale studio-app.js (or an
-// old ../studio-shared/studio-ui.js) and break in ways that only a hard reload
-// fixed. The HTML itself is served max-age=0 (public/_headers), so stamping
+// Cache-busting for the Studios. Poster / Print / Schedule Studio are copied
+// verbatim from public/ into dist/ — each index.html loads vendor scripts, the
+// shared riso press and one prebuilt bundle (scripts/build-studios.mjs) — so
+// their .js/.css keep stable, unhashed names, and the CDN caches those for
+// hours. After a deploy a browser could pair a fresh bundle with a stale
+// ../studio-shared/riso-engine.js (or, before the bundles, one app script with
+// another) and break in ways that only a hard reload fixed. The HTML itself is served max-age=0 (public/_headers), so stamping
 // each local <script src> / stylesheet <link> in it with ?v=<content hash>
 // makes every changed file a new URL the moment the new HTML lands, while
 // unchanged files keep their cached copy.
@@ -38,9 +39,9 @@ function stampStudioAssets(outDir) {
     let missing = 0;
 
     const stamp = (match, pre, url, post) => {
-      // Local, relative files only (vendor/…, ../studio-shared/…,
-      // ../print/print-icons.js). CDN URLs, protocol-relative and root-absolute
-      // paths are left alone.
+      // Local, relative files only (vendor/…, ../studio-shared/…, the
+      // *.bundle.js). CDN URLs, protocol-relative and root-absolute paths are
+      // left alone.
       if (/^(?:[a-z]+:|\/)/i.test(url)) return match;
       const file = path.join(htmlDir, url);
       if (!existsSync(file)) {

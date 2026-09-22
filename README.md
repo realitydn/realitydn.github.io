@@ -32,9 +32,10 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 
 ```
 ├── public/
-│   ├── studio/          # Poster Studio (standalone webapp; .jsx precompiled at build — see Notes)
+│   ├── studio/          # Poster Studio (standalone webapp; ES modules → one bundle — see Notes)
 │   ├── schedule/        # Schedule Studio (standalone webapp; auto-pulls the app feed)
 │   ├── print/           # Print Studio (vector CMYK PDF, QR standees; preview via serve-print.cjs :4503)
+│   ├── studio-shared/   # shared by Poster + Print: riso press + engine (classic scripts), studio-ui.jsx (RUI), print-icons.js
 │   ├── images/          # gallery/, hero.jpg, reality-logo.png, whatsapp-qr.png
 │   ├── feed-snapshot.json  # build-time feed snapshot (prerender + runtime fallback)
 │   ├── llms.txt, llms-full.txt, sitemap.xml  # GENERATED at prebuild by scripts/build-seo-files.mjs (gitignored) — edit the sources, not these
@@ -107,6 +108,6 @@ MIGRATION-GUIDE.md.)
 
 - Six languages via URL prefix (`/`, `/vn`, `/ru`, `/uk`, `/ko`, `/ja`) — `languages.js` is the registry
 - The old poster carousel + events-config.json + Poster Manager pipeline is retired (feed-driven since 2026-07-06)
-- The Studios (Poster `public/studio/`, Print `public/print/`, Schedule `public/schedule/`) are no longer compiled in the browser — Babel is gone. `scripts/build-studios.mjs` (prebuild) precompiles each `.jsx` to a sibling `.js` with esbuild; edit the `.jsx`. Locally, `tools/serve-*.cjs` transpile on the fly.
+- The Studios (Poster `public/studio/`, Print `public/print/`, Schedule `public/schedule/`) are ES modules, each with one entry (`main.jsx`) that esbuild bundles into a single classic script beside `index.html` (`studio.bundle.js`, `print.bundle.js`, `schedule.bundle.js` + `.map`, gitignored). `scripts/build-studios.mjs` (prebuild) writes them; locally, `tools/serve-*.cjs` bundle on each request, so the `.bat` launchers need no build step. One recipe for both, in `tools/studio-bundle.cjs`. Each `index.html` is the vendored libraries (`vendor/`, globals), the riso press (`studio-shared/riso-press.js` + `riso-engine.js`, classic scripts: `riso-press.js` must stay a standalone UMD file the app vendors) and the bundle. The few globals the bundles still set on purpose (`RStore`, `RCloud`, `RUI`, `shadowModel`, the test suite's hooks) are listed in each `main.jsx`. Edit the `.jsx`/`.js` sources, never a bundle.
 - Studio cache-busting is automatic: at build time the `reality-studio-cache-bust` plugin in `vite.config.js` stamps every local `<script>`/stylesheet in the deployed studio HTML with `?v=<content hash>`, so a deploy can never pair a new file with a stale cached one — no hard refresh needed. It only rewrites the `dist/` copies; the tracked `public/*/index.html` stay unstamped.
 - Studio third-party libraries (React, html-to-image, jsPDF, JSZip, pdf-lib, fontkit, qrcode) are self-hosted under each studio's `vendor/` — no CDN scripts.

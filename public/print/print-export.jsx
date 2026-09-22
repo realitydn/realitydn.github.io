@@ -1,140 +1,41 @@
 /* ============================================================
-   REALITY PRINT STUDIO — vector PDF export (pdf-lib + fontkit)
+   REALITY PRINT STUDIO — vector PDF export: the element drawers
    Every element drawn as VECTOR, CMYK, K-only black text.
    Year 2 DNA: 2px ink borders, straight-down plane shadows,
    misregistration echo (the second silkscreen layer), geometric
    colour blocking, Thin-100 display, rotated badges/seals.
-   Page is the exact A-size by default; bleed + vector crop marks are opt-in
-   and declare themselves in TrimBox/BleedBox. Gang on A4.
-   Exports: PrintExport { single, gang, ready, … }
+
+   This file is renderElement — one element onto a pdf-lib page —
+   and the print TRACK ladder it sets type on (the twin of
+   print-element.jsx's; tools/verify-day-colours.mjs reads both, and
+   the footer drawer, out of THESE file names). The page around it —
+   exact A-size, opt-in bleed + vector crop marks in TrimBox /
+   BleedBox, gang on A4 — is print-imposition.js (PrintExport); the
+   fonts, raster, colours and measuring are print-pdf.js.
+   Exports: renderElement
    ============================================================ */
-import { PrintImg } from './print-store.js';
 import {
-  sizeDims as sizeDims_, FACES as FACES_, faceFor, PALETTE_CMYK, INK, GANG, shadowSpec,
-} from './print-paper.js';
+  L, inkColor, whiteColor, tintK, accentColor, isAccent, colorForKey, surfTextFallback,
+  chars, STAR_CH, starGlyphW, measure, wrapText,
+} from './print-pdf.js';
+
+import { INK, shadowSpec } from './print-paper.js';
 import {
-  risoOpts, blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
+  blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
   stripeLayout, dotFieldLayout, arcTextLayout,
 } from './print-layout.js';
-import { nfcDeep } from './print-preflight.js';
 import {
-  ACCENTS, contrastInk, PALETTE, partnerOf, inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT,
-  WORDMARK_PATH, INK_MARK, NEUTRALS,
+  PALETTE, partnerOf, contrastInk, NEUTRALS, inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, WORDMARK_PATH, INK_MARK,
 } from '../studio-shared/brand.js';
 import { starPath, roundedRectPath, iconLayout, burstRays, shapePath, ruleLayout } from '../studio-shared/shapes.js';
 import { qrGeometry, buildQR } from '../studio-shared/qr.js';
 
-let PrintExport;
-(function(){
-const PT_PER_MM = 72/25.4;
 /* THE TRACKING LADDER, print — the exact twin of the TRACK block in
    print-element.jsx. The screen renderer is a proof of this output, so a rung
    that differs between the two files is a proof that lies. Canon M6: screen
    ladder + print's +.01em offset. `fact` is Grotesk's natural 0 — prices,
    addresses and any other stated fact. */
 const TRACK = { display:0.025, h1:0.035, h2:0.05, name:0.01, label:0.17, button:0.12, sign:0.10, fact:0 };
-function L(){ return window.PDFLib; }
-function sizeDims(size, orient){ return sizeDims_(size, orient); }
-
-/* ---- fonts ---- */
-async function loadFontBytes(){
-  if(loadFontBytes._cache) return loadFontBytes._cache;
-  const FACES = FACES_, out = {};
-  await Promise.all(Object.keys(FACES).map(async key=>{
-    const res = await fetch(FACES[key].file);
-    if(!res.ok) throw new Error('font fetch failed: '+FACES[key].file);
-    out[key] = await res.arrayBuffer();
-  }));
-  loadFontBytes._cache = out; return out;
-}
-async function embedFonts(pdf){
-  pdf.registerFontkit(window.fontkit);
-  const bytes = await loadFontBytes(), fonts = {};
-  for(const key of Object.keys(bytes)) fonts[key] = await pdf.embedFont(bytes[key], { subset:true });
-  return (fam, weight)=> fonts[faceFor(fam, weight)];
-}
-
-/* ---- raster (photo) embedding ----
-   The image element is the one non-vector part: render its RISO treatment to a
-   canvas at a size-aware DPI TARGET (small pieces 300 · A3-ish 200 · larger
-   150), then embed as a JPEG. RGB, not CMYK — fine for a photo; the
-   K-only-text guarantee is unaffected (no rgb() touches the text).
-   The target is capped at RASTER_CAP px on the long side, so it is NOT 150 dpi
-   everywhere: a full-width A1 photo (841 mm) comes out at ~121 dpi, an A2 one
-   (594 mm) at the full 150. The cap sits above the upload cap (3500 px in
-   print-app) so the export never throws away pixels the upload kept — past
-   that, resolution is the source's, and the preflight reports the dpi the
-   SOURCE actually gives at print size. */
-const RASTER_CAP = 4000;
-function dataURLtoBytes(u){ const b=atob((u.split(',')[1])||''); const a=new Uint8Array(b.length); for(let i=0;i<b.length;i++) a[i]=b.charCodeAt(i); return a; }
-async function rasterizeImage(pdf, el, accentName, report){
-  if(typeof document==='undefined' || !window.RISO) return null;
-  let img=null;
-  if(el.imgId && PrintImg){ img = PrintImg.peek(el.imgId) || await PrintImg.load(el.imgId).catch(()=>null); }
-  const longMM=Math.max(el.w,el.h)/PT_PER_MM;
-  const dpi = longMM<=210 ? 300 : longMM<=420 ? 200 : 150;
-  let pxW=Math.round(el.w/72*dpi), pxH=Math.round(el.h/72*dpi);
-  const cap=RASTER_CAP, mx=Math.max(pxW,pxH); if(mx>cap){ const k=cap/mx; pxW=Math.round(pxW*k); pxH=Math.round(pxH*k); }
-  const cv=document.createElement('canvas'); cv.width=Math.max(1,pxW); cv.height=Math.max(1,pxH);
-  if(img){ window.RISO.setSource(img);
-    if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale||1, x:el.imgX||0, y:el.imgY||0, rot:el.imgRot||0 });
-    window.RISO.render(cv, el.treatment||'none', risoOpts(el, accentName)); }
-  else {
-    /* no pixels — the frame prints blank. Say so: the report goes back to the
-       app, which shows it, instead of a console line nobody reads. */
-    if(report) report.missingImages.push({ id:el.id, imgId:el.imgId||null });
-    return null;
-  }
-  return await pdf.embedJpg(dataURLtoBytes(cv.toDataURL('image/jpeg',0.92)));
-}
-
-/* ---- colour ---- */
-function cmykArr(a){ return L().cmyk(a[0],a[1],a[2],a[3]); }
-function inkColor(){ return cmykArr([0,0,0,1]); }
-function whiteColor(){ return cmykArr([0,0,0,0]); }
-function tintK(k){ return cmykArr([0,0,0,k]); }
-function accentColor(name){ const c=PALETTE_CMYK[name]; return c?cmykArr(c):inkColor(); }
-function isAccent(name){ return ACCENTS.indexOf(name)>=0; }
-function colorForKey(key, fallback){
-  if(key==null || key==='auto') return fallback || inkColor();
-  if(key==='ink') return inkColor();
-  if(key==='white') return whiteColor();
-  if(isAccent(key)) return accentColor(key);
-  return inkColor();
-}
-/* auto text colour on a surfaced box — contrast is judged against the box's OWN
-   fill accent (accentHex), not the doc accent, so it matches the screen when the
-   surface accent is customised. */
-function surfTextFallback(surface, accentHex){
-  if(surface==='solid') return whiteColor();
-  if(surface==='accent') return contrastInk(accentHex, NEUTRALS.print)===NEUTRALS.print.light ? whiteColor() : inkColor();
-  return inkColor();
-}
-
-/* ---- text layout ---- */
-function chars(s){ return Array.from(s); }
-/* ★ (U+2605) isn't in any embedded face, so as a font glyph it exports as tofu.
-   We draw it as a vector star instead (see drawLineStr); measure it with a
-   matching advance so centring/wrapping stay WYSIWYG with the screen. */
-const STAR_CH = '★';
-function starGlyphW(size){ return size*0.9; }
-function measure(str, font, size, tracking){
-  if(!str) return 0;
-  const cs=chars(str); let w=0;
-  for(const ch of cs) w += ch===STAR_CH ? starGlyphW(size) : font.widthOfTextAtSize(ch,size);
-  return w + Math.max(0,cs.length-1)*tracking*size;
-}
-function wrapText(text, font, size, tracking, maxW){
-  const lines=[];
-  (text||'').split('\n').forEach(par=>{
-    const words=par.split(/\s+/).filter(w=>w.length);
-    if(!words.length){ lines.push(''); return; }
-    let cur='';
-    for(const w of words){ const t=cur?cur+' '+w:w; if(!cur||measure(t,font,size,tracking)<=maxW) cur=t; else { lines.push(cur); cur=w; } }
-    if(cur) lines.push(cur);
-  });
-  return lines;
-}
 
 /* ============================================================
    render one element. ctx = { B, pageH, fontFor, accentName }
@@ -686,161 +587,4 @@ function arrowPoints(dir, w, h){
 }
 function arrowPath(dir,w,h){ const p=arrowPoints(dir,w,h); return 'M '+p.map(q=>q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' L ')+' Z'; }
 
-/* THE PAGE GEOMETRY, in mm. A printer's prepress reads three boxes: MediaBox
-   (the sheet in the file), BleedBox (how far the flood runs) and TrimBox (the
-   A-size — where the guillotine lands). Only TrimBox answers "is this A6?",
-   so it is always written, even on a trim-only file where all three coincide.
-   Marks sit OUTSIDE the bleed, which is why a marked page's media is bigger
-   than trim+bleed: a mark drawn inside the media edge is a mark the RIP keeps. */
-const BLEED_MM    = 3;   // flood runs this far past the trim
-const MARK_GAP_MM = 3;   // marks begin here, out from the trim — clear of the bleed
-const MARK_LEN_MM = 4;   // and run this far further out
-const MARK_PAD_MM = 1;   // breathing room so no tick dies on the media edge
-
-function drawCropMarks(page, O, trimW, trimH, pageH){
-  const gap=MARK_GAP_MM*PT_PER_MM, len=MARK_LEN_MM*PT_PER_MM, th=0.5, col=inkColor();
-  const corners=[[O,O],[O+trimW,O],[O,O+trimH],[O+trimW,O+trimH]];
-  corners.forEach(([cxp,cyTop],i)=>{ const right=(i%2)===1, bottom=i>=2;
-    const hx=right?cxp+gap:cxp-gap-len; page.drawRectangle({ x:hx, y:pageH-cyTop-th/2, width:len, height:th, color:col });
-    const vyTop=bottom?cyTop+gap:cyTop-gap-len; page.drawRectangle({ x:cxp-th/2, y:pageH-(vyTop+len), width:th, height:len, color:col }); });
-}
-
-/* What the last export could NOT do, for the app to show — a photo with no
-   pixels, a part whose renderer threw. These used to be console.warn lines:
-   the PDF came out with a blank box and nobody was told. */
-function newReport(){ return { missingImages:[], failed:[] }; }
-let lastReport = newReport();
-
-async function buildPiece(doc, { bleed, marks }, report){
-  const { PDFDocument, pushGraphicsState, popGraphicsState, rectangle, clip, endPath } = L();
-  report = report || newReport();
-  /* every string NFC before a glyph is placed — decomposed Vietnamese would
-     otherwise set its combining marks as separate, advancing glyphs (see
-     nfcDeep in print-preflight). The caller's doc is not touched. */
-  doc = Object.assign({}, doc, { elements: nfcDeep(doc.elements||[]) });
-  const dims=sizeDims(doc.size,doc.orient);
-  const withMarks = !!(bleed && marks);
-  const B = bleed ? BLEED_MM*PT_PER_MM : 0;                  // trim edge → bleed edge
-  /* O = media edge → trim edge. Trim-only puts them on top of each other, so
-     the file IS the A-size: 105×148 mm out, not 111×154 mm with a note. */
-  const O = withMarks ? Math.max(B, (MARK_GAP_MM+MARK_LEN_MM+MARK_PAD_MM)*PT_PER_MM) : B;
-  const pageW=dims.wpt+O*2, pageH=dims.hpt+O*2;
-  const pdf=await PDFDocument.create(); const fontFor=await embedFonts(pdf);
-  const page=pdf.addPage([pageW,pageH]);
-  page.setTrimBox(O, O, dims.wpt, dims.hpt);
-  if(B) page.setBleedBox(O-B, O-B, dims.wpt+B*2, dims.hpt+B*2);
-  page.drawRectangle({ x:0,y:0,width:pageW,height:pageH,color:whiteColor() });
-  /* embed photo rasters up front (async) so renderElement can stay synchronous */
-  const imgMap={};
-  for(const el of (doc.elements||[])){ if(el.type==='image'){ try{ const r=await rasterizeImage(pdf, el, doc.accent, report); if(r) imgMap[el.id]=r; }
-    catch(e){ console.warn('image embed failed', e); report.missingImages.push({ id:el.id, imgId:el.imgId||null, error:String(e&&e.message||e) }); } } }
-  const ctx={ B:O, pageH, fontFor, accentName:doc.accent, imgMap };
-  /* CLIP THE ART TO THE BLEED BOX. Nothing clipped to the artboard, and the
-     flood templates run 12pt (4.2mm) past the trim by design — so with bleed
-     on, colour ran 1.2mm beyond the 3mm BleedBox and on into the crop marks,
-     which start 3mm out: the marks sat IN the flood. One clip path round the
-     content keeps the art inside the BleedBox the file declares; the marks are
-     drawn after the clip is popped, on bare paper. Trim-only pages need no
-     clip — the page edge IS the trim. */
-  const clipped = B>0 && O>B;
-  if(clipped) page.pushOperators(pushGraphicsState(), rectangle(O-B, O-B, dims.wpt+B*2, dims.hpt+B*2), clip(), endPath());
-  (doc.elements||[]).forEach(el=>{ try{ renderElement(page,el,ctx); }catch(e){ console.warn('el render failed',el&&el.type,e); report.failed.push({ id:el&&el.id, type:el&&el.type, error:String(e&&e.message||e) }); } });
-  if(clipped) page.pushOperators(popGraphicsState());
-  if(withMarks) drawCropMarks(page,O,dims.wpt,dims.hpt,pageH);
-  return { pdf, dims, B, O, pageW, pageH, report };
-}
-
-/* Default is the printable area alone — the page reports the A-size and
-   nothing else. Ask for bleed when the piece floods and the shop trims it. */
-async function single(doc, opts){
-  opts=opts||{}; const bleed=opts.bleed===true;
-  lastReport = newReport();
-  const { pdf }=await buildPiece(doc,{ bleed, marks:bleed&&opts.marks!==false }, lastReport);
-  return await pdf.save();
-}
-
-/* GANG ON A4. The A-sizes tile A4 exactly (2×A6 = 210 mm), so the pieces butt
-   edge to edge with at most a millimetre of slack round the sheet — there is
-   no room for bleed at true size, and none for gutters. That is why the piece
-   is built trim-only here, and why the cut guides can't sit in a margin that
-   isn't there. They used to be full-length hairlines across the whole sheet,
-   printed down every shared edge; a guillotine a hair off the line then left
-   a black rule along the piece. Now each cut line gets only a short tick
-   (GANG_TICK_MM) either side of every corner it meets — so ink touches only
-   the outer 3 mm of a piece's corners, the zone the preflight already keeps
-   text out of — and nothing runs along the middle of an edge. Where a sheet
-   DOES leave a real margin (≥ 2 mm), classic crop marks go in it, clear of
-   the art entirely. */
-const GANG_TICK_MM = 3;
-async function gang(doc, opts){
-  opts=opts||{}; const { PDFDocument, degrees }=L();
-  const g=GANG[doc.size]; if(!g) throw new Error('Size '+doc.size+' cannot be ganged on A4');
-  lastReport = newReport();
-  const piece=await buildPiece(doc,{ bleed:false, marks:false }, lastReport); const pieceBytes=await piece.pdf.save();
-  const a4=await PDFDocument.create(); const A4=sizeDims('a4','portrait');
-  const sheet=a4.addPage([A4.wpt,A4.hpt]); sheet.drawRectangle({ x:0,y:0,width:A4.wpt,height:A4.hpt,color:whiteColor() });
-  const [embedded]=await a4.embedPdf(pieceBytes);
-  const cellW=A4.wpt/g.cols, cellH=A4.hpt/g.rows;
-  const pieceLandscape=piece.dims.wpt>piece.dims.hpt, cellLandscape=g.cell==='landscape', rotate=pieceLandscape!==cellLandscape;
-  const pw=rotate?piece.dims.hpt:piece.dims.wpt, ph=rotate?piece.dims.wpt:piece.dims.hpt;
-  /* Never scale ABOVE 1. A-paper halves leave a fraction of a mm of slack per
-     cell, and filling it would hand the guillotine an A8 that is 0.3% too wide
-     — the same lie as a "A6" that measures 111 mm. Pieces stay true size and
-     the grid is centred on the sheet; the cut guides ride the real edges. */
-  const sc=Math.min(1,cellW/pw,cellH/ph);
-  const stepX=pw*sc, stepY=ph*sc;
-  const originX=(A4.wpt-g.cols*stepX)/2, originY=(A4.hpt-g.rows*stepY)/2;
-  for(let rr=0;rr<g.rows;rr++) for(let cc=0;cc<g.cols;cc++){
-    const cellX=originX+cc*stepX, cellY=originY+(g.rows-1-rr)*stepY;
-    if(rotate) sheet.drawPage(embedded,{ x:cellX+stepX, y:cellY, xScale:sc, yScale:sc, rotate:degrees(90) });
-    else sheet.drawPage(embedded,{ x:cellX, y:cellY, xScale:sc, yScale:sc });
-  }
-  if(opts.marks!==false){
-    const tick=GANG_TICK_MM*PT_PER_MM, th=0.4, col=inkColor(), margin=2*PT_PER_MM;
-    const xs=[], ys=[];
-    for(let c=0;c<=g.cols;c++) xs.push(originX+c*stepX);
-    for(let rr=0;rr<=g.rows;rr++) ys.push(originY+rr*stepY);
-    const clampY=v=>Math.max(0,Math.min(A4.hpt,v)), clampX=v=>Math.max(0,Math.min(A4.wpt,v));
-    const vseg=(x,y0,y1)=>{ y0=clampY(y0); y1=clampY(y1); if(y1>y0) sheet.drawLine({ start:{x,y:y0}, end:{x,y:y1}, thickness:th, color:col }); };
-    const hseg=(y,x0,x1)=>{ x0=clampX(x0); x1=clampX(x1); if(x1>x0) sheet.drawLine({ start:{x:x0,y}, end:{x:x1,y}, thickness:th, color:col }); };
-    /* interior cut lines: a tick either side of every row/column line they cross
-       (the sheet-edge ends included — those run out into the slack) */
-    for(let c=1;c<g.cols;c++) ys.forEach(y=> vseg(xs[c], y-tick, y+tick));
-    for(let rr=1;rr<g.rows;rr++) xs.forEach(x=> hseg(ys[rr], x-tick, x+tick));
-    /* the outer boundary is the sheet edge unless there is a real margin — then
-       crop marks in it, stopping 1 mm short of the art */
-    const gap=1*PT_PER_MM;
-    if(originX>=margin) ys.forEach(y=>{ hseg(y, 0, originX-gap); hseg(y, xs[g.cols]+gap, A4.wpt); });
-    if(originY>=margin) xs.forEach(x=>{ vseg(x, 0, originY-gap); vseg(x, ys[g.rows]+gap, A4.hpt); });
-  }
-  return await a4.save();
-}
-
-/* What the emitted page will actually measure, in mm — the topbar reads this
-   rather than doing the sum again, so the label can't claim a size the
-   exporter doesn't write. `offsetMm` is media edge → trim edge. */
-function pageMm(size, orient, bleed){
-  const d=sizeDims(size,orient);
-  const O=bleed ? Math.max(BLEED_MM, MARK_GAP_MM+MARK_LEN_MM+MARK_PAD_MM) : 0;
-  return { wmm:+(d.wmm+O*2).toFixed(1), hmm:+(d.hmm+O*2).toFixed(1), trimWmm:d.wmm, trimHmm:d.hmm, offsetMm:O };
-}
-
-async function ready(){ await loadFontBytes(); return true; }
-
-/* Glyph coverage, asked of the SAME TTFs the PDF embeds — the browser
-   falls back to a system face for a missing character, so the screen can't be
-   trusted to show one; the PDF prints tofu. Parsed once (fontkit), then a
-   cmap lookup per character: cheap enough to run on every edit. */
-let _faces=null;
-async function glyphChecker(){
-  if(!_faces){
-    const bytes=await loadFontBytes(), fk=window.fontkit, out={};
-    for(const key of Object.keys(bytes)){ try{ out[key]=fk.create(new Uint8Array(bytes[key])); }catch(e){ out[key]=null; } }
-    _faces=out;
-  }
-  return (fam, weight, cp)=>{ const f=_faces[faceFor(fam, weight)]; return f ? f.hasGlyphForCodePoint(cp) : null; };
-}
-PrintExport = { single, gang, ready, pageMm, glyphChecker, report:()=>lastReport, RASTER_CAP };
-})();
-
-export { PrintExport };
+export { renderElement };

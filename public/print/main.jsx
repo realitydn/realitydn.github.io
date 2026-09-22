@@ -33,7 +33,9 @@ import './print-templates.js';
 import './print-preflight.js';
 import './print-element.jsx';
 import './print-canvas.jsx';
+import './print-pdf.js';
 import './print-export.jsx';
+import './print-imposition.js';
 import './print-app.jsx';
 
 import { makeElement } from './print-data.jsx';

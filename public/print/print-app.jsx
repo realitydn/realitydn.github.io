@@ -29,7 +29,7 @@ import {
 } from './print-preflight.js';
 import { PrintElement as APElement } from './print-element.jsx';
 import { PrintCanvas as APCanvas } from './print-canvas.jsx';
-import { PrintExport } from './print-export.jsx';
+import { PrintExport } from './print-imposition.js';
 
 function starterDoc(){
   return {

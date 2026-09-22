@@ -15,6 +15,7 @@ import {
 
 import { RStore } from './studio-store.js';
 import { describeStoreError, persistStorage } from '../studio-shared/store.js';
+import { useHistory, historyKey } from '../studio-shared/history.js';
 import { RCloud } from '../studio-shared/cloud.js';
 import {
   CATALOG as AP_CAT, FORMATS as AP_FMT, OUTPUT_FORMATS as AP_OUT, STANDEE_FORMATS as AP_STD,
@@ -2783,48 +2784,23 @@ function App({ initialDoc }){
 
   /* ---- undo / redo ----
      Poster Studio never had this, which is a strange thing to say about a tool
-     whose whole job is trying things. Same model as Print Studio's: every doc
-     change starts a 350ms timer, and the timer is what commits a history entry
-     — so dragging a slider across forty values is ONE undo, not forty. `skip`
-     stops the undo's own setDoc from being recorded as a new edit. */
-  const [histVer, setHistVer] = React.useState(0);
-  const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });
-  React.useEffect(()=>{
-    const h = hist.current;
-    if(h.skip){ h.skip=false; h.prev=doc; return; }
-    if(h.prev==null){ h.prev=doc; return; }
-    if(h.pending==null) h.pending=h.prev;
-    h.prev=doc;
-    clearTimeout(h.timer);
-    h.timer=setTimeout(()=>{
-      h.past.push(h.pending); if(h.past.length>80) h.past.shift();
-      h.future=[]; h.pending=null; setHistVer(v=>v+1);
-    }, 350);
-  }, [doc]);
-  const undo = React.useCallback(()=>{
-    const h = hist.current;
-    clearTimeout(h.timer);
-    if(h.pending!=null){ h.past.push(h.pending); h.pending=null; h.future=[]; }
-    const prev = h.past.pop(); if(!prev) return;
-    h.future.push(docRef.current); h.skip=true;
-    setDoc(prev); setHistVer(v=>v+1);
-    setSelectedIds(ids=>ids.filter(id=>prev.elements.some(e=>e.id===id)));
-  }, []);
-  const redo = React.useCallback(()=>{
-    const h = hist.current;
-    const nxt = h.future.pop(); if(!nxt) return;
-    h.past.push(docRef.current); h.skip=true;
-    setDoc(nxt); setHistVer(v=>v+1);
-    setSelectedIds(ids=>ids.filter(id=>nxt.elements.some(e=>e.id===id)));
-  }, []);
+     whose whole job is trying things. The shared history
+     (../studio-shared/history.js, Print's and Schedule's too): every doc change
+     starts a 350ms timer, and the timer is what commits a history entry — so
+     dragging a slider across forty values is ONE undo, not forty. 80 deep. */
+  const hist = useHistory(doc, { limit:80, coalesceMs:350, apply:(snap)=>{
+    setDoc(snap);
+    setSelectedIds(ids=>ids.filter(id=>snap.elements.some(e=>e.id===id)));
+  } });
+  const { undo, redo } = hist;
   /* A doc change that ISN'T an edit — export flipping the view through every
-     format and back. Marked with the same `skip` the undo uses, so the history
-     files it as the new baseline instead of an undo step. Every Save Images
-     from Master used to leave five format flips in the undo stack, so the
-     first Ctrl-Z after an export only changed which format you were looking
-     at. (Only ever call it with an update that produces a NEW doc — a skip
-     nobody consumes would swallow the next real edit.) */
-  const setDocQuiet = (fn)=>{ hist.current.skip = true; setDoc(fn); };
+     format and back. hist.quiet() files it as the new baseline instead of an
+     undo step. Every Save Images from Master used to leave five format flips
+     in the undo stack, so the first Ctrl-Z after an export only changed which
+     format you were looking at. (Only ever call it with an update that
+     produces a NEW doc — a mark nobody consumes would swallow the next real
+     edit.) */
+  const setDocQuiet = (fn)=>{ hist.quiet(); setDoc(fn); };
 
   /* ---- WP9 cloud sign-in state (best-effort; this browser's IndexedDB stays
      the source of truth). `cloudUser` is just for the toolbar label; null =
@@ -2946,8 +2922,7 @@ function App({ initialDoc }){
       const ae = document.activeElement;
       const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable);
       const mod = e.ctrlKey||e.metaKey;
-      if(mod && (e.key==='z'||e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
-      if(mod && (e.key==='y'||e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
+      if(historyKey(e, undo, redo)) return;
       /* Ctrl-S keeps the poster as a template (never the browser's "save page"),
          Ctrl-E saves the images. Both work from inside a field: blur it first so
          whatever you just typed — the poster name, usually — is committed, then
@@ -4118,7 +4093,6 @@ function App({ initialDoc }){
     setExporting(false); setExportMsg('');
   }
 
-  const h = hist.current;
   /* re-pointed every render — see actionsRef */
   actionsRef.current = {
     saveTpl: saveUserTpl,
@@ -4156,7 +4130,7 @@ function App({ initialDoc }){
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
         onSaveTpl={saveUserTpl}
-        canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
+        canUndo={hist.canUndo} canRedo={hist.canRedo} onUndo={undo} onRedo={redo}
         zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)}
         saveState={saveState} saveMsg={saveMsg} />
       <div className="rs-body">

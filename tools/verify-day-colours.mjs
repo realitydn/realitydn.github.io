@@ -170,6 +170,7 @@ if (brand) {
       "getDoc", "listDocs", "putDoc", "delDoc", "putPoster", "putDigestStory", "optimizeImage", "fetchFeed"],
     "public/studio-shared/store.js": ["openDB", "reqVal", "txDone", "describeStoreError", "storeErrText",
       "persistStorage", "makeWriter", "watchOtherTabs"],
+    "public/studio-shared/history.js": ["useHistory", "historyKey", "HIST_MAX", "HIST_QUIET_MS"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;

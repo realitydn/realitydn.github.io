@@ -5,6 +5,7 @@
    ============================================================ */
 import { RCloud } from '../studio-shared/cloud.js';
 import { persistStorage } from '../studio-shared/store.js';
+import { useHistory, historyKey } from '../studio-shared/history.js';
 import {
   DAY_COLORS as A_DC, DAY_TEXT as A_DT, DAY_ABBR as A_DA, LOCATIONS as A_LOCS,
   rangeDates as a_dates, rangeLabel as a_rangeLabel, dAdd as a_dAdd, dWeekday as a_wd,
@@ -24,8 +25,9 @@ import {
 } from './schedule-render.jsx';
 
 const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
-const HIST_MAX = 60;        /* undo steps kept */
-const HIST_QUIET_MS = 500;  /* edits closer together than this are one step — a typed title is one undo, not twelve */
+/* Undo (../studio-shared/history.js): 60 steps kept; edits closer together
+   than 500ms are one step — a typed title is one undo, not twelve. */
+const HISTORY = { limit:60, coalesceMs:500 };
 
 /* Fetch + build the feed rows for a range. The ONE path every pull takes — the
    auto-pull on open, the re-pull when the range moves, and the Import dialog's
@@ -754,7 +756,12 @@ function App({ stored }){
      setDocQuiet — the machine: a feed merge or a cloud load. No stamp, not
                    dirty, not an undo step (the history just re-bases on it). */
   const dirtyRef = React.useRef(false);
-  const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });
+  /* ---- undo / redo — the shared history, the same model as Print Studio's:
+     one entry per quiet burst of edits, HISTORY.limit deep. Quiet (machine)
+     changes re-base the baseline instead of becoming steps, so undo never
+     "undoes a sync". `restore` (below) is what puts a snapshot back. ---- */
+  const hist = useHistory(doc, { ...HISTORY, apply:(snap)=>restore(snap) });
+  const { undo, redo } = hist;
   const setDoc = React.useCallback(fn=>setDocRaw(d=>{
     const next = typeof fn==='function' ? fn(d) : fn;
     if(next===d) return d;
@@ -763,7 +770,7 @@ function App({ stored }){
   }), []);
   const setDocQuiet = React.useCallback(fn=>setDocRaw(d=>{
     const next = typeof fn==='function' ? fn(d) : fn;
-    if(next!==d) hist.current.skip = true;
+    if(next!==d) hist.quiet();
     return next;
   }), []);
   const [selId, setSelId] = React.useState(null);
@@ -798,22 +805,6 @@ function App({ stored }){
     a_save(doc).then(r=>{ if(n===saveSeq.current) setSaveFailed(!r.ok); });
   }, [doc]);
 
-  /* ---- undo / redo — modelled on Print Studio's: one entry per quiet burst of
-     edits (HIST_QUIET_MS), HIST_MAX deep. Quiet (machine) changes re-base the
-     baseline instead of becoming steps, so undo never "undoes a sync". ---- */
-  const [histVer, setHistVer] = React.useState(0);
-  React.useEffect(()=>{
-    const h = hist.current;
-    if(h.skip){ h.skip=false; h.prev=doc; return; }
-    if(h.prev==null){ h.prev=doc; return; }
-    if(h.pending==null) h.pending=h.prev;
-    h.prev=doc;
-    clearTimeout(h.timer);
-    h.timer=setTimeout(()=>{
-      h.past.push(h.pending); if(h.past.length>HIST_MAX) h.past.shift();
-      h.future=[]; h.pending=null; setHistVer(v=>v+1);
-    }, HIST_QUIET_MS);
-  }, [doc]);
   /* A snapshot taken before the latest feed pull landed still holds the older
      feed rows; lay that same pull over it (pure, no network) so undo restores
      YOUR edit, not last pull's data. Only for the same range — a different
@@ -824,26 +815,14 @@ function App({ stored }){
     if(!lf || lf.range.start!==snap.range.start || lf.range.days!==snap.range.days) return snap;
     return a_applyFeed(snap, lf.rows).doc;
   }, []);
+  /* Put an undo/redo snapshot back: a real edit (dirty, stamped), not a new
+     step (the history has already marked it quiet). */
   const restore = React.useCallback(snap=>{
-    hist.current.skip = true; dirtyRef.current = true;
+    dirtyRef.current = true;
     const next = Object.assign({}, rebase(snap), { savedAt:Date.now() });
-    setDocRaw(next); setHistVer(v=>v+1);
+    setDocRaw(next);
     setSelId(id=>next.events.some(e=>e.id===id) ? id : null);
   }, [rebase]);
-  const undo = React.useCallback(()=>{
-    const h = hist.current;
-    clearTimeout(h.timer);
-    if(h.pending!=null){ h.past.push(h.pending); h.pending=null; h.future=[]; }
-    const prev = h.past.pop(); if(!prev) return;
-    h.future.push(docRef.current);
-    restore(prev);
-  }, [restore]);
-  const redo = React.useCallback(()=>{
-    const h = hist.current;
-    const nxt = h.future.pop(); if(!nxt) return;
-    h.past.push(docRef.current);
-    restore(nxt);
-  }, [restore]);
 
   /* ---- WP9 cloud sync (best-effort; localStorage stays the source of truth) ----
      Debounced (~2s) push of the working doc to studio_documents (schedule/working).
@@ -890,10 +869,9 @@ function App({ stored }){
         const when = new Date(remoteAt).toLocaleString();
         if(window.confirm('The cloud has a newer Schedule Studio draft (last edited '+when+', '+a_rangeLabel(a_norm(remoteDoc).range)+').\n\nLoad it? This replaces what’s on screen — Ctrl+Z brings this copy back.\n\nCancel keeps this copy; the cloud draft is only overwritten once you edit here.')){
           /* an undo step of its own, so a wrong click is one Ctrl+Z */
-          const h = hist.current; h.past.push(local); h.future = [];
-          if(h.past.length>HIST_MAX) h.past.shift();
+          hist.record(local);
           dirtyRef.current = false;
-          setDocQuiet(a_norm(remoteDoc)); setSelId(null); setHistVer(v=>v+1);
+          setDocQuiet(a_norm(remoteDoc)); setSelId(null);
           setPullNonce(n=>n+1);
         }
       }catch(e){ /* local-only on any failure */ }
@@ -1008,9 +986,7 @@ function App({ stored }){
     function onKey(e){
       const ae = document.activeElement;
       const typing = ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable);
-      const mod = e.ctrlKey || e.metaKey;
-      if(mod && (e.key==='z' || e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
-      if(mod && (e.key==='y' || e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
+      if(historyKey(e, undo, redo)) return;
       if(e.key==='Escape'){
         if(typing){ ae.blur(); return; }
         if(selRef.current) setSelId(null);
@@ -1028,8 +1004,7 @@ function App({ stored }){
     window.addEventListener('keydown', onKey);
     return ()=>window.removeEventListener('keydown', onKey);
   }, [undo, redo]);
-  const h = hist.current;
-  const canUndo = h.past.length>0 || h.pending!=null, canRedo = h.future.length>0;
+  const { canUndo, canRedo } = hist;
 
   /* capacity message for the bar under the stage */
   const capMsg = (()=>{

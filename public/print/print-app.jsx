@@ -13,6 +13,7 @@ import { PressPanels, SEP_SCREENS, PressStock, PressFold, ProofFold } from '../s
 
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import { describeStoreError as storeErrText, watchOtherTabs } from '../studio-shared/store.js';
+import { useHistory, historyKey } from '../studio-shared/history.js';
 import {
   CATALOG as AP_CAT, DEFAULTS as AP_DEF, PALETTE as AP_PAL, ACCENTS as AP_ACC, SIZES as AP_SZ,
   SIZE_ORDER as AP_ORD, GANG as AP_GANG, sizeDims as apDims, PT_PER_MM as AP_PPM,
@@ -1077,7 +1078,6 @@ function App({ boot }){
   const [exportErr, setExportErr] = React.useState(null);
   const [exportNote, setExportNote] = React.useState(null);
   const [userTpls, setUserTpls] = React.useState(()=>hydrateTpls(boot.tpls));
-  const [histVer, setHistVer] = React.useState(0);
   const [saveSt, setSaveSt] = React.useState('saved');    // saved | saving | failed
   const [saveErr, setSaveErr] = React.useState(null);
   const [tplErr, setTplErr] = React.useState(null);
@@ -1147,7 +1147,7 @@ function App({ boot }){
       const take = (els)=> (els||[]).forEach(e=>{ if(e && e.imgId) keep.add(e.imgId); });
       take(docRef.current.elements);
       tplsRef.current.forEach(tp=> take(tp.doc && tp.doc.elements));
-      const h = hist.current; if(h){ h.past.concat(h.future, h.pending?[h.pending]:[]).forEach(d=>take(d && d.elements)); }
+      hist.snapshots().forEach(d=>take(d && d.elements));
       PrintStore.gcImages(keep, 24*3600*1000)
         .then(n=>{ if(n) console.info('Print Studio: removed '+n+' orphaned image'+(n===1?'':'s')+' from storage'); })
         .catch(e=>console.warn('image sweep skipped', e));
@@ -1162,36 +1162,13 @@ function App({ boot }){
   const [, fontsIn] = React.useState(0);
   React.useEffect(()=>{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>fontsIn(1)).catch(()=>{}); }, []);
 
-  /* ---- history — one entry per quiet burst of edits (350ms), max 80 ---- */
-  const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });
-  React.useEffect(()=>{
-    const h = hist.current;
-    if(h.skip){ h.skip=false; h.prev=doc; return; }
-    if(h.prev==null){ h.prev=doc; return; }
-    if(h.pending==null) h.pending=h.prev;
-    h.prev=doc;
-    clearTimeout(h.timer);
-    h.timer=setTimeout(()=>{
-      h.past.push(h.pending); if(h.past.length>80) h.past.shift();
-      h.future=[]; h.pending=null; setHistVer(v=>v+1);
-    }, 350);
-  }, [doc]);
-  const undo = React.useCallback(()=>{
-    const h = hist.current;
-    clearTimeout(h.timer);
-    if(h.pending!=null){ h.past.push(h.pending); h.pending=null; h.future=[]; }
-    const prev = h.past.pop(); if(!prev) return;
-    h.future.push(docRef.current); h.skip=true;
-    setDoc(prev); setHistVer(v=>v+1);
-    setSelectedIds(ids=>ids.filter(id=>prev.elements.some(e=>e.id===id)));
-  }, []);
-  const redo = React.useCallback(()=>{
-    const h = hist.current;
-    const nxt = h.future.pop(); if(!nxt) return;
-    h.past.push(docRef.current); h.skip=true;
-    setDoc(nxt); setHistVer(v=>v+1);
-    setSelectedIds(ids=>ids.filter(id=>nxt.elements.some(e=>e.id===id)));
-  }, []);
+  /* ---- history — one entry per quiet burst of edits (350ms), max 80
+     (../studio-shared/history.js, the one Poster and Schedule use) ---- */
+  const hist = useHistory(doc, { limit:80, coalesceMs:350, apply:(snap)=>{
+    setDoc(snap);
+    setSelectedIds(ids=>ids.filter(id=>snap.elements.some(e=>e.id===id)));
+  } });
+  const { undo, redo } = hist;
 
   function select(id, additive){
     if(id==null){ setSelectedIds([]); return; }
@@ -1205,8 +1182,7 @@ function App({ boot }){
       const ae = document.activeElement;
       const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable);
       const mod = e.ctrlKey||e.metaKey;
-      if(mod && (e.key==='z'||e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
-      if(mod && (e.key==='y'||e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
+      if(historyKey(e, undo, redo)) return;
       if(typing) return;
       const ids = selIdsRef.current;
       if(mod && (e.key==='a'||e.key==='A')){ e.preventDefault(); setSelectedIds(docRef.current.elements.map(x=>x.id)); return; }
@@ -1489,7 +1465,6 @@ function App({ boot }){
   </React.Fragment>);
 
   const gridS = gridSpec(doc, dims);
-  const h = hist.current;
 
   /* Ctrl-K. The palette searches every inspector label the Fold index has
      harvested, plus these — the sheet-level commands that live in the topbar
@@ -1519,7 +1494,7 @@ function App({ boot }){
     <div className="ps-app">
       <Topbar doc={doc} setDoc={setDoc} onResize={onResize} onExport={onExport} exporting={exporting} exportMsg={exportMsg}
         zoomPct={zoomPct} onZoomFit={onZoomFit} onZoomStep={onZoomStep}
-        canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
+        canUndo={hist.canUndo} canRedo={hist.canRedo} onUndo={undo} onRedo={redo}
         preflight={preflightItems} onPickIssue={pickIssue} pastTrim={pastTrim} status={status} />
       <div className="ps-body">
         <div className="ps-lib">

@@ -8,12 +8,24 @@ import { loadLocale } from './data/translations';
 import { loadMenu } from './data/menu-i18n';
 import './index.css';
 
-// createRoot, deliberately NOT hydrateRoot (reviewed 23.09.26). The prerendered
-// HTML is a Day-theme, build-time STILL; the client tree legitimately differs
-// from it on first render — ThemeToggle reads a saved Night theme, the calendar
-// is re-cut against today's date (TONIGHT chips, ended events dropped), Footer's
-// year, BandField's live mosaic — so hydration would log mismatches and patch
-// them anyway. The visible cost of re-rendering (the calendar flashing
+// createRoot, deliberately NOT hydrateRoot (reviewed 23.09.26, and re-tested
+// 23.09.26 against a development build: hydrateRoot, prerendered DOM diffed
+// against renderToString of the client's first render). The prerendered HTML
+// is a Day-theme, build-time STILL captured from a client-rendered DOM, and it
+// does not match the first client render:
+//   - capture artefacts: adjacent JSX text nodes merge when the DOM is
+//     serialised ("{n}." lists, the hero line), and there are no Suspense
+//     markers (<!--$-->) for App's lazy-locale boundary — React 18 treats both
+//     as hard mismatches, on every route;
+//   - the calendar: the capture renders the 60-day snapshot, the first client
+//     render the 21-day inline seed, both cut against their own "now" — so
+//     the home pages mismatch on practically every visit;
+//   - ThemeToggle renders the saved/OS Night icon; the gallery carousel's dot
+//     count is the capture viewport's snap count, and its pause button is
+//     absent under reduced motion.
+// On a mismatch React 18 throws the server DOM away and client-renders the
+// whole root anyway, so hydrateRoot would cost a failed pass plus console
+// errors for nothing. The visible cost of re-rendering (the calendar flashing
 // prerendered rows → skeleton → rows) is handled at the data layer instead: see
 // the window.__FEED__ inline seed in hooks/useFeed.js.
 const container = document.getElementById('root');

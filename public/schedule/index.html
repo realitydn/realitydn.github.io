@@ -31,9 +31,14 @@
      truth. Load before the .jsx apps so RCloud is defined when they run. -->
 <script src="cloud-client.js"></script>
 
-<script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
-<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+<!-- Export libraries, self-hosted (were unpkg with no integrity check — a
+     compromised CDN could have run code with access to the hub token).
+     Byte-for-byte copies of the same pinned files: html-to-image 1.11.11
+     (dist/html-to-image.js), jsPDF 2.5.1 (dist/jspdf.umd.min.js), JSZip 3.10.1
+     (dist/jszip.min.js). To upgrade, curl the new unpkg URL into vendor/. -->
+<script src="vendor/html-to-image.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
 <!-- Precompiled from the sibling .jsx by scripts/build-studios.mjs. Edit the
      .jsx — the local launcher transpiles it on the fly, the build emits these. -->
 <script src="schedule-data.js"></script>

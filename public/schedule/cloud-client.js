@@ -21,6 +21,8 @@
 
    Token lives in localStorage('reality-hub-token-v1') with expiry.
    Override the hub for local testing with ?hub=http://localhost:3000
+   — honoured ONLY when the Studio itself is served from localhost /
+   127.0.0.1. Anywhere else ?hub= is ignored (see hub() below).
    ============================================================ */
 (function () {
   'use strict';
@@ -32,15 +34,45 @@
   var TOKEN_KEY = 'reality-hub-token-v1';
   var TOKEN_MSG = 'reality-studio-token';
   var SIGNIN_TIMEOUT_MS = 60000;
+  // A hub request that hasn't finished in this long is abandoned (resolves
+  // null like any network failure) so a hung connection can't leave a Save /
+  // Send button spinning forever. Generous on purpose: poster uploads are
+  // multi-MB and the hub is a long way from Đà Nẵng.
+  var CALL_TIMEOUT_MS = 20000;
   var LOG = '[rcloud]';
 
-  /* ---- hub origin (override via ?hub=) ------------------------------------ */
+  /* ---- hub origin (override via ?hub=, allowlisted) ----------------------- */
+  // call() attaches the stored Bearer token to every request it sends to hub(),
+  // so hub() must never be steerable by a stranger: an unchecked ?hub= meant a
+  // crafted link (…/studio/?hub=https://evil.example) shipped the token to
+  // whoever wrote it. Only two overrides are honoured:
+  //   • the production hub itself (harmless, same as the default), and
+  //   • http://localhost:* / http://127.0.0.1:* — and ONLY while this page is
+  //     itself running on localhost/127.0.0.1, i.e. on Donald's machine.
+  // Anything else is ignored (one console line) and the default hub is used.
+  // The override is reduced to its origin, so a path/query smuggled into it
+  // can't reshape the request URLs either.
+  function isLocalHost(hostname) {
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  }
+  var warnedHub = false;
   function hub() {
     try {
       var q = new URLSearchParams(window.location.search);
       var h = q.get('hub');
-      if (h) return h.replace(/\/+$/, '');
-    } catch (e) { /* ignore — fall through to default */ }
+      if (h) {
+        var u = new URL(h);
+        if (u.origin === DEFAULT_HUB) return DEFAULT_HUB;
+        if (u.protocol === 'http:' && isLocalHost(u.hostname) &&
+            isLocalHost(window.location.hostname)) {
+          return u.origin;
+        }
+        if (!warnedHub) {
+          warnedHub = true;
+          console.info(LOG, 'ignoring ?hub= override (not allowlisted):', u.origin);
+        }
+      }
+    } catch (e) { /* ignore — malformed URL falls through to default */ }
     return DEFAULT_HUB;
   }
 
@@ -81,12 +113,22 @@
   /* ---- low-level fetch helper (never throws) ----------------------------- */
   // Returns { ok, status, json, text } or null on any thrown/network error.
   // 503 is treated as "dormant" — logged once, returned with ok:false so callers
-  // no-op cleanly.
+  // no-op cleanly. A request (response headers AND body) still unfinished after
+  // CALL_TIMEOUT_MS is aborted and resolves null like any network failure.
   function call(method, path, opts) {
     opts = opts || {};
     var t = readToken();
     var headers = Object.assign({}, opts.headers || {});
     if (t && t.token && opts.auth !== false) headers['Authorization'] = 'Bearer ' + t.token;
+    var ctrl = null;
+    var timer = null;
+    try {
+      if (typeof AbortController === 'function') {
+        ctrl = new AbortController();
+        timer = setTimeout(function () { ctrl.abort(); }, CALL_TIMEOUT_MS);
+      }
+    } catch (e) { ctrl = null; }
+    function done() { if (timer) { clearTimeout(timer); timer = null; } }
     return fetch(hub() + path, {
       method: method,
       headers: headers,
@@ -95,6 +137,7 @@
       credentials: 'omit',
       mode: 'cors',
       cache: 'no-store',
+      signal: ctrl ? ctrl.signal : undefined,
     }).then(function (res) {
       if (res.status === 503) {
         console.info(LOG, method, path, '→ 503 (hub dormant; staying local-only)');
@@ -107,10 +150,16 @@
       return res.text().then(function (text) {
         var json = null;
         try { json = text ? JSON.parse(text) : null; } catch (e) {}
+        done();
         return { ok: res.ok, status: res.status, json: json, text: text };
       });
     }).catch(function (err) {
-      console.info(LOG, method, path, 'failed (offline/blocked):', err && err.message);
+      done();
+      if (err && err.name === 'AbortError') {
+        console.info(LOG, method, path, 'timed out after ' + (CALL_TIMEOUT_MS / 1000) + 's; staying local-only');
+      } else {
+        console.info(LOG, method, path, 'failed (offline/blocked):', err && err.message);
+      }
       return null;
     });
   }

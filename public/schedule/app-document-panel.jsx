@@ -3,8 +3,10 @@
    The inspector with nothing selected: layout, palette, per-channel
    text size, daily card + FB cover settings, header, footer, Save
    JSON / CSV, clone, new blank, and "Hidden from app sync".
+   Each section is an RUI fold (open until you close it; Ctrl-K finds its
+   fields); the explanatory notes are Hints (the topbar toggle).
    ============================================================ */
-import { SField, SChips } from './app-controls.jsx';
+import { Field, Chips, Fold, Hint } from './app-controls.jsx';
 import { dlBlob } from './app-export.jsx';
 import { cloneToNextPeriod as a_cloneNext, dShort as a_dshort, newDoc as a_new, normalizeDoc as a_norm,
   restoreFeedEvent as a_restoreFeed, serializeCSV as a_serCSV, thisMonday as a_thisMonday, QR_CTA } from './schedule-data.jsx';
@@ -17,6 +19,7 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
   const setDaily = patch => setDoc(d=>Object.assign({}, d, { daily:Object.assign({ story:0, feed:0, card:'classic' }, d.daily, patch) }));
   return (
     <React.Fragment>
+      <Fold id="doc-look" title="Layout + palette" open>
       <div className="ss-sech">Layout</div>
       <div className="ss-chips">
         {LOOKS_LIST.map(lk=>(
@@ -39,10 +42,10 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
           );
         })}
       </div>
-      <div className="ss-mini" style={{ marginBottom:12 }}>Layout + palette apply to the whole week, every output. Print always renders on white.</div>
+      <Hint>Layout + palette apply to the whole week, every output. Print always renders on white.</Hint>
+      </Fold>
       {sizeInfo && sizeInfo.active &&
-        <React.Fragment>
-          <div className="ss-sech">Text size · {channelId==='stories'?'Stories':'Feed'}</div>
+        <Fold id="doc-size" title={'Text size · '+(channelId==='stories'?'Stories':'Feed')} open>
           <div className="ss-sizebar">
             <button className="ss-iconbtn" disabled={sizeInfo.baseStep<=0}
               title="Smaller — whole week" onClick={()=>setBaseSize(Math.max(0, sizeInfo.baseStep-1))}>−</button>
@@ -55,10 +58,9 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
           <div className="ss-mini" style={{ marginBottom:10 }}>
             {sizeInfo.base==='auto' ? <b>Auto.</b> : <b>Custom.</b>} Every day starts at the biggest size that still sits easy in your busiest day. Nudge the whole week here, or any single day in the list on the left. Per-day tweaks reset when you add or remove days.
           </div>
-        </React.Fragment>}
+        </Fold>}
       {channelId==='daily' && dailyVariant!=='cover' &&
-        <React.Fragment>
-          <div className="ss-sech">Daily card · {dailyVariant==='story'?'9:16 Story':'4:5 Feed'}</div>
+        <Fold id="doc-daily" title={'Daily card · '+(dailyVariant==='story'?'9:16 Story':'4:5 Feed')} open>
           <div className="ss-lab" style={{ marginBottom:6 }}>Layout</div>
           <div className="ss-chips" style={{ marginBottom:8 }}>
             {DAILY_CARDS.map(dcd=>(
@@ -66,11 +68,11 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
                 title={dcd.hint} onClick={()=>setDaily({ card:dcd.id })}>{dcd.name}</button>
             ))}
           </div>
-          <div className="ss-mini" style={{ marginBottom:12 }}>
+          <Hint>
             One layout for the whole document — every day you export uses it, so a week
             of cards reads as one week. Each gives the day colour a different structural
             job; all of them hold from two events to ten.
-          </div>
+          </Hint>
           <div className="ss-row">
             <div className="ss-lab"><span>Text size</span><span>{dailyInfo ? dailyInfo.px+'px' : ''}</span></div>
             <div className="ss-sizebar">
@@ -83,13 +85,12 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
                 title="Back to auto-fit" onClick={()=>setDaily({ [dailyVariant]:0 })}>Auto</button>
             </div>
           </div>
-          <div className="ss-mini" style={{ marginBottom:10 }}>
+          <Hint>
             Daily cards size independently of the weekly schedules — the 9:16 story runs large by default. This adjusts only the {dailyVariant==='story'?'9:16 story':'4:5 feed'}.
-          </div>
-        </React.Fragment>}
+          </Hint>
+        </Fold>}
       {channelId==='daily' && dailyVariant==='cover' &&
-        <React.Fragment>
-          <div className="ss-sech">FB Cover</div>
+        <Fold id="doc-cover" title="FB Cover" open>
           <div className="ss-lab" style={{ marginBottom:6 }}>Cover style</div>
           <div className="ss-chips" style={{ marginBottom:12 }}>
             {COVER_STYLES.map(cs=>(
@@ -109,43 +110,45 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
                 title="Back to auto-fit" onClick={()=>setCover({ sizeOffset:0 })}>Auto</button>
             </div>
           </div>
-          <SChips label="Columns" options={[{v:'auto',l:'Auto'},{v:1,l:'1'},{v:2,l:'2'}]}
+          <Chips label="Columns" options={[{v:'auto',l:'Auto'},{v:1,l:'1'},{v:2,l:'2'}]}
             value={doc.cover.cols||'auto'} onChange={v=>setCover({ cols:v })} />
-          <SChips label="Long titles" options={[{v:'wrap',l:'Wrap'},{v:'short',l:'Short'},{v:'crop',l:'Crop'}]}
+          <Chips label="Long titles" options={[{v:'wrap',l:'Wrap'},{v:'short',l:'Short'},{v:'crop',l:'Crop'}]}
             value={doc.cover.titles||'wrap'} onChange={v=>setCover({ titles:v })} />
-          <SChips label="QR code" options={[{v:false,l:'Off'},{v:true,l:'On'}]}
+          <Chips label="QR code" options={[{v:false,l:'Off'},{v:true,l:'On'}]}
             value={!!doc.cover.qr} onChange={v=>setCover({ qr:!!v })} />
-          <div className="ss-mini" style={{ marginBottom:10 }}>
+          <Hint>
             <b>Wrap</b> shows full titles on two lines — nothing is cropped. <b>Short</b> uses each event's short title; <b>Crop</b> is one line with an ellipsis. Size auto-fits the previewed day; nudge it bigger or smaller here.
-          </div>
-          <div className="ss-mini" style={{ marginBottom:10 }}>
+          </Hint>
+          <Hint>
             Every cover ends on <b>{QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned. On <b>Sidebar</b>, <b>Slice</b> and <b>Halftone</b> it sits in the colour panel and costs the events list nothing; on the other six it rides the footer and the text steps down a size to make room. Turn it on for a cover that will be projected or seen on desktop.
-          </div>
-        </React.Fragment>}
-      <div className="ss-sech">Header</div>
-      <SField label="Title" value={doc.header.title}
+          </Hint>
+        </Fold>}
+      <Fold id="doc-header" title="Header" open>
+      <Field label="Title" value={doc.header.title}
         onChange={v=>setDoc(d=>Object.assign({}, d, { header:{ title:v } }))} />
-      <div className="ss-sech">Footer</div>
-      <SChips label="Support note" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]}
+      </Fold>
+      <Fold id="doc-footer" title="Footer" open>
+      <Chips label="Support note" options={[{v:true,l:'Show'},{v:false,l:'Hide'}]}
         value={doc.footer.supportNote}
         onChange={v=>setDoc(d=>Object.assign({}, d, { footer:Object.assign({}, d.footer, { supportNote:v }) }))} />
       {doc.footer.supportNote &&
-        <SField value={doc.footer.supportText} area
+        <Field value={doc.footer.supportText} area
           onChange={v=>setDoc(d=>Object.assign({}, d, { footer:Object.assign({}, d.footer, { supportText:v }) }))} />}
-      <SChips label="Footer density" options={[{v:'auto',l:'Auto'},{v:'full',l:'Full'},{v:'compact',l:'Compact'},{v:'minimal',l:'Minimal'}]}
+      <Chips label="Footer density" options={[{v:'auto',l:'Auto'},{v:'full',l:'Full'},{v:'compact',l:'Compact'},{v:'minimal',l:'Minimal'}]}
         value={doc.footer.density||'auto'}
         onChange={v=>setDoc(d=>Object.assign({}, d, { footer:Object.assign({}, d.footer, { density:v }) }))} />
-      <div className="ss-mini" style={{ marginBottom:10 }}>Auto compacts the footer only when a heavy week needs the room.</div>
-      <SChips label="Wifi on print" options={[{v:'auto',l:'Show'},{v:'off',l:'Hide'}]}
+      <Hint>Auto compacts the footer only when a heavy week needs the room.</Hint>
+      <Chips label="Wifi on print" options={[{v:'auto',l:'Show'},{v:'off',l:'Hide'}]}
         value={doc.footer.wifi}
         onChange={v=>setDoc(d=>Object.assign({}, d, { footer:Object.assign({}, d.footer, { wifi:v }) }))} />
       <div className="ss-rowflex">
-        <SField label="Wifi name" value={doc.footer.wifiName}
+        <Field label="Wifi name" value={doc.footer.wifiName}
           onChange={v=>setDoc(d=>Object.assign({}, d, { footer:Object.assign({}, d.footer, { wifiName:v }) }))} />
-        <SField label="Pass" value={doc.footer.wifiPass}
+        <Field label="Pass" value={doc.footer.wifiPass}
           onChange={v=>setDoc(d=>Object.assign({}, d, { footer:Object.assign({}, d.footer, { wifiPass:v }) }))} />
       </div>
-      <div className="ss-sech">Document</div>
+      </Fold>
+      <Fold id="doc-document" title="Document" open>
       <div className="ss-actions">
         <button className="ss-iconbtn" onClick={()=>{
           const blob = new Blob([JSON.stringify(doc, null, 2)], { type:'application/json' });
@@ -172,11 +175,11 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
           }
         }}>New blank</button>
       </div>
+      </Fold>
       {(doc.feedDeleted||[]).length>0 &&
-        <React.Fragment>
-          <div className="ss-sech">Hidden from app sync</div>
-          <div className="ss-mini" style={{ marginBottom:6 }}>
-            App events you deleted here. They stay out of every pull until restored.</div>
+        <Fold id="doc-hidden" title="Hidden from app sync" badge={String(doc.feedDeleted.length)} open>
+          <Hint>
+            App events you deleted here. They stay out of every pull until restored.</Hint>
           {doc.feedDeleted.map(t=>(
             <div key={t.key} className="ss-tomb">
               <span className="tt">{t.weekly?'↻ ':''}{t.title}<small>{t.weekly?'whole series':a_dshort(t.date)}</small></span>
@@ -186,8 +189,8 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
               }}>Restore</button>
             </div>
           ))}
-        </React.Fragment>}
-      <div className="ss-mini">Select an event (left list or click it in the preview) to edit it here. The day strip up top moves the range and places carousel splits.</div>
+        </Fold>}
+      <Hint>Select an event (left list or click it in the preview) to edit it here. The day strip up top moves the range and places carousel splits.</Hint>
     </React.Fragment>
   );
 }

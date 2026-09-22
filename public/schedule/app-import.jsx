@@ -4,7 +4,7 @@
    the REALITY feed — which goes through the same merge as the auto-pull.
    ============================================================ */
 import { RCloud } from '../studio-shared/cloud.js';
-import { SChips } from './app-controls.jsx';
+import { Chips } from './app-controls.jsx';
 import { fetchFeedRows } from './app-feed.jsx';
 import { applyFeedToDoc as a_applyFeed, clearRangeOccurrences as a_clearRange, parseCSV as a_csv,
   rangeDates as a_dates, normalizeDoc as a_norm, parsePasteBlock as a_paste, dToDate } from './schedule-data.jsx';
@@ -97,7 +97,7 @@ function ImportModal({ doc, setDoc, onClose }){
             onChange={e=>{ const f=e.target.files[0]; if(!f) return;
               const fr=new FileReader(); fr.onload=()=>{ setFeed(null); setText(String(fr.result)); }; fr.readAsText(f, 'utf-8'); e.target.value=''; }} />
         </div>
-        <SChips label="Mode" options={[{v:'merge',l:parsed.fromFeed?'Sync (keep my rows)':'Add to current'},{v:'replace',l:(isCSV&&!parsed.fromFeed)?'Replace (range follows the file)':(parsed.fromFeed?'Replace my rows in range':'Replace range events')}]}
+        <Chips label="Mode" options={[{v:'merge',l:parsed.fromFeed?'Sync (keep my rows)':'Add to current'},{v:'replace',l:(isCSV&&!parsed.fromFeed)?'Replace (range follows the file)':(parsed.fromFeed?'Replace my rows in range':'Replace range events')}]}
           value={mode} onChange={setMode} />
         {parsed.fromFeed && <div className="ss-mini">
           Sync is what happens automatically on open and whenever the range moves — app events are
@@ -109,7 +109,7 @@ function ImportModal({ doc, setDoc, onClose }){
               ? <b>{parsed.events.length} event{parsed.events.length===1?'':'s'} parsed{isCSV?' (CSV)':''}{parsed.errors.length?' · '+parsed.errors.length+' problem'+(parsed.errors.length===1?'':'s'):''}</b>
               : 'Day headers (MON / 8.6 / 2026-06-08) assign the days in paste mode. Or pull this range straight from the published feed.'}
         </div>
-        {parsed.errors.slice(0,5).map((er,i)=><div key={i} className="ss-mini ss-err">{er}</div>)}
+        {parsed.errors.slice(0,5).map((er,i)=><div key={i} className="ss-mini err">{er}</div>)}
         <div className="ss-actions" style={{ marginTop:12 }}>
           <button className="ss-iconbtn ss-go" disabled={!parsed.events.length && !Object.keys(parsed.notes||{}).length}
             onClick={run}>Import</button>

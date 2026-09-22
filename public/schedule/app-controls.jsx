@@ -1,8 +1,20 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — app · small shared controls
-   The labelled field and chip row every panel uses, the capacity
-   colours, and the one confirm that guards deleting a weekly series.
+   The shared control kit (RUI, ../studio-shared/studio-ui.jsx — the
+   same copy Poster and Print use) set to Schedule's parameters, the
+   capacity colours, and the one confirm that guards deleting a
+   weekly series.
    ============================================================ */
+import { RUI } from '../studio-shared/studio-ui.jsx';
+
+/* prefix ss- (schedule.css + studio-base.css), fold state + hints under
+   reality-schedule:*. Hints start ON here: the Schedule's notes were always on
+   screen before it had the toggle, so nobody loses them by surprise. */
+RUI.configure({ prefix:'ss', storeKey:'reality-schedule', hintsDefault:true });
+const { Chips, Fold, Hint, HintsToggle } = RUI;
+/* Schedule's fields are prose (event titles, the support note) — keep the
+   browser's spellcheck on, as it always was here. */
+const Field = (p)=><RUI.Field spellCheck {...p} />;
 
 const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
 
@@ -15,31 +27,4 @@ function confirmDelete(ev){
     + '\n\nTo drop a single week, use "Skip the week" instead. Ctrl+Z undoes either way.');
 }
 
-/* ---------- small controls ---------- */
-function SField({ label, value, onChange, area, ph }){
-  return (
-    <div className="ss-row">
-      {label && <div className="ss-lab">{label}</div>}
-      {area
-        ? <textarea className="ss-area" value={value||''} placeholder={ph||''} onChange={e=>onChange(e.target.value)} />
-        : <input className="ss-input" value={value||''} placeholder={ph||''} onChange={e=>onChange(e.target.value)} />}
-    </div>
-  );
-}
-function SChips({ label, options, value, onChange, multi }){
-  const isOn = v => multi ? (value||[]).indexOf(v)>=0 : value===v;
-  const flip = v => { if(!multi) return onChange(v);
-    const cur = value||[]; onChange(isOn(v) ? cur.filter(x=>x!==v) : cur.concat([v])); };
-  return (
-    <div className="ss-row">
-      {label && <div className="ss-lab">{label}</div>}
-      <div className="ss-chips">
-        {options.map(o=>(
-          <button key={String(o.v)} className={'ss-chip'+(isOn(o.v)?' on':'')} onClick={()=>flip(o.v)}>{o.l}</button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export { CAP_COL, confirmDelete, SField, SChips };
+export { RUI, CAP_COL, confirmDelete, Field, Chips, Fold, Hint, HintsToggle };

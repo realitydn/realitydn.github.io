@@ -1,0 +1,438 @@
+/* ============================================================
+   REALITY STUDIOS — the shared chrome (Poster · Print · Schedule)
+   ============================================================
+   One look for the three tools. Each index.html loads this BEFORE
+   its own stylesheet, which is left holding layout only (grid
+   columns, paddings, the few components only that Studio draws).
+
+   How it's shared. The three Studios keep their class prefixes —
+   rs- (Poster), ps- (Print), ss- (Schedule) — because their markup,
+   and the RUI kit's output (studio-ui.jsx builds every class as
+   `${prefix}-name`), already say them. So a component is written
+   ONCE here against all three names:
+       :is(.rs-chip, .ps-chip, .ss-chip){ … }
+   :is() takes the specificity of one class, exactly like the rules
+   it replaced, so a Studio's own sheet (loaded after) still wins
+   on order where it needs a variant.
+
+   Square. The chrome has no rounded corners anywhere — panels,
+   buttons, chips, inputs, swatches, tiles, dots, modals, toasts —
+   to match the brand's hard-corner rule (Donald, Phase 4). This is
+   the TOOL only: nothing here reaches the artwork, which draws its
+   own shapes (rounded QR modules, designed pills, the ticket…).
+
+   Still. Nothing lifts or jumps on hover — the old translateY
+   "jitter" on library items, cards and section toggles is gone;
+   hover is a border/colour change only.
+   ============================================================ */
+
+:root{
+  /* ---- type ---- */
+  --st-mont:'Montserrat',sans-serif;
+  --st-grot:'Space Grotesk',sans-serif;
+  --st-alt:'Montserrat Alternates',sans-serif;
+  /* The scale. Labels floor at 10px: at 8–9.5px, uppercase and
+     tracked, they were the hardest thing on screen to read — in
+     tools whose panels are mostly labels. */
+  --st-fs-label:10px;      /* uppercase labels, chips, buttons, badges */
+  --st-fs-btn:10.5px;      /* segmented + primary buttons */
+  --st-fs-small:11px;      /* notes, hints, section heads */
+  --st-fs-body:12px;       /* list rows, card names */
+  --st-fs-input:13px;      /* what you type */
+
+  /* ---- the dark (one warm near-black, not three) ---- */
+  --st-bg:#0e0c09;         /* page */
+  --st-panel:#15110b;      /* top bar, library, inspector, dialogs */
+  --st-raised:#1b1610;     /* fold heads, library items, cards, tiles */
+  --st-field:#0e0b07;      /* inputs, chips, segmented controls */
+  --st-hover:#221a13;      /* a raised thing under the pointer */
+  --st-on:#241a10;         /* a toggled button, the palette's current row */
+  --st-stage:#14110c;      /* behind the artwork … */
+  --st-stage-check:#191510;/* … and its checkerboard */
+
+  /* ---- lines ---- */
+  --st-bw:1px;             /* control border width (Print sets 2px) */
+  --st-line-soft:#2a2318;  /* panel dividers */
+  --st-line:#33291b;       /* fields, chips, folds, cards */
+  --st-line-strong:#3a2f1f;/* buttons, segmented controls */
+  --st-line-open:#4a3d29;  /* an open fold, a dialog */
+  --st-line-hover:#6f6553; /* anything under the pointer */
+  --st-sw-border:#3a2f1f;  /* the outline on a neutral swatch (Auto, Ink, Paper) */
+
+  /* ---- text, brightest to faintest ---- */
+  --st-ink:#fffbf1;        /* cream — names, values you typed */
+  --st-text:#efe7d8;       /* body */
+  --st-soft:#cbc1ad;       /* button text */
+  --st-mid:#b6ab97;        /* chip + fold-head text */
+  --st-muted:#9b9079;      /* segmented-control text */
+  --st-dim:#8a7f6c;        /* labels */
+  --st-faint:#7a6f5c;      /* group labels, hints-of-hints */
+  --st-ghost:#6a6051;      /* placeholders */
+
+  /* ---- signal ---- */
+  --st-accent:#ed1b72;     /* the UI accent: on-states, focus, badges (Schedule sets its amber) */
+  --st-accent-hi:#ff4d94;  /* primary button hover */
+  --st-accent-bg:#2a1620;  /* a picked tile */
+  --st-on-accent:#0d0905;  /* text on an accent fill */
+  --st-select:#00e5ff;     /* selection + guides on the canvas — deliberately OUT of the palette, so it can never be mistaken for artwork */
+  --st-amber:#fdb515;      /* Poster's Master, Schedule's accent, "saving…" */
+  --st-warn:#fddf00;       /* loud warning fill */
+  --st-warn-ink:#1c1403;
+  --st-warn-soft:#fdcf6a;  /* warning text on the dark */
+  --st-warn-line:#5a4a1c;
+  --st-warn-bg:#241d10;
+  --st-bad:#ed2224;        /* not saved, errors */
+  --st-bad-deep:#b3121f;
+  --st-bad-ink:#ed7a82;    /* delete buttons, error text */
+  --st-bad-line:#5a2326;
+  --st-bad-bg:#2a1416;
+  --st-good:#43b02a;       /* saved, the on-demand "extra" tier */
+
+  /* ---- space + depth ---- */
+  --st-sp-1:4px; --st-sp-2:6px; --st-sp-3:8px; --st-sp-4:10px; --st-sp-5:14px;
+  --st-scrim:rgba(8,6,3,.62);
+  --st-shadow:0 14px 34px rgba(0,0,0,.5);
+  --st-shadow-big:0 24px 60px rgba(0,0,0,.55);
+}
+
+/* ============================================================ shell */
+*{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; }
+body{ background:var(--st-bg); overflow:hidden; }
+#root{ height:100%; }
+:focus-visible:not(input):not(textarea){ outline:2px solid var(--st-accent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+
+:is(.rs-app,.ps-app,.ss-app){ position:fixed; inset:0; display:grid;
+  background:var(--st-bg); color:var(--st-text); font-family:var(--st-grot); }
+
+/* the three panels around the artwork */
+:is(.rs-top,.ps-top,.ss-top){ background:var(--st-panel); border-bottom:var(--st-bw) solid var(--st-line-soft); }
+:is(.rs-top,.ps-top,.ss-top) .spacer{ flex:1 1 0; min-width:8px; }
+:is(.rs-lib,.ps-lib,.ss-lib,.rs-inspector,.ps-inspector,.ss-inspector){ overflow-y:auto; background:var(--st-panel); }
+:is(.rs-lib,.ps-lib,.ss-lib){ border-right:var(--st-bw) solid var(--st-line-soft); }
+:is(.rs-inspector,.ps-inspector,.ss-inspector){ border-left:var(--st-bw) solid var(--st-line-soft); }
+/* the stage the artwork sits on (Print lightens it for its white sheet) */
+:is(.rs-stage,.ps-stage,.ss-stage){ position:relative;
+  background:
+    linear-gradient(45deg,var(--st-stage-check) 25%,transparent 25%,transparent 75%,var(--st-stage-check) 75%) 0 0/26px 26px,
+    linear-gradient(45deg,var(--st-stage-check) 25%,transparent 25%,transparent 75%,var(--st-stage-check) 75%) 13px 13px/26px 26px,
+    var(--st-stage); }
+
+/* ============================================================ top bar */
+:is(.rs-brand,.ps-brand,.ss-brand){ font-family:var(--st-alt); font-weight:600; text-transform:uppercase;
+  letter-spacing:.02em; font-size:24px; line-height:1; color:var(--st-ink); white-space:nowrap; }
+:is(.rs-brand,.ps-brand,.ss-brand) small{ display:block; font-family:var(--st-mont); font-weight:700;
+  font-size:var(--st-fs-label); letter-spacing:.2em; color:var(--st-dim); margin-top:3px; }
+
+/* a labelled group of controls */
+:is(.rs-tgroup,.ps-tgroup,.ss-tgroup){ display:flex; align-items:center; gap:8px; }
+:is(.rs-tgroup,.ps-tgroup,.ss-tgroup) .gl{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase;
+  letter-spacing:.12em; font-size:var(--st-fs-label); color:var(--st-faint); white-space:nowrap; }
+
+/* segmented control */
+:is(.rs-seg,.ps-seg,.ss-seg){ display:flex; border:var(--st-bw) solid var(--st-line-strong); overflow:hidden; background:var(--st-field); }
+:is(.rs-seg,.ps-seg,.ss-seg) button{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+  font-size:var(--st-fs-btn); color:var(--st-muted); background:none; border:none; padding:7px 12px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.1; white-space:nowrap; transition:.12s; }
+:is(.rs-seg,.ps-seg,.ss-seg) button small{ font-size:var(--st-fs-label); letter-spacing:.06em; color:var(--st-faint); font-weight:600; }
+:is(.rs-seg,.ps-seg,.ss-seg) button:hover{ color:var(--st-text); }
+:is(.rs-seg,.ps-seg,.ss-seg) button.on{ background:var(--st-accent); color:var(--st-on-accent); }
+:is(.rs-seg,.ps-seg,.ss-seg) button.on small{ color:rgba(13,9,5,.6); }
+:is(.rs-seg,.ps-seg,.ss-seg) button:disabled{ opacity:.4; cursor:default; }
+
+/* icon / text button */
+:is(.rs-iconbtn,.ps-iconbtn,.ss-iconbtn){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+  font-size:var(--st-fs-label); color:var(--st-soft); background:var(--st-field); border:var(--st-bw) solid var(--st-line-strong);
+  padding:8px 12px; cursor:pointer; transition:.12s; display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+:is(.rs-iconbtn,.ps-iconbtn,.ss-iconbtn):hover{ border-color:var(--st-line-hover); color:var(--st-ink); }
+:is(.rs-iconbtn,.ps-iconbtn,.ss-iconbtn).on{ background:var(--st-on); border-color:var(--st-accent); color:#fff; }
+/* after :hover — same specificity, so a disabled button must win on order */
+:is(.rs-iconbtn,.ps-iconbtn,.ss-iconbtn):disabled,
+:is(.rs-iconbtn,.ps-iconbtn,.ss-iconbtn):disabled:hover{ opacity:.4; cursor:default; border-color:var(--st-line-strong); color:var(--st-soft); }
+/* destructive */
+:is(.rs-del,.ps-del,.ss-del){ border-color:var(--st-bad-line) !important; color:var(--st-bad-ink) !important; }
+:is(.rs-del,.ps-del,.ss-del):hover{ background:var(--st-bad-bg) !important; border-color:var(--st-bad) !important; color:#fff !important; }
+
+/* the primary button — Save images / Save PDF */
+:is(.rs-savebtn,.ps-savebtn){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+  font-size:var(--st-fs-btn); color:var(--st-on-accent); background:var(--st-accent); border:var(--st-bw) solid var(--st-accent);
+  padding:6px 14px; cursor:pointer; transition:.12s; display:flex; flex-direction:column; align-items:center;
+  gap:1px; line-height:1.15; white-space:nowrap; }
+:is(.rs-savebtn,.ps-savebtn) small{ font-size:var(--st-fs-label); letter-spacing:.06em; font-weight:600; color:rgba(13,9,5,.66); text-transform:uppercase; }
+:is(.rs-savebtn,.ps-savebtn):hover{ background:var(--st-accent-hi); border-color:var(--st-accent-hi); }
+:is(.rs-savebtn,.ps-savebtn).alt{ background:var(--st-good); border-color:var(--st-good); }
+:is(.rs-savebtn,.ps-savebtn):disabled{ opacity:.45; cursor:default; }
+
+/* the file/poster name beside it */
+:is(.rs-tname,.ps-tname){ width:132px; background:var(--st-field); border:var(--st-bw) solid var(--st-line-strong);
+  color:var(--st-ink); font-family:var(--st-grot); font-size:12.5px; padding:8px 10px; outline:none; transition:.12s; }
+:is(.rs-tname,.ps-tname):focus{ border-color:var(--st-accent); }
+:is(.rs-tname,.ps-tname)::placeholder{ color:var(--st-ghost); }
+
+/* status chips — Saved / Saving… / NOT SAVED / another tab / store trouble.
+   Quiet when all is well; a fill the eye can't miss when it isn't. */
+:is(.rs-savestate,.ps-stat,.ss-unsaved){ display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+  font-size:var(--st-fs-label); color:var(--st-faint); padding:6px 9px; border:var(--st-bw) solid transparent;
+  white-space:nowrap; cursor:default; }
+:is(.rs-savestate.fallback,.ps-stat.warn){ color:var(--st-warn-ink); background:var(--st-warn); border-color:var(--st-on-accent); }
+:is(.rs-savestate.error,.ps-stat.bad,.ss-unsaved){ color:#fff; background:var(--st-bad); border-color:var(--st-bad-deep); }
+/* × inside a chip or toast */
+:is(.rs-statx,.ps-statx,.ss-statx){ border:none; background:none; color:inherit; cursor:pointer; font-size:12px; line-height:1; padding:0 0 0 2px; }
+
+/* ============================================================ panels */
+/* section heading inside a panel */
+:is(.rs-sech,.ps-sech,.ss-sech){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+  font-size:var(--st-fs-small); color:var(--st-dim); margin:18px 0 10px; }
+:is(.rs-sech,.ps-sech,.ss-sech):first-child{ margin-top:0; }
+
+/* context banner at the head of the inspector (each Studio colours its own) */
+:is(.rs-context,.ss-context){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+  font-size:var(--st-fs-label); padding:9px 11px; margin-bottom:16px; line-height:1.5;
+  background:var(--st-warn-bg); border:1px solid var(--st-warn-line); color:var(--st-warn-soft); }
+:is(.rs-context,.ss-context) b{ font-size:var(--st-fs-small); letter-spacing:.04em; }
+
+/* nothing selected / nothing here */
+:is(.rs-empty,.ps-empty,.ss-empty){ text-align:center; color:var(--st-faint); padding:30px 14px; }
+:is(.rs-empty,.ps-empty,.ss-empty) .big{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+  font-size:var(--st-fs-body); color:var(--st-mid); margin-bottom:8px; }
+:is(.rs-empty,.ps-empty,.ss-empty) p{ font-size:var(--st-fs-body); line-height:1.5; margin:0; }
+
+/* ============================================================ fields */
+:is(.rs-row,.ps-row,.ss-row){ margin-bottom:14px; }
+:is(.rs-lab,.ps-lab,.ss-lab){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.09em;
+  font-size:var(--st-fs-label); color:var(--st-dim); margin-bottom:6px; display:flex; justify-content:space-between; }
+:is(.rs-lab,.ps-lab,.ss-lab) .val{ color:var(--st-soft); font-weight:600; letter-spacing:.04em; }
+:is(.rs-input,.ps-input,.ss-input,.rs-area,.ps-area,.ss-area){ width:100%; background:var(--st-field);
+  border:var(--st-bw) solid var(--st-line); color:var(--st-ink); font-family:var(--st-grot); font-size:var(--st-fs-input);
+  padding:8px 10px; outline:none; transition:.12s; border-radius:0; }
+:is(.rs-input,.ps-input,.ss-input,.rs-area,.ps-area,.ss-area):focus{ border-color:var(--st-accent); }
+:is(.rs-input,.ps-input,.ss-input,.rs-area,.ps-area,.ss-area)::placeholder{ color:var(--st-ghost); }
+:is(.rs-input,.ps-input,.ss-input).mono{ font-family:ui-monospace,Menlo,Consolas,monospace; letter-spacing:.04em; }
+:is(.rs-area,.ps-area,.ss-area){ resize:vertical; min-height:46px; line-height:1.3; }
+
+/* a row of sibling fields */
+:is(.rs-rowflex,.ps-rowflex,.ss-rowflex){ display:flex; gap:8px; }
+:is(.rs-rowflex,.ps-rowflex,.ss-rowflex) > *{ flex:1; }
+
+/* chips — a one-of (or some-of) choice */
+:is(.rs-chips,.ps-chips,.ss-chips){ display:flex; flex-wrap:wrap; gap:5px; }
+:is(.rs-chip,.ps-chip,.ss-chip){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+  font-size:var(--st-fs-label); color:var(--st-mid); background:var(--st-field); border:var(--st-bw) solid var(--st-line);
+  padding:6px 9px; cursor:pointer; transition:.12s; }
+:is(.rs-chip,.ps-chip,.ss-chip):hover{ border-color:var(--st-line-hover); color:var(--st-ink); }
+:is(.rs-chip,.ps-chip,.ss-chip).on{ background:var(--st-accent); color:var(--st-on-accent); border-color:var(--st-accent); }
+:is(.rs-chip,.ps-chip,.ss-chip):is(.dis,:disabled){ opacity:.4; cursor:default; }
+
+/* swatches */
+:is(.rs-swatches,.ps-swatches,.ss-swatches){ display:flex; flex-wrap:wrap; gap:6px; }
+:is(.rs-sw,.ps-sw,.ss-sw){ width:26px; height:26px; border:2px solid var(--st-line-soft); cursor:pointer; transition:.12s; position:relative; }
+:is(.rs-sw,.ps-sw,.ss-sw):hover{ transform:scale(1.1); }
+:is(.rs-sw,.ps-sw,.ss-sw).on{ border-color:var(--st-ink); box-shadow:0 0 0 2px var(--st-accent); }
+:is(.rs-sw,.ps-sw,.ss-sw).ink{ background:linear-gradient(135deg,var(--st-on-accent) 50%,var(--st-ink) 50%); }
+
+/* slider — a square thumb on a hairline */
+:is(.rs-slider,.ps-slider,.ss-slider){ -webkit-appearance:none; appearance:none; width:100%; height:4px; background:var(--st-line); outline:none; }
+:is(.rs-slider,.ps-slider,.ss-slider)::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:0;
+  background:var(--st-accent); cursor:pointer; border:2px solid var(--st-panel); }
+:is(.rs-slider,.ps-slider,.ss-slider)::-moz-range-thumb{ width:16px; height:16px; border-radius:0; background:var(--st-accent);
+  cursor:pointer; border:2px solid var(--st-panel); }
+
+/* type-scale stepper: A− [slider] A+ */
+:is(.rs-stepper,.ps-stepper,.ss-stepper){ display:flex; align-items:center; gap:9px; }
+:is(.rs-stepper,.ps-stepper,.ss-stepper) :is(.rs-slider,.ps-slider,.ss-slider){ flex:1; }
+:is(.rs-stepper,.ps-stepper,.ss-stepper) button{ flex:none; width:30px; height:26px; border:var(--st-bw) solid var(--st-line);
+  background:var(--st-field); color:var(--st-soft); cursor:pointer; font-family:var(--st-mont); font-weight:700; font-size:var(--st-fs-small); transition:.12s; }
+:is(.rs-stepper,.ps-stepper,.ss-stepper) button:hover{ border-color:var(--st-accent); color:#fff; }
+
+/* numeric arrange fields — the precise cousin of the position sliders */
+:is(.rs-numgrid,.ps-numgrid,.ss-numgrid){ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
+:is(.rs-num,.ps-num,.ss-num){ display:flex; flex-direction:column; gap:3px; }
+:is(.rs-num,.ps-num,.ss-num) span{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+  font-size:var(--st-fs-label); color:var(--st-dim); }
+:is(.rs-num,.ps-num,.ss-num) input{ width:100%; background:var(--st-field); border:var(--st-bw) solid var(--st-line); color:var(--st-ink);
+  font-family:var(--st-grot); font-size:var(--st-fs-body); padding:5px; outline:none; -moz-appearance:textfield; border-radius:0; }
+:is(.rs-num,.ps-num,.ss-num) input::-webkit-outer-spin-button,
+:is(.rs-num,.ps-num,.ss-num) input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+:is(.rs-num,.ps-num,.ss-num) input:focus{ border-color:var(--st-accent); }
+
+/* a row of buttons that share the width — wraps rather than crushes */
+:is(.rs-actions,.ps-actions,.ss-actions){ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+:is(.rs-actions,.ps-actions,.ss-actions) :is(.rs-iconbtn,.ps-iconbtn,.ss-iconbtn){ flex:1 1 60px; justify-content:center; padding:9px 6px; white-space:nowrap; }
+
+/* list editor: [field][field][×] rows + a dashed "add" */
+:is(.rs-itemrow,.ps-itemrow,.ss-itemrow){ display:flex; gap:5px; margin-bottom:5px; align-items:center; }
+:is(.rs-itemrow,.ps-itemrow,.ss-itemrow) :is(.rs-input,.ps-input,.ss-input){ font-size:var(--st-fs-body); padding:6px 8px; }
+:is(.rs-itemrow,.ps-itemrow,.ss-itemrow) button{ flex:none; width:28px; height:28px; border:var(--st-bw) solid var(--st-line);
+  background:var(--st-raised); color:var(--st-ink); cursor:pointer; font-size:13px; line-height:1; padding:0; }
+:is(.rs-itemrow,.ps-itemrow,.ss-itemrow) button:hover{ border-color:var(--st-line-hover); }
+/* the last button of a row is its delete */
+:is(.rs-itemrow,.ps-itemrow,.ss-itemrow) button:last-child{ border-color:var(--st-bad-line); color:var(--st-bad-ink); font-size:14px; }
+:is(.rs-itemrow,.ps-itemrow,.ss-itemrow) button:last-child:hover{ background:var(--st-bad-bg); color:#fff; }
+:is(.rs-addrow,.ps-addrow,.ss-addrow){ width:100%; font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+  font-size:var(--st-fs-label); color:var(--st-mid); border:var(--st-bw) dashed var(--st-line-open); padding:8px; cursor:pointer;
+  background:none; transition:.12s; }
+:is(.rs-addrow,.ps-addrow,.ss-addrow):hover{ border-color:var(--st-accent); color:#fff; }
+/* an inline text action inside a note */
+:is(.rs-linkbtn,.ps-linkbtn,.ss-linkbtn){ background:none; border:0; padding:0; font:inherit; color:var(--st-text); text-decoration:underline; cursor:pointer; }
+:is(.rs-linkbtn,.ps-linkbtn,.ss-linkbtn):hover{ color:#fff; }
+
+/* ============================================================ hints + notes */
+/* .mini is the small note under a control — and what RUI's <Hint> draws
+   (shown only while Hints is on) */
+:is(.rs-mini,.ps-mini,.ss-mini){ font-family:var(--st-grot); font-size:var(--st-fs-small); color:var(--st-dim); line-height:1.45; margin:2px 0 0; }
+:is(.rs-mini,.ps-mini,.ss-mini) b{ color:var(--st-soft); font-weight:600; }
+:is(.rs-mini,.ps-mini,.ss-mini).err{ color:var(--st-bad-ink); }
+/* a standing note that is NOT help text (so not behind Hints) */
+:is(.rs-hint,.ps-hint,.ss-hint){ font-family:var(--st-grot); font-size:var(--st-fs-small); line-height:1.4; color:var(--st-dim); margin:0 0 13px; }
+:is(.rs-hint,.ps-hint,.ss-hint) b{ color:var(--st-ink); font-weight:700; }
+/* a note that something is wrong and matters (the template store would not open) */
+:is(.rs-alert,.ps-alert,.ss-alert){ padding:7px 9px; border:1px solid var(--st-bad-line); background:var(--st-bad-bg); color:#ffb3b8; }
+/* a small outlined tag inside a row ("out of date") */
+:is(.rs-tag,.ps-tag,.ss-tag){ flex:none; font-family:var(--st-mont); font-size:var(--st-fs-label); font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; padding:1px 5px; border:1px solid currentColor; opacity:.7; }
+/* an inline warning that must be read (QR contrast, …) */
+:is(.rs-warn,.ps-warn,.ss-warn){ font-family:var(--st-grot); font-size:var(--st-fs-small); line-height:1.4; color:var(--st-warn-ink);
+  background:var(--st-warn); border:var(--st-bw) solid var(--st-on-accent); padding:8px 10px; margin:-4px 0 13px; }
+
+/* ============================================================ folds */
+/* Collapsible sections (RUI.Fold). Boxed rather than hairline-divided — at a
+   dozen folds in a column, a rule between them isn't enough edge to tell
+   "closed section" from "end of the panel". */
+:is(.rs-fold,.ps-fold,.ss-fold){ border:var(--st-bw) solid var(--st-line); margin-bottom:7px; background:var(--st-panel); }
+:is(.rs-fold,.ps-fold,.ss-fold).open{ border-color:var(--st-line-open); }
+:is(.rs-foldhead,.ps-foldhead,.ss-foldhead){ display:flex; align-items:center; gap:8px; width:100%; background:var(--st-raised);
+  border:none; cursor:pointer; padding:9px 10px; text-align:left;
+  font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.11em;
+  font-size:var(--st-fs-label); color:var(--st-mid); transition:.12s; }
+:is(.rs-foldhead,.ps-foldhead,.ss-foldhead):hover{ color:var(--st-ink); }
+:is(.rs-foldhead,.ps-foldhead,.ss-foldhead) .chev{ color:var(--st-faint); width:10px; flex:none; font-size:var(--st-fs-label); }
+:is(.rs-foldhead,.ps-foldhead,.ss-foldhead) .t{ flex:1 1 auto; min-width:0; }
+/* the count of props inside that differ from the defaults — a closed fold
+   still says whether anything in it is set */
+:is(.rs-foldhead,.ps-foldhead,.ss-foldhead) .badge{ flex:none; background:var(--st-accent); color:var(--st-on-accent);
+  padding:1px 7px; font-family:var(--st-grot); font-weight:600; font-size:var(--st-fs-label); letter-spacing:.04em; }
+:is(.rs-fold,.ps-fold,.ss-fold).open :is(.rs-foldhead,.ps-foldhead,.ss-foldhead){ color:var(--st-text); }
+:is(.rs-fold,.ps-fold,.ss-fold).open :is(.rs-foldhead,.ps-foldhead,.ss-foldhead) .chev{ color:var(--st-accent); }
+:is(.rs-foldbody,.ps-foldbody,.ss-foldbody){ padding:12px 10px 2px; border-top:var(--st-bw) solid var(--st-line-soft); }
+:is(.rs-foldbody,.ps-foldbody,.ss-foldbody) :is(.rs-sech,.ps-sech,.ss-sech):first-child{ margin-top:0; }
+:is(.rs-foldbody,.ps-foldbody,.ss-foldbody) > :is(.rs-row,.ps-row,.ss-row,.rs-actions,.ps-actions,.ss-actions):last-child{ margin-bottom:10px; }
+
+/* ============================================================ library */
+/* group title: TEMPLATES · PARTS …, with a hint on the right */
+:is(.rs-libtitle,.ps-libtitle,.ss-libtitle){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+  font-size:var(--st-fs-small); color:var(--st-faint); margin:18px 0 9px; display:flex; justify-content:space-between; align-items:baseline; }
+:is(.rs-libtitle,.ps-libtitle,.ss-libtitle):first-child{ margin-top:0; }
+:is(.rs-libtitle,.ps-libtitle,.ss-libtitle) .hint{ font-weight:600; letter-spacing:.03em; font-size:var(--st-fs-label); color:var(--st-faint); text-transform:none; }
+/* a section toggle, closed by default, with a count */
+:is(.rs-sec,.ps-sec,.ss-sec){ width:100%; display:flex; align-items:center; gap:8px; padding:9px 10px; margin-bottom:5px;
+  border:var(--st-bw) solid var(--st-line); background:var(--st-raised); cursor:pointer; transition:.12s;
+  font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+  font-size:var(--st-fs-small); color:var(--st-ink); text-align:left; }
+:is(.rs-sec,.ps-sec,.ss-sec):hover{ border-color:var(--st-line-hover); }
+:is(.rs-sec,.ps-sec,.ss-sec).open{ border-color:var(--st-accent); }
+:is(.rs-sec,.ps-sec,.ss-sec) .caret{ flex:none; width:10px; font-size:var(--st-fs-label); color:var(--st-dim); }
+:is(.rs-sec,.ps-sec,.ss-sec).open .caret{ color:var(--st-accent); }
+:is(.rs-sec,.ps-sec,.ss-sec) .t{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+:is(.rs-sec,.ps-sec,.ss-sec) .dot{ flex:none; width:11px; height:11px; border:1px solid rgba(0,0,0,.25); }
+:is(.rs-sec,.ps-sec,.ss-sec) .n{ flex:none; font-family:var(--st-grot); font-weight:600; font-size:var(--st-fs-label); color:var(--st-dim);
+  background:var(--st-field); padding:1px 7px; border:1px solid var(--st-line); }
+
+/* a part you drag onto the artwork */
+:is(.rs-libitem,.ps-libitem,.ss-libitem){ display:flex; flex-direction:column; gap:2px; padding:11px 12px; margin-bottom:7px;
+  border:var(--st-bw) solid var(--st-line); background:var(--st-raised); cursor:grab; transition:.12s;
+  touch-action:none; user-select:none; }
+:is(.rs-libitem,.ps-libitem,.ss-libitem):hover{ border-color:var(--st-accent); background:var(--st-hover); }
+:is(.rs-libitem,.ps-libitem,.ss-libitem):active{ cursor:grabbing; }
+:is(.rs-libitem,.ps-libitem,.ss-libitem) .ln{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+  font-size:var(--st-fs-body); color:var(--st-ink); }
+:is(.rs-libitem,.ps-libitem,.ss-libitem) .lh{ font-size:var(--st-fs-small); color:var(--st-dim); font-family:var(--st-grot); line-height:1.2; }
+
+/* template cards — a real mini render. minmax(0,1fr), not 1fr: a bare 1fr
+   column takes its MIN size from the widest thing in it, so one long name
+   pushed the column past the panel (and the card's buttons with it). */
+:is(.rs-tplgrid,.ps-tplgrid,.ss-tplgrid){ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin:2px 0 10px; }
+:is(.rs-tplcard,.ps-tplcard,.ss-tplcard){ display:flex; flex-direction:column; gap:4px; padding:6px; border:var(--st-bw) solid var(--st-line);
+  background:var(--st-raised); cursor:pointer; position:relative; transition:.12s; min-width:0; }
+:is(.rs-tplcard,.ps-tplcard,.ss-tplcard):hover{ border-color:var(--st-accent); }
+/* names wrap (three lines, then ellipsis) — "Thứ Tư Acoustic — Mai Thúc Lân"
+   is a normal name here, and a card is ~100px wide */
+:is(.rs-tplcard,.ps-tplcard,.ss-tplcard) .tn{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.02em;
+  font-size:var(--st-fs-label); color:var(--st-ink); line-height:1.2; overflow-wrap:anywhere;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+:is(.rs-tplcard,.ps-tplcard,.ss-tplcard) .ts{ font-family:var(--st-grot); font-size:var(--st-fs-label); color:var(--st-dim); }
+:is(.rs-thumbbox,.ps-thumbbox,.ss-thumbbox){ overflow:hidden; border:1px solid rgba(255,251,241,.12); margin:0 auto; max-width:100%; }
+/* the delete cross on a saved template */
+:is(.rs-tplx,.ps-tplx,.ss-tplx){ position:absolute; right:8px; top:8px; width:22px; height:22px; border:var(--st-bw) solid var(--st-bad-line);
+  background:var(--st-raised); color:var(--st-bad-ink); cursor:pointer; font-size:13px; line-height:1; padding:0; z-index:2; }
+:is(.rs-tplx,.ps-tplx,.ss-tplx):hover{ background:var(--st-bad-bg); color:#fff; }
+/* its quieter sibling (archive, rename…) */
+:is(.rs-tplx,.ps-tplx,.ss-tplx).mild{ border-color:var(--st-line-strong); color:var(--st-mid); }
+
+/* the chip that follows the pointer while you drag a part in */
+:is(.rs-ghost,.ps-ghost,.ss-ghost){ position:fixed; z-index:9999; pointer-events:none; transform:translate(-50%,-50%);
+  font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:var(--st-fs-body);
+  color:var(--st-on-accent); background:var(--st-accent); border:2px solid var(--st-on-accent); padding:9px 14px;
+  box-shadow:0 10px 24px rgba(0,0,0,.4); }
+
+/* ============================================================ dialogs */
+:is(.rs-overlay,.ps-overlay,.ss-overlay){ position:fixed; inset:0; z-index:9990; background:var(--st-scrim);
+  display:flex; align-items:center; justify-content:center; }
+:is(.rs-modal,.ps-modal,.ss-modal){ width:620px; max-width:92vw; max-height:86vh; overflow-y:auto; background:var(--st-panel);
+  color:var(--st-text); font-family:var(--st-grot); border:var(--st-bw) solid var(--st-line-open); padding:18px; box-shadow:var(--st-shadow-big); }
+:is(.rs-modal,.ps-modal,.ss-modal).narrow{ width:440px; }
+:is(.rs-modal,.ps-modal,.ss-modal).wide{ width:min(860px, 94vw); max-width:94vw; max-height:92vh; padding:20px 22px 22px; }
+:is(.rs-modalhead,.ps-modalhead,.ss-modalhead){ display:flex; align-items:baseline; gap:12px; margin-bottom:12px; }
+:is(.rs-modaltitle,.ps-modaltitle,.ss-modaltitle){ font-family:var(--st-mont); font-weight:800; text-transform:uppercase;
+  letter-spacing:.06em; font-size:14px; color:var(--st-ink); }
+:is(.rs-modalsub,.ps-modalsub,.ss-modalsub){ font-family:var(--st-grot); font-size:var(--st-fs-body); line-height:1.45; color:var(--st-dim); }
+:is(.rs-modalsub,.ps-modalsub,.ss-modalsub) b{ color:var(--st-soft); font-weight:600; }
+:is(.rs-modalfoot,.ps-modalfoot,.ss-modalfoot){ display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+/* a pickable row in a dialog's list: title over a meta line */
+:is(.rs-pick,.ps-pick,.ss-pick){ display:block; width:100%; text-align:left; cursor:pointer; padding:8px 10px; margin-bottom:4px;
+  background:var(--st-raised); border:var(--st-bw) solid var(--st-line); color:var(--st-ink); font-family:var(--st-grot); transition:.12s; }
+:is(.rs-pick,.ps-pick,.ss-pick):hover{ border-color:var(--st-accent); background:var(--st-hover); }
+:is(.rs-pick,.ps-pick,.ss-pick) .pt{ font-family:var(--st-grot); font-weight:600; font-size:var(--st-fs-input); color:var(--st-ink); }
+:is(.rs-pick,.ps-pick,.ss-pick) .pm{ font-size:var(--st-fs-small); color:var(--st-dim); margin-top:2px; }
+:is(.rs-pick,.ps-pick,.ss-pick).hero{ border-color:var(--st-accent); background:var(--st-accent-bg); padding:10px 12px; margin-bottom:10px; }
+:is(.rs-pick,.ps-pick,.ss-pick).hero .pm + .pm{ color:var(--st-soft); margin-top:3px; }
+:is(.rs-pickhead,.ps-pickhead,.ss-pickhead){ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.09em;
+  font-size:var(--st-fs-label); color:var(--st-faint); margin:2px 0 6px; }
+
+/* ============================================================ command palette (Ctrl-K) */
+/* With ~300 controls across a dozen folds, "where does dot gain live" stopped
+   being answerable from memory. RUI.Palette searches every label the folds
+   have ever built, opens the fold it's in, scrolls to it and flashes it. */
+:is(.rs-palwrap,.ps-palwrap,.ss-palwrap){ position:fixed; inset:0; z-index:10000; background:var(--st-scrim);
+  display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; }
+:is(.rs-pal,.ps-pal,.ss-pal){ width:min(560px, 92vw); background:var(--st-panel); border:var(--st-bw) solid var(--st-line-open);
+  box-shadow:var(--st-shadow-big); overflow:hidden; display:flex; flex-direction:column; max-height:70vh; }
+:is(.rs-palq,.ps-palq,.ss-palq){ width:100%; background:var(--st-field); border:none; border-bottom:var(--st-bw) solid var(--st-line-soft);
+  color:var(--st-ink); font-family:var(--st-grot); font-size:15px; padding:15px 17px; outline:none; }
+:is(.rs-palq,.ps-palq,.ss-palq)::placeholder{ color:var(--st-ghost); }
+:is(.rs-pallist,.ps-pallist,.ss-pallist){ overflow-y:auto; padding:6px; }
+:is(.rs-palrow,.ps-palrow,.ss-palrow){ width:100%; display:flex; align-items:baseline; gap:10px; padding:9px 11px; border:none;
+  background:none; cursor:pointer; text-align:left; font-family:var(--st-grot); }
+:is(.rs-palrow,.ps-palrow,.ss-palrow) .l{ flex:1 1 auto; font-size:var(--st-fs-input); color:var(--st-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+:is(.rs-palrow,.ps-palrow,.ss-palrow) .g{ flex:none; font-family:var(--st-mont); font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; font-size:var(--st-fs-label); color:var(--st-faint); }
+:is(.rs-palrow,.ps-palrow,.ss-palrow).on{ background:var(--st-on); }
+:is(.rs-palrow,.ps-palrow,.ss-palrow).on .l{ color:#fff; }
+:is(.rs-palrow,.ps-palrow,.ss-palrow).on .g{ color:var(--st-accent); }
+:is(.rs-palempty,.ps-palempty,.ss-palempty){ padding:18px 14px; font-size:var(--st-fs-body); line-height:1.5; color:var(--st-faint); }
+:is(.rs-palfoot,.ps-palfoot,.ss-palfoot){ border-top:var(--st-bw) solid var(--st-line-soft); padding:8px 14px; font-family:var(--st-mont); font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em; font-size:var(--st-fs-label); color:var(--st-faint); }
+/* where the palette lands */
+@keyframes st-flashkf{ 0%,100%{ background:transparent; } 22%{ background:rgba(237,27,114,.22); } }
+:is(.rs-flash,.ps-flash,.ss-flash){ animation:st-flashkf 1.25s ease-out; }
+@media (prefers-reduced-motion: reduce){ :is(.rs-flash,.ps-flash,.ss-flash){ animation:none; box-shadow:0 0 0 2px var(--st-accent); } }
+
+/* ============================================================ toast */
+/* A short note over the foot of the stage — things worth saying that don't
+   deserve a dialog. Print's stays until dismissed and colours itself as a
+   warning (print.css). */
+:is(.rs-toast,.ps-toast,.ss-toast){ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:10001;
+  max-width:min(560px, 86vw); padding:11px 16px; cursor:pointer;
+  background:var(--st-bg); color:var(--st-ink); border:var(--st-bw) solid var(--st-line-open); box-shadow:var(--st-shadow);
+  font-family:var(--st-grot); font-size:var(--st-fs-input); line-height:1.4; text-align:center; }

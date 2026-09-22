@@ -164,7 +164,7 @@ function UserTplCard({ t, onApply, onArchive, onDelete, archived, thumb, onCaptu
       <TplThumb doc={t.doc} w={88} thumb={thumb} onCapture={onCapture} />
       <span className="tn">{t.name}</span>
       <span className="ts">{archived ? 'archived' : new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
-      <button className="rs-tplx" style={{ right:28, top:4, width:20, height:20, fontSize:11, borderColor:'#3a2f1f', color:'#b6ab97' }}
+      <button className="rs-tplx mild" style={{ right:28, top:4, width:20, height:20, fontSize:11 }}
         title={archived?'Restore to My templates':'Archive — tuck it into the Archive drawer'}
         onClick={e=>{ e.stopPropagation(); onArchive(); }}>{archived?'↩':'⤓'}</button>
       <button className="rs-tplx" style={{ top:4, width:20, height:20, fontSize:11 }} title="Delete this template"

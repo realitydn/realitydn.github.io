@@ -18,8 +18,8 @@
                     Auto — white IS the default).
      stockNote    — a closing line under the stock picker (Print's).
      hintTight    — Poster's inspector runs its hints tight.
-   (the outline an outlined swatch takes is RUI's swatchBorder, set with
-   the Studio's RUI.configure).
+   (the outline an outlined swatch takes is RUI's swatchBorder — the
+   --st-sw-border token in studio-base.css, which Print overrides).
    and per call:
      PressFold `dials` — Print exposes a SUBSET of the press (drift, skew,
                     stretch, streaks, starvation, pull) as a section of its

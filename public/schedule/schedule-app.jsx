@@ -14,9 +14,11 @@
    and each panel:
      app-topbar.jsx · app-daystrip.jsx · app-daylist.jsx
      app-event-editor.jsx · app-document-panel.jsx · app-import.jsx
-     app-controls.jsx     the small controls they share
+     app-controls.jsx     the shared control kit (RUI) set to Schedule's
+                          parameters — folds, fields, chips, hints, Ctrl-K
    ============================================================ */
 import { persistStorage } from '../studio-shared/store.js';
+import { RUI } from './app-controls.jsx';
 import { useCloud } from './app-cloud.jsx';
 import { DayList } from './app-daylist.jsx';
 import { DayStrip } from './app-daystrip.jsx';
@@ -32,7 +34,8 @@ import { Topbar } from './app-topbar.jsx';
 import { DAY_ABBR as A_DA, rangeDates as a_dates, dayInfo as a_dayInfo, dShort as a_dshort,
   loadStoredDoc as a_load, dWeekday as a_wd } from './schedule-data.jsx';
 import { computeCapacity as a_cap, channelById as a_ch, CHANNELS as A_CH, partCount as a_partCount,
-  partSize as a_partSize, PartCanvas as APart, coverInfo as coverInfo_, dailySizing } from './schedule-render.jsx';
+  partSize as a_partSize, PartCanvas as APart, coverInfo as coverInfo_, dailySizing,
+  LOOKS_LIST, PALETTES } from './schedule-render.jsx';
 
 /* ---------- boot: the stored doc is async now (IndexedDB) ----------
    Boot waits for loadStoredDoc() — a few ms — and only then mounts the app,
@@ -93,12 +96,30 @@ function App({ stored }){
   const { exporting, exportMsg, hubMsg, exportJob, exportRef, doExport } =
     useExport({ doc, channelId, dailyVariant, setSelId });
 
+  /* Ctrl-K (RUI.Palette). The folds index every inspector control on their
+     own; these are the week-level commands. Re-registered each render — it
+     is a plain assignment, and it keeps every closure current. */
+  const [palOpen, setPalOpen] = RUI.usePalette();
+  React.useEffect(()=>{
+    const setStyle = patch => setDoc(d=>Object.assign({}, d, { style:Object.assign({}, d.style, patch) }));
+    RUI.setActions([].concat(
+      A_CH.map(c=>({ label:'Channel · '+c.label+' ('+c.sub+')', group:'Preview', run:()=>{ setChannelId(c.id); setPartIdx(0); } })),
+      LOOKS_LIST.map(lk=>({ label:'Layout · '+lk.l, group:'Look', run:()=>setStyle({ look:lk.id }) })),
+      PALETTES.map(p=>({ label:'Palette · '+p.name, group:'Look', run:()=>setStyle({ theme:p.id }) })),
+      [{ label:'Import — paste / CSV / feed', group:'Import', run:()=>setImportOpen(true) },
+       { label:'Export this channel', group:'Export', run:()=>doExport('channel') },
+       { label:'Export everything', group:'Export', run:()=>doExport('all') },
+       { label:'Undo', group:'Edit', run:undo },
+       { label:'Redo', group:'Edit', run:redo },
+       { label:'Deselect', group:'Edit', run:()=>setSelId(null) },
+       { label:'Toggle hints', group:'View', run:()=>RUI.setHints(!RUI.hintsOn()) }]
+    ));
+  });
+
   const ch = a_ch(channelId);
   return (
     <div className="ss-app">
-      {syncNote && <div style={{ position:'fixed', top:12, left:'50%', transform:'translateX(-50%)', zIndex:10000,
-        background:'#0d0905', color:'#fffbf1', fontFamily:"'Montserrat',sans-serif", fontWeight:700, fontSize:12,
-        letterSpacing:'.04em', padding:'7px 14px', borderRadius:999, boxShadow:'0 8px 24px rgba(0,0,0,.35)', pointerEvents:'none' }}>{syncNote}</div>}
+      {syncNote && <div className="ss-syncnote">{syncNote}</div>}
       <Topbar doc={doc} setDoc={setDoc} count={doc.events.length}
         onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg} hubMsg={hubMsg}
         cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut}
@@ -174,6 +195,7 @@ function App({ stored }){
             dailyVariant={dailyVariant} coverInfo={coverInfo} dailyInfo={dailyInfo} requestPull={requestPull} />
         </div>
       </div>
+      {palOpen && <RUI.Palette onClose={()=>setPalOpen(false)} />}
       {importOpen && <ImportModal doc={doc} setDoc={setDoc}
         onClose={skipped=>{ setImportOpen(false);
           if(skipped) alert(skipped+' event'+(skipped===1?'':'s')+' fell outside the current range and were skipped. Widen the range on the day strip and re-import to include them.'); }} />}

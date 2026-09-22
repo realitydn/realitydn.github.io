@@ -57,6 +57,8 @@ const SHARED = {
   // with Poster Studio (Print used to carry its own white-paper fork).
   '/studio-shared/riso-press.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-press.js'),
   '/studio-shared/riso-engine.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-engine.js'),
+  // The chrome all three Studios share (tokens, controls, folds, dialogs).
+  '/studio-shared/studio-base.css': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-base.css'),
 };
 
 const server = http.createServer((req, res) => {

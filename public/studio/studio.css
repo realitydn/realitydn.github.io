@@ -1,14 +1,12 @@
 /* ============================================================
-   REALITY POSTER STUDIO — app chrome
-   ============================================================ */
-:root{ --rs-mont:'Montserrat',sans-serif; --rs-grot:'Space Grotesk',sans-serif; }
-*{ box-sizing:border-box; }
-html,body{ margin:0; height:100%; }
-body{ background:#0e0c09; overflow:hidden; }
-#root{ height:100%; }
+   REALITY POSTER STUDIO — layout + Poster-only components
+   ============================================================
+   The chrome every Studio shares — tokens, buttons, chips, fields,
+   folds, library, dialogs, palette, toast — is
+   ../studio-shared/studio-base.css, loaded first. This file is the
+   Poster's grid and the few things only the Poster draws. */
 
-.rs-app{ position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr;
-  background:#0e0c09; color:#efe7d8; font-family:var(--rs-grot); }
+.rs-app{ grid-template-rows:auto 1fr; }
 
 /* ---- TOPBAR ---- */
 /* Two rows beside the wordmark. It was ONE 60px row that scrolled sideways,
@@ -20,136 +18,60 @@ body{ background:#0e0c09; overflow:hidden; }
    looking at it. Each row wraps instead of overlapping, so a window narrower
    than the 1280 it's laid out for grows a line rather than hiding anything. */
 .rs-top{ display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto;
-  column-gap:18px; row-gap:6px; align-items:center; padding:7px 14px 7px;
-  border-bottom:1px solid #2a2318; background:#15110b; }
+  column-gap:18px; row-gap:6px; align-items:center; padding:7px 14px 7px; }
 .rs-toprow{ grid-column:2; display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; min-width:0; }
 .rs-toprow > *{ flex:none; }
-.rs-toprow2{ padding-top:6px; border-top:1px solid #221b12; }
-.rs-brand, .rs-tgroup .gl, .rs-iconbtn, .rs-savebtn, .rs-seg button{ white-space:nowrap; }
-.rs-toprow .spacer{ flex:1 1 0; min-width:8px; }
-.rs-brand{ grid-row:1 / span 2; align-self:center;
-  font-family:'Montserrat Alternates',sans-serif; font-weight:600; text-transform:uppercase;
-  letter-spacing:.02em; font-size:26px; line-height:1; color:#fffbf1; }
-.rs-brand small{ display:block; font-family:var(--rs-mont); font-weight:700; font-size:10px;
-  letter-spacing:.2em; color:#8a7f6c; margin-top:3px; }
-.rs-tgroup{ display:flex; align-items:center; gap:8px; }
-.rs-tgroup .gl{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.12em;
-  font-size:10px; color:#7a6f5c; }
-/* the working doc's autosave, out loud — see SaveState in studio-app.jsx */
-.rs-savestate{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
-  font-size:10px; color:#7a6f5c; padding:6px 9px; border:1px solid transparent; border-radius:7px;
-  white-space:nowrap; cursor:default; display:inline-flex; align-items:center; gap:6px; }
-.rs-savestate::before{ content:''; width:7px; height:7px; border-radius:50%; background:#43b02a; }
-.rs-savestate.saving::before{ background:#fdb515; }
-.rs-savestate.fallback{ color:#fdcf6a; border-color:#5a4a1c; }
-.rs-savestate.fallback::before{ background:#fdb515; }
-.rs-savestate.error{ color:#fff; background:#b3121f; border-color:#ed2224; }
+.rs-toprow2{ padding-top:6px; border-top:1px solid var(--st-line-soft); }
+.rs-brand{ grid-row:1 / span 2; align-self:center; font-size:26px; }
+
+/* the working doc's autosave, out loud — see SaveState in panels/topbar.jsx */
+.rs-savestate::before{ content:''; width:7px; height:7px; background:var(--st-good); }
+.rs-savestate.saving::before{ background:var(--st-amber); }
+.rs-savestate.fallback::before{ background:var(--st-on-accent); }
 .rs-savestate.error::before{ background:#fff; }
 
-/* segmented control */
-.rs-seg{ display:flex; border:1px solid #3a2f1f; border-radius:7px; overflow:hidden; background:#0e0b07; }
-.rs-seg button{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-  font-size:10.5px; color:#9b9079; background:none; border:none; padding:7px 12px; cursor:pointer;
-  display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.1; transition:.12s; }
-.rs-seg button small{ font-size:10px; letter-spacing:.06em; color:#7a6f5c; font-weight:600; }
-.rs-seg button:hover{ color:#efe7d8; }
-.rs-seg button.on{ background:#ed1b72; color:#0d0905; }
-.rs-seg button.on small{ color:rgba(13,9,5,.6); }
-.rs-seg button.master.on{ background:#fdb515; color:#0d0905; }
+/* Master (the source every format inherits from) is amber, not pink */
+.rs-seg button.master.on{ background:var(--st-amber); color:var(--st-on-accent); }
 .rs-seg button.master.on small{ color:rgba(13,9,5,.6); }
 /* the extra A1 print view — dashed frame + its own on-colour so it reads as
    an on-demand add-on, never part of the Save-All bundle of formats */
 .rs-seg.xtra{ border-style:dashed; background:transparent; }
-.rs-seg.xtra button.on{ background:#43b02a; color:#0d0905; }
+.rs-seg.xtra button.on{ background:var(--st-good); color:var(--st-on-accent); }
 .rs-seg.xtra button.on small{ color:rgba(13,9,5,.6); }
 /* standee size picker — same on-demand "extra print" tier as A1 (dashed frame,
    green on-state), but a dropdown since it's a family of sizes */
-.rs-stsel{ background:transparent; border:1px dashed #3a2f1f; border-radius:7px; color:#9b9079;
-  font-family:var(--rs-mont); font-weight:700; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+.rs-stsel, .rs-tsel{ background:var(--st-field); border:1px solid var(--st-line-strong); border-radius:0; color:var(--st-soft);
+  font-family:var(--st-mont); font-weight:700; font-size:var(--st-fs-btn); letter-spacing:.06em; text-transform:uppercase;
   padding:8px 6px; cursor:pointer; outline:none; transition:.12s; }
-.rs-stsel:hover, .rs-stsel:focus{ border-color:#6f6553; color:#fffbf1; }
-.rs-stsel.on{ background:#43b02a; border-color:#43b02a; border-style:solid; color:#0d0905; }
-.rs-stsel option{ background:#15110b; color:#cbc1ad; }
-.rs-iconbtn:disabled{ opacity:.4; cursor:default; }
-
-.rs-iconbtn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
-  font-size:10px; color:#cbc1ad; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
-  padding:8px 12px; cursor:pointer; transition:.12s; display:inline-flex; align-items:center; gap:7px; }
-.rs-iconbtn:hover{ border-color:#6f6553; color:#fffbf1; }
-/* after :hover — same specificity, so a disabled button must win on order */
-.rs-iconbtn:disabled, .rs-iconbtn:disabled:hover{ opacity:.4; cursor:default; border-color:#3a2f1f; color:#cbc1ad; }
-.rs-iconbtn.on{ background:#241a10; border-color:#ed1b72; color:#fff; }
+.rs-stsel{ background:transparent; border-style:dashed; color:var(--st-muted); }
+.rs-stsel:hover, .rs-stsel:focus, .rs-tsel:hover, .rs-tsel:focus{ border-color:var(--st-line-hover); color:var(--st-ink); }
+.rs-stsel.on{ background:var(--st-good); border-color:var(--st-good); border-style:solid; color:var(--st-on-accent); }
+.rs-stsel option, .rs-tsel option{ background:var(--st-panel); color:var(--st-soft); }
+.rs-tsel:disabled{ opacity:.4; cursor:default; }
 
 /* The block you finish on — Save template, then the export controls (poster
    name, format select, Save Images): the right-hand end of the top row, a flex
-   row of its own since two groups ride it. It used to be sticky over a
-   scrolling bar and paint over whatever slid under it; nothing slides under it
-   now, so it's just a group. */
+   row of its own since two groups ride it. */
 .rs-top .rs-export{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; }
-.rs-tname{ width:132px; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
-  color:#fffbf1; font-family:var(--rs-grot); font-size:12.5px; padding:8px 10px; outline:none; transition:.12s; }
-.rs-tname:focus{ border-color:#ed1b72; }
-.rs-tname::placeholder{ color:#6a6051; }
-.rs-tsel{ background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px; color:#cbc1ad;
-  font-family:var(--rs-mont); font-weight:700; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
-  padding:8px 6px; cursor:pointer; outline:none; transition:.12s; }
-.rs-tsel:hover, .rs-tsel:focus{ border-color:#6f6553; color:#fffbf1; }
-.rs-tsel:disabled{ opacity:.4; cursor:default; }
-.rs-savebtn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-  font-size:10.5px; color:#0d0905; background:#ed1b72; border:1px solid #ed1b72; border-radius:7px;
-  padding:6px 14px; cursor:pointer; transition:.12s; display:flex; flex-direction:column; align-items:center;
-  gap:1px; line-height:1.15; }
-.rs-savebtn small{ font-size:10px; letter-spacing:.06em; font-weight:600; color:rgba(13,9,5,.66); text-transform:uppercase; }
-.rs-savebtn:hover{ background:#ff4d94; border-color:#ff4d94; }
-.rs-savebtn:disabled{ opacity:.45; cursor:default; }
-
-/* user templates — delete cross on each saved item */
-.rs-tplx{ position:absolute; right:8px; top:8px; width:22px; height:22px; border:1px solid #5a2326;
-  border-radius:6px; background:#1b1610; color:#ed7a82; cursor:pointer; font-size:13px; line-height:1; padding:0; }
-.rs-tplx:hover{ background:#2a1416; color:#fff; }
 
 /* ---- BODY ---- */
 .rs-body{ display:grid; grid-template-columns:236px 1fr 312px; min-height:0; }
-.rs-lib, .rs-inspector{ overflow-y:auto; background:#15110b; }
-.rs-lib{ border-right:1px solid #2a2318; padding:16px 14px 40px; }
-.rs-inspector{ border-left:1px solid #2a2318; padding:16px 16px 60px; }
+.rs-lib{ padding:16px 14px 40px; }
+.rs-inspector{ padding:16px 16px 60px; }
 
-.rs-sech{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
-  font-size:11px; color:#8a7f6c; margin:18px 0 10px; }
-.rs-sech:first-child{ margin-top:0; }
+/* stage */
+/* .dropping = files are being dragged over it (see hooks/useImageDrop.js) */
+.rs-stage{ overflow:hidden; transition:box-shadow .12s; }
+.rs-stage.dropping{ box-shadow:inset 0 0 0 3px var(--st-select), inset 0 0 0 4px rgba(13,9,5,.7); }
+.rs-canvas{ will-change:transform; }
+/* Panning (hooks/useViewport.js): Space held = an open hand, dragging = a closed
+   one — over everything on the stage, so no element's own cursor argues. */
+.rs-stage.rs-panready, .rs-stage.rs-panready *{ cursor:grab !important; }
+.rs-stage.rs-panning, .rs-stage.rs-panning *{ cursor:grabbing !important; }
 
-/* Collapsible inspector sections. These used to be a photo-panel-only device
-   drawn as hairline dividers; now every section of every element type is one,
-   so they're boxed — at a dozen folds in a column, a rule between them isn't
-   enough edge to tell "closed section" from "end of the panel". */
-.rs-fold{ border:1px solid #33291b; border-radius:9px; margin-bottom:7px; background:#15110b; }
-.rs-fold.open{ border-color:#4a3d29; }
-.rs-foldhead{ display:flex; align-items:center; gap:8px; width:100%; background:#1b1610; border:none;
-  border-radius:8px; cursor:pointer; padding:9px 10px; text-align:left;
-  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.11em;
-  font-size:10px; color:#b6ab97; transition:.12s; }
-.rs-foldhead:hover{ color:#fffbf1; }
-.rs-foldhead .chev{ color:#7d7260; width:10px; flex:none; font-size:9px; }
-.rs-foldhead .t{ flex:1 1 auto; min-width:0; }
-/* The badge is the count of props inside that differ from this element's
-   defaults — a closed fold still says whether anything in it is set. */
-.rs-foldhead .badge{ flex:none; background:#ed1b72; color:#0d0905; border-radius:9px;
-  padding:1px 7px; font-family:var(--rs-grot); font-weight:600; font-size:10px; letter-spacing:.04em; }
-.rs-fold.open .rs-foldhead{ color:#e9ddc5; border-radius:8px 8px 0 0; }
-.rs-fold.open .rs-foldhead .chev{ color:#ed1b72; }
-.rs-foldbody{ padding:12px 10px 2px; border-top:1px solid #2a2318; }
-.rs-foldbody .rs-sech:first-child{ margin-top:0; }
-.rs-foldbody > .rs-row:last-child, .rs-foldbody > .rs-actions:last-child{ margin-bottom:10px; }
-
-/* library items */
-.rs-libitem{ display:flex; flex-direction:column; gap:2px; padding:11px 12px; margin-bottom:7px;
-  border:1px solid #33291b; border-radius:9px; background:#1b1610; cursor:grab; transition:.13s;
-  touch-action:none; user-select:none; }
-.rs-libitem:hover{ border-color:#ed1b72; background:#221a13; transform:translateY(-1px); }
-.rs-libitem:active{ cursor:grabbing; }
-.rs-libitem .ln{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.03em;
-  font-size:12px; color:#fffbf1; }
-.rs-libitem .lh{ font-size:11px; color:#8a7f6c; font-family:var(--rs-grot); line-height:1.2; }
+/* context banner: Master = amber (the base rule), an output format = pink */
+.rs-context.out{ background:var(--st-accent-bg); border-color:#5a2348; color:#f59ac9; }
+.rs-ovtag{ color:#ed7aa8; font-weight:700; }
 
 /* graphics picker — shape / rule / burst / icon grids. One component serves
    both the library (drag to spawn) and the Inspector (click to swap kind), so
@@ -159,15 +81,15 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-gfxgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(58px, 1fr)); gap:5px; margin-bottom:2px; }
 .rs-gfxgrid.wide{ grid-template-columns:repeat(auto-fill, minmax(44px, 1fr)); }
 .rs-gfxtile{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 3px 5px;
-  border:1px solid #33291b; border-radius:8px; background:#1b1610; color:#c9bda6;
+  border:1px solid var(--st-line); background:var(--st-raised); color:#c9bda6;
   cursor:grab; transition:.12s; touch-action:none; user-select:none; overflow:hidden; }
-.rs-gfxtile:hover{ border-color:#ed1b72; background:#221a13; color:#fffbf1; transform:translateY(-1px); }
+.rs-gfxtile:hover{ border-color:var(--st-accent); background:var(--st-hover); color:var(--st-ink); }
 .rs-gfxtile:active{ cursor:grabbing; }
-.rs-gfxtile.on{ border-color:#ed1b72; background:#2a1620; color:#ed1b72; }
+.rs-gfxtile.on{ border-color:var(--st-accent); background:var(--st-accent-bg); color:var(--st-accent); }
 .rs-gfxtile .gp{ display:block; width:100%; height:30px; }
 .rs-gfxtile .gp svg{ width:100%; height:100%; }
-.rs-gfxtile .gl{ font-family:var(--rs-grot); font-size:10px; letter-spacing:.01em; line-height:1.1;
-  color:#8a7f6c; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-gfxtile .gl{ font-family:var(--st-grot); font-size:var(--st-fs-label); letter-spacing:.01em; line-height:1.1;
+  color:var(--st-dim); text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-gfxtile:hover .gl, .rs-gfxtile.on .gl{ color:inherit; }
 .rs-gfxsearch{ margin-bottom:2px; }
 
@@ -182,199 +104,20 @@ body{ background:#0e0c09; overflow:hidden; }
    turn fourteen thumbnails into a column you have to scroll — object-fit
    letterboxes rather than squashing when the cap bites */
 .rs-treatgrid canvas.tp{ display:block; width:100%; height:auto; max-height:78px;
-  object-fit:contain; border-radius:4px; background:#0e0b07; }
+  object-fit:contain; background:var(--st-field); }
 
-/* stage */
-/* .dropping = files are being dragged over it (see the App's drop handler) */
-.rs-stage{ position:relative; overflow:hidden; transition:box-shadow .12s;
-  background:
-    linear-gradient(45deg,#191510 25%,transparent 25%,transparent 75%,#191510 75%) 0 0/26px 26px,
-    linear-gradient(45deg,#191510 25%,transparent 25%,transparent 75%,#191510 75%) 13px 13px/26px 26px,
-    #14110c; }
-.rs-stage.dropping{ box-shadow:inset 0 0 0 3px #00e5ff, inset 0 0 0 4px rgba(13,9,5,.7); }
-.rs-canvas{ will-change:transform; }
-/* Panning (hooks/useViewport.js): Space held = an open hand, dragging = a closed
-   one — over everything on the stage, so no element's own cursor argues. */
-.rs-stage.rs-panready, .rs-stage.rs-panready *{ cursor:grab !important; }
-.rs-stage.rs-panning, .rs-stage.rs-panning *{ cursor:grabbing !important; }
+/* the ink-mark editor's preview well (its ground colour is set inline — it is the preview substrate) */
+.rs-inkprev{ border:var(--st-bw) solid var(--st-line-open); min-height:210px; padding:20px;
+  display:flex; align-items:center; justify-content:center; }
 
-/* inspector controls */
-.rs-row{ margin-bottom:14px; }
-/* Labels floor at 10px. At 8–9.5px, uppercase and tracked, they were the
-   hardest thing on screen to read — in a tool whose whole panel is labels. */
-.rs-lab{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.09em;
-  font-size:10px; color:#8a7f6c; margin-bottom:6px; display:flex; justify-content:space-between; }
-.rs-lab .val{ color:#cbb; font-weight:600; letter-spacing:.04em; }
-.rs-input, .rs-area{ width:100%; background:#0e0b07; border:1px solid #33291b; border-radius:7px;
-  color:#fffbf1; font-family:var(--rs-grot); font-size:13px; padding:8px 10px; outline:none; transition:.12s; }
-.rs-input:focus, .rs-area:focus{ border-color:#ed1b72; }
-.rs-area{ resize:vertical; min-height:46px; line-height:1.3; }
-
-.rs-chips{ display:flex; flex-wrap:wrap; gap:5px; }
-.rs-chip{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:10px; color:#b6ab97; background:#0e0b07; border:1px solid #33291b; border-radius:6px;
-  padding:6px 9px; cursor:pointer; transition:.12s; }
-.rs-chip:hover{ border-color:#6f6553; color:#fffbf1; }
-.rs-chip.on{ background:#ed1b72; color:#0d0905; border-color:#ed1b72; }
-
-.rs-swatches{ display:flex; flex-wrap:wrap; gap:6px; }
-.rs-sw{ width:26px; height:26px; border-radius:6px; border:2px solid #2a2318; cursor:pointer; transition:.12s; position:relative; }
-.rs-sw:hover{ transform:scale(1.1); }
-.rs-sw.on{ border-color:#fffbf1; box-shadow:0 0 0 2px #ed1b72; }
-.rs-sw.ink{ background:linear-gradient(135deg,#0d0905 50%,#fffbf1 50%); }
-
-.rs-slider{ -webkit-appearance:none; width:100%; height:4px; border-radius:3px; background:#33291b; outline:none; }
-.rs-slider::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
-  background:#ed1b72; cursor:pointer; border:2px solid #15110b; }
-.rs-slider::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#ed1b72; cursor:pointer; border:2px solid #15110b; }
-
-/* wrap rather than crush — arrange rows carry 2–4 buttons and the inspector
-   is only 312px wide */
-.rs-actions{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-.rs-actions .rs-iconbtn{ flex:1 1 60px; justify-content:center; padding:9px 6px; white-space:nowrap; }
-.rs-del{ border-color:#5a2326 !important; color:#ed7a82 !important; }
-.rs-del:hover{ background:#2a1416 !important; border-color:#ed2224 !important; color:#fff !important; }
-
-.rs-empty{ text-align:center; color:#7d7260; padding:30px 14px; }
-.rs-empty .big{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
-  font-size:12px; color:#b6ab97; margin-bottom:8px; }
-.rs-empty p{ font-size:12px; line-height:1.5; margin:0; }
-
+/* vibe / weekday picker cards */
 .rs-vibe{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-.rs-vibe button{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:10px; color:#cbc1ad; border:1px solid #33291b; border-radius:8px; padding:10px 8px; cursor:pointer;
-  background:#1b1610; transition:.13s; display:flex; flex-direction:column; align-items:center; gap:5px; }
-.rs-vibe button:hover{ border-color:#6f6553; color:#fffbf1; transform:translateY(-1px); }
-.rs-vibe button.on{ border-color:#fffbf1; color:#fffbf1; background:#241d14; }
-.rs-vibe .dot{ width:30px; height:8px; border-radius:4px; }
-/* weekday picker — colour dot beside the day so the name stays legible */
-.rs-days button{ flex-direction:row; justify-content:flex-start; gap:8px; font-size:11px; padding:9px 10px; }
-.rs-days .dot{ width:14px; height:14px; border-radius:50%; flex:none; }
-
-/* spawn ghost */
-.rs-ghost{ position:fixed; z-index:9999; pointer-events:none; transform:translate(-50%,-50%);
-  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:12px;
-  color:#0d0905; background:#ed1b72; border:2px solid #0d0905; border-radius:8px; padding:9px 14px;
-  box-shadow:0 10px 24px rgba(0,0,0,.4); }
-
-.rs-rowflex{ display:flex; gap:8px; }
-.rs-rowflex > *{ flex:1; }
-.rs-mini{ font-family:var(--rs-grot); font-size:11px; color:#8a7f6c; line-height:1.45; margin:2px 0 0; }
-.rs-itemrow{ display:flex; gap:5px; margin-bottom:5px; align-items:center; }
-.rs-itemrow .rs-input{ font-size:12px; padding:6px 8px; }
-.rs-itemrow button{ flex:none; width:28px; height:28px; border:1px solid #5a2326; border-radius:6px;
-  background:#1b1610; color:#ed7a82; cursor:pointer; font-size:14px; line-height:1; }
-.rs-itemrow button:hover{ background:#2a1416; color:#fff; }
-.rs-addrow{ width:100%; font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
-  font-size:10px; color:#b6ab97; border:1px dashed #4a3d29; border-radius:7px; padding:8px; cursor:pointer; background:none; transition:.12s; }
-.rs-addrow:hover{ border-color:#ed1b72; color:#fff; }
-/* an inline text action inside a hint line (e.g. Remove the imported VI subtitle) */
-.rs-linkbtn{ background:none; border:0; padding:0; font:inherit; color:#e8dcc6; text-decoration:underline; cursor:pointer; }
-.rs-linkbtn:hover{ color:#fff; }
-
-/* type-scale stepper */
-.rs-stepper{ display:flex; align-items:center; gap:9px; }
-.rs-stepper .rs-slider{ flex:1; }
-.rs-stepper button{ flex:none; width:30px; height:26px; border:1px solid #33291b; border-radius:6px;
-  background:#0e0b07; color:#cbc1ad; cursor:pointer; font-family:var(--rs-mont); font-weight:700; font-size:11px; transition:.12s; }
-.rs-stepper button:hover{ border-color:#ed1b72; color:#fff; }
-
-/* context banner + override tag */
-.rs-context{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:10px; padding:9px 11px; border-radius:8px; margin-bottom:16px; line-height:1.5; }
-.rs-context b{ font-size:11px; letter-spacing:.04em; }
-.rs-context.master{ background:#241d10; border:1px solid #5a4a1c; color:#fdcf6a; }
-.rs-context.out{ background:#2a1422; border:1px solid #5a2348; color:#f59ac9; }
-.rs-ovtag{ color:#ed7aa8; font-weight:700; }
-
-/* ============================================================
-   COLLAPSIBLE LIBRARY — sections that start closed, with counts.
-   ============================================================
-   The parts list used to be 3,195px of always-open rows: every
-   catalog group, every template, the queue, the graphics grids,
-   all expanded, all the time. Print Studio already had the right
-   shape for this, so these are its .ps-sec / .ps-tplcard rules
-   in Poster's register (rounded, hairline, warm dark). */
-.rs-libtitle{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
-  font-size:11px; color:#7a6f5c; margin:18px 0 9px; display:flex; justify-content:space-between; align-items:baseline; }
-.rs-libtitle:first-child{ margin-top:0; }
-.rs-libtitle .hint{ font-weight:600; letter-spacing:.03em; font-size:10px; color:#7a6f5c; text-transform:none; }
-.rs-sec{ width:100%; display:flex; align-items:center; gap:8px; padding:9px 10px; margin-bottom:5px;
-  border:1px solid #33291b; border-radius:8px; background:#1b1610; cursor:pointer; transition:.12s;
-  font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:11px; color:#fffbf1; text-align:left; }
-.rs-sec:hover{ border-color:#6f6553; transform:translateY(-1px); }
-.rs-sec.open{ border-color:#ed1b72; }
-.rs-sec .caret{ flex:none; width:10px; font-size:9px; color:#8a7f6c; }
-.rs-sec.open .caret{ color:#ed1b72; }
-.rs-sec .t{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rs-sec .dot{ flex:none; width:11px; height:11px; border-radius:50%; border:1px solid rgba(0,0,0,.25); }
-.rs-sec .n{ flex:none; font-family:var(--rs-grot); font-weight:600; font-size:10px; color:#8a7f6c;
-  background:#0e0b07; padding:1px 7px; border:1px solid #33291b; border-radius:8px; }
-
-/* template preview cards — a real mini render beats "4 parts · click to load" */
-/* minmax(0,1fr), not 1fr: a bare 1fr column still takes its MIN size from the
-   widest thing in it, so one long template name pushed the column past the
-   236px library — taking the card's archive/delete buttons (absolute, off its
-   right edge) out of the panel with it. */
-.rs-tplgrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin:2px 0 10px; }
-.rs-tplcard{ display:flex; flex-direction:column; gap:4px; padding:6px; border:1px solid #33291b;
-  border-radius:8px; background:#1b1610; cursor:pointer; position:relative; transition:.12s; min-width:0; }
-.rs-tplcard:hover{ border-color:#ed1b72; transform:translateY(-2px); }
-/* Names wrap (to three lines, then ellipsis) rather than running off in one
-   line — "Thứ Tư Acoustic — Mai Thúc Lân" is a normal template name here, and a
-   card is 100px wide. Nothing collides: the buttons sit over the thumbnail. */
-.rs-tplcard .tn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.02em;
-  font-size:10px; color:#fffbf1; line-height:1.2; overflow-wrap:anywhere;
-  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-.rs-tplcard .ts{ font-family:var(--rs-grot); font-size:10px; color:#8a7f6c; }
-.rs-thumbbox{ overflow:hidden; border:1px solid rgba(255,251,241,.12); border-radius:4px; margin:0 auto;
-  max-width:100%; }
-
-/* numeric arrange fields — the precise cousin of the position sliders */
-.rs-numgrid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
-.rs-num{ display:flex; flex-direction:column; gap:3px; }
-.rs-num span{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-  font-size:10px; color:#8a7f6c; }
-.rs-num input{ width:100%; background:#0e0b07; border:1px solid #33291b; border-radius:6px; color:#fffbf1;
-  font-family:var(--rs-grot); font-size:12px; padding:5px; outline:none; -moz-appearance:textfield; }
-.rs-num input::-webkit-outer-spin-button, .rs-num input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-.rs-num input:focus{ border-color:#ed1b72; }
-
-/* ============================================================
-   COMMAND PALETTE (Ctrl-K) + the flash it lands on.
-   ============================================================
-   With ~300 controls across a dozen folds, "where does dot gain
-   live" stopped being answerable from memory. The palette
-   searches every label the inspector has ever built, opens the
-   fold it's in, scrolls to it and flashes it. */
-.rs-palwrap{ position:fixed; inset:0; z-index:10000; background:rgba(8,6,3,.62);
-  display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; }
-.rs-pal{ width:min(560px, 92vw); background:#15110b; border:1px solid #4a3d29; border-radius:12px;
-  box-shadow:0 24px 60px rgba(0,0,0,.55); overflow:hidden; display:flex; flex-direction:column; max-height:70vh; }
-.rs-palq{ width:100%; background:#0e0b07; border:none; border-bottom:1px solid #2a2318; color:#fffbf1;
-  font-family:var(--rs-grot); font-size:15px; padding:15px 17px; outline:none; }
-.rs-palq::placeholder{ color:#6a6051; }
-.rs-pallist{ overflow-y:auto; padding:6px; }
-.rs-palrow{ width:100%; display:flex; align-items:baseline; gap:10px; padding:9px 11px; border:none;
-  border-radius:7px; background:none; cursor:pointer; text-align:left; font-family:var(--rs-grot); }
-.rs-palrow .l{ flex:1 1 auto; font-size:13px; color:#efe7d8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rs-palrow .g{ flex:none; font-family:var(--rs-mont); font-weight:700; text-transform:uppercase;
-  letter-spacing:.1em; font-size:10px; color:#7d7260; }
-.rs-palrow.on{ background:#241a10; }
-.rs-palrow.on .l{ color:#fff; }
-.rs-palrow.on .g{ color:#ed1b72; }
-.rs-palempty{ padding:18px 14px; font-size:12px; line-height:1.5; color:#7d7260; }
-.rs-palfoot{ border-top:1px solid #2a2318; padding:8px 14px; font-family:var(--rs-mont); font-weight:700;
-  text-transform:uppercase; letter-spacing:.1em; font-size:10px; color:#7a6f5c; }
-@keyframes rs-flashkf{ 0%,100%{ background:transparent; } 22%{ background:rgba(237,27,114,.22); } }
-.rs-flash{ animation:rs-flashkf 1.25s ease-out; border-radius:7px; }
-@media (prefers-reduced-motion: reduce){ .rs-flash{ animation:none; box-shadow:0 0 0 2px #ed1b72; } }
-
-/* A short note over the foot of the stage — things worth saying that don't
-   deserve a dialog (Delete hid rather than deleted; that file isn't a picture).
-   Click to dismiss; it goes by itself. */
-.rs-toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:9998;
-  max-width:min(560px, 86vw); padding:11px 16px; border-radius:9px; cursor:pointer;
-  background:#0d0906; color:#fffbf1; border:1px solid #4a3d29; box-shadow:0 14px 34px rgba(0,0,0,.5);
-  font-family:var(--rs-grot); font-size:13px; line-height:1.4; text-align:center; }
+.rs-vibe button{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+  font-size:var(--st-fs-label); color:var(--st-soft); border:1px solid var(--st-line); padding:10px 8px; cursor:pointer;
+  background:var(--st-raised); transition:.12s; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.rs-vibe button:hover{ border-color:var(--st-line-hover); color:var(--st-ink); }
+.rs-vibe button.on{ border-color:var(--st-ink); color:var(--st-ink); background:#241d14; }
+.rs-vibe .dot{ width:30px; height:8px; }
+/* weekday picker — colour square beside the day so the name stays legible */
+.rs-days button{ flex-direction:row; justify-content:flex-start; gap:8px; font-size:var(--st-fs-small); padding:9px 10px; }
+.rs-days .dot{ width:14px; height:14px; flex:none; }

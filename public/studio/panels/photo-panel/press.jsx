@@ -108,7 +108,7 @@ function SepControls({ el, update, theme, inkKey }){
                 <div className="rs-lab">Plate {i+1}{i===0?' · first drum':''} <span className="val">{inkTitle(k)}</span></div>
                 <div className="rs-swatches">
                   {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(k===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>setPlate(i,a)} />))}
-                  {plates.length>1 && <div className="rs-sw" title="Remove this plate" style={{ border:'1.5px solid #3a2f1f', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#cdbfae' }} onClick={()=>dropPlate(i)}>✕</div>}
+                  {plates.length>1 && <div className="rs-sw" title="Remove this plate" style={{ border:'1.5px solid var(--st-sw-border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#cdbfae' }} onClick={()=>dropPlate(i)}>✕</div>}
                 </div>
               </React.Fragment>
             ))}

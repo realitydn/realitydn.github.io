@@ -4,7 +4,8 @@
 import { searchNorm, eventMatches, feedDayLabel } from '../feed.js';
 /* ---- WP9 event picker — lists upcoming events from the REALITY feed so the
    user can push the current poster's formats onto an event's poster slots.
-   Reuses the studio's overlay/modal CSS atoms; fully additive UI. ---- */
+   Drawn with the shared kit (studio-base.css): the dark modal, .rs-pick rows,
+   .rs-input search, .rs-iconbtn buttons. ---- */
 function EventPickerModal({ picker, onPick, onClose, onRetry }){
   /* When the poster came off "In queue" (doc.eventRef), that event is pinned
      up top as the obvious one-click send; everything else lists below it.
@@ -60,31 +61,25 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
   const rest = (origin ? picker.events.filter(e=>e.id!==origin.id) : picker.events)
     .filter(ev=>eventMatches(ev, terms));
   const originHit = !!(origin && eventMatches(originEv, terms));
-  const kicker = { fontFamily:'Montserrat', fontWeight:700, fontSize:10, letterSpacing:'.09em',
-    textTransform:'uppercase', opacity:.55, margin:'2px 0 6px' };
 
   /* ---- step 2: this date, or the whole series? ---- */
   function renderScope(){
     const dates = datesOf(scopeStep);
     const list = dates.slice(0,8).map(d=>feedDayLabel(d.startsAt)).join(' · ')
       + (dates.length>8 ? '  +'+(dates.length-8)+' more' : '');
-    const opt = { display:'block', width:'100%', textAlign:'left', cursor:'pointer', font:'inherit',
-      color:'#0d0905', borderRadius:6, marginBottom:8, padding:'10px 12px' };
     return (
       <React.Fragment>
-        <div style={{ fontWeight:800, fontSize:14, marginBottom:2 }}>{scopeStep.title_en || scopeStep.title_vi || '(untitled)'}</div>
-        <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>Repeats — {dates.length} upcoming dates in the feed.</div>
-        <button onClick={()=>onPick(scopeStep.id, 'one')}
-          style={Object.assign({}, opt, { border:'1px solid rgba(120,110,90,.45)', background:'transparent' })}>
-          <div style={{ fontFamily:'Montserrat', fontWeight:800, fontSize:13 }}>This date only</div>
-          <div style={{ fontSize:11, opacity:.65, marginTop:2 }}>{whenOf(scopeStep.startsAt)}</div>
+        <div className="rs-pickhead">{scopeStep.title_en || scopeStep.title_vi || '(untitled)'}</div>
+        <div className="rs-modalsub" style={{ marginBottom:12 }}>Repeats — {dates.length} upcoming dates in the feed.</div>
+        <button className="rs-pick" onClick={()=>onPick(scopeStep.id, 'one')}>
+          <div className="pt">This date only</div>
+          <div className="pm">{whenOf(scopeStep.startsAt)}</div>
         </button>
-        <button onClick={()=>onPick(scopeStep.id, 'series')}
-          style={Object.assign({}, opt, { border:'2px solid #0d0905', background:'#fddf00' })}>
-          <div style={{ fontFamily:'Montserrat', fontWeight:800, fontSize:13 }}>All {dates.length} dates</div>
-          <div style={{ fontSize:11, opacity:.7, marginTop:2 }}>{list}</div>
+        <button className="rs-pick hero" onClick={()=>onPick(scopeStep.id, 'series')}>
+          <div className="pt">All {dates.length} dates</div>
+          <div className="pm">{list}</div>
         </button>
-        <div style={{ fontSize:11, opacity:.6, lineHeight:1.45 }}>
+        <div className="rs-mini">
           “All dates” also becomes the series default, so dates the app mints later inherit this poster — and it overrides dates whose poster was set by hand.
         </div>
       </React.Fragment>
@@ -96,76 +91,61 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
     const listable = !picker.loading && !picker.err && picker.events.length>0;
     return (
       <React.Fragment>
-        {picker.loading && <div style={{ fontSize:12, opacity:.7 }}>Loading upcoming events…</div>}
+        {picker.loading && <div className="rs-mini">Loading upcoming events…</div>}
         {!picker.loading && picker.err &&
-          <div style={{ fontSize:12, color:'#b00' }}>
-            {picker.err}
-            {onRetry &&
-              <button onClick={onRetry}
-                style={{ marginLeft:8, padding:'4px 10px', border:'2px solid #0d0905', background:'#fddf00', color:'#0d0905', borderRadius:6, fontFamily:'Montserrat', fontWeight:700, fontSize:11, cursor:'pointer' }}>
-                Retry
-              </button>}
+          <div className="rs-mini err" style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span>{picker.err}</span>
+            {onRetry && <button className="rs-iconbtn" onClick={onRetry}>Retry</button>}
           </div>}
         {!picker.loading && !picker.err && picker.events.length===0 && !origin &&
-          <div style={{ fontSize:12, opacity:.7 }}>No upcoming events in the feed.</div>}
+          <div className="rs-mini">No upcoming events in the feed.</div>}
         {listable &&
-          <input ref={searchRef} type="search" value={q} placeholder="Search by name…"
-            onChange={e=>setQ(e.target.value)}
-            style={{ width:'100%', padding:'8px 10px', marginBottom:10, borderRadius:6,
-              border:'2px solid #0d0905', background:'#fff', color:'#0d0905',
-              fontFamily:'Space Grotesk, sans-serif', fontSize:13 }} />}
+          <input ref={searchRef} className="rs-input" type="search" value={q} placeholder="Search by name…"
+            onChange={e=>setQ(e.target.value)} style={{ marginBottom:10 }} />}
         {!picker.loading && originHit && (
           <React.Fragment>
-            <div style={kicker}>This poster’s event</div>
-            <div onClick={()=>choose(originEv)}
-              style={{ cursor:'pointer', padding:'10px 12px', borderRadius:6, marginBottom:10, border:'2px solid #0d0905', background:'rgba(120,110,90,.07)' }}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.16)'}
-              onMouseLeave={e=>e.currentTarget.style.background='rgba(120,110,90,.07)'}>
-              <div style={{ fontWeight:800, fontSize:13 }}>{(originEv && (originEv.title_en || originEv.title_vi)) || origin.title || '(untitled)'}</div>
-              <div style={{ fontSize:11, opacity:.6 }}>{whenOf((originEv && originEv.startsAt) || origin.startsAt)}{originEv && originEv.location && originEv.location.code ? ' · '+originEv.location.code : ''}</div>
-              <div style={{ fontSize:11, opacity:.75, marginTop:3 }}>↳ Send here — this poster was queued for this event.</div>
-            </div>
-            {rest.length>0 && <div style={kicker}>…or another event</div>}
+            <div className="rs-pickhead">This poster’s event</div>
+            <button className="rs-pick hero" onClick={()=>choose(originEv)}>
+              <div className="pt">{(originEv && (originEv.title_en || originEv.title_vi)) || origin.title || '(untitled)'}</div>
+              <div className="pm">{whenOf((originEv && originEv.startsAt) || origin.startsAt)}{originEv && originEv.location && originEv.location.code ? ' · '+originEv.location.code : ''}</div>
+              <div className="pm">↳ Send here — this poster was queued for this event.</div>
+            </button>
+            {rest.length>0 && <div className="rs-pickhead">…or another event</div>}
           </React.Fragment>
         )}
         {!picker.loading && rest.map(ev=>{
           const n = datesOf(ev).length;
           return (
-            <div key={ev.id} onClick={()=>choose(ev)}
-              style={{ cursor:'pointer', padding:'8px 10px', borderRadius:6, marginBottom:4, border:'1px solid rgba(120,110,90,.2)' }}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(120,110,90,.08)'}
-              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-              <div style={{ fontWeight:700, fontSize:13 }}>{ev.title_en || ev.title_vi || '(untitled)'}</div>
-              <div style={{ fontSize:11, opacity:.6 }}>
+            <button key={ev.id} className="rs-pick" onClick={()=>choose(ev)}>
+              <div className="pt">{ev.title_en || ev.title_vi || '(untitled)'}</div>
+              <div className="pm">
                 {whenOf(ev.startsAt)}{ev.location && ev.location.code ? ' · '+ev.location.code : ''}
                 {n>1 ? ' · repeats — '+n+' dates' : ''}
               </div>
-            </div>
+            </button>
           );
         })}
         {listable && !rest.length && !originHit &&
-          <div style={{ fontSize:12, opacity:.7 }}>Nothing matches “{q}”.</div>}
+          <div className="rs-mini">Nothing matches “{q}”.</div>}
       </React.Fragment>
     );
   }
 
   return (
-    <div className="rs-overlay" onClick={onClose}
-      style={{ position:'fixed', inset:0, background:'rgba(10,7,3,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
-      <div className="rs-modal" onClick={e=>e.stopPropagation()}
-        style={{ width:420, maxWidth:'92vw', maxHeight:'80vh', overflow:'auto', background:'#fffbf1', color:'#0d0905', borderRadius:10, padding:18, boxShadow:'0 30px 70px rgba(0,0,0,.5)' }}>
-        <div style={{ fontFamily:'Montserrat', fontWeight:800, letterSpacing:'.04em', fontSize:14, marginBottom:4 }}>
-          {scopeStep ? 'Update the series?' : 'Export to event'}
+    <div className="rs-overlay" onClick={onClose}>
+      <div className="rs-modal narrow" onClick={e=>e.stopPropagation()}>
+        <div className="rs-modalhead" style={{ marginBottom:4 }}>
+          <div className="rs-modaltitle">{scopeStep ? 'Update the series?' : 'Export to event'}</div>
         </div>
         {!scopeStep &&
-          <div style={{ fontSize:12, opacity:.7, marginBottom:12 }}>
+          <div className="rs-modalsub" style={{ marginBottom:12 }}>
             Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus your text-less <b>feed slice</b> → <b>feed</b> onto the chosen event.
           </div>}
         {scopeStep ? renderScope() : renderList()}
-        <div style={{ marginTop:12, display:'flex', justifyContent:'flex-end', gap:8 }}>
+        <div className="rs-modalfoot">
           {scopeStep &&
-            <button className="rs-addrow" onClick={()=>setScopeStep(null)} style={{ display:'inline-block', width:'auto' }}>‹ Back</button>}
-          <button className="rs-addrow" onClick={onClose} style={{ display:'inline-block', width:'auto' }}>Cancel</button>
+            <button className="rs-iconbtn" onClick={()=>setScopeStep(null)}>‹ Back</button>}
+          <button className="rs-iconbtn" onClick={onClose}>Cancel</button>
         </div>
       </div>
     </div>

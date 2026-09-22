@@ -17,6 +17,9 @@
                      Poster's too). One object per page, shared with
                      anything else on it (cloud.js keeps an earlier copy
                      if there is one).
+     window.RUI    — the control kit (../studio-shared/studio-ui.jsx,
+                     imported by app-controls.jsx): folds, fields, chips,
+                     hints, the Ctrl-K palette. Poster and Print set it too.
    ============================================================ */
 import '../studio-shared/cloud.js';
 import './schedule-data.jsx';

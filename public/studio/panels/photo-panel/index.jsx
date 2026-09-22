@@ -136,7 +136,7 @@ function PhotoControls({ el, update, theme, accent, day }){
         {(t==='offregister'||t==='overprint'||((t==='duotone'||t==='posterize')&&el.splitTone)) && <React.Fragment>
           <div className="rs-lab">{(t==='duotone'||t==='posterize') ? 'Second ink' : 'Accent ink'} <span className="val">{el.ink2||'auto'}</span></div>
           <div className="rs-swatches">
-            <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ ink2:null })} />
+            <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid var(--st-sw-border)' }} onClick={()=>update({ ink2:null })} />
             {AP_INKS.map(a=>(
               <div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />
             ))}

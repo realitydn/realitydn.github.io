@@ -84,37 +84,26 @@ function InkMarkEditor({ el, doc, update, onClose }){
      dimension it does not use */
   const previewM = Math.max(6, Math.floor(Math.min(258/f.cols, 168/f.rows)));
   return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(10,7,3,.62)',
-      display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999 }}>
-      <div onClick={e=>e.stopPropagation()} style={{ background:'#171109', border:'2px solid #3a2c1c',
-        width:'min(860px, 94vw)', maxHeight:'92vh', overflow:'auto', padding:'20px 22px 22px',
-        boxShadow:'0 18px 0 rgba(0,0,0,.35)' }}>
-        <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:16 }}>
-          <div style={{ fontFamily:'Montserrat', fontWeight:800, fontSize:15, letterSpacing:'.04em',
-            textTransform:'uppercase', color:'#fffbf1' }}>Ink mark editor</div>
-          <div style={{ fontFamily:'Space Grotesk', fontSize:12, color:'#8a7f6c' }}>
-            Cell order is canon — this recolours and resizes, it never reorders.</div>
-          <button onClick={onClose} style={{ marginLeft:'auto', background:'none', border:'2px solid #3a2c1c',
-            color:'#e9ddc5', padding:'5px 12px', cursor:'pointer', fontFamily:'Montserrat', fontWeight:700,
-            fontSize:11, letterSpacing:'.08em', textTransform:'uppercase' }}>Done</button>
+    <div className="rs-overlay" onClick={onClose}>
+      <div className="rs-modal wide" onClick={e=>e.stopPropagation()}>
+        <div className="rs-modalhead" style={{ marginBottom:16 }}>
+          <div className="rs-modaltitle">Ink mark editor</div>
+          <div className="rs-modalsub">Cell order is canon — this recolours and resizes, it never reorders.</div>
+          <button className="rs-iconbtn" onClick={onClose} style={{ marginLeft:'auto' }}>Done</button>
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'minmax(220px,300px) 1fr', gap:22, alignItems:'start' }}>
           {/* ---- live preview ---- */}
           <div>
-            <div style={{ background:bg, border:'2px solid #3a2c1c', minHeight:210, padding:20,
-              display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {/* the ground is data (the preview substrate); its frame is chrome */}
+            <div className="rs-inkprev" style={{ background:bg }}>
               <Swatch form={form} mode={mode} day={day} grounded={plate} theme={previewTheme}
                 m={previewM} />
             </div>
-            <div style={{ display:'flex', gap:5, marginTop:8 }}>
+            <div className="rs-seg" style={{ marginTop:8 }}>
               {MARK_GROUNDS.map(g=>(
-                <button key={g.v} onClick={()=>setGround(g.v)}
-                  style={{ flex:1, padding:'6px 0', cursor:'pointer', fontFamily:'Montserrat', fontWeight:700,
-                    fontSize:9.5, letterSpacing:'.08em', textTransform:'uppercase',
-                    background: ground===g.v ? '#2a1620' : 'transparent',
-                    border:'2px solid '+(ground===g.v ? '#ed1b72' : '#3a2c1c'),
-                    color: ground===g.v ? '#ed1b72' : '#8a7f6c' }}>{g.l}</button>
+                <button key={g.v} className={ground===g.v?'on':''} onClick={()=>setGround(g.v)}
+                  style={{ flex:1 }}>{g.l}</button>
               ))}
             </div>
             <div className="rs-mini" style={{ marginTop:8 }}>

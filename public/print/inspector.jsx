@@ -38,7 +38,7 @@ function ShadowControls({ el, update }){
         <div className="ps-lab">Shadow ink<span className="val">{el.shadowColor||'soft K'}</span></div>
         <div className="ps-swatches">
           <div className={'ps-sw'+((el.shadowColor||'k')==='k'?' on':'')} title="Soft press tint (K)"
-            style={{ background:'linear-gradient(135deg,#777 0 50%,#ddd 50% 100%)', border:'1.5px solid #cfc7b6' }}
+            style={{ background:'linear-gradient(135deg,#777 0 50%,#ddd 50% 100%)', border:'1.5px solid var(--st-sw-border)' }}
             onClick={()=>update({shadowColor:'k', shadowAlpha:null})} />
           <div className={'ps-sw'+(el.shadowColor==='ink'?' on':'')} title="Ink" style={{ background:AP_INK.rgb }}
             onClick={()=>update({shadowColor:'ink', shadowAlpha:el.shadowAlpha!=null?el.shadowAlpha:1})} />

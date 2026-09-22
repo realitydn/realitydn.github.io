@@ -106,7 +106,9 @@ const FINISH_LOOKS = [
   { v:'copier',  l:'Copied',   p:{ finContrast:1.45, finSat:0.35, grain:0.6, grainSize:1.5, grainBlend:'dirty', dust:0.3, paperTex:0.3 },
     note:'Blown contrast, dirty toner grain, no subtlety left.' }
 ];
-/* recommended defaults applied when a treatment is chosen — each looks good out of the box */
+/* recommended defaults applied when a treatment is chosen — each looks good out of the box.
+   cutout, posterize, spot, mosaic and photocopy render byte-identically on day and night:
+   by design — press treatments print on cream stock whichever theme the poster is. */
 const TREAT_PRESETS = {
   /* the press: null = the paper decides (inks: accent + partner, night adds
      the black plate first; stock: cream on either theme; GCR / ink limit:

@@ -7,15 +7,22 @@
    ============================================================ */
 import { PrintImg } from './print-store.js';
 import {
-  PALETTE as PE_PAL, INK as PE_INK, WHITE as PE_WHITE, ACCENTS as PE_ACC, surfaceStyle as peSurf,
-  resolveInk as peInk, buildQR as peQR, qrGeometry as peGeom, partnerOf as pePartner,
-  LIFT as PE_LIFT, dotFieldLayout as peDots, stripeLayout as peStripes, burstRays as peBurst,
-  ruleLayout as peRule, shapePath as peShape, arcTextLayout as peArc, fitTextSize as peFit,
-  blendCss as peBlend, risoOpts as peRiso, contrastInk, shadowCss, shadowSpec, roundedRectPath,
-  starPath, borderDash, listRowFont, listSplit, iconLayout, punchLayout, couponLayout,
+  INK as PE_INK, WHITE as PE_WHITE, surfaceStyle as peSurf, resolveInk as peInk, LIFT as PE_LIFT,
+  shadowCss, shadowSpec,
+} from './print-paper.js';
+import {
+  dotFieldLayout as peDots, stripeLayout as peStripes, arcTextLayout as peArc, fitTextSize as peFit,
+  blendCss as peBlend, risoOpts as peRiso, borderDash, listRowFont, listSplit, punchLayout, couponLayout,
+} from './print-layout.js';
+import {
+  PALETTE as PE_PAL, ACCENTS as PE_ACC, partnerOf as pePartner, contrastInk,
   inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, inkMarkHex, INK_MARK, INK_MARK_CELLS_PRINT,
-} from './print-data.jsx';
-import { NEUTRALS, MONT, GROT, ALT } from '../studio-shared/brand.js';
+  NEUTRALS, MONT, GROT, ALT,
+} from '../studio-shared/brand.js';
+import {
+  burstRays as peBurst, ruleLayout as peRule, shapePath as peShape, roundedRectPath, starPath, iconLayout,
+} from '../studio-shared/shapes.js';
+import { buildQR as peQR, qrGeometry as peGeom } from '../studio-shared/qr.js';
 import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
 import { EM } from '../studio-shared/util.js';
 
@@ -46,7 +53,7 @@ function peFill(key, accentHex){
   if(PE_ACC.indexOf(key)>=0) return PE_PAL[key];
   return accentHex;
 }
-/* plane shadow via the shared spec (print-data shadowSpec) — flat vector
+/* plane shadow via the shared spec (print-paper shadowSpec) — flat vector
    offset, preset K-tint or the custom dial set, identical in the PDF. */
 function elShadow(el){ return shadowCss(shadowSpec(el)) || 'none'; }
 function shadowColRgba(spec){
@@ -453,7 +460,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     </svg>;
   }
   else if(t==='inkmark'){
-    /* The ink strip / ink square — canon rev 22.08.26 (print-data INK_MARK).
+    /* The ink strip / ink square — canon rev 22.08.26 (brand.js INK_MARK).
        Flat cells on the shared inkMarkLayout module grid — the SAME geometry
        the PDF exporter draws — fitted undistorted into the box and centred.
        Stock cells are the PAPER: shown white here, skipped (unprinted) in the

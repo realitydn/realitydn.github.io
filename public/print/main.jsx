@@ -26,13 +26,18 @@
 import './print-store.js';
 import '../studio-shared/print-icons.js';
 import '../studio-shared/studio-ui.jsx';
+import './print-paper.js';
+import './print-layout.js';
 import './print-data.jsx';
+import './print-templates.js';
+import './print-preflight.js';
 import './print-element.jsx';
 import './print-canvas.jsx';
 import './print-export.jsx';
 import './print-app.jsx';
 
-import { makeElement, TEMPLATES, TEMPLATE_GROUPS, buildTemplate } from './print-data.jsx';
+import { makeElement } from './print-data.jsx';
+import { TEMPLATES, TEMPLATE_GROUPS, buildTemplate } from './print-templates.js';
 import { ImageControls, IMG_TREATS, IMG_TREAT_PRESETS } from './print-app.jsx';
 
 /* Test hooks — the studio test suite (scripts/test-studios) reaches these

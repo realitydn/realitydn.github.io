@@ -10,13 +10,19 @@
    ============================================================ */
 import { PrintImg } from './print-store.js';
 import {
-  sizeDims as sizeDims_, FACES as FACES_, faceFor, risoOpts, PALETTE_CMYK, ACCENTS, contrastInk,
-  blendPdf, starPath, PALETTE, partnerOf, shadowSpec, roundedRectPath, borderDash, fitTextSize,
-  listRowFont, listSplit, iconLayout, punchLayout, INK, qrGeometry, couponLayout, stripeLayout,
-  dotFieldLayout, burstRays, shapePath, arcTextLayout, ruleLayout, inkMarkLayout, inkMarkCells,
-  INK_MARK_DAY_ACCENT, WORDMARK_PATH, INK_MARK, buildQR, nfcDeep, GANG,
-} from './print-data.jsx';
-import { NEUTRALS } from '../studio-shared/brand.js';
+  sizeDims as sizeDims_, FACES as FACES_, faceFor, PALETTE_CMYK, INK, GANG, shadowSpec,
+} from './print-paper.js';
+import {
+  risoOpts, blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
+  stripeLayout, dotFieldLayout, arcTextLayout,
+} from './print-layout.js';
+import { nfcDeep } from './print-preflight.js';
+import {
+  ACCENTS, contrastInk, PALETTE, partnerOf, inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT,
+  WORDMARK_PATH, INK_MARK, NEUTRALS,
+} from '../studio-shared/brand.js';
+import { starPath, roundedRectPath, iconLayout, burstRays, shapePath, ruleLayout } from '../studio-shared/shapes.js';
+import { qrGeometry, buildQR } from '../studio-shared/qr.js';
 
 let PrintExport;
 (function(){
@@ -509,7 +515,7 @@ function renderElement(page, el, ctx){
     });
   }
   else if(t==='rule'){
-    /* one shared layout with the screen (print-data ruleLayout) → identical
+    /* one shared layout with the screen (shapes.js ruleLayout) → identical
        geometry. strokes = polylines, dots = circles, fills = closed polys. */
     const col=colorForKey(el.fill||'ink',inkColor()), lay=ruleLayout(el);
     const CAP = L().LineCapStyle ? (lay.cap==='butt'?L().LineCapStyle.Butt:L().LineCapStyle.Round) : null;
@@ -710,7 +716,7 @@ async function buildPiece(doc, { bleed, marks }, report){
   report = report || newReport();
   /* every string NFC before a glyph is placed — decomposed Vietnamese would
      otherwise set its combining marks as separate, advancing glyphs (see
-     nfcDeep in print-data). The caller's doc is not touched. */
+     nfcDeep in print-preflight). The caller's doc is not touched. */
   doc = Object.assign({}, doc, { elements: nfcDeep(doc.elements||[]) });
   const dims=sizeDims(doc.size,doc.orient);
   const withMarks = !!(bleed && marks);

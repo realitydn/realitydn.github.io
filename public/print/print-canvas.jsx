@@ -6,7 +6,8 @@
    The stage scrolls when zoomed past fit.
    Exports: PrintCanvas
    ============================================================ */
-import { PALETTE as PC_PAL, INK as PC_INK, INK } from './print-data.jsx';
+import { PALETTE as PC_PAL } from '../studio-shared/brand.js';
+import { INK } from './print-paper.js';
 import { PrintElement as PCElement } from './print-element.jsx';
 const PC_STEP = 6;                     // fallback snap grid (pt)
 const PC_GUIDE = '#ed1b72';            // brand pink alignment line

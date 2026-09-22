@@ -14,15 +14,19 @@ import { PressPanels, SEP_SCREENS, PressStock, PressFold, ProofFold } from '../s
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import { describeStoreError as storeErrText, watchOtherTabs } from '../studio-shared/store.js';
 import { useHistory, historyKey } from '../studio-shared/history.js';
+import { PALETTE as AP_PAL, ACCENTS as AP_ACC, INK_MARK, INK_MARK_DAY_KEYS } from '../studio-shared/brand.js';
+import { SHAPE_KINDS } from '../studio-shared/shapes.js';
+import { uid as apUid, slugify as apSlug } from '../studio-shared/util.js';
 import {
-  CATALOG as AP_CAT, DEFAULTS as AP_DEF, PALETTE as AP_PAL, ACCENTS as AP_ACC, SIZES as AP_SZ,
-  SIZE_ORDER as AP_ORD, GANG as AP_GANG, sizeDims as apDims, PT_PER_MM as AP_PPM,
-  TYPE_SCALE as AP_SCALE, snapToScale as apSnap, scaleStep as apStep, makeElement as apMake,
-  uid as apUid, slugify as apSlug, TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG,
-  buildTemplate as apBuildTpl, INK as AP_INK, artPastTrim as apPastTrim,
-  migrateElements as apMigrate, nfcDeep as apNfc, SHAPE_KINDS, risoOpts, gridSpec, QR_DESTINATIONS,
-  INK_MARK, INK_MARK_DAY_KEYS, preflight as preflight_,
-} from './print-data.jsx';
+  SIZES as AP_SZ, SIZE_ORDER as AP_ORD, GANG as AP_GANG, sizeDims as apDims, PT_PER_MM as AP_PPM,
+  TYPE_SCALE as AP_SCALE, snapToScale as apSnap, scaleStep as apStep, INK as AP_INK, gridSpec,
+} from './print-paper.js';
+import { risoOpts } from './print-layout.js';
+import { CATALOG as AP_CAT, DEFAULTS as AP_DEF, makeElement as apMake, QR_DESTINATIONS } from './print-data.jsx';
+import { TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG, buildTemplate as apBuildTpl } from './print-templates.js';
+import {
+  artPastTrim as apPastTrim, migrateElements as apMigrate, nfcDeep as apNfc, preflight as preflight_,
+} from './print-preflight.js';
 import { PrintElement as APElement } from './print-element.jsx';
 import { PrintCanvas as APCanvas } from './print-canvas.jsx';
 import { PrintExport } from './print-export.jsx';
@@ -108,7 +112,7 @@ const IMG_TREAT_PRESETS = {
 const FITTABLE = ['headline','numeral','bignum','kicker'];
 const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
 /* Module shape only. Finder EYES used to offer Rounded and Dot too; decoding
-   the exported PDFs, every styled eye failed (print-data qrGeometry) — so the
+   the exported PDFs, every styled eye failed (studio-shared qr.js qrGeometry) — so the
    option is gone and the eyes are always square. */
 const QR_MODULES = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
 const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'}];
@@ -731,7 +735,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
   })();
   else if(el.type==='wordmark') content = <div className="ps-mini" style={{ marginBottom:8 }}>The canonical REALITY vector — Montserrat with the Alternates A·I·Y. Colour below.</div>;
   else if(el.type==='inkmark') content = (()=>{
-    /* the canon grid (print-data INK_MARK) — the panel only RECOLOURS
+    /* the canon grid (brand.js INK_MARK) — the panel only RECOLOURS
        (mode/day) or resizes by whole modules; cell order is untouchable.
        Form/module changes snap the box to exact module multiples so cells
        stay square; a free drag-resize still fits-and-centres undistorted. */
@@ -868,7 +872,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
 
 /* ---------- preflight — the chip next to Save PDF, and its list ----------
    Non-blocking: it never stops an export, it just says what the press will
-   show. Recomputed on every edit (print-data preflight). A row click selects
+   show. Recomputed on every edit (print-preflight.js). A row click selects
    the part it names; the bleed row carries its own fix. */
 function PreflightChip({ items, onPick, onBleedOn }){
   const [open, setOpen] = React.useState(false);

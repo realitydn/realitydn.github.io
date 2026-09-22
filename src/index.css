@@ -147,18 +147,6 @@
   --sh-heavy: 0 14px 3px rgba(255, 251, 241, .26);
   color-scheme: dark;
 }
-.scope-day {
-  --accent: var(--blue); --accent-2: var(--pink);
-  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
-  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56);
-  --hairline: rgba(13, 9, 5, .16); --purple: #6e3179;
-  --blue-text: #0a6fa0; --red-text: #c8161a;
-  --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
-  --sh-light: 0 4px 1px rgba(13, 9, 5, .10);
-  --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
-  --sh-heavy: 0 13px 3px rgba(13, 9, 5, .23);
-  color-scheme: light;
-}
 
 /* ============================================================
    Base
@@ -242,13 +230,6 @@ body {
 /* ── Space Grotesk states FACTS (canon two-axis type, 18.08.26): times,
    prices, rooms, dates are Grotesk in every medium — at range only size
    and weight rise, never the family. ── */
-.type-fact {
-  font-family: var(--grotesk);
-  font-weight: 500;
-  font-size: 13px;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
-}
 .type-sub {
   font-family: var(--grotesk);
   font-weight: 400;
@@ -256,17 +237,6 @@ body {
   color: var(--fg-faint);
   letter-spacing: 0;
 }
-.type-name {
-  font-family: var(--mont);
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: var(--tr-name);
-  line-height: 1.3;
-}
-/* Long names split at the DATA layer, never truncated: name + qualifier as
-   two fields — the qualifier set in .type-sub. */
-.name-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.name-block .type-name { text-transform: none !important; }
 
 /* Uppercase Vietnamese: stacked diacritics sit above cap height; display
    steps to weight 200. Never strip diacritics. */
@@ -310,8 +280,7 @@ body {
 /* Buttons — Montserrat 700, uppercase, stamped. Hover lifts, press stamps. */
 .btn-primary,
 .btn-secondary,
-.btn-info,
-.btn-notice {
+.btn-info {
   font-family: var(--mont);
   font-weight: 700;
   text-transform: uppercase;
@@ -333,33 +302,26 @@ body {
 }
 
 /* Role fills (canon buttons card, 19.08.26): blue = INFO / wayfinding
-   ("take me to more of this" — listings, calendar subscribe), yellow =
-   NOTICE / offer. Coloured fills take ink — the one exception is the red
-   ACTION, which is cream (see the canon AA exception; the site currently
-   has no ACTION-role button). */
+   ("take me to more of this" — listings, calendar subscribe). Coloured
+   fills take ink — the one exception is the red ACTION, which is cream (see
+   the canon AA exception). The site has no NOTICE (yellow) or ACTION-role
+   button, so only INFO is defined here; the canon card has the others. */
 .btn-info {
   background-color: var(--blue);
   color: #0d0905;
   border-color: var(--blue);
 }
-.btn-notice {
-  background-color: var(--yellow);
-  color: #0d0905;
-  border-color: var(--yellow);
-}
 
 .btn-primary:hover,
 .btn-secondary:hover,
-.btn-info:hover,
-.btn-notice:hover {
+.btn-info:hover {
   transform: translateY(-3px);
   box-shadow: var(--sh-heavy);
 }
 
 .btn-primary:active,
 .btn-secondary:active,
-.btn-info:active,
-.btn-notice:active {
+.btn-info:active {
   transform: translateY(2px);
   box-shadow: var(--sh-light);
 }
@@ -480,7 +442,6 @@ input[type="radio"] {
 .btn-primary:focus-visible { background-color: var(--fg); }
 .btn-secondary:focus-visible { background-color: var(--surface); }
 .btn-info:focus-visible { background-color: var(--blue); }
-.btn-notice:focus-visible { background-color: var(--yellow); }
 .chip:focus-visible { background-color: var(--surface); }
 /* the exceptions — ink outline, no plate, no slip */
 :where(input, select, textarea):focus-visible,
@@ -496,9 +457,8 @@ a:not([class]):focus-visible {
    takes the accent's PARTNER (day-colours.json): blue field → pink, yellow
    notice → red, red action → yellow, day-coded field → ink. */
 .b-wayfind, .btn-info { --accent: var(--pink); }
-.b-notice, .btn-notice { --accent: var(--red); }
 .b-act { --accent: var(--yellow); }
-.cal-datetab, .cal-noposter, .day-field { --accent: var(--fg); }
+.cal-datetab, .cal-noposter { --accent: var(--fg); }
 @media (prefers-reduced-motion: reduce) {
   :where(a, button, [tabindex]:not([tabindex="-1"]), summary):focus-visible { transition: none; }
 }
@@ -648,20 +608,6 @@ button, a {
   display: none;
 }
 
-/* Accent color backgrounds — the locked 7. */
-.accent-yellow { background-color: var(--yellow); }
-.accent-amber  { background-color: var(--amber); }
-.accent-red    { background-color: var(--red); }
-.accent-pink   { background-color: var(--pink); }
-.accent-purple { background-color: var(--purple); }
-.accent-blue   { background-color: var(--blue); }
-.accent-green  { background-color: var(--green); }
-
-/* Multiply blend for accent overlays */
-.blend-multiply {
-  mix-blend-mode: multiply;
-}
-
 /* Section spacing */
 .section {
   position: relative;
@@ -679,10 +625,6 @@ section[id], div[id="proposal"] {
    exemption — white stock has more headroom and K prints heavier than it
    looks. Tracking rides +.01em on the same ladder. */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-
   body {
     color: black;
     background: white;
@@ -802,103 +744,7 @@ section[id], div[id="proposal"] {
 }
 .cal-label::after { content: ""; flex: 1; height: 2px; background: var(--hairline); }
 
-/* Feed cards — solid day-colour bands framed in a 2px day-of-week border;
-   theme info boxes (date · title · meta) overlay the lower-left, the cost
-   badge sits top-right (the app parks its reminder bell there; here that
-   corner is the price's). */
-.cal-card {
-  position: relative;
-  display: block;
-  width: 100%;
-  text-align: left;
-  appearance: none;
-  border: 2px solid var(--day);
-  border-radius: 0;
-  box-shadow: var(--sh-default);
-  background: var(--day);
-  color: var(--fg);
-  overflow: hidden;
-  cursor: pointer;
-  padding: 0;
-  transition: transform var(--dur-tap) ease, box-shadow var(--dur-tap) ease;
-}
-.cal-card:hover { transform: translateY(-3px); box-shadow: var(--sh-heavy); }
-.cal-card:active { transform: translateY(0); box-shadow: var(--sh-light); }
-.cal-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.cal-slice { min-height: 86px; }
-.cal-hero-slice { min-height: 180px; }
-@media (min-width: 640px) { .cal-hero-slice { min-height: 220px; } }
-
-/* The text-less poster slice — fills the card over the day-colour plate
-   (which stays visible while the image lazy-loads, and IS the card when an
-   event has no slice yet). */
-.cal-card-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-
-.cal-ov {
-  position: absolute;
-  left: 8px; bottom: 8px; right: 8px;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  pointer-events: none;
-}
 .cal-bx { background: var(--bg); color: var(--fg); padding: 3px 8px; max-width: 100%; }
-/* 12px floor (canon): the date chip and the time·meta line are the deciding
-   facts on a card — the hub bumped these 17.08.26; the port follows. */
-.cal-bx-d { font-family: var(--mont); font-weight: 700; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; }
-.cal-bx-t {
-  font-family: var(--mont); font-weight: 700; font-size: 14px; line-height: 1.05;
-  text-transform: uppercase; letter-spacing: 0.01em;
-  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.cal-bx-m { font-family: var(--grotesk); font-weight: 500; font-size: 12px; }
-/* Name + qualifier split (canon, hub mig 0054): the qualifier gets its own chip
-   line between title and meta — the slices' translation of .type-sub. Absent =
-   no chip; the stack renders exactly as before. */
-.cal-bx-q { font-family: var(--grotesk); font-weight: 400; font-size: 12px; letter-spacing: 0; color: var(--fg-faint); }
-.cal-hero-slice .cal-bx-d { font-size: 12px; }
-.cal-hero-slice .cal-bx-t { font-size: 19px; }
-@media (min-width: 640px) { .cal-hero-slice .cal-bx-t { font-size: 22px; } }
-
-.cal-go {
-  position: absolute;
-  top: 8px; right: 8px;
-  z-index: 2;
-  background: var(--bg); color: var(--fg);
-  border: 1.5px solid var(--fg);
-  padding: 2px 6px;
-  font-family: var(--mont); font-weight: 700; font-size: 11px;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  pointer-events: none;
-}
-
-/* Hero misregister prints — STATIC riso echoes behind the next-up card,
-   same as the hub's .cal-hero-wrap. The drifting 9s/13s loops were retired
-   by canon C1 (18.08.26): the plates sit at the ratified hero offsets
-   (--misreg-hero-1/2: 13/6, diagonal) at every size. The isolation is
-   LOAD-BEARING and must sit on a background-less ancestor. */
-.cal-hero-wrap { position: relative; isolation: isolate; margin-bottom: 12px; }
-.cal-hero-wrap::before,
-.cal-hero-wrap::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-.cal-hero-wrap::before {
-  background: var(--accent-2);
-  transform: translate(var(--misreg-hero-2), var(--misreg-hero-2));
-}
-.cal-hero-wrap::after {
-  background: var(--accent);
-  transform: translate(var(--misreg-hero-1), var(--misreg-hero-1));
-}
-@media (min-width: 640px) {
-  .cal-hero-wrap { margin-bottom: 16px; }
-}
 
 /* Date tab — theme fill framed in the weekday colour (matches the feed cards);
    the event overlay's header stamp (hub .cal-datetab). */
@@ -958,12 +804,6 @@ section[id], div[id="proposal"] {
 .im-strip-v i.b, .im-strip-h i.b { grid-column: span 2; grid-row: span 2; }
 .im-square { grid-template-columns: repeat(2, calc(var(--m) * 2)); grid-template-rows: repeat(2, calc(var(--m) * 2)); }
 .im-square .sub { display: grid; grid-template-columns: repeat(2, var(--m)); grid-template-rows: repeat(2, var(--m)); }
-.im.im-key { gap: var(--kw); padding: var(--kw); background: #0d0905; }
-.im.im-key .sub { gap: var(--kw); }
-.im-clear { padding: var(--m); }
-/* Ground — OPT-IN only (G2): a mark over photography or a print export.
-   The stock-on-stock open silhouette is CORRECT on screen; do not patch it. */
-.im-ground { background: var(--paper-shade); padding: var(--m); }
 
 /* ── Ink motion — Engine A (press pass) as CSS; Engine B (mode swap) runs in
    JS so unchanged cells never move. SCALE ONLY, never opacity. Screen timing
@@ -992,14 +832,13 @@ section[id], div[id="proposal"] {
    switched off (it composites into the 3–4.2 band). */
 .band { border-top: 3px solid var(--fg); }
 .band:first-child { border-top: 0; }
-.b-wayfind, .b-notice, .b-act { --fg-dim: currentColor; --fg-faint: currentColor; --surface: transparent; }
-.b-wayfind, .b-notice {
+.b-wayfind, .b-act { --fg-dim: currentColor; --fg-faint: currentColor; --surface: transparent; }
+.b-wayfind {
   --fg: #0d0905; --bg: #fffbf1; --on-ink: #fffbf1;
   --hairline: rgba(13, 9, 5, .26); --surface-2: rgba(13, 9, 5, .08);
   color: #0d0905;
 }
 .b-wayfind { background: var(--blue); }
-.b-notice { background: var(--yellow); }
 .b-act {
   background: var(--red);
   --fg: #fffbf1; --bg: #0d0905; --on-ink: #0d0905;
@@ -1028,14 +867,14 @@ section[id], div[id="proposal"] {
 /* ON-RED, LIVE: the sanctioned cream display type is a hole over a field
    that also prints yellow and stock, so on a live act band the display
    drops back to ink like the rest of the band's copy. */
-.b-act.band-live.band-live :is(.disp, .h-display, .reg-far),
-.b-act.band-live.band-live :is(.disp, .h-display, .reg-far) * { color: #0d0905; }
+.b-act.band-live.band-live .reg-far,
+.b-act.band-live.band-live .reg-far * { color: #0d0905; }
 /* ON-RED CONTRACT: on a red field EVERYTHING is ink; only display-size type
    (≥32px, far register) is re-creamed — .btn-action's AA exception extended
    by size, never generalised. Doubled specificity so later component rules
    never win the tie. */
 .b-act.b-act, .b-act.b-act * { color: #0d0905; }
-.b-act.b-act :is(.disp, .h-display, .reg-far), .b-act.b-act :is(.disp, .h-display, .reg-far) * { color: #fffbf1; }
+.b-act.b-act .reg-far, .b-act.b-act .reg-far * { color: #fffbf1; }
 .b-act.b-act .btn-primary { background: #fffbf1; border-color: #fffbf1; color: #0d0905; }
 .b-act.b-act .btn-secondary { background: transparent; border-color: #0d0905; color: #0d0905; }
 
@@ -1077,28 +916,10 @@ section[id], div[id="proposal"] {
   .ev-dlg-poster img { width: 100%; height: 100%; aspect-ratio: auto; border: 0; }
   .ev-dlg-body .plate-b { overflow-y: auto; overscroll-behavior: contain; }
 }
-.dlg-sm { width: min(420px, calc(100% - 48px)); }
-.drawer { inset: 0; border-width: 0; box-shadow: none; }
 /* lightbox — ink plate, 32px inset; the photo is the subject (never a mark) */
 .lbx { inset: 32px; border-width: 3px; display: grid; grid-template-rows: 1fr auto; padding: 0; background: var(--fg); color: var(--on-ink); }
 .lbx .lbx-frame { position: relative; overflow: hidden; border-bottom: 3px solid var(--on-ink); }
 .lbx .lbx-cap { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 18px; font-family: var(--grotesk); font-size: 14px; font-variant-numeric: tabular-nums; }
-.toast-site {
-  position: fixed; z-index: 70; right: 32px; bottom: 32px; width: min(420px, calc(100% - 64px));
-  display: flex; align-items: center; gap: 14px;
-  background: var(--fg); color: var(--on-ink);
-  border: 2px solid var(--fg); box-shadow: 0 9px 0 rgba(13, 9, 5, 0.26);
-  padding: 14px 16px; font-family: var(--mont); font-weight: 700; font-size: 14px;
-}
-.banner {
-  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-  border-bottom: 3px solid var(--fg);
-  background: var(--yellow); color: #0d0905;
-  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
-  letter-spacing: 0.06em; text-transform: uppercase;
-}
-.banner.is-ink { background: var(--fg); color: var(--on-ink); }
-.banner .banner-a { margin-left: auto; flex: none; font-weight: 700; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 3px; color: inherit; }
 
 /* ── Calendar rows — the typographic event row (canon 22.08.26). Posters
    are spent on the next-up wall and the event overlay; past the wall an
@@ -1159,21 +980,16 @@ section[id], div[id="proposal"] {
    animation is a RE-STAMP, never a shimmer or an opacity fade (the old
    bg-gray-200 + animate-pulse calendar skeleton was both off-palette and
    theme-blind — do not bring it back). */
-.st { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; width: 100%; padding: 24px 20px; border: 2px solid var(--fg); background: var(--surface-2); }
-.st-t { font-family: var(--mont); font-weight: 700; font-size: 19px; line-height: 1.2; letter-spacing: 0.02em; margin: 0; }
-.st-b { font-family: var(--grotesk); font-size: 14px; line-height: 1.55; margin: 0; color: var(--fg-dim); }
 @keyframes sk-stamp {
   0%, 72% { transform: scaleY(1); }
   80% { transform: scaleY(0.55); }
   88% { transform: scaleY(1.06); }
   100% { transform: scaleY(1); }
 }
-.sk { display: block; height: 13px; background: var(--surface-2); border: 0; animation: sk-stamp 2.4s var(--ease-snap) infinite; transform-origin: 50% 50%; }
-.sk.sk-2 { background: var(--paper-shade); height: 11px; }
 .sk-block { background: var(--surface-2); animation: sk-stamp 2.4s var(--ease-snap) infinite; transform-origin: 50% 50%; }
-.sk-stagger > *:nth-child(2) .sk, .sk-stagger > .sk-block:nth-child(2) { animation-delay: 0.18s; }
-.sk-stagger > *:nth-child(3) .sk, .sk-stagger > .sk-block:nth-child(3) { animation-delay: 0.36s; }
-.sk-stagger > *:nth-child(4) .sk, .sk-stagger > .sk-block:nth-child(4) { animation-delay: 0.54s; }
+.sk-stagger > .sk-block:nth-child(2) { animation-delay: 0.18s; }
+.sk-stagger > .sk-block:nth-child(3) { animation-delay: 0.36s; }
+.sk-stagger > .sk-block:nth-child(4) { animation-delay: 0.54s; }
 @media (prefers-reduced-motion: reduce) {
-  .sk, .sk-block { animation: none !important; transform: none !important; }
+  .sk-block { animation: none !important; transform: none !important; }
 }

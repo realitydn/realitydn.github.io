@@ -37,6 +37,8 @@ const SHARED = {
   // vendored verbatim into the app, so it must never grow a Studio-side fork.
   '/studio-shared/riso-press.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-press.js'),
   '/studio-shared/riso-engine.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-engine.js'),
+  // The chrome all three Studios share (tokens, controls, folds, dialogs).
+  '/studio-shared/studio-base.css': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-base.css'),
 };
 
 const MIME = {

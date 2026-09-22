@@ -24,6 +24,16 @@ const PORT = process.env.PORT || 4502;
 const ROOT = path.resolve(__dirname, '..', 'public', 'schedule');
 const ENTRY = 'index.html';
 
+// Files the page loads from OUTSIDE its own folder. Deployed, public/ is
+// copied verbatim to the site root, so index.html's "../studio-shared/…"
+// resolves at the root and just works; locally ROOT containment would 403 it,
+// so this maps those requests back to the real files. (The shared modules are
+// inside the bundle; esbuild reads them straight off disk.)
+const SHARED = {
+  // The chrome all three Studios share (tokens, controls, folds, dialogs).
+  '/studio-shared/studio-base.css': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-base.css'),
+};
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -51,8 +61,9 @@ const server = http.createServer((req, res) => {
   let rel = decodeURIComponent((req.url || '/').split('?')[0]);
   if (rel === '/') rel = '/' + ENTRY;
 
-  const filePath = path.normalize(path.join(ROOT, rel));
-  if (!filePath.startsWith(ROOT)) {
+  const shared = SHARED[rel];
+  const filePath = shared || path.normalize(path.join(ROOT, rel));
+  if (!shared && !filePath.startsWith(ROOT)) {
     res.writeHead(403);
     return res.end('Forbidden');
   }

@@ -109,7 +109,7 @@ function ImportModal({ doc, setDoc, onClose }){
               ? <b>{parsed.events.length} event{parsed.events.length===1?'':'s'} parsed{isCSV?' (CSV)':''}{parsed.errors.length?' · '+parsed.errors.length+' problem'+(parsed.errors.length===1?'':'s'):''}</b>
               : 'Day headers (MON / 8.6 / 2026-06-08) assign the days in paste mode. Or pull this range straight from the published feed.'}
         </div>
-        {parsed.errors.slice(0,5).map((er,i)=><div key={i} className="ss-mini ss-err">{er}</div>)}
+        {parsed.errors.slice(0,5).map((er,i)=><div key={i} className="ss-mini err">{er}</div>)}
         <div className="ss-actions" style={{ marginTop:12 }}>
           <button className="ss-iconbtn ss-go" disabled={!parsed.events.length && !Object.keys(parsed.notes||{}).length}
             onClick={run}>Import</button>

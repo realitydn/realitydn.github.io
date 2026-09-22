@@ -1,6 +1,7 @@
 import React from 'react';
 
-// FormFields — the labelled controls both proposal forms are built from.
+// FormFields — the labelled controls ProposalForm (and so both proposal
+// forms) is built from.
 // Every field gets the full wiring the hand-rolled markup was missing:
 // id ↔ htmlFor, aria-invalid + aria-describedby pointing at its error, the
 // .field-error border, and a ref the form uses to focus it when its step

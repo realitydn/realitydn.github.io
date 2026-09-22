@@ -6,9 +6,9 @@ import { scrollBehavior } from './motion';
 // a draft that survives a reload or a tab switch, and one submit path to the
 // hub (primary) + the worker (fire-and-forget backup).
 //
-// The forms keep their own fields and layout; this hook owns everything that
-// was copy-pasted between them. Field / ChoiceGroup (components/FormFields)
-// read the object it returns.
+// Its one caller is components/ProposalForm, which renders the steps from
+// each form's spec (the forms themselves are just fields + validation).
+// Field / ChoiceGroup (components/FormFields) read the object it returns.
 //
 //   type        draft key + id prefix: 'event-public' | 'event-private' | 'art'
 //   initial     the empty form data

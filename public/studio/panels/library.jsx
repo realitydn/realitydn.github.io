@@ -41,8 +41,7 @@ function Library({ lib, startSpawn }){
                 );
               })()}
               {tplStoreErr &&
-                <div className="rs-mini" style={{ margin:'4px 0 8px', padding:'7px 9px', borderRadius:7,
-                  border:'1px solid #5a2326', background:'#2a1416', color:'#ffb3b8', opacity:1 }}>
+                <div className="rs-mini rs-alert" style={{ margin:'4px 0 8px' }}>
                   <b>This browser couldn’t open the template store</b> ({tplStoreErr}). What’s listed below is
                   the older localStorage backup, not your full library — anything saved since the move to
                   IndexedDB is missing from it. Don’t delete or import over these; reload the page first, and
@@ -118,7 +117,7 @@ function Library({ lib, startSpawn }){
                         <TplThumb doc={e.tpl.doc} w={88} />
                         <span className="tn">{e.tpl.name}</span>
                         <span className="ts">{e.reason} · {new Date(e.at).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
-                        <button className="rs-tplx" style={{ top:4, width:20, height:20, fontSize:11, borderColor:'#3a2f1f', color:'#b6ab97' }}
+                        <button className="rs-tplx mild" style={{ top:4, width:20, height:20, fontSize:11 }}
                           title={'Put “'+e.tpl.name+'” back in My templates'}
                           onClick={ev=>{ ev.stopPropagation(); restoreFromBin(e); }}>↩</button>
                       </div>

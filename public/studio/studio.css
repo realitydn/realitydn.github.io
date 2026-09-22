@@ -106,6 +106,10 @@
 .rs-treatgrid canvas.tp{ display:block; width:100%; height:auto; max-height:78px;
   object-fit:contain; background:var(--st-field); }
 
+/* the ink-mark editor's preview well (its ground colour is set inline — it is the preview substrate) */
+.rs-inkprev{ border:var(--st-bw) solid var(--st-line-open); min-height:210px; padding:20px;
+  display:flex; align-items:center; justify-content:center; }
+
 /* vibe / weekday picker cards */
 .rs-vibe{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
 .rs-vibe button{ font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;

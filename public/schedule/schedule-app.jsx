@@ -96,9 +96,7 @@ function App({ stored }){
   const ch = a_ch(channelId);
   return (
     <div className="ss-app">
-      {syncNote && <div style={{ position:'fixed', top:12, left:'50%', transform:'translateX(-50%)', zIndex:10000,
-        background:'#0d0905', color:'#fffbf1', fontFamily:"'Montserrat',sans-serif", fontWeight:700, fontSize:12,
-        letterSpacing:'.04em', padding:'7px 14px', borderRadius:999, boxShadow:'0 8px 24px rgba(0,0,0,.35)', pointerEvents:'none' }}>{syncNote}</div>}
+      {syncNote && <div className="ss-syncnote">{syncNote}</div>}
       <Topbar doc={doc} setDoc={setDoc} count={doc.events.length}
         onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg} hubMsg={hubMsg}
         cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut}

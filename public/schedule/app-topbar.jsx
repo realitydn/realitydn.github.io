@@ -58,7 +58,7 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
           : <button onClick={onCloudSignIn} className="ss-iconbtn"
               title="Sign in to the REALITY hub to sync this draft and pull from the feed">Sign in</button>}
       </div>}
-      <span className="gl" style={{ fontFamily:'Montserrat', fontWeight:700, letterSpacing:'.1em', fontSize:9, color:'#6f6553' }}>{count} EV</span>
+      <span className="ss-count">{count} EV</span>
     </div>
   );
 }

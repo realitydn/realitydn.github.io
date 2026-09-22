@@ -43,9 +43,10 @@ import { ACCENTS, PALETTE } from './brand.js';
 
 (function(){
   /* ---------- config ----------
-     swatchBorder — the outline a light/neutral swatch takes, so it reads on
-     the Studio's own chrome (dark Poster panel, light Print panel). */
-  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'#3a2f1f' };
+     swatchBorder — the outline a light/neutral swatch takes. It is the
+     --st-sw-border token (studio-base.css; Print sets its own), so the
+     Studios no longer pass it — configure() still takes one to override. */
+  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'var(--st-sw-border)' };
   function cls(suffix){ return CFG.prefix + '-' + suffix; }
 
   /* ---------- a minimal external store (subscribe + snapshot) ----------

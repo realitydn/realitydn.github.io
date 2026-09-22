@@ -15,7 +15,7 @@ import { TYPE_SCALE as AP_SCALE, snapToScale as apSnap, scaleStep as apStep, INK
    drift to different components again. The prefix is the only local part —
    every class the kit builds is `ps-…` from here. Swatches is the kit's row
    too, with print's fixed swatches (K-only ink, paper white) as its parameter. */
-RUI.configure({ prefix:'ps', storeKey:'reality-print', swatchBorder:'#cfc7b6' });
+RUI.configure({ prefix:'ps', storeKey:'reality-print' });
 const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
 const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap} step={apStep} suffix="pt" />;
 
@@ -41,7 +41,7 @@ const SURFACED_BOX = ['headline','numeral','bignum','kicker','pricelist','qr','c
 /* accent-only swatch row (optional null = auto/partner, for second inks) */
 function AccentRow({ value, onChange, nullable, nullTitle }){
   return (<div className="ps-swatches">
-    {nullable && <div className={'ps-sw'+(value==null?' on':'')} title={nullTitle||'Auto'} style={{ background:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', border:'1.5px solid #cfc7b6' }} onClick={()=>onChange(null)} />}
+    {nullable && <div className={'ps-sw'+(value==null?' on':'')} title={nullTitle||'Auto'} style={{ background:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', border:'1.5px solid var(--st-sw-border)' }} onClick={()=>onChange(null)} />}
     {AP_ACC.map(a=>(<div key={a} className={'ps-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />))}
   </div>);
 }

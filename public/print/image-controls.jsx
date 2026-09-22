@@ -76,7 +76,7 @@ function PressControls({ el, update, docAccent }){
                 <div className="ps-lab">Plate {i+1}{i===0?' · first drum':''}<span className="val">{inkTitle(k)}</span></div>
                 <div className="ps-swatches">
                   {PLATE_INKS.map(a=>(<div key={a} className={'ps-sw'+(k===a?' on':'')} title={inkTitle(a)} style={{ background:sw(a) }} onClick={()=>setPlate(i,a)} />))}
-                  {plates.length>1 && <div className="ps-sw" title="Remove this plate" style={{ border:'1.5px solid #cfc7b6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10 }} onClick={()=>dropPlate(i)}>✕</div>}
+                  {plates.length>1 && <div className="ps-sw" title="Remove this plate" style={{ border:'1.5px solid var(--st-sw-border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10 }} onClick={()=>dropPlate(i)}>✕</div>}
                 </div>
               </React.Fragment>
             ))}

@@ -32,10 +32,10 @@ function QueueList({ queue }){
                 <div key={ev.id} className="rs-libitem" onClick={()=>applyQueueItem(ev)}
                   style={{ cursor:'pointer', position:'relative', paddingRight:36 }}>
                   <span className="ln" style={{ display:'flex', alignItems:'center', gap:7 }}>
-                    {accent && <span style={{ width:9, height:9, borderRadius:'50%', flex:'none', background:AP_PAL[accent], border:'1px solid rgba(0,0,0,.25)' }} />}
+                    {accent && <span style={{ width:9, height:9, flex:'none', background:AP_PAL[accent], border:'1px solid rgba(0,0,0,.25)' }} />}
                     <span>{ev.title_en || ev.title_vi || '(untitled)'}</span>
                     {stale && <span title="The name, host, price or day/time changed after this poster was made — the artwork still shows the old one."
-                      style={{ fontSize:9, fontWeight:700, letterSpacing:.4, textTransform:'uppercase', padding:'1px 5px', border:'1px solid currentColor', borderRadius:3, opacity:.7, flex:'none' }}>out of date</span>}
+                      className="rs-tag">out of date</span>}
                   </span>
                   {/* cost rides the feed (hub 0033) so the price makes it onto the poster */}
                   <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)}{ev.cost?' · '+ev.cost:''} · click for a starter</span>

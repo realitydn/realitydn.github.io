@@ -57,6 +57,7 @@
   --st-line-strong:#3a2f1f;/* buttons, segmented controls */
   --st-line-open:#4a3d29;  /* an open fold, a dialog */
   --st-line-hover:#6f6553; /* anything under the pointer */
+  --st-sw-border:#3a2f1f;  /* the outline on a neutral swatch (Auto, Ink, Paper) */
 
   /* ---- text, brightest to faintest ---- */
   --st-ink:#fffbf1;        /* cream — names, values you typed */
@@ -286,6 +287,11 @@ body{ background:var(--st-bg); overflow:hidden; }
 /* a standing note that is NOT help text (so not behind Hints) */
 :is(.rs-hint,.ps-hint,.ss-hint){ font-family:var(--st-grot); font-size:var(--st-fs-small); line-height:1.4; color:var(--st-dim); margin:0 0 13px; }
 :is(.rs-hint,.ps-hint,.ss-hint) b{ color:var(--st-ink); font-weight:700; }
+/* a note that something is wrong and matters (the template store would not open) */
+:is(.rs-alert,.ps-alert,.ss-alert){ padding:7px 9px; border:1px solid var(--st-bad-line); background:var(--st-bad-bg); color:#ffb3b8; }
+/* a small outlined tag inside a row ("out of date") */
+:is(.rs-tag,.ps-tag,.ss-tag){ flex:none; font-family:var(--st-mont); font-size:var(--st-fs-label); font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; padding:1px 5px; border:1px solid currentColor; opacity:.7; }
 /* an inline warning that must be read (QR contrast, …) */
 :is(.rs-warn,.ps-warn,.ss-warn){ font-family:var(--st-grot); font-size:var(--st-fs-small); line-height:1.4; color:var(--st-warn-ink);
   background:var(--st-warn); border:var(--st-bw) solid var(--st-on-accent); padding:8px 10px; margin:-4px 0 13px; }
@@ -374,7 +380,7 @@ body{ background:var(--st-bg); overflow:hidden; }
 :is(.rs-overlay,.ps-overlay,.ss-overlay){ position:fixed; inset:0; z-index:9990; background:var(--st-scrim);
   display:flex; align-items:center; justify-content:center; }
 :is(.rs-modal,.ps-modal,.ss-modal){ width:620px; max-width:92vw; max-height:86vh; overflow-y:auto; background:var(--st-panel);
-  color:var(--st-text); border:var(--st-bw) solid var(--st-line-open); padding:18px; box-shadow:var(--st-shadow-big); }
+  color:var(--st-text); font-family:var(--st-grot); border:var(--st-bw) solid var(--st-line-open); padding:18px; box-shadow:var(--st-shadow-big); }
 :is(.rs-modal,.ps-modal,.ss-modal).narrow{ width:440px; }
 :is(.rs-modal,.ps-modal,.ss-modal).wide{ width:min(860px, 94vw); max-width:94vw; max-height:92vh; padding:20px 22px 22px; }
 :is(.rs-modalhead,.ps-modalhead,.ss-modalhead){ display:flex; align-items:baseline; gap:12px; margin-bottom:12px; }

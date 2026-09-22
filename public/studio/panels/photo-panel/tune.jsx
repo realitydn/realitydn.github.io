@@ -43,12 +43,12 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
             <Chips label="Ramp" options={[{v:'tone',l:'By tone'},{v:'frame',l:'Across frame'}]} value={el.gradMode||'tone'} onChange={v=>update({gradMode:v})} />
             <div className="rs-lab">From <span className="val">{el.gradA||el.ink||'accent'}</span></div>
             <div className="rs-swatches">
-              <div className={'rs-sw'+(el.gradA==null?' on':'')} title="Main ink" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ gradA:null })} />
+              <div className={'rs-sw'+(el.gradA==null?' on':'')} title="Main ink" style={{ border:'1.5px solid var(--st-sw-border)' }} onClick={()=>update({ gradA:null })} />
               {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.gradA===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradA:a })} />))}
             </div>
             <div className="rs-lab">To <span className="val">{el.gradB||'partner'}</span></div>
             <div className="rs-swatches">
-              <div className={'rs-sw'+(el.gradB==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ gradB:null })} />
+              <div className={'rs-sw'+(el.gradB==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid var(--st-sw-border)' }} onClick={()=>update({ gradB:null })} />
               {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.gradB===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ gradB:a })} />))}
             </div>
             {el.gradMode==='frame' && <Slider label="Ramp angle" val={el.gradAngle!=null?el.gradAngle:90} min={0} max={360} step={1} onChange={v=>update({gradAngle:v})} suffix="°" />}
@@ -56,7 +56,7 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
           {(el.inkMode||'single')==='two' && <React.Fragment>
             <div className="rs-lab">Second ink <span className="val">{el.ink2||'auto'}</span></div>
             <div className="rs-swatches">
-              <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ ink2:null })} />
+              <div className={'rs-sw ink'+(el.ink2==null?' on':'')} title="Auto — warm/cool partner" style={{ border:'1.5px solid var(--st-sw-border)' }} onClick={()=>update({ ink2:null })} />
               {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.ink2===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ ink2:a })} />))}
             </div>
             <Slider label="Screen offset" val={el.screenOffset!=null?el.screenOffset:30} min={0} max={90} step={1} onChange={v=>update({screenOffset:v})} suffix="°" />
@@ -74,7 +74,7 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
           {el.field && el.field!=='paper' && <React.Fragment>
             <div className="rs-lab">Field ink <span className="val">{el.fieldInk||'main'}</span></div>
             <div className="rs-swatches">
-              <div className={'rs-sw'+(el.fieldInk==null?' on':'')} title="Main ink" style={{ border:'1.5px solid #3a2f1f' }} onClick={()=>update({ fieldInk:null })} />
+              <div className={'rs-sw'+(el.fieldInk==null?' on':'')} title="Main ink" style={{ border:'1.5px solid var(--st-sw-border)' }} onClick={()=>update({ fieldInk:null })} />
               {AP_INKS.map(a=>(<div key={a} className={'rs-sw'+(el.fieldInk===a?' on':'')} title={inkTitle(a)} style={{ background:AP_PAL[a] }} onClick={()=>update({ fieldInk:a })} />))}
             </div>
             {el.field==='tint' && <Slider label="Tint strength" val={el.fieldStrength!=null?el.fieldStrength:0.12} min={0.04} max={0.5} step={0.01} onChange={v=>update({fieldStrength:v})} />}

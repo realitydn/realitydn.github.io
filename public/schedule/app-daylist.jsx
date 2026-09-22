@@ -51,7 +51,7 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate, 
           <div key={date} className={'ss-daysec'+(selDate===date?' sel':'')}
             onDragOver={e=>e.preventDefault()} onDrop={e=>onDropDay(e, date)}>
             <div className="ss-dayhead" onClick={()=>setSelDate(date)}>
-              <span className="sq" style={{ background:closed?'transparent':A_DC[w], border:closed?'1.5px solid #4a3d29':'none' }} />
+              <span className={'sq'+(closed?' closed':'')} style={closed?null:{ background:A_DC[w] }} />
               <span className="nm">{A_DA[w]} <small>{a_dshort(date)}</small></span>
               <span className="ct" style={{ color:CAP_COL[cap]==='#3d3526'?'#6f6553':CAP_COL[cap] }}>
                 {closed ? 'closed' : evs.length+' ev'}</span>

@@ -8,7 +8,9 @@
 
    Print keeps the Year 2 DS night register's 2px borders (they
    carry the structure here); everything else is the shared look. */
-:root{ --st-bw:2px; }
+:root{ --st-bw:2px;
+  /* neutral swatches here are K ink and paper white — a light outline keeps the K one visible */
+  --st-sw-border:#cfc7b6; }
 
 .ps-app{ grid-template-rows:auto 1fr; }
 

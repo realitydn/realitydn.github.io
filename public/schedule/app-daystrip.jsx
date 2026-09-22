@@ -51,8 +51,7 @@ function DayStrip({ doc, setDoc, capacity, selDate, onPickDate, feedStat, onRetr
           return (
             <React.Fragment key={date}>
               <div className={'ss-chipday'+(selDate===date?' sel':'')+(closed?' closed':'')}
-                style={{ background:closed?'transparent':A_DC[w], color:closed?'#b6ab97':A_DT[w],
-                  borderColor:closed?'#4a3d29':A_DC[w] }}
+                style={closed ? null : { background:A_DC[w], color:A_DT[w], borderColor:A_DC[w] }}
                 onClick={()=>onPickDate(date)} title={date + (closed?' · closed':' · '+n+' events')}>
                 <span className="da">{A_DA[w]}</span>
                 <span className="dn">{a_dshort(date)}</span>

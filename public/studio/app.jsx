@@ -13,7 +13,7 @@ import {
 } from './studio-data.jsx';
 import { posterDayOf } from './studio-element.jsx';
 import { StudioCanvas as APCanvas } from './studio-canvas.jsx';
-import { starterDoc, normalizeDoc, loadLegacyDoc, bootDoc } from './doc.js';
+import { starterDoc, normalizeDoc, loadLegacyDoc, bootDoc, bootState } from './doc.js';
 import { useDoc } from './hooks/useDoc.js';
 import { useAutosave } from './hooks/useAutosave.js';
 import { useToast } from './hooks/useToast.js';
@@ -26,6 +26,7 @@ import { useViewport } from './hooks/useViewport.js';
 import { useImageDrop } from './hooks/useImageDrop.js';
 import { useArrange } from './hooks/useArrange.js';
 import { useSpawn } from './hooks/useSpawn.js';
+import { usePhotoSweep } from './hooks/usePhotoSweep.js';
 import { Topbar } from './panels/topbar.jsx';
 import { QueueList } from './panels/queue.jsx';
 import { Library } from './panels/library.jsx';
@@ -33,7 +34,7 @@ import { Inspector } from './panels/inspector/index.jsx';
 import { EventPickerModal } from './panels/event-picker.jsx';
 
 /* ---------- app ---------- */
-function App({ initialDoc }){
+function App({ initialDoc, bootClean }){
   const { doc, setDoc, docRef, selectedIds, setSelectedIds, selectedId, select, sliceMode, setSliceMode, setFeedSlice,
     viewFormat, isOutput, activeLabel, hist, undo, redo, setDocQuiet, resolved, resolvedRef, sel, selRef, selIdsRef,
     overrideCount, updateEl, updateElRef, update, resetOverride, resetFormat, toggleHidden, del, dup, layer, clearAll } = useDoc(initialDoc);
@@ -62,6 +63,7 @@ function App({ initialDoc }){
   useImageDrop({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelectedIds, resolvedRef, updateElRef, exportingRef, say });
   const { alignSel, distributeSel, centreSel } = useArrange({ selectedIds, resolved, updateEl, viewFormat });
   const { spawn, startSpawn } = useSpawn({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelectedIds });
+  usePhotoSweep({ docRef, hist, libClean:lib.libClean, bootClean });
 
   /* re-pointed every render — see actionsRef */
   actionsRef.current = {
@@ -151,8 +153,8 @@ function Boot(){
   const [ready, setReady] = React.useState(null);
   React.useEffect(()=>{
     let done = false;
-    const go = (d)=>{ if(!done){ done = true; setReady({ doc:d }); } };
-    bootDoc().then(go, ()=>go(normalizeDoc(loadLegacyDoc()) || starterDoc()));
+    const go = (d, clean)=>{ if(!done){ done = true; setReady({ doc:d, clean:!!clean }); } };
+    bootDoc().then(d=>go(d, bootState.clean), ()=>go(normalizeDoc(loadLegacyDoc()) || starterDoc()));
     setTimeout(()=>{ if(!done){ console.warn('[studio] working doc read timed out — starting from the fallback copy.');
       go(normalizeDoc(loadLegacyDoc()) || starterDoc()); } }, 4000);
     /* Ask the browser not to evict this origin's storage under pressure — the
@@ -161,7 +163,7 @@ function Boot(){
     persistStorage();
   }, []);
   if(!ready) return null;
-  return <App initialDoc={ready.doc} />;
+  return <App initialDoc={ready.doc} bootClean={ready.clean} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<Boot/>);

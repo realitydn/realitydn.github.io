@@ -12,6 +12,7 @@ import { ImageIntake, processImageFile, imageFromClipboard, PhotoUpload } from '
 import { PressPanels, SEP_SCREENS, PressStock, PressFold, ProofFold } from '../studio-shared/press-panels.jsx';
 
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
+import { describeStoreError as storeErrText, watchOtherTabs } from '../studio-shared/store.js';
 import {
   CATALOG as AP_CAT, DEFAULTS as AP_DEF, PALETTE as AP_PAL, ACCENTS as AP_ACC, SIZES as AP_SZ,
   SIZE_ORDER as AP_ORD, GANG as AP_GANG, sizeDims as apDims, PT_PER_MM as AP_PPM,
@@ -54,12 +55,8 @@ function hydrateTpls(a){
   return a.filter(t=>t && t.doc && Array.isArray(t.doc.elements))
           .map(t=>Object.assign({}, t, { doc:Object.assign({}, t.doc, { elements:apMigrate(t.doc.elements) }) }));
 }
-/* storage errors in words a person can act on */
-function storeErrText(e){
-  const n = e && (e.name||''), m = e && (e.message||String(e));
-  if(n==='QuotaExceededError' || /quota/i.test(m||'')) return 'storage full';
-  return m || 'write failed';
-}
+/* storage errors in words a person can act on: storeErrText is store.js's
+   describeStoreError (the Poster's badge reads the same words). */
 
 /* ---------- small controls ----------
    Field / Slider / Chips / ScaleControl / NumField / Fold now come from the
@@ -1128,25 +1125,12 @@ function App({ boot }){
      last one to change anything wins and the other's work is gone on reload.
      Tabs announce themselves on a BroadcastChannel; any other voice on it
      raises the warning (and a `storage` event covers the localStorage
-     fallback, where a write from the other tab fires one here). ---- */
-  const tabId = React.useRef(Math.random().toString(36).slice(2));
-  const peers = React.useRef(new Set());
+     fallback, where a write from the other tab fires one here) — store.js
+     watchOtherTabs. ---- */
+  const tabs = React.useRef(null);
   React.useEffect(()=>{
-    const onStorage = (e)=>{ if(e.key && e.key.indexOf('reality-print')===0) setOtherTab(true); };
-    window.addEventListener('storage', onStorage);
-    if(!('BroadcastChannel' in window)) return ()=>window.removeEventListener('storage', onStorage);
-    const bc = new BroadcastChannel('reality-print-studio'), me = tabId.current;
-    bc.onmessage = (e)=>{
-      const m = e.data||{}; if(!m.id || m.id===me) return;
-      if(m.t==='hello'){ peers.current.add(m.id); bc.postMessage({ t:'here', id:me }); }
-      else if(m.t==='here') peers.current.add(m.id);
-      else if(m.t==='bye') peers.current.delete(m.id);
-      setOtherTab(peers.current.size>0);
-    };
-    bc.postMessage({ t:'hello', id:me });
-    const bye = ()=>{ try{ bc.postMessage({ t:'bye', id:me }); }catch(err){} };
-    window.addEventListener('pagehide', bye);
-    return ()=>{ bye(); window.removeEventListener('pagehide', bye); window.removeEventListener('storage', onStorage); bc.close(); };
+    tabs.current = watchOtherTabs({ channel:'reality-print-studio', storagePrefix:'reality-print', onChange:setOtherTab });
+    return ()=>{ tabs.current.stop(); tabs.current = null; };
   }, []);
 
   /* ---- orphaned photos. Nothing ever called delImage, so every upload stayed
@@ -1158,7 +1142,7 @@ function App({ boot }){
   React.useEffect(()=>{
     if(boot.backend!=='idb' || boot.error || !PrintStore || !PrintStore.gcImages) return;
     const t = setTimeout(()=>{
-      if(peers.current.size>0) return;
+      if(tabs.current && tabs.current.peers()>0) return;
       const keep = new Set();
       const take = (els)=> (els||[]).forEach(e=>{ if(e && e.imgId) keep.add(e.imgId); });
       take(docRef.current.elements);

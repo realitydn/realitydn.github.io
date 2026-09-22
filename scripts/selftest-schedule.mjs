@@ -3,7 +3,8 @@
  * data layer: the WP9 feed mapping (buildDocFromFeed / ictHHMM / ictDate, weekly
  * inference, the night rollover), the App→Schedule merge (series-keyed
  * presentation, tombstones, dedupe), and the pure editing helpers (Replace,
- * Clone, delete/restore, venue-time "today", autosave failure).
+ * Clone, delete/restore, venue-time "today", autosave failure, and the
+ * IndexedDB + localStorage coexistence: newer-wins adoption, both-writes).
  *
  * No test runner is installed in any repo (Events Platform build plan §5.4 #9).
  * schedule-data.jsx is a browser <script> (not a module) and contains JSX
@@ -44,6 +45,7 @@ const FNS = [
   'timeKey', 'eventsOn',
   'ictHHMM', 'ictDate', 'feedWindow', 'buildDocFromFeed', 'feedPrefKey', 'mergeFeedIntoDoc', 'applyFeedToDoc',
   'deleteEventFromDoc', 'restoreFeedEvent', 'clearRangeOccurrences', 'cloneToNextPeriod', 'storeDoc',
+  'pickNewerDoc', 'writeBothDocs',
 ];
 const code =
   // consts the extracted functions read (mirrors schedule-data.jsx)
@@ -394,6 +396,55 @@ ctx.localStorage = { setItem() { const e = new Error('quota'); e.name = 'QuotaEx
 eq('storeDoc: full storage → false', X.storeDoc({ events: [] }), false);
 ctx.localStorage = { setItem() {} };
 eq('storeDoc: a normal write → true', X.storeDoc({ events: [] }), true);
+
+// ── storage coexistence: IndexedDB + the localStorage copy (23.09.26) ────────
+// Load adopts whichever copy has the newer savedAt; a tie goes to IndexedDB.
+{
+  const { pickNewerDoc, writeBothDocs } = X;
+  const d = (savedAt, tag) => ({ events: [], savedAt, tag });
+  eq('adopt: nothing stored → null', pickNewerDoc(null, null).doc, null);
+  eq('adopt: localStorage only (a doc from the old code) → ls', pickNewerDoc(null, d(5, 'L')).from, 'ls');
+  eq('adopt: IndexedDB only → idb', pickNewerDoc(d(5, 'I'), null).from, 'idb');
+  eq('adopt: an old tab wrote a newer localStorage copy → ls', pickNewerDoc(d(5, 'I'), d(9, 'L')).doc.tag, 'L');
+  eq('adopt: IndexedDB newer → idb', pickNewerDoc(d(9, 'I'), d(5, 'L')).doc.tag, 'I');
+  eq('adopt: same savedAt (both-writes) → idb', pickNewerDoc(d(7, 'I'), d(7, 'L')).from, 'idb');
+  eq('adopt: a copy without savedAt loses to one with it', pickNewerDoc({ events: [], tag: 'I' }, d(1, 'L')).from, 'ls');
+  eq('adopt: savedAt as a string still compares as a number', pickNewerDoc(d('20', 'I'), d(3, 'L')).from, 'idb');
+  eq('adopt: a record without events is not a doc', pickNewerDoc({ savedAt: 99 }, d(1, 'L')).from, 'ls');
+  eq('adopt: junk in localStorage is ignored', pickNewerDoc(d(1, 'I'), 'garbage').from, 'idb');
+
+  // Every save writes BOTH copies — the localStorage one first, synchronously —
+  // and counts as saved when either landed.
+  const run = async () => {
+    const calls = [];
+    const doc = d(42, 'X');
+    const lsOk = (x) => { calls.push(['ls', x.savedAt]); return true; };
+    const lsFull = (x) => { calls.push(['ls', x.savedAt]); return false; };
+    const lsThrows = () => { throw new Error('boom'); };
+    const idbOk = (x) => { calls.push(['idb', x.savedAt]); return Promise.resolve(); };
+    const idbFail = (x) => { calls.push(['idb', x.savedAt]); return Promise.reject(new Error('QuotaExceededError')); };
+    const idbThrows = () => { throw new Error('no indexedDB'); };
+    let r = await writeBothDocs(doc, lsOk, idbOk);
+    eq('both-writes: both copies written', JSON.stringify(calls), JSON.stringify([['ls', 42], ['idb', 42]]));
+    check('both-writes: ok when both land', r.ok && r.ls && r.idb);
+    r = await writeBothDocs(doc, lsFull, idbOk);
+    check('both-writes: localStorage full, IndexedDB took it → saved', r.ok && !r.ls && r.idb);
+    r = await writeBothDocs(doc, lsOk, idbFail);
+    check('both-writes: IndexedDB refused, localStorage took it → saved', r.ok && r.ls && !r.idb);
+    r = await writeBothDocs(doc, lsFull, idbFail);
+    check('both-writes: neither landed → NOT SAVED', !r.ok && !r.ls && !r.idb);
+    r = await writeBothDocs(doc, lsThrows, idbThrows);
+    check('both-writes: writers that throw are failures, not crashes', !r.ok);
+    // the round trip the coexistence relies on: what a save wrote, the next load adopts
+    let lsBox = null, idbBox = null;
+    await writeBothDocs(d(100, 'new'), (x) => { lsBox = JSON.parse(JSON.stringify(x)); return true; },
+      (x) => { idbBox = JSON.parse(JSON.stringify(x)); return Promise.resolve(); });
+    eq('round trip: after a save both copies agree', pickNewerDoc(idbBox, lsBox).doc.tag, 'new');
+    lsBox = d(200, 'old-tab');   // a tab still on the old code saves later, to localStorage only
+    eq('round trip: the old tab’s later edit wins the next load', pickNewerDoc(idbBox, lsBox).doc.tag, 'old-tab');
+  };
+  await run();
+}
 
 if (failures.length) {
   console.error(`\nselftest-schedule: ${failures.length} FAILED, ${passed} passed`);

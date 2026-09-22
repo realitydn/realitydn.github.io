@@ -4,6 +4,7 @@
    previews · inspector · import (paste/CSV) · export pipeline.
    ============================================================ */
 import { RCloud } from '../studio-shared/cloud.js';
+import { persistStorage } from '../studio-shared/store.js';
 import {
   DAY_COLORS as A_DC, DAY_TEXT as A_DT, DAY_ABBR as A_DA, LOCATIONS as A_LOCS,
   rangeDates as a_dates, rangeLabel as a_rangeLabel, dAdd as a_dAdd, dWeekday as a_wd,
@@ -14,7 +15,7 @@ import {
   deleteEventFromDoc as a_delEvent, restoreFeedEvent as a_restoreFeed,
   clearRangeOccurrences as a_clearRange, cloneToNextPeriod as a_cloneNext,
   thisMonday as a_thisMonday, normalizeDoc as a_norm, newDoc as a_new, starterDoc as a_starter,
-  loadStoredDoc as a_load, storeDoc as a_store, DAY_FULL, QR_CTA, dToDate,
+  loadStoredDoc as a_load, saveStoredDoc as a_save, DAY_FULL, QR_CTA, dToDate,
 } from './schedule-data.jsx';
 import {
   CHANNELS as A_CH, channelById as a_ch, computeCapacity as a_cap, PartCanvas as APart,
@@ -681,8 +682,8 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
           <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl/⌘+Shift+Z or Ctrl+Y)">↷ Redo</button>
         </div>
       </div>
-      {/* The autosave write failed (localStorage is shared with Poster + Print
-          Studio and caps at ~5MB). Stays up until a write lands again. */}
+      {/* The autosave write failed — neither IndexedDB nor the localStorage
+          copy took it (see saveStoredDoc). Stays up until a write lands again. */}
       {saveFailed && <span className="ss-unsaved" role="alert"
         title="The browser refused to save this schedule — its storage (shared with Poster + Print Studio) is full. Your edits live only in this tab: Save JSON now, then free space (e.g. delete old Poster Studio templates).">
         NOT SAVED — storage full</span>}
@@ -721,14 +722,30 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
   );
 }
 
+/* ---------- boot: the stored doc is async now (IndexedDB) ----------
+   Boot waits for loadStoredDoc() — a few ms — and only then mounts the app,
+   so the first render IS the saved week and the autosave never writes a blank
+   one over it. */
+function Boot(){
+  const [boot, setBoot] = React.useState(null);
+  React.useEffect(()=>{
+    let live = true;
+    a_load().catch(()=>null).then(d=>{ if(live) setBoot({ doc:d }); });
+    persistStorage();
+    return ()=>{ live=false; };
+  }, []);
+  if(!boot) return null;
+  return <App stored={boot.doc} />;
+}
+
 /* ---------- app ---------- */
-function App(){
+function App({ stored }){
   /* First run (nothing stored) opens a blank document on the CURRENT week and
      lets the feed pull fill it. The June stress-test week is a dev fixture now:
      ?seed=stress loads it on purpose. */
   const [doc, setDocRaw] = React.useState(()=>{
     try{ if(new URLSearchParams(window.location.search).get('seed')==='stress') return a_norm(a_starter()); }catch(e){}
-    return a_load() || a_norm(a_new(a_thisMonday()));
+    return stored || a_norm(a_new(a_thisMonday()));
   });
   /* Two ways to change the document:
      setDoc      — a real edit by the user: stamps savedAt (what cloud sync
@@ -770,9 +787,16 @@ function App(){
   const [pullNonce, setPullNonce] = React.useState(0);
   const requestPull = React.useCallback(()=>setPullNonce(n=>n+1), []);
 
-  /* autosave — and SAY when it didn't land (see storeDoc) */
+  /* autosave — IndexedDB + the localStorage copy (saveStoredDoc), and SAY when
+     neither landed. The first run writes the doc boot adopted, which is how a
+     localStorage-only doc reaches IndexedDB. Only the newest save's answer
+     moves the badge. */
   const [saveFailed, setSaveFailed] = React.useState(false);
-  React.useEffect(()=>{ setSaveFailed(!a_store(doc)); }, [doc]);
+  const saveSeq = React.useRef(0);
+  React.useEffect(()=>{
+    const n = ++saveSeq.current;
+    a_save(doc).then(r=>{ if(n===saveSeq.current) setSaveFailed(!r.ok); });
+  }, [doc]);
 
   /* ---- undo / redo — modelled on Print Studio's: one entry per quiet burst of
      edits (HIST_QUIET_MS), HIST_MAX deep. Quiet (machine) changes re-base the
@@ -1301,4 +1325,4 @@ function PreviewClickLayer({ doc, setSelId, children }){
   return children;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<Boot/>);

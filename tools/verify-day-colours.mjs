@@ -168,6 +168,8 @@ if (brand) {
     "public/studio-shared/cloud.js": ["createCloud", "DEFAULT_HUB", "TOKEN_KEY", "TOKEN_MSG", "SIGNIN_TIMEOUT_MS",
       "CALL_TIMEOUT_MS", "isLocalHost", "readToken", "writeToken", "clearToken", "isSignedIn", "currentEmail",
       "getDoc", "listDocs", "putDoc", "delDoc", "putPoster", "putDigestStory", "optimizeImage", "fetchFeed"],
+    "public/studio-shared/store.js": ["openDB", "reqVal", "txDone", "describeStoreError", "storeErrText",
+      "persistStorage", "makeWriter", "watchOtherTabs"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;
@@ -179,6 +181,9 @@ if (brand) {
   for (const rel of studioSources) {
     for (const m of read(rel).matchAll(re))
       fail(`${rel}: defines its own ${m[1]} — it lives in ${owner[m[1]]}; import it`);
+    // …and nobody opens IndexedDB behind store.js's back.
+    if (/\bindexedDB\s*\.\s*open\s*\(/.test(read(rel)))
+      fail(`${rel}: opens IndexedDB itself — describe the schema to public/studio-shared/store.js openDB`);
   }
   // …and the wordmark component draws brand.js's paths, never its own.
   if (!/WORDMARK_PATHS/.test(read("public/studio-shared/wordmark.jsx")))

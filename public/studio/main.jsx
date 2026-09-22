@@ -18,7 +18,8 @@
        UMD file; the engine test harness loads the two the same way.
 
    Globals this bundle SETS, kept permanently:
-     window.RStore  — the IndexedDB store (studio-store.js)
+     window.RStore  — the template + working-doc store (studio-store.js, on
+                      the shared IndexedDB layer ../studio-shared/store.js)
      window.RCloud  — the cloud client (../studio-shared/cloud.js, shared
                       with Schedule Studio)
      window.RUI     — the shared control kit (../studio-shared/studio-ui.jsx);

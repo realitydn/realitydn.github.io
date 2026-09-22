@@ -125,6 +125,14 @@ primitive they both use.
   different mask) — switch it to the encoder with a golden update if wanted.
 - Left for the second half: `cloud.js`, `store.js`, `history.js`.
 
+**Follow-up — Schedule localStorage copy.** Schedule's working doc moved to IndexedDB
+(`reality-schedule`) on 23.09.26 but still writes the old `reality-schedule-doc-v2` localStorage
+copy on every save, and load adopts whichever copy is newer, so a tab still running the old code
+and the new code never lose each other's edits. Once every Schedule tab has reloaded onto the new
+code — at the earliest the release after this branch ships — drop the `storeDoc()` write in
+`saveStoredDoc` and the `readLSDoc()` fallback in `loadStoredDoc` (schedule-data.jsx), and remove
+the key from localStorage.
+
 ## Phase 3 — Split the big files
 
 With modules in place, split along the seams that already exist:

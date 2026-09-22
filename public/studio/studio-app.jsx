@@ -14,6 +14,7 @@ import {
 } from '../studio-shared/press-panels.jsx';
 
 import { RStore } from './studio-store.js';
+import { describeStoreError, persistStorage } from '../studio-shared/store.js';
 import { RCloud } from '../studio-shared/cloud.js';
 import {
   CATALOG as AP_CAT, FORMATS as AP_FMT, OUTPUT_FORMATS as AP_OUT, STANDEE_FORMATS as AP_STD,
@@ -65,12 +66,8 @@ function normalizeDoc(d){
   delete doc._savedAt;   // the localStorage fallback's timestamp — storage bookkeeping, not part of the poster
   return doc;
 }
-/* Why a storage write failed, in words for the topbar. */
-function describeStoreError(e){
-  const n = e && e.name, m = (e && e.message) || '';
-  if(n==='QuotaExceededError' || /quota/i.test(m) || (e && e.code===22)) return 'storage full';
-  return m || n || 'write failed';
-}
+/* Why a storage write failed, in words for the topbar: describeStoreError,
+   ../studio-shared/store.js (the one Print's badges use too). */
 /* Arrow-key nudge: a ninth of the grid step (5px at STEP 45), so nine presses
    walk exactly one step and a nudged box can always be walked back onto the
    armature a drag snaps to. Shift moves one whole step. */
@@ -4586,7 +4583,7 @@ function Boot(){
     /* Ask the browser not to evict this origin's storage under pressure — the
        library and the working doc are the only copy of a lot of work. The
        answer doesn't change anything here, so it isn't read. */
-    try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+    persistStorage();
   }, []);
   if(!ready) return null;
   return <App initialDoc={ready.doc} />;

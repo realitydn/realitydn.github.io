@@ -22,35 +22,26 @@
    • The {getAll,put,delete,replaceAll} surface is deliberately
      the shape a future cloud sync would expose, so the cloud
      step bolts on without rewriting callers.
+   • The IndexedDB plumbing (open, transactions, requests) is
+     ../studio-shared/store.js, shared with Print and Schedule.
+     This file is the Poster's schema and what it keeps there;
+     the database, its stores, keys and records are unchanged.
    ============================================================ */
+import { openDB } from '../studio-shared/store.js';
+
 (function(){
   const DB_NAME = 'reality-studio', DB_VER = 1;
   const T_STORE = 'templates';     // keyPath 'id' — one record per saved template
   const M_STORE = 'meta';          // keyPath 'k'  — { k, v } flags (migration, etc.)
   const LS_TPL_KEY = 'reality-studio-templates-v1';   // the legacy localStorage library
-  let _db = null;
-
-  function open(){
-    if(_db) return Promise.resolve(_db);
-    return new Promise((res, rej)=>{
-      let rq;
-      try{ rq = indexedDB.open(DB_NAME, DB_VER); }
-      catch(e){ rej(e); return; }
-      rq.onupgradeneeded = ()=>{
-        const db = rq.result;
-        if(!db.objectStoreNames.contains(T_STORE)) db.createObjectStore(T_STORE, { keyPath:'id' });
-        if(!db.objectStoreNames.contains(M_STORE)) db.createObjectStore(M_STORE, { keyPath:'k' });
-      };
-      rq.onsuccess = ()=>{ _db = rq.result; res(_db); };
-      rq.onerror   = ()=>rej(rq.error);
-      rq.onblocked = ()=>rej(new Error('IndexedDB open blocked'));
-    });
-  }
-
-  /* small promise wrappers */
-  function store(name, mode){ return _db.transaction(name, mode).objectStore(name); }
-  function txDone(t){ return new Promise((res, rej)=>{ t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
-  function reqVal(r){ return new Promise((res, rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+  const db = openDB({
+    name: DB_NAME, version: DB_VER, blockedMessage: 'IndexedDB open blocked',
+    upgrade(d){
+      if(!d.objectStoreNames.contains(T_STORE)) d.createObjectStore(T_STORE, { keyPath:'id' });
+      if(!d.objectStoreNames.contains(M_STORE)) d.createObjectStore(M_STORE, { keyPath:'k' });
+    },
+  });
+  const open = db.open;
 
   /* ---- WP9 best-effort cloud mirror (window.RCloud) -------------------------
      IndexedDB stays the source of truth. After a successful LOCAL write we
@@ -247,22 +238,17 @@
     }catch(e){}
   }
 
-  async function tplGetAll(){ await open(); return reqVal(store(T_STORE, 'readonly').getAll()); }
+  async function tplGetAll(){ return db.getAll(T_STORE); }
 
-  async function tplPut(t){ await open(); const s = store(T_STORE, 'readwrite'); s.put(t); await txDone(s.transaction); cloudPutTpl(t); }
+  async function tplPut(t){ await db.put(T_STORE, t); cloudPutTpl(t); }
 
-  async function tplDelete(id){ await open(); const s = store(T_STORE, 'readwrite'); s.delete(id); await txDone(s.transaction);
+  async function tplDelete(id){ await db.delete(T_STORE, id);
     try{ await thumbDelete(id); }catch(e){}   // the card's cached picture goes with the record
     cloudDelTpl(id); }
 
   /* Upsert many in one transaction without clearing — used by migrate() so a
      re-run can never drop records added after the first migration. */
-  async function tplBulkPut(arr){
-    await open();
-    const s = store(T_STORE, 'readwrite');
-    (arr||[]).forEach(t=>s.put(t));
-    return txDone(s.transaction);
-  }
+  async function tplBulkPut(arr){ return db.putMany(T_STORE, arr); }
 
   /* Fold `incoming` into the library and remove exactly the ids in `dropIds`,
      in one transaction. Nothing else is touched.
@@ -279,11 +265,10 @@
      bin first, so a bad import stays recoverable from two places rather than
      none. */
   async function tplApply(incoming, dropIds){
-    await open();
-    const s = store(T_STORE, 'readwrite');
-    (dropIds||[]).forEach(id=>{ if(id) s.delete(id); });
-    (incoming||[]).forEach(t=>{ if(t && t.id) s.put(t); });
-    await txDone(s.transaction);
+    await db.tx(T_STORE, 'readwrite', s=>{
+      (dropIds||[]).forEach(id=>{ if(id) s.delete(id); });
+      (incoming||[]).forEach(t=>{ if(t && t.id) s.put(t); });
+    });
     cloudPutMany(incoming);   // best-effort mirror of the imported set
   }
 
@@ -295,7 +280,7 @@
      key, no schema change, local only. */
   const BIN_PREFIX = 'bin:', BIN_CAP = 10;
   function binRange(){ return IDBKeyRange.bound(BIN_PREFIX, BIN_PREFIX + '\uffff'); }
-  async function binRows(){ await open(); return reqVal(store(M_STORE, 'readonly').getAll(binRange())); }
+  async function binRows(){ return db.getAll(M_STORE, binRange()); }
   async function binPut(t, reason){
     if(!t || !t.id) return;
     await metaPut(BIN_PREFIX + t.id, { at: Date.now(), reason: reason || 'removed', tpl: t });
@@ -303,9 +288,7 @@
       const rows = await binRows();
       if(rows.length > BIN_CAP){
         rows.sort((a,b)=>((a.v&&a.v.at)||0)-((b.v&&b.v.at)||0));
-        const s = store(M_STORE, 'readwrite');
-        rows.slice(0, rows.length - BIN_CAP).forEach(r=>s.delete(r.k));
-        await txDone(s.transaction);
+        await db.tx(M_STORE, 'readwrite', s=>{ rows.slice(0, rows.length - BIN_CAP).forEach(r=>s.delete(r.k)); });
       }
     }catch(e){ /* an over-full bin is not worth failing a delete over */ }
   }
@@ -317,9 +300,7 @@
   }
   async function binDelete(id){
     if(!id) return;
-    await open();
-    const s = store(M_STORE, 'readwrite'); s.delete(BIN_PREFIX + id);
-    return txDone(s.transaction);
+    return db.delete(M_STORE, BIN_PREFIX + id);
   }
 
   /* ---- restore from the account, on demand ---------------------------------
@@ -366,7 +347,7 @@
      Thumbnails are DERIVED data, so they sit apart from the template record:
      • They ride the `meta` store behind a 'thumb:' key rather than a store of
        their own, so this needs no DB_VER bump — and therefore no upgrade that
-       a second open tab could block (see open()'s onblocked).
+       a second open tab could block (see store.js open()'s onblocked).
      • They are LOCAL ONLY, never mirrored to the hub. A thumbnail is ~10 KB and
        regenerates itself on any machine that hasn't got one, whereas attaching
        it to the record would mean re-uploading that template's whole ~2.5 MB
@@ -374,7 +355,7 @@
      -------------------------------------------------------------------------- */
   const TH_PREFIX = 'thumb:';
   function thumbRange(){ return IDBKeyRange.bound(TH_PREFIX, TH_PREFIX + '\uffff'); }
-  async function thumbRows(mode){ await open(); return reqVal(store(M_STORE, mode||'readonly').getAll(thumbRange())); }
+  async function thumbRows(){ return db.getAll(M_STORE, thumbRange()); }
 
   /* { [templateId]: {src,w,h} } for the whole library — one read on load. */
   async function thumbGetAll(){
@@ -386,9 +367,7 @@
   async function thumbPut(id, thumb){ if(!id || !thumb) return; return metaPut(TH_PREFIX + id, thumb); }
   async function thumbDelete(id){
     if(!id) return;
-    await open();
-    const s = store(M_STORE, 'readwrite'); s.delete(TH_PREFIX + id);
-    return txDone(s.transaction);
+    return db.delete(M_STORE, TH_PREFIX + id);
   }
   /* Keep only the ids the library still holds. Import can put DIFFERENT artwork
      under an id that already has a thumbnail, and a card that goes on showing
@@ -398,13 +377,11 @@
     const rows = await thumbRows();
     const drop = (rows||[]).map(r=>r && r.k).filter(k=>k && !keep[k.slice(TH_PREFIX.length)]);
     if(!drop.length) return;
-    const s = store(M_STORE, 'readwrite');
-    drop.forEach(k=>s.delete(k));
-    return txDone(s.transaction);
+    return db.tx(M_STORE, 'readwrite', s=>{ drop.forEach(k=>s.delete(k)); });
   }
 
-  async function metaGet(k){ await open(); const v = await reqVal(store(M_STORE, 'readonly').get(k)); return v ? v.v : undefined; }
-  async function metaPut(k, v){ await open(); const s = store(M_STORE, 'readwrite'); s.put({ k, v }); return txDone(s.transaction); }
+  async function metaGet(k){ const v = await db.get(M_STORE, k); return v ? v.v : undefined; }
+  async function metaPut(k, v){ return db.put(M_STORE, { k, v }); }
 
   /* ---- the working doc ------------------------------------------------------
      The poster on screen autosaved to localStorage on every change — photos

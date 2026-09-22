@@ -29,42 +29,35 @@
                   REJECTS when the write didn't land
    Failures are also broadcast as a window 'printstore:error' event
    ({ detail:{ kind, message } }) so the chrome can show them.
+
+   The IndexedDB plumbing (open, transactions, the queued writer) is
+   ../studio-shared/store.js, shared with Poster and Schedule. This
+   file is Print's schema and what it keeps there; the database, its
+   stores, keys and records are unchanged.
    ============================================================ */
+import { openDB, makeWriter } from '../studio-shared/store.js';
+
 let PrintStore, PrintImg, PrintDocs;
 (function(){
   const DB_NAME='reality-print', DB_VER=2, STORE='images', KV='kv';
   const LS_DOC='reality-print-doc-v1', LS_TPL='reality-print-templates-v1';
-  let _db=null, _opening=null;
+  const db = openDB({
+    name: DB_NAME, version: DB_VER, errorEvent: 'printstore:error',
+    /* an older tab still holds v1 open — the upgrade waits on it */
+    blockedMessage: 'IndexedDB upgrade blocked — close other Print Studio tabs',
+    upgrade(d){
+      if(!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE,{keyPath:'id'});
+      if(!d.objectStoreNames.contains(KV))    d.createObjectStore(KV);
+    },
+  });
+  const open = db.open;
 
-  function open(){
-    if(_db) return Promise.resolve(_db);
-    if(_opening) return _opening;
-    _opening = new Promise((res,rej)=>{
-      let rq; try{ rq=indexedDB.open(DB_NAME,DB_VER); }catch(e){ rej(e); return; }
-      rq.onupgradeneeded=()=>{ const db=rq.result;
-        if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:'id'});
-        if(!db.objectStoreNames.contains(KV))    db.createObjectStore(KV); };
-      rq.onsuccess=()=>{ _db=rq.result;
-        /* a newer tab wants to upgrade — step aside rather than block it */
-        _db.onversionchange=()=>{ try{ _db.close(); }catch(e){} _db=null; };
-        res(_db); };
-      rq.onerror  =()=>rej(rq.error);
-      /* an older tab still holds v1 open — the upgrade waits on it */
-      rq.onblocked=()=>rej(new Error('IndexedDB upgrade blocked — close other Print Studio tabs'));
-    });
-    _opening.catch(()=>{}).then(()=>{ _opening=null; });
-    return _opening;
-  }
-  function store(name, mode){ return _db.transaction(name,mode).objectStore(name); }
-  function txDone(t){ return new Promise((res,rej)=>{ t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error||new Error('transaction aborted')); }); }
-  function reqVal(r){ return new Promise((res,rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
-
-  async function putImage(rec){ await open(); const s=store(STORE,'readwrite'); s.put(rec); return txDone(s.transaction); }
-  async function getImage(id){ await open(); return reqVal(store(STORE,'readonly').get(id)); }
-  async function delImage(id){ await open(); const s=store(STORE,'readwrite'); s.delete(id); return txDone(s.transaction); }
-  async function allIds(){ await open(); return reqVal(store(STORE,'readonly').getAllKeys()); }
-  async function kvGet(key){ await open(); return reqVal(store(KV,'readonly').get(key)); }
-  async function kvPut(key, val){ await open(); const s=store(KV,'readwrite'); s.put(val, key); return txDone(s.transaction); }
+  function putImage(rec){ return db.put(STORE, rec); }
+  function getImage(id){ return db.get(STORE, id); }
+  function delImage(id){ return db.delete(STORE, id); }
+  function allIds(){ return db.getAllKeys(STORE); }
+  function kvGet(key){ return db.get(KV, key); }
+  function kvPut(key, val){ return db.put(KV, val, key); }
 
   /* Orphan sweep. Nothing ever called delImage, so every photo ever uploaded
      stayed in IDB forever. Deletes records NOT in `keep` — and, to stay
@@ -72,22 +65,20 @@ let PrintStore, PrintImg, PrintDocs;
      in another tab, or deleted and still undoable, survives). The app only
      calls this after the doc AND the templates both loaded cleanly. */
   async function gcImages(keep, minAgeMs){
-    await open();
-    return new Promise((res,rej)=>{
-      const t=_db.transaction(STORE,'readwrite'), s=t.objectStore(STORE), now=Date.now(); let n=0;
+    const swept = await db.tx(STORE, 'readwrite', s=>{
+      const now=Date.now(), out={ n:0 };
       const rq=s.openCursor();
       rq.onsuccess=()=>{ const c=rq.result; if(!c) return;
         const v=c.value, young = v && v.ts && (now-v.ts) < (minAgeMs||0);
-        if(!keep.has(c.key) && !young){ c.delete(); n++; }
+        if(!keep.has(c.key) && !young){ c.delete(); out.n++; }
         c.continue(); };
-      t.oncomplete=()=>res(n); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error);
+      return out;   // read once the transaction has committed
     });
+    return swept.n;
   }
   PrintStore={ open, putImage, getImage, delImage, allIds, kvGet, kvPut, gcImages };
 
-  function report(kind, message){
-    try{ window.dispatchEvent(new CustomEvent('printstore:error', { detail:{ kind, message } })); }catch(e){}
-  }
+  const report = db.report;
 
   /* ---- decoded-image cache: id → { data(dataURL), w, h, img, unsaved } ---- */
   const _cache=new Map();
@@ -158,22 +149,11 @@ let PrintStore, PrintImg, PrintDocs;
     }
   }
   function lsPut(key, val){ localStorage.setItem(key, JSON.stringify(val)); }   // throws on quota — on purpose
-  /* One write in flight per key, the newest value queued behind it: a drag
-     fires a doc change per frame, and this lands the LAST one without a
-     transaction per pixel. Each caller's promise settles with the write that
-     carried its value (or a newer one). */
+  /* One write in flight per key, the newest value queued behind it (store.js
+     makeWriter): a drag fires a doc change per frame, and this lands the LAST
+     one without a transaction per pixel. */
   function writer(key, lsKey){
-    let busy=false, has=false, next, waiters=[];
-    async function pump(){
-      busy=true;
-      while(has){
-        const v=next, ws=waiters; has=false; waiters=[];
-        try{ if(_backend==='ls') lsPut(lsKey, v); else await kvPut(key, v); ws.forEach(w=>w.res()); }
-        catch(e){ ws.forEach(w=>w.rej(e)); }
-      }
-      busy=false;
-    }
-    return (v)=> new Promise((res,rej)=>{ next=v; has=true; waiters.push({res,rej}); if(!busy) pump(); });
+    return makeWriter(async (v)=>{ if(_backend==='ls') lsPut(lsKey, v); else await kvPut(key, v); });
   }
   PrintDocs={ load:loadDocs, saveDoc:writer('doc', LS_DOC), saveTpls:writer('templates', LS_TPL),
               backend:()=>_backend };

@@ -183,11 +183,9 @@ const inkTitle = a => a==='ink' ? 'Ink' : a==='cream' ? 'Cream' : a;
 function PressControls({ el, update, docAccent }){
   const RP = window.RISO && window.RISO.press; if(!RP) return null;
   const inkKey = el.followAccent!==false ? docAccent : (el.ink||'pink');
-  const stockKey = el.stock||'white';
   const resolved = RP.resolveInks({ inks:el.inks, ink:inkKey, ink2:el.ink2, paper:'day' });
   const custom = Array.isArray(el.inks) && el.inks.length>0;
   const plates = custom ? el.inks : resolved;
-  const opaque = el.opaque!=null ? !!el.opaque : RP.isDark(RP.stockHex(stockKey));
   const setPlate = (i,v)=>{ const arr=plates.slice(); arr[i]=v; update({ inks:arr }); };
   const dropPlate = (i)=>{ const arr=plates.slice(); arr.splice(i,1); update({ inks:arr }); };
   const screenKey = el.screen==='am' ? ((el.pitch||9)>=11 ? 's43' : (el.pitch||9)<=6.5 ? 's106' : 's71') : 'grain';
@@ -214,11 +212,6 @@ function PressControls({ el, update, docAccent }){
           </React.Fragment>
         : <Hint><b>{plates.map(inkTitle).join(' → ')}</b> — the accent and its partner, the classic two-colour riso.</Hint>}
       {warn.length>0 && <Hint>⚠ <b>{warn.map(p=>inkTitle(p[0])+' + '+inkTitle(p[1])).join(', ')}</b> — near-tonal pairs the guidance advises against. Allowed; the overlap goes muddy.</Hint>}
-      <div className="ps-sech">Stock</div>
-      <div className="ps-swatches">
-        {RP.STOCKS.map(s=>(<div key={s} className={'ps-sw'+(stockKey===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s], border:'1.5px solid #cfc7b6' }} onClick={()=>update({ stock:s, opaque:null })} />))}
-      </div>
-      <Hint><b>{STOCK_LABEL[stockKey]||stockKey}.</b> {opaque ? 'Dark stock — opaque ink, a screenprint rather than a riso.' : 'Translucent ink: the sheet shows through every plate.'} White is the sheet these pieces are run on; the rest are for a piece going on a coloured stock.</Hint>
       <div className="ps-sech">Screen</div>
       <Chips options={SEP_SCREENS} value={screenKey} onChange={pickScreen} />
       {el.screen==='am'
@@ -232,6 +225,27 @@ function PressControls({ el, update, docAccent }){
       <Slider label="Chroma boost" val={el.sepBoost!=null?el.sepBoost:1.15} min={0.8} max={2} step={0.01} onChange={v=>update({sepBoost:v})} suffix="×" />
       <Slider label="Ink limit" val={el.tac!=null?el.tac:2.2} min={1} max={4} step={0.05} onChange={v=>update({tac:v})} />
       <Chips label="Source" options={[{v:false,l:'Positive'},{v:true,l:'Negative'}]} value={!!el.invertSource} onChange={v=>update({invertSource:v})} />
+    </React.Fragment>
+  );
+}
+/* The press under EVERY treatment. Separation is the press itself; every other
+   treatment but "none" is separated back into plates and pressed flat by the
+   shared engine (riso-engine pressThrough), so the stock, the registration miss,
+   the drum, the pull and the proof all apply to it — and they carry over when
+   the treatment changes, so every treatment has to be able to reach them.
+   Plates for the proof come from the engine itself (RISO.platesFor). */
+function PressCommon({ el, update, t, docAccent }){
+  const RP = window.RISO && window.RISO.press; if(!RP) return null;
+  const stockKey = el.stock||'white';
+  const opaque = el.opaque!=null ? !!el.opaque : RP.isDark(RP.stockHex(stockKey));
+  const plates = (window.RISO.platesFor && window.risoOpts) ? window.RISO.platesFor(t, window.risoOpts(el, docAccent)) : [];
+  return (
+    <React.Fragment>
+      <div className="ps-sech">Stock</div>
+      <div className="ps-swatches">
+        {RP.STOCKS.map(s=>(<div key={s} className={'ps-sw'+(stockKey===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s], border:'1.5px solid #cfc7b6' }} onClick={()=>update({ stock:s, opaque:null })} />))}
+      </div>
+      <Hint><b>{STOCK_LABEL[stockKey]||stockKey}.</b> {opaque ? 'Dark stock — opaque ink, a screenprint rather than a riso.' : 'Translucent ink: the sheet shows through every plate.'} White is the sheet these pieces are run on; the rest are for a piece going on a coloured stock.</Hint>
       <div className="ps-sech">The press</div>
       <Slider label="Drift" val={el.drift||0} min={0} max={24} step={0.5} onChange={v=>update({drift:v})} suffix="px" />
       <Slider label="Feed skew" val={el.skew||0} min={0} max={24} step={0.5} onChange={v=>update({skew:v})} suffix="px" />
@@ -278,6 +292,7 @@ function ImageControls({ el, update, onFile, docAccent }){
         <Slider label="Contrast" val={el.contrast!=null?el.contrast:1.1} min={0.7} max={1.9} step={0.01} onChange={v=>update({contrast:v})} />
         <Slider label="Soft focus" val={el.blurUnder!=null?el.blurUnder:0} min={0} max={16} step={0.5} onChange={v=>update({blurUnder:v})} suffix="px" />
         {t==='separation' && <PressControls el={el} update={update} docAccent={docAccent} />}
+        {t!=='none' && <PressCommon el={el} update={update} t={t} docAccent={docAccent} />}
         {t==='duotone' && <React.Fragment>
           <Slider label="Tone balance" val={el.balance!=null?el.balance:0.5} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
           <Slider label="Shadow tint" val={el.shadowTint!=null?el.shadowTint:0.18} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />

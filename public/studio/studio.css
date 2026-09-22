@@ -264,6 +264,9 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-addrow{ width:100%; font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
   font-size:10px; color:#b6ab97; border:1px dashed #4a3d29; border-radius:7px; padding:8px; cursor:pointer; background:none; transition:.12s; }
 .rs-addrow:hover{ border-color:#ed1b72; color:#fff; }
+/* an inline text action inside a hint line (e.g. Remove the imported VI subtitle) */
+.rs-linkbtn{ background:none; border:0; padding:0; font:inherit; color:#e8dcc6; text-decoration:underline; cursor:pointer; }
+.rs-linkbtn:hover{ color:#fff; }
 
 /* type-scale stepper */
 .rs-stepper{ display:flex; align-items:center; gap:9px; }

@@ -1172,6 +1172,40 @@
     cx.putImageData(out,0,0);
   }
 
+  /* The plates the press will run for `name` at these dials, as ink keys in
+     drum order — what a host's Proof picker lists, so "Plate 2 · Blue" is the
+     plate `proofPlate: 1` isolates. No pixels are touched. It MIRRORS the
+     stacking in separation / offRegister / overprint / halftone's core screen
+     and plateSetFor (everything else, via pressThrough): change a stack order
+     there and change it here. [] for 'none', which never meets the press. */
+  function platesFor(name, opts){
+    const o=Object.assign({}, RENDER_DEFAULTS, opts||{});
+    for(const kk in RENDER_DEFAULTS){ if(o[kk]==null && RENDER_DEFAULTS[kk]!=null) o[kk]=RENDER_DEFAULTS[kk]; }
+    if(!name || name==='none') return [];
+    o._stock=stockOf(name,o); o._dark=RP.isDark(o._stock); o._name=name;
+    if(name==='separation') return RP.resolveInks(sepOpts(o));
+    const keyA=o.ink||'pink', keyB=o.ink2||PARTNER[o.ink]||'blue';
+    const mono = o._dark ? 'cream' : 'ink';
+    const nightK = o.paper==='night' && !o.stock && !o._dark && !!NIGHT_K[name] && (o.nightPlate!=null?o.nightPlate:1)>0;
+    const stockOpaque = o.opaque!=null ? !!o.opaque : o._dark;
+    let L=null;
+    if(name==='offregister'){
+      L=[]; if(o.ink3) L.push(o.ink3);
+      L.push(stockOpaque?keyB:keyA); if(o.ghost>0) L.push(keyA); L.push(stockOpaque?keyA:keyB);
+      if(nightK) L.unshift('ink');
+    } else if(name==='overprint'){
+      L=[]; if(o.ink3) L.push(o.ink3);
+      if(stockOpaque) L.push(keyB,keyA); else L.push(keyA,keyB);
+      if(nightK) L.unshift('ink');
+    } else if(name==='halftone' && HT_CORE_SHAPES[o.shape||'circle'] && !(o.jitter>0) && (o.inkMode||'single')!=='gradient'){
+      const mode=o.inkMode||'single';
+      L = mode==='two' ? [keyA,keyB] : [mode==='black' ? mono : keyA];
+      const fieldDark = (o.field||'paper')==='paper' ? o._dark : (o.field==='ink' && (o.fieldInk||keyA)==='ink');
+      if(nightK && !(o.opaque!=null ? !!o.opaque : fieldDark)) L.unshift('ink');
+    }
+    return L || plateSetFor(o);
+  }
+
   const TREATMENTS = { separation, duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
                        dither, hatch, photocopy, contour, edges, mosaic };
 
@@ -1763,6 +1797,8 @@
                   /* the core, for hosts that want the plates themselves (a proof export) */
                   press: RP,
                   TREATMENTS: Object.keys(TREATMENTS),
+                  /* the plates a treatment presses, for a host's Proof picker */
+                  platesFor,
                   RENDER_DEFAULTS,
                   get source(){ return SRC; } };
 })();

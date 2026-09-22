@@ -869,6 +869,37 @@ function sepResolved(el, inkKey, theme){
     tac: el.tac!=null ? el.tac : (night?2.8:2.2),
     warn: RP.NEVER_PAIR.filter(p=>inks.indexOf(p[0])>=0 && inks.indexOf(p[1])>=0) };
 }
+/* What the press runs for ANY treatment. Separation resolves its own job
+   (sepResolved); every other treatment but "none" is separated back into
+   plates and pressed flat (riso-engine pressThrough, or its own stack for
+   off-register / overprint / halftone), so the stock and The press / Proof
+   folds apply to it just the same — and its settings carry over when you
+   switch treatments, so they must be reachable from every one of them. */
+function pressResolved(el, t, inkKey, theme){
+  if(!t || t==='none') return null;
+  if(t==='separation') return sepResolved(el, inkKey, theme);
+  const RP = window.RISO && window.RISO.press; if(!RP || !window.RISO.platesFor) return null;
+  const paper = theme==='night' ? 'night' : 'day';
+  const stockHex = el.stock ? RP.stockHex(el.stock) : RP.PAPER.day;   // a press treatment prints on cream on either theme
+  return { inks: window.RISO.platesFor(t, Object.assign({}, el, { ink:inkKey, paper })),
+    night: paper==='night', stockKey: el.stock||'day', stockHex,
+    opaque: el.opaque!=null ? !!el.opaque : RP.isDark(stockHex) };
+}
+function PressStock({ el, update, r }){
+  const RP = window.RISO && window.RISO.press; if(!RP || !r) return null;
+  return (
+    <React.Fragment>
+      <div className="rs-sech">Stock</div>
+      <div className="rs-swatches">
+        <div className={'rs-sw'+(el.stock==null?' on':'')} title="Auto — cream" style={{ background:RP.PAPER.day, border:'1.5px solid #3a2f1f' }} onClick={()=>update({ stock:null, opaque:null })} />
+        {RP.STOCKS.map(s=>(<div key={s} className={'rs-sw'+(el.stock===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s] }} onClick={()=>update({ stock:s, opaque:null })} />))}
+      </div>
+      <Hint tight><b>{STOCK_LABEL[r.stockKey]||r.stockKey}.</b> {r.opaque
+        ? 'Dark stock — opaque ink, a screenprint rather than a riso: each plate covers what is under it.'
+        : 'Translucent ink: the sheet shows through every plate, so a tinted stock colours the whole print.'}</Hint>
+    </React.Fragment>
+  );
+}
 function SepControls({ el, update, theme, inkKey }){
   const RP = window.RISO && window.RISO.press;
   const r = sepResolved(el, inkKey, theme);
@@ -903,14 +934,7 @@ function SepControls({ el, update, theme, inkKey }){
             : <React.Fragment><b>{plates.map(inkTitle).join(' → ')}</b> — the accent and its partner, the classic two-colour riso.</React.Fragment>}</Hint>}
       {r.warn.length>0 && <Hint tight>⚠ <b>{r.warn.map(p=>inkTitle(p[0])+' + '+inkTitle(p[1])).join(', ')}</b> — near-tonal pairs the guidance advises against. Allowed; the overlap goes muddy.</Hint>}
 
-      <div className="rs-sech">Stock</div>
-      <div className="rs-swatches">
-        <div className={'rs-sw'+(el.stock==null?' on':'')} title="Auto — cream" style={{ background:RP.PAPER.day, border:'1.5px solid #3a2f1f' }} onClick={()=>update({ stock:null, opaque:null })} />
-        {RP.STOCKS.map(s=>(<div key={s} className={'rs-sw'+(el.stock===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s] }} onClick={()=>update({ stock:s, opaque:null })} />))}
-      </div>
-      <Hint tight><b>{STOCK_LABEL[r.stockKey]||r.stockKey}.</b> {r.opaque
-        ? 'Dark stock — opaque ink, a screenprint rather than a riso: each plate covers what is under it.'
-        : 'Translucent ink: the sheet shows through every plate, so a tinted stock colours the whole print.'}</Hint>
+      <PressStock el={el} update={update} r={r} />
 
       <div className="rs-sech">Screen</div>
       <Chips options={SEP_SCREENS} value={screenKey} onChange={pickScreen} />
@@ -934,12 +958,13 @@ function SepControls({ el, update, theme, inkKey }){
     </React.Fragment>
   );
 }
-function SepPressFold({ el, update, plates }){
+function SepPressFold({ el, update, plates, other }){
   const pressDirty = RUI.dirtyCount(el, ['drift','skew','stretch','duo','drumStreak','drumBand','starve','wet','pull','pressRun','fountainTo','gain','linear','floor','ceiling','solidity','floodCap'], TREAT_PRESETS.separation);
   const n = Math.max(2, (plates||[]).length);
   return (
     <Fold id="ph-sep-press" title="The press" dirty={pressDirty}
       hint={<React.Fragment>A riso misses register because the <b>paper</b> moves. Each plate gets its own miss — a shift, a fraction of a degree, a shear that opens down the sheet, a stretch along the feed. A dual-drum press lays the first two plates in one pass, so those two register tight.</React.Fragment>}>
+      {other && <Hint tight>The <b>{other}</b> is separated back into these plates and run through the same press — every dial here moves it too, and they stay set when you switch treatment.</Hint>}
       <div className="rs-sech">Registration</div>
       <Slider label="Drift" val={el.drift||0} min={0} max={24} step={0.5} onChange={v=>update({drift:v})} suffix="px" />
       <Slider label="Feed skew" val={el.skew||0} min={0} max={24} step={0.5} onChange={v=>update({skew:v})} suffix="px" />
@@ -1062,6 +1087,7 @@ function PhotoControls({ el, update, theme, accent, day }){
   const pickTreat = v=>update(Object.assign({ treatment:v, look:null }, TREAT_PRESETS[v]||{}));
   /* the job the press will run — plates, stock, physics — resolved like the engine does */
   const sepR = t==='separation' ? sepResolved(el, inkKey, theme) : null;
+  const pressR = t==='separation' ? sepR : pressResolved(el, t, inkKey, theme);
   /* The press's own grade, in the under-layer's prop names — what the photo
      showing through is graded by while the two are joined. */
   const pressGrade = { underBright:el.brightness||0, underContrast:el.contrast!=null?el.contrast:1,
@@ -1254,6 +1280,7 @@ function PhotoControls({ el, update, theme, accent, day }){
             dials you've moved off the preset. */}
         {t!=='none' && <Fold id="ph-press" title={'Tune · '+pressLabel} dirty={pressDirty}>
         {t==='separation' && <SepControls el={el} update={update} theme={theme} inkKey={inkKey} />}
+        {t!=='separation' && pressR && <PressStock el={el} update={update} r={pressR} />}
         {t==='duotone' && <React.Fragment>
           <Slider label="Tone balance" val={el.balance} min={0.1} max={0.9} step={0.01} onChange={v=>update({balance:v})} />
           <Slider label="Shadow tint" val={el.shadowTint} min={0} max={0.6} step={0.02} onChange={v=>update({shadowTint:v})} />
@@ -1504,8 +1531,8 @@ function PhotoControls({ el, update, theme, accent, day }){
         {/* The press and the proof are folds of their own: the press is a dozen
             dials that describe a machine, not a look, and the proof changes what
             the canvas shows — neither belongs under Tune. */}
-        {t==='separation' && sepR && <SepPressFold el={el} update={update} plates={sepR.inks} />}
-        {t==='separation' && sepR && <SepProofFold el={el} update={update} plates={sepR.inks} />}
+        {pressR && <SepPressFold el={el} update={update} plates={pressR.inks} other={t!=='separation' ? pressLabel.toLowerCase() : null} />}
+        {pressR && <SepProofFold el={el} update={update} plates={pressR.inks} />}
       </Fold>
 
       <Fold id="ph-adjust" title="Adjust & focus" dirty={adjustDirty}>
@@ -2152,7 +2179,7 @@ function CentreRow({ label, centre, hint }){
    tools are used within minutes of each other and there is no
    reason for "where is the size control" to have two answers.
    ============================================================ */
-function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice }){
+function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice, feedEvents }){
   if(!el){
     const DAYS = AP_ABYDAY.map((a,i)=>({ n:i+1, abbr:AP_DABBR[i], accent:a }));
     const slice = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
@@ -2237,6 +2264,18 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   // auto-sizes to its box, so height stays hidden there.
   const showHeight = !isText || !!caps.tag;
 
+  /* The linked event's Vietnamese name, when it is a different name (not a
+     copy of the EN). Opt-in: a queue starter no longer places it — the Title
+     offers it as a button. Posters linked before eventRef carried titleVi
+     look it up in the queue's feed. */
+  const viName = (()=>{
+    const r = doc.eventRef; if(!r) return '';
+    if(r.titleVi!=null) return r.titleVi || '';
+    const ev = (feedEvents||[]).find(e=>e && e.id===r.id);
+    return (ev && ev.title_en && ev.title_vi && searchNorm(ev.title_vi).trim()!==searchNorm(ev.title_en).trim()) ? ev.title_vi : '';
+  })();
+  const subIsVi = !!el.subtitleVi && (el.subtitle||'').trim()!=='';
+
   /* Badges + auto-open, counted against what this type is born with. Note the
      box defaults (w/h/anchor/rot) live OUTSIDE DEFAULTS[type].props — fold them
      in, or `anchor:'safe'` reads as an edit on every element ever made. */
@@ -2259,6 +2298,12 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   const contentBody = (
     <React.Fragment>
       {el.type==='title' && <Field label="Title text" value={el.text} onChange={v=>update({text:v})} area />}
+      {el.type==='title' && viName && !subIsVi &&
+        <button className="rs-addrow" title="Put the event's Vietnamese name in the subtitle (replaces what is there)"
+          onClick={()=>update({ subtitle:viName, subtitleVi:true })}>＋ Tiếng Việt — “{viName}”</button>}
+      {el.type==='title' && subIsVi &&
+        <div className="rs-mini" style={{ marginTop:-2, marginBottom:10 }}>Subtitle is the event's Vietnamese name — it follows the feed week to week.{' '}
+          <button className="rs-linkbtn" onClick={()=>update({ subtitle:'', subtitleVi:false })}>Remove</button></div>}
       {el.type==='tagline' && <Field label="Tagline" value={el.text} onChange={v=>update({text:v})} area />}
       {el.type==='info' && <React.Fragment>
         <Field label="Info text" value={el.text} onChange={v=>update({text:v})} area />
@@ -2443,7 +2488,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* ===================== SUBTEXT ===================== */}
       {caps.subtitle &&
         <Fold id="f-sub" title="Subtitle" dirty={dSub}>
-          <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({subtitle:v})} area />
+          <Field label="Subtitle — sits in the title box" value={el.subtitle||''} onChange={v=>update({ subtitle:v, subtitleVi:false })} area />
           {(el.subtitle||'').trim()
             ? <React.Fragment>
                 <Chips label="Spacing to title" options={[{v:'tight',l:'Tight'},{v:'snug',l:'Snug'},{v:'roomy',l:'Roomy'},{v:'split',l:'Top / bottom'}]} value={el.subLayout||'snug'} onChange={v=>update({subLayout:v})} />
@@ -3501,18 +3546,18 @@ function App({ initialDoc }){
     /* Fill every box the feed can populate: the day·time chip, the host credit,
        and the price chip. Host keeps the template placeholder when the event has
        none; cost reads "Free" when the event carries no price (the feed's null
-       cost means free — matching the app's own event page). A Vietnamese name
-       rides the title's stacked subtitle — the one bilingual slot the Classic
-       has — instead of being dropped. */
+       cost means free — matching the app's own event page). The Vietnamese name
+       is NOT placed: it rides doc.eventRef.titleVi, and the Title's Subtitle
+       fold offers it as a one-click "Import Vietnamese". */
     built.elements.forEach(el=>{
-      if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); if(titleVi) el.subtitle = titleVi; }
+      if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); }
       if(el.type==='when'){ el.text = when; el.w = 450; }
       if(el.type==='host' && ev.host){ el.name = ev.host; }
       if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
     });
     setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
       elements:built.elements, theme:built.theme, accent, title,
-      eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt, cost:ev.cost||null } }));
+      eventRef:{ id:ev.id, key:queueKey(ev), title, titleVi:titleVi||null, startsAt:ev.startsAt, cost:ev.cost||null } }));
     setSelectedIds([]);
   }
   /* The day·time chip text for a feed event (see the note above). */
@@ -3541,7 +3586,9 @@ function App({ initialDoc }){
     snap.elements.forEach(el=>{
       if(el.type==='title'){
         if(!same(el.text||'', title)){ el.text = title; el.fontSize = queueTitleSize(title); }
-        if(titleVi && el.subtitle!=null && String(el.subtitle).trim()) el.subtitle = titleVi;   // only where the poster has the slot
+        /* Only a subtitle that was IMPORTED as the Vietnamese name follows the
+           feed (Film Club's changes weekly); a hand-written one is artwork. */
+        if(el.subtitleVi) el.subtitle = titleVi || '';
       }
       if(el.type==='when'){ el.text = when; }
       if(el.type==='host' && ev.host){ el.name = ev.host; }
@@ -3550,7 +3597,7 @@ function App({ initialDoc }){
     setDoc(d=>({ ...d, masterFormat:snap.masterFormat||'4x5', activeFormat:'master', overrides,
       elements:snap.elements, theme:snap.theme||d.theme,
       accent: di!=null ? AP_ABYDAY[di] : (snap.accent||d.accent), title,
-      eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt, cost:ev.cost||null } }));
+      eventRef:{ id:ev.id, key:queueKey(ev), title, titleVi:titleVi||null, startsAt:ev.startsAt, cost:ev.cost||null } }));
     setSelectedIds([]);
   }
 
@@ -4471,7 +4518,7 @@ function App({ initialDoc }){
           {/* Feed slice moved INTO the inspector's no-selection panel — it's a
               whole-poster setting, and riding along under every element edit
               was three controls of tax on every selection. */}
-          <Inspector el={sel} doc={doc} update={update} dup={dup} del={del} layer={layer}
+          <Inspector el={sel} doc={doc} feedEvents={queueFeed && queueFeed.events} update={update} dup={dup} del={del} layer={layer}
             clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel}
             resetOverride={resetOverride} toggleHidden={toggleHidden}
             selCount={selectedIds.length} align={alignSel} distribute={distributeSel} centre={centreSel}

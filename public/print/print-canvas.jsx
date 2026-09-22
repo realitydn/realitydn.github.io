@@ -3,7 +3,8 @@
    Works in points. Shows the trim edge, the safe margin, the
    layout grid (columns/rows), bleed + crop-mark preview, smart
    alignment guides, multi-drag and 8-handle resize.
-   The stage scrolls when zoomed past fit.
+   The stage scrolls when zoomed past fit; panning it (space- or
+   middle-drag) and zooming about the pointer are use-viewport.js.
    Exports: PrintCanvas
    ============================================================ */
 import { PALETTE as PC_PAL } from '../studio-shared/brand.js';
@@ -160,10 +161,11 @@ function PrintCanvas({ elements, wpt, hpt, accent, grid, bleedPt, showGrid, show
   function removeListeners(){ window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); }
   React.useEffect(()=>removeListeners, []);
 
-  /* ctrl/⌘-wheel zoom — must be a non-passive listener to preventDefault */
+  /* ctrl/⌘-wheel zoom about the pointer (use-viewport keeps that point under
+     it) — must be a non-passive listener to preventDefault */
   React.useEffect(()=>{
     const st = stageRef.current; if(!st || !onZoomWheel) return;
-    function wheel(e){ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); onZoomWheel(e.deltaY); }
+    function wheel(e){ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); onZoomWheel(e.deltaY, e.clientX, e.clientY); }
     st.addEventListener('wheel', wheel, { passive:false });
     return ()=>st.removeEventListener('wheel', wheel);
   }, [onZoomWheel]);

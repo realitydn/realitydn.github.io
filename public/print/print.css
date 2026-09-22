@@ -196,6 +196,9 @@ body{ background:var(--ps-bg); overflow:hidden; }
     #191510; }
 .ps-spacer{ position:relative; min-width:100%; min-height:100%; }
 .ps-canvas{ will-change:transform; }
+/* panning (use-viewport.js): Space held arms it, a drag scrolls the stage */
+.ps-stage.ps-panready, .ps-stage.ps-panready *{ cursor:grab !important; }
+.ps-stage.ps-panning, .ps-stage.ps-panning *{ cursor:grabbing !important; user-select:none; }
 
 /* inspector controls */
 .ps-row{ margin-bottom:13px; }

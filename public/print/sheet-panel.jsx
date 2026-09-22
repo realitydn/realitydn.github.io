@@ -37,7 +37,9 @@ function SheetPanel({ doc, setDoc, dims, clearAll }){
       <div className="ps-sech">Shortcuts</div>
       <div className="ps-mini" style={{ marginBottom:12 }}>
         <b>Ctrl-Z</b> undo · <b>Ctrl-⇧-Z</b> redo · <b>Ctrl-D</b> duplicate · <b>Ctrl-A</b> select all ·
-        arrows nudge 1pt (<b>⇧</b> 10) · <b>Ctrl-scroll</b> zoom · <b>⇧-click</b> multi-select · <b>⇧-drag corner</b> keeps aspect.
+        arrows nudge 1pt (<b>⇧</b> 10) · <b>⇧-click</b> multi-select · <b>⇧-drag corner</b> keeps aspect ·
+        <b>Space-drag</b> or <b>middle-drag</b> pans · <b>Ctrl-scroll</b> zooms at the pointer ·
+        <b>Ctrl-0</b> (or the % button) fits and re-centres.
       </div>
 
       <div className="ps-empty" style={{ paddingTop:4 }}>

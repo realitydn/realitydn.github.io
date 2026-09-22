@@ -71,7 +71,7 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
           <div className="ps-tgroup">
             <div className="ps-seg">
               <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
-              <button onClick={onZoomFit} title="Fit the sheet">{zoomPct}</button>
+              <button onClick={onZoomFit} title="Fit and re-centre the sheet (Ctrl-0) · Space-drag or middle-drag pans">{zoomPct}</button>
               <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
             </div>
           </div>

@@ -1,9 +1,11 @@
 // Zero-dependency static server for the REALITY Poster Studio.
 //
-// The Studio is a fully client-side app (React + Babel transpiled in the
-// browser), but it must be SERVED over HTTP — opening the .html as a file://
-// fails because Babel fetches the sibling .jsx files via XHR, which file://
-// blocks. This serves public/studio/ so the Studio can load locally.
+// The Studio is a fully client-side app (plain React — no in-browser Babel
+// any more), but it must be SERVED, not opened as a file://: index.html asks
+// for .js files that only exist after a build (scripts/build-studios.mjs
+// precompiles them for deploy), and this server compiles each one from its
+// sibling .jsx on request via studio-jsx.cjs. This serves public/studio/ so
+// the Studio can load locally.
 //
 // Launched by "Poster Studio.bat". Stop with Ctrl-C or by closing the window.
 
@@ -43,7 +45,7 @@ const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
-  // Babel reads these as text and transpiles them; charset matters for the
+  // Raw .jsx is served as text if requested directly; charset matters for the
   // Vietnamese strings (Đà Nẵng, Mai Thúc Lân) in the catalog defaults.
   '.jsx': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',

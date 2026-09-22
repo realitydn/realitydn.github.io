@@ -25,6 +25,17 @@
 // tools/serve-*.cjs dev servers transpile the same .jsx on the fly, so the
 // .jsx files remain the single source of truth and local can never drift
 // from live.
+//
+// Cache-busting is NOT done here. The emitted .js names are stable, so the
+// deployed studio index.html files get ?v=<content hash> stamped onto every
+// local script/stylesheet — but that happens on the dist/ copies, in the
+// reality-studio-cache-bust plugin in vite.config.js, after Vite has copied
+// public/ over. Stamping public/*/index.html here would rewrite tracked files
+// on every build and leave the git tree dirty.
+//
+// esbuild is a direct devDependency in package.json (pinned to the version
+// Vite ships) — this script imports it, so it mustn't rely on Vite pulling it
+// in transitively.
 
 import { transform } from 'esbuild';
 import { readdir, readFile, writeFile } from 'node:fs/promises';

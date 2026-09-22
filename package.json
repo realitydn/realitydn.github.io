@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/fetch-feed.mjs && node scripts/build-studios.mjs && node tools/verify-day-colours.mjs",
+    "prebuild": "node scripts/fetch-feed.mjs && node scripts/build-seo-files.mjs && node scripts/build-studios.mjs && node tools/verify-day-colours.mjs",
     "build": "vite build",
     "build:no-prerender": "SKIP_PRERENDER=1 vite build",
     "og": "node scripts/build-og-card.mjs",
@@ -25,6 +25,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.21.5",
     "postcss": "^8.4.47",
     "puppeteer": "^23.0.0",
     "tailwindcss": "^3.4.11",

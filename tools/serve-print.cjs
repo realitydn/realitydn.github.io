@@ -2,9 +2,9 @@
 //
 // Like the Poster Studio it is a fully client-side app (precompiled React —
 // no in-browser Babel since 23faf1c; this server transpiles the .jsx sources
-// on the fly via studio-jsx.cjs) that must be SERVED over HTTP — the page
-// fetches sibling scripts via XHR, which file:// blocks, and the PDF engine
-// fetches the vendored font .ttf files. This serves public/print/.
+// on the fly via studio-jsx.cjs) that must be SERVED over HTTP — index.html
+// asks for .js files that only exist after a build, and the PDF engine
+// fetches the vendored font .ttf files, which file:// blocks. This serves public/print/.
 //
 // Launched by "Print Studio.bat". Stop with Ctrl-C or by closing the window.
 
@@ -25,7 +25,7 @@ const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
-  // Babel reads these as text and transpiles them; charset matters for the
+  // Raw .jsx is served as text if requested directly; charset matters for the
   // Vietnamese strings (Đà Nẵng, Mai Thúc Lân) in the catalog defaults.
   '.jsx': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',

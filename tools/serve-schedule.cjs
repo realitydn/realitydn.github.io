@@ -1,8 +1,10 @@
 // Zero-dependency static server for the REALITY Schedule Studio.
 //
 // Same pattern as serve-studio.cjs: the Studio is a fully client-side app
-// (React + Babel transpiled in the browser) but must be SERVED over HTTP,
-// because Babel fetches the sibling .jsx files via XHR, which file:// blocks.
+// (plain React — no in-browser Babel any more) but must be SERVED, not opened
+// as a file://: index.html asks for .js files that only exist after a build
+// (scripts/build-studios.mjs), and this server compiles each one from its
+// sibling .jsx on request via studio-jsx.cjs.
 //
 // Canonical home: public/schedule/ — the same files the site deploys to
 // realitydn.com/schedule, so the local launcher and the live tool never drift.
@@ -25,8 +27,9 @@ const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
-  // Babel reads these as text; charset matters for the Vietnamese strings
-  // (Đà Nẵng, Mai Thúc Lân, Cẩm Nang…) in the seed week and footers.
+  // Raw .jsx is served as text if requested directly; charset matters for
+  // the Vietnamese strings (Đà Nẵng, Mai Thúc Lân, Cẩm Nang…) in the seed
+  // week and footers.
   '.jsx': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',

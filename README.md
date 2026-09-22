@@ -32,12 +32,12 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 
 ```
 ├── public/
-│   ├── studio/          # Poster Studio (standalone webapp, Babel-XHR JSX — hard-refresh after deploys)
+│   ├── studio/          # Poster Studio (standalone webapp; .jsx precompiled at build — see Notes)
 │   ├── schedule/        # Schedule Studio (standalone webapp; auto-pulls the app feed)
 │   ├── print/           # Print Studio (vector CMYK PDF, QR standees; preview via serve-print.cjs :4503)
 │   ├── images/          # gallery/, hero.jpg, reality-logo.png, whatsapp-qr.png
 │   ├── feed-snapshot.json  # build-time feed snapshot (prerender + runtime fallback)
-│   ├── llms.txt         # AI-discoverability summary — keep current
+│   ├── llms.txt, llms-full.txt, sitemap.xml  # GENERATED at prebuild by scripts/build-seo-files.mjs (gitignored) — edit the sources, not these
 │   └── _headers         # Cloudflare Pages cache policy
 ├── src/
 │   ├── components/      # Header, Hero, Calendar (feed), EventOverlay, EventsSchema (JSON-LD),
@@ -54,7 +54,7 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 │   └── App.jsx          # routes ×6 locales; unknown paths redirect to /
 ├── worker/              # form-handler Worker — BACKUP lane only (hub is primary; see worker/README.md)
 ├── prerender.mjs        # static HTML for all locales × pages
-└── .github/workflows/deploy.yml  # push to main = build + deploy (Cloudflare Pages)
+└── .github/workflows/deploy.yml  # push to main / nightly / manual = selftest + build + deploy (Cloudflare Pages)
 ```
 
 ## Forms
@@ -92,9 +92,13 @@ already started scrolling. Add an alias there, not in the components.
 ## Deployment
 
 Cloudflare Pages (project `realitydn`). Every push to `main` triggers
-`.github/workflows/deploy.yml`, which runs the full build (including the
-Puppeteer pre-render, which refreshes `feed-snapshot.json`) and ships `dist/`
-via `wrangler pages deploy`. There is no dashboard-connected build — the GitHub
+`.github/workflows/deploy.yml`, which runs the self-tests, then the full build
+(including the Puppeteer pre-render, which refreshes `feed-snapshot.json`) and
+ships `dist/` via `wrangler pages deploy`. It also runs nightly at 00:05
+Đà Nẵng time (so the pre-rendered events and JSON-LD never go stale) and can be
+started by hand from the Actions tab. A pre-render that misses any route now
+fails the build instead of shipping a partial site; `ALLOW_PARTIAL_PRERENDER=1`
+overrides, `SKIP_PRERENDER=1` skips pre-rendering entirely. There is no dashboard-connected build — the GitHub
 Action is the whole pipeline, so build-time env vars (`VITE_*`) belong in the
 workflow, not a hosting dashboard. (The site moved off Netlify in 2026 — see
 MIGRATION-GUIDE.md.)
@@ -103,4 +107,6 @@ MIGRATION-GUIDE.md.)
 
 - Six languages via URL prefix (`/`, `/vn`, `/ru`, `/uk`, `/ko`, `/ja`) — `languages.js` is the registry
 - The old poster carousel + events-config.json + Poster Manager pipeline is retired (feed-driven since 2026-07-06)
-- Studio JSX under public/ is Babel-XHR-cached: a studio tab needs Ctrl+Shift+R after any deploy
+- The Studios (Poster `public/studio/`, Print `public/print/`, Schedule `public/schedule/`) are no longer compiled in the browser — Babel is gone. `scripts/build-studios.mjs` (prebuild) precompiles each `.jsx` to a sibling `.js` with esbuild; edit the `.jsx`. Locally, `tools/serve-*.cjs` transpile on the fly.
+- Studio cache-busting is automatic: at build time the `reality-studio-cache-bust` plugin in `vite.config.js` stamps every local `<script>`/stylesheet in the deployed studio HTML with `?v=<content hash>`, so a deploy can never pair a new file with a stale cached one — no hard refresh needed. It only rewrites the `dist/` copies; the tracked `public/*/index.html` stay unstamped.
+- Studio third-party libraries (React, html-to-image, jsPDF, JSZip, pdf-lib, fontkit, qrcode) are self-hosted under each studio's `vendor/` — no CDN scripts.

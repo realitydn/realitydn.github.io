@@ -9,6 +9,7 @@ import { RUI } from '../studio-shared/studio-ui.jsx';
 import { inkTitle, INK_CHOICES } from '../studio-shared/brand.js';
 import { RULE_PATTERNS } from '../studio-shared/shapes.js';
 import { ImageIntake, processImageFile, imageFromClipboard, PhotoUpload } from '../studio-shared/image-intake.jsx';
+import { PressPanels, SEP_SCREENS, PressStock, PressFold, ProofFold } from '../studio-shared/press-panels.jsx';
 
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import {
@@ -160,10 +161,14 @@ function AccentRow({ value, onChange, nullable, nullTitle }){
 /* The separation press on a print piece — the same dials Poster Studio
    exposes, cut to what a Print job needs. Print's stock is the white sheet by
    default (the engine's `white`); every other stock is one click away for a
-   piece going on kraft or board. Physics and defaults: riso-press.js. */
-const STOCK_LABEL = { day:'Cream', white:'White', news:'Newsprint', straw:'Straw', kraft:'Kraft', salmon:'Salmon',
-                      grey:'Grey board', flint:'Flint', steel:'Steel', night:'Night' };
-const SEP_SCREENS = [{v:'grain',l:'Grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
+   piece going on kraft or board. Physics and defaults: riso-press.js. The
+   Stock picker, the press dials and the Proof are
+   ../studio-shared/press-panels.jsx, shared with the Poster; Print's
+   parameters: white stock (no Auto), a subset of the press as a section of
+   the treatment fold, loose hints on the light panel. */
+PressPanels.configure({ stockDefault:'white', hintTight:false, swatchBorder:'#cfc7b6',
+  stockNote:'White is the sheet these pieces are run on; the rest are for a piece going on a coloured stock.' });
+const PRINT_PRESS_DIALS = ['drift','skew','stretch','drumStreak','starve','pull'];
 const PLATE_INKS = INK_CHOICES;
 function PressControls({ el, update, docAccent }){
   const RP = window.RISO && window.RISO.press; if(!RP) return null;
@@ -226,23 +231,10 @@ function PressCommon({ el, update, t, docAccent }){
   const plates = (window.RISO.platesFor && risoOpts) ? window.RISO.platesFor(t, risoOpts(el, docAccent)) : [];
   return (
     <React.Fragment>
-      <div className="ps-sech">Stock</div>
-      <div className="ps-swatches">
-        {RP.STOCKS.map(s=>(<div key={s} className={'ps-sw'+(stockKey===s?' on':'')} title={STOCK_LABEL[s]||s} style={{ background:RP.PAPER[s], border:'1.5px solid #cfc7b6' }} onClick={()=>update({ stock:s, opaque:null })} />))}
-      </div>
-      <Hint><b>{STOCK_LABEL[stockKey]||stockKey}.</b> {opaque ? 'Dark stock — opaque ink, a screenprint rather than a riso.' : 'Translucent ink: the sheet shows through every plate.'} White is the sheet these pieces are run on; the rest are for a piece going on a coloured stock.</Hint>
-      <div className="ps-sech">The press</div>
-      <Slider label="Drift" val={el.drift||0} min={0} max={24} step={0.5} onChange={v=>update({drift:v})} suffix="px" />
-      <Slider label="Feed skew" val={el.skew||0} min={0} max={24} step={0.5} onChange={v=>update({skew:v})} suffix="px" />
-      <Slider label="Stretch" val={el.stretch||0} min={0} max={30} step={0.5} onChange={v=>update({stretch:v})} suffix="px" />
-      <Slider label="Streaks" val={el.drumStreak||0} min={0} max={1} step={0.02} onChange={v=>update({drumStreak:v})} />
-      <Slider label="Starvation" val={el.starve||0} min={0} max={1} step={0.02} onChange={v=>update({starve:v})} />
-      <Slider label="Pull" val={el.pull||0} min={0} max={400} step={1} onChange={v=>update({pull:v})} />
-      <Hint>A riso misses register because the paper moves; each plate gets its own miss. Pull is which sheet off the run this is — 0 is the idealised print, the miss opens and the master wears as the run goes.</Hint>
-      <div className="ps-sech">Proof</div>
-      <Chips options={[{v:-1,l:'The print'}].concat(plates.map((k,i)=>({v:i,l:'Plate '+(i+1)+' · '+inkTitle(k)})))}
-        value={el.proofPlate!=null?el.proofPlate:-1} onChange={v=>update({ proofPlate: v<0?null:v })} />
-      <Chips label="Show as" options={[{v:false,l:'In its ink'},{v:true,l:'Greyscale'}]} value={!!el.proofGrey} onChange={v=>update({proofGrey:v})} />
+      <PressStock el={el} update={update} stockKey={stockKey} opaque={opaque} />
+      <PressFold el={el} update={update} plates={plates} fold={false} dials={PRINT_PRESS_DIALS}
+        note="A riso misses register because the paper moves; each plate gets its own miss. Pull is which sheet off the run this is — 0 is the idealised print, the miss opens and the master wears as the run goes." />
+      <ProofFold el={el} update={update} plates={plates} fold={false} />
     </React.Fragment>
   );
 }

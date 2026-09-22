@@ -162,6 +162,8 @@ if (brand) {
       "QUIET_SPEC", "QUIET_TIGHT", "qrPatternOf", "QR_DATA_FRAC", "_QR", "_QR_ROWS"],
     "public/studio-shared/image-intake.jsx": ["processImageFile", "imageFromClipboard", "looksLikeImage",
       "imageErrorMessage", "PhotoUpload", "PHOTO_MAX_EDGE", "UPLOAD_MAX_PX"],
+    "public/studio-shared/press-panels.jsx": ["STOCK_LABEL", "SEP_SCREENS", "PRESS_DIALS", "PressStock",
+      "PressDial", "PressFold", "ProofFold", "InkRow", "SepPressFold", "SepProofFold"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;

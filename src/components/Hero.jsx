@@ -28,6 +28,10 @@ export default function Hero({ t }) {
             86 Mai Thúc Lân · Đà Nẵng
           </p>
           <h1 className="text-ink" style={{ fontSize: 'clamp(32px, 4.5vw, 54px)' }}>
+            {/* Screen-reader/crawler-only lead so the page's one H1 reads
+                "REALITY Đà Nẵng — coffee / cocktails / community" (localized)
+                while the visual stays the three-part display line. */}
+            <span className="sr-only">{t.use('heroPrefix')} </span>
             {lead.length > 0 && (
               <span className="font-display block">
                 {/* NBSP before the trailing slash — a breakable space let the
@@ -35,6 +39,9 @@ export default function Hero({ t }) {
                 {lead.join(' / ')}{' /'}
               </span>
             )}
+            {/* The spans are display:block, so this space is invisible — it
+                only keeps the H1's text from reading "cocktails /community". */}
+            {lead.length > 0 && ' '}
             <span className="font-display-bold block">{slam}</span>
           </h1>
           <p className="mt-6 text-ink font-body text-lg leading-relaxed">

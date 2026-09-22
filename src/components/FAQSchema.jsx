@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
 /**
- * FAQSchema — emits a JSON-LD FAQPage from the current language's infoItems.
+ * FAQSchema — emits a JSON-LD FAQPage from the Q&A list the caller builds
+ * (App.jsx buildFaq — full answers from the current language's locale).
  * Lets Google surface the Q&A directly in search results. Must live inside a
  * <Route> child so Puppeteer captures it in pre-rendered HTML.
  *
@@ -32,7 +33,8 @@ export default function FAQSchema({ items, id = 'faq-schema' }) {
       tag.type = 'application/ld+json';
       document.head.appendChild(tag);
     }
-    tag.textContent = JSON.stringify(schema);
+    // '<' escaped so no answer text can close the <script> in baked HTML.
+    tag.textContent = JSON.stringify(schema).replace(/</g, '\\u003c');
 
     return () => {
       // Cleaning up on unmount keeps stale tags out of the head when the

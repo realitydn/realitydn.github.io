@@ -1,16 +1,44 @@
-# Cache-Control policy for the site.
+# Response headers for the site (Cloudflare Pages `_headers`).
 #
 # Why this file exists
 # --------------------
 # Cloudflare Pages honors a `_headers` file at the site root. It lives in
 # public/ so Vite copies it verbatim into dist/.
 #
+# How rules combine (read before adding one)
+# ------------------------------------------
+# A request inherits the headers of EVERY rule whose path matches — they are
+# not first-match. A header set by two matching rules is joined with a comma,
+# which is how /assets/* used to ship
+#   Cache-Control: public, max-age=31536000, immutable, public, max-age=0, must-revalidate
+# So the catch-all /* below deliberately sets NO Cache-Control: HTML gets
+# Pages' own default (public, max-age=0, must-revalidate — always revalidate,
+# so pre-rendered pages update on deploy), and each specific block below is
+# the only rule that sets Cache-Control for its paths. Keep it that way: add
+# Cache-Control to specific paths only.
+#
 # Strategy
 # --------
 # Hashed build assets (JS / CSS emitted by Vite into /assets/) are immutable —
 # the content hash changes when the contents change, so we cache them forever.
-# Static assets with stable filenames (images, fonts, PDFs) get a day of CDN
-# caching. HTML is served fresh so pre-rendered content updates propagate.
+# Static assets with stable filenames (images, PDFs) get a day of caching.
+# Internal tools revalidate on every load.
+
+# Every response: security headers. HSTS without includeSubDomains — not
+# every realitydn.com subdomain is known to be HTTPS-only.
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# The pages.dev hostnames (production alias + per-deploy previews) duplicate
+# realitydn.com — keep them out of every index.
+https://realitydn.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
+https://:deployment.realitydn.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
 
 # Immutable hashed build output — cache forever.
 /assets/*
@@ -25,7 +53,7 @@
 /*.pdf
   Cache-Control: public, max-age=86400, must-revalidate
 
-# Fonts and favicons — rarely change. One year, but allow revalidation.
+# Favicons — rarely change. A week.
 /favicon.ico
   Cache-Control: public, max-age=604800
 /favicon.svg
@@ -40,18 +68,38 @@
   X-Robots-Tag: noindex, nofollow, noarchive
   Cache-Control: public, max-age=0, must-revalidate
 
-# Sitemap + robots + llms.txt — check every hour so updates propagate quickly.
+# Internal editors and their shared kit (Poster / Print / Schedule Studio,
+# event report, tokens). Not for search; and their un-hashed .js/.css must
+# revalidate on every load so a deploy is picked up immediately.
+/studio/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/print/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/schedule/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/event-report/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/tokens/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/studio-shared/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+
+# Build-time copy of the events feed — data for the page, not a document.
+/feed-snapshot.json
+  X-Robots-Tag: noindex, nofollow
+
+# Sitemap + robots + llms files — check every hour so updates propagate quickly.
 /sitemap.xml
   Cache-Control: public, max-age=3600
 /robots.txt
   Cache-Control: public, max-age=3600
 /llms.txt
   Cache-Control: public, max-age=3600
-
-# Everything else (HTML). Don't cache — pre-rendered HTML must stay current.
-/*
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Frame-Options: SAMEORIGIN
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+/llms-full.txt
+  Cache-Control: public, max-age=3600

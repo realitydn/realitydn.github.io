@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Calendar from "./components/Calendar";
@@ -15,8 +15,10 @@ import EventsSchema from "./components/EventsSchema";
 import MenuSchema from "./components/MenuSchema";
 import HostGuide from "./pages/HostGuide";
 import EventGuidelines from "./pages/EventGuidelines";
+import NotFound from "./pages/NotFound";
 import { STR } from "./data/translations";
-import { LANGS, pathFor } from "./data/languages";
+import { LANGS, langByCode, langFromPath, pathFor, routeFor } from "./data/languages";
+import { buildFaq } from "./data/faq";
 import useFeed from "./hooks/useFeed";
 import useHashLanding from "./hooks/useHashLanding";
 
@@ -39,10 +41,15 @@ function makeT(lang) {
 // Per-page SEO strings live in each locale's `seo` block (locales/*.js).
 const seoOf = (lang) => STR[lang].seo || STR.EN.seo;
 
+const SITE = 'https://realitydn.com';
+
 function HomePage({ lang }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = makeT(lang);
   const seo = seoOf(lang);
+  // Memoised per language: FAQSchema re-emits its tag whenever `items`
+  // changes identity, so a fresh array every render would churn the <head>.
+  const faq = useMemo(() => buildFaq(makeT(lang), lang), [lang]);
   // Deep links (/#proposal from the app, /#events, /#menus…) land where they
   // point, and stay there once the feed has arrived. useFeed here is the
   // same shared load Calendar/EventsSchema use — no extra fetch.
@@ -52,11 +59,7 @@ function HomePage({ lang }) {
   return (
     <div className="min-h-screen">
       <SEO lang={lang} title={seo.homeTitle} description={seo.homeDescription} />
-      <FAQSchema items={[
-        { q: t.use('infoHost.welcomeTitle'), a: t.use('infoHost.welcomeBody') },
-        { q: t.use('infoHost.rulesTitle'), a: t.use('infoHost.rules')[0] },
-        { q: t.use('infoHost.hostTitle'), a: t.use('infoHost.hostIntro') },
-      ]} />
+      <FAQSchema items={faq} />
       <MenuSchema lang={lang} />
       <EventsSchema lang={lang} />
       {/* Skip link — first focusable element so keyboard users can jump past
@@ -94,14 +97,16 @@ export default function App() {
           prefix (/vn, /ru, /uk, /ko, /ja). See data/languages.js. */}
       {LANGS.map(({ code }) => (
         <React.Fragment key={code}>
-          <Route path={pathFor(code, '/')} element={<HomePage lang={code} />} />
-          <Route path={pathFor(code, '/event-guidelines')} element={<EventGuidelinesRoute lang={code} />} />
-          <Route path={pathFor(code, '/host-guide')} element={<HostGuideRoute lang={code} />} />
+          <Route path={routeFor(code, '/')} element={<HomePage lang={code} />} />
+          <Route path={routeFor(code, '/event-guidelines')} element={<EventGuidelinesRoute lang={code} />} />
+          <Route path={routeFor(code, '/host-guide')} element={<HostGuideRoute lang={code} />} />
         </React.Fragment>
       ))}
 
-      {/* Any unknown path → home. */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Any unknown path → a real 404 page (prerendered to dist/404.html,
+          which Cloudflare Pages serves with a 404 status). Redirecting to
+          home made every typo a soft-404 duplicate of the homepage. */}
+      <Route path="*" element={<NotFoundRoute />} />
     </Routes>
   );
 }
@@ -112,6 +117,7 @@ function EventGuidelinesRoute({ lang }) {
   return (
     <>
       <SEO lang={lang} title={seo.guidelinesTitle} description={seo.guidelinesDescription} />
+      <GuidelinesSchema lang={lang} title={seo.guidelinesTitle} description={seo.guidelinesDescription} />
       <EventGuidelines lang={lang} t={t} />
     </>
   );
@@ -125,6 +131,67 @@ function HostGuideRoute({ lang }) {
     <>
       <SEO lang={lang} title={seo.hostGuideTitle} description={seo.hostGuideDescription} noindex />
       <HostGuide lang={lang} t={t} />
+    </>
+  );
+}
+
+// WebPage + BreadcrumbList JSON-LD for the Event Guidelines pages (Home ›
+// Event Guidelines), same imperative upsert/cleanup pattern as FAQSchema.
+function GuidelinesSchema({ lang, title, description, id = 'guidelines-schema' }) {
+  useEffect(() => {
+    const home = SITE + pathFor(lang, '/');
+    const url = SITE + pathFor(lang, '/event-guidelines');
+    const schema = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'WebPage',
+          '@id': url + '#webpage',
+          url,
+          name: title,
+          description,
+          inLanguage: langByCode(lang).iso,
+          isPartOf: { '@id': SITE + '/#website' },
+          about: { '@id': SITE + '/#business' },
+          breadcrumb: { '@id': url + '#breadcrumb' },
+        },
+        {
+          '@type': 'BreadcrumbList',
+          '@id': url + '#breadcrumb',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'REALITY', item: home },
+            { '@type': 'ListItem', position: 2, name: title, item: url },
+          ],
+        },
+      ],
+    };
+    let tag = document.getElementById(id);
+    if (!tag) {
+      tag = document.createElement('script');
+      tag.id = id;
+      tag.type = 'application/ld+json';
+      document.head.appendChild(tag);
+    }
+    tag.textContent = JSON.stringify(schema).replace(/</g, '\\u003c');
+    return () => {
+      const existing = document.getElementById(id);
+      if (existing) existing.remove();
+    };
+  }, [lang, title, description, id]);
+  return null;
+}
+
+// Unknown paths. The language comes from the prefix (/vn/typo → Vietnamese),
+// EN otherwise. noindex + no canonical/hreflang via <SEO notFound>.
+function NotFoundRoute() {
+  const { pathname } = useLocation();
+  const lang = langFromPath(pathname);
+  const t = makeT(lang);
+  const seo = seoOf(lang);
+  return (
+    <>
+      <SEO lang={lang} title={seo.notFoundTitle || STR.EN.seo.notFoundTitle} notFound />
+      <NotFound lang={lang} t={t} />
     </>
   );
 }

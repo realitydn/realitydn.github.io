@@ -9,6 +9,11 @@ import { STR } from '../data/translations';
  * language, so the URL stays the source of truth and crawlers see six
  * indexable pages. Native names in the list; the trigger shows the current
  * two-letter label.
+ *
+ * The <nav> is always rendered and only hidden (display:none) while closed:
+ * mounting it on open meant the prerendered HTML carried no links to the
+ * other languages at all, so crawlers couldn't discover them from the page.
+ * Links keep the current #hash, so switching language mid-page stays put.
  */
 export default function LangMenu({ lang, compact = false }) {
   const [open, setOpen] = useState(false);
@@ -56,32 +61,32 @@ export default function LangMenu({ lang, compact = false }) {
         </svg>
       </button>
 
-      {open && (
-        <nav
-          aria-label={menuLabel}
-          className="absolute right-0 top-full mt-2 z-50 min-w-[164px] bg-cream border-2 border-ink stamp-in"
-          style={{ boxShadow: 'var(--sh-light)' }}
-        >
-          {LANGS.map((l) => {
-            const active = l.code === lang;
-            return (
-              <Link
-                key={l.code}
-                to={pathFor(l.code, base)}
-                hrefLang={l.iso}
-                lang={l.iso}
-                aria-current={active ? 'page' : undefined}
-                className={`flex items-baseline gap-2 px-4 py-2.5 font-title text-xs tracking-[0.08em] transition-colors ${
-                  active ? 'bg-ink text-cream' : 'text-ink hover:bg-ink/5'
-                }`}
-              >
-                <span className="w-6 opacity-60">{l.label}</span>
-                <span>{l.native}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      <nav
+        aria-label={menuLabel}
+        className={`absolute right-0 top-full mt-2 z-50 min-w-[164px] bg-cream border-2 border-ink stamp-in ${
+          open ? '' : 'hidden'
+        }`}
+        style={{ boxShadow: 'var(--sh-light)' }}
+      >
+        {LANGS.map((l) => {
+          const active = l.code === lang;
+          return (
+            <Link
+              key={l.code}
+              to={{ pathname: pathFor(l.code, base), hash: location.hash }}
+              hrefLang={l.iso}
+              lang={l.iso}
+              aria-current={active ? 'page' : undefined}
+              className={`flex items-baseline gap-2 px-4 py-2.5 font-title text-xs tracking-[0.08em] transition-colors ${
+                active ? 'bg-ink text-cream' : 'text-ink hover:bg-ink/5'
+              }`}
+            >
+              <span className="w-6 opacity-60">{l.label}</span>
+              <span>{l.native}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

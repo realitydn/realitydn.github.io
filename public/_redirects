@@ -1,14 +1,25 @@
-# SPA fallback for client-side routing.
+# Redirects (Cloudflare Pages `_redirects`, copied verbatim into dist/).
 #
-# Why this exists
-# ---------------
-# When a user hits a deep URL (e.g. /event-guidelines, /vn/host-guide) we want
-# the host to serve the pre-rendered HTML for that route if it exists, and
-# otherwise fall through to index.html so React Router can handle it.
+# No SPA catch-all any more. Every real page is prerendered to its own
+# index.html (prerender.mjs), and dist/404.html is the prerendered NotFound
+# page — Cloudflare Pages serves it with a real 404 status for any path
+# without a file. The old `/* /index.html 200` turned every typo into a
+# 200 copy of the English homepage (a soft 404). Static tool dirs (/studio/,
+# /print/, /schedule/, /event-report/, /sidework-points/) are real files and
+# are served before any rule here.
 #
-# Cloudflare Pages honors a `_redirects` file. Pre-rendered routes ship real
-# HTML at /event-guidelines/index.html, /vn/index.html, etc., so those are
-# served directly — this catch-all only kicks in for routes the crawler-facing
-# prerender didn't cover (mostly fat-finger URLs).
+# Canonical URLs end in a slash (/vn/, /event-guidelines/); Pages adds that
+# itself with a 308, so no rule is needed for it.
 
-/*    /index.html   200
+# Old / guessable language prefixes → the real ones. /vn is the Vietnamese
+# prefix (ISO "vi" is only used for hreflang); EN lives at the root.
+/vi            /vn/          301
+/vi/*          /vn/:splat    301
+/en            /             301
+/en/*          /:splat       301
+
+# Guessable shortcuts → the live app, where events and the menu actually live.
+/events        https://app.realitydn.com/        301
+/events/       https://app.realitydn.com/        301
+/menu          https://app.realitydn.com/menu    301
+/menu/         https://app.realitydn.com/menu    301

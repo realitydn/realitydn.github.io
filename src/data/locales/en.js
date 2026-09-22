@@ -145,7 +145,7 @@ export default {
   "menus": "Menus",
   "downloadPdf": "Download full drinks PDF",
   "findUs": "Find us",
-  "hours": "Open daily · 11:00 – 2:00",
+  "hours": "Open daily · 11:00 – 02:00",
   "darkTitle": "Come find out.",
   "galleryTitle": "Gallery",
   "joinWA": "Join our WhatsApp Community",
@@ -160,7 +160,11 @@ export default {
     "addToCalendar": "Add our calendar to yours",
     "details": "Details",
     "today": "Today",
-    "tomorrow": "Tomorrow"
+    "tomorrow": "Tomorrow",
+    "tonight": "Tonight",
+    "posterAlt": "{title} — poster",
+    "skip": "Skip the rest of the calendar",
+    "fallbackTitle": "REALITY event"
   },
   "eventOverlay": {
     "openInApp": "Open in the REALITY app",
@@ -397,15 +401,79 @@ export default {
   "skipLink": "Skip to content",
   "langMenuLabel": "Language",
   "backHome": "Back to REALITY home",
+  "a11y": {
+    "home": "REALITY home",
+    "menu": "Site menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "whatsapp": "Join our WhatsApp community",
+    "instagram": "Follow us on Instagram",
+    "facebook": "Follow us on Facebook",
+    "mapTitle": "Map to REALITY, 86 Mai Thúc Lân",
+    "openImage": "Open photo",
+    "closeImage": "Close photo",
+    "galleryImage": "REALITY — a photo from the space",
+    "prevSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "goToSlide": "Go to slide {n}",
+    "pauseSlides": "Pause slideshow",
+    "playSlides": "Play slideshow",
+    "eventTypes": "Type of event",
+    "room": "Room"
+  },
+  "footer": {
+    "stayInTouch": "Stay in touch",
+    "joinCommunity": "Join our community",
+    "scanWA": "Scan to join WhatsApp",
+    "qrAlt": "QR code: join the REALITY WhatsApp community"
+  },
+  "visit": {
+    "directions": "Directions",
+    "openInMaps": "Open 86 Mai Thúc Lân in Google Maps"
+  },
+  "menuPriceNote": "Prices in thousands of VND — 150k = 150,000 ₫",
+  "formErrors": {
+    "required": "This field is required.",
+    "email": "Please enter a valid email address.",
+    "url": "Please enter a valid link, like https://yourwebsite.com",
+    "pickOne": "Please choose at least one option.",
+    "pickOption": "Please choose an option.",
+    "timeout": "This is taking too long. Check your connection and try again — your answers are saved."
+  },
+  "formDraft": {
+    "restored": "We restored your unfinished proposal.",
+    "clear": "Start over"
+  },
   "theme": {
     "group": "Theme",
     "day": "Day",
     "night": "Night"
   },
+  "heroPrefix": "REALITY Đà Nẵng —",
+  "faq": {
+    "whatQ": "What events are on at REALITY?",
+    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The live, always-current calendar is in the REALITY app:",
+    "freeQ": "Are events at REALITY free?",
+    "freeA": "Most events are free to attend — please buy a drink to support the space. Some events have an entry fee or ask for pre-registration; that's marked on the weekly schedule, on the event posters and on each event in the REALITY app.",
+    "hoursQ": "What are REALITY's opening hours?",
+    "hoursA": "REALITY is open every day, 11:00 – 2:00 (11 AM to 2 AM), weekends included. The third-floor rooftop patio closes at midnight.",
+    "whereQ": "Where is REALITY in Đà Nẵng?",
+    "whereA": "86 Mai Thúc Lân, Đà Nẵng, Việt Nam — in the Mỹ An area near Mỹ Khê beach. Three floors: a ground-floor café and lounge, a second-floor event space and lounge, and a third-floor rooftop patio.",
+    "hostA": "Send us your idea through the Event Proposal Form on the homepage (Info → Host an event). For public community events we help reserve and set up the space and equipment and help promote the event; we just ask that guests buy a drink. A public event with an entry fee either rents the space or splits entry 50/50 with REALITY. Private or for-profit events that reserve a whole room pay an hourly rental fee. Please read the Event Guidelines first:",
+    "rentQ": "Can I rent a room at REALITY for a private event?",
+    "rentA": "Yes. Reserving a whole room, or presenting a commercial product or service, carries an hourly rental fee based on the room and time of day. Rates per hour, in thousands of VND (₫):",
+    "petsQ": "Can I bring my dog or pet to REALITY?"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This page doesn't exist — or it moved. The rest of REALITY is right where you left it.",
+    "langs": "Other languages"
+  },
   "seo": {
-    "homeTitle": "REALITY — coffee / cocktails / community",
-    "homeDescription": "REALITY — coffee, cocktails, and community at 86 Mai Thúc Lân, Đà Nẵng. Events, live music, open mics, art shows, and the easiest place in the city to make friends. Open daily 11 AM – 2 AM.",
-    "guidelinesTitle": "Event & Branding Guidelines — REALITY",
+    "homeTitle": "REALITY Đà Nẵng — Café, Cocktail Bar & Community Space",
+    "homeDescription": "Café by day, cocktail bar by night and community space in Đà Nẵng. Live music, pub quiz, language exchange, open mic & board games. Open daily 11:00–2:00.",
+    "notFoundTitle": "Page not found — REALITY Đà Nẵng",
+    "guidelinesTitle": "Event & Branding Guidelines — REALITY Đà Nẵng",
     "guidelinesDescription": "Guidelines for hosting at REALITY Đà Nẵng — general rules, public and private events, and our branding guidelines.",
     "hostGuideTitle": "Host Guide — REALITY",
     "hostGuideDescription": "A guide to hosting well at REALITY Đà Nẵng — coming soon."

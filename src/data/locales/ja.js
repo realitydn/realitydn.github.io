@@ -143,7 +143,7 @@ export default {
   "menus": "メニュー",
   "downloadPdf": "ドリンクメニューPDFをダウンロード",
   "findUs": "場所はこちら",
-  "hours": "毎日営業 · 11:00 – 2:00",
+  "hours": "毎日営業 · 11:00 – 02:00",
   "darkTitle": "来て、たしかめて。",
   "galleryTitle": "ギャラリー",
   "joinWA": "WhatsAppコミュニティに参加する",
@@ -158,7 +158,11 @@ export default {
     "addToCalendar": "REALITYのカレンダーを自分のカレンダーに追加",
     "details": "詳細",
     "today": "今日",
-    "tomorrow": "明日"
+    "tomorrow": "明日",
+    "tonight": "今夜",
+    "posterAlt": "{title} — ポスター",
+    "skip": "カレンダーの残りをスキップ",
+    "fallbackTitle": "REALITYのイベント"
   },
   "eventOverlay": {
     "openInApp": "REALITYアプリで開く",
@@ -395,15 +399,79 @@ export default {
   "skipLink": "本文へスキップ",
   "langMenuLabel": "言語",
   "backHome": "REALITYのホームに戻る",
+  "a11y": {
+    "home": "REALITY ホーム",
+    "menu": "サイトメニュー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
+    "whatsapp": "WhatsAppコミュニティに参加",
+    "instagram": "Instagramでフォロー",
+    "facebook": "Facebookでフォロー",
+    "mapTitle": "REALITYの地図(86 Mai Thúc Lân)",
+    "openImage": "写真を開く",
+    "closeImage": "写真を閉じる",
+    "galleryImage": "REALITY — 店内の写真",
+    "prevSlide": "前のスライド",
+    "nextSlide": "次のスライド",
+    "goToSlide": "スライド{n}へ移動",
+    "pauseSlides": "スライドショーを一時停止",
+    "playSlides": "スライドショーを再生",
+    "eventTypes": "イベントの種類",
+    "room": "スペース"
+  },
+  "footer": {
+    "stayInTouch": "つながろう",
+    "joinCommunity": "コミュニティに参加",
+    "scanWA": "スキャンしてWhatsAppに参加",
+    "qrAlt": "QRコード:REALITYのWhatsAppコミュニティに参加"
+  },
+  "visit": {
+    "directions": "ルート案内",
+    "openInMaps": "Googleマップで86 Mai Thúc Lânを開く"
+  },
+  "menuPriceNote": "価格は千ドン単位です — 150k = 150,000 ₫",
+  "formErrors": {
+    "required": "この項目は必須です。",
+    "email": "有効なメールアドレスを入力してください。",
+    "url": "有効なリンクを入力してください(例:https://yourwebsite.com)",
+    "pickOne": "少なくとも1つ選んでください。",
+    "pickOption": "1つ選んでください。",
+    "timeout": "送信に時間がかかりすぎています。接続を確認してもう一度お試しください — 入力内容は保存されています。"
+  },
+  "formDraft": {
+    "restored": "書きかけの提案を復元しました。",
+    "clear": "最初からやり直す"
+  },
   "theme": {
     "group": "テーマ",
     "day": "昼",
     "night": "夜"
   },
+  "heroPrefix": "REALITY ダナン —",
+  "faq": {
+    "whatQ": "REALITYではどんなイベントがありますか?",
+    "whatA": "ほぼ毎日、昼も夜も何かしら開催しています:ライブ音楽、オープンマイクや屋上でのアコースティックジャム、パブクイズ、ボードゲームナイト、チェスナイト、映画クラブと短編映画の上映、カラオケ、言語交換とカルチャークラブ(ベトナム人と外国人の交流会、フランス語・中国語クラブ)、ダンスクラス、トーク、ワークショップ、アート展示など。最新のスケジュールはREALITYアプリで確認できます:",
+    "freeQ": "REALITYのイベントは無料ですか?",
+    "freeA": "ほとんどのイベントは参加無料です。スペースを応援するためにドリンクを一杯注文してください。入場料や事前登録が必要なイベントもあり、週間スケジュール、ポスター、REALITYアプリの各イベントページに明記しています。",
+    "hoursQ": "REALITYの営業時間は?",
+    "hoursA": "REALITYは週末も含め毎日11:00から深夜2:00まで営業しています。3階の屋上パティオは深夜0時に閉まります。",
+    "whereQ": "REALITYはダナンのどこにありますか?",
+    "whereA": "86 Mai Thúc Lân, ダナン, ベトナム — ミーケービーチ(Mỹ Khê)近くのミーアン(Mỹ An)エリアです。1階はカフェとラウンジ、2階はイベントスペースとラウンジ、3階は屋上パティオの3フロアです。",
+    "hostA": "ホームページのイベント提案フォーム(インフォ → イベントを開く)からアイデアを送ってください。公開のコミュニティイベントなら、スペースの確保やセッティング、機材の準備、告知までお手伝いします。お客さんにドリンクを注文してもらうことだけお願いしています。入場料のある公開イベントは、スペースを借りるか、入場収入をREALITYと50/50で分けます。部屋を丸ごと貸し切る非公開・営利目的のイベントは、時間単位の利用料がかかります。まずはイベントガイドラインをお読みください:",
+    "rentQ": "プライベートイベントのためにREALITYの部屋を借りられますか?",
+    "rentA": "はい。部屋を丸ごと貸し切る場合や、商品・サービスを紹介する場合は、部屋と時間帯に応じた時間単位の利用料がかかります。1時間あたりの料金(単位:千ドン、₫):",
+    "petsQ": "REALITYに犬やペットを連れて行ってもいいですか?"
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "body": "このページは存在しないか、移動しました。REALITYのほかの場所はそのままです。",
+    "langs": "ほかの言語"
+  },
   "seo": {
-    "homeTitle": "REALITY — コーヒー / カクテル / コミュニティ",
-    "homeDescription": "REALITY — ダナン市 86 Mai Thúc Lân にあるコーヒー・カクテル・コミュニティの空間。イベント、ライブ音楽、オープンマイク、アート展示、そして街でいちばん友だちを作りやすい場所。毎日 11:00 – 2:00 営業。",
-    "guidelinesTitle": "イベント&ブランドガイドライン — REALITY",
+    "homeTitle": "REALITY ダナン — カフェ・カクテルバー・コミュニティスペース",
+    "homeDescription": "ダナンの昼はカフェ、夜はカクテルバーになるコミュニティスペース。ライブ音楽、パブクイズ、言語交換、オープンマイク、ボードゲームなどのイベントを開催。毎日11:00–2:00営業。",
+    "notFoundTitle": "ページが見つかりません — REALITY ダナン",
+    "guidelinesTitle": "イベント&ブランドガイドライン — REALITY ダナン",
     "guidelinesDescription": "REALITY(ダナン)でイベントを開くためのガイドライン — 基本ルール、公開・貸切イベント、ブランドガイドラインについて。",
     "hostGuideTitle": "ホストガイド — REALITY",
     "hostGuideDescription": "REALITY(ダナン)で上手にイベントを開くためのガイド — 近日公開。"

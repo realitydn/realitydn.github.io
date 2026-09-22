@@ -143,7 +143,7 @@ export default {
   "menus": "메뉴",
   "downloadPdf": "전체 음료 메뉴 PDF 다운로드",
   "findUs": "오시는 길",
-  "hours": "매일 영업 · 11:00 – 2:00",
+  "hours": "매일 영업 · 11:00 – 02:00",
   "darkTitle": "직접 와서 확인해 보세요.",
   "galleryTitle": "갤러리",
   "joinWA": "WhatsApp 커뮤니티 들어오기",
@@ -158,7 +158,11 @@ export default {
     "addToCalendar": "저희 캘린더를 내 캘린더에 추가",
     "details": "자세히",
     "today": "오늘",
-    "tomorrow": "내일"
+    "tomorrow": "내일",
+    "tonight": "오늘 밤",
+    "posterAlt": "{title} — 포스터",
+    "skip": "나머지 일정 건너뛰기",
+    "fallbackTitle": "REALITY 이벤트"
   },
   "eventOverlay": {
     "openInApp": "REALITY 앱에서 열기",
@@ -395,15 +399,79 @@ export default {
   "skipLink": "본문으로 건너뛰기",
   "langMenuLabel": "언어",
   "backHome": "REALITY 홈으로 돌아가기",
+  "a11y": {
+    "home": "REALITY 홈",
+    "menu": "사이트 메뉴",
+    "openMenu": "메뉴 열기",
+    "closeMenu": "메뉴 닫기",
+    "whatsapp": "WhatsApp 커뮤니티 참여하기",
+    "instagram": "Instagram에서 팔로우하기",
+    "facebook": "Facebook에서 팔로우하기",
+    "mapTitle": "REALITY 지도, 86 Mai Thúc Lân",
+    "openImage": "사진 열기",
+    "closeImage": "사진 닫기",
+    "galleryImage": "REALITY — 공간 사진",
+    "prevSlide": "이전 슬라이드",
+    "nextSlide": "다음 슬라이드",
+    "goToSlide": "{n}번 슬라이드로 이동",
+    "pauseSlides": "슬라이드쇼 일시정지",
+    "playSlides": "슬라이드쇼 재생",
+    "eventTypes": "이벤트 유형",
+    "room": "공간"
+  },
+  "footer": {
+    "stayInTouch": "소식 받기",
+    "joinCommunity": "커뮤니티 참여",
+    "scanWA": "스캔해서 WhatsApp 참여하기",
+    "qrAlt": "QR 코드: REALITY WhatsApp 커뮤니티 참여"
+  },
+  "visit": {
+    "directions": "길찾기",
+    "openInMaps": "Google 지도에서 86 Mai Thúc Lân 열기"
+  },
+  "menuPriceNote": "가격은 천 동 단위예요 — 150k = 150,000 ₫",
+  "formErrors": {
+    "required": "필수 항목이에요.",
+    "email": "올바른 이메일 주소를 입력해 주세요.",
+    "url": "올바른 링크를 입력해 주세요. 예: https://yourwebsite.com",
+    "pickOne": "하나 이상 선택해 주세요.",
+    "pickOption": "하나를 선택해 주세요.",
+    "timeout": "전송이 너무 오래 걸려요. 연결을 확인하고 다시 시도해 주세요 — 입력한 내용은 저장되어 있어요."
+  },
+  "formDraft": {
+    "restored": "작성 중이던 제안서를 복원했어요.",
+    "clear": "처음부터 다시"
+  },
   "theme": {
     "group": "테마",
     "day": "낮",
     "night": "밤"
   },
+  "heroPrefix": "REALITY 다낭 —",
+  "faq": {
+    "whatQ": "REALITY에서는 어떤 이벤트가 열리나요?",
+    "whatA": "거의 매일 낮과 밤에 뭔가가 열려요: 라이브 음악, 오픈 마이크와 루프탑 어쿠스틱 잼, 펍 퀴즈, 보드게임 나이트, 체스 나이트, 필름 클럽과 단편영화 상영, 노래방, 언어 교환과 문화 클럽(베트남인·외국인 교류 모임, 프랑스어·중국어 클럽), 댄스 클래스, 강연, 워크숍, 그리고 아트 전시. 항상 최신인 일정은 REALITY 앱에서 볼 수 있어요:",
+    "freeQ": "REALITY 이벤트는 무료인가요?",
+    "freeA": "대부분의 이벤트는 무료예요. 공간을 응원하는 의미로 음료 한 잔 주문해 주세요. 입장료가 있거나 사전 등록이 필요한 이벤트도 있는데, 주간 일정표와 포스터, 그리고 REALITY 앱의 각 이벤트 페이지에 표시해 둬요.",
+    "hoursQ": "REALITY 영업시간은 어떻게 되나요?",
+    "hoursA": "REALITY는 주말 포함 매일 11:00부터 새벽 2:00까지 영업해요. 3층 루프탑 파티오는 자정에 닫아요.",
+    "whereQ": "REALITY는 다낭 어디에 있나요?",
+    "whereA": "86 Mai Thúc Lân, 다낭, 베트남 — 미케 해변(Mỹ Khê) 근처 미안(Mỹ An) 지역이에요. 1층 카페와 라운지, 2층 이벤트 공간과 라운지, 3층 루프탑 파티오까지 세 개 층이 있어요.",
+    "hostA": "홈페이지의 이벤트 제안 양식(안내 → 이벤트 열기)으로 아이디어를 보내 주세요. 공개 커뮤니티 이벤트라면 공간 예약과 세팅, 장비 준비, 홍보까지 함께 도와드려요. 손님들이 음료를 주문해 주시기만 부탁드려요. 입장료가 있는 공개 이벤트는 공간을 대관하거나 입장 수익을 REALITY와 50/50으로 나눠요. 방 전체를 예약하는 비공개·영리 이벤트는 시간당 대관료가 있어요. 먼저 이벤트 가이드라인을 읽어 주세요:",
+    "rentQ": "비공개 행사를 위해 REALITY 공간을 대관할 수 있나요?",
+    "rentA": "네. 방 전체를 예약하거나 상업적인 상품·서비스를 소개하는 경우, 방과 시간대에 따라 시간당 대관료가 있어요. 시간당 요금(단위: 천 동, ₫):",
+    "petsQ": "REALITY에 강아지나 반려동물을 데려가도 되나요?"
+  },
+  "notFound": {
+    "title": "페이지를 찾을 수 없어요",
+    "body": "이 페이지는 없거나 다른 곳으로 옮겨졌어요. 나머지 REALITY는 그대로 있어요.",
+    "langs": "다른 언어"
+  },
   "seo": {
-    "homeTitle": "REALITY — 커피 / 칵테일 / 커뮤니티",
-    "homeDescription": "REALITY — 다낭 86 Mai Thúc Lân의 커피, 칵테일, 커뮤니티 공간. 이벤트, 라이브 음악, 오픈 마이크, 아트 전시, 그리고 다낭에서 친구 사귀기 가장 쉬운 곳. 매일 오전 11시부터 새벽 2시까지 영업.",
-    "guidelinesTitle": "이벤트 & 브랜드 가이드라인 — REALITY",
+    "homeTitle": "REALITY 다낭 — 카페, 칵테일 바 & 커뮤니티 공간",
+    "homeDescription": "다낭 86 Mai Thúc Lân의 낮에는 카페, 밤에는 칵테일 바인 커뮤니티 공간. 라이브 음악, 펍 퀴즈, 언어 교환, 오픈 마이크, 보드게임 이벤트. 매일 11:00–2:00 영업.",
+    "notFoundTitle": "페이지를 찾을 수 없어요 — REALITY 다낭",
+    "guidelinesTitle": "이벤트 & 브랜드 가이드라인 — REALITY 다낭",
     "guidelinesDescription": "REALITY 다낭에서 이벤트를 열기 위한 가이드라인 — 기본 규칙, 공개·대관 이벤트, 브랜드 가이드라인 안내.",
     "hostGuideTitle": "호스트 가이드 — REALITY",
     "hostGuideDescription": "REALITY 다낭에서 이벤트를 잘 여는 법을 담은 가이드 — 곧 공개돼요."

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { MENU } from '../data/menu';
+import { langByCode, pathFor } from '../data/languages';
 
 /**
  * MenuSchema — emits a schema.org Menu (JSON-LD) generated from the same
@@ -7,38 +8,57 @@ import { MENU } from '../data/menu';
  * drift from what customers actually see. Pre-rendering captures it into the
  * static HTML for crawlers; search engines and LLMs both read it.
  *
+ * Every language reads its own fields: menu.js carries name/tag/desc/label
+ * with an EN/VI/RU/UK/KO/JA suffix, EN canonical. The suffix is the LANGS
+ * code except Vietnamese, whose fields are *VI (its UI code is 'VN').
+ * The @id is shared with the LocalBusiness `hasMenu` in index.html.
+ *
  * Prices in menu.js are thousands of VND ('95' → ₫95,000).
  */
+const SITE = 'https://realitydn.com';
+const MENU_ID = `${SITE}/#drinks-menu`;
+
+const NAMES = {
+  EN: 'REALITY Drinks Menu',
+  VN: 'Menu đồ uống REALITY',
+  RU: 'Меню напитков REALITY',
+  UK: 'Меню напоїв REALITY',
+  KO: 'REALITY 음료 메뉴',
+  JA: 'REALITY ドリンクメニュー',
+};
+
 export default function MenuSchema({ lang = 'EN', id = 'menu-schema' }) {
   useEffect(() => {
-    const vn = lang === 'VN';
+    const suffix = lang === 'VN' ? 'VI' : lang;
+    const pick = (obj, field) => obj[field + suffix] || obj[field + 'EN'];
+    const page = SITE + pathFor(lang, '/');
 
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'Menu',
-      '@id': 'https://realitydn.com/#drinks-menu',
-      name: vn ? 'Menu đồ uống REALITY' : 'REALITY Drinks Menu',
-      inLanguage: vn ? 'vi' : 'en',
-      url: 'https://realitydn.com/#menus',
-      mainEntityOfPage: 'https://realitydn.com/',
+      '@id': MENU_ID,
+      name: NAMES[lang] || NAMES.EN,
+      inLanguage: langByCode(lang).iso,
+      url: page + '#menus',
+      mainEntityOfPage: page,
       hasMenuSection: MENU.map((cat) => ({
         '@type': 'MenuSection',
-        name: vn ? cat.labelVI : cat.labelEN,
+        name: pick(cat, 'label'),
         hasMenuSection: cat.sections.map((section) => ({
           '@type': 'MenuSection',
-          name: vn ? section.labelVI : section.labelEN,
+          name: pick(section, 'label'),
           hasMenuItem: section.items.map((item) => {
             const entry = {
               '@type': 'MenuItem',
-              name: vn ? (item.nameVI || item.nameEN) : item.nameEN,
+              name: pick(item, 'name'),
             };
-            const desc = vn ? (item.descVI || item.descEN) : item.descEN;
+            const desc = pick(item, 'desc');
             if (desc) entry.description = desc;
             const price = Number(item.price);
             if (Number.isFinite(price) && price > 0) {
               entry.offers = {
                 '@type': 'Offer',
-                price: String(price * 1000),
+                price: price * 1000,
                 priceCurrency: 'VND',
               };
             }
@@ -55,7 +75,8 @@ export default function MenuSchema({ lang = 'EN', id = 'menu-schema' }) {
       tag.type = 'application/ld+json';
       document.head.appendChild(tag);
     }
-    tag.textContent = JSON.stringify(schema);
+    // '<' escaped so no menu text can close the <script> in baked HTML.
+    tag.textContent = JSON.stringify(schema).replace(/</g, '\\u003c');
 
     return () => {
       const existing = document.getElementById(id);

@@ -49,3 +49,9 @@ Thumbs.db
 # Claude Code git worktrees — transient; never commit (they land as bare
 # gitlinks with no .gitmodules and break checkout / Cloudflare Pages builds).
 .claude/worktrees/
+
+# Generated at prebuild by scripts/build-seo-files.mjs (dated + live events),
+# so tracking them would dirty the tree on every build. CI regenerates them.
+public/sitemap.xml
+public/llms.txt
+public/llms-full.txt

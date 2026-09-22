@@ -26,14 +26,41 @@ const PORT = 4173;
 // hreflang into <head> before Puppeteer captures.
 // /host-guide is still a stub, so noindex is injected at the component level;
 // we skip adding it to the sitemap but do pre-render it so links work.
+// Routes are the trailing-slash URLs the host actually serves (dist/vn/
+// index.html is /vn/; /vn 308s there) — the same form pathFor() emits.
 const LANG_PREFIXES = ['', '/vn', '/ru', '/uk', '/ko', '/ja'];
-const PAGES = ['', '/event-guidelines', '/host-guide'];
+const PAGES = ['/', '/event-guidelines/', '/host-guide/'];
 const ROUTES = LANG_PREFIXES.flatMap((prefix) =>
-  PAGES.map((page) => prefix + page || '/')
+  PAGES.map((page) => prefix + page)
+);
+const HOME_ROUTES = new Set(LANG_PREFIXES.map((prefix) => prefix + '/'));
+
+// The 404 page: any path no route matches renders <NotFound>; the capture is
+// written to dist/404.html, which Cloudflare Pages serves with a 404 status
+// for every path without a file (there is no SPA catch-all in _redirects).
+const NOT_FOUND_PROBE = '/__prerender-404__/';
+const ALL_ROUTES = [...ROUTES, NOT_FOUND_PROBE];
+
+// JSON-LD that belongs to the home pages only. The shell every route boots
+// from is pristine (see startServer), so these should never reach another
+// route — stripping them anyway is belt-and-braces against a regression.
+const HOME_ONLY_SCRIPT_IDS = ['faq-schema', 'menu-schema', 'events-schema'];
+const HOME_ONLY_RE = new RegExp(
+  `<script\\b[^>]*\\bid="(?:${HOME_ONLY_SCRIPT_IDS.join('|')})"[^>]*>[\\s\\S]*?</script>`,
+  'g'
 );
 
-// Simple static file server for the built dist/
-function startServer() {
+// No <noscript> fallback in shipped pages: the prerendered DOM IS the no-JS
+// content, and the old fallback added a second, English-only H1 to all six
+// locales. index.html no longer carries one; this keeps it that way.
+const NOSCRIPT_RE = /<noscript\b[^>]*>[\s\S]*?<\/noscript>/g;
+
+// Simple static file server for the built dist/.
+// `shell` is dist/index.html as Vite wrote it, read BEFORE any route is
+// captured. Previously the fallback re-read dist/index.html from disk — which
+// by then was the prerendered English homepage, so every later route booted
+// from its <head> (EN title, FAQ/Menu/Events JSON-LD) and kept the leftovers.
+function startServer(shell) {
   const mime = {
     '.html': 'text/html',
     '.js': 'application/javascript',
@@ -52,10 +79,15 @@ function startServer() {
 
   return new Promise((resolve) => {
     const server = createServer((req, res) => {
-      let filePath = join(DIST, req.url === '/' ? '/index.html' : req.url);
-      // SPA fallback — serve index.html for non-file routes
-      if (!existsSync(filePath) || !filePath.includes('.')) {
-        filePath = join(DIST, 'index.html');
+      const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+      const filePath = join(DIST, urlPath);
+      // SPA fallback — every route (and '/' itself) gets the pristine shell,
+      // never a file an earlier capture already overwrote.
+      const isFile = /\.[a-z0-9]+$/i.test(urlPath) && urlPath !== '/index.html';
+      if (!isFile || !existsSync(filePath)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(shell);
+        return;
       }
       try {
         const data = readFileSync(filePath);
@@ -71,10 +103,41 @@ function startServer() {
   });
 }
 
+// Inline feed seed for the home routes — the contract is documented at the top
+// of src/hooks/useFeed.js. main.jsx uses createRoot, so without a seed the
+// prerendered calendar is thrown away and flashes to the loading skeleton until
+// the live fetch lands. The seed lets the first client render already hold the
+// events. Descriptions are dropped (they're ~half the weight and only show in
+// the overlay; the live refresh fills them in a beat later) along with fields the
+// site never reads, and the window is 21 days, not the live fetch's 60: that's
+// every row a phone shows and more than the desktop pane's first view, and
+// the live refresh extends it. ~16KB gzipped vs ~45KB for the full window.
+// Built once from the same snapshot the capture itself renders from; null (no
+// seed) if the snapshot is unreadable.
+function buildFeedSeed() {
+  try {
+    const snap = JSON.parse(readFileSync(join(DIST, 'feed-snapshot.json'), 'utf-8'));
+    const now = Date.now();
+    const events = (snap.events || [])
+      .filter((e) => e.status === 'published'
+        && Date.parse(e.endsAt || e.startsAt) >= now - 3 * 3600e3
+        && Date.parse(e.startsAt) <= now + 21 * 86400e3)
+      .map(({ description_en, description_vi, posterStaleAt, updatedAt, ...rest }) => rest);
+    const seed = { version: snap.version, generatedAt: snap.generatedAt, venue: snap.venue, locations: snap.locations, events };
+    return '<script>window.__FEED__=' + JSON.stringify(seed).replace(/</g, '\\u003c') + ';</script>';
+  } catch (err) {
+    console.warn('  ! no inline feed seed — ' + err.message);
+    return null;
+  }
+}
+
 async function prerender() {
   console.log('\n🔍 Pre-rendering routes for SEO...\n');
 
-  const server = await startServer();
+  const feedSeed = buildFeedSeed();
+
+  const shell = readFileSync(join(DIST, 'index.html'));
+  const server = await startServer(shell);
   const browser = await launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -85,7 +148,7 @@ async function prerender() {
   // could cost the other fourteen.
   const failed = [];
 
-  for (const route of ROUTES) {
+  for (const route of ALL_ROUTES) {
     const url = `http://localhost:${PORT}${route}`;
     console.log(`  → Rendering ${route}`);
 
@@ -117,12 +180,17 @@ async function prerender() {
         // Wait a beat for any React effects to settle
         await new Promise((r) => setTimeout(r, 500));
 
-        const html = await page.content();
+        let html = (await page.content()).replace(NOSCRIPT_RE, '');
+        if (!HOME_ROUTES.has(route)) html = html.replace(HOME_ONLY_RE, '');
+        // Seed goes ahead of the module bundle so useFeed sees it on first render.
+        else if (feedSeed) html = html.replace(/<script type="module"/, (m) => feedSeed + m);
 
         // Write the rendered HTML to the right place in dist/
-        const outPath = route === '/'
-          ? join(DIST, 'index.html')
-          : join(DIST, route, 'index.html');
+        const outPath = route === NOT_FOUND_PROBE
+          ? join(DIST, '404.html')
+          : route === '/'
+            ? join(DIST, 'index.html')
+            : join(DIST, route, 'index.html');
 
         const outDir = dirname(outPath);
         if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
@@ -145,16 +213,16 @@ async function prerender() {
   server.close();
 
   if (failed.length) {
-    // Loud on purpose. A missing route does NOT 404: public/_redirects has a
-    // `/* /index.html 200` catch-all, so an unrendered /vn quietly serves the
-    // English homepage with a 200. Nothing alarms, nothing errors — the only
-    // symptom is crawlers indexing the wrong language. That silence is why
-    // this used to exit 0 and ship a partial site looking perfectly healthy.
-    console.error(`\n❌ ${failed.length} of ${ROUTES.length} routes did not pre-render:\n`);
+    // Loud on purpose. There is no SPA catch-all in _redirects any more, so
+    // an unrendered /vn/ ships as a 404 (or, if 404.html is the one missing,
+    // Cloudflare falls back to serving the English homepage for every
+    // unknown path). Either way a page silently drops out of the index —
+    // that silence is why this used to exit 0 and ship a partial site.
+    console.error(`\n❌ ${failed.length} of ${ALL_ROUTES.length} routes did not pre-render:\n`);
     for (const r of failed) console.error(`     ✗ ${r || '/'}`);
     console.error(
-      '\n   These would deploy as the English homepage (200, no 404) and be\n' +
-      '   indexed as such. Refusing to ship a partial pre-render.\n' +
+      '\n   These would deploy missing or wrong and be indexed as such.\n' +
+      '   Refusing to ship a partial pre-render.\n' +
       '   Set ALLOW_PARTIAL_PRERENDER=1 to deploy anyway.\n'
     );
     return failed;

@@ -143,7 +143,7 @@ export default {
   "menus": "Thực đơn",
   "downloadPdf": "Tải PDF đồ uống",
   "findUs": "Địa chỉ",
-  "hours": "Mở cửa mỗi ngày · 11:00 – 2:00",
+  "hours": "Mở cửa mỗi ngày · 11:00 – 02:00",
   "darkTitle": "Đến khám phá.",
   "galleryTitle": "Hình ảnh không gian",
   "joinWA": "Tham gia nhóm WhatsApp",
@@ -158,7 +158,11 @@ export default {
     "addToCalendar": "Thêm lịch của chúng tôi vào lịch của bạn",
     "details": "Chi tiết",
     "today": "Hôm nay",
-    "tomorrow": "Ngày mai"
+    "tomorrow": "Ngày mai",
+    "tonight": "Tối nay",
+    "posterAlt": "{title} — poster",
+    "skip": "Bỏ qua phần còn lại của lịch",
+    "fallbackTitle": "Sự kiện REALITY"
   },
   "eventOverlay": {
     "openInApp": "Mở trong app REALITY",
@@ -395,15 +399,79 @@ export default {
   "skipLink": "Bỏ qua đến nội dung",
   "langMenuLabel": "Ngôn ngữ",
   "backHome": "Về trang chủ REALITY",
+  "a11y": {
+    "home": "Trang chủ REALITY",
+    "menu": "Menu trang web",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "whatsapp": "Tham gia cộng đồng WhatsApp của chúng tôi",
+    "instagram": "Theo dõi chúng tôi trên Instagram",
+    "facebook": "Theo dõi chúng tôi trên Facebook",
+    "mapTitle": "Bản đồ đến REALITY, 86 Mai Thúc Lân",
+    "openImage": "Mở ảnh",
+    "closeImage": "Đóng ảnh",
+    "galleryImage": "REALITY — ảnh chụp không gian quán",
+    "prevSlide": "Trang trước",
+    "nextSlide": "Trang tiếp theo",
+    "goToSlide": "Đến trang {n}",
+    "pauseSlides": "Tạm dừng trình chiếu",
+    "playSlides": "Phát trình chiếu",
+    "eventTypes": "Loại sự kiện",
+    "room": "Phòng"
+  },
+  "footer": {
+    "stayInTouch": "Giữ liên lạc",
+    "joinCommunity": "Tham gia cộng đồng",
+    "scanWA": "Quét mã để vào WhatsApp",
+    "qrAlt": "Mã QR: tham gia cộng đồng WhatsApp của REALITY"
+  },
+  "visit": {
+    "directions": "Chỉ đường",
+    "openInMaps": "Mở 86 Mai Thúc Lân trên Google Maps"
+  },
+  "menuPriceNote": "Giá tính bằng nghìn đồng — 150k = 150.000 ₫",
+  "formErrors": {
+    "required": "Vui lòng điền mục này.",
+    "email": "Vui lòng nhập địa chỉ email hợp lệ.",
+    "url": "Vui lòng nhập đường link hợp lệ, ví dụ https://trangcuaban.com",
+    "pickOne": "Vui lòng chọn ít nhất một mục.",
+    "pickOption": "Vui lòng chọn một mục.",
+    "timeout": "Việc gửi đang mất quá nhiều thời gian. Hãy kiểm tra kết nối và thử lại — câu trả lời của bạn vẫn được lưu."
+  },
+  "formDraft": {
+    "restored": "Chúng tôi đã khôi phục bản đề xuất bạn đang viết dở.",
+    "clear": "Làm lại từ đầu"
+  },
   "theme": {
     "group": "Giao diện",
     "day": "Ngày",
     "night": "Đêm"
   },
+  "heroPrefix": "REALITY Đà Nẵng —",
+  "faq": {
+    "whatQ": "REALITY có những sự kiện gì?",
+    "whatA": "Gần như ngày nào cũng có: nhạc sống, open mic và acoustic jam trên sân thượng, pub quiz, đêm board game, đêm cờ vua, câu lạc bộ phim và chiếu phim ngắn, karaoke, giao lưu ngôn ngữ và câu lạc bộ văn hoá (giao lưu người Việt – người nước ngoài, câu lạc bộ tiếng Pháp, tiếng Trung), lớp nhảy, buổi nói chuyện, workshop và triển lãm nghệ thuật. Lịch sự kiện luôn cập nhật nằm trong app REALITY:",
+    "freeQ": "Sự kiện ở REALITY có miễn phí không?",
+    "freeA": "Phần lớn sự kiện đều miễn phí — bạn chỉ cần mua đồ uống để ủng hộ quán. Một số sự kiện có phí vào cửa hoặc cần đăng ký trước; điều này được ghi rõ trên lịch hàng tuần, trên poster và trên trang của từng sự kiện trong app REALITY.",
+    "hoursQ": "REALITY mở cửa lúc mấy giờ?",
+    "hoursA": "REALITY mở cửa mỗi ngày từ 11:00 đến 2:00 sáng, kể cả cuối tuần. Sân thượng tầng 3 đóng cửa lúc nửa đêm.",
+    "whereQ": "REALITY ở đâu tại Đà Nẵng?",
+    "whereA": "86 Mai Thúc Lân, Đà Nẵng, Việt Nam — khu Mỹ An, gần biển Mỹ Khê. Quán có ba tầng: quán cà phê và sảnh ở tầng 1, không gian sự kiện và sảnh ở tầng 2, và sân thượng ở tầng 3.",
+    "hostA": "Gửi ý tưởng của bạn qua Form đề xuất sự kiện trên trang chủ (Thông tin → Tổ chức sự kiện). Với sự kiện cộng đồng công khai, chúng tôi giúp giữ chỗ, sắp xếp không gian và thiết bị, và hỗ trợ quảng bá; chỉ mong khách mua đồ uống. Sự kiện công khai có thu phí vào cửa thì thuê không gian hoặc chia đôi tiền vé 50/50 với REALITY. Sự kiện riêng tư hoặc thương mại cần giữ nguyên một phòng sẽ trả phí thuê theo giờ. Vui lòng đọc Hướng dẫn Sự kiện trước:",
+    "rentQ": "Có thể thuê phòng ở REALITY cho sự kiện riêng không?",
+    "rentA": "Có. Giữ nguyên một phòng, hoặc giới thiệu sản phẩm hay dịch vụ thương mại, sẽ tính phí thuê theo giờ tuỳ theo phòng và khung giờ. Giá mỗi giờ, đơn vị nghìn đồng (₫):",
+    "petsQ": "Có được mang chó hoặc thú cưng đến REALITY không?"
+  },
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "body": "Trang này không tồn tại — hoặc đã được chuyển đi. Phần còn lại của REALITY vẫn ở nguyên chỗ cũ.",
+    "langs": "Ngôn ngữ khác"
+  },
   "seo": {
-    "homeTitle": "REALITY — cà phê / cocktail / cộng đồng",
-    "homeDescription": "REALITY — cà phê, cocktail và cộng đồng tại 86 Mai Thúc Lân, Đà Nẵng. Sự kiện, nhạc sống, open mic, triển lãm. Mở cửa mỗi ngày 11:00 – 2:00.",
-    "guidelinesTitle": "Hướng dẫn Sự kiện & Thương hiệu — REALITY",
+    "homeTitle": "REALITY Đà Nẵng — Quán Cà Phê, Bar & Không Gian Cộng Đồng",
+    "homeDescription": "Quán cà phê ban ngày, quán bar cocktail về đêm tại 86 Mai Thúc Lân, Đà Nẵng. Nhạc sống, pub quiz, giao lưu ngôn ngữ, open mic, board game. Mở 11:00–2:00.",
+    "notFoundTitle": "Không tìm thấy trang — REALITY Đà Nẵng",
+    "guidelinesTitle": "Hướng dẫn Sự kiện & Thương hiệu — REALITY Đà Nẵng",
     "guidelinesDescription": "Hướng dẫn tổ chức sự kiện tại REALITY Đà Nẵng — quy định chung, sự kiện công khai/riêng tư, và hướng dẫn thương hiệu của chúng tôi.",
     "hostGuideTitle": "Hướng dẫn tổ chức — REALITY",
     "hostGuideDescription": "Hướng dẫn tổ chức sự kiện tại REALITY — đang được cập nhật."

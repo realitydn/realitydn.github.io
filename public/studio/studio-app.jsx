@@ -5,6 +5,9 @@
 import { ICON_CATEGORIES, ICON_CORE, ICON_LABELS } from '../studio-shared/print-icons.js';
 import { RUI } from '../studio-shared/studio-ui.jsx';
 import { inkTitle } from '../studio-shared/brand.js';
+import {
+  ImageIntake, processImageFile, imageFromClipboard, looksLikeImage, PhotoUpload,
+} from '../studio-shared/image-intake.jsx';
 
 import { RStore } from './studio-store.js';
 import { RCloud } from './cloud-client.js';
@@ -383,75 +386,16 @@ const TICKET_FORMATS = {
   mini:     { variant:'mini',          w:450,  h:90,  surface:'paper', showQR:false },
 };
 
-/* ---------- photo helpers ---------- */
-/* Read an image File/Blob, downscale to ≤2000px on the long edge, and hand back
-   a data URL. PNGs keep their alpha (re-encoded as PNG, for partner logos);
-   everything else is JPEG. Shared by the upload button, clipboard paste and
-   drag-and-drop.
-
-   2000px, not the old 860: that cap existed because the working doc lived in
-   localStorage, and it made a 4:5 export (2160px wide) an upscale of a photo
-   a third its size. The doc is in IndexedDB now, so photos keep what Print
-   Studio keeps. What goes to the hub is re-cut to 860 on the way out
-   (RStore.slimDocForCloud), so cloud payloads are exactly what they were.
-
-   A file the browser can't decode used to fail in silence — nothing
-   happened, nothing said why. The commonest one is an iPhone HEIC, which
-   Chrome on Windows can't open; `onError(message)` says so (an alert if the
-   caller didn't pass one). */
-const PHOTO_MAX_EDGE = 2000;
-function imageErrorMessage(file){
-  const name = (file && file.name) || 'that file';
-  const heic = /\.(heic|heif)$/i.test(name) || /hei[cf]/i.test((file && file.type)||'');
-  return heic
-    ? 'Couldn’t open “'+name+'” — this browser can’t read HEIC (iPhone) photos. Convert it to JPEG first, or screenshot it. (On the iPhone, Settings → Camera → Formats → Most Compatible stops new photos being HEIC.)'
-    : 'Couldn’t open “'+name+'” as an image — it may be damaged, or a format this browser can’t read. JPEG, PNG and WebP always work.';
-}
-function processImageFile(file, onReady, onError){
-  if(!file) return;
-  const fail = ()=>{ const m = imageErrorMessage(file); if(typeof onError==='function') onError(m); else window.alert(m); };
-  const png = file.type==='image/png';
-  const fr=new FileReader();
-  fr.onerror=fail;
-  fr.onload=()=>{ const im=new Image();
-    im.onerror=fail;
-    im.onload=()=>{
-      if(!im.width || !im.height){ fail(); return; }
-      const sc=Math.min(1,PHOTO_MAX_EDGE/Math.max(im.width,im.height));
-      const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
-      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      onReady(png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg',0.82));
-    };
-    im.src=fr.result; };
-  fr.readAsDataURL(file);
-}
-/* Is this dropped/pasted file meant to be a picture? By type, or — because
-   Windows hands HEIC over with an empty type — by name, so an iPhone photo
-   reaches processImageFile and gets told why it won't open instead of being
-   ignored. */
-function looksLikeImage(f){
-  if(!f) return false;
-  if(f.type && f.type.indexOf('image/')===0) return true;
-  return /\.(jpe?g|png|webp|gif|avif|bmp|heic|heif)$/i.test(f.name||'');
-}
-/* Pull the first image out of a paste payload (DataTransfer), or null. */
-function imageFromClipboard(cd){
-  if(!cd) return null;
-  const items=cd.items;
-  if(items){ for(let i=0;i<items.length;i++){ const it=items[i];
-    if(it.kind==='file' && it.type && it.type.indexOf('image/')===0) return it.getAsFile(); } }
-  const files=cd.files;
-  if(files){ for(let i=0;i<files.length;i++){ if(looksLikeImage(files[i])) return files[i]; } }
-  return null;
-}
-function PhotoUpload({ onPick, label }){
-  const inp = React.useRef(null);
-  function handle(e){ const f=e.target.files[0]; if(!f) return; processImageFile(f, onPick); e.target.value=''; }
-  return (<React.Fragment>
-    <button className="rs-addrow" onClick={()=>inp.current.click()}>{label||'⬆ Upload / replace photo…'}</button>
-    <input ref={inp} type="file" accept="image/*" style={{display:'none'}} onChange={handle} />
-  </React.Fragment>);
-}
+/* ---------- photo helpers ----------
+   File / clipboard / drop → a sized image is ../studio-shared/image-intake.jsx
+   (processImageFile, imageFromClipboard, looksLikeImage, PhotoUpload — the
+   same code Print Studio takes photos with, HEIC message and all). Poster's
+   parameters: a 2000px long edge — not the old 860, which existed because the
+   working doc lived in localStorage and made a 4:5 export (2160px wide) an
+   upscale; the doc is in IndexedDB now, and what goes to the hub is re-cut to
+   860 on the way out (RStore.slimDocForCloud), so cloud payloads are exactly
+   what they were — and JPEG at 0.82. */
+ImageIntake.configure({ maxEdge:2000, jpegQuality:0.82, uploadLabel:'⬆ Upload / replace photo…' });
 /* Every press, in the canon order, each carrying the Photo Guidance's own
    three lines. `tag` is what the treatment IS in four words; best/avoid are
    transcribed from the guidance card, not written here — they are what makes
@@ -1153,7 +1097,7 @@ function PhotoControls({ el, update, theme, accent, day }){
   return (
     <React.Fragment>
       <Fold id="ph-img" title="Image" open>
-        <PhotoUpload onPick={src=>update({ src })} />
+        <PhotoUpload onImage={({ data })=>update({ src:data })} />
         <Hint tight>…or copy an image anywhere and paste it here with <b>Ctrl-V</b> / <b>⌘V</b>.</Hint>
         {el.type==='logo'
           ? <React.Fragment>
@@ -1167,7 +1111,7 @@ function PhotoControls({ el, update, theme, accent, day }){
 
       <Fold id="ph-mix" title="Second exposure" badge={el.src2?'on':null}>
         {!el.src2 && <Hint tight>Blend a second image into the source — the press treats the two as one photo.</Hint>}
-        <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onPick={src2=>update({ src2 })} />
+        <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onImage={({ data })=>update({ src2:data })} />
         {el.src2 && <React.Fragment>
           <Slider label="Mix" val={el.mix2!=null?el.mix2:0.6} min={0} max={1} step={0.02} onChange={v=>update({mix2:v})} />
           <Chips label="Blend" options={[{v:'screen',l:'Screen'},{v:'multiply',l:'Multiply'},{v:'lighten',l:'Lighten'},{v:'overlay',l:'Overlay'}]} value={el.mix2Mode||'screen'} onChange={v=>update({mix2Mode:v})} />
@@ -3197,7 +3141,7 @@ function App({ initialDoc }){
       const file = imageFromClipboard(e.clipboardData);
       if(!file) return;
       e.preventDefault();
-      processImageFile(file, src=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); }, m=>window.alert(m));
+      processImageFile(file, ({ data:src })=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); }, m=>window.alert(m));
     }
     window.addEventListener('paste', onPaste);
     return ()=>window.removeEventListener('paste', onPaste);
@@ -3242,7 +3186,7 @@ function App({ initialDoc }){
       const box = hit && hit.closest ? hit.closest('[data-elid]') : null;
       const target = box ? resolvedRef.current.find(x=>x.id===box.getAttribute('data-elid')) : null;
       if(target && (target.type==='photo' || target.type==='logo')){
-        processImageFile(file, src=>{ const fn=updateElRef.current; if(fn) fn(target.id, { src });
+        processImageFile(file, ({ data:src })=>{ const fn=updateElRef.current; if(fn) fn(target.id, { src });
           setSelectedIds([target.id]); }, m=>window.alert(m));
         return;
       }
@@ -3251,7 +3195,7 @@ function App({ initialDoc }){
       const cv = canvasRef.current; if(!cv) return;
       const cr = cv.getBoundingClientRect(), sc = scaleRef.current, d = AP_DEF.photo;
       const px = (e.clientX-cr.left)/sc, py = (e.clientY-cr.top)/sc;
-      processImageFile(file, src=>{
+      processImageFile(file, ({ data:src })=>{
         const dd = docRef.current;
         let vx = px - d.w/2, vy = py - d.h/2;
         if(dd.snap){ vx=Math.round(vx/STEP)*STEP; vy=Math.round(vy/STEP)*STEP; }

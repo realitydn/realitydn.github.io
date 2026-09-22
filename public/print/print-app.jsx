@@ -8,6 +8,7 @@ import { ICON_GLYPHS, ICON_LABELS, ICON_CATEGORIES, ICON_CORE } from '../studio-
 import { RUI } from '../studio-shared/studio-ui.jsx';
 import { inkTitle, INK_CHOICES } from '../studio-shared/brand.js';
 import { RULE_PATTERNS } from '../studio-shared/shapes.js';
+import { ImageIntake, processImageFile, imageFromClipboard, PhotoUpload } from '../studio-shared/image-intake.jsx';
 
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import {
@@ -139,42 +140,16 @@ function qrLum(key){
 }
 
 /* ---------- photo helpers ----------
-   Uploads are downscaled to UPLOAD_MAX_PX on the long side. It was 2000 px,
-   with a comment claiming that was 150 dpi — it is, up to ~A3 width; a
-   full-width A1 photo got ~85 dpi. The pixels live in IndexedDB (print-store),
-   not the doc, so the bigger file costs storage we have, not the ~5 MB
-   localStorage bucket. 3500 px is 150 dpi across 593 mm — an A2's long side,
-   an A1's short one — and the exporter's raster cap (4000) sits above it so
-   none of it is thrown away. The preflight names the dpi a photo really gets. */
-const UPLOAD_MAX_PX = 3500;
-function processImageFile(file, onReady){
-  if(!file) return;
-  const png = file.type==='image/png';
-  const fr=new FileReader();
-  fr.onload=()=>{ const im=new Image(); im.onload=()=>{
-    const max=UPLOAD_MAX_PX, sc=Math.min(1, max/Math.max(im.width,im.height));
-    const w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc));
-    const c=document.createElement('canvas'); c.width=w; c.height=h;
-    c.getContext('2d').drawImage(im,0,0,w,h);
-    onReady({ data: png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg',0.86), w, h });
-  }; im.src=fr.result; };
-  fr.readAsDataURL(file);
-}
-function imageFromClipboard(cd){
-  if(!cd) return null;
-  const items=cd.items;
-  if(items){ for(let i=0;i<items.length;i++){ const it=items[i]; if(it.kind==='file'&&it.type&&it.type.indexOf('image/')===0) return it.getAsFile(); } }
-  const files=cd.files;
-  if(files){ for(let i=0;i<files.length;i++){ if(files[i].type&&files[i].type.indexOf('image/')===0) return files[i]; } }
-  return null;
-}
-function PhotoUpload({ onFile }){
-  const inp=React.useRef(null);
-  return (<React.Fragment>
-    <button className="ps-addrow" onClick={()=>inp.current.click()}>⬆ Upload / replace image…</button>
-    <input ref={inp} type="file" accept="image/*" style={{ display:'none' }} onChange={e=>{ const f=e.target.files[0]; if(f) onFile(f); e.target.value=''; }} />
-  </React.Fragment>);
-}
+   File / clipboard → a sized image is ../studio-shared/image-intake.jsx, the
+   same code the Poster uses (which is how Print gained the HEIC message and an
+   error path — an undecodable file used to do nothing at all). Print's
+   parameters: a 3500px long edge — 150 dpi across 593 mm, an A2's long side,
+   an A1's short one; it was 2000, which gave a full-width A1 photo ~85 dpi.
+   The pixels live in IndexedDB (print-store), not the doc, so the bigger file
+   costs storage we have, and the exporter's raster cap (4000) sits above it
+   so none of it is thrown away. The preflight names the dpi a photo really
+   gets. JPEG at 0.86. */
+ImageIntake.configure({ maxEdge:3500, jpegQuality:0.86, uploadLabel:'⬆ Upload / replace image…' });
 /* accent-only swatch row (optional null = auto/partner, for second inks) */
 function AccentRow({ value, onChange, nullable, nullTitle }){
   return (<div className="ps-swatches">

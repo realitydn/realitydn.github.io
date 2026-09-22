@@ -162,7 +162,11 @@ function makeWriter(write){
    covers a localStorage fallback, where a write from the other tab fires one
    here). Returns { peers() → how many other tabs answered, stop() }. */
 function watchOtherTabs({ channel, storagePrefix, onChange }){
-  const me = Math.random().toString(36).slice(2);
+  /* A tab's id. randomUUID first: Math.random is seeded in the test suites, so
+     two test tabs drew the SAME id and each ignored the other as itself. */
+  let me = '';
+  try{ if(window.crypto && window.crypto.randomUUID) me = window.crypto.randomUUID(); }catch(e){}
+  if(!me) me = Math.random().toString(36).slice(2) + Date.now().toString(36);
   const peers = new Set();
   const onStorage = (e)=>{ if(storagePrefix && e.key && e.key.indexOf(storagePrefix)===0) onChange(true); };
   window.addEventListener('storage', onStorage);

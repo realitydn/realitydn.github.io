@@ -187,6 +187,7 @@ if (brand) {
     "public/studio-shared/store.js": ["openDB", "reqVal", "txDone", "describeStoreError", "storeErrText",
       "persistStorage", "makeWriter", "watchOtherTabs"],
     "public/studio-shared/history.js": ["useHistory", "historyKey", "HIST_MAX", "HIST_QUIET_MS"],
+    "public/studio-shared/blobs.js": ["makeBlobStore", "isRef", "isInline", "REF_PREFIX", "parseDataUrl"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;

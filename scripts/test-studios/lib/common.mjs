@@ -24,7 +24,9 @@ export const FONT_CACHE = path.join(FIXTURES, 'fonts');
 // Ports reserved for the suites — away from the launchers' 4501-4503, Vite's
 // 4173/5173 and the prerender, so a run never collides with a Studio Donald
 // has open.
-export const PORTS = { harness: 4600, studio: 4601, schedule: 4602, print: 4603 };
+// TEST_PORT_BASE lets two worktrees run the suite side by side (default 4600).
+const BASE = Number(process.env.TEST_PORT_BASE) || 4600;
+export const PORTS = { harness: BASE, studio: BASE + 1, schedule: BASE + 2, print: BASE + 3 };
 
 // The fixed clock for every page: Monday of the stress week, mid-morning in
 // Đà Nẵng. The clock ADVANCES from here with real elapsed time, so debounces

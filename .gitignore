@@ -55,3 +55,7 @@ Thumbs.db
 public/sitemap.xml
 public/llms.txt
 public/llms-full.txt
+
+# Studio test suites (scripts/test-studios): renders + diff images from the
+# last failing run. Goldens (tests/golden/) and fixtures ARE tracked.
+tests/out/

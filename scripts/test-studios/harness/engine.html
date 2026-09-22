@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>riso engine harness</title>
+</head>
+<body>
+<!-- The engine alone: the pure press core, then the canvas engine over it —
+     the same two files, in the same order, every Studio loads. No React, no
+     app code, no fonts. -->
+<script src="/public/studio-shared/riso-press.js"></script>
+<script src="/public/studio-shared/riso-engine.js"></script>
+<script>
+  window.harnessReady = new Promise(function (resolve, reject) {
+    var img = new Image();
+    img.onload = function () { img.decode().then(function () { resolve(img); }, function () { resolve(img); }); };
+    img.onerror = function () { reject(new Error('fixture photo failed to load')); };
+    img.src = '/tests/fixtures/photo.jpg';
+  }).then(function (img) { window.fixturePhoto = img; return true; });
+
+  /* One case = one fresh canvas, the engine's globals reset to neutral, one
+     render() call — exactly what drawPhotoPress does in the Poster Studio. */
+  window.renderCase = function (treatment, opts, w, h) {
+    var R = window.RISO;
+    R.setSource(window.fixturePhoto);
+    if (R.setSource2) R.setSource2(null);
+    if (R.setTransform) R.setTransform({ scale: 1, x: 0, y: 0, rot: 0 });
+    if (R.setTransform2) R.setTransform2({ scale: 1, x: 0, y: 0, rot: 0 });
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    var t0 = performance.now();
+    R.render(cv, treatment, opts);
+    var ms = performance.now() - t0;
+    /* raw RGBA, not a PNG: the canvas's own PNG encoder differs between
+       Chrome builds, the pixels don't */
+    var px = cv.getContext('2d').getImageData(0, 0, w, h).data, s = '';
+    for (var i = 0; i < px.length; i += 0x8000) s += String.fromCharCode.apply(null, px.subarray(i, i + 0x8000));
+    return { width: w, height: h, rgba: btoa(s), ms: ms };
+  };
+</script>
+</body>
+</html>

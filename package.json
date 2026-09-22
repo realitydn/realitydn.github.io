@@ -12,6 +12,9 @@
     "preview": "vite preview",
     "selftest": "node scripts/selftest.mjs",
     "selftest:schedule": "node scripts/selftest-schedule.mjs",
+    "test:studios": "node scripts/test-studios/run.mjs",
+    "test:studios:update": "node scripts/test-studios/run.mjs --update",
+    "test:studios:ci": "node scripts/test-studios/run.mjs --only engine,smoke",
     "clean": "rm -rf dist node_modules package-lock.json"
   },
   "dependencies": {

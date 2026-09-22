@@ -16,15 +16,15 @@ import {
   QR_HOST as R_QR_HOST, QR_LABEL as R_QR_LABEL, QR_LABEL_SHORT as R_QR_LABEL_SHORT,
   QR_CTA as R_QR_CTA,
 } from './schedule-data.jsx';
+import { relLuminance } from '../studio-shared/brand.js';
 
-/* sRGB relative luminance — the real one, with the gamma expansion, not an
-   averaged-channel approximation. Used to decide whether a palette's ground is
-   light enough to carry a QR's quiet zone invisibly. */
+/* sRGB relative luminance — brand.js's, the real one with the gamma
+   expansion. Used to decide whether a palette's ground is light enough to
+   carry a QR's quiet zone invisibly; anything that isn't a #rrggbb reads as
+   light (1), as it always has. */
 function R_LUM(hex){
   if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return 1;
-  const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
-    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
-  return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
+  return relLuminance(hex);
 }
 
 /* ---- stylings — Year 2 token sets. Each renderer reads these generically, so a

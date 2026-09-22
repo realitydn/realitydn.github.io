@@ -13,10 +13,12 @@ import {
   ruleLayout as peRule, shapePath as peShape, arcTextLayout as peArc, fitTextSize as peFit,
   blendCss as peBlend, risoOpts as peRiso, contrastInk, shadowCss, shadowSpec, roundedRectPath,
   starPath, borderDash, listRowFont, listSplit, iconLayout, punchLayout, couponLayout,
-  inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, inkMarkHex, INK_MARK,
+  inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, inkMarkHex, INK_MARK, INK_MARK_CELLS_PRINT,
 } from './print-data.jsx';
+import { NEUTRALS, MONT, GROT, ALT } from '../studio-shared/brand.js';
+import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
 
-const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
+const FAM_CSS = { mont:MONT, grot:GROT, alt:ALT };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
 
 /* ---- THE TRACKING LADDER, print ------------------------------------------
@@ -37,7 +39,7 @@ const FACT = (size, extra)=> Object.assign({
   fontFamily:FAM_CSS.grot, fontWeight:500, letterSpacing:0, fontSize:size,
   fontVariantNumeric:'tabular-nums', textTransform:'none'
 }, extra||{});
-const contrastFor = (hex)=> contrastInk(hex);
+const contrastFor = (hex)=> contrastInk(hex, NEUTRALS.print);
 function peFill(key, accentHex){
   if(key==='ink') return PE_INK.rgb;
   if(key==='white') return PE_WHITE.rgb;
@@ -72,21 +74,8 @@ function stickerRadius(el){
   return '0';
 }
 
-function WordmarkSVG({ height, color }){
-  return (
-    <svg viewBox="0 0 512 84" height={height} role="img" aria-label="REALITY" style={{ display:'block' }}>
-      <g fill={color}>
-        <path d="M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z"/>
-        <path d="M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z"/>
-        <path d="M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z"/>
-        <path d="M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z"/>
-        <path d="M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z"/>
-        <path d="M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z"/>
-        <path d="M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z"/>
-      </g>
-    </svg>
-  );
-}
+/* WordmarkSVG — the baked vector mark — is ../studio-shared/wordmark.jsx, the
+   one component every Studio draws; re-exported for this Studio's modules. */
 export { WordmarkSVG };
 
 /* one QR shape descriptor → SVG node (mirrors the PDF drawQrShape). Coords are
@@ -479,7 +468,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       {lay.boxes.map(b=>(
         <div key={b.slot} style={{ position:'absolute',
           left:ox+b.x*m, top:oy+b.y*m, width:b.w*m, height:b.h*m,
-          background:inkMarkHex(nameOf(b.slot), dayAcc) }} />
+          background:inkMarkHex(nameOf(b.slot), dayAcc, INK_MARK_CELLS_PRINT) }} />
       ))}
     </div>;
   }
@@ -533,7 +522,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
       return <div aria-hidden="true" style={{ position:'relative', flex:'none', width:lay.cols*m, height:lay.rows*m }}>
         {lay.boxes.map(b=>(<div key={b.slot} style={{ position:'absolute', left:b.x*m, top:b.y*m, width:b.w*m, height:b.h*m,
-          background:inkMarkHex(nameOf(b.slot), 'red') }} />))}
+          background:inkMarkHex(nameOf(b.slot), 'red', INK_MARK_CELLS_PRINT) }} />))}
       </div>;
     };
     const qs = Math.min(el.h-6, 56);

@@ -7,10 +7,11 @@
 //
 //   node tools/verify-day-colours.mjs        # exits 1 on any drift
 //
-// Checks: Schedule Studio day literals · Poster Studio ACCENT_DAYS · Print
-// Studio PALETTE hexes · the INK_MARK cell hexes + fixed cell order in BOTH
-// studio-data.jsx and print-data.jsx (and their generated .js) · the
-// event-report denylist of retired off-palette hexes · site strings · the
+// Checks: the shared brand module (public/studio-shared/brand.js) — it must
+// derive the day hexes from day-colours.json, and its evaluated tables
+// (PALETTE, Schedule DAY_COLORS/DAY_TEXT, Poster ACCENT_DAYS, the INK_MARK
+// cells + fixed cell order, contrastInk's answers) must match canon — and no
+// Studio source may define its own copy again · the event-report denylist of retired off-palette hexes · site strings · the
 // TYPE section: the canon tracking ladder on both studios' text presets
 // (print bakes the +.01em offset) and the ticket/footer wordmark staying the
 // baked vector, never a font-family re-typeset.
@@ -19,7 +20,7 @@
 // cheap — wire it wherever the precompile step runs). If canon ever changes
 // a hue, update day-colours.json first, then the literals, then re-run.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -41,64 +42,38 @@ const fail = (msg) => { failures++; console.error("DRIFT: " + msg); };
 // no longer exist.
 const read = (rel) => readFileSync(join(root, rel), "utf8");
 
-// ── 1 · Schedule Studio: DAY_COLORS / DAY_TEXT literals (ISO 1=Mon..7=Sun) ──
-for (const rel of ["public/schedule/schedule-data.jsx"]) {
-  const src = read(rel);
-  const colors = src.match(/DAY_COLORS\s*=\s*\{([^}]*)\}/);
-  const text = src.match(/DAY_TEXT\s*=\s*\{([^}]*)\}/);
-  if (!colors || !text) { fail(`${rel}: DAY_COLORS/DAY_TEXT block not found`); continue; }
-  DAY_ORDER.forEach((day, i) => {
-    const iso = i + 1;
-    const want = canon.days[day].hex.toLowerCase();
-    const gotHex = (colors[1].match(new RegExp(`${iso}\\s*:\\s*['"]([^'"]+)['"]`)) || [])[1];
-    if ((gotHex || "").toLowerCase() !== want)
-      fail(`${rel}: ISO ${iso} (${DAY_FULL[day]}) is ${gotHex}, canon says ${want}`);
-    // DAY_TEXT uses INK/CREAM constants; canon "on" of #fffbf1 means CREAM.
-    const wantText = canon.days[day].on.toLowerCase() === "#fffbf1" ? "CREAM" : "INK";
-    const gotText = (text[1].match(new RegExp(`${iso}\\s*:\\s*(INK|CREAM)`)) || [])[1];
-    if (gotText !== wantText)
-      fail(`${rel}: ISO ${iso} (${DAY_FULL[day]}) text is ${gotText}, canon says ${wantText}`);
+// ── 1–4 · The brand module: ONE source, derived from canon (Phase 2) ──
+// The palette, the weekday coding (Poster ACCENT_DAYS, Schedule DAY_COLORS /
+// DAY_TEXT, the ink mark's day map), contrast and the INK_MARK block used to
+// be typed three times — in studio-data.jsx, print-data.jsx and
+// schedule-data.jsx — and this file parsed each copy's literals. They now
+// live once, in public/studio-shared/brand.js, which DERIVES the hexes from
+// day-colours.json at build time (esbuild inlines the JSON). So:
+//   a) brand.js must import the token file (a hand-typed hex table there
+//      would be the old drift, one level up);
+//   b) brand.js is EVALUATED (bundled in memory by the same esbuild the
+//      Studios build with) and every table it hands the Studios is checked
+//      against canon — so a derivation bug fails here, not just a typo;
+//   c) no Studio source may define its own copy of any of those names again.
+const BRAND = "public/studio-shared/brand.js";
+{
+  const src = read(BRAND);
+  if (!/import\s+\w+\s+from\s+['"]\.\.\/tokens\/day-colours\.json['"]/.test(src))
+    fail(`${BRAND}: no longer imports ../tokens/day-colours.json — the day hexes must be derived from canon, not typed`);
+}
+let brand = null;
+try {
+  const { default: esbuild } = await import("esbuild");
+  const out = esbuild.buildSync({
+    entryPoints: [join(root, BRAND)], bundle: true, format: "esm", platform: "neutral",
+    write: false, logLevel: "silent",
   });
+  brand = await import("data:text/javascript;base64," + Buffer.from(out.outputFiles[0].text).toString("base64"));
+} catch (e) {
+  fail(`${BRAND}: could not be bundled + evaluated (${String((e && e.message) || e).split("\n")[0]})`);
 }
-
-// ── 2 · Poster Studio: ACCENT_DAYS (accent name → weekday name) ──
-for (const rel of ["public/studio/studio-data.jsx"]) {
-  const src = read(rel);
-  const block = src.match(/ACCENT_DAYS\s*=\s*\{([\s\S]*?)\}/);
-  if (!block) { fail(`${rel}: ACCENT_DAYS block not found`); continue; }
-  for (const day of DAY_ORDER) {
-    const accent = accentOf(day);
-    const re = new RegExp(`${accent}\\s*:\\s*['"]${DAY_FULL[day]}['"]`);
-    if (!re.test(block[1]))
-      fail(`${rel}: ACCENT_DAYS lacks ${accent}:'${DAY_FULL[day]}' (canon pairing)`);
-  }
-}
-
-// ── 3 · Print Studio: PALETTE hexes (accent name → hex) ──
-// Parse a `const PALETTE = {...}` object literal into { name: '#hex' }.
-const parsePalette = (src, rel) => {
-  const block = src.match(/PALETTE\s*=\s*\{([\s\S]*?)\}/);
-  if (!block) { fail(`${rel}: PALETTE block not found`); return null; }
-  const out = {};
-  for (const m of block[1].matchAll(/(\w+)\s*:\s*['"](#[0-9a-fA-F]{6})['"]/g)) out[m[1]] = m[2].toLowerCase();
-  return out;
-};
-for (const rel of ["public/print/print-data.jsx"]) {
-  const pal = parsePalette(read(rel), rel);
-  if (!pal) continue;
-  for (const day of DAY_ORDER) {
-    const accent = accentOf(day), want = canon.days[day].hex.toLowerCase();
-    if (pal[accent] !== want)
-      fail(`${rel}: PALETTE.${accent} is ${pal[accent]}, canon (${DAY_FULL[day]}) says ${want}`);
-  }
-}
-
-// ── 4 · Ink mark (canon rev 22.08.26): cell hexes + fixed cell order ──
-// The INK_MARK blocks in BOTH studios must resolve the seven accents to the
-// canon hues, keep the right neutrals for their substrate, and carry the
-// FIXED cell order (ink-strip.json: order is canon; recolouring is the only
-// parameter). Artwork neutrals per ink-strip.json cells: ink #0d0905, stock
-// #fffbf1. Print neutrals follow the print substrate (canon.print).
+// Artwork neutrals per ink-strip.json cells: ink #0d0905, stock #fffbf1.
+// Print neutrals follow the print substrate (canon.print).
 const INK_ARTWORK = { ink: "#0d0905", stock: "#fffbf1" };
 // mode → { bands, field (six strip cells), sq (square quadrant-4 field) },
 // verbatim from ink-strip.json §modes + src/components/InkMark.jsx.
@@ -109,65 +84,86 @@ const INK_ORDER = {
   ink:     { bands: "ink,stock,ink",   field: "ink,stock,stock,ink,ink,stock",     sq: "stock,ink,ink,ink" },
 };
 const INK_ANCHORED = "stock,pink,green,ink";
-const INK_FILES = [
-  { rel: "public/studio/studio-data.jsx", neutrals: INK_ARTWORK },
-  // Schedule Studio joined the mark on 23.08 (masthead strip + the square
-  // riding the footer QR), so its port is guarded here like the other two.
-  { rel: "public/schedule/schedule-data.jsx", neutrals: INK_ARTWORK },
-  { rel: "public/print/print-data.jsx",   neutrals: { ink: canon.print.ink, stock: canon.print.stock } },
-];
-const stripQ = (s) => s.replace(/['"\s]/g, "");
-for (const { rel, neutrals } of INK_FILES) {
-  const src = read(rel);
-  const pal = parsePalette(src, rel);
-  const cellsBlock = src.match(/INK_MARK_CELLS\s*=\s*\{([\s\S]*?)\}/);
-  if (!cellsBlock || !pal) { if (!cellsBlock) fail(`${rel}: INK_MARK_CELLS block not found`); continue; }
-  // resolve each cell entry: PALETTE.x → parsed hex · INK.rgb/WHITE.rgb →
-  // the file's own substrate constants · or a hex literal.
-  const constHex = (name) => {
-    const m = src.match(new RegExp(`${name}\\s*=\\s*\\{\\s*rgb\\s*:\\s*['"](#[0-9a-fA-F]{6})['"]`));
-    return m ? m[1].toLowerCase() : null;
-  };
-  const cells = {};
-  for (const m of cellsBlock[1].matchAll(/(\w+)\s*:\s*(PALETTE\.\w+|INK\.rgb|WHITE\.rgb|['"]#[0-9a-fA-F]{6}['"])/g)) {
-    const v = m[2];
-    cells[m[1]] = v.startsWith("PALETTE.") ? pal[v.slice(8)]
-      : v === "INK.rgb" ? constHex("INK")
-      : v === "WHITE.rgb" ? constHex("WHITE")
-      : v.slice(1, -1).toLowerCase();
-  }
+if (brand) {
+  const B = BRAND;
+  const lc = (v) => String(v || "").toLowerCase();
+  DAY_ORDER.forEach((day, i) => {
+    const iso = i + 1, accent = accentOf(day), want = canon.days[day].hex.toLowerCase();
+    const on = canon.days[day].on.toLowerCase();
+    // the palette (Poster, Print, Schedule's mark) — accent name → hex
+    if (lc(brand.PALETTE[accent]) !== want) fail(`${B}: PALETTE.${accent} is ${brand.PALETTE[accent]}, canon (${DAY_FULL[day]}) says ${want}`);
+    // Schedule's ISO-keyed tables
+    if (lc(brand.DAY_COLORS[iso]) !== want) fail(`${B}: DAY_COLORS[${iso}] (${DAY_FULL[day]}) is ${brand.DAY_COLORS[iso]}, canon says ${want}`);
+    if (lc(brand.DAY_TEXT[iso]) !== on) fail(`${B}: DAY_TEXT[${iso}] (${DAY_FULL[day]}) is ${brand.DAY_TEXT[iso]}, canon says ${on}`);
+    if (brand.DAY_FULL[iso] !== DAY_FULL[day]) fail(`${B}: DAY_FULL[${iso}] is ${brand.DAY_FULL[iso]}, should be ${DAY_FULL[day]}`);
+    // Poster's accent ↔ weekday pairing
+    if (brand.ACCENT_DAYS[accent] !== DAY_FULL[day]) fail(`${B}: ACCENT_DAYS lacks ${accent}:'${DAY_FULL[day]}' (canon pairing)`);
+    if (brand.ACCENTS_BY_DAY[i] !== accent) fail(`${B}: ACCENTS_BY_DAY[${i}] is ${brand.ACCENTS_BY_DAY[i]}, canon (${DAY_FULL[day]}) says ${accent}`);
+    // the ink mark's daycode map
+    if (brand.INK_MARK_DAY_ACCENT[day] !== accent) fail(`${B}: INK_MARK_DAY_ACCENT lacks ${day}:'${accent}' (canon pairing)`);
+  });
+  // contrastInk must land on canon's `on` for every day accent, on both pairs
+  // (artwork: ink/cream; print: the same answer on #111111/white).
   for (const day of DAY_ORDER) {
-    const accent = accentOf(day), want = canon.days[day].hex.toLowerCase();
-    if (cells[accent] !== want)
-      fail(`${rel}: INK_MARK cell '${accent}' is ${cells[accent]}, canon (${DAY_FULL[day]}) says ${want}`);
+    const hex = canon.days[day].hex, on = canon.days[day].on.toLowerCase();
+    const art = lc(brand.contrastInk(hex));
+    if (art !== on) fail(`${B}: contrastInk(${hex}) is ${art} on the artwork pair, canon 'on' says ${on}`);
+    const pr = lc(brand.contrastInk(hex, brand.NEUTRALS.print));
+    const prWant = on === INK_ARTWORK.stock ? canon.print.stock.toLowerCase() : canon.print.ink.toLowerCase();
+    if (pr !== prWant) fail(`${B}: contrastInk(${hex}, print) is ${pr}, canon says ${prWant}`);
   }
-  for (const n of ["ink", "stock"]) {
-    if (cells[n] !== neutrals[n].toLowerCase())
-      fail(`${rel}: INK_MARK cell '${n}' is ${cells[n]}, canon says ${neutrals[n]}`);
+  // the neutrals: artwork literals + canon.print
+  if (lc(brand.PALETTE.ink) !== INK_ARTWORK.ink || lc(brand.PALETTE.cream) !== INK_ARTWORK.stock)
+    fail(`${B}: PALETTE neutrals drifted (ink ${brand.PALETTE.ink}, cream ${brand.PALETTE.cream})`);
+  if (lc(brand.NEUTRALS.print.ink) !== canon.print.ink.toLowerCase() || lc(brand.NEUTRALS.print.light) !== canon.print.stock.toLowerCase())
+    fail(`${B}: NEUTRALS.print is ${brand.NEUTRALS.print.ink}/${brand.NEUTRALS.print.light}, canon.print says ${canon.print.ink}/${canon.print.stock}`);
+  // INK_MARK cells — the seven accents at canon hue, the right neutrals per substrate
+  for (const [name, cells, neutrals] of [
+    ["INK_MARK_CELLS", brand.INK_MARK_CELLS, INK_ARTWORK],
+    ["INK_MARK_CELLS_PRINT", brand.INK_MARK_CELLS_PRINT, { ink: canon.print.ink, stock: canon.print.stock }],
+  ]) {
+    if (!cells) { fail(`${B}: ${name} is gone`); continue; }
+    for (const day of DAY_ORDER) {
+      const accent = accentOf(day), want = canon.days[day].hex.toLowerCase();
+      if (lc(cells[accent]) !== want) fail(`${B}: ${name}.${accent} is ${cells[accent]}, canon (${DAY_FULL[day]}) says ${want}`);
+    }
+    for (const n of ["ink", "stock"])
+      if (lc(cells[n]) !== neutrals[n].toLowerCase()) fail(`${B}: ${name}.${n} is ${cells[n]}, canon says ${neutrals[n]}`);
   }
   // fixed cell order — every mode's bands/field/sq, plus the anchored field
+  const IM = brand.INK_MARK || {};
   for (const [mode, want] of Object.entries(INK_ORDER)) {
-    const m = src.match(new RegExp(`${mode}:\\s*\\{\\s*bands:\\s*\\[([^\\]]*)\\]\\s*,\\s*field:\\s*\\[([^\\]]*)\\]\\s*,\\s*sq:\\s*\\[([^\\]]*)\\]`));
-    if (!m) { fail(`${rel}: INK_MARK mode '${mode}' not found in canonical shape`); continue; }
-    if (stripQ(m[1]) !== want.bands) fail(`${rel}: INK_MARK ${mode}.bands order is [${stripQ(m[1])}], canon says [${want.bands}]`);
-    if (stripQ(m[2]) !== want.field) fail(`${rel}: INK_MARK ${mode}.field order is [${stripQ(m[2])}], canon says [${want.field}]`);
-    if (stripQ(m[3]) !== want.sq) fail(`${rel}: INK_MARK ${mode}.sq order is [${stripQ(m[3])}], canon says [${want.sq}]`);
+    const m = IM.modes && IM.modes[mode];
+    if (!m) { fail(`${B}: INK_MARK mode '${mode}' not found`); continue; }
+    for (const k of ["bands", "field", "sq"])
+      if ((m[k] || []).join(",") !== want[k]) fail(`${B}: INK_MARK ${mode}.${k} order is [${(m[k] || []).join(",")}], canon says [${want[k]}]`);
   }
-  const anch = src.match(/anchoredField\s*:\s*\[([^\]]*)\]/);
-  if (!anch || stripQ(anch[1]) !== INK_ANCHORED)
-    fail(`${rel}: INK_MARK anchoredField is [${anch ? stripQ(anch[1]) : "missing"}], canon says [${INK_ANCHORED}]`);
+  if ((IM.anchoredField || []).join(",") !== INK_ANCHORED)
+    fail(`${B}: INK_MARK anchoredField is [${(IM.anchoredField || []).join(",")}], canon says [${INK_ANCHORED}]`);
+  if (brand.SITE !== canon.site) fail(`${B}: SITE is ${brand.SITE}, canon says ${canon.site}`);
+  if (!(brand.WORDMARK_PATHS || []).length || !/^M73\.4,63\.7/.test(brand.WORDMARK_PATHS[0]))
+    fail(`${B}: the wordmark's baked letter paths are missing`);
 }
-// Print Studio's literal day→accent map for the daycode mode.
+// c) No second copy. Every Studio imports these from brand.js; a local
+//    definition is a fork waiting to drift, so it fails the build outright.
 {
-  for (const rel of ["public/print/print-data.jsx"]) {
-    const block = read(rel).match(/INK_MARK_DAY_ACCENT\s*=\s*\{([\s\S]*?)\}/);
-    if (!block) { fail(`${rel}: INK_MARK_DAY_ACCENT block not found`); continue; }
-    for (const day of DAY_ORDER) {
-      const accent = accentOf(day);
-      if (!new RegExp(`${day}\\s*:\\s*['"]${accent}['"]`).test(block[1]))
-        fail(`${rel}: INK_MARK_DAY_ACCENT lacks ${day}:'${accent}' (canon pairing)`);
-    }
+  const OWNED = ["PALETTE", "ACCENTS", "ACCENT_DAYS", "ACCENT_BY_DAY", "ACCENTS_BY_DAY", "DAY_COLORS",
+    "DAY_TEXT", "DAY_FULL", "INK_CHOICES", "INK_MARK", "INK_MARK_CELLS", "INK_MARK_DAY_KEYS",
+    "INK_MARK_DAY_ACCENT", "inkMarkCells", "inkMarkLayout", "inkMarkHex", "relLuminance",
+    "contrastRatio", "contrastInk", "accentDay", "WORDMARK_PATH", "WORDMARK_PATHS", "WM_PATHS",
+    "PARTNER", "partnerOf", "inkTitle", "WordmarkSVG"];
+  const re = new RegExp(`^\\s*(?:export\\s+)?(?:const|let|var|function)\\s+(${OWNED.join("|")})\\b`, "gm");
+  const studioSources = [];
+  for (const dir of ["public/studio", "public/print", "public/schedule"])
+    for (const f of readdirSync(join(root, dir)))
+      if (/\.(jsx|js|mjs)$/.test(f) && !/\.bundle\.js$/.test(f)) studioSources.push(`${dir}/${f}`);
+  for (const rel of studioSources) {
+    for (const m of read(rel).matchAll(re))
+      fail(`${rel}: defines its own ${m[1]} — it lives in ${BRAND} (or wordmark.jsx); import it`);
   }
+  // …and the wordmark component draws brand.js's paths, never its own.
+  if (!/WORDMARK_PATHS/.test(read("public/studio-shared/wordmark.jsx")))
+    fail("public/studio-shared/wordmark.jsx: no longer draws brand.js WORDMARK_PATHS");
 }
 
 // ── 5 · Event report: retired off-palette hexes must be gone (22.08.26) ──
@@ -389,8 +385,8 @@ for (const rel of ["public/print/print-data.jsx"]) {
       fail(`${rel}: ticket site line lost its button-role tracking (TRACK.button)`);
     if (!/TRACK\.label/.test(block))
       fail(`${rel}: ticket banner line lost its label-role tracking (TRACK.label)`);
-    if (!/M73\.4,63\.7/.test(src))
-      fail(`${rel}: WordmarkSVG's baked letter paths are missing`);
+    if (!/import\s*\{[^}]*\bWordmarkSVG\b[^}]*\}\s*from\s*['"]\.\.\/studio-shared\/wordmark\.jsx['"]/.test(src))
+      fail(`${rel}: WordmarkSVG is not the shared studio-shared/wordmark.jsx (baked letter paths)`);
   }
   for (const rel of ["public/print/print-element.jsx"]) {
     const src = read(rel);

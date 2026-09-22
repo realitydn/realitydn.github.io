@@ -20,13 +20,18 @@
    TEMPLATE_GROUPS, buildTemplate
    ============================================================ */
 
-/* ---- brand palette (LOCKED) — screen RGB ---- */
 import { ICON_GLYPHS } from '../studio-shared/print-icons.js';
-
-const PALETTE = {
-  blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
-  amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224'
-};
+/* ---- brand palette (LOCKED) — screen RGB, the weekday coding, contrast,
+   the ink mark, the wordmark path and the brand strings: one copy for every
+   Studio, in ../studio-shared/brand.js (the hexes derive from
+   public/tokens/day-colours.json). Print's own substrate — #111111 ink on the
+   true-white sheet, canon's `print` block — is NEUTRALS.print there, handed
+   to contrastInk and the ink-mark cells as a parameter. ---- */
+import {
+  PALETTE, ACCENTS, NEUTRALS, contrastInk, INK_MARK, INK_MARK_CELLS_PRINT, INK_MARK_DAY_KEYS,
+  INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex, WORDMARK_PATH, ADDR, SITE,
+  PARTNER, partnerOf,
+} from '../studio-shared/brand.js';
 /* Canonical CMYK build of each locked accent [c,m,y,k] 0..1. The browser
    renders the RGB hex above; the PDF is filled with THESE, so saturated
    hues (blue, green, yellow) don't blow out on a coated press. Seeded from
@@ -40,8 +45,6 @@ const PALETTE_CMYK = {
   pink:  [0.00, 0.92, 0.22, 0.00],
   red:   [0.00, 0.92, 0.88, 0.00],
 };
-const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
-
 /* Ink = the text/line black. On screen a hair off pure so it sits kindly on
    white; in the PDF it is K-ONLY (CMYK 0,0,0,1) so type rides the black plate
    alone — one ink, crisp registration, no colour fringing on small text.
@@ -50,8 +53,8 @@ const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
    → print.ink, beside true-white stock), not Poster's cream-paper #0d0905;
    tools/verify-day-colours.mjs holds both to it. The PDF never sees this
    hex: text and ink fills stay K-only. */
-const INK   = { rgb:'#111111', cmyk:[0,0,0,1] };
-const WHITE = { rgb:'#ffffff', cmyk:[0,0,0,0] };
+const INK   = { rgb:NEUTRALS.print.ink,   cmyk:[0,0,0,1] };
+const WHITE = { rgb:NEUTRALS.print.light, cmyk:[0,0,0,0] };
 
 /* ---- A-series, portrait base, exact ISO millimetres ---- */
 const PT_PER_MM = 72 / 25.4;                 // 2.834645…  (1pt = 1/72")
@@ -125,26 +128,10 @@ function faceFor(fam, weight){
 }
 
 /* ---- colour resolution (screen) ----
-   Readable ink for text on a fill — Poster Studio's rule (studio-data.jsx
-   contrastInk), with print's light being the white sheet instead of cream.
-   This used to cut a gamma-less luminance at 0.55, which put WHITE text on
-   pink and red; real relative luminance and whichever neutral actually
-   contrasts better lands on ink for pink (4.72 vs 4.20) and red (4.59 vs
-   4.33), white only on purple — the same answer the Poster gives and the
-   templates' own comment below already claims. Ties go to ink (`>`). */
-function relLuminance(hex){
-  const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
-    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
-  return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
-}
-function contrastRatio(a, b){
-  const l1=relLuminance(a), l2=relLuminance(b);
-  return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
-}
-function contrastInk(hex){
-  if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return INK.rgb;
-  return contrastRatio(hex, WHITE.rgb) > contrastRatio(hex, INK.rgb) ? WHITE.rgb : INK.rgb;
-}
+   Readable ink for text on a fill is brand.js contrastInk — Poster's
+   contrast-ratio rule — handed Print's pair (NEUTRALS.print), so the light
+   is the white sheet instead of cream: ink on pink and red, white only on
+   purple. Ties go to ink. */
 /* An element's ink choice → screen hex. 'ink'/'white' literal; an accent name
    → its hex; 'auto' → the supplied fallback (surface contrast or doc accent). */
 function resolveInk(key, fallback){
@@ -160,121 +147,24 @@ function surfaceStyle(surface, accentHex){
   switch(surface){
     case 'solid':   return { background:INK.rgb,   color:WHITE.rgb,            border:`${bw}px solid ${INK.rgb}` };
     case 'paper':   return { background:WHITE.rgb, color:INK.rgb,             border:`${bw}px solid ${INK.rgb}` };
-    case 'accent':  return { background:accentHex, color:contrastInk(accentHex), border:`${bw}px solid ${accentHex}` };
+    case 'accent':  return { background:accentHex, color:contrastInk(accentHex, NEUTRALS.print), border:`${bw}px solid ${accentHex}` };
     case 'outline': return { background:'transparent', color:INK.rgb,         border:`${bw}px solid ${INK.rgb}` };
     default:        return { background:'transparent', color:INK.rgb,         border:`${bw}px solid transparent` };
   }
 }
 
-/* REALITY wordmark as one combined vector path (the 7 letter subpaths of the
-   site Logo, joined). drawn by the PDF exporter via drawSvgPath; the screen
-   uses the inline <svg> in print-element.jsx. Same glyph outlines. */
-const WORDMARK_PATH = [
-  'M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z',
-  'M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z',
-  'M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z',
-  'M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z',
-  'M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z',
-  'M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z',
-  'M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z'
-].join(' ');
+/* The REALITY wordmark (WORDMARK_PATH — the 7 letter subpaths of the site
+   Logo, joined; drawn by the PDF exporter via drawSvgPath), ADDR / SITE and
+   the misregistration PARTNER map (an element's "echo" ghost, the riso
+   overprint move — canon partners) are all in brand.js. */
 
-/* mandatory brand strings (style guide §11) — always full diacritics */
-const ADDR = '86 Mai Thúc Lân · Đà Nẵng';
-const SITE = 'realitydn.com';
-
-/* Misregistration partners — the second silkscreen layer (--accent-2). An
-   element's "echo" ghost is drawn offset in its partner colour, the riso
-   overprint move. Lifted from the poster riso-engine PARTNER map. */
-const PARTNER = { pink:'blue', red:'blue', amber:'purple', yellow:'pink', blue:'pink', green:'purple', purple:'amber' };
-function partnerOf(accent){ return PARTNER[accent] || 'blue'; }
-
-/* ============================================================
-   INK MARK — the ink strip / ink square as a placeable print
-   element (canon rev 22.08.26). Machine spec: design-system-year2/
-   design_handoff_web_app_ink_pass/tokens/ink-strip.json — cell
-   ORDER is FIXED; recolouring (mode / day) is the only parameter.
-   Deliberate duplicate of the Poster Studio block (studio-data.jsx)
-   — tools/verify-day-colours.mjs guards BOTH against canon.
-
-   Print departures: STOCK IS THE PAPER. On true-white stock the
-   stock cells are UNPRINTED — the PDF exporter skips them entirely
-   (never a cream/white fill) and the screen shows them paper-white.
-   Stock is always an inner cell, so the outer-corner rule (G2)
-   holds with no ground plate; ink cells ride the K plate; accents
-   fill from PALETTE_CMYK. No radius, no gradients, no cell
-   shadows, never auto-placed, static always. v1 skips voids.
-   ============================================================ */
-const INK_MARK_CELLS = {
-  red:PALETTE.red, blue:PALETTE.blue, yellow:PALETTE.yellow, green:PALETTE.green,
-  pink:PALETTE.pink, purple:PALETTE.purple, amber:PALETTE.amber,
-  ink:INK.rgb,      /* screen preview; the PDF draws these K-only (0,0,0,1) */
-  stock:WHITE.rgb   /* the substrate — UNPRINTED on press, skipped by the exporter */
-};
-const INK_MARK = {
-  rev:'22.08.26',
-  forms:{
-    'strip-v':        { cols:2, rows:9, field:6 },
-    'strip-h':        { cols:9, rows:2, field:6 },
-    'strip-short-v':  { cols:2, rows:7, field:2 },
-    'strip-short-h':  { cols:7, rows:2, field:2 },
-    'square':         { cols:4, rows:4, field:4, square:true },
-    'square-anchored':{ cols:4, rows:4, field:4, square:true, anchored:true }
-  },
-  /* fixed cell orders per mode — bands read red-first; `field` lists the six
-     1×1 strip cells in reading order; `sq` is the square's quadrant-4 field
-     in Z order. Mirrors src/components/InkMark.jsx exactly. */
-  modes:{
-    full:    { bands:['red','blue','yellow'], field:['stock','ink','green','pink','purple','amber'], sq:['stock','pink','purple','amber'] },
-    majors:  { bands:['red','blue','yellow'], field:['stock','ink','stock','ink','ink','stock'],     sq:['stock','ink','stock','ink'] },
-    daycode: { bands:['day','ink','day'],     field:['stock','day','ink','day','day','stock'],       sq:['stock','day','day','ink'] },
-    ink:     { bands:['ink','stock','ink'],   field:['ink','stock','stock','ink','ink','stock'],     sq:['stock','ink','ink','ink'] }
-  },
-  /* square-anchored × full: whole neutral pair kept, two minors dropped —
-     ink lands on the OUTER corner. */
-  anchoredField:['stock','pink','green','ink'],
-  floors:{ strip:8, short:6, square:6 }      /* pt per module on print */
-};
-const INK_MARK_DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
-/* day key → accent name — the canonical weekday pairing (day-colours.json). */
-const INK_MARK_DAY_ACCENT = {
-  mon:'green', tue:'blue', wed:'purple', thu:'pink', fri:'red', sat:'amber', sun:'yellow'
-};
-/* form + mode → the cell names for the 3 bands and the field, canon order. */
-function inkMarkCells(form, mode){
-  const m = INK_MARK.modes[mode] || INK_MARK.modes.full;
-  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
-  const field = f.square
-    ? ((f.anchored && (mode==='full' || !INK_MARK.modes[mode])) ? INK_MARK.anchoredField : m.sq)
-    : (f.field===2 ? m.field.slice(0,2) : m.field);
-  return { bands:m.bands.slice(), field:field.slice() };
-}
-/* form → cell boxes in MODULE units: [{ slot:'b0'…'b2'|'f0'…'f5', x,y,w,h }].
-   ONE geometry for the screen divs AND the vector PDF, so the two renderers
-   can't drift. Bands 2×2; field cells 1×1; square field in Z order (f3 = the
-   outer corner). */
-function inkMarkLayout(form){
-  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
-  const boxes=[];
-  if(f.square){
-    boxes.push({ slot:'b0', x:0, y:0, w:2, h:2 });
-    boxes.push({ slot:'b1', x:2, y:0, w:2, h:2 });
-    boxes.push({ slot:'b2', x:0, y:2, w:2, h:2 });
-    for(let i=0;i<4;i++) boxes.push({ slot:'f'+i, x:2+(i%2), y:2+(i>>1), w:1, h:1 });
-  } else if(f.cols===2){
-    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:0, y:b*2, w:2, h:2 });
-    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:i%2, y:6+(i>>1), w:1, h:1 });
-  } else {
-    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:b*2, y:0, w:2, h:2 });
-    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:6+(i>>1), y:i%2, w:1, h:1 });
-  }
-  return { cols:f.cols, rows:f.rows, boxes };
-}
-/* cell name → screen hex. 'day' takes the weekday accent's hue. */
-function inkMarkHex(name, dayAccent){
-  if(name==='day') return PALETTE[dayAccent] || PALETTE.pink;
-  return INK_MARK_CELLS[name] || INK.rgb;
-}
+/* INK MARK — the ink strip / square as a placeable print element (canon rev
+   22.08.26) — is brand.js's, the same block the Poster and Schedule draw.
+   Print departures: STOCK IS THE PAPER. On true-white stock the stock cells
+   are UNPRINTED — the PDF exporter skips them entirely (never a cream/white
+   fill) and the screen shows them paper-white (INK_MARK_CELLS_PRINT). Stock
+   is always an inner cell, so the outer-corner rule (G2) holds with no ground
+   plate; ink cells ride the K plate; accents fill from PALETTE_CMYK. */
 
 /* Flat straight-down shadow — the lifted-edge plane (style guide §05).
    On the white sheet it prints as a soft K tint. {dy, k} per step. */
@@ -1449,7 +1339,7 @@ export {
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
   contrastInk, surfaceStyle, resolveInk, buildQR, qrGeometry, starPath, QR_DESTINATIONS, WORDMARK_PATH,
   ADDR, SITE, PARTNER, partnerOf, LIFT, shadowSpec, shadowCss, gridSpec,
-  INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
+  INK_MARK, INK_MARK_CELLS_PRINT, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
   dotFieldLayout, stripeLayout, burstRays, ruleLayout, borderDash,
   iconLayout, punchLayout, listSplit, LIST_ROW_SIZES, listRowFont,
   roundedRectPath, shapePath, SHAPE_KINDS, fitTextSize, measureTextW, arcTextLayout,

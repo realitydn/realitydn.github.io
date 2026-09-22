@@ -5,24 +5,20 @@
    Spec: SCHEDULE-STUDIO-SPEC.md
    ============================================================ */
 
-const INK = '#0d0905';
-const CREAM = '#fffbf1';
-const WHITE = '#ffffff';
-const MONT = "'Montserrat',sans-serif";
-const ALT = "'Montserrat Alternates',sans-serif";
-const GROT = "'Space Grotesk',sans-serif";
-
-/* Year 2 locked palette, glued to weekdays (ISO 1=Mon .. 7=Sun):
-   MON green · TUE blue · WED purple · THU pink · FRI red · SAT orange (amber) · SUN yellow.
-   Purple is the one block that takes cream text (--on-ink logic).
-   SOURCE OF TRUTH: public/tokens/day-colours.json (canon 18.08.26). These are
-   literals only because a canvas renderer can't read CSS custom properties —
-   tools/verify-day-colours.mjs enforces the match and fails the build on
-   drift. Change the json first, then this block. */
-const DAY_COLORS = { 1:'#43b02a', 2:'#18a7e0', 3:'#6e3179', 4:'#ed1b72', 5:'#ed2224', 6:'#fdb515', 7:'#fddf00' };
-const DAY_TEXT   = { 1:INK, 2:INK, 3:CREAM, 4:INK, 5:INK, 6:INK, 7:INK };
-const DAY_ABBR   = { 1:'MON', 2:'TUE', 3:'WED', 4:'THU', 5:'FRI', 6:'SAT', 7:'SUN' };
-const DAY_FULL   = { 1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 7:'Sunday' };
+/* Brand atoms — the neutrals, the three faces and the Year 2 weekday coding
+   (MON green · TUE blue · WED purple · THU pink · FRI red · SAT orange (amber)
+   · SUN yellow; purple is the one block that takes cream text) — come from
+   ../studio-shared/brand.js, which DERIVES the day tables from
+   public/tokens/day-colours.json (canon 18.08.26) at build time. A canvas
+   renderer can't read CSS custom properties, so the hexes are inlined into
+   the bundle rather than read at run time; the verifier checks that one
+   source. Keyed by ISO weekday (1=Mon .. 7=Sun). */
+import {
+  INK_HEX as INK, CREAM_HEX as CREAM, WHITE_HEX as WHITE, MONT, ALT, GROT,
+  DAY_COLORS, DAY_TEXT, DAY_ABBR_ISO as DAY_ABBR, DAY_FULL,
+  PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
+} from '../studio-shared/brand.js';
+import { WordmarkSVG as Wordmark } from '../studio-shared/wordmark.jsx';
 
 /* Location registry — editable config, drives the auto-legend. */
 const LOCATIONS = [
@@ -36,9 +32,9 @@ const FLAGS = [
   { key:'fee',    glyph:'$', label:'Has Fee Beyond Purchase' },
 ];
 
-/* Daily-card layout ids. Duplicated from DAILY_CARDS in schedule-render.jsx for
-   the same reason DAY_COLORS is duplicated from the token sheet: this file is
-   loaded first and must be able to normalise a document on its own. An archive
+/* Daily-card layout ids. Duplicated from DAILY_CARDS in schedule-render.jsx:
+   this file is loaded first and must be able to normalise a document on its
+   own. An archive
    naming a layout we no longer ship falls back to classic rather than blank. */
 const DAILY_CARD_IDS = ['classic','flood','misreg','spine','chrono'];
 
@@ -689,26 +685,10 @@ function storeDoc(doc){ try{ localStorage.setItem(SCH_LS, JSON.stringify(doc)); 
 /* ============================================================
    BRAND ATOMS
    ============================================================ */
-/* Canonical REALITY wordmark — Montserrat w/ Alternates A,I,Y, baked vector
-   (same paths as the site Logo + Poster Studio). tight=true crops the built-in
-   margins so it sits flush in left-aligned headers. */
-const WM_PATHS = [
-  'M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z',
-  'M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z',
-  'M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z',
-  'M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z',
-  'M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z',
-  'M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z',
-  'M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z',
-];
-function Wordmark({ height, color, tight }){
-  const vb = tight ? '72.4 12.3 374.2 60.1' : '0 0 512 84';
-  return (
-    <svg viewBox={vb} height={height} role="img" aria-label="REALITY" style={{ display:'block' }}>
-      <g fill={color||INK}>{WM_PATHS.map((d,i)=><path key={i} d={d} />)}</g>
-    </svg>
-  );
-}
+/* The canonical REALITY wordmark — Montserrat w/ Alternates A,I,Y, baked
+   vector (the site Logo's paths) — is ../studio-shared/wordmark.jsx, imported
+   above as Wordmark. tight=true crops the built-in margins so it sits flush
+   in left-aligned headers. */
 
 /* Real QR — encodes https://app.realitydn.com (v2, EC M). Generated by
    tools/generate-qr.py's algorithm (python-qrcode, EC M, border 0); exports
@@ -721,81 +701,12 @@ function Wordmark({ height, color, tight }){
    app, where the same week carries every event's detail page, and where a
    printed sheet from Monday still resolves to Thursday's changes. The printed
    site string on the sheet stays realitydn.com; only the code goes to the app. */
-/* ============================================================
-   INK MARK — canon rev 22.08.26. A verbatim port of the block in
-   studio-data.jsx / print-data.jsx: machine spec lives in
-   design-system-year2/design_handoff_web_app_ink_pass/tokens/
-   ink-strip.json, cell ORDER is FIXED, and recolouring (mode /
-   day) is the only parameter. tools/verify-day-colours.mjs checks
-   this file alongside the other two, so the three renderers cannot
-   drift to different marks.
-
-   PALETTE duplicates the seven hues that DAY_COLORS below also
-   carries. That is deliberate, not an oversight: DAY_COLORS is
-   keyed by ISO weekday and the verifier reads its literals
-   directly (it cannot follow a reference), while the mark needs
-   the same hues by NAME. Both blocks are guarded against
-   day-colours.json, so a drift between them fails the build.
-   ============================================================ */
-const PALETTE = {
-  blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
-  amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224'
-};
-const INK_MARK_CELLS = {
-  red:PALETTE.red, blue:PALETTE.blue, yellow:PALETTE.yellow, green:PALETTE.green,
-  pink:PALETTE.pink, purple:PALETTE.purple, amber:PALETTE.amber,
-  ink:'#0d0905',      /* literal artwork ink */
-  stock:'#fffbf1'     /* a COLOUR, not an absence — always an inner cell */
-};
-const INK_MARK = {
-  rev:'22.08.26',
-  forms:{
-    'strip-v':        { cols:2, rows:9, field:6 },
-    'strip-h':        { cols:9, rows:2, field:6 },
-    'strip-short-v':  { cols:2, rows:7, field:2 },
-    'strip-short-h':  { cols:7, rows:2, field:2 },
-    'square':         { cols:4, rows:4, field:4, square:true },
-    'square-anchored':{ cols:4, rows:4, field:4, square:true, anchored:true }
-  },
-  modes:{
-    full:    { bands:['red','blue','yellow'], field:['stock','ink','green','pink','purple','amber'], sq:['stock','pink','purple','amber'] },
-    majors:  { bands:['red','blue','yellow'], field:['stock','ink','stock','ink','ink','stock'],     sq:['stock','ink','stock','ink'] },
-    daycode: { bands:['day','ink','day'],     field:['stock','day','ink','day','day','stock'],       sq:['stock','day','day','ink'] },
-    ink:     { bands:['ink','stock','ink'],   field:['ink','stock','stock','ink','ink','stock'],     sq:['stock','ink','ink','ink'] }
-  },
-  anchoredField:['stock','pink','green','ink'],
-  floors:{ strip:8, short:6, square:6 }
-};
-const INK_MARK_DAY_ACCENT = { mon:'green', tue:'blue', wed:'purple', thu:'pink', fri:'red', sat:'amber', sun:'yellow' };
-function inkMarkCells(form, mode){
-  const m = INK_MARK.modes[mode] || INK_MARK.modes.full;
-  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
-  const field = f.square
-    ? ((f.anchored && (mode==='full' || !INK_MARK.modes[mode])) ? INK_MARK.anchoredField : m.sq)
-    : (f.field===2 ? m.field.slice(0,2) : m.field);
-  return { bands:m.bands.slice(), field:field.slice() };
-}
-function inkMarkLayout(form){
-  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
-  const boxes=[];
-  if(f.square){
-    boxes.push({ slot:'b0', x:0, y:0, w:2, h:2 });
-    boxes.push({ slot:'b1', x:2, y:0, w:2, h:2 });
-    boxes.push({ slot:'b2', x:0, y:2, w:2, h:2 });
-    for(let i=0;i<4;i++) boxes.push({ slot:'f'+i, x:2+(i%2), y:2+(i>>1), w:1, h:1 });
-  } else if(f.cols===2){
-    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:0, y:b*2, w:2, h:2 });
-    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:i%2, y:6+(i>>1), w:1, h:1 });
-  } else {
-    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:b*2, y:0, w:2, h:2 });
-    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:6+(i>>1), y:i%2, w:1, h:1 });
-  }
-  return { cols:f.cols, rows:f.rows, boxes };
-}
-function inkMarkHex(name, dayAccent){
-  if(name==='day') return PALETTE[dayAccent] || PALETTE.pink;
-  return INK_MARK_CELLS[name] || '#0d0905';
-}
+/* INK MARK — canon rev 22.08.26 — is brand.js's (INK_MARK, the artwork cell
+   table, inkMarkCells / inkMarkLayout / inkMarkHex): the one block the Poster
+   and Print draw too, so the three renderers cannot drift to different marks.
+   Machine spec: design-system-year2/design_handoff_web_app_ink_pass/tokens/
+   ink-strip.json — cell ORDER is FIXED, recolouring (mode / day) is the only
+   parameter. */
 /* The mark itself. `m` is the module in px; the caller sizes it, exactly as the
    poster ticket does, so a mark beside a QR can be pinned to that QR's height.
    No radius, no gradients, no cell shadows — the spec bans all three. */

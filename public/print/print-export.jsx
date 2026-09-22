@@ -16,6 +16,7 @@ import {
   dotFieldLayout, burstRays, shapePath, arcTextLayout, ruleLayout, inkMarkLayout, inkMarkCells,
   INK_MARK_DAY_ACCENT, WORDMARK_PATH, INK_MARK, buildQR, nfcDeep, GANG,
 } from './print-data.jsx';
+import { NEUTRALS } from '../studio-shared/brand.js';
 
 let PrintExport;
 (function(){
@@ -100,7 +101,7 @@ function colorForKey(key, fallback){
    surface accent is customised. */
 function surfTextFallback(surface, accentHex){
   if(surface==='solid') return whiteColor();
-  if(surface==='accent') return contrastInk(accentHex)==='#ffffff' ? whiteColor() : inkColor();
+  if(surface==='accent') return contrastInk(accentHex, NEUTRALS.print)===NEUTRALS.print.light ? whiteColor() : inkColor();
   return inkColor();
 }
 
@@ -345,7 +346,7 @@ function renderElement(page, el, ctx){
       else { if(isBonus) ellipse(c.cx,c.cy,rr,rr,{color:bonusCol}); ellipse(c.cx,c.cy,rr,rr,{borderColor:col,borderWidth:lay.stroke}); }
       if(isBonus){
         const lbl=el.bonusLabel||'★', f=fontFor('mont',800), s=c.d*0.42;
-        const tcol=contrastInk(bonusHex)==='#ffffff'?whiteColor():inkColor();
+        const tcol=contrastInk(bonusHex, NEUTRALS.print)===NEUTRALS.print.light?whiteColor():inkColor();
         const w=measure(lbl,f,s,0), a=f.heightAtSize(s,{descender:false});
         drawLineStr(lbl, c.cx-w/2, c.cy+a*0.36, f, s, tcol, 0);
       } else if(el.numbered){

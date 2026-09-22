@@ -4,6 +4,7 @@
    ============================================================ */
 import { ICON_CATEGORIES, ICON_CORE, ICON_LABELS } from '../studio-shared/print-icons.js';
 import { RUI } from '../studio-shared/studio-ui.jsx';
+import { inkTitle } from '../studio-shared/brand.js';
 
 import { RStore } from './studio-store.js';
 import { RCloud } from './cloud-client.js';
@@ -805,8 +806,6 @@ function IconPicker({ value, onPick, onSpawn }){
   );
 }
 
-/* tooltip label for an ink key — the neutrals get their brand names */
-const inkTitle = a => a==='ink' ? 'Ink' : a==='cream' ? 'Cream' : a;
 /* an ink swatch row with a leading Auto/Off slot (null) */
 function InkRow({ label, value, onChange, autoTitle }){
   return (

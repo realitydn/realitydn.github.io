@@ -7,32 +7,15 @@
 
 import { ICON_GLYPHS } from '../studio-shared/print-icons.js';
 
-const PALETTE = {
-  blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
-  amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224',
-  /* the two neutrals — valid anywhere an ink key is stored (engine PAL mirrors this) */
-  ink:'#0d0905', cream:'#fffbf1'
-};
-const ACCENTS = ['blue','green','yellow','amber','purple','pink','red'];
-/* what ink swatch pickers offer: the seven accents plus the neutrals.
-   ACCENTS stays the day-coding seven — don't fold these in there. */
-const INK_CHOICES = ACCENTS.concat(['ink','cream']);
-/* Weekday each accent codes for on schedule surfaces (Year 2 scheme, shifted
-   June 2026) — surfaced as tooltips on the poster-accent picker so an event
-   poster can match its day. Amber is the schedule's "orange".
-   SOURCE OF TRUTH: public/tokens/day-colours.json (canon 18.08.26) —
-   tools/verify-day-colours.mjs enforces this pairing at build time. */
-const ACCENT_DAYS = {
-  yellow:'Sunday', green:'Monday', blue:'Tuesday', purple:'Wednesday',
-  pink:'Thursday', red:'Friday', amber:'Saturday'
-};
-/* Mon→Sun order + the inverse of ACCENT_DAYS — drives the day-of-week picker,
-   the ordered accent row, and the Story filename (e.g. purple → "3-Wed"). */
-const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const DAY_ABBR  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const ACCENT_BY_DAY = {}; Object.keys(ACCENT_DAYS).forEach(a=>{ ACCENT_BY_DAY[ACCENT_DAYS[a]]=a; });
-const ACCENTS_BY_DAY = DAY_NAMES.map(d=>ACCENT_BY_DAY[d]);   // green,blue,purple,pink,red,amber,yellow
-function accentDay(accent){ const day=ACCENT_DAYS[accent]; if(!day) return null; const i=DAY_NAMES.indexOf(day); return { name:day, abbr:DAY_ABBR[i], n:i+1 }; }
+/* The palette, the weekday coding (derived from public/tokens/day-colours.json),
+   contrast and the ink mark live in ../studio-shared/brand.js — one copy for all
+   three Studios. Re-exported below so this Studio's modules keep one import. */
+import {
+  PALETTE, ACCENTS, INK_CHOICES, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
+  relLuminance, contrastRatio, contrastInk,
+  INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex,
+} from '../studio-shared/brand.js';
+
 
 const FORMATS = {
   '4x5':  { w:1080, h:1350, label:'4:5', sub:'FEED' },   /* primary — IG feed + site pipeline */
@@ -120,40 +103,8 @@ function themeColors(theme){
     : { fg:'#0d0905', bg:'#fffbf1', paper:'#fffbf1', shadow:(a)=>`rgba(13,9,5,${a})` };
 }
 
-/* Pick the readable ink/cream for text sitting on a given fill.
-
-   This used to threshold a NAIVE luminance (channels averaged without the
-   sRGB gamma expansion) at 0.2, which put ink on every accent — including
-   PURPLE, where ink measures 2.25:1 and is genuinely hard to read. Real
-   relative luminance, and whichever neutral actually contrasts better, lands
-   on exactly the canon `on` value for all seven day accents
-   (public/tokens/day-colours.json): ink on blue · green · yellow · amber ·
-   pink · red, cream on purple. Night-purple (#9a4faa) resolves to cream too.
-   So the rule needs no lookup table to stay in step with canon — it derives
-   the same answer, and keeps working for a custom fill the palette never
-   named.
-
-   NOT generalised: cream-on-red is canon for the ACTION BUTTON only
-   (reality-tokens.json F2 — 4.19:1, a knowing AA exception). A red fill in
-   artwork still takes ink here; a poster that wants the button read sets
-   textColor:'cream' explicitly, the way the Ink-bands template's action band
-   does. Every element's "Text colour" swatch overrides this — Auto is only
-   the starting point. */
-function relLuminance(hex){
-  const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
-    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
-  return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
-}
-function contrastRatio(a, b){
-  const l1=relLuminance(a), l2=relLuminance(b);
-  return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
-}
-function contrastInk(hex){
-  if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return '#0d0905';
-  /* ties and near-ties go to ink — the Riso look — because `>` keeps ink
-     unless cream is strictly better (pink 4.72 vs 4.06, red 4.59 vs 4.19). */
-  return contrastRatio(hex,'#fffbf1') > contrastRatio(hex,'#0d0905') ? '#fffbf1' : '#0d0905';
-}
+/* contrastInk — Poster's contrast-ratio rule, now canon for every Studio — is in
+   brand.js; with no pair it answers ink/cream, the artwork neutrals. */
 
 /* surface → concrete box style (canvas px units) */
 function surfaceStyle(surface, theme, accentHex, lift){
@@ -380,100 +331,13 @@ function QRGlyph({ size, dark, light, quiet }){
   );
 }
 
-/* ============================================================
-   INK MARK — the ink strip / ink square as a placeable element
-   (canon rev 22.08.26). Machine spec: design-system-year2/
-   design_handoff_web_app_ink_pass/tokens/ink-strip.json — cell
-   ORDER is FIXED; recolouring (mode / day) is the only parameter.
-   Forms: 2×9 / 9×2 strip · 2×7 / 7×2 short · 4×4 square (+
-   square-anchored, where ink takes the outer corner).
-
-   G2 (closed 22.08.26): on print/poster surfaces the outer-corner
-   rule HOLDS — stock is never on an outer edge or corner — so the
-   poster element defaults to a paper-shade GROUND with one module
-   of clear space (square-anchored needs none: its ink corner IS
-   the anchor). The open silhouette is a SCREEN-only allowance.
-
-   No radius, no gradients, no cell shadows, never auto-placed.
-   v1 deliberately skips voids/dropout (the max-3-void variation
-   move) — recolour only. Cell hexes are enforced against
-   public/tokens/day-colours.json by tools/verify-day-colours.mjs.
-   ============================================================ */
-const INK_MARK_CELLS = {
-  red:PALETTE.red, blue:PALETTE.blue, yellow:PALETTE.yellow, green:PALETTE.green,
-  pink:PALETTE.pink, purple:PALETTE.purple, amber:PALETTE.amber,
-  ink:PALETTE.ink,      /* #0d0905 — literal artwork ink */
-  stock:PALETTE.cream   /* #fffbf1 — a COLOUR, not an absence; always an inner cell */
-};
-const INK_MARK = {
-  rev:'22.08.26',
-  forms:{
-    'strip-v':        { cols:2, rows:9, field:6 },
-    'strip-h':        { cols:9, rows:2, field:6 },
-    'strip-short-v':  { cols:2, rows:7, field:2 },
-    'strip-short-h':  { cols:7, rows:2, field:2 },
-    'square':         { cols:4, rows:4, field:4, square:true },
-    'square-anchored':{ cols:4, rows:4, field:4, square:true, anchored:true }
-  },
-  /* fixed cell orders per mode — bands read red-first; `field` lists the six
-     1×1 strip cells in reading order; `sq` is the square's quadrant-4 field
-     in Z order. Mirrors src/components/InkMark.jsx exactly. */
-  modes:{
-    full:    { bands:['red','blue','yellow'], field:['stock','ink','green','pink','purple','amber'], sq:['stock','pink','purple','amber'] },
-    majors:  { bands:['red','blue','yellow'], field:['stock','ink','stock','ink','ink','stock'],     sq:['stock','ink','stock','ink'] },
-    daycode: { bands:['day','ink','day'],     field:['stock','day','ink','day','day','stock'],       sq:['stock','day','day','ink'] },
-    ink:     { bands:['ink','stock','ink'],   field:['ink','stock','stock','ink','ink','stock'],     sq:['stock','ink','ink','ink'] }
-  },
-  /* square-anchored × full: whole neutral pair kept, two minors dropped —
-     ink lands on the OUTER corner (why that form needs no ground). */
-  anchoredField:['stock','pink','green','ink'],
-  floors:{ strip:8, short:6, square:6 }      /* px per module */
-};
-const INK_MARK_DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
-/* day key → accent name, derived from the canonical pairing above so the two
-   can never drift (mon green · tue blue · wed purple · thu pink · fri red ·
-   sat amber · sun yellow — day-colours.json). */
-const INK_MARK_DAY_ACCENT = {};
-INK_MARK_DAY_KEYS.forEach((d,i)=>{ INK_MARK_DAY_ACCENT[d] = ACCENTS_BY_DAY[i]; });
-
-/* form + mode → the cell names for the 3 bands and the field, canon order. */
-function inkMarkCells(form, mode){
-  const m = INK_MARK.modes[mode] || INK_MARK.modes.full;
-  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
-  const field = f.square
-    ? ((f.anchored && (mode==='full' || !INK_MARK.modes[mode])) ? INK_MARK.anchoredField : m.sq)
-    : (f.field===2 ? m.field.slice(0,2) : m.field);
-  return { bands:m.bands.slice(), field:field.slice() };
-}
-/* form → cell boxes in MODULE units: [{ slot:'b0'…'b2'|'f0'…'f5', x,y,w,h }].
-   ONE geometry for the screen divs AND Print Studio's vector PDF, so the two
-   renderers can't drift. Bands are 2×2; field cells 1×1.
-     strip-v: bands stacked, field rows of two (row-major)
-     strip-h: strip-v rotated -90° — bands left-to-right, field columns of two
-     square:  quadrants in Z order (red TL · blue TR · yellow BL), field at
-              half module in quadrant 4 (Z order, f3 = the outer corner). */
-function inkMarkLayout(form){
-  const f = INK_MARK.forms[form] || INK_MARK.forms['strip-v'];
-  const boxes=[];
-  if(f.square){
-    boxes.push({ slot:'b0', x:0, y:0, w:2, h:2 });
-    boxes.push({ slot:'b1', x:2, y:0, w:2, h:2 });
-    boxes.push({ slot:'b2', x:0, y:2, w:2, h:2 });
-    for(let i=0;i<4;i++) boxes.push({ slot:'f'+i, x:2+(i%2), y:2+(i>>1), w:1, h:1 });
-  } else if(f.cols===2){
-    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:0, y:b*2, w:2, h:2 });
-    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:i%2, y:6+(i>>1), w:1, h:1 });
-  } else {
-    for(let b=0;b<3;b++) boxes.push({ slot:'b'+b, x:b*2, y:0, w:2, h:2 });
-    for(let i=0;i<f.field;i++) boxes.push({ slot:'f'+i, x:6+(i>>1), y:i%2, w:1, h:1 });
-  }
-  return { cols:f.cols, rows:f.rows, boxes };
-}
-/* cell name → hex. 'day' takes the weekday accent's hue. */
-function inkMarkHex(name, dayAccent){
-  if(name==='day') return PALETTE[dayAccent] || PALETTE.pink;
-  return INK_MARK_CELLS[name] || PALETTE.ink;
-}
+/* INK MARK — the ink strip / ink square (canon rev 22.08.26) — is in brand.js:
+   INK_MARK, its cell tables, inkMarkCells / inkMarkLayout / inkMarkHex. G2
+   (closed 22.08.26): on print/poster surfaces the outer-corner rule HOLDS —
+   stock is never on an outer edge or corner — so the poster element defaults
+   to a paper-shade GROUND with one module of clear space (square-anchored
+   needs none: its ink corner IS the anchor). The open silhouette is a
+   SCREEN-only allowance. */
 
 /* ============================================================
    VECTOR GEOMETRY — the graphical-element kit.

@@ -6,6 +6,7 @@
    ============================================================ */
 import { ICON_GLYPHS, ICON_LABELS, ICON_CATEGORIES, ICON_CORE } from '../studio-shared/print-icons.js';
 import { RUI } from '../studio-shared/studio-ui.jsx';
+import { inkTitle, INK_CHOICES } from '../studio-shared/brand.js';
 
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import {
@@ -188,8 +189,7 @@ function AccentRow({ value, onChange, nullable, nullTitle }){
 const STOCK_LABEL = { day:'Cream', white:'White', news:'Newsprint', straw:'Straw', kraft:'Kraft', salmon:'Salmon',
                       grey:'Grey board', flint:'Flint', steel:'Steel', night:'Night' };
 const SEP_SCREENS = [{v:'grain',l:'Grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
-const PLATE_INKS = AP_ACC.concat(['ink','cream']);
-const inkTitle = a => a==='ink' ? 'Ink' : a==='cream' ? 'Cream' : a;
+const PLATE_INKS = INK_CHOICES;
 function PressControls({ el, update, docAccent }){
   const RP = window.RISO && window.RISO.press; if(!RP) return null;
   const inkKey = el.followAccent!==false ? docAccent : (el.ink||'pink');

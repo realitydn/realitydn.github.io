@@ -5,6 +5,7 @@
 import { ICON_CATEGORIES, ICON_CORE, ICON_LABELS } from '../studio-shared/print-icons.js';
 import { RUI } from '../studio-shared/studio-ui.jsx';
 import { inkTitle } from '../studio-shared/brand.js';
+import { slugify } from '../studio-shared/util.js';
 import {
   ImageIntake, processImageFile, imageFromClipboard, looksLikeImage, PhotoUpload,
 } from '../studio-shared/image-intake.jsx';
@@ -112,14 +113,8 @@ async function bootDoc(){
   return starterDoc();
 }
 
-/* Poster name → filename slug. Vietnamese-safe: đ/Đ are mapped by hand (they
-   don't decompose under NFD), the rest of the diacritics strip normally.
-   "Đêm Trò Chơi" → "dem-tro-choi"; "Board Game Night" → "board-game-night". */
-function slugify(s){
-  return (s||'').replace(/đ/g,'d').replace(/Đ/g,'D')
-    .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'),'')
-    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
-}
+/* Poster name → filename slug: util.js slugify (Vietnamese-safe; "Đêm Trò
+   Chơi" → "dem-tro-choi"), the one Print Studio names its PDFs with. */
 /* Export filename stem per format. Two formats lead with the accent's weekday
    (e.g. purple → "3-wed-…") so files sort Mon→Sun and the day is legible:
      • 9:16 Story — "3-wed-pulse-sessions"        (phone-post naming)
@@ -224,41 +219,26 @@ function storeQueueDismissed(o){ try{ localStorage.setItem(QUEUE_DISMISS_KEY, JS
    longer, so long event names land inside the Classic layout's box. */
 function queueTitleSize(t){ const n=(t||'').length; return n<=12?120 : n<=22?100 : n<=34?82 : n<=50?68 : 56; }
 
-/* ---------- small controls ---------- */
 /* ---------- small controls ----------
-   Field / Slider / Chips / ScaleControl / NumField / Fold come from the shared
-   kit (public/studio-shared/studio-ui.jsx), the same copy Print Studio loads,
-   so the two can't drift to different components again. Swatches stays local:
-   its Auto/Ink/Cream trio is Poster's, not Print's K-only set. */
-RUI.configure({ prefix:'rs', storeKey:'reality-studio' });
+   Field / Slider / Chips / ScaleControl / NumField / Fold / Swatches come from
+   the shared kit (public/studio-shared/studio-ui.jsx), the same copy Print
+   Studio loads, so the two can't drift to different components again. What
+   stays here is Poster's parameters: the px type scale, and Swatches' fixed
+   Auto/Ink/Cream trio (Print's is K-only ink and paper white). */
+RUI.configure({ prefix:'rs', storeKey:'reality-studio', swatchBorder:'#3a2f1f' });
 const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
 const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnapScale} step={apScaleStep} suffix="px" note="snapped" />;
 
-function Swatches({ label, value, onChange, autoTitle, autoBg }){
-  // Auto adapts to the surface/theme; Ink and Cream are literal and fixed, so
-  // any element (esp. text over a photo) can be forced dark or light. The Auto
-  // swatch is relabelled / recoloured per role (text contrast vs poster accent).
-  const fixed = [
-    { v:'fg',    bg: autoBg || 'linear-gradient(135deg,#0d0905 0 50%,#fffbf1 50% 100%)',
-                 title: autoTitle || 'Auto — adapts to surface / theme' },
-    { v:'ink',   bg:'#0d0905', title:'Ink' },
-    { v:'cream', bg:'#fffbf1', title:'Cream' },
-  ];
-  return (
-    <div className="rs-row">
-      {label && <div className="rs-lab">{label}</div>}
-      <div className="rs-swatches">
-        {fixed.map(s=>(
-          <div key={s.v} className={'rs-sw'+(value===s.v?' on':'')} title={s.title}
-            style={{ background:s.bg, border:'1.5px solid #3a2f1f' }} onClick={()=>onChange(s.v)} />
-        ))}
-        {AP_ACC.map(a=>(
-          <div key={a} className={'rs-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />
-        ))}
-      </div>
-    </div>
-  );
-}
+/* Auto adapts to the surface/theme; Ink and Cream are literal and fixed, so
+   any element (esp. text over a photo) can be forced dark or light. The Auto
+   swatch is relabelled / recoloured per role (text contrast vs poster accent).
+   The row itself is RUI.Swatches; Poster's fixed trio is the parameter. */
+const Swatches = ({ autoTitle, autoBg, ...p })=> <RUI.Swatches {...p} fixed={[
+  { v:'fg',    bg: autoBg || 'linear-gradient(135deg,#0d0905 0 50%,#fffbf1 50% 100%)',
+               title: autoTitle || 'Auto — adapts to surface / theme' },
+  { v:'ink',   bg:'#0d0905', title:'Ink' },
+  { v:'cream', bg:'#fffbf1', title:'Cream' },
+]} />;
 const SURFACES = [
   {v:'solid',l:'Solid'},{v:'paper',l:'Paper'},{v:'accent',l:'Accent'},
   {v:'outline',l:'Outline'},{v:'scrim',l:'Scrim'},{v:'none',l:'None'}
@@ -802,7 +782,7 @@ function BlurControls({ el, update, prefix, label, max }){
    shows too. Poster's parameters: an Auto (cream) stock, every press dial
    grouped in a fold of its own, tight hints on the dark panel.
    ============================================================ */
-PressPanels.configure({ stockDefault:'day', hintTight:true, swatchBorder:'#3a2f1f' });
+PressPanels.configure({ stockDefault:'day', hintTight:true });
 /* What the press will actually run for this element — resolved the same way
    the engine resolves it, so the panel never describes a different job from
    the one on the poster. */

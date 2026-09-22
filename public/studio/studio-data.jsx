@@ -9,6 +9,7 @@ import {
   SHAPE_KINDS, shapePath, shapeClip, roundedRectPath, burstRays, ruleLayout, RULE_PATTERNS, iconLayout,
 } from '../studio-shared/shapes.js';
 import { QRGlyph, qrPatternOf, QUIET_SPEC, QUIET_TIGHT } from '../studio-shared/qr.js';
+import { setIdPrefix, uid, makeTypeScale } from '../studio-shared/util.js';
 
 /* The palette, the weekday coding (derived from public/tokens/day-colours.json),
    contrast and the ink mark live in ../studio-shared/brand.js — one copy for all
@@ -59,17 +60,9 @@ const STANDEE_FORMATS = ['st-60x120','st-60x160','st-80x180','st-80x200'];
    through their own toolbar picker, kept out of the Save-All bundle. */
 const HANDOUT_FORMATS = ['a5','a6'];
 /* modular type scale — font size snaps to these for consistency */
-const TYPE_SCALE = [18,22,26,32,38,46,56,68,82,100,120,144,172,206,248];
-function snapToScale(v){
-  let best = TYPE_SCALE[0], d = Infinity;
-  for(const s of TYPE_SCALE){ const dd = Math.abs(s-v); if(dd<d){ d=dd; best=s; } }
-  return best;
-}
-function scaleStep(v, dir){
-  let i = TYPE_SCALE.indexOf(snapToScale(v));
-  i = Math.max(0, Math.min(TYPE_SCALE.length-1, i+dir));
-  return TYPE_SCALE[i];
-}
+/* px — the snapping itself is ../studio-shared/util.js makeTypeScale */
+const TYPE = makeTypeScale([18,22,26,32,38,46,56,68,82,100,120,144,172,206,248]);
+const TYPE_SCALE = TYPE.steps, snapToScale = TYPE.snap, scaleStep = TYPE.step;
 /* keys routed to per-format overrides (vs content, which is shared across every
    format). Geometry + image framing + text SIZE — so type can be resized per
    view without touching Master or the other formats. */
@@ -216,8 +209,8 @@ function safeRect(format){
   return { x:(f.w-size)/2, y:(f.h-size)/2, w:size, h:size };
 }
 
-let _id = 1;
-function uid(){ return 'e'+(_id++)+'_'+Math.random().toString(36).slice(2,6); }
+/* element ids: 'e…' (util.js uid) */
+setIdPrefix('e');
 
 /* ---- Sessions list parser — one row per line, pasted as-is ----
    Treats each row as a set of typed cells split on em/en dashes, pipes, tabs,

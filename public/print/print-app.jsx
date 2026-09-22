@@ -65,32 +65,19 @@ function storeErrText(e){
    Field / Slider / Chips / ScaleControl / NumField / Fold now come from the
    shared kit (public/studio-shared/studio-ui.jsx) so Poster and Print can't
    drift to different components again. The prefix is the only local part —
-   every class the kit builds is `ps-…` from here. Swatches stays local: its
-   fixed swatches are print's (K-only ink, paper white), not Poster's. */
-RUI.configure({ prefix:'ps', storeKey:'reality-print' });
+   every class the kit builds is `ps-…` from here. Swatches is the kit's row
+   too, with print's fixed swatches (K-only ink, paper white) as its parameter. */
+RUI.configure({ prefix:'ps', storeKey:'reality-print', swatchBorder:'#cfc7b6' });
 const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
 const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap} step={apStep} suffix="pt" />;
 
-function Swatches({ label, value, onChange, auto, white }){
-  const fixed = [];
-  if(auto)  fixed.push({ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', title:'Auto — readable on the surface' });
-  fixed.push({ v:'ink', bg:AP_INK.rgb, title:'Ink (K-only)' });
-  if(white) fixed.push({ v:'white', bg:'#ffffff', title:'White (paper / reverse)' });
-  return (
-    <div className="ps-row">
-      {label && <div className="ps-lab">{label}</div>}
-      <div className="ps-swatches">
-        {fixed.map(s=>(
-          <div key={s.v} className={'ps-sw'+(value===s.v?' on':'')} title={s.title}
-            style={{ background:s.bg, border:'1.5px solid #cfc7b6' }} onClick={()=>onChange(s.v)} />
-        ))}
-        {AP_ACC.map(a=>(
-          <div key={a} className={'ps-sw'+(value===a?' on':'')} title={a} style={{ background:AP_PAL[a] }} onClick={()=>onChange(a)} />
-        ))}
-      </div>
-    </div>
-  );
-}
+/* Print's fixed swatches — K-only ink, the paper white, an optional Auto —
+   ahead of the accents; the row itself is RUI.Swatches. */
+const Swatches = ({ auto, white, ...p })=> <RUI.Swatches {...p} fixed={[].concat(
+  auto  ? [{ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', title:'Auto — readable on the surface' }] : [],
+  [{ v:'ink', bg:AP_INK.rgb, title:'Ink (K-only)' }],
+  white ? [{ v:'white', bg:'#ffffff', title:'White (paper / reverse)' }] : []
+)} />;
 const SURFACES =[{v:'none',l:'None'},{v:'paper',l:'Outline box'},{v:'solid',l:'Solid'},{v:'accent',l:'Accent'},{v:'outline',l:'Hairline'}];
 const FAMS = [{v:'mont',l:'Display'},{v:'grot',l:'Text'},{v:'alt',l:'Wordmark'}];
 const LIFTS = [{v:'none',l:'Flat'},{v:'light',l:'Light'},{v:'default',l:'Lift'},{v:'heavy',l:'Heavy'},{v:'custom',l:'Custom'}];
@@ -166,7 +153,7 @@ function AccentRow({ value, onChange, nullable, nullTitle }){
    ../studio-shared/press-panels.jsx, shared with the Poster; Print's
    parameters: white stock (no Auto), a subset of the press as a section of
    the treatment fold, loose hints on the light panel. */
-PressPanels.configure({ stockDefault:'white', hintTight:false, swatchBorder:'#cfc7b6',
+PressPanels.configure({ stockDefault:'white', hintTight:false,
   stockNote:'White is the sheet these pieces are run on; the rest are for a piece going on a coloured stock.' });
 const PRINT_PRESS_DIALS = ['drift','skew','stretch','drumStreak','starve','pull'];
 const PLATE_INKS = INK_CHOICES;

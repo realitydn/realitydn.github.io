@@ -17,6 +17,7 @@ import {
 } from './print-data.jsx';
 import { NEUTRALS, MONT, GROT, ALT } from '../studio-shared/brand.js';
 import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
+import { EM } from '../studio-shared/util.js';
 
 const FAM_CSS = { mont:MONT, grot:GROT, alt:ALT };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
@@ -30,7 +31,6 @@ function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
    `sign` is print-only: wayfinding type is read across a room, so it takes
    the signage rung (.09) with the print offset on top. */
 const TRACK = { display:0.025, h1:0.035, h2:0.05, name:0.01, label:0.17, button:0.12, sign:0.10, fact:0 };
-const EM = (v)=> v+'em';
 /* FACT type — Grotesk states facts, in every medium (M1). A printed menu is a
    NEAR surface (M2's register list names it), so facts here sit at 500 rather
    than the poster's far-register 700. Tabular figures are what make a price

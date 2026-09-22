@@ -39,9 +39,13 @@
    sharing one global scope, where a top-level `function Field(){}` here
    would have collided with the `const { Field } = RUI` alias each Studio
    declares. Only RUI escapes. */
+import { ACCENTS, PALETTE } from './brand.js';
+
 (function(){
-  /* ---------- config ---------- */
-  const CFG = { prefix:'rs', storeKey:'reality-studio' };
+  /* ---------- config ----------
+     swatchBorder — the outline a light/neutral swatch takes, so it reads on
+     the Studio's own chrome (dark Poster panel, light Print panel). */
+  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'#3a2f1f' };
   function cls(suffix){ return CFG.prefix + '-' + suffix; }
 
   /* ---------- a minimal external store (subscribe + snapshot) ----------
@@ -232,6 +236,27 @@
     );
   }
 
+  /* A colour choice: the Studio's own fixed swatches first (each
+     { v, bg, title } — Poster's Auto/Ink/Cream, Print's Auto/Ink(K)/White),
+     then the seven accents. The fixed set is the parameter; the row is one. */
+  function Swatches({ label, value, onChange, fixed }){
+    return (
+      <div className={cls('row')}>
+        {label && <div className={cls('lab')}>{label}</div>}
+        <div className={cls('swatches')}>
+          {(fixed||[]).map(s=>(
+            <div key={s.v} className={cls('sw')+(value===s.v?' on':'')} title={s.title}
+              style={{ background:s.bg, border:'1.5px solid '+CFG.swatchBorder }} onClick={()=>onChange(s.v)} />
+          ))}
+          {ACCENTS.map(a=>(
+            <div key={a} className={cls('sw')+(value===a?' on':'')} title={a} style={{ background:PALETTE[a] }} onClick={()=>onChange(a)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  function swatchBorder(){ return CFG.swatchBorder; }
+
   /* numeric field — the precise cousin of the position sliders */
   function NumField({ label, value, onChange, min, step }){
     const [txt, setTxt] = React.useState(null);
@@ -410,12 +435,13 @@
   function configure(opts){
     if(opts && opts.prefix) CFG.prefix = opts.prefix;
     if(opts && opts.storeKey) CFG.storeKey = opts.storeKey;
+    if(opts && opts.swatchBorder) CFG.swatchBorder = opts.swatchBorder;
     hydrate();
   }
 
   window.RUI = {
     configure, cls,
-    Field, Slider, Chips, ScaleControl, NumField, Fold, Hint, HintsToggle,
+    Field, Slider, Chips, ScaleControl, NumField, Fold, Hint, HintsToggle, Swatches, swatchBorder,
     Palette, usePalette,
     hintsOn, setHints, useStore, hintStore, foldStore, setFold,
     dirtyCount, isSet, reveal, setActions, indexStore,

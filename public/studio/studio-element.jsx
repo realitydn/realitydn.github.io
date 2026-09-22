@@ -15,6 +15,7 @@ import {
 import { MONT, ALT, GROT } from '../studio-shared/brand.js';
 import { qrTarget, qrMatrix } from '../studio-shared/qr.js';
 import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
+import { EM } from '../studio-shared/util.js';
 
 /* ---- FACT type — the 5+6 merge, in one place -------------------------
    Canon (reality-ds.css .type-fact-far · decision M1 "family wins"):
@@ -49,7 +50,6 @@ import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
    verify-day-colours.mjs §TYPE now fails the build on any off-ladder literal
    in here, so it cannot drift back. */
 const TRACK = { display:0.015, h1:0.025, h2:0.04, name:0, label:0.16, button:0.11, fact:0 };
-const EM = (v) => v + 'em';
 
 const FACT = (size, extra) => Object.assign({
   fontFamily:GROT, fontWeight:700, letterSpacing:0, fontSize:size,

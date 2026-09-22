@@ -18,8 +18,8 @@
                     Auto — white IS the default).
      stockNote    — a closing line under the stock picker (Print's).
      hintTight    — Poster's inspector runs its hints tight.
-     swatchBorder — the chrome colour an outlined swatch takes (dark
-                    Poster panel vs light Print panel).
+   (the outline an outlined swatch takes is RUI's swatchBorder, set with
+   the Studio's RUI.configure).
    and per call:
      PressFold `dials` — Print exposes a SUBSET of the press (drift, skew,
                     stretch, streaks, starvation, pull) as a section of its
@@ -32,7 +32,7 @@
 import { RUI } from './studio-ui.jsx';
 import { inkTitle, INK_CHOICES, PALETTE } from './brand.js';
 
-const CFG = { stockDefault:'day', stockNote:null, hintTight:true, swatchBorder:'#3a2f1f' };
+const CFG = { stockDefault:'day', stockNote:null, hintTight:true };
 function configure(opts){ Object.assign(CFG, opts||{}); }
 
 const cls = (s)=> RUI.cls(s);
@@ -59,9 +59,9 @@ function PressStock({ el, update, stockKey, opaque }){
       <Sech>Stock</Sech>
       <div className={cls('swatches')}>
         {auto && <div className={cls('sw')+(el.stock==null?' on':'')} title="Auto — cream"
-          style={{ background:RP.PAPER.day, border:'1.5px solid '+CFG.swatchBorder }} onClick={()=>update({ stock:null, opaque:null })} />}
+          style={{ background:RP.PAPER.day, border:'1.5px solid '+RUI.swatchBorder() }} onClick={()=>update({ stock:null, opaque:null })} />}
         {RP.STOCKS.map(s=>(<div key={s} className={cls('sw')+(on(s)?' on':'')} title={STOCK_LABEL[s]||s}
-          style={auto ? { background:RP.PAPER[s] } : { background:RP.PAPER[s], border:'1.5px solid '+CFG.swatchBorder }}
+          style={auto ? { background:RP.PAPER[s] } : { background:RP.PAPER[s], border:'1.5px solid '+RUI.swatchBorder() }}
           onClick={()=>update({ stock:s, opaque:null })} />))}
       </div>
       <H><b>{STOCK_LABEL[key]||key}.</b> {opaque
@@ -109,7 +109,7 @@ function InkRow({ label, value, onChange, autoTitle }){
     <React.Fragment>
       <div className={cls('lab')}>{label} <span className="val">{value||'auto'}</span></div>
       <div className={cls('swatches')}>
-        <div className={cls('sw')+(value==null?' on':'')} title={autoTitle||'Auto'} style={{ border:'1.5px solid '+CFG.swatchBorder }} onClick={()=>onChange(null)} />
+        <div className={cls('sw')+(value==null?' on':'')} title={autoTitle||'Auto'} style={{ border:'1.5px solid '+RUI.swatchBorder() }} onClick={()=>onChange(null)} />
         {INK_CHOICES.map(a=>(
           <div key={a} className={cls('sw')+(value===a?' on':'')} title={inkTitle(a)} style={{ background:PALETTE[a] }} onClick={()=>onChange(a)} />
         ))}

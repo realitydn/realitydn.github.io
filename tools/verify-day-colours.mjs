@@ -164,6 +164,7 @@ if (brand) {
       "imageErrorMessage", "PhotoUpload", "PHOTO_MAX_EDGE", "UPLOAD_MAX_PX"],
     "public/studio-shared/press-panels.jsx": ["STOCK_LABEL", "SEP_SCREENS", "PRESS_DIALS", "PressStock",
       "PressDial", "PressFold", "ProofFold", "InkRow", "SepPressFold", "SepProofFold"],
+    "public/studio-shared/util.js": ["uid", "_id", "slugify", "makeTypeScale", "EM"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;

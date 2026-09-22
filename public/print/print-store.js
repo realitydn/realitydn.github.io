@@ -92,7 +92,7 @@ let PrintStore, PrintImg, PrintDocs;
   /* ---- decoded-image cache: id → { data(dataURL), w, h, img, unsaved } ---- */
   const _cache=new Map();
   let _seq=0;
-  function uid(){ return 'img'+Date.now().toString(36)+'_'+(_seq++); }
+  function newImgId(){ return 'img'+Date.now().toString(36)+'_'+(_seq++); }
   function decode(dataURL){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=dataURL; }); }
 
   /* store a fresh data URL → returns its new id (and caches the decoded image).
@@ -100,7 +100,7 @@ let PrintStore, PrintImg, PrintDocs;
      but it is flagged `unsaved` and REPORTED: it will be gone after a reload,
      and the user needs to know that now, not when the PDF comes out blank. */
   async function add(dataURL, w, h){
-    const id=uid();
+    const id=newImgId();
     let img=null; try{ img=await decode(dataURL); }catch(e){}
     const entry={ data:dataURL, w, h, img, unsaved:false };
     _cache.set(id, entry);

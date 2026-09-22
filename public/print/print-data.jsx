@@ -24,6 +24,7 @@ import {
   SHAPE_KINDS, shapePath, roundedRectPath, starPath, burstRays, ruleLayout, iconLayout,
 } from '../studio-shared/shapes.js';
 import { nfc, buildQR, qrGeometry } from '../studio-shared/qr.js';
+import { setIdPrefix, uid, slugify, makeTypeScale } from '../studio-shared/util.js';
 /* ---- brand palette (LOCKED) — screen RGB, the weekday coding, contrast,
    the ink mark, the wordmark path and the brand strings: one copy for every
    Studio, in ../studio-shared/brand.js (the hexes derive from
@@ -103,9 +104,9 @@ const GANG = {
 };
 
 /* ---- type scale (pt) — sizes snap to these ---- */
-const TYPE_SCALE = [7,8,9,10,11,12,14,16,18,21,24,28,33,39,46,54,64,76,90,108,128];
-function snapToScale(v){ let b=TYPE_SCALE[0], d=Infinity; for(const s of TYPE_SCALE){ const dd=Math.abs(s-v); if(dd<d){ d=dd; b=s; } } return b; }
-function scaleStep(v, dir){ let i=TYPE_SCALE.indexOf(snapToScale(v)); i=Math.max(0,Math.min(TYPE_SCALE.length-1,i+dir)); return TYPE_SCALE[i]; }
+/* the snapping itself is ../studio-shared/util.js makeTypeScale */
+const TYPE = makeTypeScale([7,8,9,10,11,12,14,16,18,21,24,28,33,39,46,54,64,76,90,108,128]);
+const TYPE_SCALE = TYPE.steps, snapToScale = TYPE.snap, scaleStep = TYPE.step;
 
 /* ---- font faces — one TTF per (family, weight). The export engine fetches
    + embeds (subset) these; the screen uses the same families via Google
@@ -534,15 +535,8 @@ function risoOpts(el, docAccent){
   };
 }
 
-let _id = 1;
-function uid(){ return 'p'+(_id++)+'_'+Math.random().toString(36).slice(2,6); }
-
-/* Name → filename slug. Vietnamese-safe (đ/Đ mapped by hand). */
-function slugify(s){
-  return (s||'').replace(/đ/g,'d').replace(/Đ/g,'D')
-    .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'),'')
-    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
-}
+/* element ids: 'p…'; slugify (Vietnamese-safe) — ../studio-shared/util.js */
+setIdPrefix('p');
 
 /* ---- QR — the encoder (vendored qrcode-generator, UTF-8 + NFC, EC level M,
    auto version), nfc and the square-finder-eye geometry the screen SVG and the

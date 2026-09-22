@@ -13,15 +13,17 @@ public/studio/studio-data.js
 public/studio/studio-element.js
 public/studio/studio-canvas.js
 public/studio/studio-app.js
-public/schedule/schedule-data.js
-public/schedule/schedule-render.js
-public/schedule/schedule-app.js
 public/print/print-data.js
 public/print/print-element.js
 public/print/print-canvas.js
 public/print/print-export.js
 public/print/print-app.js
 public/studio-shared/studio-ui.js
+
+# Studio bundles built by scripts/build-studios.mjs (prebuild) from each
+# Studio's main.jsx — one per Studio, plus its source map.
+public/*/*.bundle.js
+public/*/*.bundle.js.map
 
 # Vite's transient config-loader artifacts (left behind if a build is killed)
 vite.config.js.timestamp-*.mjs

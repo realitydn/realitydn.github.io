@@ -21,15 +21,10 @@
 <!-- React, self-hosted production builds. These were unpkg *development*
      builds (1.2 MB combined, and slower at runtime because of the dev-only
      warning checks) alongside @babel/standalone, which compiled the .jsx
-     below in the browser on every load. The .jsx is precompiled by
-     scripts/build-studios.mjs now, so Babel is gone entirely. -->
+     in the browser on every load. Babel is gone entirely: the Studio is one
+     prebuilt bundle now (below), which reads React as this global. -->
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
-
-<!-- WP9: best-effort cloud sync (window.RCloud). Strictly additive — no-ops
-     when not signed in or the hub is dormant; localStorage stays the source of
-     truth. Load before the .jsx apps so RCloud is defined when they run. -->
-<script src="cloud-client.js"></script>
 
 <!-- Export libraries, self-hosted (were unpkg with no integrity check — a
      compromised CDN could have run code with access to the hub token).
@@ -39,10 +34,10 @@
 <script src="vendor/html-to-image.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
-<!-- Precompiled from the sibling .jsx by scripts/build-studios.mjs. Edit the
-     .jsx — the local launcher transpiles it on the fly, the build emits these. -->
-<script src="schedule-data.js"></script>
-<script src="schedule-render.js"></script>
-<script src="schedule-app.js"></script>
+<!-- The Studio itself: main.jsx and every module it imports (the cloud client
+     — window.RCloud — data, render engine, app), bundled by esbuild into one
+     script. Built by scripts/build-studios.mjs for deploy; the local launcher
+     (tools/serve-schedule.cjs) bundles it on each request. Edit the .jsx. -->
+<script src="schedule.bundle.js"></script>
 </body>
 </html>

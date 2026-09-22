@@ -873,7 +873,7 @@ function SchQR({ size, dark, light, quiet }){
   );
 }
 
-Object.assign(window, {
+export {
   INK, CREAM, WHITE, MONT, ALT, GROT,
   DAY_COLORS, DAY_TEXT, DAY_ABBR, DAY_FULL, LOCATIONS, FLAGS,
   dToDate, dToISO, dAdd, dWeekday, dShort, dShortYr, rangeDates, rangeLabel, nextMonday, thisMonday, todayIso,
@@ -885,9 +885,4 @@ Object.assign(window, {
   loadStoredDoc, storeDoc,
   Wordmark, SchQR, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT, QR_CTA,
   PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex, SchInkMark,
-});
-
-/* CommonJS-style export for the node self-test (scripts/selftest-schedule.mjs),
-   ignored in the browser where `module` is undefined. Kept guarded so it never
-   throws when this file loads as a plain <script>. */
-try{ if(typeof module!=='undefined' && module.exports){ module.exports = { buildDocFromFeed, mergeFeedIntoDoc, ictHHMM, ictDate }; } }catch(e){}
+};

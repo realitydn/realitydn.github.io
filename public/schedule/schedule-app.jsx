@@ -3,17 +3,24 @@
    Day strip (range + splits) · day list editor · channel
    previews · inspector · import (paste/CSV) · export pipeline.
    ============================================================ */
-const { CHANNELS:A_CH, channelById:a_ch, computeCapacity:a_cap, PartCanvas:APart,
-        partCount:a_partCount, partSize:a_partSize,
-        DAY_COLORS:A_DC, DAY_TEXT:A_DT, DAY_ABBR:A_DA, LOCATIONS:A_LOCS,
-        rangeDates:a_dates, rangeLabel:a_rangeLabel, dAdd:a_dAdd, dWeekday:a_wd, dShort:a_dshort,
-        todayIso:a_today,
-        eventsOn:a_eventsOn, dayInfo:a_dayInfo, blankEvent:a_blank, suid:a_uid,
-        parseQuickLine:a_quick, parsePasteBlock:a_paste, parseCSV:a_csv, serializeCSV:a_serCSV,
-        buildDocFromFeed:a_buildFeed, mergeFeedIntoDoc:a_mergeFeed, applyFeedToDoc:a_applyFeed, feedWindow:a_feedWindow,
-        deleteEventFromDoc:a_delEvent, restoreFeedEvent:a_restoreFeed, clearRangeOccurrences:a_clearRange,
-        cloneToNextPeriod:a_cloneNext, thisMonday:a_thisMonday,
-        normalizeDoc:a_norm, newDoc:a_new, starterDoc:a_starter, loadStoredDoc:a_load, storeDoc:a_store } = window;
+import { RCloud } from './cloud-client.js';
+import {
+  DAY_COLORS as A_DC, DAY_TEXT as A_DT, DAY_ABBR as A_DA, LOCATIONS as A_LOCS,
+  rangeDates as a_dates, rangeLabel as a_rangeLabel, dAdd as a_dAdd, dWeekday as a_wd,
+  dShort as a_dshort, todayIso as a_today, eventsOn as a_eventsOn, dayInfo as a_dayInfo,
+  blankEvent as a_blank, suid as a_uid, parseQuickLine as a_quick, parsePasteBlock as a_paste,
+  parseCSV as a_csv, serializeCSV as a_serCSV, buildDocFromFeed as a_buildFeed,
+  mergeFeedIntoDoc as a_mergeFeed, applyFeedToDoc as a_applyFeed, feedWindow as a_feedWindow,
+  deleteEventFromDoc as a_delEvent, restoreFeedEvent as a_restoreFeed,
+  clearRangeOccurrences as a_clearRange, cloneToNextPeriod as a_cloneNext,
+  thisMonday as a_thisMonday, normalizeDoc as a_norm, newDoc as a_new, starterDoc as a_starter,
+  loadStoredDoc as a_load, storeDoc as a_store, DAY_FULL, QR_CTA, dToDate,
+} from './schedule-data.jsx';
+import {
+  CHANNELS as A_CH, channelById as a_ch, computeCapacity as a_cap, PartCanvas as APart,
+  partCount as a_partCount, partSize as a_partSize, LOOKS_LIST, PALETTES, DAILY_CARDS, dailyCardOf,
+  COVER_STYLES, computeStackSizing, coverInfo as coverInfo_, dailySizing,
+} from './schedule-render.jsx';
 
 const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
 const HIST_MAX = 60;        /* undo steps kept */
@@ -25,9 +32,9 @@ const HIST_QUIET_MS = 500;  /* edits closer together than this are one step — 
    range plus two weeks (feedWindow) because the weekly inference needs to see
    next week. Throws on an unreachable feed so the caller can say so. */
 async function fetchFeedRows(range){
-  if(!window.RCloud || !window.RCloud.fetchFeed) throw new Error('Cloud client unavailable.');
+  if(!RCloud || !RCloud.fetchFeed) throw new Error('Cloud client unavailable.');
   const w = a_feedWindow(range);
-  const fd = await window.RCloud.fetchFeed({ from:w.from, to:w.to });
+  const fd = await RCloud.fetchFeed({ from:w.from, to:w.to });
   if(!fd || !Array.isArray(fd.events)) throw new Error('The REALITY feed could not be reached.');
   const built = a_buildFeed(fd, { locations:A_LOCS, range, makeId:a_uid });
   return { rows:built.events, errors:built.errors, total:fd.events.length };
@@ -340,7 +347,7 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
           return (
             <React.Fragment>
               <div className="ss-mini" style={{ marginTop:-4 }}>
-                Shows on every <b>{window.DAY_FULL[a_wd(sel.date)]}</b> from {a_dshort(sel.date)} onward —
+                Shows on every <b>{DAY_FULL[a_wd(sel.date)]}</b> from {a_dshort(sel.date)} onward —
                 in every week you open, on every channel and export. Switch back to One-off to drop all future copies at once.
               </div>
               {occ &&
@@ -373,14 +380,14 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
     <React.Fragment>
       <div className="ss-sech">Layout</div>
       <div className="ss-chips">
-        {window.LOOKS_LIST.map(lk=>(
+        {LOOKS_LIST.map(lk=>(
           <button key={lk.id} className={'ss-chip'+((doc.style.look||'ledger')===lk.id?' on':'')}
             title={lk.hint} onClick={()=>setStyle({ look:lk.id })}>{lk.l}</button>
         ))}
       </div>
       <div className="ss-sech">Palette</div>
       <div className="ss-styles">
-        {window.PALETTES.map(p=>{
+        {PALETTES.map(p=>{
           const on = (doc.style.theme||'day')===p.id;
           return (
             <button key={p.id} className={'ss-style'+(on?' on':'')} title={p.note}
@@ -415,8 +422,8 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
           <div className="ss-sech">Daily card · {dailyVariant==='story'?'9:16 Story':'4:5 Feed'}</div>
           <div className="ss-lab" style={{ marginBottom:6 }}>Layout</div>
           <div className="ss-chips" style={{ marginBottom:8 }}>
-            {window.DAILY_CARDS.map(dcd=>(
-              <button key={dcd.id} className={'ss-chip'+(window.dailyCardOf(doc)===dcd.id?' on':'')}
+            {DAILY_CARDS.map(dcd=>(
+              <button key={dcd.id} className={'ss-chip'+(dailyCardOf(doc)===dcd.id?' on':'')}
                 title={dcd.hint} onClick={()=>setDaily({ card:dcd.id })}>{dcd.name}</button>
             ))}
           </div>
@@ -446,7 +453,7 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
           <div className="ss-sech">FB Cover</div>
           <div className="ss-lab" style={{ marginBottom:6 }}>Cover style</div>
           <div className="ss-chips" style={{ marginBottom:12 }}>
-            {window.COVER_STYLES.map(cs=>(
+            {COVER_STYLES.map(cs=>(
               <button key={cs.id} className={'ss-chip'+(((doc.cover&&doc.cover.layout)||'banner')===cs.id?' on':'')}
                 onClick={()=>setCover({ layout:cs.id })}>{cs.name}</button>
             ))}
@@ -473,7 +480,7 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
             <b>Wrap</b> shows full titles on two lines — nothing is cropped. <b>Short</b> uses each event's short title; <b>Crop</b> is one line with an ellipsis. Size auto-fits the previewed day; nudge it bigger or smaller here.
           </div>
           <div className="ss-mini" style={{ marginBottom:10 }}>
-            Every cover ends on <b>{window.QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned. On <b>Sidebar</b>, <b>Slice</b> and <b>Halftone</b> it sits in the colour panel and costs the events list nothing; on the other six it rides the footer and the text steps down a size to make room. Turn it on for a cover that will be projected or seen on desktop.
+            Every cover ends on <b>{QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned. On <b>Sidebar</b>, <b>Slice</b> and <b>Halftone</b> it sits in the colour panel and costs the events list nothing; on the other six it rides the footer and the text steps down a size to make room. Turn it on for a cover that will be projected or seen on desktop.
           </div>
         </React.Fragment>}
       <div className="ss-sech">Header</div>
@@ -553,7 +560,7 @@ function ImportModal({ doc, setDoc, onClose }){
   const [feed, setFeed] = React.useState(null);   // null | { loading } | { events, errors } — WP9 feed pull
   const fileRef = React.useRef(null);
   const isCSV = /^[^\n]*\bdate\b[^\n]*\btitle\b/i.test(text.split('\n')[0]||'');
-  const hasCloud = typeof window!=='undefined' && !!window.RCloud;
+  const hasCloud = typeof window!=='undefined' && !!RCloud;
   /* Feed-pulled events (when present) supersede the paste/CSV box — they carry
      the same blankEvent() shape, so the existing merge/replace + range-clamp
      reuse unchanged. */
@@ -592,7 +599,7 @@ function ImportModal({ doc, setDoc, onClose }){
     }
     if(mode==='replace' && isCSV && evs.length){
       const ds = evs.map(e=>e.date).sort();
-      const span = Math.round((window.dToDate(ds[ds.length-1]) - window.dToDate(ds[0]))/86400000) + 1;
+      const span = Math.round((dToDate(ds[ds.length-1]) - dToDate(ds[0]))/86400000) + 1;
       const range = { start:ds[0], days:Math.max(1, Math.min(10, span)) };
       const keep = evs.filter(e=>a_dates(range).indexOf(e.date)>=0);
       skipped = evs.length - keep.length;
@@ -661,7 +668,7 @@ function ImportModal({ doc, setDoc, onClose }){
 function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg, count, cloudUser, onCloudSignIn, onCloudSignOut,
                   canUndo, canRedo, onUndo, onRedo, saveFailed, requestPull }){
   const fileRef = React.useRef(null);
-  const hasCloud = typeof window!=='undefined' && !!window.RCloud;
+  const hasCloud = typeof window!=='undefined' && !!RCloud;
   return (
     <div className="ss-top">
       <div className="ss-brand">Reality<small>SCHEDULE STUDIO</small></div>
@@ -825,16 +832,16 @@ function App(){
           never applied or overwritten silently.
      Every RCloud call no-ops when signed-out / hub dormant, so local-only
      behaviour is unchanged. ---- */
-  const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
+  const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return RCloud && RCloud.isSignedIn() ? (RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
   const [cloudReady, setCloudReady] = React.useState(false);
   const cloudPushRef = React.useRef(null);
   React.useEffect(()=>{
-    if(!cloudUser || !window.RCloud || !cloudReady || !dirtyRef.current) return;
+    if(!cloudUser || !RCloud || !cloudReady || !dirtyRef.current) return;
     if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
     cloudPushRef.current = setTimeout(()=>{
       const d = docRef.current;
       dirtyRef.current = false;   /* an edit during the upload sets it again */
-      Promise.resolve(window.RCloud.putDoc('schedule','working', (d.header&&d.header.title)||'', d, d.savedAt||Date.now()))
+      Promise.resolve(RCloud.putDoc('schedule','working', (d.header&&d.header.title)||'', d, d.savedAt||Date.now()))
         .then(ok=>{ if(!ok) dirtyRef.current = true; })
         .catch(()=>{ dirtyRef.current = true; });
     }, 2000);
@@ -842,11 +849,11 @@ function App(){
   }, [doc, cloudUser, cloudReady]);
   React.useEffect(()=>{
     setCloudReady(false);
-    if(!cloudUser || !window.RCloud) return;
+    if(!cloudUser || !RCloud) return;
     let live = true;
     (async()=>{
       try{
-        const remote = await window.RCloud.getDoc('schedule','working');
+        const remote = await RCloud.getDoc('schedule','working');
         if(!live || !remote) return;
         let remoteDoc = remote.json;
         if(typeof remoteDoc==='string'){ try{ remoteDoc = JSON.parse(remoteDoc); }catch(e){ remoteDoc=null; } }
@@ -884,7 +891,7 @@ function App(){
   const pullSeqRef = React.useRef(0);
   const firstPullRef = React.useRef(true);
   React.useEffect(()=>{
-    if(!window.RCloud || !window.RCloud.fetchFeed) return;
+    if(!RCloud || !RCloud.fetchFeed) return;
     const range = { start:doc.range.start, days:doc.range.days };
     const seq = ++pullSeqRef.current;
     const wait = firstPullRef.current ? 0 : 450;
@@ -913,15 +920,15 @@ function App(){
   }, [doc.range.start, doc.range.days, pullNonce]);
 
   async function cloudSignIn(){
-    try{ if(!window.RCloud) return; const t = await window.RCloud.signIn(); setCloudUser(t ? (window.RCloud.currentEmail()||'signed in') : null); }catch(e){}
+    try{ if(!RCloud) return; const t = await RCloud.signIn(); setCloudUser(t ? (RCloud.currentEmail()||'signed in') : null); }catch(e){}
   }
-  function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){} setCloudUser(null); }
+  function cloudSignOut(){ try{ if(RCloud) RCloud.signOut(); }catch(e){} setCloudUser(null); }
 
   const dates = a_dates(doc.range);
   const sel = doc.events.filter(e=>e.id===selId)[0] || null;
   const capacity = React.useMemo(()=>a_cap(doc, channelId), [doc, channelId]);
   /* per-day text sizing view for the current channel (Stories / Feed, stacked looks) */
-  const sizeInfo = React.useMemo(()=>window.computeStackSizing(doc, channelId), [doc, channelId]);
+  const sizeInfo = React.useMemo(()=>computeStackSizing(doc, channelId), [doc, channelId]);
   const editSizing = React.useCallback((mutate)=>{
     setDoc(d=>{
       const sizing = Object.assign({}, d.sizing);
@@ -948,10 +955,10 @@ function App(){
   const effDaily = dates.indexOf(dailyDate)>=0 ? dailyDate :
     (dates.filter(d=>a_dayInfo(doc,d).status!=='closed')[0] || dates[0]);
   const size = a_partSize(channelId, dailyVariant);
-  const coverInfo = (channelId==='daily' && dailyVariant==='cover' && window.coverInfo)
-    ? window.coverInfo(doc, effDaily) : null;
-  const dailyInfo = (channelId==='daily' && dailyVariant!=='cover' && window.dailySizing)
-    ? window.dailySizing(doc, dailyVariant, effDaily) : null;
+  const coverInfo = (channelId==='daily' && dailyVariant==='cover' && coverInfo_)
+    ? coverInfo_(doc, effDaily) : null;
+  const dailyInfo = (channelId==='daily' && dailyVariant!=='cover' && dailySizing)
+    ? dailySizing(doc, dailyVariant, effDaily) : null;
 
   /* fit preview to stage (clamped — tiny panels must never yield ≤0 scale) */
   React.useLayoutEffect(()=>{
@@ -1081,7 +1088,7 @@ function App(){
      job, this is the errand on the way back, and a dormant hub must never cost you
      the zip you actually asked for. */
   async function pushDigestCards(cards){
-    if(!window.RCloud || !window.RCloud.isSignedIn()) return 'Backstage: sign in to Cloud to send day cards';
+    if(!RCloud || !RCloud.isSignedIn()) return 'Backstage: sign in to Cloud to send day cards';
     /* A card for a day that has already happened has no digest left to sit under,
        and would only push a dead date to the top of Backstage's Recent list. */
     const today = a_today();
@@ -1092,7 +1099,7 @@ function App(){
       setExportMsg('Backstage ' + (i+1) + '/' + due.length + '…');
       try{
         const blob = await toStoryBlob(due[i].dataUrl);
-        const r = await window.RCloud.putDigestStory(due[i].date, blob, blob.type);
+        const r = await RCloud.putDigestStory(due[i].date, blob, blob.type);
         if(r && r.ok) sent++; else failed++;
       }catch(err){ console.error('[Studio] digest card push failed', due[i].date, err); failed++; }
     }

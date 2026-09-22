@@ -1,34 +1,28 @@
-// Precompile the Studios' JSX so browsers never have to load Babel.
+// Build the Studios' bundles so browsers never have to load Babel.
 //
-// The three Studios (Poster, Schedule, Print) are hand-rolled classic-script
-// React apps that live in public/ and are copied verbatim into dist/ by Vite —
-// they never went through the bundler. They used to ship raw .jsx and compile
-// it in the browser with @babel/standalone: ~3 MB of Babel, plus a full
-// transpile of ~260 KB of JSX, on every single page load. From Vietnam that
-// cost seconds on every open.
+// The three Studios (Poster, Schedule, Print) are hand-rolled React apps that
+// live in public/ and are copied verbatim into dist/ by Vite — they never go
+// through Vite's own bundler. They used to ship raw .jsx and compile it in the
+// browser with @babel/standalone (~3 MB of Babel plus a full transpile on
+// every load); then a file-by-file JSX transform whose outputs index.html
+// listed as a row of ordered classic <script>s sharing window globals.
 //
-// This turns each .jsx into a sibling .js at build time instead.
+// Now each Studio is ES modules with one entry, public/<studio>/main.jsx, and
+// this script bundles it with esbuild into ONE classic script beside
+// index.html (public/studio/studio.bundle.js, public/print/print.bundle.js,
+// public/schedule/schedule.bundle.js, each with a linked .map). The bundler
+// resolves every import, so a missing or renamed export fails the build
+// instead of breaking a Studio at runtime. The recipe (IIFE, es2019, classic
+// React.createElement JSX against the vendored global React) lives in
+// tools/studio-bundle.cjs, shared with the local servers (tools/serve-*.cjs),
+// which bundle the same entry in memory on every request — so the Studio you
+// test locally is compiled exactly like the one that deploys.
 //
-// Semantics are preserved exactly. esbuild's `transform` (NOT `bundle`) only
-// rewrites JSX syntax into React.createElement calls — it does not wrap the
-// file in a module, hoist anything, or rename bindings. Top-level `const`/
-// `function` declarations stay top-level, so the files keep sharing global
-// scope the way ordered classic scripts do, and the explicit
-// `Object.assign(window, {...})` exports each library file ends with keep
-// working untouched.
+// Run by `npm run prebuild`. The .bat launchers don't need it.
 //
-// Target is deliberately 'esnext' (no downlevelling). Babel was configured
-// here with no data-presets, i.e. JSX only — matching that exactly means this
-// change cannot alter runtime behaviour of any other syntax.
-//
-// Run by `npm run prebuild`. Local .bat launchers don't need it: the
-// tools/serve-*.cjs dev servers transpile the same .jsx on the fly, so the
-// .jsx files remain the single source of truth and local can never drift
-// from live.
-//
-// Cache-busting is NOT done here. The emitted .js names are stable, so the
-// deployed studio index.html files get ?v=<content hash> stamped onto every
-// local script/stylesheet — but that happens on the dist/ copies, in the
+// Cache-busting is NOT done here. The bundle names are stable, so the deployed
+// studio index.html files get ?v=<content hash> stamped onto every local
+// script/stylesheet — but that happens on the dist/ copies, in the
 // reality-studio-cache-bust plugin in vite.config.js, after Vite has copied
 // public/ over. Stamping public/*/index.html here would rewrite tracked files
 // on every build and leave the git tree dirty.
@@ -37,19 +31,22 @@
 // Vite ships) — this script imports it, so it mustn't rely on Vite pulling it
 // in transitively.
 
-import { transform } from 'esbuild';
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { build, transform } from 'esbuild';
+import { createRequire } from 'node:module';
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// studio-shared/ holds studio-ui.jsx — the control atoms Poster and Print both
-// load. It compiles exactly like a Studio's own sources; it just isn't one.
-const STUDIO_DIRS = ['studio', 'schedule', 'print', 'studio-shared'];
+const require = createRequire(import.meta.url);
+const { STUDIOS, bundleOptions, formatErrors } = require('../tools/studio-bundle.cjs');
 
-// Shared with tools/serve-*.cjs — keep the two in step. Any change to how a
-// .jsx is compiled must apply to both the build and the local dev servers, or
-// the Studio you test locally stops matching the one that deploys.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// MIGRATION (Phase 1 of docs/REFACTOR-PLAN.md): Studios still on ordered
+// classic scripts get the old file-by-file JSX transform until they move to
+// a bundle. Shared with tools/studio-jsx.cjs — keep the two in step.
+const BUNDLED = ['schedule'];
+const LEGACY_DIRS = ['studio', 'print', 'studio-shared'];
 export const JSX_TRANSFORM = {
   loader: 'jsx',
   target: 'esnext',
@@ -60,52 +57,33 @@ export const JSX_TRANSFORM = {
 
 async function compileDir(dir) {
   const abs = path.join(ROOT, 'public', dir);
-  let entries;
-  try {
-    entries = await readdir(abs);
-  } catch {
-    return { dir, compiled: 0, skipped: true };
-  }
-
-  const sources = entries.filter((f) => f.endsWith('.jsx'));
-  let compiled = 0;
-
+  const sources = (await readdir(abs)).filter((f) => f.endsWith('.jsx'));
   for (const file of sources) {
-    const src = path.join(abs, file);
-    const out = path.join(abs, file.replace(/\.jsx$/, '.js'));
-    const code = await readFile(src, 'utf8');
-
-    const result = await transform(code, {
-      ...JSX_TRANSFORM,
-      sourcefile: `${dir}/${file}`,
-    });
-
-    // Leading banner makes it obvious in devtools that this file is generated
-    // and that the .jsx beside it is what you edit.
-    const banner =
-      `// GENERATED from ${file} by scripts/build-studios.mjs — do not edit.\n`;
-    await writeFile(out, banner + result.code, 'utf8');
-    compiled++;
+    const code = await readFile(path.join(abs, file), 'utf8');
+    const result = await transform(code, { ...JSX_TRANSFORM, sourcefile: `${dir}/${file}` });
+    const banner = `// GENERATED from ${file} by scripts/build-studios.mjs — do not edit.\n`;
+    await writeFile(path.join(abs, file.replace(/\.jsx$/, '.js')), banner + result.code, 'utf8');
   }
-
-  return { dir, compiled, total: sources.length };
+  console.log(`  studios: ${dir} — compiled ${sources.length} .jsx → .js (legacy)`);
 }
 
-const results = await Promise.all(STUDIO_DIRS.map(compileDir));
-
-let total = 0;
-for (const r of results) {
-  if (r.skipped) {
-    console.warn(`  studios: public/${r.dir}/ not found — skipped`);
-    continue;
+async function bundle(name) {
+  const opts = bundleOptions(name);
+  try {
+    await build(opts);
+  } catch (err) {
+    console.error(`  studios: ${name} — bundle FAILED\n${formatErrors(err)}`);
+    process.exitCode = 1;
+    return;
   }
-  total += r.compiled;
-  console.log(`  studios: ${r.dir} — compiled ${r.compiled} .jsx → .js`);
+  const kb = ((await stat(opts.outfile)).size / 1024).toFixed(0);
+  console.log(`  studios: ${name} — ${path.relative(ROOT, opts.outfile).split(path.sep).join('/')} (${kb} KB)`);
 }
 
-if (total === 0) {
-  console.error('  studios: no .jsx files compiled — is public/ intact?');
-  process.exit(1);
-}
+await Promise.all([...BUNDLED.map(bundle), ...LEGACY_DIRS.map(compileDir)]);
 
-console.log(`  studios: ${total} file(s) precompiled, Babel not needed at runtime`);
+if (process.exitCode) {
+  console.error('  studios: a bundle failed to build — see above');
+} else {
+  console.log(`  studios: ${Object.keys(STUDIOS).length} Studio(s) built, Babel not needed at runtime`);
+}

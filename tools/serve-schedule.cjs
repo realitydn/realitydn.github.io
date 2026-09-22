@@ -1,10 +1,11 @@
 // Zero-dependency static server for the REALITY Schedule Studio.
 //
 // Same pattern as serve-studio.cjs: the Studio is a fully client-side app
-// (plain React — no in-browser Babel any more) but must be SERVED, not opened
-// as a file://: index.html asks for .js files that only exist after a build
-// (scripts/build-studios.mjs), and this server compiles each one from its
-// sibling .jsx on request via studio-jsx.cjs.
+// (plain React — no in-browser Babel) but must be SERVED, not opened as a
+// file://: index.html asks for schedule.bundle.js, which only exists on disk
+// after a build (scripts/build-studios.mjs). This server bundles main.jsx and
+// its imports in memory on every request instead (tools/studio-bundle.cjs —
+// the same esbuild recipe the build uses), so there is no build step.
 //
 // Canonical home: public/schedule/ — the same files the site deploys to
 // realitydn.com/schedule, so the local launcher and the live tool never drift.
@@ -14,7 +15,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { serveCompiledJsx } = require('./studio-jsx.cjs');
+const { serveBundle } = require('./studio-bundle.cjs');
 
 // Default 4502 (what "Schedule Studio.bat" expects). Honour PORT when set, so a
 // second instance — e.g. a preview server — can run on an assigned free port
@@ -56,9 +57,10 @@ const server = http.createServer((req, res) => {
     return res.end('Forbidden');
   }
 
-  // index.html asks for .js; the app files are .jsx on disk. Compile on demand
+  // index.html asks for schedule.bundle.js; build it from main.jsx on demand
   // so editing a .jsx and hitting refresh is all it takes — no build step.
-  if (serveCompiledJsx(filePath, res)) return;
+  // (A stale built bundle on disk is never served in its place.)
+  if (serveBundle('schedule', rel, res)) return;
 
   fs.readFile(filePath, (err, data) => {
     if (err) {

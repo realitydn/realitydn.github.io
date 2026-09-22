@@ -5,15 +5,17 @@
    and bump density until it fits (type ladder → footer ladder).
    Contract: never overflow silently, never go below the floor.
    ============================================================ */
-const { INK:R_INK, CREAM:R_CREAM, WHITE:R_WHITE, MONT:R_MONT, ALT:R_ALT, GROT:R_GROT,
-        DAY_COLORS:R_DC, DAY_TEXT:R_DT, DAY_ABBR:R_DA, DAY_FULL:R_DF,
-        LOCATIONS:R_LOCS, FLAGS:R_FLAGS, rangeDates:r_rangeDates, rangeLabel:r_rangeLabel,
-        dWeekday:r_wd, dShort:r_dshort, eventsOn:r_eventsOn, dayInfo:r_dayInfo,
-        timeLabel:r_timeLabel, usedLegend:r_usedLegend, partDates:r_partDates,
-        Wordmark:RWordmark, SchQR:RQR, SchInkMark:RInkMark, QR_DATA_FRAC:R_QR_FRAC,
-        qrPatternOf:R_QR_PATTERN, QUIET_SPEC:R_QUIET_SPEC, QUIET_TIGHT:R_QUIET_TIGHT,
-        INK_MARK:R_INK_MARK,
-        QR_HOST:R_QR_HOST, QR_LABEL:R_QR_LABEL, QR_LABEL_SHORT:R_QR_LABEL_SHORT, QR_CTA:R_QR_CTA } = window;
+import {
+  INK as R_INK, CREAM as R_CREAM, WHITE as R_WHITE, MONT as R_MONT, ALT as R_ALT, GROT as R_GROT,
+  DAY_COLORS as R_DC, DAY_TEXT as R_DT, DAY_ABBR as R_DA, DAY_FULL as R_DF, LOCATIONS as R_LOCS,
+  FLAGS as R_FLAGS, rangeDates as r_rangeDates, rangeLabel as r_rangeLabel, dWeekday as r_wd,
+  dShort as r_dshort, eventsOn as r_eventsOn, dayInfo as r_dayInfo, timeLabel as r_timeLabel,
+  usedLegend as r_usedLegend, partDates as r_partDates, Wordmark as RWordmark, SchQR as RQR,
+  SchInkMark as RInkMark, QR_DATA_FRAC as R_QR_FRAC, qrPatternOf as R_QR_PATTERN,
+  QUIET_SPEC as R_QUIET_SPEC, QUIET_TIGHT as R_QUIET_TIGHT, INK_MARK as R_INK_MARK,
+  QR_HOST as R_QR_HOST, QR_LABEL as R_QR_LABEL, QR_LABEL_SHORT as R_QR_LABEL_SHORT,
+  QR_CTA as R_QR_CTA,
+} from './schedule-data.jsx';
 
 /* sRGB relative luminance — the real one, with the gamma expansion, not an
    averaged-channel approximation. Used to decide whether a palette's ground is
@@ -2506,9 +2508,9 @@ function partSize(channelId, dailyVariant){
   return { w:ch.w, h:ch.h };
 }
 
-Object.assign(window, {
+export {
   CHANNELS, DAILY_VARIANTS, channelById, GEOM, LOOKS_LIST, PALETTES, COVER_STYLES, COVER_QR, COVER_FOOT_H,
   DAILY_CARDS, dailyCardOf,
   computeCapacity, bestSplit, resolveFit, computeStackSizing, coverInfo, dailySizing,
   PartCanvas, partCount, partSize, ArrowChip,
-});
+};

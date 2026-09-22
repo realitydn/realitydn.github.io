@@ -17,6 +17,9 @@ function listSources(dirs) {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) { if (e.name !== 'vendor') walk(p); }
+      // Sources only: skip a .js built from a sibling .jsx, and the Studio
+      // bundles (*.bundle.js — build output of scripts/build-studios.mjs).
+      else if (/\.bundle\.js$/.test(e.name)) continue;
       else if (/\.jsx$/.test(e.name) || (/\.js$/.test(e.name) && !fs.existsSync(p + 'x'))) out.push(p);
     }
   };

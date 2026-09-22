@@ -110,6 +110,21 @@ down any deliberate difference (e.g. Print's white stock) as a parameter, not a 
 Exit: `grep` finds no second definition of any of the above; Print and Poster share every
 primitive they both use.
 
+**First half done (branch `refactor/studios`)** — the stateless modules, one commit each:
+`brand.js` (+ `wordmark.jsx`), `shapes.js`, `qr.js` (+ `vendor/qrcode.cjs`, bundled, no global),
+`image-intake.jsx`, `press-panels.jsx`, `util.js` (+ `RUI.Swatches`). As built:
+- Day hexes are derived from `day-colours.json` in `brand.js`; the verifier evaluates `brand.js`
+  and fails on any Studio source that defines an owned name again (module → names map).
+- Differences kept as parameters: the substrate pair (`NEUTRALS.artwork` vs `NEUTRALS.print`,
+  passed to `contrastInk` and the ink-mark cells), `ImageIntake.configure` (Poster 2000 px / JPEG
+  .82, Print 3500 px / .86), `PressPanels.configure` (Poster cream + Auto stock, Print white; Print
+  shows a subset of the press dials as a section), id prefix (`e`/`p`), each Studio's type ladder,
+  Swatches' fixed set, RUI `swatchBorder`.
+- The Poster's QR now encodes the element's own Website text (`qrTarget`: a bare host gains
+  https://). Schedule keeps its pinned app.realitydn.com matrix (goldened; the live encoder picks a
+  different mask) — switch it to the encoder with a golden update if wanted.
+- Left for the second half: `cloud.js`, `store.js`, `history.js`.
+
 ## Phase 3 — Split the big files
 
 With modules in place, split along the seams that already exist:

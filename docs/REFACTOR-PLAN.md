@@ -121,9 +121,33 @@ primitive they both use.
   shows a subset of the press dials as a section), id prefix (`e`/`p`), each Studio's type ladder,
   Swatches' fixed set, RUI `swatchBorder`.
 - The Poster's QR now encodes the element's own Website text (`qrTarget`: a bare host gains
-  https://). Schedule keeps its pinned app.realitydn.com matrix (goldened; the live encoder picks a
-  different mask) — switch it to the encoder with a golden update if wanted.
+  https://). Schedule kept its pinned app.realitydn.com matrix here (goldened; the live encoder picks a
+  different mask) — switched to the encoder in the second half.
 - Left for the second half: `cloud.js`, `store.js`, `history.js`.
+
+**Second half done (branch `refactor/studios`)** — the stateful modules, one commit each, plus
+the Schedule QR:
+- `cloud.js` — the two `cloud-client.js` files (identical but for Schedule's `putDigestStory`)
+  as one superset, verbatim: hub allowlist, 20 s timeout, the `reality-hub-token-v1` token, the
+  `/studio-auth` popup + origin check, every method's name and return shape. `window.RCloud` is
+  still set (an earlier one on the page is kept). Print can import it; it doesn't yet.
+- `store.js` — the IndexedDB plumbing only: `openDB({ name, version, upgrade, blockedMessage,
+  errorEvent })` → get / getAll / getAllKeys / put / putMany / delete / `tx` / report, plus
+  `describeStoreError`, `persistStorage`, `makeWriter` (Print's queued writer) and
+  `watchOtherTabs` (Print's BroadcastChannel). Each Studio keeps its own schema file and its exact
+  database: Poster `reality-studio` v1 (templates, meta), Print `reality-print` v2 (images, kv),
+  and now Schedule `reality-schedule` v1 (kv `doc`). No record changed shape; old-branch code and
+  new code were run against the same profile both ways (see the commit).
+- Schedule's working doc moved to IndexedDB with a coexistence period — see the follow-up below.
+- `history.js` — `useHistory(doc, { limit, coalesceMs, apply })` → undo / redo / canUndo /
+  canRedo / `quiet()` / `record()` / `snapshots()`, and `historyKey` (the shortcut, ignored while
+  typing). Parameters kept: Poster 80 × 350 ms, Print 80 × 350 ms, Schedule 60 × 500 ms; quiet
+  changes stay a call (`quiet()`), not a doc predicate — only the caller knows an export's format
+  flip from a click on the same tab.
+- Schedule's QR encodes live through `qr.js` (same URL, 25 modules, EC M, new mask); the ten
+  Schedule goldens that carry it were updated after checking the diffs and decoding every code.
+- The verifier's shared-name guard covers the cloud, store and history names, and fails any
+  Studio that opens IndexedDB itself.
 
 **Follow-up — Schedule localStorage copy.** Schedule's working doc moved to IndexedDB
 (`reality-schedule`) on 23.09.26 but still writes the old `reality-schedule-doc-v2` localStorage

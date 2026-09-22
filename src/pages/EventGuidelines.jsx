@@ -4,6 +4,7 @@ import Logo from '../components/Logo';
 import ThemeToggle from '../components/ThemeToggle';
 import LangMenu from '../components/LangMenu';
 import { pathFor } from '../data/languages';
+import { scrollBehavior } from '../hooks/motion';
 
 // Splits a plain-text guideline string on known phrases and wraps each match in
 // an anchor link — used for the "see: How REALITY Can Help with Promotion" and
@@ -22,7 +23,7 @@ function linkifyPhrases(text, links) {
           key={`lnk-${li}-${pi}`}
           href={href}
           className="underline font-semibold hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--red)' }}
+          style={{ color: 'var(--red-text)' }}
         >
           {phrase}
         </a>,
@@ -75,7 +76,8 @@ function BulletList({ items }) {
 
 export default function EventGuidelines({ lang, t }) {
   const homeHref = pathFor(lang, '/');
-  const proposalHref = `${homeHref === '/' ? '' : homeHref}/#proposal`;
+  // pathFor already ends in '/' ('/', '/vn/'), so the hash appends directly.
+  const proposalHref = `${homeHref}#proposal`;
 
   // Scroll to an in-page section when arriving via a hash link — handles both
   // same-page jumps and cross-page links from the homepage public-events copy
@@ -84,7 +86,7 @@ export default function EventGuidelines({ lang, t }) {
     const { hash } = window.location;
     if (!hash) return;
     const el = document.querySelector(hash);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
   }, []);
 
   // Cross-reference phrases in the public-events copy → on-page anchors.
@@ -109,11 +111,11 @@ export default function EventGuidelines({ lang, t }) {
               className="p-2 -ml-2 hover:bg-ink/5 transition-colors inline-flex items-center"
               aria-label={t.use('backHome')}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </Link>
-            <Link to={homeHref} aria-label="REALITY home">
+            <Link to={homeHref} aria-label={t.use('a11y.home')}>
               <Logo color="var(--fg)" />
             </Link>
           </div>

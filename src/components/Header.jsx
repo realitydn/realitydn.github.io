@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
@@ -7,22 +7,53 @@ import ThemeToggle from './ThemeToggle';
 import LangMenu from './LangMenu';
 import { URLS } from '../data/translations';
 import { pathFor } from '../data/languages';
+import { scrollBehavior } from '../hooks/motion';
 
 export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
   const location = useLocation();
   const path = location.pathname;
 
   const homeHref = pathFor(lang, '/');
+  const headerRef = useRef(null);
+  const toggleRef = useRef(null);
 
   const onLogoClick = (e) => {
-    if (path === homeHref) {
+    // homeHref is the slash form (/vn/); dev servers also answer /vn.
+    if (path === homeHref || path + '/' === homeHref) {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
     }
   };
 
+  // The mobile menu closes on Escape (focus back to the toggle), on a tap
+  // anywhere outside the masthead, and on any navigation — a route change or
+  // an in-page anchor (the links also close it on click; this catches the
+  // back button and hash changes from elsewhere).
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      setMobileOpen(false);
+      if (toggleRef.current) toggleRef.current.focus();
+    };
+    const onPointer = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer);
+    };
+  }, [mobileOpen, setMobileOpen]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname, location.hash, setMobileOpen]);
+
   return (
     <header
+      ref={headerRef}
       className="sticky top-0 z-40 bg-cream"
       style={{ borderBottom: '3px solid var(--fg)' }}
     >
@@ -42,7 +73,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             clipped second row and sits out — the mark never crops, the
             header never grows. */}
         <div className="flex flex-wrap content-start items-center h-6 md:h-7 overflow-hidden">
-          <Link to={homeHref} onClick={onLogoClick} className="flex items-center flex-none" aria-label="REALITY home">
+          <Link to={homeHref} onClick={onLogoClick} className="flex items-center flex-none" aria-label={t.use('a11y.home')}>
             <Logo className="h-6 md:h-7 w-auto" color="var(--fg)" />
           </Link>
           {/* module 8 with 8px air; phones (below sm) drop to 7 — the short
@@ -57,8 +88,9 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
           </span>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em]">
+        {/* Desktop Navigation — whitespace-nowrap: at 1024px Ukrainian's
+            "В гості" wrapped onto two lines. */}
+        <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em] whitespace-nowrap">
           <a href="#events" className="hover:opacity-70 transition-opacity focus:underline">
             {t.use('nav.events')}
           </a>
@@ -93,7 +125,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             target="_blank"
             rel="noreferrer"
             className="btn-secondary p-2 flex items-center justify-center"
-            aria-label="Join WhatsApp"
+            aria-label={t.use('a11y.whatsapp')}
           >
             {Icons.whatsapp()}
           </a>
@@ -102,7 +134,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             target="_blank"
             rel="noreferrer"
             className="btn-secondary p-2 flex items-center justify-center"
-            aria-label="Follow on Instagram"
+            aria-label={t.use('a11y.instagram')}
           >
             {Icons.instagram()}
           </a>
@@ -111,7 +143,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             target="_blank"
             rel="noreferrer"
             className="btn-secondary p-2 flex items-center justify-center"
-            aria-label="Follow on Facebook"
+            aria-label={t.use('a11y.facebook')}
           >
             {Icons.facebook()}
           </a>
@@ -134,16 +166,20 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
           </a>
           <a
             href={URLS.WA}
+            target="_blank"
+            rel="noreferrer"
             className="btn-secondary p-3 min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
-            aria-label="WhatsApp"
+            aria-label={t.use('a11y.whatsapp')}
           >
             {Icons.whatsapp()}
           </a>
           <LangMenu lang={lang} compact />
           <button
+            ref={toggleRef}
+            type="button"
             onClick={() => setMobileOpen(v => !v)}
             className="btn-secondary p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileOpen ? t.use('a11y.closeMenu') : t.use('a11y.openMenu')}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
           >
@@ -155,7 +191,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
       {/* Mobile Navigation */}
       {mobileOpen && (
         <div id="mobile-nav" className="lg:hidden bg-cream" style={{ borderTop: '2px solid var(--fg)' }}>
-          <nav className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 gap-3 font-title font-bold text-xs tracking-[0.12em] stamp-stagger">
+          <nav className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 gap-3 font-title font-bold text-xs tracking-[0.12em] stamp-stagger" aria-label={t.use('a11y.menu')}>
             {/* The app CTA leads the mobile menu, full-width and loud. */}
             <a
               onClick={() => setMobileOpen(false)}
@@ -199,14 +235,42 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             >
               {t.use('nav.visit')}
             </a>
-            <div className="col-span-2 flex justify-between items-center gap-3 pt-1">
+            {/* Socials: WhatsApp + Instagram + Facebook as icon buttons (the
+                bar above hides WhatsApp below 640px, so the menu is the only
+                place a phone finds the community), then the theme toggle. */}
+            <div className="col-span-2 flex items-center gap-3 pt-1">
               <a
-                href={URLS.FB}
+                href={URLS.WA}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMobileOpen(false)}
                 className="btn-secondary px-4 py-3 flex-1 flex items-center justify-center gap-2"
-                aria-label="Facebook"
+                aria-label={t.use('a11y.whatsapp')}
                 style={{ '--ri': 4 }}
               >
-                {Icons.facebook()} Facebook
+                {Icons.whatsapp()}
+              </a>
+              <a
+                href={URLS.IG}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMobileOpen(false)}
+                className="btn-secondary px-4 py-3 flex-1 flex items-center justify-center gap-2"
+                aria-label={t.use('a11y.instagram')}
+                style={{ '--ri': 4 }}
+              >
+                {Icons.instagram()}
+              </a>
+              <a
+                href={URLS.FB}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMobileOpen(false)}
+                className="btn-secondary px-4 py-3 flex-1 flex items-center justify-center gap-2"
+                aria-label={t.use('a11y.facebook')}
+                style={{ '--ri': 4 }}
+              >
+                {Icons.facebook()}
               </a>
               <div style={{ '--ri': 5 }}>
                 <ThemeToggle lang={lang} compact />

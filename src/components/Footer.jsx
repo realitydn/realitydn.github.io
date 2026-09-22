@@ -5,6 +5,9 @@ import InkMark from './InkMark';
 import { URLS, STR } from '../data/translations';
 
 export default function Footer({ lang }) {
+  const S = STR[lang];
+  // New footer strings fall back to EN if a locale ever lacks the block.
+  const F = S.footer || STR.EN.footer;
   return (
     <footer className="section mt-10 bg-cream" style={{ borderTop: '3px solid var(--fg)' }}>
       {/* Main footer content */}
@@ -12,12 +15,15 @@ export default function Footer({ lang }) {
         <div className="col-span-12 md:col-span-6">
           <Logo className="h-7 w-auto mb-3" color="var(--fg)" />
           <p className="text-gray-700 font-body">86 Mai Thúc Lân, Đà Nẵng</p>
-          <p className="text-gray-700 font-body">{STR[lang].hours}</p>
+          <p className="text-gray-700 font-body">{S.hours}</p>
           <p className="text-gray-700 font-body">realitydn.com</p>
+          <p className="text-gray-700 font-body">
+            <a href="mailto:realitydn@gmail.com" className="underline underline-offset-4">realitydn@gmail.com</a>
+          </p>
         </div>
         <div className="col-span-12 md:col-span-6 md:text-right">
           <div className="eyebrow text-gray-600">
-            STAY IN TOUCH
+            {F.stayInTouch}
           </div>
           <div className="mt-4 flex md:justify-end gap-3 flex-wrap">
             <a
@@ -26,7 +32,7 @@ export default function Footer({ lang }) {
               rel="noreferrer"
               className="btn-primary px-5 py-3 text-sm flex items-center gap-2"
             >
-              {Icons.app()} {STR[lang].getApp.button}
+              {Icons.app()} {S.getApp.button}
             </a>
             <a
               href={URLS.WA}
@@ -76,19 +82,26 @@ export default function Footer({ lang }) {
             </div>
 
             {/* Right side - QR Code + its ink square, the hero strip's
-                sanctioned partner. The square butts FLUSH against the code —
+                sanctioned partner. The code is also a LINK to the same
+                community (a phone can't scan its own screen). The square butts FLUSH against the code —
                 the QR's own quiet zone is the gap, no rule between them —
                 and its 4 modules must equal the QR's rendered height, so the
                 QR box is pinned at 96px (module 24) on every width. Ink
                 cells dropping out against the Night ground IS the Night
                 form — no plate behind it. */}
-            <div className="flex items-center gap-4">
+            <a
+              href={URLS.WA}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-4"
+              style={{ color: 'inherit' }}
+            >
               <div className="text-right hidden sm:block">
                 <div className="eyebrow text-[11px]" style={{ color: 'var(--fg-dim)' }}>
-                  JOIN OUR COMMUNITY
+                  {F.joinCommunity}
                 </div>
                 <div className="font-body text-sm" style={{ color: 'var(--fg-dim)' }}>
-                  Scan to join WhatsApp
+                  {F.scanWA}
                 </div>
               </div>
               <div className="flex items-center">
@@ -103,7 +116,7 @@ export default function Footer({ lang }) {
                 >
                   <img
                     src="/images/whatsapp-qr.png"
-                    alt="Scan to join the REALITY WhatsApp community"
+                    alt={F.qrAlt}
                     className="w-full h-full object-contain p-1"
                     loading="lazy"
                     decoding="async"
@@ -116,7 +129,7 @@ export default function Footer({ lang }) {
                   />
                 </div>
               </div>
-            </div>
+            </a>
           </div>
         </div>
 

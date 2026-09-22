@@ -5,7 +5,7 @@ import { FEED_ICS_URL } from '../data/feed';
 import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
-import { fmtTime, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
+import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
 import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel } from '../data/cal-feed';
 
 // Calendar — the "what's on" feed, wearing the app's calendar look. Posters
@@ -26,6 +26,22 @@ import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel } f
 //   events                  → the feed: five posters + rows, today-forward.
 //
 // This site's language toggle is 'EN' | 'VN' (NOT en/vi); feed-helpers map 'VN' → *_vi.
+//
+// Cards and rows are real LINKS to the event's page in the app (the feed's
+// sourceUrl) — crawlers and middle/ctrl/cmd-clicks get the real page, and a
+// plain left click (or Enter) is intercepted to open the overlay instead.
+
+// The app's page for an event: the feed's sourceUrl, else the canonical
+// /events/:id path the hub serves.
+function eventHref(ev) {
+  return ev.sourceUrl || `${URLS.APP}/events/${ev.id}`;
+}
+
+// A plain primary click opens the overlay; anything with a modifier (new
+// tab / window / download) is left to the browser and follows the link.
+function isPlainClick(e) {
+  return !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+}
 
 function WhatsAppCta({ lang }) {
   // Kept verbatim from the original component (URLS.WA, Icons.whatsapp, joinWA/waBlurb).
@@ -67,6 +83,33 @@ export default function Calendar({ lang }) {
   const { soon, later } = useMemo(() => splitFeedSite(events || []), [events]);
   const total = soon.length + later.length;
 
+  // TONIGHT / TODAY / TOMORROW chips ride the soon split: an event in the
+  // soon window is either today (ICT) or tomorrow. Today splits on 17:00 —
+  // "Tonight" for the evening programme, "Today" for a daytime class.
+  const soonIds = useMemo(() => new Set(soon.map((ev) => ev.id)), [soon]);
+  const todayKey = dateKey(new Date().toISOString());
+  const whenLabel = (ev) => {
+    if (!soonIds.has(ev.id)) return '';
+    if (dateKey(ev.startsAt) !== todayKey) return C.tomorrow;
+    const hour = parseInt(fmtTime(ev.startsAt).slice(0, 2), 10);
+    return hour >= 17 ? C.tonight : C.today;
+  };
+
+  const openEvent = (e, ev) => {
+    if (!isPlainClick(e)) return;
+    e.preventDefault();
+    setOverlayEvent(ev);
+  };
+
+  // "Skip the calendar" — the desktop pane lists every row (60+ links), so
+  // a keyboard visitor gets a way past them to what follows.
+  const skipPast = (e) => {
+    const target = document.getElementById('cal-after');
+    if (!target) return;
+    e.preventDefault();
+    target.focus();
+  };
+
   // The five-poster cap: soon and later are each soonest-first, and later
   // starts strictly after soon's today+tomorrow window, so concatenating
   // keeps chronological order. The first five wear posters (the wall); the
@@ -96,7 +139,8 @@ export default function Calendar({ lang }) {
   // and the name one step larger; on phones the lead stacks (canon w390:
   // .ev-card → one column) so the text never crushes.
   const card = (ev, lead = false) => {
-    const title = pickTitle(ev, lang) || 'REALITY event';
+    const title = pickTitle(ev, lang) || C.fallbackTitle;
+    const when = whenLabel(ev);
     const qualifier = pickQualifier(ev, lang);
     const loc = pickLocName(ev.location, lang);
     const start = fmtTime(ev.startsAt);
@@ -112,23 +156,23 @@ export default function Calendar({ lang }) {
     // crop); the feed slice is only ever the fallback when no 4:5 exists.
     const img = ev.posters?.poster4x5 || ev.posters?.feed || null;
     return (
-      <button
+      <a
         key={ev.id}
-        type="button"
+        href={eventHref(ev)}
         className={`relative grid w-full cursor-pointer items-start gap-5 py-4 pl-5 pr-1 text-left ${
           lead
             ? 'grid-cols-1 sm:grid-cols-[1fr_220px] md:grid-cols-[1fr_260px]'
             : 'grid-cols-[1fr_160px] sm:grid-cols-[1fr_200px]'
         } ${dayClassFromISO(ev.startsAt)}`}
         style={{ color: 'var(--fg)', borderBottom: '2px solid var(--hairline)', borderRadius: 0 }}
-        onClick={() => setOverlayEvent(ev)}
-        aria-label={title}
+        onClick={(e) => openEvent(e, ev)}
       >
         <span className="day-spine" aria-hidden="true" />
         <span className="flex min-w-0 flex-col items-start gap-2">
-          <span className="flex items-center gap-2.5">
+          <span className="flex flex-wrap items-center gap-2.5">
             <span className="day-plate">{wd}</span>
             <span className="ev-date">{dm}</span>
+            {when && <span className="when-chip">{when}</span>}
           </span>
           <span
             style={{
@@ -162,18 +206,18 @@ export default function Calendar({ lang }) {
             <img
               className="absolute inset-0 h-full w-full object-cover"
               src={img}
-              alt=""
+              alt={C.posterAlt.replace('{title}', title)}
               loading="lazy"
               decoding="async"
             />
           ) : (
-            <span className="cal-noposter absolute inset-0">
+            <span className="cal-noposter absolute inset-0" aria-hidden="true">
               <span className="cal-noposter-wd">{wd}</span>
               <span className="cal-noposter-dm">{dm}</span>
             </span>
           )}
         </span>
-      </button>
+      </a>
     );
   };
 
@@ -184,7 +228,8 @@ export default function Calendar({ lang }) {
   // rides as TEXT, never a colour block. Same sources as the slices, so all
   // six languages flow through unchanged.
   const row = (ev, i) => {
-    const title = pickTitle(ev, lang) || 'REALITY event';
+    const title = pickTitle(ev, lang) || C.fallbackTitle;
+    const when = whenLabel(ev);
     const qualifier = pickQualifier(ev, lang);
     const loc = pickLocName(ev.location, lang);
     const start = fmtTime(ev.startsAt);
@@ -195,17 +240,17 @@ export default function Calendar({ lang }) {
     const full = fmtDayDate(ev.startsAt, lang);
     const wd = dm && full.endsWith(dm) ? full.slice(0, -dm.length).trim() : full;
     return (
-      <button
+      <a
         key={ev.id}
-        type="button"
+        href={eventHref(ev)}
         className={`ev ${dayClassFromISO(ev.startsAt)}${i >= ROW_CAP ? ' ev-extra' : ''}`}
-        onClick={() => setOverlayEvent(ev)}
-        aria-label={title}
+        onClick={(e) => openEvent(e, ev)}
       >
-        <span className="day-spine" />
+        <span className="day-spine" aria-hidden="true" />
         <span className="ev-when">
           <span className="day-plate">{wd}</span>
           <span className="ev-date">{dm}</span>
+          {when && <span className="when-chip">{when}</span>}
         </span>
         <span className="ev-b">
           <span className="ev-n">{title}</span>
@@ -217,7 +262,7 @@ export default function Calendar({ lang }) {
           <span className="ev-qual">{costLabel(ev, lang)}</span>
         </span>
         <span className="ev-go" aria-hidden="true">→</span>
-      </button>
+      </a>
     );
   };
 
@@ -229,8 +274,9 @@ export default function Calendar({ lang }) {
       <div id="events" aria-hidden="true" style={{ scrollMarginTop: '90px' }} />
       <div className="mb-8">
         {/* Blue literal, not the accent: eyebrows are blue's JOB (canon), and
-            the theme-aware accent would flip this pink in Night. */}
-        <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>{C.eyebrow}</div>
+            the theme-aware accent would flip this pink in Night. The TEXT
+            print of blue (--blue-text): bright blue on cream is 2.66:1. */}
+        <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>{C.eyebrow}</div>
         <h2 className="h-section text-3xl md:text-5xl text-ink">{C.title}</h2>
       </div>
 
@@ -302,6 +348,13 @@ export default function Calendar({ lang }) {
               {rest.length > 0 && (
                 <>
                   <div className="cal-label mt-6 scroll-mt-24">{CF.comingUp}</div>
+                  <a
+                    href="#cal-after"
+                    onClick={skipPast}
+                    className="btn-secondary sr-only focus:not-sr-only focus:inline-block focus:mb-3 focus:px-3 focus:py-2 text-xs"
+                  >
+                    {C.skip}
+                  </a>
                   <div className={`wk${folded ? ' wk-capped' : ''}`}>
                     {rest.map(row)}
                   </div>
@@ -331,7 +384,9 @@ export default function Calendar({ lang }) {
               )}
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-between gap-4 flex-wrap">
+          {/* Skip target (tabIndex -1: focusable by script, not in the tab
+              order, no focus plate). */}
+          <div id="cal-after" tabIndex={-1} className="mt-3 flex items-center justify-between gap-4 flex-wrap">
             <span className="text-sm font-body text-ink/60">
               {CF.upcomingCount.replace('{n}', String(total))}
             </span>

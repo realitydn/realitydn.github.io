@@ -23,6 +23,15 @@
   --accent:   var(--blue);
   --accent-2: var(--pink);
 
+  /* TEXT-ONLY accent inks (a11y pass 23.09.26). Bright blue on cream is
+     2.66:1 and bright red 4.19:1 — both under AA for reading text. These
+     darker prints carry eyebrows, links and error hints; the locked brights
+     above stay the FILLS (plates, swatches, bands, borders). Night lifts
+     them back (see [data-theme="dark"]). Ratios on #fffbf1: blue 5.36,
+     red 5.67 (tools: scratch contrast check, WCAG 2.x relative luminance). */
+  --blue-text: #0a6fa0;
+  --red-text:  #c8161a;
+
   /* misregister — static offsets (canon 18.08.26; the drifting loop was
      retired). Needs isolation:isolate on a BACKGROUND-LESS ancestor or the
      negative-z plates vanish silently. */
@@ -97,6 +106,11 @@
   /* Night leads pink; blue becomes the partner ink (canon 18.08.26). */
   --accent:    var(--pink);
   --accent-2:  var(--blue);
+  /* Text accents on the night ground: bright blue already reads (7.32:1);
+     red lifts a step so a hint on --surface-2 still clears AA (6.15:1 on
+     the bg, 5.2:1 on --surface-2). */
+  --blue-text: #18a7e0;
+  --red-text:  #ff4d4f;
 
   --bg:        #0a0703;
   --surface:   #171109;
@@ -126,6 +140,7 @@
   --bg: #0a0703; --surface: #171109; --surface-2: #241a10; --paper-shade: #1c140b;
   --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .48);
   --hairline: #3a2c1c; --purple: #9a4faa;
+  --blue-text: #18a7e0; --red-text: #ff4d4f;
   --fg-rgb: 255 251 241; --bg-rgb: 10 7 3;
   --sh-light: 0 4px 1px rgba(255, 251, 241, .14);
   --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
@@ -137,6 +152,7 @@
   --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
   --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56);
   --hairline: rgba(13, 9, 5, .16); --purple: #6e3179;
+  --blue-text: #0a6fa0; --red-text: #c8161a;
   --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
   --sh-light: 0 4px 1px rgba(13, 9, 5, .10);
   --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
@@ -403,7 +419,7 @@ body {
   display: block;
 }
 .field-hint-error {
-  color: var(--red);
+  color: var(--red-text);
   font-family: var(--grotesk);
   font-size: 14px;
   margin-top: 6px;
@@ -427,8 +443,10 @@ input[type="radio"] {
   color: #0d0905;
 }
 .alert-success { background: var(--green); }
-.alert-error   { background: var(--red); color: #fffbf1; }
-.alert-error a { color: #fffbf1; }
+/* Ink on the red fill (4.59:1), not cream (4.19:1 — under AA at body size):
+   coloured fills take ink, per the buttons canon. */
+.alert-error   { background: var(--red); color: #0d0905; }
+.alert-error a { color: #0d0905; }
 
 /* ============================================================
    Focus / a11y — canon G1, 22.08.26: the misregister plate.
@@ -447,7 +465,7 @@ input[type="radio"] {
 :where(a, button, [tabindex], input, select, textarea, summary):focus {
   outline: none;
 }
-:where(a, button, [tabindex], summary):focus-visible {
+:where(a, button, [tabindex]:not([tabindex="-1"]), summary):focus-visible {
   outline: none;
   transform: translate(-4px, -4px);
   box-shadow: 4px 4px 0 0 var(--accent);
@@ -456,7 +474,7 @@ input[type="radio"] {
 /* Faces must be OPAQUE or the plate reads as a fill. Filled controls keep
    their own fills (their background rules outrank :where's zero specificity);
    bare-box controls get paper. */
-:where(a, button, [tabindex], summary):focus-visible {
+:where(a, button, [tabindex]:not([tabindex="-1"]), summary):focus-visible {
   background-color: var(--bg);
 }
 .btn-primary:focus-visible { background-color: var(--fg); }
@@ -482,7 +500,7 @@ a:not([class]):focus-visible {
 .b-act { --accent: var(--yellow); }
 .cal-datetab, .cal-noposter, .day-field { --accent: var(--fg); }
 @media (prefers-reduced-motion: reduce) {
-  :where(a, button, [tabindex], summary):focus-visible { transition: none; }
+  :where(a, button, [tabindex]:not([tabindex="-1"]), summary):focus-visible { transition: none; }
 }
 
 /* Skip-to-content link — hidden until focused. */
@@ -508,6 +526,10 @@ a:not([class]):focus-visible {
   top: 0.5rem;
   left: 0.5rem;
 }
+
+/* Korean breaks between words (eojeol), not mid-syllable-block — the
+   browser default splits a word anywhere, which reads as a typo. */
+:lang(ko) { word-break: keep-all; overflow-wrap: break-word; }
 
 /* ============================================================
    Motion — stamp, don't float
@@ -1035,6 +1057,26 @@ section[id], div[id="proposal"] {
 .plate-f { margin-top: auto; display: flex; gap: 12px; padding: 16px 18px; border-top: 3px solid var(--fg); }
 .plate-f > * { flex: 1; }
 .dlg { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 64px)); max-height: calc(100% - 64px); }
+/* The event overlay (EventOverlay.jsx). 90dvh so a phone's collapsing URL
+   bar never hides the footer; vh first as the fallback. On phones the
+   poster + text scroll together in ONE inner scroller and the app CTA is
+   pinned in .plate-f, so the primary action is never 1500px down a swipe.
+   From md the poster takes the left 2/5 and only the text pane scrolls.
+   overscroll-behavior: contain keeps a fling from chaining to the (locked)
+   page behind. */
+.ev-dlg { width: min(672px, calc(100% - 32px)); max-height: 90vh; max-height: 90dvh; }
+.ev-dlg-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; }
+.ev-dlg-poster { flex: none; display: flex; justify-content: center; padding: 16px; background: var(--day); border-bottom: 3px solid var(--fg); }
+.ev-dlg-poster img { display: block; height: min(34vh, 340px); height: min(34dvh, 340px); width: auto; aspect-ratio: 4 / 5; object-fit: cover; border: 2px solid var(--fg); }
+.ev-dlg-poster.is-plain { display: block; padding: 0; }
+.ev-dlg-body .plate-b { overflow: visible; }
+.ev-dlg .plate-f .btn-primary { text-align: center; }
+@media (min-width: 768px) {
+  .ev-dlg-body { flex-direction: row; overflow: hidden; }
+  .ev-dlg-poster { width: 40%; padding: 0; border-bottom: 0; background: var(--bg); }
+  .ev-dlg-poster img { width: 100%; height: 100%; aspect-ratio: auto; border: 0; }
+  .ev-dlg-body .plate-b { overflow-y: auto; overscroll-behavior: contain; }
+}
 .dlg-sm { width: min(420px, calc(100% - 48px)); }
 .drawer { inset: 0; border-width: 0; box-shadow: none; }
 /* lightbox — ink plate, 32px inset; the photo is the subject (never a mark) */
@@ -1093,6 +1135,17 @@ section[id], div[id="proposal"] {
   letter-spacing: 0.04em; text-transform: uppercase;
 }
 .day-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 9px; background: var(--day); }
+/* TONIGHT / TODAY / TOMORROW — a small ink chip beside the date, only on
+   events in the soon window. Ink, not a day hue: the weekday colour already
+   owns the plate, and the chip is a FACT (when), not a category. */
+.when-chip {
+  display: inline-block;
+  background: var(--fg); color: var(--bg);
+  padding: 3px 7px;
+  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.1;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap;
+}
 @media (max-width: 640px) {
   /* the row re-stacks rather than shrinking: when / name / meta as rows */
   .ev { grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 8px 14px; padding-left: 20px; }

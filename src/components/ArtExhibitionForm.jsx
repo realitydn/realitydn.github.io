@@ -1,620 +1,167 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { URLS } from '../data/translations';
+import useProposalForm, { isEmail, isUrl } from '../hooks/useProposalForm';
+import { Field, ChoiceGroup, ReviewList, StepProgress, SubmitAlert, StepNav, Honeypot } from './FormFields';
 
-const WORKER_URL = '';
-// Proposals now POST to the hub — the app's Control Room inbox is the review
-// surface. VITE_HUB_URL overrides for previews; defaults to prod. The Notion
-// worker (WORKER_URL) stays live below as a fire-and-forget backup.
-const HUB = (import.meta.env.VITE_HUB_URL || 'https://app.realitydn.com').replace(/\/$/, '');
+// ArtExhibitionForm — the visual-art exhibition pitch. Same engine as
+// EventProposalForm (useProposalForm + FormFields); only the fields differ.
 
-export default function ArtExhibitionForm({ t, onSuccess }) {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
-  const [errors, setErrors] = useState({});
+const INITIAL = {
+  email: '',
+  name: '',
+  artistCollectiveName: '',
+  basedWhere: '',
+  contact: '',
+  artistBio: '',
+  workLink: '',
+  showDescription: '',
+  showAreas: [],
+  spaceAmount: '',
+  technicalNeeds: '',
+  preferredDate: '',
+  flexibility: '',
+  isGroupShow: '',
+  numArtists: '',
+  curatorInfo: '',
+  honeypot: '',
+};
 
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    artistCollectiveName: '',
-    basedWhere: '',
-    contact: '',
-    artistBio: '',
-    workLink: '',
-    showDescription: '',
-    showAreas: [],
-    spaceAmount: '',
-    technicalNeeds: '',
-    preferredDate: '',
-    flexibility: '',
-    isGroupShow: '',
-    numArtists: '',
-    curatorInfo: '',
-    honeypot: '',
+const AREAS = ['floor1', 'floor2l', 'floor2e', 'rooftop'];
+const FLEXIBILITY = ['veryFlexible', 'somewhat', 'fixed'];
+const GROUP = ['yes', 'no'];
+
+// Error CODES, not sentences — rendered as formErrors.<code> in the
+// visitor's language. Insertion order = reading order = focus order.
+function validate(step, d) {
+  const e = {};
+  if (step === 1) {
+    if (!d.email.trim()) e.email = 'required';
+    else if (!isEmail(d.email)) e.email = 'email';
+    if (!d.name.trim()) e.name = 'required';
+    if (!d.basedWhere.trim()) e.basedWhere = 'required';
+    if (!d.contact.trim()) e.contact = 'required';
+    if (!d.artistBio.trim()) e.artistBio = 'required';
+    if (!d.workLink.trim()) e.workLink = 'required';
+    else if (!isUrl(d.workLink)) e.workLink = 'url';
+  } else if (step === 2) {
+    if (!d.showDescription.trim()) e.showDescription = 'required';
+    if (!d.spaceAmount.trim()) e.spaceAmount = 'required';
+  } else if (step === 3) {
+    if (!d.preferredDate.trim()) e.preferredDate = 'required';
+    if (!d.flexibility) e.flexibility = 'pickOption';
+    if (!d.isGroupShow) e.isGroupShow = 'pickOption';
+    if (d.isGroupShow === 'yes' && !d.numArtists.trim()) e.numArtists = 'required';
+  }
+  return e;
+}
+
+export default function ArtExhibitionForm({ t, lang, onSuccess }) {
+  const form = useProposalForm({
+    type: 'art',
+    initial: INITIAL,
+    validate,
+    kind: 'art',
+    extra: {},
+    workerPath: '/api/art-exhibition',
+    lang,
+    t,
+    onSuccess,
   });
+  const f = (k) => t.use(`artForm.${k}`);
+  const opts = (group, values) => values.map((v) => ({ value: v, label: f(`${group}.${v}`) }));
+  const { data, step } = form;
 
-  const validateStep = (stepNum) => {
-    const newErrors = {};
-
-    if (stepNum === 1) {
-      if (!formData.email) newErrors.email = 'Email is required';
-      if (!formData.name) newErrors.name = 'Name is required';
-      if (!formData.basedWhere) newErrors.basedWhere = 'Location information is required';
-      if (!formData.contact) newErrors.contact = 'Contact is required';
-      if (!formData.artistBio) newErrors.artistBio = 'Artist bio is required';
-      if (!formData.workLink) newErrors.workLink = 'Link to your work is required';
-    } else if (stepNum === 2) {
-      if (!formData.showDescription) newErrors.showDescription = 'Show description is required';
-      if (!formData.spaceAmount) newErrors.spaceAmount = 'Space amount is required';
-    } else if (stepNum === 3) {
-      if (!formData.preferredDate) newErrors.preferredDate = 'Preferred date is required';
-      if (!formData.flexibility) newErrors.flexibility = 'Timeline flexibility is required';
-      if (!formData.isGroupShow) newErrors.isGroupShow = 'Please specify if group show';
-      if (formData.isGroupShow === 'yes' && !formData.numArtists) {
-        newErrors.numArtists = 'Number of artists is required';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const handleCheckboxChange = (e, fieldName) => {
-    const { value, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: checked
-        ? [...prev[fieldName], value]
-        : prev[fieldName].filter((item) => item !== value),
-    }));
-    if (errors[fieldName]) {
-      setErrors((prev) => ({
-        ...prev,
-        [fieldName]: '',
-      }));
-    }
-  };
-
-  const handleRadioChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const nextStep = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
-    }
-  };
-
-  const prevStep = () => {
-    setStep(step - 1);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Honeypot tripped: fake a success so bots don't retry, but never POST.
-    // Browsers like Brave/Cốc Cốc/iOS Safari and password managers can
-    // autofill hidden fields, so a silent return would block real users too —
-    // showing the thank-you screen at least keeps them moving.
-    if (formData.honeypot) {
-      setSubmitStatus('success');
-      setStep(1);
-      if (typeof onSuccess === 'function') onSuccess();
-      return;
-    }
-
-    if (!validateStep(3)) return;
-
-    setLoading(true);
-    setSubmitStatus(null);
-
-    try {
-      // Notion-era pipeline stays live as a backup while the hub inbox beds in —
-      // fire-and-forget to the same-origin worker (Notion + Sheets + the Resend
-      // confirmation email). Sent first so a hub outage can't lose the pitch;
-      // only the hub response below drives the success/error UX.
-      fetch(`${WORKER_URL}/api/art-exhibition`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      }).catch(() => {});
-
-      // Primary: the Events Platform hub. Its /api/proposals route CORS-allows
-      // realitydn.com and is dormant-safe (accepts + flags unverified until a
-      // Turnstile secret is set). `kind` tags the proposal for the inbox.
-      const response = await fetch(`${HUB}/api/proposals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, kind: 'art' }),
-      });
-
-      // Guard against the SPA catch-all serving index.html when the worker
-      // route isn't actually wired up — a 200 with text/html would otherwise
-      // look like a successful submit.
-      const contentType = response.headers.get('content-type') || '';
-      const gotJson = contentType.includes('application/json');
-
-      if (response.ok && gotJson) {
-        setSubmitStatus('success');
-        setFormData({
-          email: '',
-          name: '',
-          artistCollectiveName: '',
-          basedWhere: '',
-          contact: '',
-          artistBio: '',
-          workLink: '',
-          showDescription: '',
-          showAreas: [],
-          spaceAmount: '',
-          technicalNeeds: '',
-          preferredDate: '',
-          flexibility: '',
-          isGroupShow: '',
-          numArtists: '',
-          curatorInfo: '',
-          honeypot: '',
-        });
-        setStep(1);
-        // Hand off to parent — section-level thank-you replaces the form.
-        if (typeof onSuccess === 'function') onSuccess();
-      } else {
-        setSubmitStatus('error');
-      }
-    } catch (error) {
-      console.error('Submission error:', error);
-      setSubmitStatus('error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const heading = (key) => (
+    <h3
+      ref={form.headingRef}
+      tabIndex={-1}
+      className="h-section text-xl md:text-2xl mb-6 scroll-mt-24"
+    >
+      {f(key)}
+    </h3>
+  );
 
   return (
-    // Rules-on-paper (ink pass 22.08.26): the card-static shell grounded the
-    // form against the old parallax collage; on the flat paper band the form
-    // is fields on paper under a 2px ink rule — the inputs carry their own
-    // ink borders.
-    <form onSubmit={handleSubmit} className="pt-6 md:pt-8 max-w-2xl" style={{ borderTop: '2px solid var(--fg)' }}>
-      {/* Progress indicator — stamped squares on a rule */}
-      <div className="mb-8 flex justify-between items-center">
-        {[1, 2, 3, 4].map((num) => (
-          <div key={num} className="flex items-center flex-1 last:flex-none">
-            <div
-              className={`w-9 h-9 shrink-0 flex items-center justify-center font-title font-bold text-sm border-2 transition-colors ${
-                step >= num
-                  ? 'bg-ink text-cream border-ink'
-                  : 'bg-transparent text-ink/40 border-ink/25'
-              }`}
-              style={step === num ? { boxShadow: 'var(--sh-light)' } : undefined}
-              aria-current={step === num ? 'step' : undefined}
-            >
-              {num}
-            </div>
-            {num < 4 && (
-              <div
-                className={`h-[2px] mx-2 md:mx-3 flex-1 ${
-                  step > num ? 'bg-ink' : 'bg-ink/20'
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="mb-6">
-        <p className="font-body text-sm text-gray-600">
-          {t.use('artForm.step')} {step} {t.use('artForm.of')} 4
-        </p>
-      </div>
+    <form
+      onSubmit={form.handleSubmit}
+      noValidate
+      className="pt-6 md:pt-8 max-w-2xl"
+      style={{ borderTop: '2px solid var(--fg)' }}
+    >
+      <StepProgress form={form} t={t} ns="artForm" />
 
       {/* Step 1: About You */}
       {step === 1 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step1Title')}</h3>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.email')} *
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.emailPlaceholder')}
-            />
-            {errors.email && <p className="field-hint-error">{errors.email}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.name')} *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.namePlaceholder')}
-            />
-            {errors.name && <p className="field-hint-error">{errors.name}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.artistCollectiveName')}
-            </label>
-            <input
-              type="text"
-              name="artistCollectiveName"
-              value={formData.artistCollectiveName}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.artistCollectiveNamePlaceholder')}
-            />
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.basedWhere')} *
-            </label>
-            <input
-              type="text"
-              name="basedWhere"
-              value={formData.basedWhere}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.basedWherePlaceholder')}
-            />
-            {errors.basedWhere && <p className="field-hint-error">{errors.basedWhere}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.contact')} *
-            </label>
-            <input
-              type="text"
-              name="contact"
-              value={formData.contact}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.contactPlaceholder')}
-            />
-            {errors.contact && <p className="field-hint-error">{errors.contact}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.artistBio')} *
-            </label>
-            <textarea
-              name="artistBio"
-              value={formData.artistBio}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.artistBioPlaceholder')}
-              rows="4"
-            />
-            {errors.artistBio && <p className="field-hint-error">{errors.artistBio}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.workLink')} *
-            </label>
-            <input
-              type="url"
-              name="workLink"
-              value={formData.workLink}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.workLinkPlaceholder')}
-            />
-            {errors.workLink && <p className="field-hint-error">{errors.workLink}</p>}
-          </div>
-
-          {/* Honeypot — the HTML name is deliberately not one of the common
-              autofill targets (email/name/phone/website/address/...) so
-              password managers and aggressive autofill (Brave/Cốc Cốc/iOS
-              Safari, 1Password, LastPass) leave it alone. The data-* hints
-              reinforce the opt-out for the major password managers. Bots
-              that fill every input still trip the trap. */}
-          <input
-            type="text"
-            name="hp_field"
-            value={formData.honeypot}
-            onChange={(e) => setFormData((prev) => ({ ...prev, honeypot: e.target.value }))}
-            style={{
-              position: 'absolute',
-              left: '-9999px',
-              top: '-9999px',
-              width: '1px',
-              height: '1px',
-              opacity: 0,
-            }}
-            tabIndex="-1"
-            autoComplete="off"
-            aria-hidden="true"
-            data-1p-ignore="true"
-            data-lpignore="true"
-          />
+          {heading('step1Title')}
+          <Field form={form} name="email" type="email" required autoComplete="email" label={f('email')} placeholder={f('emailPlaceholder')} />
+          <Field form={form} name="name" required autoComplete="name" label={f('name')} placeholder={f('namePlaceholder')} />
+          <Field form={form} name="artistCollectiveName" label={f('artistCollectiveName')} placeholder={f('artistCollectiveNamePlaceholder')} />
+          <Field form={form} name="basedWhere" required label={f('basedWhere')} placeholder={f('basedWherePlaceholder')} />
+          <Field form={form} name="contact" required label={f('contact')} placeholder={f('contactPlaceholder')} />
+          <Field form={form} name="artistBio" required rows="4" label={f('artistBio')} placeholder={f('artistBioPlaceholder')} />
+          <Field form={form} name="workLink" type="url" required inputMode="url" autoComplete="url" label={f('workLink')} placeholder={f('workLinkPlaceholder')} />
+          <Honeypot form={form} />
         </div>
       )}
 
       {/* Step 2: About the Show */}
       {step === 2 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step2Title')}</h3>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.showDescription')} *
-            </label>
-            <textarea
-              name="showDescription"
-              value={formData.showDescription}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.showDescriptionPlaceholder')}
-              rows="5"
-            />
-            {errors.showDescription && <p className="field-hint-error">{errors.showDescription}</p>}
-          </div>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('artForm.showAreasLabel')}
-            </label>
-            <div className="space-y-2">
-              {['floor1', 'floor2l', 'floor2e', 'rooftop'].map((area) => (
-                <label key={area} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value={area}
-                    checked={formData.showAreas.includes(area)}
-                    onChange={(e) => handleCheckboxChange(e, 'showAreas')}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`artForm.showAreas.${area}`)}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.spaceAmount')} *
-            </label>
-            <input
-              type="text"
-              name="spaceAmount"
-              value={formData.spaceAmount}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.spaceAmountPlaceholder')}
-            />
-            {errors.spaceAmount && <p className="field-hint-error">{errors.spaceAmount}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.technicalNeeds')}
-            </label>
-            <textarea
-              name="technicalNeeds"
-              value={formData.technicalNeeds}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.technicalNeedsPlaceholder')}
-              rows="3"
-            />
-          </div>
+          {heading('step2Title')}
+          <Field form={form} name="showDescription" required rows="5" label={f('showDescription')} placeholder={f('showDescriptionPlaceholder')} />
+          <ChoiceGroup form={form} name="showAreas" multiple legend={f('showAreasLabel')} options={opts('showAreas', AREAS)} />
+          <Field form={form} name="spaceAmount" required label={f('spaceAmount')} placeholder={f('spaceAmountPlaceholder')} />
+          <Field form={form} name="technicalNeeds" rows="3" label={f('technicalNeeds')} placeholder={f('technicalNeedsPlaceholder')} />
         </div>
       )}
 
       {/* Step 3: Scheduling & Group Shows */}
       {step === 3 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step3Title')}</h3>
-
-          <div>
-            <label className="field-label">
-              {t.use('artForm.preferredDate')} *
-            </label>
-            <input
-              type="text"
-              name="preferredDate"
-              value={formData.preferredDate}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('artForm.preferredDatePlaceholder')}
-            />
-            {errors.preferredDate && <p className="field-hint-error">{errors.preferredDate}</p>}
-          </div>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('artForm.flexibilityLabel')} *
-            </label>
-            <div className="space-y-2">
-              {['veryFlexible', 'somewhat', 'fixed'].map((option) => (
-                <label key={option} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="flexibility"
-                    value={option}
-                    checked={formData.flexibility === option}
-                    onChange={handleRadioChange}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`artForm.flexibility.${option}`)}</span>
-                </label>
-              ))}
-            </div>
-            {errors.flexibility && <p className="field-hint-error">{errors.flexibility}</p>}
-          </div>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('artForm.isGroupShowLabel')} *
-            </label>
-            <div className="space-y-2">
-              {['yes', 'no'].map((option) => (
-                <label key={option} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="isGroupShow"
-                    value={option}
-                    checked={formData.isGroupShow === option}
-                    onChange={handleRadioChange}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`artForm.isGroupShow.${option}`)}</span>
-                </label>
-              ))}
-            </div>
-            {errors.isGroupShow && <p className="field-hint-error">{errors.isGroupShow}</p>}
-          </div>
-
-          {formData.isGroupShow === 'yes' && (
+          {heading('step3Title')}
+          <Field form={form} name="preferredDate" required label={f('preferredDate')} placeholder={f('preferredDatePlaceholder')} />
+          <ChoiceGroup form={form} name="flexibility" required legend={f('flexibilityLabel')} options={opts('flexibility', FLEXIBILITY)} />
+          <ChoiceGroup form={form} name="isGroupShow" required legend={f('isGroupShowLabel')} options={opts('isGroupShow', GROUP)} />
+          {data.isGroupShow === 'yes' && (
             <>
-              <div>
-                <label className="field-label">
-                  {t.use('artForm.numArtists')} *
-                </label>
-                <input
-                  type="text"
-                  name="numArtists"
-                  value={formData.numArtists}
-                  onChange={handleInputChange}
-                  className="field"
-                  placeholder={t.use('artForm.numArtistsPlaceholder')}
-                />
-                {errors.numArtists && <p className="field-hint-error">{errors.numArtists}</p>}
-              </div>
-
-              <div>
-                <label className="field-label">
-                  {t.use('artForm.curatorInfo')}
-                </label>
-                <textarea
-                  name="curatorInfo"
-                  value={formData.curatorInfo}
-                  onChange={handleInputChange}
-                  className="field"
-                  placeholder={t.use('artForm.curatorInfoPlaceholder')}
-                  rows="3"
-                />
-              </div>
+              <Field form={form} name="numArtists" required inputMode="numeric" label={f('numArtists')} placeholder={f('numArtistsPlaceholder')} />
+              <Field form={form} name="curatorInfo" rows="3" label={f('curatorInfo')} placeholder={f('curatorInfoPlaceholder')} />
             </>
           )}
         </div>
       )}
 
-      {/* Step 4: Review & Submit */}
+      {/* Step 4: Review & Submit — values in words, never raw option codes */}
       {step === 4 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('artForm.step4Title')}</h3>
+          {heading('step4Title')}
 
-          {submitStatus === 'success' && (
-            <div className="alert-success">
-              <p className="flex items-center gap-2">
-                <span>✓</span> {t.use('artForm.successMessage')}
-              </p>
-            </div>
-          )}
+          <SubmitAlert form={form} t={t} ns="artForm" waUrl={URLS.WA} />
 
-          {submitStatus === 'error' && (
-            <div className="alert-error">
-              <p>{t.use('artForm.errorMessage')}</p>
-              <p className="mt-2 text-sm">
-                {t.use('artForm.fallbackMessage')}{' '}
-                <a href={URLS.WA} target="_blank" rel="noreferrer" className="font-title underline">
-                  WhatsApp
-                </a>
-              </p>
-            </div>
-          )}
-
-          {submitStatus !== 'success' && (
+          {form.status !== 'success' && (
             <>
-              <div
-                className="space-y-4 p-4"
-                style={{ border: '2px solid var(--hairline)', background: 'var(--surface-2)' }}
-              >
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('artForm.email')}
-                  </p>
-                  <p className="font-body">{formData.email}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('artForm.name')}
-                  </p>
-                  <p className="font-body">{formData.name}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('artForm.basedWhere')}
-                  </p>
-                  <p className="font-body">{formData.basedWhere}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('artForm.flexibilityLabel')}
-                  </p>
-                  <p className="font-body">{formData.flexibility}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('artForm.isGroupShowLabel')}
-                  </p>
-                  <p className="font-body">{formData.isGroupShow}</p>
-                </div>
-              </div>
+              <ReviewList
+                rows={[
+                  { label: f('email'), value: data.email },
+                  { label: f('name'), value: data.name },
+                  { label: f('basedWhere'), value: data.basedWhere },
+                  { label: f('workLink'), value: data.workLink },
+                  { label: f('flexibilityLabel'), value: data.flexibility && f(`flexibility.${data.flexibility}`) },
+                  { label: f('isGroupShowLabel'), value: data.isGroupShow && f(`isGroupShow.${data.isGroupShow}`) },
+                ]}
+              />
 
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className="btn-secondary px-5 py-3 text-sm"
-                >
-                  {t.use('artForm.back')}
+                <button type="button" onClick={form.back} className="btn-secondary px-5 py-3 text-sm">
+                  {f('back')}
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={form.loading}
                   className="btn-primary px-5 py-3 text-sm disabled:opacity-50"
                 >
-                  {loading ? t.use('artForm.submitting') : t.use('artForm.submit')}
+                  {form.loading ? f('submitting') : f('submit')}
                 </button>
               </div>
             </>
@@ -622,38 +169,7 @@ export default function ArtExhibitionForm({ t, onSuccess }) {
         </div>
       )}
 
-      {/* Navigation buttons */}
-      {step < 4 && submitStatus !== 'success' && (
-        <div className="flex gap-2 mt-8">
-          {step > 1 && (
-            <button
-              type="button"
-              onClick={prevStep}
-              className="btn-secondary px-5 py-3 text-sm"
-            >
-              {t.use('artForm.back')}
-            </button>
-          )}
-          {step < 3 && (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="btn-primary px-5 py-3 text-sm"
-            >
-              {t.use('artForm.next')}
-            </button>
-          )}
-          {step === 3 && (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="btn-primary px-5 py-3 text-sm"
-            >
-              {t.use('artForm.review')}
-            </button>
-          )}
-        </div>
-      )}
+      <StepNav form={form} t={t} ns="artForm" />
     </form>
   );
 }

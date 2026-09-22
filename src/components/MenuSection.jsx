@@ -58,6 +58,28 @@ export default function MenuSection({ lang, t }) {
     });
   };
 
+  // WAI-ARIA tabs on BOTH category lists (desktop sidebar, phone strip):
+  // roving tabIndex, arrows move + select, Home/End jump. The panels are
+  // labelled by the desktop tab (aria-labelledby reads a hidden referent).
+  const tabId = (prefix, key) => `menu-${prefix}-tab-${key}`;
+  const panelId = (key) => `menu-panel-${key}`;
+  const onTabKeys = (e, prefix) => {
+    let n = -1;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') n = (index + 1) % MENU.length;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') n = (index - 1 + MENU.length) % MENU.length;
+    else if (e.key === 'Home') n = 0;
+    else if (e.key === 'End') n = MENU.length - 1;
+    if (n < 0) return;
+    e.preventDefault();
+    selectCategory(n);
+    const el = document.getElementById(tabId(prefix, MENU[n].key));
+    if (el) {
+      el.focus();
+      // the phone strip scrolls sideways — keep the focused tab in view
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  };
+
   const tabClasses = (active) =>
     `text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
       active
@@ -78,7 +100,7 @@ export default function MenuSection({ lang, t }) {
     // (the .band stack idiom; DarkCTA's own bottom border was removed).
     <section id="menus" className="band b-paper section text-ink">
       <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
-        <div className="eyebrow mb-2" style={{ color: 'var(--blue)' }}>
+        <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
           {t.use('drinkEyebrow')}
         </div>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -94,17 +116,29 @@ export default function MenuSection({ lang, t }) {
             {t.use('downloadPdf')}
           </a>
         </div>
+        {/* Prices print as "150k" (house style); said once, here. */}
+        <p className="mt-3 font-body text-sm text-gray-600">{t.use('menuPriceNote')}</p>
       </Reveal>
 
       <div className="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6">
         {/* Desktop sidebar navigation */}
         <aside className="hidden md:block md:col-span-3 sticky top-24 self-start">
-          <nav className="flex flex-col gap-2" role="tablist" aria-label={t.use('menus')}>
+          <nav
+            className="flex flex-col gap-2"
+            role="tablist"
+            aria-label={t.use('menus')}
+            aria-orientation="vertical"
+            onKeyDown={(e) => onTabKeys(e, 'desktop')}
+          >
             {MENU.map((c, i) => (
               <button
                 key={c.key}
+                type="button"
+                id={tabId('desktop', c.key)}
                 role="tab"
                 aria-selected={i === index}
+                aria-controls={panelId(c.key)}
+                tabIndex={i === index ? 0 : -1}
                 onClick={() => selectCategory(i)}
                 className={tabClasses(i === index)}
                 style={tabStyle(c.key, i === index)}
@@ -124,10 +158,22 @@ export default function MenuSection({ lang, t }) {
         <div className="col-span-12 md:col-span-9">
           {/* Mobile horizontal nav */}
           <div className="md:hidden -mx-2 px-2 mb-4">
-            <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory py-1 scrollbar-hide">
+            <div
+              className="flex gap-2 overflow-x-auto snap-x snap-mandatory py-1 scrollbar-hide"
+              role="tablist"
+              aria-label={t.use('menus')}
+              aria-orientation="horizontal"
+              onKeyDown={(e) => onTabKeys(e, 'mobile')}
+            >
               {MENU.map((c, i) => (
                 <button
                   key={c.key}
+                  type="button"
+                  id={tabId('mobile', c.key)}
+                  role="tab"
+                  aria-selected={i === index}
+                  aria-controls={panelId(c.key)}
+                  tabIndex={i === index ? 0 : -1}
                   onClick={() => selectCategory(i)}
                   className={`snap-start shrink-0 ${tabClasses(i === index)}`}
                   style={tabStyle(c.key, i === index)}
@@ -159,9 +205,11 @@ export default function MenuSection({ lang, t }) {
             {MENU.map((cat, i) => (
               <section
                 key={cat.key}
+                id={panelId(cat.key)}
                 hidden={i !== index}
                 className={`py-6 md:py-8 space-y-8 ${i === index ? 'panel-swap' : ''}`}
                 role="tabpanel"
+                aria-labelledby={tabId('desktop', cat.key)}
               >
                 <header className="flex items-start gap-3 md:gap-4">
                   <span

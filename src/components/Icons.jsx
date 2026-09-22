@@ -3,12 +3,20 @@ import React from 'react';
 // Year 2 iconography: 2px ink strokes, hard joints, hard corners.
 // Default stroke is currentColor so icons inherit text color and flip
 // with the Day/Night theme automatically.
+//
+// Decorative by contract (a11y pass 23.09.26): every icon sits inside a
+// control that already carries its name (visible text or aria-label), so the
+// SVG is aria-hidden — as role="img" with an English label it was read twice
+// ("WhatsApp WhatsApp") and in English on every locale. `label` stays as a
+// dev-facing name only. An icon that ever stands alone must get its name
+// from its control.
 const S = 2, LC = "square", LJ = "miter";
 
+// eslint-disable-next-line no-unused-vars
 const Svg = ({ label, size = 22, color = "currentColor", children }) => (
   <svg
-    role="img"
-    aria-label={label}
+    aria-hidden="true"
+    focusable="false"
     width={size}
     height={size}
     viewBox="0 0 24 24"

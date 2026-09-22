@@ -19,11 +19,11 @@ export default function HostGuide({ lang, t }) {
               className="p-2 -ml-2 hover:bg-ink/5 transition-colors inline-flex items-center"
               aria-label={t.use('backHome')}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </Link>
-            <Link to={homeHref} aria-label="REALITY home">
+            <Link to={homeHref} aria-label={t.use('a11y.home')}>
               <Logo color="var(--fg)" />
             </Link>
           </div>

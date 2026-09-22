@@ -37,6 +37,14 @@ function SunIcon() {
     </svg>
   );
 }
+// Every <meta name="theme-color"> (there may be media-scoped pairs) takes the
+// active theme's paper.
+function syncThemeColor(night) {
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+    meta.setAttribute('content', night ? THEME_COLORS.night : THEME_COLORS.day);
+  });
+}
+
 export default function ThemeToggle({ lang = 'EN', compact = false }) {
   const [night, setNight] = useState(() =>
     typeof document !== 'undefined' &&
@@ -45,11 +53,17 @@ export default function ThemeToggle({ lang = 'EN', compact = false }) {
   const settleTimer = useRef(null);
 
   // Follow the attribute so the twin toggle (and any other writer) stays
-  // in sync without lifted state.
+  // in sync without lifted state. The browser-chrome colour follows it too,
+  // and is synced once on mount: the pre-paint bootstrap in index.html runs
+  // BEFORE <meta name="theme-color"> is parsed, so a saved/OS Night theme
+  // used to leave the phone's address bar cream until the first toggle.
   useEffect(() => {
     const root = document.documentElement;
+    syncThemeColor(root.getAttribute('data-theme') === 'dark');
     const mo = new MutationObserver(() => {
-      setNight(root.getAttribute('data-theme') === 'dark');
+      const dark = root.getAttribute('data-theme') === 'dark';
+      setNight(dark);
+      syncThemeColor(dark);
     });
     mo.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
     return () => mo.disconnect();
@@ -102,8 +116,7 @@ export default function ThemeToggle({ lang = 'EN', compact = false }) {
         localStorage.setItem(STORAGE_KEY, toNight ? 'dark' : 'light');
       } catch (e) { /* private mode etc. — theme just won't persist */ }
     }
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', toNight ? THEME_COLORS.night : THEME_COLORS.day);
+    syncThemeColor(toNight);
   };
 
   useEffect(() => () => clearTimeout(settleTimer.current), []);

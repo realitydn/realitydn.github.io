@@ -99,11 +99,15 @@ export default function useHashLanding({ settled = true } = {}) {
     };
     tick();
 
+    // fonts.ready can settle after the page has unmounted (a route change
+    // mid-load) — the flag keeps a late re-anchor from yanking the next page.
+    let alive = true;
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => { go(); });
+      document.fonts.ready.then(() => { if (alive) go(); });
     }
 
     return () => {
+      alive = false;
       cancelAnimationFrame(raf);
       USER_INTENT.forEach((e) => window.removeEventListener(e, release));
     };

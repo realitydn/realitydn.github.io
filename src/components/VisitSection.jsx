@@ -4,7 +4,15 @@ import { Icons } from './Icons';
 import Reveal from './Reveal';
 import { URLS, STR } from '../data/translations';
 
+// The place page on Google Maps — the same cid as the LocalBusiness JSON-LD's
+// hasMap (index.html), so Directions opens the listing (reviews, hours, the
+// route button) rather than a bare coordinate.
+const MAPS_PLACE = 'https://maps.google.com/?cid=9022999249739857995';
+// From the same JSON-LD (never invent a phone number — there isn't one).
+const EMAIL = 'realitydn@gmail.com';
+
 export default function VisitSection({ lang, t }) {
+  const S = STR[lang];
   return (
     // The visit band — wayfinding is blue's whole job (hero, visit,
     // subscribe are the blue bands). Same contract as the hero: .b-wayfind
@@ -19,28 +27,52 @@ export default function VisitSection({ lang, t }) {
             <h2 className="h-section text-3xl md:text-4xl text-ink">
               {t.use('findUs')}
             </h2>
-            <p className="mt-4 font-body text-ink flex items-center gap-2">
-              {Icons.pin()} 86 Mai Thúc Lân, Đà Nẵng
+            {/* The address IS the way there — it opens the Maps listing. */}
+            <p className="mt-4 font-body text-ink">
+              <a
+                href={MAPS_PLACE}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 underline underline-offset-4"
+                aria-label={t.use('visit.openInMaps')}
+              >
+                {Icons.pin()} 86 Mai Thúc Lân, Đà Nẵng
+              </a>
             </p>
             <p className="font-body text-ink">
-              {STR[lang].hours}
+              {S.hours}
+            </p>
+            <p className="font-body text-ink">
+              <a href={`mailto:${EMAIL}`} className="underline underline-offset-4">
+                {EMAIL}
+              </a>
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
+              {/* Directions leads: on a wayfinding band the way there is the
+                  job. The app follows as the quieter outline. */}
               <a
                 className="btn-primary px-5 py-3 text-sm flex items-center gap-2"
+                href={MAPS_PLACE}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {Icons.pin()} {t.use('visit.directions')}
+              </a>
+              <a
+                className="btn-secondary px-5 py-3 text-sm flex items-center gap-2"
                 href={`${URLS.APP}/?utm_source=website&utm_medium=find_us`}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={STR[lang].getApp.title}
+                aria-label={S.getApp.title}
               >
-                {Icons.app()} {STR[lang].getApp.button}
+                {Icons.app()} {S.getApp.button}
               </a>
               <a
                 className="btn-secondary px-5 py-3 text-sm flex items-center gap-2"
                 href={URLS.WA}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Join WhatsApp"
+                aria-label={t.use('a11y.whatsapp')}
               >
                 {Icons.whatsapp()} WhatsApp
               </a>
@@ -49,7 +81,7 @@ export default function VisitSection({ lang, t }) {
                 href={URLS.IG}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Follow on Instagram"
+                aria-label={t.use('a11y.instagram')}
               >
                 {Icons.instagram()} Instagram
               </a>
@@ -58,7 +90,7 @@ export default function VisitSection({ lang, t }) {
                 href={URLS.FB}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Follow on Facebook"
+                aria-label={t.use('a11y.facebook')}
               >
                 {Icons.facebook()} Facebook
               </a>
@@ -72,7 +104,7 @@ export default function VisitSection({ lang, t }) {
               style={{ border: '2px solid var(--fg)', boxShadow: 'var(--sh-heavy)' }}
             >
               <iframe
-                title="Reality — Google Maps"
+                title={t.use('a11y.mapTitle')}
                 src={URLS.MAP}
                 className="w-full h-[420px]"
                 style={{ border: 0 }}

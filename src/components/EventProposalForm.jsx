@@ -1,620 +1,178 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { URLS } from '../data/translations';
 import { pathFor } from '../data/languages';
+import useProposalForm, { isEmail } from '../hooks/useProposalForm';
+import { Field, ChoiceGroup, ReviewList, StepProgress, SubmitAlert, StepNav, Honeypot } from './FormFields';
 
-const WORKER_URL = '';
-// Proposals now POST to the hub — the app's Control Room inbox is the review
-// surface. VITE_HUB_URL overrides for previews; defaults to prod. The Notion
-// worker (WORKER_URL) stays live below as a fire-and-forget backup.
-const HUB = (import.meta.env.VITE_HUB_URL || 'https://app.realitydn.com').replace(/\/$/, '');
+// EventProposalForm — the public AND private/paid event pitch (InfoHostSection
+// mounts it for both tabs). `type` says which: it keys the saved draft and
+// rides in the payload as eventType, so the Control Room can tell a private
+// hire from a community event. The hub's proposal `kind` stays 'event' — its
+// schema only accepts 'event' | 'art' (REALITYApp src/app/api/proposals).
 
-export default function EventProposalForm({ t, lang, onSuccess }) {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
-  const [errors, setErrors] = useState({});
+const INITIAL = {
+  email: '',
+  hostName: '',
+  organization: '',
+  contact: '',
+  eventTitle: '',
+  eventDescription: '',
+  recurrence: '',
+  daysAndTimes: '',
+  duration: '',
+  eventCost: '',
+  languages: [],
+  preferredSpace: [],
+  equipment: [],
+  anythingElse: '',
+  honeypot: '',
+};
 
-  const [formData, setFormData] = useState({
-    email: '',
-    hostName: '',
-    organization: '',
-    contact: '',
-    eventTitle: '',
-    eventDescription: '',
-    recurrence: '',
-    daysAndTimes: '',
-    duration: '',
-    eventCost: '',
-    languages: [],
-    preferredSpace: [],
-    equipment: [],
-    anythingElse: '',
-    honeypot: '',
+const RECURRENCE = ['one-time', 'weekly', 'biweekly', 'monthly', 'discuss'];
+const LANGUAGES = ['english', 'vietnamese', 'russian', 'ukrainian', 'other'];
+const SPACES = ['1l', '2l', '2e', '3p', 'unsure'];
+const EQUIPMENT = ['projector', 'microphones', 'laptop', 'dj', 'piano', 'seating', 'none', 'other'];
+
+// Error CODES, not sentences — the form renders formErrors.<code> in the
+// visitor's language. Insertion order = reading order = focus order.
+function validate(step, d) {
+  const e = {};
+  if (step === 1) {
+    if (!d.email.trim()) e.email = 'required';
+    else if (!isEmail(d.email)) e.email = 'email';
+    if (!d.hostName.trim()) e.hostName = 'required';
+    if (!d.contact.trim()) e.contact = 'required';
+  } else if (step === 2) {
+    if (!d.eventTitle.trim()) e.eventTitle = 'required';
+    if (!d.eventDescription.trim()) e.eventDescription = 'required';
+    if (!d.recurrence) e.recurrence = 'pickOption';
+    if (!d.daysAndTimes.trim()) e.daysAndTimes = 'required';
+    if (!d.duration.trim()) e.duration = 'required';
+    if (!d.eventCost.trim()) e.eventCost = 'required';
+  } else if (step === 3) {
+    if (d.languages.length === 0) e.languages = 'pickOne';
+    if (d.preferredSpace.length === 0) e.preferredSpace = 'pickOne';
+  }
+  return e;
+}
+
+export default function EventProposalForm({ t, lang, type = 'public', onSuccess }) {
+  const form = useProposalForm({
+    type: `event-${type}`,
+    initial: INITIAL,
+    validate,
+    kind: 'event',
+    extra: { eventType: type },
+    workerPath: '/api/event-proposal',
+    lang,
+    t,
+    onSuccess,
   });
+  const f = (k) => t.use(`eventForm.${k}`);
+  const opts = (group, values) => values.map((v) => ({ value: v, label: f(`${group}.${v}`) }));
+  const { data, step } = form;
 
-  const validateStep = (stepNum) => {
-    const newErrors = {};
-
-    if (stepNum === 1) {
-      if (!formData.email) newErrors.email = 'Email is required';
-      if (!formData.hostName) newErrors.hostName = 'Host name is required';
-      if (!formData.contact) newErrors.contact = 'Contact is required';
-    } else if (stepNum === 2) {
-      if (!formData.eventTitle) newErrors.eventTitle = 'Event title is required';
-      if (!formData.eventDescription) newErrors.eventDescription = 'Description is required';
-      if (!formData.recurrence) newErrors.recurrence = 'Recurrence is required';
-      if (!formData.daysAndTimes) newErrors.daysAndTimes = 'Days and times are required';
-      if (!formData.duration) newErrors.duration = 'Duration is required';
-      if (!formData.eventCost) newErrors.eventCost = 'Event cost is required';
-    } else if (stepNum === 3) {
-      if (formData.languages.length === 0) newErrors.languages = 'Please select at least one language';
-      if (formData.preferredSpace.length === 0) newErrors.preferredSpace = 'Please select at least one space';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const handleCheckboxChange = (e, fieldName) => {
-    const { value, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: checked
-        ? [...prev[fieldName], value]
-        : prev[fieldName].filter((item) => item !== value),
-    }));
-    if (errors[fieldName]) {
-      setErrors((prev) => ({
-        ...prev,
-        [fieldName]: '',
-      }));
-    }
-  };
-
-  const handleRadioChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const nextStep = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
-    }
-  };
-
-  const prevStep = () => {
-    setStep(step - 1);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Honeypot tripped: fake a success so bots don't retry, but never POST.
-    // Browsers like Brave/Cốc Cốc/iOS Safari and password managers can
-    // autofill hidden fields, so a silent return would block real users too —
-    // showing the thank-you screen at least keeps them moving.
-    if (formData.honeypot) {
-      setSubmitStatus('success');
-      setStep(1);
-      if (typeof onSuccess === 'function') onSuccess();
-      return;
-    }
-
-    if (!validateStep(3)) return;
-
-    setLoading(true);
-    setSubmitStatus(null);
-
-    try {
-      // Notion-era pipeline stays live as a backup while the hub inbox beds in —
-      // fire-and-forget to the same-origin worker (Notion + Sheets + the Resend
-      // confirmation email). Sent first so a hub outage can't lose the pitch;
-      // only the hub response below drives the success/error UX.
-      fetch(`${WORKER_URL}/api/event-proposal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      }).catch(() => {});
-
-      // Primary: the Events Platform hub. Its /api/proposals route CORS-allows
-      // realitydn.com and is dormant-safe (accepts + flags unverified until a
-      // Turnstile secret is set). `kind` tags the proposal for the inbox.
-      const response = await fetch(`${HUB}/api/proposals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, kind: 'event' }),
-      });
-
-      // Guard against the SPA catch-all serving index.html when the worker
-      // route isn't actually wired up — a 200 with text/html would otherwise
-      // look like a successful submit.
-      const contentType = response.headers.get('content-type') || '';
-      const gotJson = contentType.includes('application/json');
-
-      if (response.ok && gotJson) {
-        setSubmitStatus('success');
-        setFormData({
-          email: '',
-          hostName: '',
-          organization: '',
-          contact: '',
-          eventTitle: '',
-          eventDescription: '',
-          recurrence: '',
-          daysAndTimes: '',
-          duration: '',
-          eventCost: '',
-          languages: [],
-          preferredSpace: [],
-          equipment: [],
-          anythingElse: '',
-          honeypot: '',
-        });
-        setStep(1);
-        // Hand off to parent — renders a full-size thank-you in place of the
-        // form so the user stays on the main page instead of staring at a
-        // half-collapsed step 4.
-        if (typeof onSuccess === 'function') onSuccess();
-      } else {
-        setSubmitStatus('error');
-      }
-    } catch (error) {
-      console.error('Submission error:', error);
-      setSubmitStatus('error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const heading = (key) => (
+    <h3
+      ref={form.headingRef}
+      tabIndex={-1}
+      className="h-section text-xl md:text-2xl mb-6 scroll-mt-24"
+    >
+      {f(key)}
+    </h3>
+  );
 
   return (
     // Rules-on-paper (ink pass 22.08.26): the card-static shell grounded the
     // form against the old parallax collage; on the flat paper band the form
     // is fields on paper under a 2px ink rule — the inputs carry their own
     // ink borders.
-    <form onSubmit={handleSubmit} className="pt-6 md:pt-8 max-w-2xl" style={{ borderTop: '2px solid var(--fg)' }}>
-      {/* Progress indicator — stamped squares on a rule */}
-      <div className="mb-8 flex justify-between items-center">
-        {[1, 2, 3, 4].map((num) => (
-          <div key={num} className="flex items-center flex-1 last:flex-none">
-            <div
-              className={`w-9 h-9 shrink-0 flex items-center justify-center font-title font-bold text-sm border-2 transition-colors ${
-                step >= num
-                  ? 'bg-ink text-cream border-ink'
-                  : 'bg-transparent text-ink/40 border-ink/25'
-              }`}
-              style={step === num ? { boxShadow: 'var(--sh-light)' } : undefined}
-              aria-current={step === num ? 'step' : undefined}
-            >
-              {num}
-            </div>
-            {num < 4 && (
-              <div
-                className={`h-[2px] mx-2 md:mx-3 flex-1 ${
-                  step > num ? 'bg-ink' : 'bg-ink/20'
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="mb-6">
-        <p className="font-body text-sm text-gray-600">
-          {t.use('eventForm.step')} {step} {t.use('eventForm.of')} 4
-        </p>
-      </div>
+    <form
+      onSubmit={form.handleSubmit}
+      noValidate
+      className="pt-6 md:pt-8 max-w-2xl"
+      style={{ borderTop: '2px solid var(--fg)' }}
+    >
+      <StepProgress form={form} t={t} ns="eventForm" />
 
       {/* Step 1: About You */}
       {step === 1 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step1Title')}</h3>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.email')} *
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.emailPlaceholder')}
-            />
-            {errors.email && <p className="field-hint-error">{errors.email}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.hostName')} *
-            </label>
-            <input
-              type="text"
-              name="hostName"
-              value={formData.hostName}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.hostNamePlaceholder')}
-            />
-            {errors.hostName && <p className="field-hint-error">{errors.hostName}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.organization')}
-            </label>
-            <input
-              type="text"
-              name="organization"
-              value={formData.organization}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.organizationPlaceholder')}
-            />
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.contact')} *
-            </label>
-            <input
-              type="text"
-              name="contact"
-              value={formData.contact}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.contactPlaceholder')}
-            />
-            {errors.contact && <p className="field-hint-error">{errors.contact}</p>}
-          </div>
-
-          {/* Honeypot — the HTML name is deliberately not one of the common
-              autofill targets (email/name/phone/website/address/...) so
-              password managers and aggressive autofill (Brave/Cốc Cốc/iOS
-              Safari, 1Password, LastPass) leave it alone. The data-* hints
-              reinforce the opt-out for the major password managers. Bots
-              that fill every input still trip the trap. */}
-          <input
-            type="text"
-            name="hp_field"
-            value={formData.honeypot}
-            onChange={(e) => setFormData((prev) => ({ ...prev, honeypot: e.target.value }))}
-            style={{
-              position: 'absolute',
-              left: '-9999px',
-              top: '-9999px',
-              width: '1px',
-              height: '1px',
-              opacity: 0,
-            }}
-            tabIndex="-1"
-            autoComplete="off"
-            aria-hidden="true"
-            data-1p-ignore="true"
-            data-lpignore="true"
-          />
+          {heading('step1Title')}
+          <Field form={form} name="email" type="email" required autoComplete="email" label={f('email')} placeholder={f('emailPlaceholder')} />
+          <Field form={form} name="hostName" required autoComplete="name" label={f('hostName')} placeholder={f('hostNamePlaceholder')} />
+          <Field form={form} name="organization" autoComplete="organization" label={f('organization')} placeholder={f('organizationPlaceholder')} />
+          <Field form={form} name="contact" required label={f('contact')} placeholder={f('contactPlaceholder')} />
+          <Honeypot form={form} />
         </div>
       )}
 
       {/* Step 2: About the Event */}
       {step === 2 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step2Title')}</h3>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.eventTitle')} *
-            </label>
-            <input
-              type="text"
-              name="eventTitle"
-              value={formData.eventTitle}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.eventTitlePlaceholder')}
-            />
-            {errors.eventTitle && <p className="field-hint-error">{errors.eventTitle}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.eventDescription')} *
-            </label>
-            <textarea
-              name="eventDescription"
-              value={formData.eventDescription}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.eventDescriptionPlaceholder')}
-              rows="4"
-            />
-            {errors.eventDescription && <p className="field-hint-error">{errors.eventDescription}</p>}
-          </div>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('eventForm.recurrenceLabel')} *
-            </label>
-            <div className="space-y-2">
-              {['one-time', 'weekly', 'biweekly', 'monthly', 'discuss'].map((option) => (
-                <label key={option} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="recurrence"
-                    value={option}
-                    checked={formData.recurrence === option}
-                    onChange={handleRadioChange}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`eventForm.recurrence.${option}`)}</span>
-                </label>
-              ))}
-            </div>
-            {errors.recurrence && <p className="field-hint-error">{errors.recurrence}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.daysAndTimes')} *
-            </label>
-            <textarea
-              name="daysAndTimes"
-              value={formData.daysAndTimes}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.daysAndTimesPlaceholder')}
-              rows="3"
-            />
-            {errors.daysAndTimes && <p className="field-hint-error">{errors.daysAndTimes}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.duration')} *
-            </label>
-            <input
-              type="text"
-              name="duration"
-              value={formData.duration}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.durationPlaceholder')}
-            />
-            {errors.duration && <p className="field-hint-error">{errors.duration}</p>}
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.eventCost')} *
-            </label>
-            <input
-              type="text"
-              name="eventCost"
-              value={formData.eventCost}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.eventCostPlaceholder')}
-            />
-            {errors.eventCost && <p className="field-hint-error">{errors.eventCost}</p>}
-          </div>
+          {heading('step2Title')}
+          <Field form={form} name="eventTitle" required label={f('eventTitle')} placeholder={f('eventTitlePlaceholder')} />
+          <Field form={form} name="eventDescription" required rows="4" label={f('eventDescription')} placeholder={f('eventDescriptionPlaceholder')} />
+          <ChoiceGroup form={form} name="recurrence" required legend={f('recurrenceLabel')} options={opts('recurrence', RECURRENCE)} />
+          <Field form={form} name="daysAndTimes" required rows="3" label={f('daysAndTimes')} placeholder={f('daysAndTimesPlaceholder')} />
+          <Field form={form} name="duration" required label={f('duration')} placeholder={f('durationPlaceholder')} />
+          <Field form={form} name="eventCost" required label={f('eventCost')} placeholder={f('eventCostPlaceholder')} />
         </div>
       )}
 
       {/* Step 3: Logistics */}
       {step === 3 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step3Title')}</h3>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('eventForm.languagesLabel')} *
-            </label>
-            <div className="space-y-2">
-              {['english', 'vietnamese', 'russian', 'ukrainian'].map((lang) => (
-                <label key={lang} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value={lang}
-                    checked={formData.languages.includes(lang)}
-                    onChange={(e) => handleCheckboxChange(e, 'languages')}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`eventForm.languages.${lang}`)}</span>
-                </label>
-              ))}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  value="other"
-                  checked={formData.languages.includes('other')}
-                  onChange={(e) => handleCheckboxChange(e, 'languages')}
-                  className="shrink-0"
-                />
-                <span className="font-body">{t.use('eventForm.languages.other')}</span>
-              </label>
-            </div>
-            {errors.languages && <p className="field-hint-error">{errors.languages}</p>}
-          </div>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('eventForm.preferredSpaceLabel')} *
-            </label>
-            <div className="space-y-2">
-              {['1l', '2l', '2e', '3p', 'unsure'].map((space) => (
-                <label key={space} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value={space}
-                    checked={formData.preferredSpace.includes(space)}
-                    onChange={(e) => handleCheckboxChange(e, 'preferredSpace')}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`eventForm.preferredSpace.${space}`)}</span>
-                </label>
-              ))}
-            </div>
-            {errors.preferredSpace && <p className="field-hint-error">{errors.preferredSpace}</p>}
-          </div>
-
-          <div>
-            <label className="field-label mb-3">
-              {t.use('eventForm.equipmentLabel')}
-            </label>
-            <div className="space-y-2">
-              {['projector', 'microphones', 'laptop', 'dj', 'piano', 'seating', 'none'].map((equip) => (
-                <label key={equip} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value={equip}
-                    checked={formData.equipment.includes(equip)}
-                    onChange={(e) => handleCheckboxChange(e, 'equipment')}
-                    className="shrink-0"
-                  />
-                  <span className="font-body">{t.use(`eventForm.equipment.${equip}`)}</span>
-                </label>
-              ))}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  value="other"
-                  checked={formData.equipment.includes('other')}
-                  onChange={(e) => handleCheckboxChange(e, 'equipment')}
-                  className="shrink-0"
-                />
-                <span className="font-body">{t.use('eventForm.equipment.other')}</span>
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="field-label">
-              {t.use('eventForm.anythingElse')}
-            </label>
-            <textarea
-              name="anythingElse"
-              value={formData.anythingElse}
-              onChange={handleInputChange}
-              className="field"
-              placeholder={t.use('eventForm.anythingElsePlaceholder')}
-              rows="3"
-            />
-          </div>
+          {heading('step3Title')}
+          <ChoiceGroup form={form} name="languages" multiple required legend={f('languagesLabel')} options={opts('languages', LANGUAGES)} />
+          <ChoiceGroup form={form} name="preferredSpace" multiple required legend={f('preferredSpaceLabel')} options={opts('preferredSpace', SPACES)} />
+          <ChoiceGroup form={form} name="equipment" multiple legend={f('equipmentLabel')} options={opts('equipment', EQUIPMENT)} />
+          <Field form={form} name="anythingElse" rows="3" label={f('anythingElse')} placeholder={f('anythingElsePlaceholder')} />
         </div>
       )}
 
-      {/* Step 4: Review & Submit */}
+      {/* Step 4: Review & Submit — values in words, never raw option codes */}
       {step === 4 && (
         <div className="space-y-4">
-          <h3 className="h-section text-xl md:text-2xl mb-6">{t.use('eventForm.step4Title')}</h3>
+          {heading('step4Title')}
 
-          {submitStatus === 'success' && (
-            <div className="alert-success">
-              <p className="flex items-center gap-2">
-                <span>✓</span> {t.use('eventForm.successMessage')}
-              </p>
-            </div>
-          )}
+          <SubmitAlert form={form} t={t} ns="eventForm" waUrl={URLS.WA} />
 
-          {submitStatus === 'error' && (
-            <div className="alert-error">
-              <p>{t.use('eventForm.errorMessage')}</p>
-              <p className="mt-2 text-sm">
-                {t.use('eventForm.fallbackMessage')}{' '}
-                <a href={URLS.WA} target="_blank" rel="noreferrer" className="font-title underline">
-                  WhatsApp
-                </a>
-              </p>
-            </div>
-          )}
-
-          {submitStatus !== 'success' && (
+          {form.status !== 'success' && (
             <>
-              <div
-                className="space-y-4 p-4"
-                style={{ border: '2px solid var(--hairline)', background: 'var(--surface-2)' }}
-              >
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('eventForm.email')}
-                  </p>
-                  <p className="font-body">{formData.email}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('eventForm.hostName')}
-                  </p>
-                  <p className="font-body">{formData.hostName}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('eventForm.eventTitle')}
-                  </p>
-                  <p className="font-body">{formData.eventTitle}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('eventForm.recurrenceLabel')}
-                  </p>
-                  <p className="font-body">{formData.recurrence}</p>
-                </div>
-                <div>
-                  <p className="field-label mb-1 text-gray-600">
-                    {t.use('eventForm.languagesLabel')}
-                  </p>
-                  <p className="font-body">{formData.languages.join(', ')}</p>
-                </div>
-              </div>
+              <ReviewList
+                rows={[
+                  { label: f('email'), value: data.email },
+                  { label: f('hostName'), value: data.hostName },
+                  { label: f('eventTitle'), value: data.eventTitle },
+                  { label: f('recurrenceLabel'), value: data.recurrence && f(`recurrence.${data.recurrence}`) },
+                  { label: f('languagesLabel'), value: data.languages.map((v) => f(`languages.${v}`)).join(', ') },
+                  { label: f('preferredSpaceLabel'), value: data.preferredSpace.map((v) => f(`preferredSpace.${v}`)).join(', ') },
+                ]}
+              />
 
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStep(3)}
-                  className="btn-secondary px-5 py-3 text-sm"
-                >
-                  {t.use('eventForm.back')}
+                <button type="button" onClick={form.back} className="btn-secondary px-5 py-3 text-sm">
+                  {f('back')}
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={form.loading}
                   className="btn-primary px-5 py-3 text-sm disabled:opacity-50"
                 >
-                  {loading ? t.use('eventForm.submitting') : t.use('eventForm.submit')}
+                  {form.loading ? f('submitting') : f('submit')}
                 </button>
               </div>
 
               <p className="font-body text-sm text-gray-600 mt-4">
-                {t.use('eventForm.guidelinesPrefix')}{' '}
+                {f('guidelinesPrefix')}{' '}
                 <a
                   href={pathFor(lang, '/event-guidelines')}
                   target="_blank"
                   rel="noreferrer"
                   className="font-title underline"
                 >
-                  {t.use('eventForm.guidelinesLink')}
+                  {f('guidelinesLink')}
                 </a>
               </p>
             </>
@@ -622,38 +180,7 @@ export default function EventProposalForm({ t, lang, onSuccess }) {
         </div>
       )}
 
-      {/* Navigation buttons */}
-      {step < 4 && submitStatus !== 'success' && (
-        <div className="flex gap-2 mt-8">
-          {step > 1 && (
-            <button
-              type="button"
-              onClick={prevStep}
-              className="btn-secondary px-5 py-3 text-sm"
-            >
-              {t.use('eventForm.back')}
-            </button>
-          )}
-          {step < 3 && (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="btn-primary px-5 py-3 text-sm"
-            >
-              {t.use('eventForm.next')}
-            </button>
-          )}
-          {step === 3 && (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="btn-primary px-5 py-3 text-sm"
-            >
-              {t.use('eventForm.review')}
-            </button>
-          )}
-        </div>
-      )}
+      <StepNav form={form} t={t} ns="eventForm" />
     </form>
   );
 }

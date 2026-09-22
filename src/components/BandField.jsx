@@ -169,10 +169,18 @@ function pickColour(lead) {
   return lead;
 }
 
-/* ---- one shared ticker for every band on the page ---- */
+/* ---- one shared ticker for every band on the page ----
+   The loop PARKS itself when no band is on screen (it used to tick 60 times
+   a second forever, painting nothing): the first frame that finds no visible
+   rig drops the handle, and a band's IntersectionObserver restarts it. */
 const rigs = new Set();
 let raf = null, clock = 0, last = 0;
+function anyVisible() {
+  for (const r of rigs) if (r.visible) return true;
+  return false;
+}
 function frame(now) {
+  if (!anyVisible()) { raf = null; return; }
   raf = requestAnimationFrame(frame);
   const dt = last ? Math.min(now - last, 80) : 16;   /* a backgrounded tab must not jump */
   last = now;
@@ -270,6 +278,7 @@ export default function BandField({ lead = 'blue' }) {
       ([e]) => {
         if (e.isIntersecting && !rig.visible) rig.resync = true;
         rig.visible = e.isIntersecting;
+        if (rig.visible && !document.hidden) start();
       },
       { rootMargin: '100px' }
     );
@@ -283,7 +292,7 @@ export default function BandField({ lead = 'blue' }) {
 
     const vis = () => {
       if (document.hidden) { stop(); }
-      else { last = 0; rigs.forEach((r) => { r.resync = true; }); start(); }
+      else { last = 0; rigs.forEach((r) => { r.resync = true; }); if (anyVisible()) start(); }
     };
     document.addEventListener('visibilitychange', vis);
     start();

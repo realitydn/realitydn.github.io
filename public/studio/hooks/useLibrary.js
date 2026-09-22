@@ -4,7 +4,8 @@
    ============================================================ */
 import { RCloud } from '../../studio-shared/cloud.js';
 import { RStore } from '../studio-store.js';
-import { uid, buildTemplate as apBuildTpl } from '../studio-data.jsx';
+import { uid } from '../studio-data.jsx';
+import { buildTemplate as apBuildTpl } from '../templates.jsx';
 import { tplId, sortTpls, stampEngine, loadUserTpls } from '../doc.js';
 function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress }){
   /* ---- My templates — save / load / delete full poster snapshots.

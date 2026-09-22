@@ -4,8 +4,9 @@
    ============================================================ */
 import {
   CATALOG as AP_CAT, PALETTE as AP_PAL, ACCENT_DAYS as AP_DAYS, ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR,
-  DAY_NAMES as AP_DNAMES, GRAPHICS as AP_GFX, TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG,
+  DAY_NAMES as AP_DNAMES, GRAPHICS as AP_GFX,
 } from '../studio-data.jsx';
+import { TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG } from '../templates.jsx';
 import { Hint } from './controls.jsx';
 import { GfxGrid, IconPicker } from './gfx-grid.jsx';
 import { Sec, TplThumb, TplCard, UserTplCard } from './library-cards.jsx';

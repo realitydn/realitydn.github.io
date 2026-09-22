@@ -3,7 +3,8 @@
    Folding sections, the thumbnail queue and the template cards.
    ============================================================ */
 import { RUI } from '../../studio-shared/studio-ui.jsx';
-import { FORMATS as AP_FMT, PALETTE as AP_PAL, themeColors, buildTemplate as apBuildTpl } from '../studio-data.jsx';
+import { FORMATS as AP_FMT, PALETTE as AP_PAL, themeColors } from '../studio-data.jsx';
+import { buildTemplate as apBuildTpl } from '../templates.jsx';
 import { StudioElement, posterDayOf, loadCachedImage } from '../studio-element.jsx';
 /* ============================================================
    LIBRARY CHROME — collapsible sections + real previews.

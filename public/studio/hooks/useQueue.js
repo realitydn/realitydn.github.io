@@ -3,8 +3,9 @@
    ============================================================ */
 import { RCloud } from '../../studio-shared/cloud.js';
 import {
-  TEMPLATES as AP_TPL, buildTemplate as apBuildTpl, ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR, uid,
+  ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR, uid,
 } from '../studio-data.jsx';
+import { TEMPLATES as AP_TPL, buildTemplate as apBuildTpl } from '../templates.jsx';
 import { sortTpls } from '../doc.js';
 import {
   feedDate, feedTime, feedDayIdx, feedDayLabel, searchNorm, seriesWidePoster, queueKey, loadQueueDismissed,

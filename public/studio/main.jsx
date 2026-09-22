@@ -35,11 +35,13 @@ import '../studio-shared/studio-ui.jsx';
 import './studio-store.js';
 import '../studio-shared/cloud.js';
 import './studio-data.jsx';
+import './templates.jsx';
 import './studio-element.jsx';
 import './studio-canvas.jsx';
 import './app.jsx';
 
-import { shadowModel, TEMPLATES, TEMPLATE_GROUPS } from './studio-data.jsx';
+import { shadowModel } from './studio-data.jsx';
+import { TEMPLATES, TEMPLATE_GROUPS } from './templates.jsx';
 import { getSample } from './studio-element.jsx';
 
 /* The one shadow model (element family → dx/dy/blur/colour), which the

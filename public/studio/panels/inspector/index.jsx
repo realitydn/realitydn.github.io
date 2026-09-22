@@ -63,7 +63,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* ---- actions: always bare, always first ---- */}
       <div className="rs-sech" style={{ display:'flex', justifyContent:'space-between' }}>
         <span>{el.type}{el._overridden && <span className="rs-ovtag"> · overridden</span>}</span>
-        {selCount>=2 && <span style={{ fontSize:9, opacity:.6 }}>last of {selCount}</span>}
+        {selCount>=2 && <span style={{ fontSize:10, opacity:.6 }}>last of {selCount}</span>}
       </div>
       {/* Two rows: stacking order, then the destructive pair. Six buttons on one
           row crushed "Duplicate"/"Delete" to illegible at 312px. */}

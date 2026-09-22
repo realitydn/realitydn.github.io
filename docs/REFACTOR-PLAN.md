@@ -189,8 +189,50 @@ Exit: the smoke suite is unchanged; every file ≤ ~600 lines (engine + press ex
   truly differs.
 - **Decision for Donald first:** the studio chrome uses 6–12 px rounded corners, which the
   brand's square-corner rule contradicts. Square it, or keep the tool chrome distinct from
-  the brand on purpose?
+  the brand on purpose? — **Decided: square.**
 - Schedule adopts `RUI` (folds, hints, the palette).
+
+**Done (branch `refactor/phase4-look`).** As built:
+- **`studio-shared/studio-base.css`** (438 lines), loaded by each `index.html` before the
+  Studio's own sheet (the launchers serve it; the cache-bust stamps it). Tokens: one dark
+  (`--st-bg #0e0c09`, `--st-panel`, `--st-raised`, `--st-field` — Print's `#0a0703/#171109`
+  are gone), lines, a text ladder (`--st-ink` … `--st-ghost`), `--st-accent` (pink),
+  `--st-select` (the cyan), warn/bad/good/amber, `--st-bw` (border width), `--st-sw-border`,
+  a type scale floored at 10 px, spacing. Components written ONCE against all three prefixes
+  with `:is(.rs-x,.ps-x,.ss-x)` — the names RUI and the markup already emit, so no markup
+  churn and one-class specificity (a Studio's sheet, loaded after, still wins on order):
+  shell + panels, top bar (brand, groups, segmented, icon + primary buttons, name field),
+  status chips (Saved / NOT SAVED / another tab), fields, chips, swatches, sliders,
+  stepper, num grid, action rows, list rows, hints + notes + alerts + tags, folds, library
+  (titles, section toggles, parts, template cards, tplx), drag ghost, dialogs (overlay,
+  modal, head/sub/foot, pick rows), the Ctrl-K palette + flash, toast.
+- **Per-studio CSS is layout + what only it draws:** studio.css 380 → 123 (grid, two-row
+  top bar, Master/extra tiers, stage, graphics + treatment tiles, vibe/day pickers),
+  print.css 327 → 112 (grid, sheet-size select, preflight chip + list, white thumbnails,
+  lighter stage, icon grid), schedule.css 209 → 152 (day strip, day list, style cards,
+  size steppers, safe zones). 916 → 387 + 438 shared.
+- **Per-studio parameters are token overrides, not forks:** Print `--st-bw:2px` (its
+  2px structure) and a light `--st-sw-border`; Schedule `--st-accent` amber (its output is
+  pink-heavy, so the selection must not read as a day colour). Both are one line to undo
+  if Donald wants all three identical.
+- **Square:** 0 radius everywhere in the chrome, dots and slider thumbs included; no hover
+  lift/jitter anywhere (swatches keep a scale-up). Print's sub-10 px labels (7–9.5 px)
+  came up to the floor. Canvas selection handles were left as they are (Poster's round
+  rotate knob, Print's round edge / square corner handles) — they are affordances, not
+  panels. The artwork is untouched: every export golden is byte-identical.
+- **Inline chrome onto the kit:** the Export-to-event picker (was cream, rounded, a
+  one-off yellow button) and the ink-mark editor are the kit's dark modal; the
+  template-store error, archive crosses, queue dot/tag, Schedule's sync pill, event count
+  and closed-day chip take classes; hard-coded swatch outlines are `--st-sw-border`.
+- **Schedule on RUI:** `RUI.configure({ prefix:'ss', storeKey:'reality-schedule',
+  hintsDefault:true })`. SField/SChips → `RUI.Field` (new opt-in `spellCheck`, kept on for
+  Schedule) and `RUI.Chips` (new `multi`). Inspector sections are folds (all open by
+  default, state persists); explanatory notes are `<Hint>`s behind a top-bar Hints toggle
+  that starts ON for Schedule (new `hintsDefault`; a stored choice wins); Ctrl-K palette
+  with channels, layouts, palettes, import/export, undo/redo. The palette now also finds
+  a fold by its title (all Studios). No Slider/Swatches/NumField: Schedule has none.
+- Suites: engine + smoke + exports green and unchanged after every commit; the Schedule
+  selftest and the day-colour verifier pass.
 
 ## Phase 5 — Photos by reference
 

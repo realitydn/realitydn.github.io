@@ -1441,7 +1441,7 @@ function preflight(doc, dims, ctx){
   return out;
 }
 
-Object.assign(window, {
+export {
   PALETTE, PALETTE_CMYK, INK, WHITE, ACCENTS,
   SIZES, SIZE_ORDER, GANG, PT_PER_MM, sizeDims,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
@@ -1456,4 +1456,4 @@ Object.assign(window, {
   CATALOG, DEFAULTS, makeElement, uid, slugify,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate,
   nfc, nfcDeep, migrateElements, elBounds, crossesTrim, artPastTrim, elStrings, preflight, SAFE_MM, MIN_DPI
-});
+};

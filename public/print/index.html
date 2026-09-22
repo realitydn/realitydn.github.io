@@ -36,7 +36,6 @@
      window.RISO / window.PrintImg / window.ICON_GLYPHS exist. -->
 <script src="../studio-shared/riso-press.js"></script>
 <script src="../studio-shared/riso-engine.js"></script>
-<script src="print-store.js"></script>
 <script src="print-icons.js"></script>
 
 <!-- Shared control kit (window.RUI) — Fold, Slider, Chips, the persisted fold
@@ -45,12 +44,6 @@
      load before the app scripts, which alias its atoms at top level. -->
 <script src="../studio-shared/studio-ui.js"></script>
 
-<!-- Precompiled from the sibling .jsx by scripts/build-studios.mjs. Edit the
-     .jsx — the local launcher transpiles it on the fly, the build emits these. -->
-<script src="print-data.js"></script>
-<script src="print-element.js"></script>
-<script src="print-canvas.js"></script>
-<script src="print-export.js"></script>
-<script src="print-app.js"></script>
+<script src="print.bundle.js"></script>
 </body>
 </html>

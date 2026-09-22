@@ -6,8 +6,18 @@
    colour blocking, Thin-100 display, rotated badges/seals.
    Page is the exact A-size by default; bleed + vector crop marks are opt-in
    and declare themselves in TrimBox/BleedBox. Gang on A4.
-   Exports: window.PrintExport { single, gang, ready }
+   Exports: PrintExport { single, gang, ready, … }
    ============================================================ */
+import { PrintImg } from './print-store.js';
+import {
+  sizeDims as sizeDims_, FACES as FACES_, faceFor, risoOpts, PALETTE_CMYK, ACCENTS, contrastInk,
+  blendPdf, starPath, PALETTE, partnerOf, shadowSpec, roundedRectPath, borderDash, fitTextSize,
+  listRowFont, listSplit, iconLayout, punchLayout, INK, qrGeometry, couponLayout, stripeLayout,
+  dotFieldLayout, burstRays, shapePath, arcTextLayout, ruleLayout, inkMarkLayout, inkMarkCells,
+  INK_MARK_DAY_ACCENT, WORDMARK_PATH, INK_MARK, buildQR, nfcDeep, GANG,
+} from './print-data.jsx';
+
+let PrintExport;
 (function(){
 const PT_PER_MM = 72/25.4;
 /* THE TRACKING LADDER, print — the exact twin of the TRACK block in
@@ -17,12 +27,12 @@ const PT_PER_MM = 72/25.4;
    addresses and any other stated fact. */
 const TRACK = { display:0.025, h1:0.035, h2:0.05, name:0.01, label:0.17, button:0.12, sign:0.10, fact:0 };
 function L(){ return window.PDFLib; }
-function sizeDims(size, orient){ return window.sizeDims(size, orient); }
+function sizeDims(size, orient){ return sizeDims_(size, orient); }
 
 /* ---- fonts ---- */
 async function loadFontBytes(){
   if(loadFontBytes._cache) return loadFontBytes._cache;
-  const FACES = window.FACES, out = {};
+  const FACES = FACES_, out = {};
   await Promise.all(Object.keys(FACES).map(async key=>{
     const res = await fetch(FACES[key].file);
     if(!res.ok) throw new Error('font fetch failed: '+FACES[key].file);
@@ -34,7 +44,7 @@ async function embedFonts(pdf){
   pdf.registerFontkit(window.fontkit);
   const bytes = await loadFontBytes(), fonts = {};
   for(const key of Object.keys(bytes)) fonts[key] = await pdf.embedFont(bytes[key], { subset:true });
-  return (fam, weight)=> fonts[window.faceFor(fam, weight)];
+  return (fam, weight)=> fonts[faceFor(fam, weight)];
 }
 
 /* ---- raster (photo) embedding ----
@@ -53,7 +63,7 @@ function dataURLtoBytes(u){ const b=atob((u.split(',')[1])||''); const a=new Uin
 async function rasterizeImage(pdf, el, accentName, report){
   if(typeof document==='undefined' || !window.RISO) return null;
   let img=null;
-  if(el.imgId && window.PrintImg){ img = window.PrintImg.peek(el.imgId) || await window.PrintImg.load(el.imgId).catch(()=>null); }
+  if(el.imgId && PrintImg){ img = PrintImg.peek(el.imgId) || await PrintImg.load(el.imgId).catch(()=>null); }
   const longMM=Math.max(el.w,el.h)/PT_PER_MM;
   const dpi = longMM<=210 ? 300 : longMM<=420 ? 200 : 150;
   let pxW=Math.round(el.w/72*dpi), pxH=Math.round(el.h/72*dpi);
@@ -61,7 +71,7 @@ async function rasterizeImage(pdf, el, accentName, report){
   const cv=document.createElement('canvas'); cv.width=Math.max(1,pxW); cv.height=Math.max(1,pxH);
   if(img){ window.RISO.setSource(img);
     if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale||1, x:el.imgX||0, y:el.imgY||0, rot:el.imgRot||0 });
-    window.RISO.render(cv, el.treatment||'none', window.risoOpts(el, accentName)); }
+    window.RISO.render(cv, el.treatment||'none', risoOpts(el, accentName)); }
   else {
     /* no pixels — the frame prints blank. Say so: the report goes back to the
        app, which shows it, instead of a console line nobody reads. */
@@ -76,8 +86,8 @@ function cmykArr(a){ return L().cmyk(a[0],a[1],a[2],a[3]); }
 function inkColor(){ return cmykArr([0,0,0,1]); }
 function whiteColor(){ return cmykArr([0,0,0,0]); }
 function tintK(k){ return cmykArr([0,0,0,k]); }
-function accentColor(name){ const c=window.PALETTE_CMYK[name]; return c?cmykArr(c):inkColor(); }
-function isAccent(name){ return window.ACCENTS.indexOf(name)>=0; }
+function accentColor(name){ const c=PALETTE_CMYK[name]; return c?cmykArr(c):inkColor(); }
+function isAccent(name){ return ACCENTS.indexOf(name)>=0; }
 function colorForKey(key, fallback){
   if(key==null || key==='auto') return fallback || inkColor();
   if(key==='ink') return inkColor();
@@ -90,7 +100,7 @@ function colorForKey(key, fallback){
    surface accent is customised. */
 function surfTextFallback(surface, accentHex){
   if(surface==='solid') return whiteColor();
-  if(surface==='accent') return window.contrastInk(accentHex)==='#ffffff' ? whiteColor() : inkColor();
+  if(surface==='accent') return contrastInk(accentHex)==='#ffffff' ? whiteColor() : inkColor();
   return inkColor();
 }
 
@@ -132,7 +142,7 @@ function renderElement(page, el, ctx){
   const cx = el.w/2, cy = el.h/2;
   const ROT = degrees(-r);
   /* blend mode (riso overprint) — applied to every draw op for this element */
-  const BM = (el.blend && el.blend!=='normal' && L().BlendMode) ? L().BlendMode[window.blendPdf(el.blend)] : null;
+  const BM = (el.blend && el.blend!=='normal' && L().BlendMode) ? L().BlendMode[blendPdf(el.blend)] : null;
   const bm = (o)=>{ if(BM) o.blendMode=BM; return o; };
   /* local (lx, top-down ly) → PDF point, rotated about element centre */
   function place(lx, ly){
@@ -164,7 +174,7 @@ function renderElement(page, el, ctx){
     if(str.indexOf(STAR_CH)<0 && Math.abs(tracking)<0.0005){ const p=place(lx,baselineTop); page.drawText(str,bm(Object.assign({x:p.x,y:p.y,size,font,color,rotate:ROT},alpha))); return; }
     let curX=lx;
     for(const ch of chars(str)){
-      if(ch===STAR_CH){ const w=starGlyphW(size); localPath(window.starPath(0,0,size*0.38), color, curX+w/2, baselineTop-size*0.35, alpha); curX += w+tracking*size; continue; }
+      if(ch===STAR_CH){ const w=starGlyphW(size); localPath(starPath(0,0,size*0.38), color, curX+w/2, baselineTop-size*0.35, alpha); curX += w+tracking*size; continue; }
       const p=place(curX,baselineTop); page.drawText(ch,bm(Object.assign({x:p.x,y:p.y,size,font,color,rotate:ROT},alpha))); curX += font.widthOfTextAtSize(ch,size)+tracking*size;
     }
   }
@@ -174,16 +184,16 @@ function renderElement(page, el, ctx){
   function localPath(d, color, ox, oy, extra){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm(Object.assign({ x:o.x, y:o.y, scale:1, rotate:ROT, color }, extra||{}))); }
   function localPathStroke(d, color, w, ox, oy, extra){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm(Object.assign({ x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w }, extra||{}))); }
 
-  const accentHex = isAccent(el.fill) ? window.PALETTE[el.fill] : window.PALETTE[accentName];
+  const accentHex = isAccent(el.fill) ? PALETTE[el.fill] : PALETTE[accentName];
   const fillKey = el.fill!=null ? el.fill : accentName;
   const textFallback = surfTextFallback(el.surface, accentHex);
   const textColor = colorForKey(el.ink!=null?el.ink:'auto', textFallback);
-  const echoColor = el.echoAccent && el.echoAccent!=='auto' ? colorForKey(el.echoAccent) : accentColor(window.partnerOf(accentName));
+  const echoColor = el.echoAccent && el.echoAccent!=='auto' ? colorForKey(el.echoAccent) : accentColor(partnerOf(accentName));
 
   /* plane shadow from the shared spec — dx/dy offset, K-tint or accent ink.
      K rides the black plate as a tint; accents get an opacity graphics state
      (default alpha 1 = the hard riso shadow). */
-  const shSpec = window.shadowSpec(el);
+  const shSpec = shadowSpec(el);
   function shadowOpts(){
     if(!shSpec) return null;
     return shSpec.color==='k' ? { color:tintK(shSpec.alpha) }
@@ -196,13 +206,13 @@ function renderElement(page, el, ctx){
   /* shared box fill + styled border (color · pattern · radius) — same geometry as
      the screen border overlay via roundedRectPath, so dashes land identically. */
   function fillBox(color, radius){
-    if((radius||0)>0) localPath(window.roundedRectPath(0,0,el.w,el.h,Math.min(radius,Math.min(el.w,el.h)/2)), color, 0, 0);
+    if((radius||0)>0) localPath(roundedRectPath(0,0,el.w,el.h,Math.min(radius,Math.min(el.w,el.h)/2)), color, 0, 0);
     else rect(0,0,el.w,el.h,{ color });
   }
   function strokeBox(bw, color, pattern, radius){
     if(!(bw>0)) return;
-    const bd=window.borderDash(pattern||'solid', bw), ins=bw/2;
-    const d=window.roundedRectPath(ins, ins, Math.max(0,el.w-bw), Math.max(0,el.h-bw), Math.max(0,(radius||0)-ins));
+    const bd=borderDash(pattern||'solid', bw), ins=bw/2;
+    const d=roundedRectPath(ins, ins, Math.max(0,el.w-bw), Math.max(0,el.h-bw), Math.max(0,(radius||0)-ins));
     const o0=place(0,0), o={ x:o0.x, y:o0.y, scale:1, rotate:ROT, borderColor:color, borderWidth:bw };
     if(bd.dash) o.borderDashArray=bd.dash;
     if(L().LineCapStyle) o.borderLineCap = bd.cap==='round'?L().LineCapStyle.Round:L().LineCapStyle.Butt;
@@ -248,7 +258,7 @@ function renderElement(page, el, ctx){
     const isUpper=el.upper!==false && t!=='body';
     let size=el.fontSize;
     if(el.fit){ const lines=(el.text||'').split('\n').map(l=>isUpper?l.toUpperCase():l);
-      size=window.fitTextSize(lines, el.fam, el.weight, (el.w-pad*2)*0.98, Math.min(Math.max(el.h*1.3, el.fontSize),320), el.tracking||0); }
+      size=fitTextSize(lines, el.fam, el.weight, (el.w-pad*2)*0.98, Math.min(Math.max(el.h*1.3, el.fontSize),320), el.tracking||0); }
     if(el.orient==='v'){ drawVerticalText({ str:el.text, fam:el.fam, weight:el.weight, size, upper:isUpper, color:textColor, pad }); }
     else {
       const opts={ str:el.text, fam:el.fam, weight:el.weight, size, align:el.align||'left',
@@ -267,12 +277,12 @@ function renderElement(page, el, ctx){
     const headCol=(el.headingColor&&el.headingColor!=='auto')?colorForKey(el.headingColor):listAccent;
     if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
       drawLineStr(el.upper===false?el.heading:el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, TRACK.h2); yTop+=hs*1.1+8; }
-    const rs=window.listRowFont(el);
+    const rs=listRowFont(el);
     const rf=fontFor('mont',700), mf=fontFor('mont',800), pf=fontFor('grot',500), ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.8;
     const markerCol = (el.markerColor&&el.markerColor!=='auto') ? colorForKey(el.markerColor) : listAccent;
     const glyph = el.marker || '•';
     /* 1–2(–3) balanced columns, reading DOWN each column — same split as the screen */
-    const colsArr=window.listSplit(el.items, el.cols||1), nCols=Math.max(1,colsArr.length), colGap=18;
+    const colsArr=listSplit(el.items, el.cols||1), nCols=Math.max(1,colsArr.length), colGap=18;
     const colW=(el.w-padX*2-(nCols-1)*colGap)/nCols;
     let idx=0;
     colsArr.forEach((arr,c)=>{
@@ -303,7 +313,7 @@ function renderElement(page, el, ctx){
     });
   }
   else if(t==='icon'){
-    const lay=window.iconLayout(el);
+    const lay=iconLayout(el);
     if(lay){
       const col=colorForKey(el.ink!=null?el.ink:'ink', inkColor());
       const drawPrims=(c, dx, dy, alpha)=>{
@@ -323,19 +333,19 @@ function renderElement(page, el, ctx){
     }
   }
   else if(t==='punchgrid'){
-    const lay=window.punchLayout(el);
+    const lay=punchLayout(el);
     const col=colorForKey(el.ink!=null?el.ink:'ink', inkColor());
     const bonusKey=el.bonusFill||'pink';
     const bonusCol=colorForKey(bonusKey, accentColor(accentName));
-    const bonusHex= isAccent(bonusKey)?window.PALETTE[bonusKey] : bonusKey==='ink'?window.INK.rgb : bonusKey==='white'?'#ffffff' : window.PALETTE[accentName];
+    const bonusHex= isAccent(bonusKey)?PALETTE[bonusKey] : bonusKey==='ink'?INK.rgb : bonusKey==='white'?'#ffffff' : PALETTE[accentName];
     lay.cells.forEach(c=>{
       const last=c.n===lay.total, isBonus=el.bonus&&last, rr=c.d/2-lay.stroke/2;
       if(lay.shape==='square'){ if(isBonus) rect(c.cx-rr,c.cy-rr,rr*2,rr*2,{color:bonusCol}); rect(c.cx-rr,c.cy-rr,rr*2,rr*2,{borderColor:col,borderWidth:lay.stroke}); }
-      else if(lay.shape==='star'){ const d=window.starPath(c.cx,c.cy,rr*1.05); if(isBonus) localPath(d,bonusCol); localPathStroke(d,col,lay.stroke); }
+      else if(lay.shape==='star'){ const d=starPath(c.cx,c.cy,rr*1.05); if(isBonus) localPath(d,bonusCol); localPathStroke(d,col,lay.stroke); }
       else { if(isBonus) ellipse(c.cx,c.cy,rr,rr,{color:bonusCol}); ellipse(c.cx,c.cy,rr,rr,{borderColor:col,borderWidth:lay.stroke}); }
       if(isBonus){
         const lbl=el.bonusLabel||'★', f=fontFor('mont',800), s=c.d*0.42;
-        const tcol=window.contrastInk(bonusHex)==='#ffffff'?whiteColor():inkColor();
+        const tcol=contrastInk(bonusHex)==='#ffffff'?whiteColor():inkColor();
         const w=measure(lbl,f,s,0), a=f.heightAtSize(s,{descender:false});
         drawLineStr(lbl, c.cx-w/2, c.cy+a*0.36, f, s, tcol, 0);
       } else if(el.numbered){
@@ -355,15 +365,15 @@ function renderElement(page, el, ctx){
     const top=(el.h-blockH)/2, qx=(el.w-qrSize)/2;
     /* shared geometry → the SAME shape descriptors the screen SVG draws, so the
        stylized code is WYSIWYG down to the module. */
-    const g=window.qrGeometry(el.data, { ecl:el.ecl, quiet:el.quiet, moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo });
+    const g=qrGeometry(el.data, { ecl:el.ecl, quiet:el.quiet, moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo });
     const dataCol=textColor, eyeCol=colorForKey(el.eye, textColor), logoCol=colorForKey(el.logoColor, eyeCol), lightCol=whiteColor();
     const realCol=(role)=> role==='eye'?eyeCol : (role==='eyeHole'||role==='logoBg')?lightCol : dataCol;
-    const ghostCol=(role)=> (role==='eyeHole'||role==='logoBg')?null : (el.echoAccent&&el.echoAccent!=='auto'?accentColor(el.echoAccent):accentColor(window.partnerOf(accentName)));
+    const ghostCol=(role)=> (role==='eyeHole'||role==='logoBg')?null : (el.echoAccent&&el.echoAccent!=='auto'?accentColor(el.echoAccent):accentColor(partnerOf(accentName)));
     if(g){
       const ms=qrSize/g.tot;
       const draw=(s, bx, by, col)=>{ if(!col) return;
         if(s.kind==='circle') ellipse(bx+s.cx*ms, by+s.cy*ms, s.r*ms, s.r*ms, { color:col });
-        else if(s.kind==='roundrect') localPath(window.roundedRectPath(bx+s.x*ms, by+s.y*ms, s.w*ms, s.h*ms, s.r*ms), col, 0, 0);
+        else if(s.kind==='roundrect') localPath(roundedRectPath(bx+s.x*ms, by+s.y*ms, s.w*ms, s.h*ms, s.r*ms), col, 0, 0);
         /* honour the shape's own w/h — square eye frames are 7/5/3 modules, not 1.
            (+0.3pt overdraw kills hairline seams between cells, same as the screen's +0.03u) */
         else rect(bx+s.x*ms, by+s.y*ms, s.w*ms+0.3, s.h*ms+0.3, { color:col }); };
@@ -372,7 +382,7 @@ function renderElement(page, el, ctx){
       g.shapes.forEach(s=> draw(s, qx, top, realCol(s.role)));
       if(g.logo && g.logoKind!=='none'){
         ellipse(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.42*ms, g.logo.s*0.42*ms, { color:logoCol });
-        if(g.logoKind==='star') localPath(window.starPath(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.30*ms), lightCol, 0, 0);
+        if(g.logoKind==='star') localPath(starPath(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.30*ms), lightCol, 0, 0);
       }
     } else { rect(qx, top, qrSize, qrSize, { color:lightCol }); }
     if(el.caption){ const cf=fontFor('mont',700), csz=11*cs, a=cf.heightAtSize(csz,{descender:false}), cw=measure(el.caption.toUpperCase(),cf,csz,TRACK.label);
@@ -383,7 +393,7 @@ function renderElement(page, el, ctx){
     /* every offset below comes from the shared couponLayout the screen renders
        from — same wraps, same space-between gaps, same baselines. */
     const headCol=accentColor(isAccent(fillKey)?fillKey:accentName);
-    window.couponLayout(el).blocks.forEach(b=>{
+    couponLayout(el).blocks.forEach(b=>{
       if(b.kind==='chip'){
         rect(b.left, b.top, b.w, b.h, { color:textColor });
         drawLineStr(b.text, b.left+b.padX, b.top+b.baseOff, fontFor(b.fam,b.weight), b.size, whiteColor(), b.tracking);
@@ -396,7 +406,7 @@ function renderElement(page, el, ctx){
   else if(t==='block'){
     const radius=el.radius||0;
     liftRect(0,0,el.w,el.h);
-    if(el.echo){ if(radius>0) localPath(window.roundedRectPath(el.echoDx||8, el.echoDy||8, el.w, el.h, radius), echoColor, 0, 0); else rect(el.echoDx||8, el.echoDy||8, el.w, el.h, { color:echoColor }); }
+    if(el.echo){ if(radius>0) localPath(roundedRectPath(el.echoDx||8, el.echoDy||8, el.w, el.h, radius), echoColor, 0, 0); else rect(el.echoDx||8, el.echoDy||8, el.w, el.h, { color:echoColor }); }
     fillBox(colorForKey(fillKey, accentColor(accentName)), radius);
     const bcol = (el.borderColor && el.borderColor!=='auto') ? colorForKey(el.borderColor) : inkColor();
     strokeBox(el.border, bcol, el.borderPattern, radius);
@@ -414,7 +424,7 @@ function renderElement(page, el, ctx){
   else if(t==='stripes'){
     const bgSolid = el.bg && el.bg!=='none';
     if(bgSolid){ liftRect(0,0,el.w,el.h); rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() }); }
-    const col=colorForKey(fillKey, accentColor(accentName)), lay=window.stripeLayout(el);   // clipped polygon bars — matches the screen
+    const col=colorForKey(fillKey, accentColor(accentName)), lay=stripeLayout(el);   // clipped polygon bars — matches the screen
     const bandD=(b,dx,dy)=> 'M '+b.map(p=>(p[0]+dx).toFixed(2)+' '+(p[1]+dy).toFixed(2)).join(' L ')+' Z';
     if(el.echo) lay.bands.forEach(b=> localPath(bandD(b, el.echoDx||9, el.echoDy||9), echoColor));
     lay.bands.forEach(b=> localPath(bandD(b,0,0), col));
@@ -422,7 +432,7 @@ function renderElement(page, el, ctx){
   else if(t==='dotfield'){
     const bgSolid = el.bg && el.bg!=='none';
     if(bgSolid){ liftRect(0,0,el.w,el.h); rect(0,0,el.w,el.h,{ color: el.bg==='ink'?inkColor():whiteColor() }); }
-    const col=colorForKey(fillKey, accentColor(accentName)), lay=window.dotFieldLayout(el), shape=lay.shape;
+    const col=colorForKey(fillKey, accentColor(accentName)), lay=dotFieldLayout(el), shape=lay.shape;
     const drawDots=(c,dx,dy)=> lay.dots.forEach(p=>{ const r=p.d/2, x=p.x+dx, y=p.y+dy;
       if(shape==='square') rect(x-r, y-r, p.d, p.d, { color:c });
       else if(shape==='diamond') localPath(`M ${x} ${y-r} L ${x+r} ${y} L ${x} ${y+r} L ${x-r} ${y} Z`, c);
@@ -460,7 +470,7 @@ function renderElement(page, el, ctx){
     }
   }
   else if(t==='burst'){
-    const col=colorForKey(fillKey, accentColor(accentName)), b=window.burstRays(el.w, el.h, el.rays||16, 0);
+    const col=colorForKey(fillKey, accentColor(accentName)), b=burstRays(el.w, el.h, el.rays||16, 0);
     const drawW=(c,dx,dy)=> b.wedges.forEach(w=> localPath(`M ${w.cx+dx} ${w.cy+dy} L ${w.p0[0]+dx} ${w.p0[1]+dy} L ${w.p1[0]+dx} ${w.p1[1]+dy} Z`, c));
     if(el.echo) drawW(echoColor, el.echoDx||7, el.echoDy||7);
     drawW(col, 0, 0);
@@ -470,7 +480,7 @@ function renderElement(page, el, ctx){
   else if(t==='shape'){
     const col=colorForKey(el.fill!=null?el.fill:'blue', accentColor(accentName));
     const strokeCol=colorForKey(el.strokeColor||'ink', inkColor()), sw=el.stroke||0;
-    const path=window.shapePath(el.kind||'hexagon', el.w, el.h);
+    const path=shapePath(el.kind||'hexagon', el.w, el.h);
     if(path){
       if(shSpec){ const so=shadowOpts(); localPath(path, so.color, shSpec.dx, shSpec.dy, so.opacity!=null?{opacity:so.opacity}:null); }
       if(el.echo) localPath(path, echoColor, el.echoDx||7, el.echoDy||7);
@@ -486,12 +496,12 @@ function renderElement(page, el, ctx){
   }
   else if(t==='arctext'){
     const col=colorForKey(el.fill||'ink', inkColor()), font=fontFor(el.fam||'mont', el.weight||700);
-    const lay=window.arcTextLayout(el.text, el.w, el.h, { fontSize:el.fontSize, tracking:el.tracking, flip:el.flip, fam:el.fam, weight:el.weight, radiusAdj:el.radiusAdj, upper:el.upper });
+    const lay=arcTextLayout(el.text, el.w, el.h, { fontSize:el.fontSize, tracking:el.tracking, flip:el.flip, fam:el.fam, weight:el.weight, radiusAdj:el.radiusAdj, upper:el.upper });
     const co=font.heightAtSize(lay.fontSize,{descender:false})*0.34;   // glyph centre above baseline
     lay.glyphs.forEach(g=>{
       if(g.ch===' ') return;
       const gw=measure(g.ch,font,lay.fontSize,0), C=place(g.x,g.y);
-      if(g.ch===STAR_CH){ page.drawSvgPath(window.starPath(0,0,lay.fontSize*0.38), bm({ x:C.x, y:C.y, rotate:degrees(-(r+g.deg)), color:col })); return; }
+      if(g.ch===STAR_CH){ page.drawSvgPath(starPath(0,0,lay.fontSize*0.38), bm({ x:C.x, y:C.y, rotate:degrees(-(r+g.deg)), color:col })); return; }
       const phi=(-(r+g.deg))*Math.PI/180, cosP=Math.cos(phi), sinP=Math.sin(phi);
       const ox=-gw/2, oy=-co;                                          // centre → baseline-left (PDF y-up)
       page.drawText(g.ch, bm({ x:C.x+(ox*cosP-oy*sinP), y:C.y+(ox*sinP+oy*cosP), size:lay.fontSize, font, color:col, rotate:degrees(-(r+g.deg)) }));
@@ -500,7 +510,7 @@ function renderElement(page, el, ctx){
   else if(t==='rule'){
     /* one shared layout with the screen (print-data ruleLayout) → identical
        geometry. strokes = polylines, dots = circles, fills = closed polys. */
-    const col=colorForKey(el.fill||'ink',inkColor()), lay=window.ruleLayout(el);
+    const col=colorForKey(el.fill||'ink',inkColor()), lay=ruleLayout(el);
     const CAP = L().LineCapStyle ? (lay.cap==='butt'?L().LineCapStyle.Butt:L().LineCapStyle.Round) : null;
     const polyD = pts => 'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ');
     const drawLay=(c, dx, dy)=>{
@@ -509,7 +519,7 @@ function renderElement(page, el, ctx){
       lay.fills.forEach(f=>{ page.drawSvgPath(polyD(off(f.pts))+' Z', bm({ x:o0.x, y:o0.y, scale:1, rotate:ROT, color:c })); });
       lay.dots.forEach(d=> ellipse(d.x+dx, d.y+dy, d.r, d.r, { color:c }));
     };
-    if(el.echo){ const ec = el.echoAccent&&el.echoAccent!=='auto' ? accentColor(el.echoAccent) : accentColor(window.partnerOf(accentName)); drawLay(ec, el.echoDx||5, el.echoDy||5); }
+    if(el.echo){ const ec = el.echoAccent&&el.echoAccent!=='auto' ? accentColor(el.echoAccent) : accentColor(partnerOf(accentName)); drawLay(ec, el.echoDx||5, el.echoDy||5); }
     drawLay(col, 0, 0);
   }
   else if(t==='inkmark'){
@@ -519,9 +529,9 @@ function renderElement(page, el, ctx){
        K plate (0,0,0,1). STOCK CELLS ARE UNPRINTED — stock is the paper, so
        they are skipped entirely: never lay cream (or white) as a fill. No
        lift, no echo, no border — the mark stays flat by canon. */
-    const lay = window.inkMarkLayout(el.form||'strip-v');
-    const cells = window.inkMarkCells(el.form||'strip-v', el.mode||'full');
-    const dayAcc = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
+    const lay = inkMarkLayout(el.form||'strip-v');
+    const cells = inkMarkCells(el.form||'strip-v', el.mode||'full');
+    const dayAcc = (INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
     const m = Math.min(el.w/lay.cols, el.h/lay.rows);
     const ox = (el.w-lay.cols*m)/2, oy = (el.h-lay.rows*m)/2;
     const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
@@ -540,7 +550,7 @@ function renderElement(page, el, ctx){
     const fw=el.w;
     const top=6, wmH=Math.min(el.h-top-6, 30, Math.max(13, fw*0.055)), s=wmH/84, wmW=512*s, wmTop=top+(el.h-top-wmH)/2;
     const wmA=place(0,wmTop);
-    page.drawSvgPath(window.WORDMARK_PATH, { x:wmA.x, y:wmA.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
+    page.drawSvgPath(WORDMARK_PATH, { x:wmA.x, y:wmA.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
     /* Ink mark (absent prop = ON — mirrors print-element.jsx's footer, change
        both or they drift). markForm 'auto' keeps the classic pairing: with a
        QR the canon SQUARE (square-anchored), module = QR height/4, butted
@@ -561,12 +571,12 @@ function renderElement(page, el, ctx){
                     : markForm==='strip-long' ? 'strip-h'
                     : (fw >= 430 ? 'strip-h' : 'strip-short-h');
     const stripCells = stripForm==='strip-h' ? 9 : 7;
-    const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
+    const stripFloor = INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     const stripM = Math.max(stripFloor,
       Math.min(Math.round(el.h/4), Math.floor((el.h-top)/2), Math.floor(el.w*(el.showQR ? 0.20 : (stripForm==='strip-h'?0.34:0.28))/stripCells)));
-    const sqM = Math.max(window.INK_MARK.floors.square, Math.floor((el.h-top)/4));
+    const sqM = Math.max(INK_MARK.floors.square, Math.floor((el.h-top)/4));
     const drawMark=(form, mode, mx, my, mm)=>{
-      const lay=window.inkMarkLayout(form), cells=window.inkMarkCells(form, mode);
+      const lay=inkMarkLayout(form), cells=inkMarkCells(form, mode);
       const nameOf=(slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
       lay.boxes.forEach(b=>{
         const name=nameOf(b.slot);
@@ -576,7 +586,7 @@ function renderElement(page, el, ctx){
     };
     // QR right (+ the flush square, or a strip on its inner side)
     let rightX=el.w;
-    if(el.showQR){ const m=window.buildQR(el.qrData||'https://realitydn.com','M'), qs=Math.min(el.h-6, 56), qy=(el.h-qs)/2, qx=el.w-qs-((markOn&&squareMark)?qs:0);
+    if(el.showQR){ const m=buildQR(el.qrData||'https://realitydn.com','M'), qs=Math.min(el.h-6, 56), qy=(el.h-qs)/2, qx=el.w-qs-((markOn&&squareMark)?qs:0);
       rect(qx,qy,qs,qs,{color:whiteColor()});
       /* quiet zone = 4 modules, the spec's minimum (ISO/IEC 18004) — and what
          the screen footer already drew (QRView quiet={true} → qrGeometry's 4).
@@ -616,7 +626,7 @@ function renderElement(page, el, ctx){
   else if(t==='wordmark'){
     const wmH=Math.min(el.h,el.w*0.16), s=wmH/84, wmW=512*s, lx=(el.w-wmW)/2, lyTop=(el.h-wmH)/2;
     const o=place(lx,lyTop);
-    page.drawSvgPath(window.WORDMARK_PATH, { x:o.x, y:o.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
+    page.drawSvgPath(WORDMARK_PATH, { x:o.x, y:o.y, scale:s, color:colorForKey(el.ink||'ink',inkColor()), rotate:ROT });
   }
   else if(t==='badge'){
     drawSurface();
@@ -668,7 +678,6 @@ function arrowPoints(dir, w, h){
   return P.map(([ux,uy])=>{ const x=ux-0.5,y=uy-0.5; return [(x*ca-y*sa+0.5)*w,(x*sa+y*ca+0.5)*h]; });
 }
 function arrowPath(dir,w,h){ const p=arrowPoints(dir,w,h); return 'M '+p.map(q=>q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' L ')+' Z'; }
-const roundedRectPath = window.roundedRectPath;   // shared geometry lives in print-data.jsx
 
 /* THE PAGE GEOMETRY, in mm. A printer's prepress reads three boxes: MediaBox
    (the sheet in the file), BleedBox (how far the flood runs) and TrimBox (the
@@ -701,7 +710,7 @@ async function buildPiece(doc, { bleed, marks }, report){
   /* every string NFC before a glyph is placed — decomposed Vietnamese would
      otherwise set its combining marks as separate, advancing glyphs (see
      nfcDeep in print-data). The caller's doc is not touched. */
-  doc = Object.assign({}, doc, { elements: window.nfcDeep(doc.elements||[]) });
+  doc = Object.assign({}, doc, { elements: nfcDeep(doc.elements||[]) });
   const dims=sizeDims(doc.size,doc.orient);
   const withMarks = !!(bleed && marks);
   const B = bleed ? BLEED_MM*PT_PER_MM : 0;                  // trim edge → bleed edge
@@ -758,7 +767,7 @@ async function single(doc, opts){
 const GANG_TICK_MM = 3;
 async function gang(doc, opts){
   opts=opts||{}; const { PDFDocument, degrees }=L();
-  const g=window.GANG[doc.size]; if(!g) throw new Error('Size '+doc.size+' cannot be ganged on A4');
+  const g=GANG[doc.size]; if(!g) throw new Error('Size '+doc.size+' cannot be ganged on A4');
   lastReport = newReport();
   const piece=await buildPiece(doc,{ bleed:false, marks:false }, lastReport); const pieceBytes=await piece.pdf.save();
   const a4=await PDFDocument.create(); const A4=sizeDims('a4','portrait');
@@ -822,7 +831,9 @@ async function glyphChecker(){
     for(const key of Object.keys(bytes)){ try{ out[key]=fk.create(new Uint8Array(bytes[key])); }catch(e){ out[key]=null; } }
     _faces=out;
   }
-  return (fam, weight, cp)=>{ const f=_faces[window.faceFor(fam, weight)]; return f ? f.hasGlyphForCodePoint(cp) : null; };
+  return (fam, weight, cp)=>{ const f=_faces[faceFor(fam, weight)]; return f ? f.hasGlyphForCodePoint(cp) : null; };
 }
-window.PrintExport = { single, gang, ready, pageMm, glyphChecker, report:()=>lastReport, RASTER_CAP };
+PrintExport = { single, gang, ready, pageMm, glyphChecker, report:()=>lastReport, RASTER_CAP };
 })();
+
+export { PrintExport };

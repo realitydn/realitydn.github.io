@@ -6,7 +6,8 @@
    The stage scrolls when zoomed past fit.
    Exports: PrintCanvas
    ============================================================ */
-const { PALETTE: PC_PAL, INK: PC_INK, PrintElement: PCElement } = window;
+import { PALETTE as PC_PAL, INK as PC_INK, INK } from './print-data.jsx';
+import { PrintElement as PCElement } from './print-element.jsx';
 const PC_STEP = 6;                     // fallback snap grid (pt)
 const PC_GUIDE = '#ed1b72';            // brand pink alignment line
 const PC_GRID = '#18a7e0';             // layout grid blue
@@ -49,7 +50,7 @@ function PcTextEditor({ el, onChange, onDone }){
         position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h,
         transform: el.rot ? 'rotate('+el.rot+'deg)' : null,
         background:'rgba(237,27,114,.08)', border:'2px solid '+PC_GUIDE, outline:'none',
-        color:window.INK.rgb, padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
+        color:INK.rgb, padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
         caretColor:PC_GUIDE,
       }, pcEditFont(el))} />
   );
@@ -273,4 +274,4 @@ function PrintCanvas({ elements, wpt, hpt, accent, grid, bleedPt, showGrid, show
   );
 }
 
-window.PrintCanvas = PrintCanvas;
+export { PrintCanvas };

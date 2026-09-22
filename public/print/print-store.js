@@ -18,18 +18,19 @@
    living in localStorage — and every failed write now RAISES, so
    the app can say "not saved" instead of pretending.
 
-   Exposes:
-     window.PrintStore — raw IDB: putImage/getImage/delImage/allIds,
-                         kvGet/kvPut, gcImages(keepSet, minAgeMs)
-     window.PrintImg   — cache: add(dataURL,w,h)→id, load(id)→Image,
-                         peek(id)→Image|null, meta(id)→{w,h}|null,
-                         unsaved()→[ids kept in memory only]
-     window.PrintDocs  — load()→{doc,tpls,backend}, saveDoc(doc),
-                         saveTpls(list) — each save a Promise that
-                         REJECTS when the write didn't land
+   Exports (ES module, in Print Studio's bundle):
+     PrintStore — raw IDB: putImage/getImage/delImage/allIds,
+                  kvGet/kvPut, gcImages(keepSet, minAgeMs)
+     PrintImg   — cache: add(dataURL,w,h)→id, load(id)→Image,
+                  peek(id)→Image|null, meta(id)→{w,h}|null,
+                  unsaved()→[ids kept in memory only]
+     PrintDocs  — load()→{doc,tpls,backend}, saveDoc(doc),
+                  saveTpls(list) — each save a Promise that
+                  REJECTS when the write didn't land
    Failures are also broadcast as a window 'printstore:error' event
    ({ detail:{ kind, message } }) so the chrome can show them.
    ============================================================ */
+let PrintStore, PrintImg, PrintDocs;
 (function(){
   const DB_NAME='reality-print', DB_VER=2, STORE='images', KV='kv';
   const LS_DOC='reality-print-doc-v1', LS_TPL='reality-print-templates-v1';
@@ -82,7 +83,7 @@
       t.oncomplete=()=>res(n); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error);
     });
   }
-  window.PrintStore={ open, putImage, getImage, delImage, allIds, kvGet, kvPut, gcImages };
+  PrintStore={ open, putImage, getImage, delImage, allIds, kvGet, kvPut, gcImages };
 
   function report(kind, message){
     try{ window.dispatchEvent(new CustomEvent('printstore:error', { detail:{ kind, message } })); }catch(e){}
@@ -103,7 +104,7 @@
     let img=null; try{ img=await decode(dataURL); }catch(e){}
     const entry={ data:dataURL, w, h, img, unsaved:false };
     _cache.set(id, entry);
-    try{ await window.PrintStore.putImage({ id, data:dataURL, w, h, ts:Date.now() }); }
+    try{ await PrintStore.putImage({ id, data:dataURL, w, h, ts:Date.now() }); }
     catch(e){ entry.unsaved=true; report('image', 'Image not saved to storage ('+((e&&e.message)||'quota')+') — it will vanish on reload.'); }
     return id;
   }
@@ -111,7 +112,7 @@
   async function load(id){
     if(!id) return null;
     const c=_cache.get(id); if(c && c.img) return c.img;
-    let rec=null; try{ rec=await window.PrintStore.getImage(id); }catch(e){}
+    let rec=null; try{ rec=await PrintStore.getImage(id); }catch(e){}
     if(!rec || !rec.data) return null;
     let img=null; try{ img=await decode(rec.data); }catch(e){ return null; }
     _cache.set(id,{ data:rec.data, w:rec.w, h:rec.h, img, unsaved:false });
@@ -123,7 +124,7 @@
   async function meta(id){
     if(!id) return null;
     const c=_cache.get(id); if(c && c.w && c.h) return { w:c.w, h:c.h };
-    let rec=null; try{ rec=await window.PrintStore.getImage(id); }catch(e){}
+    let rec=null; try{ rec=await PrintStore.getImage(id); }catch(e){}
     if(!rec || !rec.data) return null;
     let w=rec.w, h=rec.h;
     if(!(w&&h)){ const im=await load(id); if(!im) return null; w=im.naturalWidth; h=im.naturalHeight; }
@@ -131,7 +132,7 @@
   }
   function unsaved(){ const out=[]; _cache.forEach((v,k)=>{ if(v.unsaved) out.push(k); }); return out; }
 
-  window.PrintImg={ add, load, peek, meta, unsaved, _cache };
+  PrintImg={ add, load, peek, meta, unsaved, _cache };
 
   /* ---- the working doc + "My templates" ---- */
   let _backend=null;   // 'idb' | 'ls'
@@ -174,6 +175,8 @@
     }
     return (v)=> new Promise((res,rej)=>{ next=v; has=true; waiters.push({res,rej}); if(!busy) pump(); });
   }
-  window.PrintDocs={ load:loadDocs, saveDoc:writer('doc', LS_DOC), saveTpls:writer('templates', LS_TPL),
-                     backend:()=>_backend };
+  PrintDocs={ load:loadDocs, saveDoc:writer('doc', LS_DOC), saveTpls:writer('templates', LS_TPL),
+              backend:()=>_backend };
 })();
+
+export { PrintStore, PrintImg, PrintDocs };

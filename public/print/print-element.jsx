@@ -5,10 +5,16 @@
    shadows, misregistration echo, geometric blocking, Thin display.
    Exports: PrintElement, WordmarkSVG
    ============================================================ */
-const { PALETTE: PE_PAL, INK: PE_INK, WHITE: PE_WHITE, ACCENTS: PE_ACC,
-        surfaceStyle: peSurf, resolveInk: peInk, buildQR: peQR, qrGeometry: peGeom, partnerOf: pePartner, LIFT: PE_LIFT,
-        dotFieldLayout: peDots, stripeLayout: peStripes, burstRays: peBurst, ruleLayout: peRule, shapePath: peShape, arcTextLayout: peArc,
-        fitTextSize: peFit, blendCss: peBlend, risoOpts: peRiso } = window;
+import { PrintImg } from './print-store.js';
+import {
+  PALETTE as PE_PAL, INK as PE_INK, WHITE as PE_WHITE, ACCENTS as PE_ACC, surfaceStyle as peSurf,
+  resolveInk as peInk, buildQR as peQR, qrGeometry as peGeom, partnerOf as pePartner,
+  LIFT as PE_LIFT, dotFieldLayout as peDots, stripeLayout as peStripes, burstRays as peBurst,
+  ruleLayout as peRule, shapePath as peShape, arcTextLayout as peArc, fitTextSize as peFit,
+  blendCss as peBlend, risoOpts as peRiso, contrastInk, shadowCss, shadowSpec, roundedRectPath,
+  starPath, borderDash, listRowFont, listSplit, iconLayout, punchLayout, couponLayout,
+  inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, inkMarkHex, INK_MARK,
+} from './print-data.jsx';
 
 const FAM_CSS = { mont:"'Montserrat',sans-serif", grot:"'Space Grotesk',sans-serif", alt:"'Montserrat Alternates',sans-serif" };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
@@ -31,7 +37,7 @@ const FACT = (size, extra)=> Object.assign({
   fontFamily:FAM_CSS.grot, fontWeight:500, letterSpacing:0, fontSize:size,
   fontVariantNumeric:'tabular-nums', textTransform:'none'
 }, extra||{});
-const contrastFor = (hex)=> window.contrastInk(hex);
+const contrastFor = (hex)=> contrastInk(hex);
 function peFill(key, accentHex){
   if(key==='ink') return PE_INK.rgb;
   if(key==='white') return PE_WHITE.rgb;
@@ -40,7 +46,7 @@ function peFill(key, accentHex){
 }
 /* plane shadow via the shared spec (print-data shadowSpec) — flat vector
    offset, preset K-tint or the custom dial set, identical in the PDF. */
-function elShadow(el){ return window.shadowCss(window.shadowSpec(el)) || 'none'; }
+function elShadow(el){ return shadowCss(shadowSpec(el)) || 'none'; }
 function shadowColRgba(spec){
   if(!spec) return null;
   if(spec.color==='k') return `rgba(13,9,5,${spec.alpha})`;
@@ -81,7 +87,7 @@ function WordmarkSVG({ height, color }){
     </svg>
   );
 }
-window.WordmarkSVG = WordmarkSVG;
+export { WordmarkSVG };
 
 /* one QR shape descriptor → SVG node (mirrors the PDF drawQrShape). Coords are
    in MODULE units; the <svg> viewBox scales them to the box. Colour by role. */
@@ -89,7 +95,7 @@ function qrShapeSvg(s, i, cols){
   const fill = cols[s.role] || cols.data;
   if(!fill || fill==='transparent') return null;
   if(s.kind==='circle')    return <circle key={i} cx={s.cx} cy={s.cy} r={s.r} fill={fill} />;
-  if(s.kind==='roundrect') return <path key={i} d={window.roundedRectPath(s.x, s.y, s.w, s.h, s.r)} fill={fill} />;
+  if(s.kind==='roundrect') return <path key={i} d={roundedRectPath(s.x, s.y, s.w, s.h, s.r)} fill={fill} />;
   /* square data module — a hair of overlap kills anti-alias seams between cells */
   return <rect key={i} x={s.x} y={s.y} width={s.w+0.03} height={s.h+0.03} fill={fill} />;
 }
@@ -111,7 +117,7 @@ function QRView({ data, ecl, dark, light, quiet, moduleStyle, eyeStyle, eye, log
       {g.shapes.map((s,i)=> qrShapeSvg(s, i, cols))}
       {!ghost && g.logo && g.logoKind!=='none' && <React.Fragment>
         <circle cx={g.logo.cx} cy={g.logo.cy} r={g.logo.s*0.42} fill={lc} />
-        {g.logoKind==='star' && <path d={window.starPath(g.logo.cx, g.logo.cy, g.logo.s*0.30)} fill={lite} />}
+        {g.logoKind==='star' && <path d={starPath(g.logo.cx, g.logo.cy, g.logo.s*0.30)} fill={lite} />}
       </React.Fragment>}
     </svg>
   );
@@ -158,14 +164,14 @@ function ImageEl({ el, docAccent, lift }){
     const cv=ref.current; if(!cv) return; let alive=true;
     const W=Math.min(Math.max(8,Math.round(el.w)),900), H=Math.max(1,Math.round(W*(el.h/Math.max(1,el.w))));
     cv.width=W; cv.height=H;
-    if(!el.imgId || !window.RISO || !window.PrintImg){ cv.getContext('2d').clearRect(0,0,W,H); return; }
+    if(!el.imgId || !window.RISO || !PrintImg){ cv.getContext('2d').clearRect(0,0,W,H); return; }
     const opts=peRiso(el, docAccent);
     const draw=(src)=>{ if(!alive||!src) return; window.RISO.setSource(src);
       if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
       window.RISO.render(cv, el.treatment||'none', opts); };
-    const cached=window.PrintImg.peek(el.imgId);
+    const cached=PrintImg.peek(el.imgId);
     if(cached) draw(cached);
-    else window.PrintImg.load(el.imgId).then(im=>{ if(im&&alive){ draw(im); bump(v=>v+1); } }).catch(()=>{});
+    else PrintImg.load(el.imgId).then(im=>{ if(im&&alive){ draw(im); bump(v=>v+1); } }).catch(()=>{});
     return ()=>{ alive=false; };
   });
   const frame = el.frame ? `${el.frameW||3}px solid ${PE_INK.rgb}` : 'none';
@@ -185,8 +191,8 @@ function ImageEl({ el, docAccent, lift }){
    wrapper (not the overflow-hidden box) so the stroke isn't clipped. */
 function borderOverlay(W, H, bw, color, pattern, radius){
   if(!(bw>0) || !color) return null;
-  const bd = window.borderDash(pattern||'solid', bw), ins = bw/2;
-  const d = window.roundedRectPath(ins, ins, Math.max(0,W-bw), Math.max(0,H-bw), Math.max(0,(radius||0)-ins));
+  const bd = borderDash(pattern||'solid', bw), ins = bw/2;
+  const d = roundedRectPath(ins, ins, Math.max(0,W-bw), Math.max(0,H-bw), Math.max(0,(radius||0)-ins));
   return (
     <svg style={{ position:'absolute', left:0, top:0, width:'100%', height:'100%', pointerEvents:'none', overflow:'visible' }}
          viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
@@ -232,8 +238,8 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const markerCol = peInk(el.markerColor||'auto', accentHex);
     const headCol = peInk(el.headingColor||'auto', accentHex);
     const glyph = el.marker || '•';
-    const rs = window.listRowFont(el);
-    const colsArr = window.listSplit(el.items, el.cols||1);
+    const rs = listRowFont(el);
+    const colsArr = listSplit(el.items, el.cols||1);
     let idx = 0;
     const renderRows = (arr)=> arr.map((it)=>{ const i=idx++;
       return <div key={i} style={{ display:'flex', alignItems:'baseline', gap:8, padding:(rs*0.3)+'px 0', color:textCol, fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:el.upper===false?'none':'uppercase', fontSize:rs+'px', letterSpacing:EM(TRACK.name) }}>
@@ -255,7 +261,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='icon'){
     const col = peFill(el.ink!=null?el.ink:'ink', accentHex);
-    const lay = window.iconLayout(el);
+    const lay = iconLayout(el);
     const _sh = elShadow(el);
     const prim = (p,i,c)=>{
       const sp = p.stroke ? { fill:'none', stroke:c, strokeWidth:lay.sw, strokeLinejoin:'miter', strokeLinecap:'square' } : { fill:c, stroke:'none' };
@@ -276,7 +282,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   else if(t==='punchgrid'){
     const col = peFill(el.ink!=null?el.ink:'ink', accentHex);
     const bonusCol = peFill(el.bonusFill||'pink', accentHex);
-    const lay = window.punchLayout(el);
+    const lay = punchLayout(el);
     const numSize = Math.max(6, lay.d*0.3);
     inner = <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
       {lay.cells.map((c,i)=>{
@@ -285,7 +291,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
         const cell = lay.shape==='square'
           ? <rect x={c.cx-r} y={c.cy-r} width={r*2} height={r*2} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} />
           : lay.shape==='star'
-          ? <path d={window.starPath(c.cx, c.cy, r*1.05)} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} strokeLinejoin="miter" />
+          ? <path d={starPath(c.cx, c.cy, r*1.05)} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} strokeLinejoin="miter" />
           : <circle cx={c.cx} cy={c.cy} r={r} fill={isBonus?bonusCol:'none'} stroke={col} strokeWidth={lay.stroke} />;
         return <g key={i}>
           {cell}
@@ -320,7 +326,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     /* geometry comes from the shared couponLayout so the PDF can place the same
        four blocks to the point. Absolute, not flex: the layout already did the
        space-between maths, and re-deriving it here is how the two drifted. */
-    const lay = window.couponLayout(el);
+    const lay = couponLayout(el);
     /* border:0 so the blocks measure from the element's own corner — the box's
        transparent border is only a box-model placeholder (the visible rule is
        the SVG overlay), and Chrome floors it to whole pixels, which would slide
@@ -359,7 +365,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
     const pts = sh>=0 ? [[sh,0],[el.w,0],[el.w-sh,el.h],[0,el.h]]
                       : [[0,0],[el.w-a,0],[el.w,el.h],[a,el.h]];
     const toStr = (ox,oy)=> pts.map(p=>`${(p[0]+ox).toFixed(2)},${(p[1]+oy).toFixed(2)}`).join(' ');
-    const sSpec = window.shadowSpec(el);
+    const sSpec = shadowSpec(el);
     inner = <svg viewBox={`0 0 ${el.w} ${el.h}`} width="100%" height="100%" preserveAspectRatio="none" style={{ display:'block', overflow:'visible' }}>
       {sSpec && <polygon points={toStr(sSpec.dx,sSpec.dy)} fill={shadowColRgba(sSpec)} />}
       {el.echo && <polygon points={toStr(el.echoDx||9, el.echoDy||9)} fill={echoHex(el,docAccent)} />}
@@ -463,9 +469,9 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
        the PDF exporter draws — fitted undistorted into the box and centred.
        Stock cells are the PAPER: shown white here, skipped (unprinted) in the
        PDF. No radius, no lift, no echo, no blend — the mark stays flat. */
-    const lay = window.inkMarkLayout(el.form||'strip-v');
-    const cells = window.inkMarkCells(el.form||'strip-v', el.mode||'full');
-    const dayAcc = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
+    const lay = inkMarkLayout(el.form||'strip-v');
+    const cells = inkMarkCells(el.form||'strip-v', el.mode||'full');
+    const dayAcc = (INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
     const m = Math.min(el.w/lay.cols, el.h/lay.rows);
     const ox = (el.w-lay.cols*m)/2, oy = (el.h-lay.rows*m)/2;
     const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
@@ -473,7 +479,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       {lay.boxes.map(b=>(
         <div key={b.slot} style={{ position:'absolute',
           left:ox+b.x*m, top:oy+b.y*m, width:b.w*m, height:b.h*m,
-          background:window.inkMarkHex(nameOf(b.slot), dayAcc) }} />
+          background:inkMarkHex(nameOf(b.slot), dayAcc) }} />
       ))}
     </div>;
   }
@@ -521,19 +527,19 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
                     : markForm==='strip-long' ? 'strip-h'
                     : (fw >= 430 ? 'strip-h' : 'strip-short-h');
     const stripCells = stripForm==='strip-h' ? 9 : 7;
-    const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
+    const stripFloor = INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     const mk = (form, mode, m)=>{
-      const lay = window.inkMarkLayout(form), cells = window.inkMarkCells(form, mode);
+      const lay = inkMarkLayout(form), cells = inkMarkCells(form, mode);
       const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
       return <div aria-hidden="true" style={{ position:'relative', flex:'none', width:lay.cols*m, height:lay.rows*m }}>
         {lay.boxes.map(b=>(<div key={b.slot} style={{ position:'absolute', left:b.x*m, top:b.y*m, width:b.w*m, height:b.h*m,
-          background:window.inkMarkHex(nameOf(b.slot), 'red') }} />))}
+          background:inkMarkHex(nameOf(b.slot), 'red') }} />))}
       </div>;
     };
     const qs = Math.min(el.h-6, 56);
     const stripM = Math.max(stripFloor,
       Math.min(Math.round(el.h/4), Math.floor((el.h-6)/2), Math.floor(el.w*(el.showQR ? 0.20 : (stripForm==='strip-h'?0.34:0.28))/stripCells)));
-    const sqM = Math.max(window.INK_MARK.floors.square, Math.floor((el.h-6)/4));
+    const sqM = Math.max(INK_MARK.floors.square, Math.floor((el.h-6)/4));
     inner = <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', gap:14, paddingTop: el.rule!==false?6:0, borderTop: el.rule!==false?`2.5px solid ${PE_INK.rgb}`:'none', boxSizing:'border-box', boxShadow:lift }}>
       <WordmarkSVG height={wmH} color={ink} />
       {/* nowrap: the address is one line or it is not shown. Letting it wrap
@@ -594,4 +600,4 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   return <div data-elid={el.id} style={wrap} onPointerDown={(e)=>onElPointerDown(e, el)}>{inner}{borderNode}</div>;
 }
 
-window.PrintElement = PrintElement;
+export { PrintElement };

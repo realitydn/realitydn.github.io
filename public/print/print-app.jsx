@@ -4,12 +4,19 @@
    Year 2 pass: layout grid + snapping, undo/redo, zoom, Fold
    inspector in one canonical order, template previews.
    ============================================================ */
-const { CATALOG:AP_CAT, DEFAULTS:AP_DEF, PALETTE:AP_PAL, ACCENTS:AP_ACC,
-        SIZES:AP_SZ, SIZE_ORDER:AP_ORD, GANG:AP_GANG, sizeDims:apDims, PT_PER_MM:AP_PPM,
-        TYPE_SCALE:AP_SCALE, snapToScale:apSnap, scaleStep:apStep,
-        makeElement:apMake, uid:apUid, slugify:apSlug,
-        PrintCanvas:APCanvas, PrintElement:APElement, TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl,
-        INK:AP_INK, artPastTrim:apPastTrim, migrateElements:apMigrate, nfcDeep:apNfc } = window;
+import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
+import {
+  CATALOG as AP_CAT, DEFAULTS as AP_DEF, PALETTE as AP_PAL, ACCENTS as AP_ACC, SIZES as AP_SZ,
+  SIZE_ORDER as AP_ORD, GANG as AP_GANG, sizeDims as apDims, PT_PER_MM as AP_PPM,
+  TYPE_SCALE as AP_SCALE, snapToScale as apSnap, scaleStep as apStep, makeElement as apMake,
+  uid as apUid, slugify as apSlug, TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG,
+  buildTemplate as apBuildTpl, INK as AP_INK, artPastTrim as apPastTrim,
+  migrateElements as apMigrate, nfcDeep as apNfc, SHAPE_KINDS, risoOpts, gridSpec, QR_DESTINATIONS,
+  INK_MARK, INK_MARK_DAY_KEYS, preflight as preflight_,
+} from './print-data.jsx';
+import { PrintElement as APElement } from './print-element.jsx';
+import { PrintCanvas as APCanvas } from './print-canvas.jsx';
+import { PrintExport } from './print-export.jsx';
 
 function starterDoc(){
   return {
@@ -86,7 +93,7 @@ const STICKER_SHAPES = [{v:'circle',l:'Circle'},{v:'rounded',l:'Rounded'},{v:'sq
 const DOT_SHAPES = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'diamond',l:'Diamond'},{v:'ring',l:'Ring'},{v:'plus',l:'Plus'}];
 const DOT_GRADS = [{v:'none',l:'Even'},{v:'out',l:'Radial out'},{v:'in',l:'Radial in'},{v:'up',l:'Up'},{v:'down',l:'Down'},{v:'left',l:'Left'},{v:'right',l:'Right'},{v:'diag',l:'Diagonal'},{v:'diag2',l:'Diagonal ↗'},{v:'wave',l:'Wave'},{v:'bloom',l:'Bloom'}];
 const STRIPE_DIRS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'},{v:'diag',l:'Diagonal ↘'},{v:'diag2',l:'Diagonal ↗'}];
-const SHAPE_OPTS = (window.SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).toUpperCase()+k.slice(1)}));
+const SHAPE_OPTS = (SHAPE_KINDS||['circle']).map(k=>({v:k, l:k.charAt(0).toUpperCase()+k.slice(1)}));
 const BLENDS = [{v:'normal',l:'None'},{v:'multiply',l:'Multiply'},{v:'screen',l:'Screen'},{v:'overlay',l:'Overlay'},{v:'darken',l:'Darken'},{v:'lighten',l:'Lighten'},{v:'hard-light',l:'Hard'}];
 const ORIENTS = [{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}];
 const BLENDABLE = ['headline','numeral','bignum','kicker','body','block','slab','stripes','dotfield','sticker','burst','shape','marquee','image','pricelist','coupon','badge','seal','rule','arrow','contact','wordmark','footer','arctext','icon','punchgrid'];
@@ -238,7 +245,7 @@ function PressCommon({ el, update, t, docAccent }){
   const RP = window.RISO && window.RISO.press; if(!RP) return null;
   const stockKey = el.stock||'white';
   const opaque = el.opaque!=null ? !!el.opaque : RP.isDark(RP.stockHex(stockKey));
-  const plates = (window.RISO.platesFor && window.risoOpts) ? window.RISO.platesFor(t, window.risoOpts(el, docAccent)) : [];
+  const plates = (window.RISO.platesFor && risoOpts) ? window.RISO.platesFor(t, risoOpts(el, docAccent)) : [];
   return (
     <React.Fragment>
       <div className="ps-sech">Stock</div>
@@ -544,14 +551,14 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
   const isText = ['headline','body','kicker','bignum','numeral'].indexOf(el.type)>=0;
   const setItems = (items)=>update({ items });
   const onPickImage = (file)=> processImageFile(file, ({data,w,h})=>{
-    if(!window.PrintImg) return;
-    window.PrintImg.add(data, w, h).then(id=>{
+    if(!PrintImg) return;
+    PrintImg.add(data, w, h).then(id=>{
       const patch={ imgId:id };
       if(!el.imgId && w && h) patch.h = Math.max(20, Math.round(el.w * h/w));
       update(patch);
     });
   });
-  const gridS = window.gridSpec(doc, dims);
+  const gridS = gridSpec(doc, dims);
 
   /* ---- bespoke content per type ---- */
   let content = null;
@@ -661,7 +668,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
     </React.Fragment>
   );
   else if(el.type==='qr') content = (()=>{
-    const dests = window.QR_DESTINATIONS||[];
+    const dests = QR_DESTINATIONS||[];
     const modKey = el.ink!=null?el.ink:'ink';
     const eyeKey = el.eye&&el.eye!=='auto'?el.eye:modKey;
     const risky = qrLum(modKey)>0.40 || qrLum(eyeKey)>0.40;
@@ -773,7 +780,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
        (mode/day) or resizes by whole modules; cell order is untouchable.
        Form/module changes snap the box to exact module multiples so cells
        stay square; a free drag-resize still fits-and-centres undistorted. */
-    const IM = window.INK_MARK;
+    const IM = INK_MARK;
     const form = el.form||'strip-v';
     const f = IM.forms[form] || IM.forms['strip-v'];
     const m = Math.max(1, Math.round(Math.min(el.w/f.cols, el.h/f.rows)));
@@ -782,7 +789,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
       const nf = IM.forms[patch.form!=null?patch.form:form] || f;
       return Object.assign(patch, { w:Math.round(nf.cols*mod), h:Math.round(nf.rows*mod) });
     };
-    const days = window.INK_MARK_DAY_KEYS.map(d=>({ v:d, l:d.charAt(0).toUpperCase()+d.slice(1) }));
+    const days = INK_MARK_DAY_KEYS.map(d=>({ v:d, l:d.charAt(0).toUpperCase()+d.slice(1) }));
     return <React.Fragment>
       <Chips label="Form" options={[
         {v:'strip-v',l:'Strip'},{v:'strip-h',l:'Strip ↔'},
@@ -960,7 +967,7 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
   const gang = AP_GANG[doc.size];
   const dims = apDims(doc.size, doc.orient);
   /* Straight from the exporter, not recomputed here. */
-  const pg = window.PrintExport.pageMm(doc.size, doc.orient, doc.withBleed===true);
+  const pg = PrintExport.pageMm(doc.size, doc.orient, doc.withBleed===true);
   const pageMm = pg.wmm+'×'+pg.hmm+' mm';
   const bleedOn = doc.withBleed===true;
   /* art past the trim with bleed off: the one export setting that silently
@@ -1090,7 +1097,7 @@ function Root(){
   const [boot, setBoot] = React.useState(null);
   React.useEffect(()=>{
     let live = true;
-    const p = window.PrintDocs ? window.PrintDocs.load() : Promise.resolve({ doc:null, tpls:null, backend:'none' });
+    const p = PrintDocs ? PrintDocs.load() : Promise.resolve({ doc:null, tpls:null, backend:'none' });
     p.catch(e=>({ doc:null, tpls:null, backend:'none', error:e })).then(r=>{ if(live) setBoot(r); });
     return ()=>{ live=false; };
   }, []);
@@ -1142,16 +1149,16 @@ function App({ boot }){
   const firstSave = React.useRef(true);
   React.useEffect(()=>{
     if(firstSave.current){ firstSave.current=false; return; }
-    if(!window.PrintDocs) return;
+    if(!PrintDocs) return;
     const n = ++saveSeq.current;
     setSaveSt('saving');
-    window.PrintDocs.saveDoc(doc).then(()=>{ if(n===saveSeq.current){ setSaveSt('saved'); setSaveErr(null); } })
+    PrintDocs.saveDoc(doc).then(()=>{ if(n===saveSeq.current){ setSaveSt('saved'); setSaveErr(null); } })
       .catch(e=>{ console.error('autosave failed', e); if(n===saveSeq.current){ setSaveSt('failed'); setSaveErr(storeErrText(e)); } });
   }, [doc]);
   const persistTpls = (next)=>{
     setUserTpls(next);
-    if(!window.PrintDocs) return;
-    window.PrintDocs.saveTpls(next).then(()=>setTplErr(null))
+    if(!PrintDocs) return;
+    PrintDocs.saveTpls(next).then(()=>setTplErr(null))
       .catch(e=>{ console.error('template save failed', e); setTplErr(storeErrText(e)); });
   };
   /* the image store reports its own failures (a photo kept in memory only) */
@@ -1192,7 +1199,7 @@ function App({ boot }){
      template", this session's undo history) that are over a day old. ---- */
   const tplsRef = React.useRef(userTpls); tplsRef.current = userTpls;
   React.useEffect(()=>{
-    if(boot.backend!=='idb' || boot.error || !window.PrintStore || !window.PrintStore.gcImages) return;
+    if(boot.backend!=='idb' || boot.error || !PrintStore || !PrintStore.gcImages) return;
     const t = setTimeout(()=>{
       if(peers.current.size>0) return;
       const keep = new Set();
@@ -1200,14 +1207,14 @@ function App({ boot }){
       take(docRef.current.elements);
       tplsRef.current.forEach(tp=> take(tp.doc && tp.doc.elements));
       const h = hist.current; if(h){ h.past.concat(h.future, h.pending?[h.pending]:[]).forEach(d=>take(d && d.elements)); }
-      window.PrintStore.gcImages(keep, 24*3600*1000)
+      PrintStore.gcImages(keep, 24*3600*1000)
         .then(n=>{ if(n) console.info('Print Studio: removed '+n+' orphaned image'+(n===1?'':'s')+' from storage'); })
         .catch(e=>console.warn('image sweep skipped', e));
     }, 2500);
     return ()=>clearTimeout(t);
   }, []);
 
-  React.useEffect(()=>{ if(window.PrintExport) window.PrintExport.ready().catch(()=>{}); }, []);
+  React.useEffect(()=>{ if(PrintExport) PrintExport.ready().catch(()=>{}); }, []);
   /* layouts measured in JS (fitted headlines, the coupon stack) read the webfont
      off a canvas — repaint once the faces land so a cold load isn't laid out
      against the fallback metrics. */
@@ -1289,15 +1296,15 @@ function App({ boot }){
   }, [undo, redo]);
 
   /* warm the image store, and accept pasted images */
-  React.useEffect(()=>{ if(window.PrintStore) window.PrintStore.open().catch(()=>{}); }, []);
+  React.useEffect(()=>{ if(PrintStore) PrintStore.open().catch(()=>{}); }, []);
   React.useEffect(()=>{
     function onPaste(e){
       const file = imageFromClipboard(e.clipboardData); if(!file) return;
       const ae=document.activeElement; if(ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable)) return;
       e.preventDefault();
       processImageFile(file, ({data,w,h})=>{
-        if(!window.PrintImg) return;
-        window.PrintImg.add(data,w,h).then(id=>{
+        if(!PrintImg) return;
+        PrintImg.add(data,w,h).then(id=>{
           const cur=docRef.current, ids=selIdsRef.current, selEl=cur.elements.find(x=>x.id===ids[ids.length-1]);
           if(selEl && selEl.type==='image'){ updateEl(selEl.id, { imgId:id, h: selEl.imgId?selEl.h:Math.max(20,Math.round(selEl.w*h/w)) }); return; }
           const dd=apDims(cur.size,cur.orient), elw=Math.min(AP_DEF.image.w, Math.round(dd.wpt-40)), elh=Math.max(20,Math.round(elw*h/w));
@@ -1457,16 +1464,16 @@ function App({ boot }){
     setTimeout(()=>URL.revokeObjectURL(url), 4000);
   }
   async function onExport(mode){
-    if(exporting || !window.PrintExport) return;
+    if(exporting || !PrintExport) return;
     const d = docRef.current;
     /* photos that would print as blank boxes — ask before making a broken PDF
        rather than after (the preflight shows them too) */
     const imgs = d.elements.filter(e=>e.type==='image');
-    if(imgs.length && window.PrintImg){
+    if(imgs.length && PrintImg){
       const miss = [];
       for(const e of imgs){
         if(!e.imgId){ miss.push('an empty image frame'); continue; }
-        const m = await window.PrintImg.meta(e.imgId).catch(()=>null);
+        const m = await PrintImg.meta(e.imgId).catch(()=>null);
         if(!m) miss.push('a photo missing from storage');
       }
       if(miss.length && !window.confirm(miss.length+' image'+(miss.length===1?'':'s')+' will print as a blank white box:\n\n  · '+miss.join('\n  · ')
@@ -1477,16 +1484,16 @@ function App({ boot }){
     try{
       if(mode==='gang'){
         setExportMsg('Ganging '+AP_SZ[d.size].label+'…');
-        const bytes = await window.PrintExport.gang(d, { marks:true });
+        const bytes = await PrintExport.gang(d, { marks:true });
         dl(bytes, base+'-'+d.size+'-x'+AP_GANG[d.size].per+'-a4.pdf');
       } else {
         setExportMsg('Rendering '+AP_SZ[d.size].label+'…');
         const withBleed = d.withBleed===true;
-        const bytes = await window.PrintExport.single(d, { bleed:withBleed, marks:true });
+        const bytes = await PrintExport.single(d, { bleed:withBleed, marks:true });
         dl(bytes, base+'-'+d.size+(withBleed?'-bleed':'')+'.pdf');
       }
       /* what the exporter could not draw — said out loud, kept until dismissed */
-      const rep = window.PrintExport.report ? window.PrintExport.report() : null;
+      const rep = PrintExport.report ? PrintExport.report() : null;
       if(rep && (rep.missingImages.length || rep.failed.length)){
         const bits = [];
         if(rep.missingImages.length) bits.push(rep.missingImages.length+' image'+(rep.missingImages.length===1?'':'s')+' printed as blank boxes');
@@ -1502,11 +1509,11 @@ function App({ boot }){
      stored size (null = gone from storage) and the embedded fonts' cmaps. ---- */
   const [imgMeta, setImgMeta] = React.useState({});
   React.useEffect(()=>{
-    if(!window.PrintImg) return;
+    if(!PrintImg) return;
     const ids = Array.from(new Set(doc.elements.filter(e=>e.type==='image' && e.imgId).map(e=>e.imgId))).filter(id=>!(id in imgMeta));
     if(!ids.length) return;
     let live = true;
-    Promise.all(ids.map(id=>window.PrintImg.meta(id).then(m=>[id,m], ()=>[id,null]))).then(rs=>{
+    Promise.all(ids.map(id=>PrintImg.meta(id).then(m=>[id,m], ()=>[id,null]))).then(rs=>{
       if(!live) return;
       setImgMeta(o=>{ const n=Object.assign({}, o); rs.forEach(([id,m])=>{ n[id]=m; }); return n; });
     });
@@ -1514,13 +1521,13 @@ function App({ boot }){
   }, [doc.elements]);
   const [glyphFn, setGlyphFn] = React.useState(null);
   React.useEffect(()=>{
-    if(window.PrintExport && window.PrintExport.glyphChecker)
-      window.PrintExport.glyphChecker().then(fn=>setGlyphFn(()=>fn)).catch(e=>console.warn('glyph check unavailable', e));
+    if(PrintExport && PrintExport.glyphChecker)
+      PrintExport.glyphChecker().then(fn=>setGlyphFn(()=>fn)).catch(e=>console.warn('glyph check unavailable', e));
   }, []);
   const preflightItems = React.useMemo(()=>{
-    const items = window.preflight(doc, dims, { images:imgMeta, hasGlyph:glyphFn });
+    const items = preflight_(doc, dims, { images:imgMeta, hasGlyph:glyphFn });
     /* photos the store could not keep — fine now, gone after a reload */
-    const unsaved = window.PrintImg && window.PrintImg.unsaved ? window.PrintImg.unsaved() : [];
+    const unsaved = PrintImg && PrintImg.unsaved ? PrintImg.unsaved() : [];
     doc.elements.forEach(e=>{ if(e.type==='image' && e.imgId && unsaved.indexOf(e.imgId)>=0)
       items.push({ level:'err', kind:'img', ids:[e.id], text:'Image is in memory only — storage refused it, so it vanishes on reload. Export now, or free space and re-upload.' }); });
     return items;
@@ -1540,7 +1547,7 @@ function App({ boot }){
       <button className="ps-statx" onClick={()=>setStoreErr(null)} title="Dismiss">×</button></span>}
   </React.Fragment>);
 
-  const gridS = window.gridSpec(doc, dims);
+  const gridS = gridSpec(doc, dims);
   const h = hist.current;
 
   /* Ctrl-K. The palette searches every inspector label the Fold index has
@@ -1648,5 +1655,8 @@ function App({ boot }){
     </div>
   );
 }
+
+// For main.jsx's test hooks (scripts/test-studios renders the photo inspector).
+export { ImageControls, IMG_TREATS, IMG_TREAT_PRESETS };
 
 ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);

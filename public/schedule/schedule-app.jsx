@@ -10,10 +10,37 @@ const { CHANNELS:A_CH, channelById:a_ch, computeCapacity:a_cap, PartCanvas:APart
         todayIso:a_today,
         eventsOn:a_eventsOn, dayInfo:a_dayInfo, blankEvent:a_blank, suid:a_uid,
         parseQuickLine:a_quick, parsePasteBlock:a_paste, parseCSV:a_csv, serializeCSV:a_serCSV,
-        buildDocFromFeed:a_buildFeed, mergeFeedIntoDoc:a_mergeFeed,
+        buildDocFromFeed:a_buildFeed, mergeFeedIntoDoc:a_mergeFeed, applyFeedToDoc:a_applyFeed, feedWindow:a_feedWindow,
+        deleteEventFromDoc:a_delEvent, restoreFeedEvent:a_restoreFeed, clearRangeOccurrences:a_clearRange,
+        cloneToNextPeriod:a_cloneNext, thisMonday:a_thisMonday,
         normalizeDoc:a_norm, newDoc:a_new, starterDoc:a_starter, loadStoredDoc:a_load, storeDoc:a_store } = window;
 
 const CAP_COL = { ok:'#3d3526', tight:'#fdb515', over:'#ed2224' };
+const HIST_MAX = 60;        /* undo steps kept */
+const HIST_QUIET_MS = 500;  /* edits closer together than this are one step — a typed title is one undo, not twelve */
+
+/* Fetch + build the feed rows for a range. The ONE path every pull takes — the
+   auto-pull on open, the re-pull when the range moves, and the Import dialog's
+   button — so they can't drift into three different merges again. Fetches the
+   range plus two weeks (feedWindow) because the weekly inference needs to see
+   next week. Throws on an unreachable feed so the caller can say so. */
+async function fetchFeedRows(range){
+  if(!window.RCloud || !window.RCloud.fetchFeed) throw new Error('Cloud client unavailable.');
+  const w = a_feedWindow(range);
+  const fd = await window.RCloud.fetchFeed({ from:w.from, to:w.to });
+  if(!fd || !Array.isArray(fd.events)) throw new Error('The REALITY feed could not be reached.');
+  const built = a_buildFeed(fd, { locations:A_LOCS, range, makeId:a_uid });
+  return { rows:built.events, errors:built.errors, total:fd.events.length };
+}
+
+/* Deleting a weekly series takes every week with it — ask first. One-offs go
+   without a prompt: undo is one keystroke away. */
+function confirmDelete(ev){
+  if(!ev || ev.repeat!=='weekly') return true;
+  return window.confirm('Delete the whole weekly series "'+ev.title+'"? It disappears from EVERY week, not just this one.'
+    + (ev.notionId ? '\n\nIt comes from the REALITY app, so it will stay hidden from future syncs until you restore it (Document → Hidden from app sync).' : '')
+    + '\n\nTo drop a single week, use "Skip the week" instead. Ctrl+Z undoes either way.');
+}
 
 function dl(href, name){ const a=document.createElement('a'); a.href=href; a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
 function dlBlob(blob, name){ const u=URL.createObjectURL(blob); dl(u, name); setTimeout(()=>URL.revokeObjectURL(u), 4000); }
@@ -75,7 +102,7 @@ function SChips({ label, options, value, onChange, multi }){
 }
 
 /* ---------- day strip — the range slider ---------- */
-function DayStrip({ doc, setDoc, capacity, selDate, onPickDate }){
+function DayStrip({ doc, setDoc, capacity, selDate, onPickDate, feedStat, onRetryFeed }){
   const dates = a_dates(doc.range);
   const stripRef = React.useRef(null);
 
@@ -135,7 +162,19 @@ function DayStrip({ doc, setDoc, capacity, selDate, onPickDate }){
       <div className="ss-grip" title="Drag to add / remove days at the end" onPointerDown={e=>gripDrag(e,'R')} />
       <button className="ss-iconbtn" title="Forward one day" onClick={()=>setRange(a_dAdd(doc.range.start,1), doc.range.days)}>›</button>
       <button className="ss-iconbtn" title="Forward one week" onClick={()=>setRange(a_dAdd(doc.range.start,7), doc.range.days)}>»</button>
+      <button className="ss-iconbtn" disabled={doc.range.start===a_thisMonday()}
+        title="Jump to the current week (Mon–Sun, Đà Nẵng time)"
+        onClick={()=>setRange(a_thisMonday(), doc.range.days)}>This week</button>
       <span className="ss-striplab">{doc.range.days} day{doc.range.days===1?'':'s'} · click a gap to split the carousel</span>
+      {/* App-feed status. Every range change re-pulls; a failure is said out loud
+          here (never a modal — the week you already have stays fully editable). */}
+      {feedStat && feedStat.state==='loading' && <span className="ss-feedstat">Pulling the app feed…</span>}
+      {feedStat && feedStat.state==='empty' && <span className="ss-feedstat">No app events in this range</span>}
+      {feedStat && feedStat.state==='error' &&
+        <span className="ss-feedstat err" role="status">
+          Couldn’t reach the REALITY feed — app events may be out of date.
+          <button className="ss-iconbtn" onClick={onRetryFeed}>Retry</button>
+        </span>}
     </div>
   );
 }
@@ -230,7 +269,7 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate, 
 }
 
 /* ---------- inspector ---------- */
-function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSize, resetSizes, dailyVariant, coverInfo, dailyInfo }){
+function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSize, resetSizes, dailyVariant, coverInfo, dailyInfo, requestPull }){
   function update(patch){
     setDoc(d=>Object.assign({}, d, { events:d.events.map(e=>e.id===sel.id?Object.assign({},e,patch):e) }));
   }
@@ -246,11 +285,12 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
         <div className="ss-sech">Event</div>
         <div className="ss-actions">
           <button className="ss-iconbtn" onClick={()=>{
-            const c = Object.assign(JSON.parse(JSON.stringify(sel)), { id:a_uid(), exceptions:[], notionId:null });
+            const c = Object.assign(JSON.parse(JSON.stringify(sel)), { id:a_uid(), exceptions:[], notionId:null, seriesId:null });
             setDoc(d=>Object.assign({}, d, { events:d.events.concat([c]) })); setSelId(c.id);
           }}>Duplicate</button>
           <button className="ss-iconbtn ss-del" onClick={()=>{
-            setDoc(d=>Object.assign({}, d, { events:d.events.filter(e=>e.id!==sel.id) })); setSelId(null);
+            if(!confirmDelete(sel)) return;
+            setDoc(d=>a_delEvent(d, sel.id)); setSelId(null);
           }}>{sel.repeat==='weekly'?'Delete series':'Delete'}</button>
         </div>
         <SField label="Title" value={sel.title} onChange={v=>update({ title:v })} area />
@@ -317,7 +357,11 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
           );
         })()}
         <div className="ss-mini">Banner is the anniversary-party treatment — one per week reads loud.</div>
-        <div className="ss-mini" style={{ marginTop:8 }}>Click the row again, press Esc, or click the canvas to deselect. Delete / Backspace removes the event (when not typing in a field).</div>
+        {sel.notionId && <div className="ss-mini" style={{ marginTop:8 }}>
+          From the REALITY app — the title, time, place and flags follow the app on every sync.
+          Short title, emphasis, hide-on, end time and skipped weeks are yours and stick
+          {sel.seriesId ? ' to the whole series, week after week' : ''}.</div>}
+        <div className="ss-mini" style={{ marginTop:8 }}>Click the row again, press Esc, or click the canvas to deselect. Delete / Backspace removes the event (when not typing in a field); a weekly series asks first. Ctrl+Z undoes.</div>
       </React.Fragment>
     );
   }
@@ -468,26 +512,35 @@ function Inspector({ doc, setDoc, sel, setSelId, channelId, sizeInfo, setBaseSiz
       </div>
       <div className="ss-actions">
         <button className="ss-iconbtn" onClick={()=>{
-          if(confirm('Move onto the next period? One-off events shift forward '+doc.range.days+' days; weekly events carry over on their own.')){
-            setDoc(d=>a_norm(Object.assign({}, d, {
-              range:{ start:a_dAdd(d.range.start, d.range.days), days:d.range.days },
-              splits:d.splits.map(s=>a_dAdd(s, d.range.days)),
-              days:Object.keys(d.days).reduce((o,k)=>{ o[a_dAdd(k, d.range.days)] = d.days[k]; return o; }, {}),
-              /* weekly masters stay put — they already project into the new range; only one-offs shift */
-              events:d.events.filter(e=>e.repeat==='weekly').concat(
-                d.events.filter(e=>e.repeat!=='weekly')
-                  .map(e=>Object.assign({}, e, { id:a_uid(), date:a_dAdd(e.date, d.range.days), notionId:null }))),
-            })));
+          if(confirm('Move onto the next period? One-off events you added here shift forward '+doc.range.days+' days; weekly events carry over on their own; the app’s events for the new dates arrive from the feed.')){
+            /* weekly masters stay put; synced one-offs don't clone (see cloneToNextPeriod) */
+            setDoc(d=>a_norm(a_cloneNext(d)));
           }
         }}>Clone → next {doc.range.days===7?'week':'period'}</button>
       </div>
       <div className="ss-actions">
         <button className="ss-iconbtn ss-del" onClick={()=>{
-          if(confirm('Start a blank schedule? The current one is kept in your last saved JSON only.')) {
-            setDoc(a_norm(a_new()));
+          if(confirm('Start a blank schedule on this week? Everything here is cleared (Ctrl+Z brings it back; Save JSON first if you want a copy). The app’s events are pulled in again.')) {
+            setDoc(a_norm(a_new(a_thisMonday()))); setSelId(null);
+            if(requestPull) requestPull();
           }
         }}>New blank</button>
       </div>
+      {(doc.feedDeleted||[]).length>0 &&
+        <React.Fragment>
+          <div className="ss-sech">Hidden from app sync</div>
+          <div className="ss-mini" style={{ marginBottom:6 }}>
+            App events you deleted here. They stay out of every pull until restored.</div>
+          {doc.feedDeleted.map(t=>(
+            <div key={t.key} className="ss-tomb">
+              <span className="tt">{t.weekly?'↻ ':''}{t.title}<small>{t.weekly?'whole series':a_dshort(t.date)}</small></span>
+              <button className="ss-iconbtn" onClick={()=>{
+                setDoc(d=>a_restoreFeed(d, t.key));
+                if(requestPull) requestPull();
+              }}>Restore</button>
+            </div>
+          ))}
+        </React.Fragment>}
       <div className="ss-mini">Select an event (left list or click it in the preview) to edit it here. The day strip up top moves the range and places carousel splits.</div>
     </React.Fragment>
   );
@@ -512,22 +565,32 @@ function ImportModal({ doc, setDoc, onClose }){
   }, [text, doc.range.start, doc.range.days, feed]);
 
   async function pullFromFeed(){
-    if(!window.RCloud){ setFeed({ events:[], errors:['Cloud client unavailable.'] }); return; }
     setFeed({ loading:true });
     try{
-      const dates = a_dates(doc.range);
-      const from = dates[0], to = dates[dates.length-1];
-      const fd = await window.RCloud.fetchFeed({ from, to });
-      if(!fd){ setFeed({ events:[], errors:['Feed not available yet.'] }); return; }
-      const built = a_buildFeed(fd, { locations:A_LOCS, range:doc.range, makeId:a_uid });
-      setFeed({ events:built.events, errors:built.errors });
-    }catch(e){ setFeed({ events:[], errors:['Could not load the feed.'] }); }
+      const r = await fetchFeedRows({ start:doc.range.start, days:doc.range.days });
+      setFeed({ events:r.rows, errors:r.errors });
+    }catch(e){ setFeed({ events:[], errors:[(e && e.message) || 'Could not load the feed.'] }); }
   }
 
   function run(){
     const dates = a_dates(doc.range);
     let evs = parsed.events, skipped = 0;
-    if(mode==='replace' && isCSV && !parsed.fromFeed && evs.length){
+    if(parsed.fromFeed){
+      /* Feed rows go through the SAME merge as the auto-pull — never a blind
+         append, which stacked a second copy of every event on each press.
+         Merge = sync (local rows kept, presentation kept, deletions honoured).
+         Replace = also clear this range's hand-made rows first; a local weekly
+         series skips these dates rather than projecting in beside the feed. */
+      const rows = evs;
+      setDoc(d=>{
+        const base = mode==='replace'
+          ? Object.assign({}, d, { events:a_clearRange(d.events, d.range, true) }) : d;
+        return a_applyFeed(base, rows).doc;
+      });
+      onClose(0);
+      return;
+    }
+    if(mode==='replace' && isCSV && evs.length){
       const ds = evs.map(e=>e.date).sort();
       const span = Math.round((window.dToDate(ds[ds.length-1]) - window.dToDate(ds[0]))/86400000) + 1;
       const range = { start:ds[0], days:Math.max(1, Math.min(10, span)) };
@@ -539,7 +602,9 @@ function ImportModal({ doc, setDoc, onClose }){
       skipped = parsed.events.length - evs.length;
       setDoc(d=>{
         const days = Object.assign({}, d.days, parsed.notes);
-        const events = (mode==='replace' ? d.events.filter(e=>dates.indexOf(e.date)<0) : d.events).concat(evs);
+        /* replace: clear what occurs in the range — weekly series skip these
+           dates instead of projecting in beside the pasted rows */
+        const events = (mode==='replace' ? a_clearRange(d.events, d.range, false) : d.events).concat(evs);
         return Object.assign({}, d, { events, days });
       });
     }
@@ -569,8 +634,11 @@ function ImportModal({ doc, setDoc, onClose }){
             onChange={e=>{ const f=e.target.files[0]; if(!f) return;
               const fr=new FileReader(); fr.onload=()=>{ setFeed(null); setText(String(fr.result)); }; fr.readAsText(f, 'utf-8'); e.target.value=''; }} />
         </div>
-        <SChips label="Mode" options={[{v:'merge',l:'Add to current'},{v:'replace',l:(isCSV&&!parsed.fromFeed)?'Replace (range follows the file)':'Replace range events'}]}
+        <SChips label="Mode" options={[{v:'merge',l:parsed.fromFeed?'Sync (keep my rows)':'Add to current'},{v:'replace',l:(isCSV&&!parsed.fromFeed)?'Replace (range follows the file)':(parsed.fromFeed?'Replace my rows in range':'Replace range events')}]}
           value={mode} onChange={setMode} />
+        {parsed.fromFeed && <div className="ss-mini">
+          Sync is what happens automatically on open and whenever the range moves — app events are
+          updated in place, never duplicated. Replace also clears the rows you added by hand in this range.</div>}
         <div className="ss-mini" style={{ margin:'8px 0' }}>
           {parsed.fromFeed
             ? <b>{parsed.events.length} event{parsed.events.length===1?'':'s'} from the feed{parsed.errors.length?' · '+parsed.errors.length+' problem'+(parsed.errors.length===1?'':'s'):''}</b>
@@ -590,7 +658,8 @@ function ImportModal({ doc, setDoc, onClose }){
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg, count, cloudUser, onCloudSignIn, onCloudSignOut }){
+function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg, count, cloudUser, onCloudSignIn, onCloudSignOut,
+                  canUndo, canRedo, onUndo, onRedo, saveFailed, requestPull }){
   const fileRef = React.useRef(null);
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   return (
@@ -599,6 +668,17 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
       <div className="ss-tgroup"><span className="gl">Range</span>
         <span className="ss-range">{a_rangeLabel(doc.range)}</span>
       </div>
+      <div className="ss-tgroup"><span className="gl">Edit</span>
+        <div className="ss-seg">
+          <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl/⌘+Z)">↶ Undo</button>
+          <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl/⌘+Shift+Z or Ctrl+Y)">↷ Redo</button>
+        </div>
+      </div>
+      {/* The autosave write failed (localStorage is shared with Poster + Print
+          Studio and caps at ~5MB). Stays up until a write lands again. */}
+      {saveFailed && <span className="ss-unsaved" role="alert"
+        title="The browser refused to save this schedule — its storage (shared with Poster + Print Studio) is full. Your edits live only in this tab: Save JSON now, then free space (e.g. delete old Poster Studio templates).">
+        NOT SAVED — storage full</span>}
       <div className="ss-tgroup"><span className="gl">Import</span>
         <div className="ss-seg">
           <button onClick={onImport}>Paste / CSV</button>
@@ -606,7 +686,7 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
         </div>
         <input ref={fileRef} type="file" accept=".json,application/json" style={{ display:'none' }}
           onChange={e=>{ const f=e.target.files[0]; if(!f) return;
-            const fr=new FileReader(); fr.onload=()=>{ try{ setDoc(a_norm(JSON.parse(String(fr.result)))); }catch(err){ alert('Not a schedule JSON file.'); } };
+            const fr=new FileReader(); fr.onload=()=>{ try{ setDoc(a_norm(JSON.parse(String(fr.result)))); if(requestPull) requestPull(); }catch(err){ alert('Not a schedule JSON file.'); } };
             fr.readAsText(f, 'utf-8'); e.target.value=''; }} />
       </div>
       <div className="spacer" />
@@ -636,9 +716,30 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
 
 /* ---------- app ---------- */
 function App(){
-  const [doc, setDocRaw] = React.useState(a_load);
+  /* First run (nothing stored) opens a blank document on the CURRENT week and
+     lets the feed pull fill it. The June stress-test week is a dev fixture now:
+     ?seed=stress loads it on purpose. */
+  const [doc, setDocRaw] = React.useState(()=>{
+    try{ if(new URLSearchParams(window.location.search).get('seed')==='stress') return a_norm(a_starter()); }catch(e){}
+    return a_load() || a_norm(a_new(a_thisMonday()));
+  });
+  /* Two ways to change the document:
+     setDoc      — a real edit by the user: stamps savedAt (what cloud sync
+                   compares), marks the doc dirty (only a dirty doc is ever
+                   pushed), and lands in the undo history.
+     setDocQuiet — the machine: a feed merge or a cloud load. No stamp, not
+                   dirty, not an undo step (the history just re-bases on it). */
+  const dirtyRef = React.useRef(false);
+  const hist = React.useRef({ past:[], future:[], prev:null, pending:null, timer:null, skip:false });
   const setDoc = React.useCallback(fn=>setDocRaw(d=>{
     const next = typeof fn==='function' ? fn(d) : fn;
+    if(next===d) return d;
+    dirtyRef.current = true;
+    return Object.assign({}, next, { savedAt:Date.now() });
+  }), []);
+  const setDocQuiet = React.useCallback(fn=>setDocRaw(d=>{
+    const next = typeof fn==='function' ? fn(d) : fn;
+    if(next!==d) hist.current.skip = true;
     return next;
   }), []);
   const [selId, setSelId] = React.useState(null);
@@ -657,78 +758,159 @@ function App(){
   const stageRef = React.useRef(null);
   const canvasRef = React.useRef(null);
   const exportRef = React.useRef(null);
+  const docRef = React.useRef(doc); docRef.current = doc;
+  /* bump to re-pull the feed without the range moving (see the pull effect) */
+  const [pullNonce, setPullNonce] = React.useState(0);
+  const requestPull = React.useCallback(()=>setPullNonce(n=>n+1), []);
 
-  React.useEffect(()=>{ a_store(doc); }, [doc]);
+  /* autosave — and SAY when it didn't land (see storeDoc) */
+  const [saveFailed, setSaveFailed] = React.useState(false);
+  React.useEffect(()=>{ setSaveFailed(!a_store(doc)); }, [doc]);
+
+  /* ---- undo / redo — modelled on Print Studio's: one entry per quiet burst of
+     edits (HIST_QUIET_MS), HIST_MAX deep. Quiet (machine) changes re-base the
+     baseline instead of becoming steps, so undo never "undoes a sync". ---- */
+  const [histVer, setHistVer] = React.useState(0);
+  React.useEffect(()=>{
+    const h = hist.current;
+    if(h.skip){ h.skip=false; h.prev=doc; return; }
+    if(h.prev==null){ h.prev=doc; return; }
+    if(h.pending==null) h.pending=h.prev;
+    h.prev=doc;
+    clearTimeout(h.timer);
+    h.timer=setTimeout(()=>{
+      h.past.push(h.pending); if(h.past.length>HIST_MAX) h.past.shift();
+      h.future=[]; h.pending=null; setHistVer(v=>v+1);
+    }, HIST_QUIET_MS);
+  }, [doc]);
+  /* A snapshot taken before the latest feed pull landed still holds the older
+     feed rows; lay that same pull over it (pure, no network) so undo restores
+     YOUR edit, not last pull's data. Only for the same range — a different
+     range re-pulls on its own once restored. */
+  const lastFeedRef = React.useRef(null);
+  const rebase = React.useCallback(snap=>{
+    const lf = lastFeedRef.current;
+    if(!lf || lf.range.start!==snap.range.start || lf.range.days!==snap.range.days) return snap;
+    return a_applyFeed(snap, lf.rows).doc;
+  }, []);
+  const restore = React.useCallback(snap=>{
+    hist.current.skip = true; dirtyRef.current = true;
+    const next = Object.assign({}, rebase(snap), { savedAt:Date.now() });
+    setDocRaw(next); setHistVer(v=>v+1);
+    setSelId(id=>next.events.some(e=>e.id===id) ? id : null);
+  }, [rebase]);
+  const undo = React.useCallback(()=>{
+    const h = hist.current;
+    clearTimeout(h.timer);
+    if(h.pending!=null){ h.past.push(h.pending); h.pending=null; h.future=[]; }
+    const prev = h.past.pop(); if(!prev) return;
+    h.future.push(docRef.current);
+    restore(prev);
+  }, [restore]);
+  const redo = React.useCallback(()=>{
+    const h = hist.current;
+    const nxt = h.future.pop(); if(!nxt) return;
+    h.past.push(docRef.current);
+    restore(nxt);
+  }, [restore]);
 
   /* ---- WP9 cloud sync (best-effort; localStorage stays the source of truth) ----
-     Debounced (~2s) push of the working doc to studio_documents (schedule/working)
-     beside the localStorage autosave above. On sign-in, a newer-in-cloud working
-     doc triggers a one-line confirm before replacing. Every RCloud call no-ops
-     when signed-out / hub dormant, so local-only behaviour is unchanged. ---- */
+     Debounced (~2s) push of the working doc to studio_documents (schedule/working).
+     Two rules keep one device from flattening another's newer work:
+       1. nothing is pushed until the sign-in pull + compare has FINISHED, and
+          then only after a real edit made here (dirtyRef) — opening a stale
+          laptop no longer uploads its stale copy two seconds after load;
+       2. the compare is savedAt vs savedAt (when each copy was last EDITED),
+          not "newer than this session started". A newer cloud copy is offered,
+          never applied or overwritten silently.
+     Every RCloud call no-ops when signed-out / hub dormant, so local-only
+     behaviour is unchanged. ---- */
   const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
-  const docRef = React.useRef(doc); docRef.current = doc;
-  const sessionStartRef = React.useRef(Date.now());
+  const [cloudReady, setCloudReady] = React.useState(false);
   const cloudPushRef = React.useRef(null);
   React.useEffect(()=>{
-    if(!cloudUser || !window.RCloud) return;
+    if(!cloudUser || !window.RCloud || !cloudReady || !dirtyRef.current) return;
     if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
     cloudPushRef.current = setTimeout(()=>{
-      try{ window.RCloud.putDoc('schedule','working', (docRef.current.header&&docRef.current.header.title)||'', docRef.current, Date.now()); }catch(e){}
+      const d = docRef.current;
+      dirtyRef.current = false;   /* an edit during the upload sets it again */
+      Promise.resolve(window.RCloud.putDoc('schedule','working', (d.header&&d.header.title)||'', d, d.savedAt||Date.now()))
+        .then(ok=>{ if(!ok) dirtyRef.current = true; })
+        .catch(()=>{ dirtyRef.current = true; });
     }, 2000);
     return ()=>{ if(cloudPushRef.current) clearTimeout(cloudPushRef.current); };
-  }, [doc, cloudUser]);
-  const cloudPullDoneRef = React.useRef(false);
+  }, [doc, cloudUser, cloudReady]);
   React.useEffect(()=>{
-    if(!cloudUser || !window.RCloud || cloudPullDoneRef.current) return;
-    cloudPullDoneRef.current = true;
+    setCloudReady(false);
+    if(!cloudUser || !window.RCloud) return;
     let live = true;
     (async()=>{
       try{
         const remote = await window.RCloud.getDoc('schedule','working');
         if(!live || !remote) return;
-        const remoteAt = typeof remote.updatedAt==='number' ? remote.updatedAt : Date.parse(remote.updatedAt||'')||0;
         let remoteDoc = remote.json;
         if(typeof remoteDoc==='string'){ try{ remoteDoc = JSON.parse(remoteDoc); }catch(e){ remoteDoc=null; } }
-        if(remoteDoc && remoteDoc.events && remoteAt > sessionStartRef.current){
-          if(window.confirm('A newer Schedule Studio working draft was found in the cloud. Load it? (Replaces what’s on screen.)')){
-            setDoc(a_norm(remoteDoc)); setSelId(null);
-          }
+        if(!remoteDoc || !remoteDoc.events) return;
+        const remoteAt = +remoteDoc.savedAt
+          || (typeof remote.updatedAt==='number' ? remote.updatedAt : Date.parse(remote.updatedAt||'')||0);
+        const local = docRef.current, localAt = +local.savedAt || 0;
+        const same = JSON.stringify(Object.assign({}, remoteDoc, { savedAt:0 })) === JSON.stringify(Object.assign({}, local, { savedAt:0 }));
+        if(same || remoteAt <= localAt) return;
+        const when = new Date(remoteAt).toLocaleString();
+        if(window.confirm('The cloud has a newer Schedule Studio draft (last edited '+when+', '+a_rangeLabel(a_norm(remoteDoc).range)+').\n\nLoad it? This replaces what’s on screen — Ctrl+Z brings this copy back.\n\nCancel keeps this copy; the cloud draft is only overwritten once you edit here.')){
+          /* an undo step of its own, so a wrong click is one Ctrl+Z */
+          const h = hist.current; h.past.push(local); h.future = [];
+          if(h.past.length>HIST_MAX) h.past.shift();
+          dirtyRef.current = false;
+          setDocQuiet(a_norm(remoteDoc)); setSelId(null); setHistVer(v=>v+1);
+          setPullNonce(n=>n+1);
         }
       }catch(e){ /* local-only on any failure */ }
+      finally{ if(live) setCloudReady(true); }
     })();
     return ()=>{ live=false; };
   }, [cloudUser]);
 
-  /* WP9 delta — automatic App→Schedule sync. On open, pull the published Events
-     Feed for the current range and idempotently merge it in (adds/updates only;
-     preserves local presentation + purely-local rows; never accumulates). The feed
-     is a PUBLIC read, so this needs no sign-in. Best-effort: any failure or an
-     empty feed leaves the doc untouched (no silent deletes). */
+  /* WP9 delta — automatic App→Schedule sync. Pull the published Events Feed for
+     the range and idempotently merge it in (mergeFeedIntoDoc: replaces synced
+     rows, keeps local rows + your presentation, honours deletions, never
+     accumulates). Runs on open AND whenever the range moves (debounced, so
+     clicking » three times is one fetch), and on demand (requestPull — Retry,
+     New blank, Open JSON, a restored deletion). The feed is a PUBLIC read, so
+     this needs no sign-in. A failure leaves the doc untouched and says so in the
+     day strip with a Retry; an empty feed is never allowed to wipe the week. */
   const [syncNote, setSyncNote] = React.useState(null);
-  const feedPullDoneRef = React.useRef(false);
+  const [feedStat, setFeedStat] = React.useState(null);   // null | { state:'loading'|'ok'|'empty'|'error' }
+  const pullSeqRef = React.useRef(0);
+  const firstPullRef = React.useRef(true);
   React.useEffect(()=>{
-    if(!window.RCloud || !window.RCloud.fetchFeed || feedPullDoneRef.current) return;
-    feedPullDoneRef.current = true;
-    let live = true;
-    (async()=>{
+    if(!window.RCloud || !window.RCloud.fetchFeed) return;
+    const range = { start:doc.range.start, days:doc.range.days };
+    const seq = ++pullSeqRef.current;
+    const wait = firstPullRef.current ? 0 : 450;
+    firstPullRef.current = false;
+    const t = setTimeout(async ()=>{
+      setFeedStat({ state:'loading' });
       try{
-        const base = docRef.current;
-        const ds = a_dates(base.range);
-        const fd = await window.RCloud.fetchFeed({ from: ds[0], to: ds[ds.length-1] });
-        if(!live || !fd || !Array.isArray(fd.events) || !fd.events.length) return;   // empty/failed → no-op
-        const built = a_buildFeed(fd, { locations:A_LOCS, range:base.range, makeId:a_uid });
-        if(!live || !built || !built.events.length) return;
-        const res = a_mergeFeed(docRef.current.events, built.events);
-        if(!live || !res.changed) return;
+        const r = await fetchFeedRows(range);
+        if(seq!==pullSeqRef.current) return;                    // the range moved on — a newer pull owns it
+        if(!r.total){ setFeedStat({ state:'empty' }); return; }  // empty → no-op (no silent deletes)
+        lastFeedRef.current = { range, rows:r.rows };
+        const res = a_applyFeed(docRef.current, r.rows).res;
+        setFeedStat({ state:'ok', at:Date.now() });
+        if(!res.changed) return;
         // re-merge inside the functional update so it composes with the latest doc
-        setDoc(d=>a_norm(Object.assign({}, d, { events:a_mergeFeed(d.events, built.events).events })));
+        setDocQuiet(d=>(d.range.start===range.start && d.range.days===range.days) ? a_applyFeed(d, r.rows).doc : d);
         const n = res.added + res.updated;
         setSyncNote(n ? ('Synced from the app · '+n+' new/updated') : 'Synced from the app');
-        setTimeout(()=>{ if(live) setSyncNote(null); }, 6000);
-      }catch(e){ /* local-only on any failure */ }
-    })();
-    return ()=>{ live = false; };
-  }, []);   // once, on open
+        setTimeout(()=>setSyncNote(null), 6000);
+      }catch(e){
+        if(seq===pullSeqRef.current) setFeedStat({ state:'error' });
+        console.info('[Schedule] feed pull failed', e && e.message);
+      }
+    }, wait);
+    return ()=>{ clearTimeout(t); };
+  }, [doc.range.start, doc.range.days, pullNonce]);
 
   async function cloudSignIn(){
     try{ if(!window.RCloud) return; const t = await window.RCloud.signIn(); setCloudUser(t ? (window.RCloud.currentEmail()||'signed in') : null); }catch(e){}
@@ -786,13 +968,18 @@ function App(){
     return ()=>{ ro.disconnect(); window.removeEventListener('resize', recompute); };
   }, [size.w, size.h]);
 
-  /* Keyboard: Delete/Backspace removes the selected event (not while typing);
-     Esc deselects — from a field it first drops focus, pressed again it deselects. */
+  /* Keyboard: Ctrl/⌘+Z undo · Ctrl/⌘+Shift+Z or Ctrl+Y redo · Delete/Backspace
+     removes the selected event (a weekly series asks first) · Esc deselects —
+     from a field it first drops focus, pressed again it deselects. None of it
+     fires while typing in a field: there, Ctrl+Z is the field's own undo. */
   const selRef = React.useRef(selId); selRef.current = selId;
   React.useEffect(()=>{
     function onKey(e){
       const ae = document.activeElement;
-      const typing = ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.isContentEditable);
+      const typing = ae && (ae.tagName==='INPUT' || ae.tagName==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable);
+      const mod = e.ctrlKey || e.metaKey;
+      if(mod && (e.key==='z' || e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+      if(mod && (e.key==='y' || e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
       if(e.key==='Escape'){
         if(typing){ ae.blur(); return; }
         if(selRef.current) setSelId(null);
@@ -802,12 +989,16 @@ function App(){
       const id = selRef.current; if(!id) return;
       if(typing) return;
       e.preventDefault();
-      setDocRaw(d=>Object.assign({}, d, { events:d.events.filter(ev=>ev.id!==id) }));
+      const ev = docRef.current.events.filter(x=>x.id===id)[0];
+      if(!confirmDelete(ev)) return;
+      setDoc(d=>a_delEvent(d, id));
       setSelId(null);
     }
     window.addEventListener('keydown', onKey);
     return ()=>window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [undo, redo]);
+  const h = hist.current;
+  const canUndo = h.past.length>0 || h.pending!=null, canRedo = h.future.length>0;
 
   /* capacity message for the bar under the stage */
   const capMsg = (()=>{
@@ -1012,8 +1203,10 @@ function App(){
         letterSpacing:'.04em', padding:'7px 14px', borderRadius:999, boxShadow:'0 8px 24px rgba(0,0,0,.35)', pointerEvents:'none' }}>{syncNote}</div>}
       <Topbar doc={doc} setDoc={setDoc} count={doc.events.length}
         onImport={()=>setImportOpen(true)} onExport={doExport} exporting={exporting} exportMsg={exportMsg} hubMsg={hubMsg}
-        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} />
+        cloudUser={cloudUser} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut}
+        canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} saveFailed={saveFailed} requestPull={requestPull} />
       <DayStrip doc={doc} setDoc={setDoc} capacity={capacity} selDate={selDate}
+        feedStat={feedStat} onRetryFeed={requestPull}
         onPickDate={d=>{ setSelDate(d); if(channelId==='daily') setDailyDate(d); }} />
       <div className="ss-body">
         <DayList doc={doc} setDoc={setDoc} selId={selId} setSelId={setSelId}
@@ -1080,7 +1273,7 @@ function App(){
           </div>
           <Inspector doc={doc} setDoc={setDoc} sel={sel} setSelId={setSelId} channelId={channelId}
             sizeInfo={sizeInfo} setBaseSize={setBaseSize} resetSizes={resetSizes}
-            dailyVariant={dailyVariant} coverInfo={coverInfo} dailyInfo={dailyInfo} />
+            dailyVariant={dailyVariant} coverInfo={coverInfo} dailyInfo={dailyInfo} requestPull={requestPull} />
         </div>
       </div>
       {importOpen && <ImportModal doc={doc} setDoc={setDoc}

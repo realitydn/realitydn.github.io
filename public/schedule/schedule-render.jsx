@@ -1734,9 +1734,14 @@ function DailySpine({ doc, date, variant }){
    chip, the card gains colour as it fills rather than losing it, and a
    ten-event day is the best-looking one instead of the worst. */
 const DAILY_OPEN_MIN = 11*60, DAILY_CLOSE_MIN = 26*60;   /* 11:00 → 02:00 */
+/* The axis runs past midnight, so an after-midnight start is read as 24:xx+
+   (the same night rollover as timeKey in schedule-data) — otherwise a 00:30
+   set clamps to 11:00 and plots at the top of the day it closes. */
 function dailyMinutes(hhmm){
   const p = /^(\d{1,2}):(\d{2})$/.exec(hhmm||'');
-  return p ? (+p[1])*60 + (+p[2]) : DAILY_OPEN_MIN;
+  if(!p) return DAILY_OPEN_MIN;
+  const h = +p[1];
+  return (h < 6 ? h+24 : h)*60 + (+p[2]);
 }
 function DailyChrono({ doc, date, variant }){
   const story = (variant||'story')==='story';

@@ -66,6 +66,20 @@ body{ background:#0e0c09; overflow:hidden; }
   background:repeating-linear-gradient(90deg,#3a2f1f 0 2px, transparent 2px 5px); }
 .ss-grip:hover{ background:repeating-linear-gradient(90deg,#6f6553 0 2px, transparent 2px 5px); }
 .ss-striplab{ font-size:11px; color:#6f6553; margin-left:8px; }
+/* app-feed status — a line in the strip, never a modal: the week stays editable */
+.ss-feedstat{ display:inline-flex; align-items:center; gap:8px; margin-left:auto; font-size:11px; color:#8a7f6c; white-space:nowrap; }
+.ss-feedstat.err{ color:#ed7a82; padding:3px 4px 3px 10px; border:1px solid #5a2326; border-radius:7px; background:#1e0f10; }
+.ss-feedstat .ss-iconbtn{ padding:5px 10px; }
+
+/* autosave failed — loud on purpose */
+.ss-unsaved{ font-family:var(--ss-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:10px;
+  color:#fff; background:#ed2224; padding:6px 10px; border-radius:6px; cursor:help; white-space:nowrap; }
+
+/* tombstones — deleted app events, restorable (inspector, Document) */
+.ss-tomb{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.ss-tomb .tt{ flex:1; min-width:0; font-size:11.5px; color:#cbc1ad; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-tomb .tt small{ margin-left:6px; color:#6f6553; font-size:10px; }
+.ss-tomb .ss-iconbtn{ padding:6px 10px; }
 
 /* ---- BODY ---- */
 .ss-body{ display:grid; grid-template-columns:284px 1fr 300px; grid-template-rows:minmax(0,1fr); min-height:0; }

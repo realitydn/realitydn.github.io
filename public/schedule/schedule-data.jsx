@@ -51,14 +51,18 @@ function dShort(iso){ const d = dToDate(iso); return d.getUTCDate() + '.' + (d.g
 function dShortYr(iso){ const d = dToDate(iso); return d.getUTCDate() + '.' + (d.getUTCMonth()+1) + '.' + String(d.getUTCFullYear()).slice(2); }
 function rangeDates(range){ const out=[]; for(let i=0;i<range.days;i++) out.push(dAdd(range.start,i)); return out; }
 function rangeLabel(range){ const end = dAdd(range.start, range.days-1); return dShortYr(range.start) + ' - ' + dShortYr(end); }
-/* Today's LOCAL calendar date. Routed through NOON UTC of the local Y/M/D rather
-   than a bare toISOString(): in ICT (UTC+7) the naive version returns YESTERDAY
-   between midnight and 07:00 — which is exactly when someone finishing next
-   week's schedule is most likely to be sitting here. */
-function todayIso(){ const t = new Date();
-  return dToISO(new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate(),12))); }
-function nextMonday(){ const iso = todayIso();
-  const w = dWeekday(iso); return dAdd(iso, w===1 ? 7 : 8-w); }
+/* Today's date AT THE VENUE — Asia/Ho_Chi_Minh, whatever timezone the laptop
+   happens to be in. The venue is UTC+7 with no DST, so shifting the epoch by a
+   fixed 7h and reading the UTC date is exact (the same pin ictDate uses for the
+   feed). The old browser-local version was right in Đà Nẵng and wrong on a
+   laptop still set to home time — "this week" landed on the wrong Monday and
+   the Backstage push skipped a day that hadn't happened yet. `now` (epoch ms)
+   is for the self-test. */
+function todayIso(now){
+  return new Date((now==null ? Date.now() : now) + 7*3600*1000).toISOString().slice(0,10); }
+/* The Monday that opens the venue's current week (Mon–Sun). */
+function thisMonday(now){ const iso = todayIso(now); return dAdd(iso, 1 - dWeekday(iso)); }
+function nextMonday(now){ return dAdd(thisMonday(now), 7); }
 
 let _sid = 1;
 function suid(){ return 'ev' + (_sid++) + '_' + Math.random().toString(36).slice(2,7); }
@@ -67,12 +71,14 @@ function suid(){ return 'ev' + (_sid++) + '_' + Math.random().toString(36).slice
 function blankEvent(date){
   return { id:suid(), date, start:'19:00', end:null, title:'New event', titleShort:null,
            locations:[], flags:{ prereg:false, fee:false }, emphasis:'none', hide:[],
-           repeat:null, repeatUntil:null, exceptions:[], notionId:null };
+           repeat:null, repeatUntil:null, exceptions:[], notionId:null, seriesId:null };
 }
+/* startIso defaults to THIS week's Monday: the tool opens on the week that is
+   actually happening, and the feed pull fills it (spec §4). */
 function newDoc(startIso){
   return {
     version:2,
-    range:{ start:startIso || nextMonday(), days:7 },
+    range:{ start:startIso || thisMonday(), days:7 },
     header:{ title:'PUBLIC EVENTS' },
     days:{},
     events:[],
@@ -87,10 +93,21 @@ function newDoc(startIso){
        choice for the whole document, because a week of cards posted a morning
        at a time has to look like one week. */
     daily:{ story:0, feed:0, card:'classic' },
+    /* App-sync memory (see mergeFeedIntoDoc). feedPrefs: the presentation you
+       gave a synced event — short title, emphasis, hidden channels, end time,
+       skipped weeks — keyed by series ('s:'+seriesId) or, for a one-off, by
+       occurrence ('e:'+feed id), so it survives the row being swapped for next
+       week's copy. feedDeleted: tombstones for synced events you deleted here,
+       so the next pull doesn't quietly put them back. */
+    feedPrefs:{},
+    feedDeleted:[],
+    savedAt:0,   /* epoch ms of the last real edit — what cloud sync compares */
   };
 }
 
-/* Real week of 8.6.26 — the seed document and the 30-event stress test. */
+/* Real week of 8.6.26 — the 30-event stress test. DEV ONLY: no longer the
+   first-run document (a new install opens on the current week and pulls the
+   feed). Load it on purpose with ?seed=stress. */
 function starterDoc(){
   const doc = newDoc('2026-06-08');
   doc.splits = ['2026-06-11'];
@@ -158,11 +175,23 @@ function normalizeDoc(d){
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
     { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[],
       repeat:ev.repeat==='weekly'?'weekly':null, exceptions:(ev.exceptions||[]).slice() }));
+  doc.feedPrefs = (d && d.feedPrefs && typeof d.feedPrefs==='object') ? d.feedPrefs : {};
+  doc.feedDeleted = (d && Array.isArray(d.feedDeleted)) ? d.feedDeleted : [];
+  doc.savedAt = (d && +d.savedAt) || 0;
   return doc;
 }
 
 /* ---- selectors ---- */
-function timeKey(t){ const m = /^(\d{1,2}):(\d{2})$/.exec(t||''); return m ? (+m[1])*60+(+m[2]) : 0; }
+/* A day here is the venue's NIGHT, not the calendar's: the bar runs past
+   midnight, and the daily chrono card already draws the day as 11:00 → 02:00.
+   So a start before 06:00 is the tail of that night — it sorts AFTER the late
+   evening instead of floating to the top of the list. (The feed mapping below
+   files such an event under the previous date for the same reason.) */
+const NIGHT_ROLLOVER_H = 6;
+function timeKey(t){ const m = /^(\d{1,2}):(\d{2})$/.exec(t||'');
+  if(!m) return 0;
+  const h = +m[1];
+  return (h < NIGHT_ROLLOVER_H ? h+24 : h)*60 + (+m[2]); }
 /* A weekly event is stored once (its `date` is the anchor = first occurrence) and
    *projected* onto every later matching weekday at read time — so it shows up forever,
    across every navigated week, with no copies stored. `exceptions` skip single weeks.
@@ -349,19 +378,42 @@ function serializeCSV(doc){
    Pure mapping (no globals required for the core, no network) so it's
    node-testable. Each feed instance → a blankEvent()-shaped row. The hub feed
    already delivers FLAT concrete instances, so we never re-generate recurrence
-   here — `repeat:'weekly'` is set only as an editor hint when a weekly tag or
-   seriesId is present; the anchor `date` is the instance date.
+   here; the anchor `date` is the instance date.
+
+   WEEKLY IS INFERRED, NOT ASSUMED. The feed (v1, checked 23.09.26) has no
+   recurrence field and nobody tags 'weekly' — but 86 of 94 instances carry a
+   seriesId, including one-off workshops and series that skip weeks. So a row
+   is weekly only when its series really does come back: an instance of the
+   same series at the same start exactly 7 days later, somewhere in the
+   fetched window (feedWindow() fetches two weeks past the range for this).
+   A 'weekly' tag still forces it. And when that next instance is itself in
+   the range, it gets its own row and this one stays a one-off — only the
+   LAST in-range instance of a series projects forward, so a 10-day range
+   never shows a series twice on one day.
 
    Time mapping pins the venue TZ (+07:00; Đà Nẵng has no DST): the feed's ISO
    carries the offset, so we read the local wall HH:MM from the +07:00 form.
+   A start before 06:00 is filed under the PREVIOUS date — it is the tail of
+   that night (see timeKey).
+
+   Only `status: 'published'` instances map. The public feed only serves
+   published events today (94/94 on 23.09.26), so this is a guard, not a filter
+   — if a draft or cancelled instance ever leaks, it must not reach a poster.
 
    `opts`:
      locations : LOCATIONS registry (defaults to the module LOCATIONS)
      range     : { start, days } — events outside the range are dropped
-                 (mirrors ImportModal's range-clamp)
+                 (mirrors ImportModal's range-clamp); the rest of the list
+                 still informs the weekly inference
      makeId    : () => id  (defaults to suid(); pass a stub in tests)
    Returns { events:[...], errors:[...] }.
    ------------------------------------------------------------ */
+/* The window to fetch for a range: the range itself plus the two weeks after
+   it (the weekly inference needs to see next week), plus a day for a Sunday
+   night that runs past midnight. */
+function feedWindow(range){
+  return { from: range.start, to: dAdd(range.start, (range.days|0) - 1 + 15) };
+}
 function ictHHMM(iso){
   if(!iso || typeof iso!=='string') return null;
   const m = /T(\d{2}):(\d{2})/.exec(iso);
@@ -391,98 +443,248 @@ function buildDocFromFeed(feedOrEvents, opts){
     if(typeof rangeDates==='undefined') return true;
     return rangeDates(opts.range).indexOf(date)>=0;
   };
+  /* pass 1: wall date/time for every usable instance, and an index of
+     series|date|start so the weekly test below is a lookup */
+  const TITLE = ev=>ev.title_en || ev.title_vi || 'Untitled event';
+  const pre = [], seen = {};
   list.forEach(ev=>{
     try{
-      const date = ictDate(ev.startsAt);
+      if(!ev) return;
+      if(ev.status && ev.status!=='published') return;           // guard: drafts/cancelled never map
+      let date = ictDate(ev.startsAt);
       if(!date){ errors.push('Event "'+(ev.title_en||ev.id||'?')+'" has no usable start date'); return; }
-      if(!inRange(date)) return;                                 // silently skip out-of-range (caller clamps)
       const start = ictHHMM(ev.startsAt) || '19:00';
+      if(+start.slice(0,2) < 6) date = dAdd(date, -1);            // after midnight → that night
+      const tags = Array.isArray(ev.tags) ? ev.tags.map(t=>String(t).toLowerCase()) : [];
+      // a series is its seriesId; a tagged-weekly event without one falls back to its title
+      const skey = ev.seriesId ? 's:'+ev.seriesId
+                 : (tags.indexOf('weekly')>=0 ? 't:'+TITLE(ev).trim().toLowerCase() : null);
+      if(skey) seen[skey+'|'+date+'|'+start] = 1;
+      pre.push({ ev, date, start, tags, skey });
+    }catch(e){ errors.push('Could not map a feed event: '+(e&&e.message)); }
+  });
+  pre.forEach(({ ev, date, start, tags, skey })=>{
+    try{
+      if(!inRange(date)) return;                                 // silently skip out-of-range (caller clamps)
       // End times are deliberately NOT synced from the app — the schedule rarely
       // shows them. `end` is user-owned here: set one by hand in the Inspector
       // and the merge below preserves it across re-syncs.
       const end = null;
-      const code = ev.location && ev.location.code ? String(ev.location.code).toUpperCase() : null;
-      const mapped = code && codeSet[code] ? codeSet[code] : null;
-      const tags = Array.isArray(ev.tags) ? ev.tags.map(t=>String(t).toLowerCase()) : [];
-      const weekly = tags.indexOf('weekly')>=0 || !!ev.seriesId;
+      // Locations: the full `locations` list when the feed gives one (Board Game
+      // Night takes all four floors; `location` only names the first), else the
+      // single `location`. Unknown codes drop; order follows the feed.
+      const raw = (Array.isArray(ev.locations) && ev.locations.length ? ev.locations : [ev.location])
+        .map(l=>l && l.code ? String(l.code).toUpperCase() : null);
+      const mapped = [];
+      raw.forEach(c=>{ if(c && codeSet[c] && mapped.indexOf(codeSet[c])<0) mapped.push(codeSet[c]); });
+      const next = dAdd(date, 7);
+      const recurs = !!skey && !!seen[skey+'|'+next+'|'+start];
+      const weekly = (tags.indexOf('weekly')>=0 || recurs) && !(recurs && inRange(next));
       // $ (fee) flag: a non-blank `cost` (e.g. "100k") auto-flags, OR an explicit `fee`
       // tag. `cost` is the app's source of truth for "costs money beyond a purchase"
       // (null/blank = free), so a priced event flags without a tag added by hand.
       const hasCost = ev.cost!=null && String(ev.cost).trim()!=='';
       events.push({
-        id: mk(), date, start, end, title: ev.title_en || ev.title_vi || 'Untitled event',
-        titleShort: null, locations: mapped ? [mapped] : [],
+        id: mk(), date, start, end, title: TITLE(ev),
+        titleShort: null, locations: mapped,
         // map the feed onto the schedule's flags/emphasis ($ = fee, * = prereg)
         flags:{ prereg: tags.indexOf('prereg')>=0, fee: hasCost || tags.indexOf('fee')>=0 },
         emphasis: tags.indexOf('featured')>=0 ? 'banner' : 'none', hide:[],
         repeat: weekly ? 'weekly' : null, repeatUntil:null, exceptions:[],
-        notionId: ev.id || null,                                 // feed event id → existing hook
+        notionId: ev.id || null,                                 // feed OCCURRENCE id (changes weekly)
+        seriesId: ev.seriesId || null,                           // stable across weeks — the merge keys on it
       });
     }catch(e){ errors.push('Could not map a feed event: '+(e&&e.message)); }
   });
   return { events, errors };
 }
 
-/* Idempotent App→Schedule merge for the auto-pull-on-open. The app is the source
-   of truth, so we REPLACE all feed-sourced rows (notionId set) with the freshly-
-   built feed rows, while (a) keeping purely-local rows (notionId == null), (b)
-   preserving the user's presentation layer (titleShort, non-default emphasis, hide,
-   repeatUntil) by notionId, and (c) collapsing weekly duplicates so weekly
-   projections don't stack. Never accumulates across opens; an event removed in the
-   app (or now out of range) simply drops. Returns { events, added, updated,
-   removed, changed }. Caller no-ops on an empty/failed feed before calling this. */
-function mergeFeedIntoDoc(existing, fresh){
+/* Idempotent App→Schedule merge — the one funnel for the auto-pull (on open and
+   on every range change) AND the Import dialog's "Pull from REALITY feed". The
+   app is the source of truth, so we REPLACE all feed-sourced rows (notionId
+   set) with the freshly-built feed rows for the range, while:
+   (a) keeping purely-local rows (notionId == null);
+   (b) carrying the user's presentation layer — titleShort, non-default
+       emphasis, hide, a hand-set end, repeatUntil, skipped weeks — through
+       `prefs` (doc.feedPrefs). Feed ids are per OCCURRENCE (a new UUID every
+       week), so prefs key on the series ('s:'+seriesId) and only fall back to
+       the occurrence ('e:'+id) for an event with no series. That is what makes
+       a short title set on this Monday's quiz still be there next Monday, and
+       what lets a one-off keep its styling after you navigate away and back.
+       A short title only carries to a DIFFERENT occurrence when the title is
+       the same — Film Club's "Roma (2018)" shortening must not land on next
+       week's different film;
+   (c) skipping tombstoned events (`deleted`, doc.feedDeleted) — an event you
+       deleted here stays deleted instead of coming back on the next pull;
+   (d) collapsing weekly duplicates so weekly projections don't stack, and
+       dropping local rows (one-offs AND local weekly series) that duplicate a
+       feed event on a date the feed covers — the synced copy wins.
+   Never accumulates across pulls; an event removed in the app simply drops.
+   Returns { events, prefs, added, updated, removed, dedup, hidden, changed }.
+   Caller no-ops on a failed/empty feed before calling this. */
+function feedPrefKey(e){
+  if(!e) return null;
+  if(e.seriesId) return 's:'+e.seriesId;
+  return e.notionId ? 'e:'+e.notionId : null;
+}
+function mergeFeedIntoDoc(existing, fresh, opts){
+  opts = opts || {};
+  const tomb = {}; (opts.deleted||[]).forEach(t=>{ if(t && t.key) tomb[t.key] = 1; });
   const seenWeekly = {}, rows = [];
+  let hidden = 0;
   (fresh||[]).forEach(e=>{
     if(!e) return;
+    if((e.notionId && tomb['e:'+e.notionId]) || (e.seriesId && tomb['s:'+e.seriesId])){ hidden++; return; }
     if(e.repeat==='weekly'){
-      const k = (e.title||'')+'|'+(e.start||'')+'|'+((e.locations||[]).join(','));
+      const k = e.seriesId ? 's:'+e.seriesId : (e.title||'')+'|'+(e.start||'')+'|'+((e.locations||[]).join(','));
       if(seenWeekly[k]) return; seenWeekly[k] = 1;
     }
     rows.push(e);
   });
-  const prevFeed = {}, local = [];
-  (existing||[]).forEach(e=>{ if(e && e.notionId) prevFeed[e.notionId] = e; else if(e) local.push(e); });
+  const prevFeed = {}, prevSeries = {}, local = [];
+  (existing||[]).forEach(e=>{
+    if(e && e.notionId){ prevFeed[e.notionId] = e; if(e.seriesId) prevSeries[e.seriesId] = e; }
+    else if(e) local.push(e);
+  });
+  /* harvest: the rows on screen are the latest word on their key's presentation.
+     Later dates win, so in a long range the series' projecting row speaks last. */
+  const prefs = Object.assign({}, opts.prefs || {});
+  Object.keys(prevFeed).map(k=>prevFeed[k]).sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0)).forEach(p=>{
+    const key = feedPrefKey(p); if(!key) return;
+    const pr = {};
+    if(p.titleShort){ pr.titleShort = p.titleShort; pr.titleFor = p.title; pr.id = p.notionId; }
+    if(p.emphasis && p.emphasis!=='none') pr.emphasis = p.emphasis;
+    if(p.hide && p.hide.length) pr.hide = p.hide.slice();
+    if(p.end != null) pr.end = p.end;
+    if(p.repeatUntil != null) pr.repeatUntil = p.repeatUntil;
+    if(p.repeat==='weekly' && p.exceptions && p.exceptions.length) pr.exceptions = p.exceptions.slice();
+    if(Object.keys(pr).length) prefs[key] = pr; else delete prefs[key];
+  });
+  const normT = s=>String(s||'').trim().toLowerCase();
   // sig includes flags + emphasis so a tag-only change (e.g. a newly-correct $/*)
   // is detected as an update and actually applied by the auto-pull.
-  const sig = e=>[e.date,e.start,e.end,e.title,(e.locations||[]).join(','),e.repeat||'',(e.exceptions||[]).join(','),
-    (e.flags&&e.flags.fee?'$':'')+(e.flags&&e.flags.prereg?'*':''), e.emphasis||'none'].join('|');
+  const sig = e=>[e.date,e.start,e.end,e.title,e.titleShort||'',(e.locations||[]).join(','),e.repeat||'',(e.exceptions||[]).join(','),
+    (e.flags&&e.flags.fee?'$':'')+(e.flags&&e.flags.prereg?'*':''), e.emphasis||'none', (e.hide||[]).join(','), e.repeatUntil||''].join('|');
   let added = 0, updated = 0;
   const merged = rows.map(e=>{
-    const p = prevFeed[e.notionId];
-    if(!p){ added++; return e; }
-    /* take core fields from the feed; keep the user's presentation choices */
-    const next = Object.assign({}, e, {
-      titleShort: p.titleShort,
-      emphasis: (p.emphasis && p.emphasis!=='none') ? p.emphasis : e.emphasis,
-      hide: p.hide || e.hide,
-      repeatUntil: p.repeatUntil != null ? p.repeatUntil : e.repeatUntil,
+    const pr = prefs[feedPrefKey(e)];
+    /* take core fields from the feed; lay the user's presentation choices back on */
+    const next = !pr ? e : Object.assign({}, e, {
+      titleShort: (pr.titleShort && (pr.id===e.notionId || normT(pr.titleFor)===normT(e.title))) ? pr.titleShort : null,
+      emphasis: pr.emphasis || e.emphasis,
+      hide: pr.hide ? pr.hide.slice() : e.hide,
+      repeatUntil: pr.repeatUntil != null ? pr.repeatUntil : e.repeatUntil,
       // end times don't sync from the app (feed rows carry end:null) — a
       // hand-set end (incl. 'late'/ALL NIGHT) belongs to the user and sticks
-      end: p.end != null ? p.end : e.end,
+      end: pr.end != null ? pr.end : e.end,
+      exceptions: (e.repeat==='weekly' && pr.exceptions) ? pr.exceptions.slice() : e.exceptions,
     });
-    if(sig(next) !== sig(p)) updated++;
+    const p = prevFeed[e.notionId] || (e.seriesId && prevSeries[e.seriesId]);
+    if(!p) added++;
+    else if(sig(next) !== sig(p)) updated++;
     return next;
   });
-  const newIds = {}; merged.forEach(e=>{ if(e.notionId) newIds[e.notionId] = 1; });
-  let removed = 0; Object.keys(prevFeed).forEach(id=>{ if(!newIds[id]) removed++; });
+  const newIds = {}, newSeries = {};
+  merged.forEach(e=>{ if(e.notionId) newIds[e.notionId] = 1; if(e.seriesId) newSeries[e.seriesId] = 1; });
+  let removed = 0; Object.keys(prevFeed).forEach(id=>{
+    if(!newIds[id] && !(prevFeed[id].seriesId && newSeries[prevFeed[id].seriesId])) removed++; });
   // drop purely-local rows that DUPLICATE a feed event (same date+start+title) — the
   // app is the source of truth, so the synced copy wins and the stray local one goes.
-  const fKey = e=>(e.date||'')+'|'+(e.start||'')+'|'+String(e.title||'').trim().toLowerCase();
-  const feedKeys = {}; merged.forEach(e=>{ feedKeys[fKey(e)] = 1; });
-  const localKept = local.filter(e=>!feedKeys[fKey(e)]);
+  // A local WEEKLY row is checked on every date it projects onto: a hand-made
+  // "Pub Quiz ↻" from before the app existed would otherwise sit beside the
+  // synced quiz every week, forever.
+  const fKey = (date, e)=>(date||'')+'|'+(e.start||'')+'|'+normT(e.title);
+  const feedKeys = {}; merged.forEach(e=>{ feedKeys[fKey(e.date, e)] = 1; });
+  const feedDates = {}; merged.forEach(e=>{ feedDates[e.date] = 1; });
+  const localKept = local.filter(e=>{
+    if(e.repeat!=='weekly') return !feedKeys[fKey(e.date, e)];
+    return !Object.keys(feedDates).some(date=>
+      dWeekday(date)===dWeekday(e.date) && e.date<=date && (!e.repeatUntil || date<=e.repeatUntil)
+      && (e.exceptions||[]).indexOf(date)<0 && feedKeys[fKey(date, e)]);
+  });
   const dedup = local.length - localKept.length;
-  return { events: localKept.concat(merged), added, updated, removed, dedup,
+  return { events: localKept.concat(merged), prefs, added, updated, removed, dedup, hidden,
     changed: (added>0 || updated>0 || removed>0 || dedup>0) };
+}
+/* Apply built feed rows to a whole document through the merge — returns
+   { doc, res }. doc is the same object when nothing changed. */
+function applyFeedToDoc(doc, rows){
+  const res = mergeFeedIntoDoc(doc.events, rows, { prefs:doc.feedPrefs, deleted:doc.feedDeleted });
+  if(!res.changed) return { doc, res };
+  return { doc: Object.assign({}, doc, { events:res.events, feedPrefs:res.prefs }), res };
+}
+
+/* ---- editing helpers (pure; the app wraps each in one setDoc) ---- */
+/* Delete an event. A synced event also leaves a tombstone so the next pull
+   doesn't put it straight back: a weekly series is tombstoned by SERIES (every
+   week stays gone), a one-off by its occurrence id. Restorable from the
+   Document panel (restoreFeedEvent). */
+function deleteEventFromDoc(doc, id){
+  const ev = doc.events.filter(e=>e.id===id)[0];
+  if(!ev) return doc;
+  const events = doc.events.filter(e=>e.id!==id);
+  if(!ev.notionId) return Object.assign({}, doc, { events });
+  const key = (ev.repeat==='weekly' && ev.seriesId) ? 's:'+ev.seriesId : 'e:'+ev.notionId;
+  const feedDeleted = (doc.feedDeleted||[]).filter(t=>t.key!==key)
+    .concat([{ key, title:ev.title, date:ev.date, weekly:ev.repeat==='weekly' }]);
+  return Object.assign({}, doc, { events, feedDeleted });
+}
+function restoreFeedEvent(doc, key){
+  return Object.assign({}, doc, { feedDeleted:(doc.feedDeleted||[]).filter(t=>t.key!==key) });
+}
+/* Clear what occurs in `range` before a Replace import, WITHOUT duplicating
+   weekly series. A one-off dated in the range goes. A local weekly series
+   anchored before the range would otherwise keep projecting into it beside the
+   replacement rows — so instead of deleting the series (it still owns every
+   other week) its in-range dates become skipped weeks. A synced row (weekly or
+   not) that shows in the range is simply dropped: the feed re-delivers it.
+   localOnly: leave synced rows alone (the feed Replace path, where the merge
+   replaces them anyway). */
+function clearRangeOccurrences(events, range, localOnly){
+  const ds = rangeDates(range);
+  const out = [];
+  (events||[]).forEach(e=>{
+    const feed = !!e.notionId;
+    if(localOnly && feed){ out.push(e); return; }
+    const hits = e.repeat==='weekly' ? ds.filter(d=>eventsOn({ events:[e] }, d).length) : (ds.indexOf(e.date)>=0 ? [e.date] : []);
+    if(!hits.length){ out.push(e); return; }
+    if(e.repeat==='weekly' && !feed){
+      const exc = (e.exceptions||[]).slice();
+      hits.forEach(d=>{ if(exc.indexOf(d)<0) exc.push(d); });
+      out.push(Object.assign({}, e, { exceptions:exc.sort() }));
+    }
+  });
+  return out;
+}
+/* Clone → next period. One-offs you typed in shift forward with the range;
+   weekly series stay put (they already project into the new range). Synced
+   ONE-OFFS do not clone: they're specific to their week, and a local copy of
+   last week's workshop is a ghost the sync never removes — the new week's own
+   events arrive from the feed. */
+function cloneToNextPeriod(doc){
+  const n = doc.range.days;
+  return Object.assign({}, doc, {
+    range:{ start:dAdd(doc.range.start, n), days:n },
+    splits:doc.splits.map(s=>dAdd(s, n)),
+    days:Object.keys(doc.days).reduce((o,k)=>{ o[dAdd(k, n)] = doc.days[k]; return o; }, {}),
+    events:doc.events.filter(e=>e.repeat==='weekly').concat(
+      doc.events.filter(e=>e.repeat!=='weekly' && !e.notionId)
+        .map(e=>Object.assign({}, e, { id:suid(), date:dAdd(e.date, n), notionId:null, seriesId:null }))),
+  });
 }
 
 /* ---- persistence ---- */
 const SCH_LS = 'reality-schedule-doc-v2';
+/* The stored document, or null on a first run (nothing stored) — the app then
+   opens a blank document on the current week and lets the feed fill it. */
 function loadStoredDoc(){
   try{ const r = localStorage.getItem(SCH_LS); if(r){ const d = JSON.parse(r); if(d && d.events) return normalizeDoc(d); } }catch(e){}
-  return starterDoc();
+  return null;
 }
-function storeDoc(doc){ try{ localStorage.setItem(SCH_LS, JSON.stringify(doc)); }catch(e){} }
+/* true when the write landed. localStorage is one ~5MB quota per origin, and
+   Poster + Print Studio share it with us — when it's full the write throws, and
+   the app must SAY so rather than let a week of edits evaporate on reload. */
+function storeDoc(doc){ try{ localStorage.setItem(SCH_LS, JSON.stringify(doc)); return true; }catch(e){ return false; } }
 
 /* ============================================================
    BRAND ATOMS
@@ -674,11 +876,12 @@ function SchQR({ size, dark, light, quiet }){
 Object.assign(window, {
   INK, CREAM, WHITE, MONT, ALT, GROT,
   DAY_COLORS, DAY_TEXT, DAY_ABBR, DAY_FULL, LOCATIONS, FLAGS,
-  dToDate, dToISO, dAdd, dWeekday, dShort, dShortYr, rangeDates, rangeLabel, nextMonday, todayIso,
+  dToDate, dToISO, dAdd, dWeekday, dShort, dShortYr, rangeDates, rangeLabel, nextMonday, thisMonday, todayIso,
   suid, blankEvent, newDoc, starterDoc, normalizeDoc,
   timeKey, eventsOn, dayInfo, timeLabel, usedLegend, partDates,
   parseQuickLine, parsePasteBlock, parseCSV, serializeCSV,
-  buildDocFromFeed, mergeFeedIntoDoc, ictHHMM, ictDate,
+  buildDocFromFeed, mergeFeedIntoDoc, applyFeedToDoc, feedWindow, feedPrefKey, ictHHMM, ictDate,
+  deleteEventFromDoc, restoreFeedEvent, clearRangeOccurrences, cloneToNextPeriod,
   loadStoredDoc, storeDoc,
   Wordmark, SchQR, QR_DATA_FRAC, qrPatternOf, QUIET_SPEC, QUIET_TIGHT, QR_TARGET, QR_HOST, QR_LABEL, QR_LABEL_SHORT, QR_CTA,
   PALETTE, INK_MARK, INK_MARK_CELLS, INK_MARK_DAY_ACCENT, inkMarkCells, inkMarkLayout, inkMarkHex, SchInkMark,

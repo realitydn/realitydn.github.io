@@ -55,8 +55,14 @@ One document per schedule range. Autosaved to localStorage, exportable/importabl
     flags: { prereg: false, fee: false },
     emphasis: 'none',                          // 'none' | 'bold' | 'banner' (§8)
     hide: [],                                  // channel ids to omit from
-    notionId: null                             // set by Notion import; powers re-pull diff
+    repeat: null,                              // null | 'weekly' — projected by eventsOn, never copied
+    repeatUntil: null, exceptions: [],         // weekly cap + skipped weeks
+    notionId: null,                            // (legacy name) REALITY app feed OCCURRENCE id; null = typed in here
+    seriesId: null                             // app feed series id — stable across weeks; the sync keys on it
   }],
+  feedPrefs: {},                               // your presentation of synced events, by 's:'+seriesId / 'e:'+id (§4)
+  feedDeleted: [],                             // tombstones: synced events deleted here stay deleted (§4)
+  savedAt: 0,                                  // epoch ms of the last real edit — cloud sync compares this
   splits: ['2026-06-11'],                      // carousel part boundaries (split AFTER this date)
   footer: {
     supportNote: true,
@@ -65,8 +71,8 @@ One document per schedule range. Autosaved to localStorage, exportable/importabl
   },
   style: {
     look: 'ledger',                            // see §8
-    theme: 'day',                              // day | night (print always day/white)
-    inkSaver: false                            // print option: outlined day blocks
+    theme: 'day',                              // day | night | paper | carbon | press (print always renders on white)
+    inkSaver: false                            // NOT BUILT — written by newDoc, read by nothing (Phase 2 idea, never shipped)
   }
 }
 ```
@@ -75,13 +81,15 @@ One document per schedule range. Autosaved to localStorage, exportable/importabl
 `1L` 1st-Floor Lounge · `2L` 2nd-Floor Lounge · `2E` Event Space · `3P` 3rd-Floor Patio.
 Adding/renaming a code is config, not code.
 
-**Sorting is derived**: events always render in start-time order within a day. Moving an event = changing its `date` or `start`. No manual ordering state.
+**Sorting is derived**: events always render in start-time order within a day. Moving an event = changing its `date` or `start`. No manual ordering state. A day is the venue's **night**: a start before 06:00 sorts after the late evening (it is the tail of that night), and the feed files such an event under the previous date.
 
 ## 4. Getting events in
 
-Five paths, and they compose:
+Five paths, and they compose. *(Updated 23.09.26 — the primary path is now the REALITY app feed, item 4; the Notion text is kept below as history.)*
 
-1. **Start from last range** — one click clones the most recent document onto the next dates (recurring events barely change week to week). The default Monday-morning move until Notion lands.
+**First run** (nothing in localStorage) opens a blank document on the **current week** (Mon–Sun, Asia/Ho_Chi_Minh) and pulls the feed into it. The old June 2026 30-event seed is a dev fixture only: `?seed=stress`.
+
+1. **Clone → next week** *(was "Start from last range")* — moves the range on one period. Weekly series stay put (they project); one-offs typed in here shift forward; **synced one-offs do not clone** (the new week's own arrive from the feed — a copied one would be a ghost the sync never removes).
 2. **Quick-add line** — one text input per day speaking the legacy grammar:
    `17:00 - 21:00: Happy Hour: Buy1Get1 Cocktails 1L/2E *` → parsed into a row. Also accepts a whole pasted block with `MON`/`TUE`… or date headers, mapped onto the visible range — the day-one migration path from the old file.
 3. **CSV import** — flexible column mapper (remembered once configured). The pinned interchange format (`Schedule Studio CSV v1`) is what Claude or any script should emit:
@@ -95,10 +103,19 @@ Five paths, and they compose:
 
    `date` ISO · `start` 24h HH:MM · `end` empty / HH:MM / `late` (renders ALL NIGHT) · `locations` slash-separated registry codes · `flags` any of `prereg fee` (or `*` `$`) · `emphasis` empty / `bold` / `banner`. Unknown columns are ignored; header names are case-insensitive; closed-day statuses are set in-app, not in CSV. Notion's native **Export → CSV** maps onto this with the column mapper, so CSV is also the zero-setup Notion bridge.
    *Interim workflow while the Notion DB catches up:* ask Claude to pull a week from the REALITY Google Calendar (MCP) and emit a `Schedule Studio CSV v1` file — drop it into the importer. The format is documented in project memory so any session produces it correctly.
-4. **Notion pull** *(the source-of-truth integration, Phase 2)* — the schedule database lives in Notion; the Studio pulls a date range and maps rows to events.
+4. **REALITY app feed — automatic** *(built, WP9; replaces the Notion pull below)*. `GET app.realitydn.com/api/feed/v1/events.json?from&to` — public, no sign-in. Pulled on open, again whenever the range moves (debounced), and from Import → *Pull from REALITY feed*; all three run the same `mergeFeedIntoDoc`:
+   - *Window:* the range plus the two weeks after it — needed to infer weekly.
+   - *Weekly is inferred:* the feed has no recurrence field and nobody tags `weekly`, while nearly every instance carries a `seriesId` (one-off workshops included). A row is `weekly` only when the same series comes back **exactly 7 days later at the same start** inside the window (or carries a `weekly` tag). Only the last in-range instance of a series projects forward, so a 10-day range never doubles one up.
+   - *Merge:* synced rows are replaced wholesale by the fresh ones (the app is the source of truth: title, time, place, $/* flags); purely-local rows are kept; a local row — or local weekly series — that duplicates a synced event on a covered date is dropped. Status other than `published` is excluded (the public feed only serves published today; the guard stays).
+   - *Your presentation sticks:* short title, emphasis, hide-on, a hand-set end and skipped weeks live in `feedPrefs`, keyed by **series** (feed ids change every week) or by occurrence for a one-off — so they follow the series week to week and survive navigating away and back. A short title only carries to a different occurrence when the title is unchanged (Film Club's film changes weekly).
+   - *Deletions stick:* deleting a synced event writes a tombstone (`feedDeleted`) — a weekly series by series, a one-off by occurrence — and the merge skips it. Restore from Inspector → Document → *Hidden from app sync*.
+   - *Failure:* an unreachable feed leaves the week as it is and says so in the day strip with **Retry**; an empty response never wipes a week.
+   - *Import dialog:* **Sync** = the merge above; **Replace** also clears the hand-made rows in the range first — a local weekly series gets those dates as skipped weeks instead of projecting in beside the feed.
+
+   ~~**Notion pull**~~ *(history — never built; superseded by the app feed)* — the schedule database lives in Notion; the Studio pulls a date range and maps rows to events.
    - *Transport:* the Notion API forbids browser CORS, so the pull runs through the **local launcher's server** (`serve-schedule.cjs` gains a `/api/notion` proxy; integration token lives in a gitignored `tools/schedule-notion.config.json`). The deployed copy at realitydn.com/schedule keeps CSV/paste/clone; if pull-from-anywhere ever matters, the existing `worker/` is the natural home for a token-secured endpoint (Phase 3).
    - *Mapping (property names configurable):* Title ← title prop · Date ← date prop (start[/end] times) · Locations ← multi-select · Flags ← `Pre-reg` / `Fee` checkboxes or multi-select · Emphasis ← checkbox · cancelled/draft statuses excluded by a Status select filter.
-   - *Diff view:* re-pull any time; rows match on `notionId` and show **added / changed / removed**, approved per row. Local edits you've made (e.g. `titleShort`) survive a re-pull.
+   - *Diff view:* re-pull any time; rows match on `notionId` and show **added / changed / removed**, approved per row. Local edits you've made (e.g. `titleShort`) survive a re-pull. **Not built:** the feed sync applies changes directly (a toast counts them) — there is no per-row approval.
    - *Schema note:* the database doesn't exist yet — defining it is part of Phase 2, and the mapper should tolerate renames so the DB can evolve.
 5. **Manual row editor** — always available (§9).
 
@@ -218,12 +235,14 @@ Three panes plus the day strip, same chrome family as Poster Studio (`rs-*` skin
 - **Left — days as a list.** Status toggle (open/closed + note), event rows, quick-add input per day speaking the §4 grammar. Click to select; drag a row onto another day to move it.
 - **Center — live preview** of the active channel at fit-to-stage scale, with part pager for carousels, safe-zone overlay on Stories, thumb-check toggle, capacity meter. Clicking an event in the preview selects it (interactive, not a drag canvas).
 - **Right — inspector.** Selected event → full row editor. Nothing selected → active channel's settings + document style (Look, theme, footer toggles).
-- **Keyboard path:** enter the whole week without the mouse — quick-add per day, `Tab` between fields, `Enter` commits, `Delete` removes selection (guarded while typing).
+- **Keyboard path:** enter the whole week without the mouse — quick-add per day, `Tab` between fields, `Enter` commits, `Delete` removes selection (guarded while typing; a whole weekly series asks first).
+- **Undo / redo** *(built 23.09.26)*: `Ctrl/⌘+Z`, `Ctrl/⌘+Shift+Z` or `Ctrl+Y`, and Undo/Redo in the topbar. 60 steps; edits less than 0.5s apart are one step (a typed title is one undo). Feed syncs and cloud loads are not steps — undo never "undoes a sync". Ignored while focus is in a field (the field keeps its own undo). *New blank* and *Delete series* confirm first and are undoable.
+- **Week navigation:** `« ‹ › »` plus **This week**; every range change re-pulls the feed (§4). **NOT SAVED — storage full** shows in the topbar if the localStorage autosave fails (the quota is shared with Poster + Print Studio).
 - Motion per tokens: parts stamp in with `--ease-stamp`/`--stagger`; `prefers-reduced-motion` ships end-states.
 
 ## 10. Architecture & delivery
 
-Sibling of Poster Studio, same zero-build philosophy:
+Sibling of Poster Studio, same zero-build philosophy. *(As built, 23.09.26: the modules collapsed into `schedule-data.jsx` (model, parsers, feed mapping + merge, persistence), `schedule-render.jsx` (layout engine, looks, channels, daily cards) and `schedule-app.jsx` (shell, import, sync, undo), precompiled to sibling `.js` by `scripts/build-studios.mjs` — no Babel at runtime. `cloud-client.js` is the shared `window.RCloud` (feed read + cloud draft). The original plan below is kept as history; `schedule-import/layout/looks/channels.jsx`, the `/api/notion` proxy and `schedule-notion.config.json` were never built.)*
 
 ```
 public/schedule/
@@ -243,7 +262,8 @@ Schedule Studio.bat      ← launcher, clone of Poster Studio.bat
 - **Deploys for free**: under `public/`, ships with the site build to `realitydn.com/schedule` (noindex/nofollow). The deployed copy has everything except Notion pull (local-proxy-only until/unless a `worker/` endpoint is wanted — Phase 3).
 - **Shared brand assets**: `reality-tokens.css`, `reality-wordmark.svg`, real QR (matrix JS/SVG) — copied in, with a future `public/brand/` dedupe noted.
 - **Export pipeline reused verbatim** from the Studio: html-to-image (`pixelRatio` 2 digital / 3 print), jsPDF (px_scaling), JSZip, the render-settle-capture loop for multi-part exports.
-- **Persistence**: localStorage autosave (`reality-schedule-doc-v2`) + recent-ranges list (~12, capped) + explicit JSON download/upload as the permanent archive.
+- **Persistence**: localStorage autosave (`reality-schedule-doc-v2`) + explicit JSON download/upload as the permanent archive. *(The planned recent-ranges list was never built — one working document, moved week to week.)* A failed autosave is shown, not swallowed.
+- **Cloud draft** *(built, WP9)*: signed in, the working doc syncs to the hub (`studio_documents`, `schedule/working`). Nothing is pushed until the sign-in pull has compared the two copies, and then only after a real edit here; the compare is `savedAt` vs `savedAt` (last edit on each side). A newer cloud copy is **offered** (confirm, undoable) — never applied or overwritten silently.
 - **Not in scope**: publishing schedule data into the site's pages. The document format + layout engine are the obvious feed/component if a styled site schedule is ever wanted (Phase 3+).
 
 ## 11. Phasing
@@ -252,13 +272,13 @@ Schedule Studio.bat      ← launcher, clone of Poster Studio.bat
 data model + editor + day strip (any-start range, splits) · **Ledger / Stack / Grid** looks · Year 2 masthead + 3px rules + date stamp · **Day / Night theme** · IG/FB feed carousel (ink arrow pair) · Stories (filled, no arrows) · **WhatsApp share card** · print A4 PDF · daily story + feed cards · emphasis ladder · measured auto-fit + footer density ladder + balanced-column fallback + capacity meters + auto-legend · quick-add/paste + CSV import + last-range clone · PNG/PDF/ZIP export · localStorage + JSON archive · launcher + deploy.
 
 **Phase 2 — the automation dividend:**
-Notion pull via local proxy + diff view (schema mapping against the existing DB) · counter card A5 · thumb-check · per-channel split suggestions · ink-saver print.
+~~Notion pull via local proxy + diff view (schema mapping against the existing DB)~~ → **shipped instead as the REALITY app feed sync** (§4: automatic, no per-row approval) · counter card A5 · thumb-check · per-channel split suggestions · ink-saver print *(not built; `style.inkSaver` is inert)*.
 
 **Phase 3 — reach:**
 **Marquee** look · TV 16:9 · worker-based Notion endpoint for the deployed copy · shared `public/brand/` dedupe · site schedule page fed by the same documents.
 
 ## 12. Status
 
-- **Notion** — DB exists but isn't fully current yet. Interim: Claude pulls from Google Calendar and emits `Schedule Studio CSV v1` (§4) for import. Phase 2 maps the pull against the real DB schema.
+- **Events source** *(23.09.26)* — the REALITY app feed is the source of truth and syncs automatically (§4). CSV v1 stays the interchange/fallback format (a Claude-emitted calendar pull still imports). *Was:* "Notion — DB exists but isn't fully current yet … Phase 2 maps the pull against the real DB schema" — superseded.
 - **WhatsApp** — confirmed priority channel; the 1:1 share card is Phase 1.
 - **Looks** — Ledger / Stack / Grid / Marquee direction approved; per-event emphasis ladder (`bold` / `banner`) works in every Look. Ledger ships in v1.

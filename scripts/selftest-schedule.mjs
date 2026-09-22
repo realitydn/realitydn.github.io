@@ -1,10 +1,13 @@
 /**
- * selftest-schedule.mjs — dependency-free unit checks for the WP9 Schedule
- * Studio feed-mapping (buildDocFromFeed / ictHHMM / ictDate).
+ * selftest-schedule.mjs — dependency-free unit checks for the Schedule Studio
+ * data layer: the WP9 feed mapping (buildDocFromFeed / ictHHMM / ictDate, weekly
+ * inference, the night rollover), the App→Schedule merge (series-keyed
+ * presentation, tombstones, dedupe), and the pure editing helpers (Replace,
+ * Clone, delete/restore, venue-time "today", autosave failure).
  *
  * No test runner is installed in any repo (Events Platform build plan §5.4 #9).
  * schedule-data.jsx is a browser <script> (not a module) and contains JSX
- * elsewhere, so we can't `import` it. Instead we extract ONLY the three pure
+ * elsewhere, so we can't `import` it. Instead we extract ONLY the pure
  * functions' source by name and eval them in a sandbox — this tests the EXACT
  * shipped code with zero duplication. Run with:
  *     node scripts/selftest-schedule.mjs
@@ -32,24 +35,28 @@ function extract(name) {
   return src.slice(start, i);
 }
 
-// Build a sandbox exposing the three functions. They reference LOCATIONS/suid/
-// rangeDates via `typeof X!=='undefined'` guards, so an empty sandbox is fine —
-// the tests pass `locations`/`makeId` explicitly.
+// Build a sandbox exposing the pure functions. They reference LOCATIONS/suid/
+// rangeDates via `typeof X!=='undefined'` guards or take them as options, so a
+// near-empty sandbox is fine — the tests pass `locations`/`makeId` explicitly.
+const FNS = [
+  // date helpers the range-clamp / weekly projection depend on
+  'dToDate', 'dToISO', 'dAdd', 'dWeekday', 'rangeDates', 'todayIso', 'thisMonday', 'nextMonday',
+  'timeKey', 'eventsOn',
+  'ictHHMM', 'ictDate', 'feedWindow', 'buildDocFromFeed', 'feedPrefKey', 'mergeFeedIntoDoc', 'applyFeedToDoc',
+  'deleteEventFromDoc', 'restoreFeedEvent', 'clearRangeOccurrences', 'cloneToNextPeriod', 'storeDoc',
+];
 const code =
-  // date helpers the range-clamp depends on (extracted from the same file)
-  extract('dToDate') + '\n' +
-  extract('dToISO') + '\n' +
-  extract('dAdd') + '\n' +
-  extract('rangeDates') + '\n' +
-  extract('ictHHMM') + '\n' +
-  extract('ictDate') + '\n' +
-  extract('buildDocFromFeed') + '\n' +
-  extract('mergeFeedIntoDoc') + '\n' +
-  'globalThis.__exports = { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc };';
+  // consts the extracted functions read (mirrors schedule-data.jsx)
+  'const NIGHT_ROLLOVER_H = 6;\n' +
+  "const SCH_LS = 'reality-schedule-doc-v2';\n" +
+  "let _sid = 1; function suid(){ return 'sid' + (_sid++); }\n" +
+  FNS.map(extract).join('\n') + '\n' +
+  'globalThis.__exports = { ' + FNS.join(', ') + ' };';
 const ctx = {};
 vm.createContext(ctx);
 vm.runInContext(code, ctx);
-const { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc } = ctx.__exports;
+const X = ctx.__exports;
+const { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc } = X;
 
 let passed = 0;
 const failures = [];
@@ -231,6 +238,162 @@ const flagFresh = [{ id: 'h', notionId: 'fe', date: '2026-07-01', start: '19:00'
 const fm = mergeFeedIntoDoc(flagExisting, flagFresh);
 eq('flag-only change counts as an update', fm.updated, 1);
 check('flag-only change applies fee', fm.events.find(e => e.notionId === 'fe').flags.fee === true);
+
+// ── weekly is INFERRED from the series recurring, not from having a seriesId ──
+// (live feed 23.09.26: 86/94 instances carry a seriesId, none is tagged weekly,
+// and five series had a single instance in three weeks)
+const wk = (id, sid, start, title, extra) => Object.assign({ id, seriesId: sid, title_en: title, startsAt: start,
+  location: { code: '2E' }, tags: [], status: 'published' }, extra || {});
+const inferFeed = { events: [
+  wk('q1', 'sQuiz', '2026-09-27T20:00:00+07:00', 'REALITY Pub Quiz'),
+  wk('q2', 'sQuiz', '2026-10-04T20:00:00+07:00', 'REALITY Pub Quiz'),
+  wk('q3', 'sQuiz', '2026-10-11T20:00:00+07:00', 'REALITY Pub Quiz'),
+  wk('o1', 'sOnce', '2026-09-25T16:00:00+07:00', 'Create in Community'),      // a series with ONE instance
+  wk('s1', 'sSkip', '2026-09-26T15:00:00+07:00', 'BECOMING YOU'),             // skips next week, back in two
+  wk('s2', 'sSkip', '2026-10-10T15:00:00+07:00', 'BECOMING YOU'),
+  wk('m1', 'sMove', '2026-09-24T19:00:00+07:00', 'Moved'),                    // next week at a different time
+  wk('m2', 'sMove', '2026-10-01T20:00:00+07:00', 'Moved'),
+  wk('d1', 'sDraft', '2026-09-23T19:00:00+07:00', 'Draft Thing', { status: 'draft' }),
+  wk('c1', 'sCan', '2026-09-23T19:30:00+07:00', 'Cancelled Thing', { status: 'cancelled' }),
+] };
+const week = { start: '2026-09-21', days: 7 };
+const inf = buildDocFromFeed(inferFeed, { locations: LOCATIONS, makeId: () => 'i', range: week }).events;
+const byT = t => inf.filter(e => e.title === t);
+eq('infer: series back next week at the same time → weekly', byT('REALITY Pub Quiz')[0].repeat, 'weekly');
+eq('infer: only the in-range instance becomes a row', byT('REALITY Pub Quiz').length, 1);
+eq('infer: a seriesId with ONE instance → one-off', byT('Create in Community')[0].repeat, null);
+eq('infer: a series that skips next week → one-off', byT('BECOMING YOU')[0].repeat, null);
+eq('infer: next week at a different time → one-off', byT('Moved')[0].repeat, null);
+eq('infer: seriesId carried onto the row', byT('REALITY Pub Quiz')[0].seriesId, 'sQuiz');
+eq('status: only published instances map', inf.filter(e => /Draft|Cancelled/.test(e.title)).length, 0);
+// a 10-day range holding two instances: the first is a one-off, the second
+// carries the projection — no day ever shows the series twice
+const long = buildDocFromFeed(inferFeed, { locations: LOCATIONS, makeId: () => 'L', range: { start: '2026-09-27', days: 10 } }).events;
+const lq = long.filter(e => e.title === 'REALITY Pub Quiz');
+eq('long range: both in-range instances are rows', lq.length, 2);
+eq('long range: first instance is a one-off', lq.find(e => e.date === '2026-09-27').repeat, null);
+eq('long range: last instance carries weekly', lq.find(e => e.date === '2026-10-04').repeat, 'weekly');
+eq('long range: 04.10 shows the quiz once', X.eventsOn({ events: lq }, '2026-10-04').length, 1);
+eq('long range: 11.10 still projects it', X.eventsOn({ events: lq }, '2026-10-11').length, 1);
+eq('feedWindow: range + two weeks (+1 night)', JSON.stringify(X.feedWindow(week)), JSON.stringify({ from: '2026-09-21', to: '2026-10-12' }));
+// the feed's full `locations` list wins over the single `location`
+const multi = buildDocFromFeed({ events: [{ id: 'bg', seriesId: null, title_en: 'Board Game Night', startsAt: '2026-09-21T19:00:00+07:00',
+  location: { code: '1L' }, locations: [{ code: '1L' }, { code: '2L' }, { code: '2E' }, { code: '3P' }, { code: null }], tags: [] }] },
+  { locations: LOCATIONS, makeId: () => 'b' }).events[0];
+eq('locations: every floor from the feed list', JSON.stringify(multi.locations), JSON.stringify(['1L', '2L', '2E', '3P']));
+
+// ── the venue night: after-midnight starts belong to the night before ─────────
+const late = buildDocFromFeed({ events: [
+  { id: 'ad', title_en: 'AFTER DARK', startsAt: '2026-10-10T21:00:00+07:00', location: { code: '2E' }, tags: [] },
+  { id: 'ap', title_en: 'After-party', startsAt: '2026-10-11T00:30:00+07:00', location: { code: '2E' }, tags: [] },
+] }, { locations: LOCATIONS, makeId: () => 'n' }).events;
+eq('rollover: 00:30 Sunday is filed under Saturday night', late.find(e => e.title === 'After-party').date, '2026-10-10');
+eq('rollover: the start stays the wall time', late.find(e => e.title === 'After-party').start, '00:30');
+const night = X.eventsOn({ events: [
+  { id: 'a', date: '2026-10-10', start: '00:30', title: 'After-party', hide: [] },
+  { id: 'b', date: '2026-10-10', start: '21:00', title: 'AFTER DARK', hide: [] },
+  { id: 'c', date: '2026-10-10', start: '11:00', title: 'Brunch', hide: [] },
+] }, '2026-10-10').map(e => e.title).join(' > ');
+eq('rollover: 00:30 sorts after the late evening', night, 'Brunch > AFTER DARK > After-party');
+check('timeKey: 05:59 after 23:00, 06:00 before 07:00', X.timeKey('05:59') > X.timeKey('23:00') && X.timeKey('06:00') < X.timeKey('07:00'));
+
+// ── "today" is the venue's date, whatever the laptop's clock says ─────────────
+const t0 = Date.UTC(2026, 8, 20, 18, 30);   // Sun 20.9 18:30Z = Mon 21.9 01:30 in Đà Nẵng
+eq('todayIso is the ICT date', X.todayIso(t0), '2026-09-21');
+eq('thisMonday in the small hours of an ICT Monday', X.thisMonday(t0), '2026-09-21');
+eq('thisMonday from a Sunday', X.thisMonday(Date.UTC(2026, 8, 27, 10)), '2026-09-21');
+eq('nextMonday', X.nextMonday(t0), '2026-09-28');
+
+// ── presentation persists across weeks by SERIES (feed ids are per occurrence) ──
+let rid = 0;
+const row = o => Object.assign({ id: 'r' + (++rid), end: null, titleShort: null, locations: ['2E'], flags: { fee: false, prereg: false },
+  emphasis: 'none', hide: [], repeat: 'weekly', repeatUntil: null, exceptions: [] }, o);
+const wk1 = [row({ notionId: 'occ-1', seriesId: 'sQ', date: '2026-09-27', start: '20:00', title: 'REALITY Pub Quiz',
+  titleShort: 'Pub Quiz', emphasis: 'bold', hide: ['print'], end: '22:30' })];
+const wk2fresh = [row({ notionId: 'occ-2', seriesId: 'sQ', date: '2026-10-04', start: '20:00', title: 'REALITY Pub Quiz' })];
+const nav = mergeFeedIntoDoc(wk1, wk2fresh, { prefs: {} });
+const q2 = nav.events.find(e => e.notionId === 'occ-2');
+eq('series: short title follows to next week', q2.titleShort, 'Pub Quiz');
+eq('series: emphasis follows', q2.emphasis, 'bold');
+eq('series: hidden channels follow', JSON.stringify(q2.hide), JSON.stringify(['print']));
+eq('series: hand-set end follows', q2.end, '22:30');
+eq('series: one row, not two', nav.events.length, 1);
+eq('series: next week is an update, not an add', nav.added, 0);
+check('series: prefs keyed by series', !!nav.prefs['s:sQ']);
+// the title changes (Film Club's film) → the old shortening must NOT land on it
+const film1 = [row({ notionId: 'f-1', seriesId: 'sF', date: '2026-09-25', start: '18:30', title: 'Film Club: Roma (2018)', titleShort: 'Film: Roma', emphasis: 'bold' })];
+const film2 = [row({ notionId: 'f-2', seriesId: 'sF', date: '2026-10-02', start: '18:30', title: 'Film Club: Perfect Days' })];
+const fm2 = mergeFeedIntoDoc(film1, film2, { prefs: {} }).events[0];
+eq('series: short title dropped when the title changes', fm2.titleShort, null);
+eq('series: emphasis still follows a retitled week', fm2.emphasis, 'bold');
+// a one-off keeps its styling after navigating away and back (prefs memory)
+const one = [row({ notionId: 'ws', seriesId: null, repeat: null, date: '2026-09-24', start: '11:30', title: 'Mobile Photography Workshop', titleShort: 'Photo Workshop' })];
+const away = mergeFeedIntoDoc(one, [row({ notionId: 'other', seriesId: null, repeat: null, date: '2026-10-01', start: '19:00', title: 'Other' })], { prefs: {} });
+check('one-off: row leaves with its week', !away.events.some(e => e.notionId === 'ws'));
+const back = mergeFeedIntoDoc(away.events, [row({ notionId: 'ws', seriesId: null, repeat: null, date: '2026-09-24', start: '11:30', title: 'Mobile Photography Workshop' })], { prefs: away.prefs });
+eq('one-off: short title back after navigating away and back', back.events[0].titleShort, 'Photo Workshop');
+// clearing a presentation choice clears the memory too
+const cleared = mergeFeedIntoDoc([Object.assign({}, q2, { titleShort: null })], wk2fresh, { prefs: nav.prefs });
+eq('series: a cleared short title stays cleared', cleared.events[0].titleShort, null);
+
+// ── tombstones: a deleted synced event stays deleted ─────────────────────────
+const tdoc = { events: [q2,
+  row({ id: 'loc', notionId: null, seriesId: null, repeat: null, date: '2026-10-05', start: '12:00', title: 'Local' }),
+  row({ id: 'one', notionId: 'occ-x', seriesId: 'sX', repeat: null, date: '2026-10-06', start: '17:00', title: 'Workshop' })],
+  feedDeleted: [], feedPrefs: {} };
+const td1 = X.deleteEventFromDoc(tdoc, q2.id);
+eq('tombstone: a weekly series is tombstoned by series', td1.feedDeleted[0].key, 's:sQ');
+const td2 = X.deleteEventFromDoc(td1, 'one');
+eq('tombstone: a one-off by its occurrence', td2.feedDeleted[1].key, 'e:occ-x');
+const td3 = X.deleteEventFromDoc(td2, 'loc');
+eq('tombstone: local rows need none', td3.feedDeleted.length, 2);
+const again = X.applyFeedToDoc(td3, [...wk2fresh, row({ notionId: 'occ-x', seriesId: 'sX', repeat: null, date: '2026-10-06', start: '17:00', title: 'Workshop' })]);
+eq('tombstone: the next pull does not bring them back', again.doc.events.length, 0);
+eq('tombstone: hidden count', again.res.hidden, 2);
+const restored = X.applyFeedToDoc(X.restoreFeedEvent(td3, 's:sQ'), wk2fresh);
+eq('tombstone: restore lets the series back in', restored.doc.events.length, 1);
+
+// ── the Import dialog's feed pull IS the merge: pressing it twice adds nothing ──
+const base = { events: [row({ id: 'L1', notionId: null, seriesId: null, repeat: null, date: '2026-09-22', start: '12:00', title: 'Hand-made' })], feedPrefs: {}, feedDeleted: [] };
+const p1 = X.applyFeedToDoc(base, inf).doc;
+const p2 = X.applyFeedToDoc(p1, inf);
+eq('import twice: the second press changes nothing', p2.res.changed, false);
+eq('import twice: row count stable', p2.doc.events.length, p1.events.length);
+
+// ── Replace clears the range without duplicating weekly series ──────────────
+const localWeekly = row({ id: 'LW', notionId: null, seriesId: null, repeat: 'weekly', date: '2026-09-06', start: '20:00', title: 'Quiz Night (old)' });
+const localOne = row({ id: 'LO', notionId: null, seriesId: null, repeat: null, date: '2026-09-23', start: '13:00', title: 'Typed in' });
+const cleared2 = X.clearRangeOccurrences([localWeekly, localOne], week, true);
+check('replace: in-range one-off cleared', !cleared2.some(e => e.id === 'LO'));
+const lw = cleared2.find(e => e.id === 'LW');
+check('replace: weekly series kept (it owns other weeks)', !!lw);
+eq('replace: its in-range date becomes a skipped week', JSON.stringify(lw.exceptions), JSON.stringify(['2026-09-27']));
+eq('replace: the series still shows the week after', X.eventsOn({ events: cleared2 }, '2026-10-04').length, 1);
+const afterReplace = mergeFeedIntoDoc(cleared2, inf).events;
+eq('replace: 27.9 shows one quiz, not two', X.eventsOn({ events: afterReplace }, '2026-09-27').filter(e => /quiz/i.test(e.title)).length, 1);
+// a hand-made weekly series that duplicates a synced one goes — the synced copy wins
+const dupWeekly = row({ id: 'DW', notionId: null, seriesId: null, repeat: 'weekly', date: '2026-09-06', start: '20:00', title: 'REALITY Pub Quiz' });
+const dm2 = mergeFeedIntoDoc([dupWeekly], inf);
+check('dedupe: local weekly duplicate of a synced series dropped', !dm2.events.some(e => e.id === 'DW'));
+eq('dedupe: counted', dm2.dedup, 1);
+
+// ── Clone → next week skips synced one-offs (they'd be ghosts) ──────────────
+const cdoc = { range: week, splits: [], days: {}, events: [
+  row({ id: 'c1', notionId: 'occ-a', seriesId: 'sA', repeat: null, date: '2026-09-24', start: '11:30', title: 'Synced one-off' }),
+  row({ id: 'c2', notionId: null, seriesId: null, repeat: null, date: '2026-09-24', start: '13:00', title: 'Typed one-off' }),
+  row({ id: 'c3', notionId: 'occ-q', seriesId: 'sQ', repeat: 'weekly', date: '2026-09-27', start: '20:00', title: 'Quiz' }),
+] };
+const cl = X.cloneToNextPeriod(cdoc);
+eq('clone: range moves a week', cl.range.start, '2026-09-28');
+check('clone: synced one-off not cloned', !cl.events.some(e => e.title === 'Synced one-off'));
+eq('clone: typed one-off shifts', cl.events.find(e => e.title === 'Typed one-off').date, '2026-10-01');
+check('clone: weekly master stays put', cl.events.some(e => e.id === 'c3' && e.date === '2026-09-27'));
+
+// ── an autosave that fails says so (storage shared with Poster + Print) ──────
+ctx.localStorage = { setItem() { const e = new Error('quota'); e.name = 'QuotaExceededError'; throw e; } };
+eq('storeDoc: full storage → false', X.storeDoc({ events: [] }), false);
+ctx.localStorage = { setItem() {} };
+eq('storeDoc: a normal write → true', X.storeDoc({ events: [] }), true);
 
 if (failures.length) {
   console.error(`\nselftest-schedule: ${failures.length} FAILED, ${passed} passed`);

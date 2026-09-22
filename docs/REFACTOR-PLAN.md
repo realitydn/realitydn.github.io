@@ -200,6 +200,80 @@ cheap, cloud sync stops downscaling (the 860 px cloud cap goes away), and dedupe
 Migration is additive: write the blob, keep the data URL until the round trip is verified, then
 drop it — the same never-destructive pattern RStore's first migration used.
 
+**Done for Poster (24.09.26, branch `refactor/phase5-photos`).** As built:
+- **Reference form:** `el.src` / `el.src2` = `'ref:sha256:<64 hex>'` — the same fields, so every
+  renderer stays one code path: `loadCachedImage` (elements/photo.jsx) resolves a reference through
+  the blob store (`url(ref)` → objectURL, LRU of 40, revoked on eviction) and still takes an inline
+  data URL, forever (old docs, template files, cloud drafts). The press, the bleed preview, the
+  treatment strip and the library thumbnails all go through it; exports see real pixels.
+- **Blob layer:** `studio-shared/blobs.js` — `makeBlobStore({ owner })` → adopt / put / get / url /
+  toDataUrl / gc / stats, in its OWN database `reality-blobs` v1, store `images` keyed by the
+  SHA-256 of the bytes: `{ hash, blob, head, size, at, created, owners }`. `head` is the data URL's
+  header, so a blob turns back into exactly the data URL it came in as. `at` = last stored (a
+  re-paste refreshes it). `owners` lets another Studio share an image later; a sweep only drops
+  its own claim.
+- **Poster's library moved, v1 left alone:** `reality-studio` v1 (the old build's) is only ever
+  READ; this build writes `reality-studio-v2` v1 (same stores, keys and shapes — `doc:working`,
+  `bin:`, `thumb:` — photos as references). `RStore.migrate()` runs every load: the first run copies
+  every v1 template, Recently deleted and card picture (and, on a profile the old build never moved,
+  the localStorage list), interning photos; every later run takes what an OLD-build tab saved since
+  (`v1sync` remembers each id's savedAt·name·archived·eventId; a changed v1 record at least as new as
+  its v2 twin replaces it, the twin going to Recently deleted first). `docGet` takes the v1 working
+  doc when its `at` is newer and files it in v2 under the same `at`. Deletes in an old tab are not
+  carried across (a missing record is too weak a signal to delete on). `retireLegacyTpls` is gone
+  from this build (it wrote v1).
+- **Intake:** upload, paste and drop go through `photos.js takePhoto` / `adoptResult` — the photo is
+  stored and the element gets the reference; every store write (`docPut`, `tplPut`, `tplBulkPut`,
+  `tplApply`, `binPut`) interns as a safety net; a photo the blob store refuses stays inline.
+- **Cloud unchanged on the wire:** `slimDocForCloud` turns each reference back into its original data
+  URL and re-cuts it to 860 px exactly as before; pulls (templates, the working draft) intern.
+  The template export file is written inline, full size; import interns.
+- **Undo** holds references (a few dozen bytes per photo).
+- **Sweep** (`hooks/usePhotoSweep.js`): once per load, only when the working doc and the library
+  (incl. the v1 pick-up) read cleanly and no other Poster tab of this build answers on the
+  `reality-poster-studio` BroadcastChannel; keeps everything referenced by the working doc, the
+  localStorage fallback copy, this tab's undo/redo, every v2 template and Recently deleted, and only
+  deletes images not stored for a day. (Old-build tabs don't announce themselves, and don't need to:
+  they never read the blob store.) `watchOtherTabs` now takes its tab id from `crypto.randomUUID`
+  — with Math.random seeded (the test suites), two tabs drew the same id and ignored each other.
+- **Print needs nothing:** its photos were already by reference (`imgId` → its own `images` store
+  in `reality-print` v2, with the same one-day, clean-load, no-other-tab sweep). Moving them onto
+  `reality-blobs` would need its own coexistence period (an old Print tab reads `reality-print`), so
+  it stays where it is — see the follow-ups.
+- **Verified** (scratch harness, not committed: the old build served from `git archive main` and this
+  one on the SAME origin, fresh profile): old-build working doc + 3 templates (two sharing a photo)
+  → new build shows all of them, photos pixel-identical, 3 blobs for 3 distinct photos, template
+  records 330 KB → 4.5 KB each (test photos ~245 KB; a real 2000 px photo is ~1 MB, so ~2.5 MB →
+  ~5 KB), v1 byte-identical afterwards; an old tab's later template save and working-doc edits are
+  picked up (the replaced copy lands in Recently deleted); the old build still opens, draws and saves
+  afterwards; cloud PUT payloads identical to the old build's for the working doc and every template
+  (inline, 860 px); an inline cloud draft and a cloud-only template come in as references (one blob
+  for the shared photo); the sweep deletes an orphan over a day old, keeps a young orphan, a
+  referenced old blob and another owner's, and does nothing while a second tab is open; replace a
+  photo → undo restores the reference and the pixels; exports after reload are byte-identical to the
+  old build's; library card pictures shot from referenced templates match the old build's.
+  `npm run test:studios` passes with no golden changes.
+- **Still true:** the 2000 px intake cap (ImageIntake.configure) — raising it is its own decision
+  now that a bigger photo costs one blob rather than a copy per template and per undo step.
+
+**Follow-ups.**
+- **Retire v1** (`reality-studio`). Once every Poster tab has reloaded onto this build — at the
+  earliest the release after this ships, and after Donald has opened the Studio once on each machine
+  he uses (that run does the copy) — drop the `V1` handle, `migrate()`'s pick-up and `docGet`'s v1
+  branch (studio-store.js), then delete the database (`indexedDB.deleteDatabase('reality-studio')`,
+  behind a `migrated_v2` check). Until then it costs one full read of the old library per load —
+  the same read the old build did every load.
+- **Cloud: upload blobs to R2 via the app, send refs.** Needs an image endpoint on the app/hub
+  (PUT by hash, GET by hash). Then pushes send references (and upload any blob the hub hasn't got),
+  pulls fetch missing blobs, and the 860 px cloud cut goes away. Until then the hub keeps inline,
+  860 px copies — readable by old builds.
+- **Print onto `reality-blobs`** (optional): dedupe and one sweep; needs the same v1/v2 coexistence
+  as Poster (new images to the blob store, old `imgId` records read-through), so only worth it if
+  Print's image store becomes a problem.
+- **The localStorage fallback** (autosave's last resort when IndexedDB refuses a write) now holds
+  references; an old-build tab reading that copy would draw the stand-in photo. Only reachable when
+  IndexedDB is refusing writes, and gone with v1's retirement.
+
 ## Phase 6 — The website (separate track, can run in parallel)
 
 - Load locale files per route (`import()`): the five locales a visitor isn't reading are

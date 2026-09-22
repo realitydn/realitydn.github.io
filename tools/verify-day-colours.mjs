@@ -36,10 +36,13 @@ const accentOf = (day) => canon.days[day].token.replace(/^--/, "");
 
 let failures = 0;
 const fail = (msg) => { failures++; console.error("DRIFT: " + msg); };
+// Sources only: since Phase 1 the studios ship one esbuild bundle built from
+// these .jsx files, so the per-file compiled .js twins this used to cross-check
+// no longer exist.
 const read = (rel) => readFileSync(join(root, rel), "utf8");
 
 // ── 1 · Schedule Studio: DAY_COLORS / DAY_TEXT literals (ISO 1=Mon..7=Sun) ──
-for (const rel of ["public/schedule/schedule-data.jsx", "public/schedule/schedule-data.js"]) {
+for (const rel of ["public/schedule/schedule-data.jsx"]) {
   const src = read(rel);
   const colors = src.match(/DAY_COLORS\s*=\s*\{([^}]*)\}/);
   const text = src.match(/DAY_TEXT\s*=\s*\{([^}]*)\}/);
@@ -59,7 +62,7 @@ for (const rel of ["public/schedule/schedule-data.jsx", "public/schedule/schedul
 }
 
 // ── 2 · Poster Studio: ACCENT_DAYS (accent name → weekday name) ──
-for (const rel of ["public/studio/studio-data.jsx", "public/studio/studio-data.js"]) {
+for (const rel of ["public/studio/studio-data.jsx"]) {
   const src = read(rel);
   const block = src.match(/ACCENT_DAYS\s*=\s*\{([\s\S]*?)\}/);
   if (!block) { fail(`${rel}: ACCENT_DAYS block not found`); continue; }
@@ -80,7 +83,7 @@ const parsePalette = (src, rel) => {
   for (const m of block[1].matchAll(/(\w+)\s*:\s*['"](#[0-9a-fA-F]{6})['"]/g)) out[m[1]] = m[2].toLowerCase();
   return out;
 };
-for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {
+for (const rel of ["public/print/print-data.jsx"]) {
   const pal = parsePalette(read(rel), rel);
   if (!pal) continue;
   for (const day of DAY_ORDER) {
@@ -108,13 +111,10 @@ const INK_ORDER = {
 const INK_ANCHORED = "stock,pink,green,ink";
 const INK_FILES = [
   { rel: "public/studio/studio-data.jsx", neutrals: INK_ARTWORK },
-  { rel: "public/studio/studio-data.js",  neutrals: INK_ARTWORK },
   // Schedule Studio joined the mark on 23.08 (masthead strip + the square
   // riding the footer QR), so its port is guarded here like the other two.
   { rel: "public/schedule/schedule-data.jsx", neutrals: INK_ARTWORK },
-  { rel: "public/schedule/schedule-data.js",  neutrals: INK_ARTWORK },
   { rel: "public/print/print-data.jsx",   neutrals: { ink: canon.print.ink, stock: canon.print.stock } },
-  { rel: "public/print/print-data.js",    neutrals: { ink: canon.print.ink, stock: canon.print.stock } },
 ];
 const stripQ = (s) => s.replace(/['"\s]/g, "");
 for (const { rel, neutrals } of INK_FILES) {
@@ -159,7 +159,7 @@ for (const { rel, neutrals } of INK_FILES) {
 }
 // Print Studio's literal day→accent map for the daycode mode.
 {
-  for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {
+  for (const rel of ["public/print/print-data.jsx"]) {
     const block = read(rel).match(/INK_MARK_DAY_ACCENT\s*=\s*\{([\s\S]*?)\}/);
     if (!block) { fail(`${rel}: INK_MARK_DAY_ACCENT block not found`); continue; }
     for (const day of DAY_ORDER) {
@@ -185,10 +185,10 @@ const RETIRED_HEXES = ["#17a7df", "#ed1b71", "#ed2123", "#3f3785", "#00b7a5", "#
 
 // ── 6 · Site string on artwork = bare host (canon D5) ──
 const SITE_FILES = [
-  "public/print/print-data.jsx", "public/print/print-data.js",
-  "public/print/print-export.jsx", "public/print/print-export.js",
-  "public/schedule/schedule-render.jsx", "public/schedule/schedule-render.js",
-  "public/studio/studio-data.jsx", "public/studio/studio-data.js",
+  "public/print/print-data.jsx",
+  "public/print/print-export.jsx",
+  "public/schedule/schedule-render.jsx",
+  "public/studio/studio-data.jsx",
   "public/event-report/index.html",
 ];
 for (const rel of SITE_FILES) {
@@ -226,7 +226,7 @@ const checkRole = (src, rel, key, prop, role, off = 0) => {
     fail(`${rel}: ${key}.${prop} is ${got} — the ${role} role tracks ${want}em${off ? " (ladder + print offset)" : ""}`);
 };
 // Poster Studio data — the bare screen ladder.
-for (const rel of ["public/studio/studio-data.jsx", "public/studio/studio-data.js"]) {
+for (const rel of ["public/studio/studio-data.jsx"]) {
   const src = read(rel);
   checkRole(src, rel, "title", "letterSpacing", "display");
   checkRole(src, rel, "title", "subTracking", "h1");
@@ -251,7 +251,7 @@ for (const rel of ["public/studio/studio-data.jsx", "public/studio/studio-data.j
 // must carry the canon rungs, and no off-ladder letterSpacing literal may
 // reappear. A value that genuinely needs to sit off the ladder belongs in
 // TRACK with a name and a reason, not inline.
-for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-element.js"]) {
+for (const rel of ["public/studio/studio-element.jsx"]) {
   const src = read(rel);
   const m = src.match(/const TRACK\s*=\s*\{([^}]*)\}/);
   if (!m) { fail(`${rel}: the TRACK ladder constant is gone`); continue; }
@@ -283,8 +283,8 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
     return out;
   };
   const seen = {};
-  for (const rel of ["public/print/print-element.jsx", "public/print/print-element.js",
-                     "public/print/print-export.jsx", "public/print/print-export.js"]) {
+  for (const rel of ["public/print/print-element.jsx",
+                     "public/print/print-export.jsx"]) {
     const t = readTrack(rel);
     if (!t) continue;
     seen[rel] = t;
@@ -297,7 +297,7 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
   const a = seen["public/print/print-element.jsx"], b = seen["public/print/print-export.jsx"];
   if (a && b && JSON.stringify(a) !== JSON.stringify(b))
     fail("print-element.jsx and print-export.jsx carry DIFFERENT TRACK ladders — the screen would stop being a proof of the PDF");
-  for (const rel of ["public/print/print-element.jsx", "public/print/print-element.js"]) {
+  for (const rel of ["public/print/print-element.jsx"]) {
     const stray = [...new Set(read(rel).match(/letterSpacing:\s*'\.?[0-9][0-9.]*em'/g) || [])];
     if (stray.length)
       fail(`${rel}: off-ladder tracking literal(s) ${stray.join(" ")} — route through TRACK`);
@@ -307,7 +307,7 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
 // Fact renderers — the family half of M1. Montserrat NAMES, Grotesk STATES
 // facts: the when/cost chips and every list's time/price/date cell go through
 // the FACT() helper in studio-element, which is the one place the rule lives.
-for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-element.js"]) {
+for (const rel of ["public/studio/studio-element.jsx"]) {
   const src = read(rel);
   if (!/const FACT\s*=/.test(src))
     fail(`${rel}: the FACT() type helper is gone — facts are Grotesk in every medium (M1)`);
@@ -353,7 +353,7 @@ for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-ele
   }
 }
 // Print Studio data — ladder + the baked print offset; body stays Grotesk 0.
-for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"]) {
+for (const rel of ["public/print/print-data.jsx"]) {
   const src = read(rel);
   checkRole(src, rel, "headline", "tracking", "display", PRINT_OFF);
   checkRole(src, rel, "numeral", "tracking", "display", PRINT_OFF);
@@ -375,7 +375,7 @@ for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"])
     if (i < 0 || j <= i) { fail(`${rel}: ${what} block not found`); return null; }
     return src.slice(i, j);
   };
-  for (const rel of ["public/studio/studio-element.jsx", "public/studio/studio-element.js"]) {
+  for (const rel of ["public/studio/studio-element.jsx"]) {
     const src = read(rel);
     const block = slice(src, rel, /el\.type\s*===?\s*['"]ticket['"]/, /el\.type\s*===?\s*['"]lineup['"]/, "ticket renderer");
     if (!block) continue;
@@ -392,7 +392,7 @@ for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"])
     if (!/M73\.4,63\.7/.test(src))
       fail(`${rel}: WordmarkSVG's baked letter paths are missing`);
   }
-  for (const rel of ["public/print/print-element.jsx", "public/print/print-element.js"]) {
+  for (const rel of ["public/print/print-element.jsx"]) {
     const src = read(rel);
     const block = slice(src, rel, /t\s*===?\s*['"]footer['"]/, /t\s*===?\s*['"]wordmark['"]/, "footer renderer");
     if (!block) continue;
@@ -401,7 +401,7 @@ for (const rel of ["public/print/print-data.jsx", "public/print/print-data.js"])
     if (/Alternates/.test(block) || /FAM_CSS\.alt\b/.test(block))
       fail(`${rel}: footer sets its mark from a font-family — never re-typeset the wordmark`);
   }
-  for (const rel of ["public/print/print-export.jsx", "public/print/print-export.js"]) {
+  for (const rel of ["public/print/print-export.jsx"]) {
     const src = read(rel);
     const block = slice(src, rel, /t\s*===?\s*['"]footer['"]/, /t\s*===?\s*['"]wordmark['"]/, "footer exporter");
     if (!block) continue;

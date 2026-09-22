@@ -60,6 +60,23 @@ jobs:
       - name: Install Puppeteer browser
         run: npx puppeteer browsers install chrome
 
+      # The studio refactor safety net (scripts/test-studios): the riso engine's
+      # golden renders + a smoke test of Poster, Print and Schedule Studio (loads
+      # clean, every top-bar control clickable at 1280/1440/1920, key panels
+      # render). ~40 s, offline. Skipped on the nightly rebuild — no code changed.
+      # The export goldens stay local: text rasterises differently on Linux.
+      - name: Studio tests (engine + smoke)
+        if: github.event_name != 'schedule'
+        run: npm run test:studios:ci
+
+      - name: Upload studio test diffs
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: studio-test-diffs
+          path: tests/out/
+          if-no-files-found: ignore
+
       - name: Build (with pre-rendering)
         run: npm run build
 

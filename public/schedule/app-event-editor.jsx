@@ -2,8 +2,9 @@
    REALITY SCHEDULE STUDIO — app · the event editor
    The inspector when an event is selected: title, times, rooms, flags,
    emphasis, hide-on, weekly repeat and skipped weeks, duplicate, delete.
+   Three RUI folds (open until you close one; Ctrl-K finds their fields).
    ============================================================ */
-import { confirmDelete, SField, SChips } from './app-controls.jsx';
+import { confirmDelete, Field, Chips, Fold, Hint } from './app-controls.jsx';
 import { DAY_ABBR as A_DA, rangeDates as a_dates, deleteEventFromDoc as a_delEvent, dShort as a_dshort,
   LOCATIONS as A_LOCS, suid as a_uid, dWeekday as a_wd, DAY_FULL } from './schedule-data.jsx';
 import { CHANNELS as A_CH } from './schedule-render.jsx';
@@ -21,7 +22,6 @@ function EventEditor({ doc, setDoc, sel, setSelId }){
   const dates = a_dates(doc.range);
   return (
     <React.Fragment>
-      <div className="ss-sech">Event</div>
       <div className="ss-actions">
         <button className="ss-iconbtn" onClick={()=>{
           const c = Object.assign(JSON.parse(JSON.stringify(sel)), { id:a_uid(), exceptions:[], notionId:null, seriesId:null });
@@ -32,8 +32,9 @@ function EventEditor({ doc, setDoc, sel, setSelId }){
           setDoc(d=>a_delEvent(d, sel.id)); setSelId(null);
         }}>{sel.repeat==='weekly'?'Delete series':'Delete'}</button>
       </div>
-      <SField label="Title" value={sel.title} onChange={v=>update({ title:v })} area />
-      <SField label="Short title (used when space is tight)" value={sel.titleShort||''} ph="optional"
+      <Fold id="ev-event" title="Event" open>
+      <Field label="Title" value={sel.title} onChange={v=>update({ title:v })} area />
+      <Field label="Short title (used when space is tight)" value={sel.titleShort||''} placeholder="optional"
         onChange={v=>update({ titleShort:v||null })} />
       <div className="ss-row">
         <div className="ss-lab">{sel.repeat==='weekly'?'Weekday (anchor)':'Day'}</div>
@@ -56,19 +57,24 @@ function EventEditor({ doc, setDoc, sel, setSelId }){
             onBlur={e=>{ const v=e.target.value.trim(); update({ end: v? normTime(v, sel.end==='late'?null:sel.end) : null }); }} />
         </div>
       </div>
-      <SChips options={[{v:false,l:'Ends quietly'},{v:true,l:'ALL NIGHT'}]} value={sel.end==='late'}
+      <Chips options={[{v:false,l:'Ends quietly'},{v:true,l:'ALL NIGHT'}]} value={sel.end==='late'}
         onChange={v=>update({ end: v?'late':null })} />
-      <SChips label="Locations" multi options={A_LOCS.map(l=>({v:l.code,l:l.code}))}
+      </Fold>
+      <Fold id="ev-where" title="Where + how it shows" open>
+      <Chips label="Locations" multi options={A_LOCS.map(l=>({v:l.code,l:l.code}))}
         value={sel.locations} onChange={v=>update({ locations:v })} />
-      <SChips label="Flags" multi
+      <Chips label="Flags" multi
         options={[{v:'prereg',l:'* Pre-reg'},{v:'fee',l:'$ Fee'}]}
         value={[sel.flags.prereg?'prereg':null, sel.flags.fee?'fee':null].filter(Boolean)}
         onChange={v=>update({ flags:{ prereg:v.indexOf('prereg')>=0, fee:v.indexOf('fee')>=0 } })} />
-      <SChips label="Emphasis" options={[{v:'none',l:'None'},{v:'bold',l:'Bold'},{v:'banner',l:'Banner'}]}
+      <Chips label="Emphasis" options={[{v:'none',l:'None'},{v:'bold',l:'Bold'},{v:'banner',l:'Banner'}]}
         value={sel.emphasis} onChange={v=>update({ emphasis:v })} />
-      <SChips label="Hide on" multi options={A_CH.map(c=>({v:c.id,l:c.label}))}
+      <Hint>Banner is the anniversary-party treatment — one per week reads loud.</Hint>
+      <Chips label="Hide on" multi options={A_CH.map(c=>({v:c.id,l:c.label}))}
         value={sel.hide||[]} onChange={v=>update({ hide:v })} />
-      <SChips label="Repeat" options={[{v:'none',l:'One-off'},{v:'weekly',l:'↻ Weekly'}]}
+      </Fold>
+      <Fold id="ev-repeat" title="Repeat" open>
+      <Chips label="Repeat" options={[{v:'none',l:'One-off'},{v:'weekly',l:'↻ Weekly'}]}
         value={sel.repeat==='weekly'?'weekly':'none'}
         onChange={v=> v==='weekly' ? update({ repeat:'weekly' })
           : update({ repeat:null, exceptions:[], repeatUntil:null })} />
@@ -95,12 +101,12 @@ function EventEditor({ doc, setDoc, sel, setSelId }){
           </React.Fragment>
         );
       })()}
-      <div className="ss-mini">Banner is the anniversary-party treatment — one per week reads loud.</div>
+      </Fold>
       {sel.notionId && <div className="ss-mini" style={{ marginTop:8 }}>
         From the REALITY app — the title, time, place and flags follow the app on every sync.
         Short title, emphasis, hide-on, end time and skipped weeks are yours and stick
         {sel.seriesId ? ' to the whole series, week after week' : ''}.</div>}
-      <div className="ss-mini" style={{ marginTop:8 }}>Click the row again, press Esc, or click the canvas to deselect. Delete / Backspace removes the event (when not typing in a field); a weekly series asks first. Ctrl+Z undoes.</div>
+      <Hint>Click the row again, press Esc, or click the canvas to deselect. Delete / Backspace removes the event (when not typing in a field); a weekly series asks first. Ctrl+Z undoes.</Hint>
     </React.Fragment>
   );
 }

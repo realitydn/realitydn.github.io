@@ -3,7 +3,7 @@
    Left column: each day with its events, quick-add, closed days,
    per-day text size, and drag-to-move between days.
    ============================================================ */
-import { CAP_COL } from './app-controls.jsx';
+import { CAP_COL, Hint } from './app-controls.jsx';
 import { blankEvent as a_blank, DAY_ABBR as A_DA, rangeDates as a_dates, dayInfo as a_dayInfo,
   DAY_COLORS as A_DC, dShort as a_dshort, eventsOn as a_eventsOn, parseQuickLine as a_quick,
   suid as a_uid, dWeekday as a_wd } from './schedule-data.jsx';
@@ -90,9 +90,9 @@ function DayList({ doc, setDoc, selId, setSelId, capacity, selDate, setSelDate, 
           </div>
         );
       })}
-      <div className="ss-mini" style={{ marginTop:10 }}>
+      <Hint>
         Quick-add speaks the schedule grammar: <b>17:00 - 21:00: Title 1L/2E * $</b>. Enter commits. Drag a row onto another day to move it.
-      </div>
+      </Hint>
     </div>
   );
 }

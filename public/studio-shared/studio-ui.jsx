@@ -1,17 +1,18 @@
 /* ============================================================
-   REALITY STUDIO UI — the control atoms both Studios share.
+   REALITY STUDIO UI — the control atoms the Studios share.
    ============================================================
    Poster Studio and Print Studio grew the same components twice:
    Field, Slider, Chips, ScaleControl, Fold — near-identical code
    behind different class prefixes, drifting apart every time one
    of them gained a feature (Print got NumField, undo and folds;
    Poster got graphics grids and per-format overrides). This file
-   is the single copy. Both pages load it BEFORE their app script.
+   is the single copy — and Schedule Studio's panels use it too.
 
    The prefix is the only thing that differs, so it's config:
      RUI.configure({ prefix:'rs', storeKey:'reality-studio' })
    Every class name is built as `${prefix}-row`, `${prefix}-lab`…
-   which is exactly what both CSS files already call them.
+   and studio-shared/studio-base.css styles all three prefixes
+   (rs- Poster, ps- Print, ss- Schedule) as one look.
 
    Three things live here that neither Studio had before:
 
@@ -31,7 +32,7 @@
       Ctrl-K searches, so "dot gain" finds a slider six folds deep
       without you remembering it lives under Treatment.
 
-   An ES module in both Studios' bundles: exports RUI (and still sets
+   An ES module in all three Studios' bundles: exports RUI (and still sets
    window.RUI, kept on purpose — see each Studio's main.jsx).
    ============================================================ */
 
@@ -46,7 +47,7 @@ import { ACCENTS, PALETTE } from './brand.js';
      swatchBorder — the outline a light/neutral swatch takes. It is the
      --st-sw-border token (studio-base.css; Print sets its own), so the
      Studios no longer pass it — configure() still takes one to override. */
-  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'var(--st-sw-border)' };
+  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'var(--st-sw-border)', hintsDefault:false };
   function cls(suffix){ return CFG.prefix + '-' + suffix; }
 
   /* ---------- a minimal external store (subscribe + snapshot) ----------
@@ -81,13 +82,15 @@ import { ACCENTS, PALETTE } from './brand.js';
      dirty-count auto-open rule apply without ever overriding a real choice. */
   const foldStore = makeStore({});
   /* Hints off by default. The help text isn't gone — it's one click away and
-     the first-run banner says so. */
+     the first-run banner says so. A Studio can start them ON (hintsDefault —
+     Schedule, whose notes were always on screen before it had the toggle);
+     once the toggle has been used, the stored choice wins either way. */
   const hintStore = makeStore(false);
 
   function hydrate(){
     foldStore.set(lsGet(CFG.storeKey+':folds', {}));
-    let h = false;
-    try{ h = localStorage.getItem(CFG.storeKey+':hints')==='1'; }catch(e){}
+    let h = !!CFG.hintsDefault;
+    try{ const v = localStorage.getItem(CFG.storeKey+':hints'); if(v==='1' || v==='0') h = v==='1'; }catch(e){}
     hintStore.set(h);
   }
 
@@ -182,14 +185,17 @@ import { ACCENTS, PALETTE } from './brand.js';
     return <div className={cls('mini')} style={tight?{ margin:'-2px 0 8px' }:{ margin:'2px 0 8px' }}>{children}</div>;
   }
 
-  function Field({ label, value, onChange, area, mono, placeholder, minHeight }){
+  /* spellCheck is off unless asked for (poster copy is names and codes);
+     Schedule asks — its titles are prose. */
+  function Field({ label, value, onChange, area, mono, placeholder, minHeight, spellCheck }){
+    const sc = !!spellCheck;
     return (
       <div className={cls('row')}>
         {label && <div className={cls('lab')}>{label}</div>}
         {area
-          ? <textarea className={cls('area')} value={value||''} spellCheck={false} placeholder={placeholder}
+          ? <textarea className={cls('area')} value={value||''} spellCheck={sc} placeholder={placeholder}
               style={minHeight?{ minHeight }:null} onChange={e=>onChange(e.target.value)} />
-          : <input className={cls('input')+(mono?' mono':'')} value={value||''} spellCheck={false} placeholder={placeholder}
+          : <input className={cls('input')+(mono?' mono':'')} value={value||''} spellCheck={sc} placeholder={placeholder}
               onChange={e=>onChange(e.target.value)} />}
       </div>
     );
@@ -205,14 +211,19 @@ import { ACCENTS, PALETTE } from './brand.js';
     );
   }
 
-  function Chips({ label, options, value, onChange }){
+  /* One-of by default; `multi` makes it some-of — value is then an array
+     and onChange gets the new array (Schedule's locations, flags, hide-on). */
+  function Chips({ label, options, value, onChange, multi }){
+    const isOn = v => multi ? (value||[]).indexOf(v)>=0 : value===v;
+    const pick = v => { if(!multi) return onChange(v);
+      const cur = value||[]; onChange(isOn(v) ? cur.filter(x=>x!==v) : cur.concat([v])); };
     return (
       <div className={cls('row')}>
         {label && <div className={cls('lab')}>{label}</div>}
         <div className={cls('chips')}>
           {options.map(o=>(
-            <button key={String(o.v)} className={cls('chip')+(value===o.v?' on':'')}
-              title={o.t||null} onClick={()=>onChange(o.v)}>{o.l}</button>
+            <button key={String(o.v)} className={cls('chip')+(isOn(o.v)?' on':'')}
+              title={o.t||null} onClick={()=>pick(o.v)}>{o.l}</button>
           ))}
         </div>
       </div>
@@ -350,6 +361,10 @@ import { ACCENTS, PALETTE } from './brand.js';
       }
       for(const id of Object.keys(idx)){
         const f = idx[id];
+        // the section itself, by its title — a fold of buttons with no
+        // labelled controls (a size stepper, a card grid) is still findable
+        if(needle && typeof f.title==='string' && f.labels.indexOf(f.title)<0 && f.title.toLowerCase().indexOf(needle)>=0)
+          out.push({ kind:'control', label:f.title, group:'Section', foldId:id });
         for(const l of f.labels){
           if(!needle || l.toLowerCase().indexOf(needle)>=0 || (f.title||'').toLowerCase().indexOf(needle)>=0)
             out.push({ kind:'control', label:l, group:f.title||'Inspector', foldId:id });
@@ -437,6 +452,7 @@ import { ACCENTS, PALETTE } from './brand.js';
     if(opts && opts.prefix) CFG.prefix = opts.prefix;
     if(opts && opts.storeKey) CFG.storeKey = opts.storeKey;
     if(opts && opts.swatchBorder) CFG.swatchBorder = opts.swatchBorder;
+    if(opts && opts.hintsDefault!=null) CFG.hintsDefault = !!opts.hintsDefault;
     hydrate();
   }
 

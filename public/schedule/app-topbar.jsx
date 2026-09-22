@@ -4,6 +4,7 @@
    cloud sign-in.
    ============================================================ */
 import { RCloud } from '../studio-shared/cloud.js';
+import { HintsToggle } from './app-controls.jsx';
 import { normalizeDoc as a_norm, rangeLabel as a_rangeLabel } from './schedule-data.jsx';
 
 /* ---------- topbar ---------- */
@@ -38,6 +39,8 @@ function Topbar({ doc, setDoc, onImport, onExport, exporting, exportMsg, hubMsg,
             const fr=new FileReader(); fr.onload=()=>{ try{ setDoc(a_norm(JSON.parse(String(fr.result)))); if(requestPull) requestPull(); }catch(err){ alert('Not a schedule JSON file.'); } };
             fr.readAsText(f, 'utf-8'); e.target.value=''; }} />
       </div>
+      {/* the explanatory notes under the controls (RUI's hints mode) */}
+      <HintsToggle />
       <div className="spacer" />
       <div className="ss-tgroup"><span className="gl">{exporting ? (exportMsg||'Exporting…') : 'Export'}</span>
         <div className="ss-seg">

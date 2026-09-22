@@ -193,6 +193,10 @@ body{ background:#0e0c09; overflow:hidden; }
     #14110c; }
 .rs-stage.dropping{ box-shadow:inset 0 0 0 3px #00e5ff, inset 0 0 0 4px rgba(13,9,5,.7); }
 .rs-canvas{ will-change:transform; }
+/* Panning (hooks/useViewport.js): Space held = an open hand, dragging = a closed
+   one — over everything on the stage, so no element's own cursor argues. */
+.rs-stage.rs-panready, .rs-stage.rs-panready *{ cursor:grab !important; }
+.rs-stage.rs-panning, .rs-stage.rs-panning *{ cursor:grabbing !important; }
 
 /* inspector controls */
 .rs-row{ margin-bottom:14px; }

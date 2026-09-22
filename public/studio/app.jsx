@@ -58,7 +58,7 @@ function App({ initialDoc }){
      up saved twice under one name. */
   const actionsRef = React.useRef({});
   useKeys({ undo, redo, say, docRef, setDoc, setSelectedIds, selIdsRef, selRef, updateElRef, resolvedRef, actionsRef });
-  const { scale, scaleRef, zoomPct, zoomStep, setZoom } = useViewport({ stageRef, viewFormat });
+  const { scale, scaleRef, pan, zoomPct, zoomStep, zoomFit } = useViewport({ stageRef, viewFormat });
   useImageDrop({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelectedIds, resolvedRef, updateElRef, exportingRef, say });
   const { alignSel, distributeSel, centreSel } = useArrange({ selectedIds, resolved, updateEl, viewFormat });
   const { spawn, startSpawn } = useSpawn({ stageRef, canvasRef, scaleRef, docRef, setDoc, setSelectedIds });
@@ -85,7 +85,7 @@ function App({ initialDoc }){
        { label:'Toggle grid', group:'View', run:()=>setDoc(d=>({...d, showGrid:!d.showGrid})) },
        { label:'Toggle snap', group:'View', run:()=>setDoc(d=>({...d, snap:!d.snap})) },
        { label:'Toggle hints', group:'View', run:()=>RUI.setHints(!RUI.hintsOn()) },
-       { label:'Zoom to fit', group:'View', run:()=>setZoom(1) },
+       { label:'Zoom to fit', group:'View', run:zoomFit },
        { label:'Undo', group:'Edit', run:undo },
        { label:'Redo', group:'Edit', run:redo },
        { label:'Select all', group:'Edit', run:()=>setSelectedIds(docRef.current.elements.map(x=>x.id)) },
@@ -101,7 +101,7 @@ function App({ initialDoc }){
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
         onSaveTpl={saveUserTpl}
         canUndo={hist.canUndo} canRedo={hist.canRedo} onUndo={undo} onRedo={redo}
-        zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)}
+        zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={zoomFit}
         saveState={saveState} saveMsg={saveMsg} />
       <div className="rs-body">
         <div className="rs-lib">
@@ -110,7 +110,7 @@ function App({ initialDoc }){
         </div>
 
         <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent} posterDay={posterDayOf(doc)}
-          showGrid={doc.showGrid} snap={doc.snap} scale={scale} stageRef={stageRef} canvasRef={canvasRef}
+          showGrid={doc.showGrid} snap={doc.snap} scale={scale} pan={pan} stageRef={stageRef} canvasRef={canvasRef}
           selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} exporting={exporting} plateOnly={plateOnly}
           sliceMode={sliceMode} feedSlice={doc.feedSlice} onSliceChange={setFeedSlice} />
 

@@ -68,6 +68,10 @@ function DocumentPanel({ doc, setDoc, isOutput, clearAll, sliceMode, setSliceMod
           <b> Ctrl-V</b> paste an image onto a photo · <b>drop</b> an image on a photo to replace it, anywhere else to add one ·
           <b> click</b> a part to drop it in the middle.
         </div>
+        <div className="rs-mini" style={{ marginBottom:10 }}>
+          <b>Space-drag</b> or <b>middle-drag</b> pans the poster · <b>Ctrl/⌘-wheel</b> (or a pinch) zooms at the pointer ·
+          the <b>wheel</b> scrolls a zoomed-in poster (<b>⇧</b> for sideways) · click the <b>%</b> in the top bar to fit and re-centre.
+        </div>
       </Fold>
     </React.Fragment>
   );

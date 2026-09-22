@@ -152,7 +152,7 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
         <div className="rs-tgroup">
           <div className="rs-seg">
             <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
-            <button onClick={onZoomFit} title="Fit the poster to the pane">{zoomPct}</button>
+            <button onClick={onZoomFit} title="Fit the poster to the pane and re-centre it (Space-drag or middle-drag pans · Ctrl/⌘-wheel zooms at the pointer)">{zoomPct}</button>
             <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
           </div>
         </div>

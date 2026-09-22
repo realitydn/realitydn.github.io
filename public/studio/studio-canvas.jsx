@@ -82,7 +82,7 @@ function ScTextEditor({ el, value, onChange, onDone }){
   );
 }
 
-function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, snap, scale,
+function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, snap, scale, pan,
                         stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly,
                         sliceMode, feedSlice, onSliceChange }){
   const f = SC_FMT[format];
@@ -275,7 +275,12 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
       {/* data-fmt = commit sentinel: export loops poll it to know the flip landed
           before capturing (React stamps it atomically with the element layout) */}
       <div ref={canvasRef} className="rs-canvas" data-fmt={format}
-        style={{ width:f.w, height:f.h, transform:`translate(-50%,-50%) scale(${scale})`,
+        /* pan (hooks/useViewport.js) = screen px off the stage's centre. Exports
+           capture this node with transform:none, so the view never reaches them. */
+        style={{ width:f.w, height:f.h,
+          transform: (pan && (pan.x || pan.y))
+            ? `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${scale})`
+            : `translate(-50%,-50%) scale(${scale})`,
           left:'50%', top:'50%', position:'absolute',
           background:t.bg, boxShadow:`0 30px 80px rgba(0,0,0,.45)` }}>
 

@@ -37,7 +37,7 @@ import '../studio-shared/cloud.js';
 import './studio-data.jsx';
 import './studio-element.jsx';
 import './studio-canvas.jsx';
-import './studio-app.jsx';
+import './app.jsx';
 
 import { shadowModel, TEMPLATES, TEMPLATE_GROUPS } from './studio-data.jsx';
 import { getSample } from './studio-element.jsx';

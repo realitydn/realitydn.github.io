@@ -1430,6 +1430,44 @@ function dailyTitleStyle(ev, font, dc, T){
   return { fontFamily:R_GROT, fontWeight:600, fontSize:font, lineHeight:1.28, color:T.fg };
 }
 
+/* The Classic header row: the day's name on the left, its date on the right,
+   both inside the day block's padding. The name is set at a fixed size, and
+   WEDNESDAY — the longest name — at the story's 108px is wider than the row
+   has room for beside its date: as a flex item a nowrap word won't shrink, so
+   the date was pushed past the block's right padding and sat flush against
+   its edge (every other day kept the 58px). Now the name is FITTED: measured
+   at its set size after layout (and again once the webfonts are in, which is
+   when the measurement is true), and stepped down only as far as it takes to
+   leave `gap` before the date. A day that already fits keeps its exact size,
+   and a fitted name keeps the set size's line height, so the header block —
+   and everything under it — stays exactly where it is on every other day. */
+function DailyNameRow({ name, date, nameFs, dateFs, gap, marginTop }){
+  const rowRef = React.useRef(null), nameRef = React.useRef(null), dateRef = React.useRef(null);
+  const [fs, setFs] = React.useState(nameFs);
+  React.useLayoutEffect(()=>{
+    const fit = ()=>{
+      const row = rowRef.current, nm = nameRef.current, dt = dateRef.current;
+      if(!row || !nm || !dt) return;
+      const cur = parseFloat(getComputedStyle(nm).fontSize) || nameFs;
+      const natural = nm.scrollWidth * nameFs / cur;              // the name's width at its set size
+      const room = row.clientWidth - dt.offsetWidth - gap;
+      const want = natural <= room ? nameFs : Math.max(1, Math.floor(nameFs * room / natural));
+      setFs(prev=> prev===want ? prev : want);
+    };
+    fit();
+    let live = true;
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ if(live) fit(); });
+    return ()=>{ live = false; };
+  }, [name, date, nameFs, dateFs, gap]);
+  return (
+    <div ref={rowRef} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap, marginTop }}>
+      <div ref={nameRef} style={{ fontFamily:R_MONT, fontWeight:700, fontSize:fs, lineHeight:nameFs+'px',
+        textTransform:'uppercase', letterSpacing:'.005em', whiteSpace:'nowrap' }}>{name}</div>
+      <div ref={dateRef} style={{ fontFamily:R_MONT, fontWeight:500, fontSize:dateFs, lineHeight:1, flex:'none' }}>{date}</div>
+    </div>
+  );
+}
+
 /* ---- 01 · CLASSIC — the original. Day block header, list, footer rule. ---- */
 function DailyClassic({ doc, date, variant }){
   const v = DAILY_VARIANTS[variant||'story'];
@@ -1452,11 +1490,8 @@ function DailyClassic({ doc, date, variant }){
           padding:(story?54:40)+'px '+(story?58:48)+'px', marginBottom:story?56:40 }}>
           <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:story?26:22, letterSpacing:'.22em',
             textTransform:'uppercase', opacity:.92 }}>TODAY AT REALITY</div>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginTop:story?18:12 }}>
-            <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:story?108:88, lineHeight:1,
-              textTransform:'uppercase', letterSpacing:'.005em' }}>{R_DF[w]}</div>
-            <div style={{ fontFamily:R_MONT, fontWeight:500, fontSize:story?54:44, lineHeight:1 }}>{r_dshort(date)}</div>
-          </div>
+          <DailyNameRow name={R_DF[w]} date={r_dshort(date)} nameFs={story?108:88} dateFs={story?54:44}
+            gap={story?36:28} marginTop={story?18:12} />
         </div>
         <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column',
           justifyContent: evs.length>5 ? 'flex-start' : 'space-evenly', gap:rowGap }}>

@@ -13,11 +13,12 @@
    jspdf, JSZip — the self-hosted builds in vendor/.
 
    Globals this bundle SETS, kept permanently:
-     window.RCloud — the cloud client (cloud-client.js). One object per
-                     page, shared with anything else on it (the guard in
-                     cloud-client.js keeps an earlier copy if there is one).
+     window.RCloud — the cloud client (../studio-shared/cloud.js, the
+                     Poster's too). One object per page, shared with
+                     anything else on it (cloud.js keeps an earlier copy
+                     if there is one).
    ============================================================ */
-import './cloud-client.js';
+import '../studio-shared/cloud.js';
 import './schedule-data.jsx';
 import './schedule-render.jsx';
 import './schedule-app.jsx';

@@ -1,10 +1,14 @@
 /* ============================================================
    REALITY STUDIOS — shared cloud client  (window.RCloud)
    ------------------------------------------------------------
-   WP9 (Events Platform) part E. An ES module in the Studio's bundle
-   (imported by main.jsx before the app modules). The IIFE below still
-   sets window.RCloud — a permanent global, see main.jsx — and the
-   module exports that same object as RCloud.
+   WP9 (Events Platform) part E. ONE copy for every Studio (Phase 2 of
+   docs/REFACTOR-PLAN.md): Poster and Schedule each carried their own
+   cloud-client.js — the Schedule's was the Poster's plus
+   putDigestStory. This is that superset. An ES module: each Studio's
+   main.jsx imports it before the app modules, and it sets
+   window.RCloud — a permanent global, see main.jsx — to the same
+   object it exports as RCloud. Print imports nothing from here yet
+   (it has no cloud features); it can, like any other Studio.
 
    THE ONE RULE: cloud sync is STRICTLY ADDITIVE and best-effort.
    localStorage / IndexedDB (RStore) stay the source of truth.
@@ -26,12 +30,7 @@
    — honoured ONLY when the Studio itself is served from localhost /
    127.0.0.1. Anywhere else ?hub= is ignored (see hub() below).
    ============================================================ */
-(function () {
-  'use strict';
-
-  // Guard: never clobber an existing RCloud (double-load safety).
-  if (window.RCloud) return;
-
+function createCloud() {
   var DEFAULT_HUB = 'https://app.realitydn.com';
   var TOKEN_KEY = 'reality-hub-token-v1';
   var TOKEN_MSG = 'reality-studio-token';
@@ -429,7 +428,7 @@
   }
 
   /* ---- expose ------------------------------------------------------------ */
-  window.RCloud = {
+  return {
     HUB: DEFAULT_HUB,
     hub: hub,
     isSignedIn: isSignedIn,
@@ -445,7 +444,8 @@
     optimizeImage: optimizeImage,
     fetchFeed: fetchFeed,
   };
-})();
+}
 
-// The one RCloud (the guard above keeps an earlier copy if there is one).
-export const RCloud = window.RCloud;
+// The one RCloud per page. Never clobber an existing one (double-load safety:
+// a second bundle or a stray copy on the same page shares the first).
+export const RCloud = window.RCloud || (window.RCloud = createCloud());

@@ -3,7 +3,7 @@
    Day strip (range + splits) · day list editor · channel
    previews · inspector · import (paste/CSV) · export pipeline.
    ============================================================ */
-import { RCloud } from './cloud-client.js';
+import { RCloud } from '../studio-shared/cloud.js';
 import {
   DAY_COLORS as A_DC, DAY_TEXT as A_DT, DAY_ABBR as A_DA, LOCATIONS as A_LOCS,
   rangeDates as a_dates, rangeLabel as a_rangeLabel, dAdd as a_dAdd, dWeekday as a_wd,

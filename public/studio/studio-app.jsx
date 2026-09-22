@@ -14,7 +14,7 @@ import {
 } from '../studio-shared/press-panels.jsx';
 
 import { RStore } from './studio-store.js';
-import { RCloud } from './cloud-client.js';
+import { RCloud } from '../studio-shared/cloud.js';
 import {
   CATALOG as AP_CAT, FORMATS as AP_FMT, OUTPUT_FORMATS as AP_OUT, STANDEE_FORMATS as AP_STD,
   HANDOUT_FORMATS as AP_HND, PALETTE as AP_PAL, ACCENTS as AP_ACC, INK_CHOICES as AP_INKS,

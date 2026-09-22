@@ -19,7 +19,8 @@
 
    Globals this bundle SETS, kept permanently:
      window.RStore  — the IndexedDB store (studio-store.js)
-     window.RCloud  — the cloud client (cloud-client.js)
+     window.RCloud  — the cloud client (../studio-shared/cloud.js, shared
+                      with Schedule Studio)
      window.RUI     — the shared control kit (../studio-shared/studio-ui.jsx);
                       the exports suite opens the library folds through it
      window.shadowModel — below
@@ -31,7 +32,7 @@
 import '../studio-shared/print-icons.js';
 import '../studio-shared/studio-ui.jsx';
 import './studio-store.js';
-import './cloud-client.js';
+import '../studio-shared/cloud.js';
 import './studio-data.jsx';
 import './studio-element.jsx';
 import './studio-canvas.jsx';

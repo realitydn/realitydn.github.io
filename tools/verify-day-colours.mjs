@@ -165,6 +165,9 @@ if (brand) {
     "public/studio-shared/press-panels.jsx": ["STOCK_LABEL", "SEP_SCREENS", "PRESS_DIALS", "PressStock",
       "PressDial", "PressFold", "ProofFold", "InkRow", "SepPressFold", "SepProofFold"],
     "public/studio-shared/util.js": ["uid", "_id", "slugify", "makeTypeScale", "EM"],
+    "public/studio-shared/cloud.js": ["createCloud", "DEFAULT_HUB", "TOKEN_KEY", "TOKEN_MSG", "SIGNIN_TIMEOUT_MS",
+      "CALL_TIMEOUT_MS", "isLocalHost", "readToken", "writeToken", "clearToken", "isSignedIn", "currentEmail",
+      "getDoc", "listDocs", "putDoc", "delDoc", "putPoster", "putDigestStory", "optimizeImage", "fetchFeed"],
   };
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;

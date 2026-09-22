@@ -44,7 +44,7 @@ async function embedFonts(pdf){
    The target is capped at RASTER_CAP px on the long side, so it is NOT 150 dpi
    everywhere: a full-width A1 photo (841 mm) comes out at ~121 dpi, an A2 one
    (594 mm) at the full 150. The cap sits above the upload cap (3500 px in
-   print-app) so the export never throws away pixels the upload kept — past
+   image-controls.jsx) so the export never throws away pixels the upload kept — past
    that, resolution is the source's, and the preflight reports the dpi the
    SOURCE actually gives at print size. */
 const RASTER_CAP = 4000;

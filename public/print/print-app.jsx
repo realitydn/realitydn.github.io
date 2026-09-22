@@ -4,6 +4,9 @@
    Year 2 pass: layout grid + snapping, undo/redo, zoom, Fold
    inspector in one canonical order, template previews.
    ============================================================ */
+import { ICON_GLYPHS, ICON_LABELS, ICON_CATEGORIES, ICON_CORE } from '../studio-shared/print-icons.js';
+import { RUI } from '../studio-shared/studio-ui.jsx';
+
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import {
   CATALOG as AP_CAT, DEFAULTS as AP_DEF, PALETTE as AP_PAL, ACCENTS as AP_ACC, SIZES as AP_SZ,
@@ -360,7 +363,7 @@ function ImageControls({ el, update, onFile, docAccent }){
 
 /* ---------- icon picker — the Year 2 glyph set, searchable ---------- */
 function IconGlyphSvg({ kind, size }){
-  const g = (window.ICON_GLYPHS||{})[kind]; if(!g) return null;
+  const g = (ICON_GLYPHS||{})[kind]; if(!g) return null;
   return (
     <svg viewBox="0 0 24 24" width={size||22} height={size||22} style={{ display:'block' }}>
       {g.map((p,i)=>{
@@ -379,9 +382,9 @@ function IconGlyphSvg({ kind, size }){
 }
 function IconPicker({ el, update }){
   const [q, setQ] = React.useState('');
-  const labels = window.ICON_LABELS||{};
-  const cats = window.ICON_CATEGORIES||[];
-  const core = window.ICON_CORE||[];
+  const labels = ICON_LABELS||{};
+  const cats = ICON_CATEGORIES||[];
+  const core = ICON_CORE||[];
   const query = q.trim().toLowerCase();
   const match = (k)=> !query || k.indexOf(query)>=0 || (labels[k]||'').toLowerCase().indexOf(query)>=0;
   const grid = (keys)=>(
@@ -400,7 +403,7 @@ function IconPicker({ el, update }){
         <input className="ps-input" placeholder="Search icons…" value={q} onChange={e=>setQ(e.target.value)} spellCheck={false} />
       </div>
       {query
-        ? grid(Object.keys(window.ICON_GLYPHS||{}))
+        ? grid(Object.keys(ICON_GLYPHS||{}))
         : <React.Fragment>
             <div className="ps-mini" style={{ margin:'0 0 4px' }}>Core</div>
             {grid(core)}

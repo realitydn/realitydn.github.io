@@ -31,9 +31,9 @@
 // Vite ships) — this script imports it, so it mustn't rely on Vite pulling it
 // in transitively.
 
-import { build, transform } from 'esbuild';
+import { build } from 'esbuild';
 import { createRequire } from 'node:module';
-import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,31 +41,6 @@ const require = createRequire(import.meta.url);
 const { STUDIOS, bundleOptions, formatErrors } = require('../tools/studio-bundle.cjs');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-// MIGRATION (Phase 1 of docs/REFACTOR-PLAN.md): Studios still on ordered
-// classic scripts get the old file-by-file JSX transform until they move to
-// a bundle. Shared with tools/studio-jsx.cjs — keep the two in step.
-const BUNDLED = ['schedule', 'print', 'studio'];
-const LEGACY_DIRS = ['studio-shared'];
-export const JSX_TRANSFORM = {
-  loader: 'jsx',
-  target: 'esnext',
-  jsx: 'transform',
-  jsxFactory: 'React.createElement',
-  jsxFragment: 'React.Fragment',
-};
-
-async function compileDir(dir) {
-  const abs = path.join(ROOT, 'public', dir);
-  const sources = (await readdir(abs)).filter((f) => f.endsWith('.jsx'));
-  for (const file of sources) {
-    const code = await readFile(path.join(abs, file), 'utf8');
-    const result = await transform(code, { ...JSX_TRANSFORM, sourcefile: `${dir}/${file}` });
-    const banner = `// GENERATED from ${file} by scripts/build-studios.mjs — do not edit.\n`;
-    await writeFile(path.join(abs, file.replace(/\.jsx$/, '.js')), banner + result.code, 'utf8');
-  }
-  console.log(`  studios: ${dir} — compiled ${sources.length} .jsx → .js (legacy)`);
-}
 
 async function bundle(name) {
   const opts = bundleOptions(name);
@@ -80,10 +55,11 @@ async function bundle(name) {
   console.log(`  studios: ${name} — ${path.relative(ROOT, opts.outfile).split(path.sep).join('/')} (${kb} KB)`);
 }
 
-await Promise.all([...BUNDLED.map(bundle), ...LEGACY_DIRS.map(compileDir)]);
+await Promise.all(Object.keys(STUDIOS).map(bundle));
 
 if (process.exitCode) {
   console.error('  studios: a bundle failed to build — see above');
+  process.exit(1);
 } else {
   console.log(`  studios: ${Object.keys(STUDIOS).length} Studio(s) built, Babel not needed at runtime`);
 }

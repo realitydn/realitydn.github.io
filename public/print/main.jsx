@@ -7,8 +7,24 @@
    The modules import what they use from each other; this file only
    fixes the order they run in — the order index.html used to list
    them as separate <script>s — and ends with the app mounting.
+
+   Globals, on purpose (index.html loads them BEFORE the bundle; the
+   modules read them as globals, never import them):
+     React, ReactDOM, PDFLib, fontkit, qrcode — the self-hosted builds
+       in vendor/;
+     window.RisoPress, window.RISO — ../studio-shared/riso-press.js
+       and riso-engine.js (the SAME two files Poster Studio loads).
+       riso-press.js is vendored verbatim into the REALITY app (its
+       sync:riso script) and must stay a standalone UMD file.
+
+   Globals this bundle SETS, kept permanently:
+     window.RUI — the shared control kit (../studio-shared/studio-ui.jsx),
+                  which sets it for both Studios
+     test hooks — below
    ============================================================ */
 import './print-store.js';
+import '../studio-shared/print-icons.js';
+import '../studio-shared/studio-ui.jsx';
 import './print-data.jsx';
 import './print-element.jsx';
 import './print-canvas.jsx';

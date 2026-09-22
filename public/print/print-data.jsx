@@ -21,6 +21,8 @@
    ============================================================ */
 
 /* ---- brand palette (LOCKED) — screen RGB ---- */
+import { ICON_GLYPHS } from '../studio-shared/print-icons.js';
+
 const PALETTE = {
   blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
   amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224'
@@ -560,7 +562,7 @@ function shapePath(kind, w, h){
    vector match. Stroke width scales with the glyph (a 200pt icon keeps its
    visual 2px-at-24 weight). `solid` fills the non-linear primitives. */
 function iconLayout(el){
-  const g = (window.ICON_GLYPHS||{})[el.kind] || null;
+  const g = (ICON_GLYPHS||{})[el.kind] || null;
   if(!g) return null;
   const s = Math.min(el.w, el.h)/24;
   const ox = (el.w-24*s)/2, oy = (el.h-24*s)/2;

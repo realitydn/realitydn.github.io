@@ -2,6 +2,9 @@
    REALITY POSTER STUDIO — App
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
+import { ICON_CATEGORIES, ICON_CORE, ICON_LABELS } from '../studio-shared/print-icons.js';
+import { RUI } from '../studio-shared/studio-ui.jsx';
+
 import { RStore } from './studio-store.js';
 import { RCloud } from './cloud-client.js';
 import {
@@ -777,11 +780,11 @@ function GfxGrid({ type, items, prop, value, onPick, onSpawn, wide }){
 function IconPicker({ value, onPick, onSpawn }){
   const [q,setQ] = React.useState('');
   const groups = React.useMemo(()=>{
-    const cats = (window.ICON_CATEGORIES||[]).map(c=>({ group:c.group, items:c.items }));
-    const core = (window.ICON_CORE||[]);
+    const cats = (ICON_CATEGORIES||[]).map(c=>({ group:c.group, items:c.items }));
+    const core = (ICON_CORE||[]);
     return core.length ? [{ group:'Core · interface', items:core }].concat(cats) : cats;
   }, []);
-  const lab = k => (window.ICON_LABELS||{})[k] || k.replace(/_/g,' ');
+  const lab = k => (ICON_LABELS||{})[k] || k.replace(/_/g,' ');
   const needle = q.trim().toLowerCase();
   const hit = k => !needle || k.toLowerCase().indexOf(needle)>=0 || lab(k).toLowerCase().indexOf(needle)>=0;
   const shown = groups.map(g=>({ group:g.group, items:g.items.filter(hit) })).filter(g=>g.items.length);

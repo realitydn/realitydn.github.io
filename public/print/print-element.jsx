@@ -156,7 +156,7 @@ function TextBlock({ el, textCol, justify }){
 
 /* raster photo + riso effects — the only non-vector element. Renders the RISO
    engine to a <canvas> (mirrors Poster Studio's PhotoEl). Pixels resolve from
-   window.PrintImg (in-memory cache → IndexedDB). No image yet → dashed prompt. */
+   PrintImg (in-memory cache → IndexedDB). No image yet → dashed prompt. */
 function ImageEl({ el, docAccent, lift }){
   const ref = React.useRef(null);
   const [, bump] = React.useState(0);

@@ -31,13 +31,14 @@
       Ctrl-K searches, so "dot gain" finds a slider six folds deep
       without you remembering it lives under Treatment.
 
-   Exposed as window.RUI. No build step of its own beyond the JSX
-   compile every Studio file already goes through.
+   An ES module in both Studios' bundles: exports RUI (and still sets
+   window.RUI, kept on purpose — see each Studio's main.jsx).
    ============================================================ */
 
-/* Wrapped in an IIFE on purpose. These are classic scripts sharing one global
-   scope, so a top-level `function Field(){}` here would collide with the
-   `const { Field } = RUI` alias each Studio declares. Only window.RUI escapes. */
+/* Wrapped in an IIFE: it dates from when the Studios were classic scripts
+   sharing one global scope, where a top-level `function Field(){}` here
+   would have collided with the `const { Field } = RUI` alias each Studio
+   declares. Only RUI escapes. */
 (function(){
   /* ---------- config ---------- */
   const CFG = { prefix:'rs', storeKey:'reality-studio' };
@@ -420,3 +421,5 @@
     dirtyCount, isSet, reveal, setActions, indexStore,
   };
 })();
+
+export const RUI = window.RUI;

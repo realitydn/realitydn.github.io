@@ -7,7 +7,29 @@
    The modules import what they use from each other; this file only
    fixes the order they run in — the order index.html used to list
    them as separate <script>s — and ends with the app mounting.
+
+   Globals, on purpose (index.html loads them BEFORE the bundle; the
+   modules read them as globals, never import them):
+     React, ReactDOM, htmlToImage, jspdf, JSZip — the self-hosted
+       builds in vendor/;
+     window.RisoPress, window.RISO — ../studio-shared/riso-press.js
+       and riso-engine.js. riso-press.js is vendored verbatim into the
+       REALITY app (its sync:riso script) and must stay a standalone
+       UMD file; the engine test harness loads the two the same way.
+
+   Globals this bundle SETS, kept permanently:
+     window.RStore  — the IndexedDB store (studio-store.js)
+     window.RCloud  — the cloud client (cloud-client.js)
+     window.RUI     — the shared control kit (../studio-shared/studio-ui.jsx);
+                      the exports suite opens the library folds through it
+     window.shadowModel — below
+     test hooks     — below
+   The modules themselves import all of these; the window names are for
+   what lives outside the bundle (the test suite, the console, a second
+   copy of the cloud client).
    ============================================================ */
+import '../studio-shared/print-icons.js';
+import '../studio-shared/studio-ui.jsx';
 import './studio-store.js';
 import './cloud-client.js';
 import './studio-data.jsx';

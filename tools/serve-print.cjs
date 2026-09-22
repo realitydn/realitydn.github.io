@@ -1,17 +1,18 @@
 // Zero-dependency static server for the REALITY Print Studio.
 //
-// Like the Poster Studio it is a fully client-side app (precompiled React —
-// no in-browser Babel since 23faf1c; this server transpiles the .jsx sources
-// on the fly via studio-jsx.cjs) that must be SERVED over HTTP — index.html
-// asks for .js files that only exist after a build, and the PDF engine
-// fetches the vendored font .ttf files, which file:// blocks. This serves public/print/.
+// Like the Poster Studio it is a fully client-side app (React, no in-browser
+// Babel since 23faf1c) that must be SERVED over HTTP — index.html asks for
+// print.bundle.js, which only exists on disk after a build, and the PDF engine
+// fetches the vendored font .ttf files, which file:// blocks. This serves
+// public/print/, and bundles main.jsx and its imports in memory on every
+// request for print.bundle.js (tools/studio-bundle.cjs — the same esbuild
+// recipe scripts/build-studios.mjs uses), so there is no build step.
 //
 // Launched by "Print Studio.bat". Stop with Ctrl-C or by closing the window.
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { serveCompiledJsx } = require('./studio-jsx.cjs');
 const { serveBundle } = require('./studio-bundle.cjs');
 
 // Default 4503 (what "Print Studio.bat" expects). Honour PORT when set so a
@@ -46,13 +47,12 @@ if (!fs.existsSync(path.join(ROOT, ENTRY))) {
   process.exit(1);
 }
 
-// Files the Studio loads from OUTSIDE its own folder. Deployed, public/ is
+// Files the page loads from OUTSIDE its own folder. Deployed, public/ is
 // copied verbatim to the site root, so index.html's "../studio-shared/…"
 // resolves at the root and just works; locally ROOT containment would 403 it.
-// The control kit is deliberately one file shared with Poster Studio rather
-// than a second copy that can drift, so this maps that request to the real one.
+// (The shared modules — the control kit, the glyph set — are inside the
+// bundle; esbuild reads them straight off disk.)
 const SHARED = {
-  '/studio-shared/studio-ui.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-ui.js'),
   // The riso press — the pure core and the canvas engine — is one copy shared
   // with Poster Studio (Print used to carry its own white-paper fork).
   '/studio-shared/riso-press.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'riso-press.js'),
@@ -71,10 +71,10 @@ const server = http.createServer((req, res) => {
     return res.end('Forbidden');
   }
 
-  // index.html asks for .js; the app files are .jsx on disk. Compile on demand
-  // so editing a .jsx and hitting refresh is all it takes — no build step.
+  // index.html asks for print.bundle.js; build it from main.jsx on demand so
+  // editing a .jsx and hitting refresh is all it takes — no build step. (A
+  // stale built bundle on disk is never served in its place.)
   if (serveBundle('print', rel, res)) return;
-  if (serveCompiledJsx(filePath, res)) return;
 
   fs.readFile(filePath, (err, data) => {
     if (err) {

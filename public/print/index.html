@@ -20,7 +20,8 @@
      engine below. These were unpkg *development* builds (1.2 MB combined, and
      slower at runtime because of the dev-only warning checks) alongside
      @babel/standalone, which compiled the .jsx in the browser on every load.
-     The .jsx is precompiled by scripts/build-studios.mjs now, so Babel is gone. -->
+     Babel is gone: the Studio is one prebuilt bundle now (below), which reads
+     React as this global. -->
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
 
@@ -29,21 +30,19 @@
 <script src="vendor/fontkit.umd.min.js"></script>
 <script src="vendor/qrcode.js"></script>
 
-<!-- Plain JS (no JSX): the riso photo engine (the SAME two files Poster Studio
-     loads — one press, no Print-side fork; Print's true-white stock is the
-     engine's `white` stock, set in print-data's risoOpts), the IndexedDB image
-     store and the Year 2 icon glyph data. Loaded before the app modules so
-     window.RISO / window.PrintImg / window.ICON_GLYPHS exist. -->
+<!-- Plain JS: the riso photo engine (the SAME two files Poster Studio loads —
+     one press, no Print-side fork; Print's true-white stock is the engine's
+     `white` stock, set in print-data's risoOpts). Loaded before the bundle so
+     window.RisoPress / window.RISO exist. -->
 <script src="../studio-shared/riso-press.js"></script>
 <script src="../studio-shared/riso-engine.js"></script>
-<script src="print-icons.js"></script>
 
-<!-- Shared control kit (window.RUI) — Fold, Slider, Chips, the persisted fold
-     state, the hints mode and the Ctrl-K palette. One copy, shared verbatim
-     with Poster Studio so the two can't drift to different components. Must
-     load before the app scripts, which alias its atoms at top level. -->
-<script src="../studio-shared/studio-ui.js"></script>
-
+<!-- The Studio itself: main.jsx and every module it imports — the IndexedDB
+     store, data, element, canvas, PDF export, app, and from ../studio-shared/
+     the Year 2 glyph set and the control kit (window.RUI) that Poster Studio
+     imports too — bundled by esbuild into one script. Built by
+     scripts/build-studios.mjs for deploy; the local launcher
+     (tools/serve-print.cjs) bundles it on each request. Edit the .jsx. -->
 <script src="print.bundle.js"></script>
 </body>
 </html>

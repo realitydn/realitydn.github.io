@@ -2,17 +2,17 @@
 //
 // The Studio is a fully client-side app (plain React — no in-browser Babel
 // any more), but it must be SERVED, not opened as a file://: index.html asks
-// for .js files that only exist after a build (scripts/build-studios.mjs
-// precompiles them for deploy), and this server compiles each one from its
-// sibling .jsx on request via studio-jsx.cjs. This serves public/studio/ so
-// the Studio can load locally.
+// for studio.bundle.js, which only exists on disk after a build
+// (scripts/build-studios.mjs bundles it for deploy). This server serves
+// public/studio/ and bundles main.jsx and its imports in memory on every
+// request for studio.bundle.js (tools/studio-bundle.cjs — the same esbuild
+// recipe the build uses), so there is no build step.
 //
 // Launched by "Poster Studio.bat". Stop with Ctrl-C or by closing the window.
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { serveCompiledJsx } = require('./studio-jsx.cjs');
 const { serveBundle } = require('./studio-bundle.cjs');
 
 // Default 4501 (what "Poster Studio.bat" expects). Honour PORT when set, so a
@@ -25,16 +25,13 @@ const PORT = process.env.PORT || 4501;
 const ROOT = path.resolve(__dirname, '..', 'public', 'studio');
 const ENTRY = 'index.html';
 
-// Files the Studio loads from OUTSIDE its own folder. Deployed, public/ is
-// copied verbatim to the site root, so index.html's "../print/print-icons.js"
-// resolves to /print/print-icons.js and just works; locally ROOT containment
-// would 403 it. The Year 2 glyph set is deliberately one file shared with
-// Print Studio (see its header) rather than a second copy that can drift, so
-// this maps that one request back to the real file.
+// Files the page loads from OUTSIDE its own folder. Deployed, public/ is
+// copied verbatim to the site root, so index.html's "../studio-shared/…"
+// resolves at the root and just works; locally ROOT containment would 403 it,
+// so this maps those requests back to the real files. (The shared modules —
+// the control kit, the Year 2 glyph set — are inside the bundle; esbuild
+// reads them straight off disk.)
 const SHARED = {
-  '/print/print-icons.js': path.resolve(__dirname, '..', 'public', 'print', 'print-icons.js'),
-  // The shared control kit (window.RUI) — one copy, both Studios.
-  '/studio-shared/studio-ui.js': path.resolve(__dirname, '..', 'public', 'studio-shared', 'studio-ui.js'),
   // The riso press: the pure core (window.RisoPress) and the canvas engine
   // over it (window.RISO). One copy for both Studios — and the core is
   // vendored verbatim into the app, so it must never grow a Studio-side fork.
@@ -80,10 +77,10 @@ const server = http.createServer((req, res) => {
     return res.end('Forbidden');
   }
 
-  // index.html asks for .js; the app files are .jsx on disk. Compile on demand
-  // so editing a .jsx and hitting refresh is all it takes — no build step.
+  // index.html asks for studio.bundle.js; build it from main.jsx on demand so
+  // editing a .jsx and hitting refresh is all it takes — no build step. (A
+  // stale built bundle on disk is never served in its place.)
   if (serveBundle('studio', rel, res)) return;
-  if (serveCompiledJsx(filePath, res)) return;
 
   fs.readFile(filePath, (err, data) => {
     if (err) {

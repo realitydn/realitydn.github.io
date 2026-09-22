@@ -1252,7 +1252,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
   }
   else if(el.type==='weekly'){
     /* accent bar (price left · time right) with a white day-badge on top.
-       The bar text goes through window.contrastInk like every other accent
+       The bar text goes through contrastInk like every other accent
        fill in the Studio — it used to carry its OWN naive-luminance rule at a
        0.6 threshold, which put cream on blue and green where canon says ink,
        so a Weekly bar and a When chip on the same accent disagreed. One rule,

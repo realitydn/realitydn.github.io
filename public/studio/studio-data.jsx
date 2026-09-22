@@ -5,6 +5,8 @@
    uid, QRGlyph
    ============================================================ */
 
+import { ICON_GLYPHS } from '../studio-shared/print-icons.js';
+
 const PALETTE = {
   blue:'#18a7e0', green:'#43b02a', yellow:'#fddf00',
   amber:'#fdb515', purple:'#6e3179', pink:'#ed1b72', red:'#ed2224',
@@ -607,7 +609,7 @@ function ruleLayout(el){
    visual weight of the 2px-at-24 original. `solid` fills the closed
    primitives instead of stroking them. */
 function iconLayout(el){
-  const g = (window.ICON_GLYPHS||{})[el.kind] || null;
+  const g = (ICON_GLYPHS||{})[el.kind] || null;
   if(!g) return null;
   const s = Math.min(el.w, el.h)/24;
   const ox = (el.w-24*s)/2, oy = (el.h-24*s)/2;
@@ -727,7 +729,7 @@ const BURST_PRESETS = [
   { k:'wheel',  l:'Wheel',   p:{ rays:12, hub:0.6 } },
 ];
 /* The picker's own structure. `kind` families read their members from the
-   registries above; `icons` reads window.ICON_CATEGORIES (print-icons.js). */
+   registries above; `icons` reads ICON_CATEGORIES (studio-shared/print-icons.js). */
 const GRAPHICS = [
   { id:'gfx-shapes', title:'Shapes',  type:'shape', prop:'kind',    open:true,
     items:SHAPE_KINDS.map(k=>({ k, l:SHAPE_LABELS[k]||k })),

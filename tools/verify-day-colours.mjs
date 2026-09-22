@@ -144,22 +144,31 @@ if (brand) {
   if (!(brand.WORDMARK_PATHS || []).length || !/^M73\.4,63\.7/.test(brand.WORDMARK_PATHS[0]))
     fail(`${B}: the wordmark's baked letter paths are missing`);
 }
-// c) No second copy. Every Studio imports these from brand.js; a local
-//    definition is a fork waiting to drift, so it fails the build outright.
+// c) No second copy. Every Studio imports these from the shared modules; a
+//    local definition is a fork waiting to drift, so it fails the build
+//    outright. (Phase 2: brand.js first, then each module as it lands.)
 {
-  const OWNED = ["PALETTE", "ACCENTS", "ACCENT_DAYS", "ACCENT_BY_DAY", "ACCENTS_BY_DAY", "DAY_COLORS",
-    "DAY_TEXT", "DAY_FULL", "INK_CHOICES", "INK_MARK", "INK_MARK_CELLS", "INK_MARK_DAY_KEYS",
-    "INK_MARK_DAY_ACCENT", "inkMarkCells", "inkMarkLayout", "inkMarkHex", "relLuminance",
-    "contrastRatio", "contrastInk", "accentDay", "WORDMARK_PATH", "WORDMARK_PATHS", "WM_PATHS",
-    "PARTNER", "partnerOf", "inkTitle", "WordmarkSVG"];
-  const re = new RegExp(`^\\s*(?:export\\s+)?(?:const|let|var|function)\\s+(${OWNED.join("|")})\\b`, "gm");
+  const OWNED = {
+    "public/studio-shared/brand.js": ["PALETTE", "ACCENTS", "ACCENT_DAYS", "ACCENT_BY_DAY", "ACCENTS_BY_DAY",
+      "DAY_COLORS", "DAY_TEXT", "DAY_FULL", "INK_CHOICES", "INK_MARK", "INK_MARK_CELLS", "INK_MARK_DAY_KEYS",
+      "INK_MARK_DAY_ACCENT", "inkMarkCells", "inkMarkLayout", "inkMarkHex", "relLuminance", "contrastRatio",
+      "contrastInk", "accentDay", "WORDMARK_PATH", "WORDMARK_PATHS", "WM_PATHS", "PARTNER", "partnerOf",
+      "inkTitle", "MONT", "ALT", "GROT"],
+    "public/studio-shared/wordmark.jsx": ["WordmarkSVG", "Wordmark"],
+    "public/studio-shared/shapes.js": ["SHAPE_KINDS", "shapePath", "shapeClip", "roundedRectPath", "starPath",
+      "burstRays", "ruleLayout", "RULE_PATTERNS", "iconLayout", "_poly", "_regPoly", "_starPts", "_star",
+      "_scalePath", "_scaleSvgPath"],
+  };
+  const owner = {};
+  for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;
+  const re = new RegExp(`^\\s*(?:export\\s+)?(?:const|let|var|function)\\s+(${Object.keys(owner).join("|")})\\b`, "gm");
   const studioSources = [];
   for (const dir of ["public/studio", "public/print", "public/schedule"])
     for (const f of readdirSync(join(root, dir)))
       if (/\.(jsx|js|mjs)$/.test(f) && !/\.bundle\.js$/.test(f)) studioSources.push(`${dir}/${f}`);
   for (const rel of studioSources) {
     for (const m of read(rel).matchAll(re))
-      fail(`${rel}: defines its own ${m[1]} — it lives in ${BRAND} (or wordmark.jsx); import it`);
+      fail(`${rel}: defines its own ${m[1]} — it lives in ${owner[m[1]]}; import it`);
   }
   // …and the wordmark component draws brand.js's paths, never its own.
   if (!/WORDMARK_PATHS/.test(read("public/studio-shared/wordmark.jsx")))

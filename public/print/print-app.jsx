@@ -7,6 +7,7 @@
 import { ICON_GLYPHS, ICON_LABELS, ICON_CATEGORIES, ICON_CORE } from '../studio-shared/print-icons.js';
 import { RUI } from '../studio-shared/studio-ui.jsx';
 import { inkTitle, INK_CHOICES } from '../studio-shared/brand.js';
+import { RULE_PATTERNS } from '../studio-shared/shapes.js';
 
 import { PrintImg, PrintDocs, PrintStore } from './print-store.js';
 import {
@@ -124,7 +125,6 @@ const ORIENTABLE = ['headline','numeral','bignum','kicker','body'];
    option is gone and the eyes are always square. */
 const QR_MODULES = [{v:'square',l:'Square'},{v:'rounded',l:'Rounded'},{v:'dot',l:'Dot'}];
 const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'}];
-const RULE_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'},{v:'dashdot',l:'Dash-dot'},{v:'double',l:'Double'},{v:'triple',l:'Triple'},{v:'ticks',l:'Ticks'},{v:'zigzag',l:'Zigzag'},{v:'wave',l:'Wave'},{v:'square',l:'Square'}];
 const RULE_TERMS = [{v:'none',l:'None'},{v:'dot',l:'Dot'},{v:'arrow',l:'Arrow'},{v:'diamond',l:'Diamond'},{v:'star',l:'★ Star'}];
 const BORDER_PATTERNS = [{v:'solid',l:'Solid'},{v:'dashed',l:'Dashed'},{v:'dotted',l:'Dotted'},{v:'dashdot',l:'Dash-dot'}];
 const SURFACED_BOX = ['headline','numeral','bignum','kicker','pricelist','qr','coupon','badge','marquee','arrow'];

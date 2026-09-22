@@ -111,7 +111,7 @@ async function posterPanels(page) {
 }
 
 async function printPanels(page) {
-  // ImageControls (print-app.jsx) is a window global — one of the test hooks
+  // ImageControls (print/image-controls.jsx) is a window global — one of the test hooks
   // print/main.jsx assigns; render it for every treatment into a scratch root.
   return page.evaluate(async () => {
     const notes = [], info = [];

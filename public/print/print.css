@@ -30,7 +30,7 @@ body{ background:var(--ps-bg); overflow:hidden; }
   background:var(--ps-bg); color:var(--ps-fg); font-family:var(--ps-grot); }
 
 /* ---- TOPBAR ----
-   Two rows beside the brand (see Topbar in print-app.jsx). No overflow-x and
+   Two rows beside the brand (see Topbar in topbar.jsx). No overflow-x and
    no sticky group any more: at 1440 px the old single row measured 2062 px
    and the sticky export group sat on top of the zoom/undo/view controls.
    Rows wrap on a narrow window — they never paint over each other.
@@ -196,6 +196,9 @@ body{ background:var(--ps-bg); overflow:hidden; }
     #191510; }
 .ps-spacer{ position:relative; min-width:100%; min-height:100%; }
 .ps-canvas{ will-change:transform; }
+/* panning (use-viewport.js): Space held arms it, a drag scrolls the stage */
+.ps-stage.ps-panready, .ps-stage.ps-panready *{ cursor:grab !important; }
+.ps-stage.ps-panning, .ps-stage.ps-panning *{ cursor:grabbing !important; user-select:none; }
 
 /* inspector controls */
 .ps-row{ margin-bottom:13px; }

@@ -4,6 +4,10 @@ compatibility_date = "2024-03-01"
 
 [vars]
 ALLOWED_ORIGIN = "https://realitydn.com,https://www.realitydn.com"
+# Gates the localhost CORS/Origin allowance in src/index.js. Anything but
+# "development" (or unset) = production: only ALLOWED_ORIGIN may POST.
+ENVIRONMENT = "production"
 
+# vars are NOT inherited by named environments — repeat every key here.
 [env.development]
-vars = { ALLOWED_ORIGIN = "http://localhost:5173" }
+vars = { ALLOWED_ORIGIN = "http://localhost:5173", ENVIRONMENT = "development" }

@@ -18,15 +18,17 @@ export async function sendConfirmationEmail(env, email, formType, formData) {
 
     const confirmationMessageVI = 'Cảm ơn bạn đã gửi đơn đề xuất! Chúng tôi sẽ xem xét và liên hệ lại trong vài ngày tới.';
 
-    // Build a summary of what they submitted
-    const summaryHtml = formData ? buildSubmissionSummary(formType, formData) : '';
+    // No echo of the submission. The recipient address comes from the same
+    // unauthenticated POST, so anything we quote back here is text a stranger
+    // can mail to any inbox from hello@realitydn.com. A fixed thank-you keeps
+    // the endpoint useless as a relay; the team sees the full submission in
+    // Notion / Sheets / the Control Room inbox.
 
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Thank you for your submission!</h2>
         <p>${confirmationMessage}</p>
 
-        ${summaryHtml}
 
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
 
@@ -71,57 +73,22 @@ export async function sendConfirmationEmail(env, email, formType, formData) {
   }
 }
 
-function buildSubmissionSummary(formType, data) {
-  const row = (label, value) =>
-    value ? `<tr><td style="padding:6px 12px 6px 0;color:#666;vertical-align:top;white-space:nowrap;">${label}</td><td style="padding:6px 0;">${value}</td></tr>` : '';
-
-  const arr = (v) => Array.isArray(v) ? v.join(', ') : v;
-
-  if (formType === 'event-proposal') {
-    return `
-      <div style="margin:24px 0;">
-        <h3 style="font-size:14px;color:#666;margin-bottom:8px;">Here's what you submitted:</h3>
-        <table style="font-size:14px;border-collapse:collapse;width:100%;">
-          ${row('Name', data.hostName)}
-          ${row('Organization', data.organization)}
-          ${row('Email', data.email)}
-          ${row('Contact', data.contact)}
-          ${row('Event', data.eventTitle)}
-          ${row('Description', data.eventDescription)}
-          ${row('Recurrence', data.recurrence)}
-          ${row('Schedule', data.daysAndTimes)}
-          ${row('Duration', data.duration)}
-          ${row('Cost', data.eventCost)}
-          ${row('Languages', arr(data.languages))}
-          ${row('Space', arr(data.preferredSpace))}
-          ${row('Equipment', arr(data.equipment))}
-          ${row('Notes', data.anythingElse)}
-        </table>
-      </div>`;
-  }
-
-  if (formType === 'art-exhibition') {
-    return `
-      <div style="margin:24px 0;">
-        <h3 style="font-size:14px;color:#666;margin-bottom:8px;">Here's what you submitted:</h3>
-        <table style="font-size:14px;border-collapse:collapse;width:100%;">
-          ${row('Name', data.name)}
-          ${row('Artist / Collective', data.artistCollectiveName)}
-          ${row('Email', data.email)}
-          ${row('Contact', data.contact)}
-          ${row('Location', data.basedWhere)}
-          ${row('Bio', data.artistBio)}
-          ${row('Portfolio', data.workLink)}
-          ${row('Concept', data.showDescription)}
-          ${row('Spaces', arr(data.showAreas))}
-          ${row('Scale', data.spaceAmount)}
-          ${row('Installation', data.technicalNeeds)}
-          ${row('Dates', data.preferredDate)}
-          ${row('Flexibility', data.flexibility)}
-          ${row('Group show', data.isGroupShow === 'yes' ? 'Yes (' + (data.numArtists || '?') + ' artists)' : 'No')}
-        </table>
-      </div>`;
-  }
-
-  return '';
+/**
+ * HTML-escape a value before it goes anywhere near the email body.
+ *
+ * Kept for any future template that quotes user input: every POSTed field is attacker-controlled (it's whatever was POSTed),
+ * and the mail goes out from hello@realitydn.com to the address in the same
+ * payload — so unescaped, this endpoint would send arbitrary HTML (phishing
+ * links, fake "reset your password" buttons) under REALITY's name. Escaping
+ * turns all of it back into inert text. Non-strings are stringified first so
+ * an object or number can't slip past as raw markup either.
+ */
+export function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
+

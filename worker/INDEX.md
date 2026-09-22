@@ -118,6 +118,7 @@ Update your React forms with the worker URLs from deployment.
 Use the test JSON files to verify everything works:
 ```bash
 curl -X POST https://worker-url/api/event-proposal \
+  -H "Origin: https://realitydn.com" \
   -H "Content-Type: application/json" \
   -d @test-event-proposal.json
 ```

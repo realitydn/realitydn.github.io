@@ -138,8 +138,14 @@ export async function appendSheetRow(env, sheetId, range, values) {
 
     const accessToken = await getAccessToken(env.GOOGLE_SERVICE_ACCOUNT_KEY);
 
+    // RAW, not USER_ENTERED: every cell here is public form input, and
+    // USER_ENTERED parses it as if typed into the sheet — so a value starting
+    // with = + - @ became a live formula (=IMPORTXML/=HYPERLINK exfiltration,
+    // or just "+84 …" phone numbers turning into #ERROR!). RAW stores each
+    // value verbatim as text. Side effect: the timestamp column is now an ISO
+    // text string rather than whatever Sheets guessed it to be.
     const response = await fetch(
-      `${SHEETS_API_BASE}/${sheetId}/values/${range}:append?valueInputOption=USER_ENTERED`,
+      `${SHEETS_API_BASE}/${sheetId}/values/${range}:append?valueInputOption=RAW`,
       {
         method: 'POST',
         headers: {

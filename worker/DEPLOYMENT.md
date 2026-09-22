@@ -173,10 +173,21 @@ async function submitArtExhibition(data) {
 
 ## Step 8: Test the Deployment
 
+POSTs must carry an allowed `Origin` header (the Worker returns 403
+otherwise — browsers always send it, curl doesn't). Production allows only
+`ALLOWED_ORIGIN`; localhost origins are accepted only under
+`--env development` (`npm run dev`), where `ENVIRONMENT = "development"`.
+
+The Origin gate stops other websites from using the form as a mail relay, but a
+script can forge the header. Add a Cloudflare rate-limiting rule for
+`realitydn.com/api/*` (Security → WAF → Rate limiting rules, e.g. 5 POSTs per
+minute per IP → block).
+
 ### Test Event Proposal
 
 ```bash
 curl -X POST https://realitydn.com/api/event-proposal \
+  -H "Origin: https://realitydn.com" \
   -H "Content-Type: application/json" \
   -d @test-event-proposal.json
 ```
@@ -185,6 +196,7 @@ curl -X POST https://realitydn.com/api/event-proposal \
 
 ```bash
 curl -X POST https://realitydn.com/api/art-exhibition \
+  -H "Origin: https://realitydn.com" \
   -H "Content-Type: application/json" \
   -d @test-art-exhibition.json
 ```

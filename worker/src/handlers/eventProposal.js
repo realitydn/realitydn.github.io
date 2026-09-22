@@ -2,7 +2,7 @@
  * Event Proposal form submission handler
  */
 
-import { validateEventProposalPayload } from '../utils/validate.js';
+import { validateEventProposalPayload, clampPayload } from '../utils/validate.js';
 import { createNotionPage, buildEventProposalProperties } from '../services/notion.js';
 import { appendSheetRow, formatEventProposalForSheets } from '../services/sheets.js';
 import { sendConfirmationEmail } from '../services/resend.js';
@@ -23,6 +23,10 @@ export async function handleEventProposal(request, env) {
     if (validationErrors.length > 0) {
       return createErrorResponse(400, 'Validation failed', validationErrors);
     }
+
+    // From here on only the length-capped copy is used, so an over-long field
+    // can't make Notion 400 (→ 500, backup lost) or bloat the email / sheet.
+    body = clampPayload(body);
 
     // Create Notion page (primary integration - must succeed)
     let notionResult;
@@ -70,6 +74,10 @@ export async function handleEventProposal(request, env) {
   }
 }
 
+// CORS headers are NOT set here: index.js reflects the request's Origin only
+// when it's on the allowlist. (These used to hard-code
+// Access-Control-Allow-Origin: *, which let any website read the response; the
+// server-side Origin check in index.js is what now refuses cross-site posts.)
 function createSuccessResponse(data) {
   return new Response(JSON.stringify({
     success: true,
@@ -77,8 +85,7 @@ function createSuccessResponse(data) {
   }), {
     status: 200,
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     }
   });
 }
@@ -91,8 +98,7 @@ function createErrorResponse(status, message, errors = []) {
   }), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     }
   });
 }

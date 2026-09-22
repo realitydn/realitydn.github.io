@@ -252,6 +252,7 @@ npm run dev
 
 # In another terminal, test with curl
 curl -X POST http://localhost:8787/api/event-proposal \
+  -H "Origin: http://localhost:5173" \
   -H "Content-Type: application/json" \
   -d @test-event-proposal.json
 ```

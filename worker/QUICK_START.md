@@ -22,6 +22,7 @@ https://reality-form-handler.your-account.workers.dev
 
 ```bash
 curl -X POST https://reality-form-handler.your-account.workers.dev/api/event-proposal \
+  -H "Origin: https://realitydn.com" \
   -H "Content-Type: application/json" \
   -d @test-event-proposal.json
 ```
@@ -129,6 +130,7 @@ wrangler tail
 npm run dev
 # Then in another terminal:
 curl -X POST http://localhost:8787/api/event-proposal \
+  -H "Origin: http://localhost:5173" \
   -H "Content-Type: application/json" \
   -d @test-event-proposal.json
 ```

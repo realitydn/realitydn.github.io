@@ -251,6 +251,7 @@ Contains realistic example:
 Usage:
 ```bash
 curl -X POST http://localhost:8787/api/event-proposal \
+  -H "Origin: http://localhost:5173" \
   -H "Content-Type: application/json" \
   -d @test-event-proposal.json
 ```
@@ -267,6 +268,7 @@ Contains realistic example:
 Usage:
 ```bash
 curl -X POST http://localhost:8787/api/art-exhibition \
+  -H "Origin: http://localhost:5173" \
   -H "Content-Type: application/json" \
   -d @test-art-exhibition.json
 ```

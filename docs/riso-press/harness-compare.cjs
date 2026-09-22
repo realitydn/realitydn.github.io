@@ -21,7 +21,7 @@
    outlined in pink. A last sheet, separation.png, renders the `separation`
    treatment with { ink:'pink', ink2:'blue' } on whichever side has it, and is
    skipped with a note while neither does. Dials come from TREAT_PRESETS /
-   TREAT_LOOKS in public/studio/studio-app.jsx (working tree) on both sides.
+   TREAT_LOOKS in public/studio/panels/photo-panel/looks.js (working tree) on both sides.
    Which files each side loaded is printed first — see harness-sides.cjs. */
 'use strict';
 const fs = require('fs');

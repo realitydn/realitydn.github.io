@@ -42,6 +42,22 @@ const fail = (msg) => { failures++; console.error("DRIFT: " + msg); };
 // no longer exist.
 const read = (rel) => readFileSync(join(root, rel), "utf8");
 
+// Every studio source, recursively (Phase 3 split the studios into hooks/,
+// panels/, elements/…) — vendor code and the generated bundles excluded, so a
+// guard can never miss a file just because it moved into a subfolder.
+const STUDIO_SOURCES = (() => {
+  const out = [];
+  const walk = (dir) => {
+    for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) { if (e.name !== "vendor" && e.name !== "fonts") walk(rel); }
+      else if (/\.(jsx|js|mjs)$/.test(e.name) && !/\.bundle\.js$/.test(e.name)) out.push(rel);
+    }
+  };
+  for (const dir of ["public/studio", "public/print", "public/schedule"]) walk(dir);
+  return out;
+})();
+
 // ── 1–4 · The brand module: ONE source, derived from canon (Phase 2) ──
 // The palette, the weekday coding (Poster ACCENT_DAYS, Schedule DAY_COLORS /
 // DAY_TEXT, the ink mark's day map), contrast and the INK_MARK block used to
@@ -175,11 +191,7 @@ if (brand) {
   const owner = {};
   for (const [mod, names] of Object.entries(OWNED)) for (const n of names) owner[n] = mod;
   const re = new RegExp(`^\\s*(?:export\\s+)?(?:const|let|var|function)\\s+(${Object.keys(owner).join("|")})\\b`, "gm");
-  const studioSources = [];
-  for (const dir of ["public/studio", "public/print", "public/schedule"])
-    for (const f of readdirSync(join(root, dir)))
-      if (/\.(jsx|js|mjs)$/.test(f) && !/\.bundle\.js$/.test(f)) studioSources.push(`${dir}/${f}`);
-  for (const rel of studioSources) {
+  for (const rel of STUDIO_SOURCES) {
     for (const m of read(rel).matchAll(re))
       fail(`${rel}: defines its own ${m[1]} — it lives in ${owner[m[1]]}; import it`);
     // …and nobody opens IndexedDB behind store.js's back.
@@ -205,13 +217,9 @@ const RETIRED_HEXES = ["#17a7df", "#ed1b71", "#ed2123", "#3f3785", "#00b7a5", "#
 }
 
 // ── 6 · Site string on artwork = bare host (canon D5) ──
-const SITE_FILES = [
-  "public/print/print-data.jsx",
-  "public/print/print-export.jsx",
-  "public/schedule/schedule-render.jsx",
-  "public/studio/studio-data.jsx",
-  "public/event-report/index.html",
-];
+// Every studio source (recursively) plus the event report — a hand-kept list
+// went stale the moment Phase 3 moved the artwork strings into new files.
+const SITE_FILES = [...STUDIO_SOURCES, "public/event-report/index.html"];
 for (const rel of SITE_FILES) {
   if (read(rel).includes("www." + canon.site))
     fail(`${rel}: carries www.${canon.site} — artwork site string is the bare host (${canon.site})`);

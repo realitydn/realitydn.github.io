@@ -173,6 +173,13 @@ With modules in place, split along the seams that already exist:
 
 Exit: the smoke suite is unchanged; every file ≤ ~600 lines (engine + press excepted).
 
+**Done (24.09.26, three parallel branches merged).** As built:
+- **Poster:** `studio-app.jsx` is gone — `app.jsx` (166) over `hooks/` (useDoc, useArrange, useAutosave, useCloud, useLibrary, useQueue, useExport, useKeys, useImageDrop, useViewport, useSpawn, useToast) and `panels/` (topbar, queue, library, event-picker, `inspector/` by TYPE_CAPS family, `photo-panel/` incl. `looks.js` = TREATS/TREAT_PRESETS/FINISH_*/TREAT_LOOKS). `elements/` holds photo + graphics renderers; `catalog.js`, `templates.jsx` split out of studio-data.
+- **Print:** flat folder of hooks (`use-*.js`), panels (`inspector-*.jsx`, `image-controls.jsx`, `topbar`, `library`, `preflight-chip`), and data split into paper / layout / templates / preflight / pdf / imposition.
+- **Schedule:** `data-*` (model, parse, feed, edit, store, brand), `render-*` (a layout kernel + one module per output), `app-*` (hooks + panels); the three old files are thin re-export shells so the selftest and imports stay stable.
+- **Panning** in Poster and Print: space/middle-drag, Ctrl/⌘-wheel zooms at the pointer, fit re-centres; exports ignore the view (byte-identical).
+- **Over ~600 on purpose:** Poster `studio-element.jsx` (840) and Print `print-export.jsx`/`print-element.jsx` (~590–600) keep the renderers `tools/verify-day-colours.mjs` reads by path; Print's `renderElement` stays one function (its branches share closure helpers). The verifier now walks every studio source recursively for its shared-name and site-string guards.
+
 ## Phase 4 — One look
 
 - `studio-shared/studio-base.css` with tokens (`--st-bg`, `--st-ink`, `--st-accent`,

@@ -242,7 +242,7 @@ Three panes plus the day strip, same chrome family as Poster Studio (`rs-*` skin
 
 ## 10. Architecture & delivery
 
-Sibling of Poster Studio, same zero-build philosophy. *(As built, 23.09.26: the modules collapsed into `schedule-data.jsx` (model, parsers, feed mapping + merge, persistence), `schedule-render.jsx` (layout engine, looks, channels, daily cards) and `schedule-app.jsx` (shell, import, sync, undo), precompiled to sibling `.js` by `scripts/build-studios.mjs` — no Babel at runtime. `cloud-client.js` is the shared `window.RCloud` (feed read + cloud draft). The original plan below is kept as history; `schedule-import/layout/looks/channels.jsx`, the `/api/notion` proxy and `schedule-notion.config.json` were never built.)*
+Sibling of Poster Studio, same zero-build philosophy. *(As built, 24.09.26 — after the refactor: `schedule-data.jsx` re-exports `data-model` (rooms, dates, the doc, `eventsOn` — still the one place weekly projection happens), `data-parse` (quick-add, paste, CSV v1), `data-feed` (mapping + merge, tombstones), `data-edit`, `data-store` (IndexedDB + the localStorage coexistence copy) and `data-brand`; `schedule-render.jsx` is the dispatcher over a layout kernel (`render-config/fit/parts/footer`) and one module per output (`render-carousel`, `render-wa`, `render-print`, `render-daily(-kit)`, `render-cover(-kit)`); `schedule-app.jsx` is the shell over `app-*` hooks and panels. `main.jsx` is the esbuild entry; the cloud client is `studio-shared/cloud.js` (`window.RCloud`). The original plan below is kept as history; `schedule-import/layout/looks/channels.jsx`, the `/api/notion` proxy and `schedule-notion.config.json` were never built.)*
 
 ```
 public/schedule/

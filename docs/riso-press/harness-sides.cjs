@@ -20,7 +20,7 @@
    Page side: window.__sides.old.RISO / window.__sides.new.RISO, and the
    helpers in window.__riso (render, diff, hasTreatment, loadImages).
 
-   Dials come from TREAT_PRESETS / TREAT_LOOKS in public/studio/studio-app.jsx
+   Dials come from TREAT_PRESETS / TREAT_LOOKS in public/studio/panels/photo-panel/looks.js
    (working tree), read by slicing the two object literals out of the source —
    the same tables feed both sides, since it is the engine under test. */
 'use strict';
@@ -40,7 +40,7 @@ const TILE_ASPECT = 1.27;
 const PRESS_PATH    = 'public/studio-shared/riso-press.js';
 const ENGINE_SHARED = 'public/studio-shared/riso-engine.js';
 const ENGINE_STUDIO = 'public/studio/riso-engine.js';
-const APP_JSX       = 'public/studio/studio-app.jsx';
+const APP_JSX       = 'public/studio/panels/photo-panel/looks.js';   // TREAT_PRESETS / TREAT_LOOKS since the Phase 3 split
 
 /* ---------------------------------------------------------------- CLI ---- */
 function parseArgs(argv, defaults, usage) {

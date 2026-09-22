@@ -1,5 +1,7 @@
 # The Riso Press — build plan
 
+> **File map (refactor Phase 3, 24.09.26):** line references below are to the pre-split files. `TREATS` / `TREAT_PRESETS` / `TREAT_LOOKS` / `FINISH_*` now live in `public/studio/panels/photo-panel/looks.js`; the photo panel is `public/studio/panels/photo-panel/`; the shared press folds are `public/studio-shared/press-panels.jsx`; Print's image panel is `public/print/image-controls.jsx`.
+
 Rev 1, 21.09.26. Written to be executed by a session that was not present for
 the design conversation. Everything it needs is in this directory or named by
 path below; nothing depends on chat history.

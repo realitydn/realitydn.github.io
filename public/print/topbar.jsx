@@ -119,4 +119,19 @@ function Topbar({ doc, setDoc, onResize, onExport, exporting, exportMsg, zoomPct
   );
 }
 
-export { Topbar };
+/* ---------- status: what the save / the other tab / the store is doing, in
+   the top row, where it can't be missed (use-storage.js feeds it) ---------- */
+function SaveStatus({ st }){
+  const { saveSt, saveErr, tplErr, otherTab, storeErr, dismissStoreErr, backend } = st;
+  return (<React.Fragment>
+    {saveSt==='failed'
+      ? <span className="ps-stat bad" title={'The last change did not reach storage: '+saveErr+'. Keep this tab open, free space (or export a PDF), and it retries on the next edit.'}>NOT SAVED — {saveErr}</span>
+      : <span className="ps-stat" title={backend==='ls' ? 'Autosaved to browser localStorage' : 'Autosaved to this browser (IndexedDB)'}>{saveSt==='saving' ? 'Saving…' : '✓ Saved'}</span>}
+    {tplErr && <span className="ps-stat bad" title="The My templates list did not save">TEMPLATES NOT SAVED — {tplErr}</span>}
+    {otherTab && <span className="ps-stat warn" title="Both tabs autosave the same sheet — the last one edited wins, and the other's changes are lost on reload. Close one.">⚠ Open in another tab</span>}
+    {storeErr && <span className="ps-stat warn" title={storeErr}>⚠ {storeErr.length>44 ? storeErr.slice(0,42)+'…' : storeErr}
+      <button className="ps-statx" onClick={dismissStoreErr} title="Dismiss">×</button></span>}
+  </React.Fragment>);
+}
+
+export { Topbar, SaveStatus };

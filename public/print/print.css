@@ -30,7 +30,7 @@ body{ background:var(--ps-bg); overflow:hidden; }
   background:var(--ps-bg); color:var(--ps-fg); font-family:var(--ps-grot); }
 
 /* ---- TOPBAR ----
-   Two rows beside the brand (see Topbar in print-app.jsx). No overflow-x and
+   Two rows beside the brand (see Topbar in topbar.jsx). No overflow-x and
    no sticky group any more: at 1440 px the old single row measured 2062 px
    and the sticky export group sat on top of the zoom/undo/view controls.
    Rows wrap on a narrow window — they never paint over each other.

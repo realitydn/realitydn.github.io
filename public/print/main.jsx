@@ -36,11 +36,11 @@ import './print-canvas.jsx';
 import './print-pdf.js';
 import './print-export.jsx';
 import './print-imposition.js';
-import './print-app.jsx';
+import './app.jsx';            // + its hooks (use-*.js) and panels (topbar, library, inspector*, …)
 
 import { makeElement } from './print-data.jsx';
 import { TEMPLATES, TEMPLATE_GROUPS, buildTemplate } from './print-templates.js';
-import { ImageControls, IMG_TREATS, IMG_TREAT_PRESETS } from './print-app.jsx';
+import { ImageControls, IMG_TREATS, IMG_TREAT_PRESETS } from './image-controls.jsx';
 
 /* Test hooks — the studio test suite (scripts/test-studios) reaches these
    by name: the exports suite reads the starter library and builds each

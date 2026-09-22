@@ -485,3 +485,7 @@
                     metaGet, metaPut, migrate, cloudPull, cloudPushAll, cloudRestore, LS_TPL_KEY,
                     docGet, docPut, retireLegacyTpls, slimDocForCloud };
 })();
+
+// An ES module in Poster Studio's bundle: the app imports RStore from here.
+// window.RStore stays set too — a permanent global (see main.jsx).
+export const RStore = window.RStore;

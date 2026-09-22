@@ -2,14 +2,26 @@
    REALITY POSTER STUDIO — App
    Master layout + per-format overrides, snapping type scale.
    ============================================================ */
-const { CATALOG:AP_CAT, FORMATS:AP_FMT, OUTPUT_FORMATS:AP_OUT, STANDEE_FORMATS:AP_STD, HANDOUT_FORMATS:AP_HND, PALETTE:AP_PAL, ACCENTS:AP_ACC, INK_CHOICES:AP_INKS, ACCENT_DAYS:AP_DAYS,
-        ACCENTS_BY_DAY:AP_ABYDAY, DAY_ABBR:AP_DABBR, DAY_NAMES:AP_DNAMES, accentDay:apAccentDay,
-        DEFAULTS:AP_DEF, LAYOUT_KEYS:AP_LK, makeElement:apMake, resolveElements:apResolve,
-        pointToMaster:apToMaster, snapToScale:apSnapScale, scaleStep:apScaleStep,
-        TYPE_SCALE:AP_SCALE, StudioCanvas:APCanvas,
-        GRAPHICS:AP_GFX, SHAPE_KINDS:AP_SHAPES, SHAPE_LABELS:AP_SHAPELAB, MASK_KINDS:AP_MASKS,
-        RULE_PATTERNS:AP_RULES, RULE_TERMS:AP_TERMS, BURST_PRESETS:AP_BURSTS,
-        TEMPLATES:AP_TPL, TEMPLATE_GROUPS:AP_TPLG, buildTemplate:apBuildTpl } = window;
+import { RStore } from './studio-store.js';
+import { RCloud } from './cloud-client.js';
+import {
+  CATALOG as AP_CAT, FORMATS as AP_FMT, OUTPUT_FORMATS as AP_OUT, STANDEE_FORMATS as AP_STD,
+  HANDOUT_FORMATS as AP_HND, PALETTE as AP_PAL, ACCENTS as AP_ACC, INK_CHOICES as AP_INKS,
+  ACCENT_DAYS as AP_DAYS, ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR,
+  DAY_NAMES as AP_DNAMES, accentDay as apAccentDay, DEFAULTS as AP_DEF, LAYOUT_KEYS as AP_LK,
+  makeElement as apMake, resolveElements as apResolve, pointToMaster as apToMaster,
+  snapToScale as apSnapScale, scaleStep as apScaleStep, TYPE_SCALE as AP_SCALE, GRAPHICS as AP_GFX,
+  SHAPE_KINDS as AP_SHAPES, SHAPE_LABELS as AP_SHAPELAB, MASK_KINDS as AP_MASKS,
+  RULE_PATTERNS as AP_RULES, RULE_TERMS as AP_TERMS, BURST_PRESETS as AP_BURSTS,
+  TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG, buildTemplate as apBuildTpl, STEP, shadowModel,
+  shapePath, ruleLayout, burstRays, iconLayout, INK_MARK, PALETTE, INK_MARK_DAY_KEYS, DAY_NAMES,
+  DAY_ABBR, themeColors, textInsetModel, parseSessions, uid,
+} from './studio-data.jsx';
+import {
+  risoSig, photoSources, drawPhotoPress, SE_DAY_INK, InkMarkSwatch, loadCachedImage, StudioElement,
+  posterDayOf, titleLineHeight,
+} from './studio-element.jsx';
+import { StudioCanvas as APCanvas } from './studio-canvas.jsx';
 const LS_KEY = 'reality-studio-doc-v2';
 const TPL_KEY = 'reality-studio-templates-v1';
 
@@ -51,7 +63,7 @@ function describeStoreError(e){
 /* Arrow-key nudge: a ninth of the grid step (5px at STEP 45), so nine presses
    walk exactly one step and a nudged box can always be walked back onto the
    armature a drag snaps to. Shift moves one whole step. */
-const NUDGE = Math.round((window.STEP||45)/9);
+const NUDGE = Math.round((STEP||45)/9);
 /* The pre-IndexedDB autosave (and the fallback copy, if IndexedDB ever
    refuses a write) — read once on boot, then retired. */
 function loadLegacyDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r) return JSON.parse(r); }catch(e){} return null; }
@@ -74,7 +86,7 @@ function loadLegacyDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r) retur
    refused a write and the fallback kept it) the newer one wins. */
 async function bootDoc(){
   let rec = null;
-  try{ if(window.RStore && window.RStore.docGet) rec = await window.RStore.docGet('working'); }catch(e){ rec = null; }
+  try{ if(RStore && RStore.docGet) rec = await RStore.docGet('working'); }catch(e){ rec = null; }
   const legacy = loadLegacyDoc();
   const legacyAt = (legacy && legacy._savedAt) || 0;    // only the fallback writer stamps this
   if(rec && (!legacy || rec.at >= legacyAt)){
@@ -84,7 +96,7 @@ async function bootDoc(){
   const d = normalizeDoc(legacy);
   if(d){
     /* Move it across; only drop the localStorage copy once IndexedDB holds it. */
-    try{ await window.RStore.docPut('working', d); localStorage.removeItem(LS_KEY); }catch(e){}
+    try{ await RStore.docPut('working', d); localStorage.removeItem(LS_KEY); }catch(e){}
     return d;
   }
   return starterDoc();
@@ -324,7 +336,7 @@ const TAG_HEIGHTS = [{v:90,l:'S'},{v:135,l:'M'},{v:180,l:'L'},{v:225,l:'XL'}];
    box-shadow on a surfaced card, or a drop-shadow on artwork (photo/logo/block/
    weekly) — the model picks the mode. */
 function ShadowControls({ el, update, theme }){
-  const m = window.shadowModel(el, theme);
+  const m = shadowModel(el, theme);
   const lift = shadowLift(el, m);
   const label = (LIFTS.find(x=>x.v===lift)||{}).l;
   // Only badge a rung you chose. "Lift" on an element whose family lifts by
@@ -701,14 +713,14 @@ function GfxPreview({ type, kind, preset }){
     if(kind==='none') return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block' }}>
       <rect x="2" y="2" width={S-4} height={S-4} fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" opacity=".55" />
     </svg>;
-    const d = window.shapePath(kind, S, S);
+    const d = shapePath(kind, S, S);
     return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block', overflow:'visible' }}>
       {d ? <path d={d} fill="currentColor" /> : <circle cx={S/2} cy={S/2} r={S/2} fill="currentColor" />}
     </svg>;
   }
   if(type==='rule'){
     const W=46, H=18;
-    const lay = window.ruleLayout({ w:W, h:H, pattern:kind, weight:2.2, amp:4, tickLen:4, term:'none' });
+    const lay = ruleLayout({ w:W, h:H, pattern:kind, weight:2.2, amp:4, tickLen:4, term:'none' });
     return <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display:'block' }}>
       {lay.strokes.map((s,i)=><polyline key={'s'+i} points={s.pts.map(p=>p[0]+','+p[1]).join(' ')} fill="none"
         stroke="currentColor" strokeWidth={lay.w} strokeLinecap={lay.cap} />)}
@@ -717,14 +729,14 @@ function GfxPreview({ type, kind, preset }){
   }
   if(type==='burst'){
     const p = preset||{ rays:16, hub:0 };
-    const b = window.burstRays(S, S, p.rays, 0);
+    const b = burstRays(S, S, p.rays, 0);
     return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block' }}>
       {b.wedges.map((w,i)=><path key={i} d={`M${w.cx} ${w.cy} L${w.p0[0]} ${w.p0[1]} L${w.p1[0]} ${w.p1[1]} Z`} fill="currentColor" />)}
       {p.hub>0 && <circle cx={b.cx} cy={b.cy} r={b.R*p.hub} fill="#15110b" />}
     </svg>;
   }
   if(type==='icon'){
-    const lay = window.iconLayout({ kind, w:S, h:S, strokeScale:1, solid:false });
+    const lay = iconLayout({ kind, w:S, h:S, strokeScale:1, solid:false });
     if(!lay) return null;
     const st = { fill:'none', stroke:'currentColor', strokeWidth:lay.sw, strokeLinecap:'round', strokeLinejoin:'round' };
     return <svg viewBox={`0 0 ${S} ${S}`} width="100%" height="100%" style={{ display:'block' }}>
@@ -1038,14 +1050,14 @@ function TreatmentStrip({ el, inkKey, theme, onPick }){
      (the per-treatment ones are overridden by the patch, so they only ever
      redraw the same image — cheap, and it can never go stale); the rest is
      what lives outside it: the source, the framing, and the ink. */
-  const sig = [window.risoSig?window.risoSig(el):'', el.src, el.src2, el.sample, el.type,
+  const sig = [risoSig?risoSig(el):'', el.src, el.src2, el.sample, el.type,
     inkKey, theme, el.imgScale, el.imgX, el.imgY, el.imgRot,
     el.img2Scale, el.img2X, el.img2Y, el.img2Rot, Math.round((el.h/el.w)*1000)].join('|');
   React.useEffect(()=>{
-    if(!window.RISO || !window.photoSources || !window.drawPhotoPress) return;
+    if(!window.RISO || !photoSources || !drawPhotoPress) return;
     let alive=true;
     const timer=setTimeout(()=>{
-      window.photoSources(el).then(([s1,s2])=>{
+      photoSources(el).then(([s1,s2])=>{
         if(!alive || !s1) return;
         const H=Math.max(24, Math.round(THUMB_W*(el.h/el.w)));
         for(let i=0;i<TREATS.length;i++){
@@ -1055,7 +1067,7 @@ function TreatmentStrip({ el, inkKey, theme, onPick }){
           /* the engine's globals are set inside drawPhotoPress and consumed
              synchronously by render(), so these fourteen calls cannot
              interleave with the poster's own press */
-          window.drawPhotoPress(cv, el, inkKey, theme, s1, s2,
+          drawPhotoPress(cv, el, inkKey, theme, s1, s2,
             Object.assign({ treatment:key }, TREAT_PRESETS[key]||{}));
         }
       });
@@ -1783,15 +1795,15 @@ const MARK_GROUNDS = [
   { v:'accent', l:'Accent', bg:null },
 ];
 function InkMarkEditor({ el, doc, update, onClose }){
-  const IM = window.INK_MARK;
-  const Swatch = window.InkMarkSwatch;
+  const IM = INK_MARK;
+  const Swatch = InkMarkSwatch;
   const [ground, setGround] = React.useState('paper');
   const form = el.form||'strip-v';
   const mode = el.mode||'full';
   const day  = el.day||'fri';
   const anchored = form==='square-anchored';
   const plate = el.ground===true && !anchored;
-  const accentHex = window.PALETTE[doc.accent] || '#18a7e0';
+  const accentHex = PALETTE[doc.accent] || '#18a7e0';
   const bg = ground==='accent' ? accentHex : MARK_GROUNDS.filter(g=>g.v===ground)[0].bg;
   /* the preview's theme drives only the paper-shade plate tone, so it follows
      the ground you are previewing on, not the poster's theme */
@@ -1893,14 +1905,14 @@ function InkMarkEditor({ el, doc, update, onClose }){
                 than making you find the mode first. */}
             <div className="rs-sech">Day strip — the weekday hue</div>
             <div className="rs-gfxgrid wide">
-              {window.INK_MARK_DAY_KEYS.map((d,i)=>(
-                <button key={d} title={window.DAY_NAMES[i]}
+              {INK_MARK_DAY_KEYS.map((d,i)=>(
+                <button key={d} title={DAY_NAMES[i]}
                   className={'rs-gfxtile'+((mode==='daycode' && day===d)?' on':'')}
                   onClick={()=>update({ mode:'daycode', day:d })}>
                   <span className="gp" style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <Swatch form={form} mode="daycode" day={d} grounded={false} theme="night" m={dayM} />
                   </span>
-                  <span className="gl">{window.DAY_ABBR[i]}</span>
+                  <span className="gl">{DAY_ABBR[i]}</span>
                 </button>
               ))}
             </div>
@@ -1924,7 +1936,7 @@ function InkMarkEditor({ el, doc, update, onClose }){
 }
 
 function InkmarkControls({ el, doc, update }){
-  const IM = window.INK_MARK;
+  const IM = INK_MARK;
   const form = el.form||'strip-v';
   const f = IM.forms[form] || IM.forms['strip-v'];
   const anchored = form==='square-anchored';
@@ -1941,7 +1953,7 @@ function InkmarkControls({ el, doc, update }){
     const np = ng?2:0;
     return Object.assign(patch, { w:Math.round((nf.cols+np)*mod), h:Math.round((nf.rows+np)*mod) });
   };
-  const days = window.INK_MARK_DAY_KEYS.map((d,i)=>({ v:d, l:window.DAY_ABBR[i] }));
+  const days = INK_MARK_DAY_KEYS.map((d,i)=>({ v:d, l:DAY_ABBR[i] }));
   const [editing, setEditing] = React.useState(false);
   return (
     <React.Fragment>
@@ -2053,7 +2065,7 @@ async function settleThumb(doc){
   try{
     const srcs = [];
     (doc.elements||[]).forEach(el=>{ if(el && el.src) srcs.push(el.src); if(el && el.src2) srcs.push(el.src2); });
-    const load = window.loadCachedImage || (window.RISO && window.RISO.loadImage);
+    const load = loadCachedImage || (window.RISO && window.RISO.loadImage);
     if(srcs.length && load)
       await Promise.all(srcs.map(s=>load(s).catch(()=>null)));
   }catch(e){}
@@ -2075,7 +2087,7 @@ async function settleThumb(doc){
 function TplThumb({ doc, w, thumb, onCapture }){
   const f = AP_FMT[doc.masterFormat||'4x5'];
   const tw = w||88, sc = tw/f.w, th = Math.round(f.h*sc);
-  const t = window.themeColors(doc.theme||'day');
+  const t = themeColors(doc.theme||'day');
   const accentHex = AP_PAL[doc.accent] || AP_PAL.blue;
   const inner = React.useRef(null);
   const noop = ()=>{};
@@ -2237,7 +2249,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <div className="rs-mini" style={{ marginBottom:10 }}>
             <b>Ctrl-K</b> find any control · <b>Ctrl-Z</b> undo · <b>Ctrl-⇧-Z</b> redo · <b>Ctrl-D</b> duplicate ·
             <b> Ctrl-A</b> select all · <b>Ctrl-S</b> save as template · <b>Ctrl-E</b> save images ·
-            arrows nudge {NUDGE}px (<b>⇧</b> one grid step, {window.STEP}px) · <b>[</b> / <b>]</b> send backward / bring forward
+            arrows nudge {NUDGE}px (<b>⇧</b> one grid step, {STEP}px) · <b>[</b> / <b>]</b> send backward / bring forward
             (<b>⇧</b> to back / front) · <b>Delete</b> removes it — or, on an output format, hides it there only ·
             <b> ⇧-click</b> multi-select · <b>double-click</b> text to edit it on the poster ·
             <b> Ctrl-V</b> paste an image onto a photo · <b>drop</b> an image on a photo to replace it, anywhere else to add one ·
@@ -2256,7 +2268,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   const lsDefault = (el.type==='when'||el.type==='cost')?0.16 : el.type==='host'?0.02 : el.type==='stamp'?0.04 : el.type==='title'?0.005 : 0;
   // Companion to Align: how far off the aligned edge the text sits. Defaults to
   // the type's baked-in padding, so 0 reads as (and is) flush to the box edge.
-  const inset = window.textInsetModel(el);
+  const inset = textInsetModel(el);
   const WEIGHTS = caps.font==='grot' ? WEIGHTS_GROT : WEIGHTS_MONT;
   const defWeight = (AP_DEF[el.type] && AP_DEF[el.type].props.weight) || (caps.font==='grot'?400:700);
   const sizeLabel = 'Font size'+(isOutput?' · '+activeLabel+' only':'');
@@ -2467,9 +2479,9 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           {/* The renderer lifts a title's line height under Vietnamese stacked
               capitals (see titleLineHeight). Say so, or a slider that stops
               doing anything below 1.08 reads as broken. */}
-          {el.type==='title' && window.titleLineHeight && (()=>{
+          {el.type==='title' && titleLineHeight && (()=>{
             const set = el.lineHeight!=null ? el.lineHeight : caps.lineHeight.def;
-            const eff = window.titleLineHeight(el);
+            const eff = titleLineHeight(el);
             return eff > set + 0.001
               ? <Hint tight>Showing at <b>{eff.toFixed(2)}</b> — the Vietnamese accents (Ấ Ổ Ặ…) need that much room to clear the line above. Your {set.toFixed(2)} is kept and comes back if they go.</Hint>
               : null;
@@ -2558,7 +2570,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <Slider label="Line spacing" val={el.rowGap!=null?el.rowGap:(el.type==='specials'?5:7)} min={0} max={24} step={1} suffix="px" onChange={v=>update({rowGap:v})} />
           <Swatches label="Row text colour" value={el.textColor!=null?el.textColor:el.color} onChange={v=>update({textColor:v})} autoTitle="Auto — stays readable on the surface" />
           {el.type==='sessions' && (()=>{
-            const marks = window.parseSessions(el.raw).reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
+            const marks = parseSessions(el.raw).reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
             if(!marks.length) return <Hint>Tip: end a line with a symbol — <b>&lt;</b>, <b>~</b>, <b>^</b>, <b>●</b> — to tag it. Name + colour the categories here once they appear, and rows get a dot + a legend.</Hint>;
             const DEFCAT=['blue','green','pink','amber','purple','red','yellow'];
             return <React.Fragment>
@@ -2659,7 +2671,7 @@ function SaveState({ state, msg }){
 function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
                   onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit, saveState, saveMsg }){
   const isOutput = doc.activeFormat!=='master';
-  const hasCloud = typeof window!=='undefined' && !!window.RCloud;
+  const hasCloud = typeof window!=='undefined' && !!RCloud;
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
      committing per keystroke would re-render the riso canvases on every key. */
   const [name, setName] = React.useState(doc.title||'');
@@ -2861,8 +2873,8 @@ function App({ initialDoc }){
         const snap = stampEngine(docRef.current);
         let err = null;
         try{
-          if(!window.RStore || !window.RStore.docPut) throw new Error('IndexedDB store not loaded');
-          await window.RStore.docPut('working', snap);
+          if(!RStore || !RStore.docPut) throw new Error('IndexedDB store not loaded');
+          await RStore.docPut('working', snap);
         }catch(e){ err = e || new Error('write failed'); }
         if(!err){
           sv.failed = false;
@@ -2969,7 +2981,7 @@ function App({ initialDoc }){
   /* ---- WP9 cloud sign-in state (best-effort; this browser's IndexedDB stays
      the source of truth). `cloudUser` is just for the toolbar label; null =
      local-only. ---- */
-  const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
+  const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return RCloud && RCloud.isSignedIn() ? (RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
   /* Restoring a library onto a new computer is one request per template — say so,
      rather than looking idle for a few minutes. */
   const [cloudMsg, setCloudMsg] = React.useState(null);
@@ -2978,20 +2990,20 @@ function App({ initialDoc }){
   }, []);
   async function cloudSignIn(){
     try{
-      if(!window.RCloud) return;
-      const t = await window.RCloud.signIn();
-      const email = t ? (window.RCloud.currentEmail()||'signed in') : null;
+      if(!RCloud) return;
+      const t = await RCloud.signIn();
+      const email = t ? (RCloud.currentEmail()||'signed in') : null;
       setCloudUser(email);
       // on connect: migrate THIS browser's templates UP to the account, then pull any
       // the account has that this browser lacks. Both best-effort; never throw.
-      if(email && window.RStore){
-        try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-        try{ if(window.RStore.cloudPull) await window.RStore.cloudPull(cloudProgress); }catch(e){}
+      if(email && RStore){
+        try{ if(RStore.cloudPushAll) await RStore.cloudPushAll(); }catch(e){}
+        try{ if(RStore.cloudPull) await RStore.cloudPull(cloudProgress); }catch(e){}
         /* Re-read the store rather than taking the pull's own list — same reason
            as the loader: that list predates the round-trip, and signing in
            mid-session must not roll the library back over a save made while the
            restore was running. */
-        try{ const after = await window.RStore.tplGetAll();
+        try{ const after = await RStore.tplGetAll();
           if(Array.isArray(after) && after.length) setUserTpls(sortTpls(after)); }catch(e){}
         finally{ setCloudMsg(null); }
       }
@@ -3002,7 +3014,7 @@ function App({ initialDoc }){
      the other account) never looked for that account's draft. The session
      clock restarts too: a draft this tab pushed before signing out is not
      "newer" than what's on screen. */
-  function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){}
+  function cloudSignOut(){ try{ if(RCloud) RCloud.signOut(); }catch(e){}
     cloudPullDoneRef.current = false; sessionStartRef.current = Date.now();
     setCloudUser(null); }
 
@@ -3014,13 +3026,13 @@ function App({ initialDoc }){
      grow when the local photo size did. ---- */
   const cloudPushRef = React.useRef(null);
   React.useEffect(()=>{
-    if(!cloudUser || !window.RCloud) return;
+    if(!cloudUser || !RCloud) return;
     if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
     cloudPushRef.current = setTimeout(()=>{
       try{
         const d = stampEngine(docRef.current);
-        const slim = window.RStore && window.RStore.slimDocForCloud ? window.RStore.slimDocForCloud(d) : Promise.resolve(d);
-        Promise.resolve(slim).then(sd=>window.RCloud.putDoc('poster','working', d.title||'', sd, Date.now())).catch(()=>{});
+        const slim = RStore && RStore.slimDocForCloud ? RStore.slimDocForCloud(d) : Promise.resolve(d);
+        Promise.resolve(slim).then(sd=>RCloud.putDoc('poster','working', d.title||'', sd, Date.now())).catch(()=>{});
       }catch(e){}
     }, 2000);
     return ()=>{ if(cloudPushRef.current) clearTimeout(cloudPushRef.current); };
@@ -3034,12 +3046,12 @@ function App({ initialDoc }){
   const sessionStartRef = React.useRef(Date.now());
   const cloudPullDoneRef = React.useRef(false);
   React.useEffect(()=>{
-    if(!cloudUser || !window.RCloud || cloudPullDoneRef.current) return;
+    if(!cloudUser || !RCloud || cloudPullDoneRef.current) return;
     cloudPullDoneRef.current = true;
     let live = true;
     (async()=>{
       try{
-        const remote = await window.RCloud.getDoc('poster','working');
+        const remote = await RCloud.getDoc('poster','working');
         if(!live || !remote) return;
         const remoteAt = typeof remote.updatedAt==='number' ? remote.updatedAt : Date.parse(remote.updatedAt||'')||0;
         let remoteDoc = remote.json;
@@ -3110,7 +3122,7 @@ function App({ initialDoc }){
         if(!ids.length) return;
         const cur = docRef.current, copies = [];
         ids.forEach(id=>{ const src = cur.elements.find(x=>x.id===id);
-          if(src) copies.push(Object.assign(JSON.parse(JSON.stringify(src)), { id:window.uid(), x:src.x+40, y:src.y+40 })); });
+          if(src) copies.push(Object.assign(JSON.parse(JSON.stringify(src)), { id:uid(), x:src.x+40, y:src.y+40 })); });
         if(copies.length){ setDoc(d=>({ ...d, elements:[...d.elements, ...copies] })); setSelectedIds(copies.map(c=>c.id)); }
         return;
       }
@@ -3158,7 +3170,7 @@ function App({ initialDoc }){
            step — so Shift-arrows move along the same armature a drag snaps to.
            (This used to say "6px = one grid step"; the step has been 45 since
            the 23.08 grid, so Shift's 30 landed off it every time.) */
-        const st = e.shiftKey ? window.STEP : NUDGE;
+        const st = e.shiftKey ? STEP : NUDGE;
         const dx = e.key==='ArrowLeft'?-st : e.key==='ArrowRight'?st : 0;
         const dy = e.key==='ArrowUp'?-st : e.key==='ArrowDown'?st : 0;
         const up = updateElRef.current;
@@ -3240,7 +3252,7 @@ function App({ initialDoc }){
       processImageFile(file, src=>{
         const dd = docRef.current;
         let vx = px - d.w/2, vy = py - d.h/2;
-        if(dd.snap){ vx=Math.round(vx/window.STEP)*window.STEP; vy=Math.round(vy/window.STEP)*window.STEP; }
+        if(dd.snap){ vx=Math.round(vx/STEP)*STEP; vy=Math.round(vy/STEP)*STEP; }
         const vf = dd.activeFormat==='master'?dd.masterFormat:dd.activeFormat;
         const m = apToMaster('photo', vx, vy, dd.masterFormat, vf);
         const el = Object.assign(apMake('photo', Math.round(m.x), Math.round(m.y)), { src });
@@ -3350,7 +3362,7 @@ function App({ initialDoc }){
     }); setSelectedIds([]);
   };
   const dup = ()=>{ if(!sel) return; const mEl=doc.elements.find(e=>e.id===sel.id); if(!mEl) return;
-    const c=Object.assign(JSON.parse(JSON.stringify(mEl)), {id:window.uid(), x:mEl.x+40, y:mEl.y+40});
+    const c=Object.assign(JSON.parse(JSON.stringify(mEl)), {id:uid(), x:mEl.x+40, y:mEl.y+40});
     setDoc(d=>({ ...d, elements:[...d.elements, c] })); setSelectedIds([c.id]);
   };
   /* Layer order. A number steps one place; 'front'/'back' jump the whole way
@@ -3481,7 +3493,7 @@ function App({ initialDoc }){
       const vfmt = AP_FMT[dd.activeFormat==='master'?dd.masterFormat:dd.activeFormat];
       let vx = onStage ? (ev.clientX-cr.left)/sc - pw/2 : vfmt.w/2 - pw/2,
           vy = onStage ? (ev.clientY-cr.top)/sc - ph/2 : vfmt.h/2 - ph/2;
-      if(dd.snap){ vx=Math.round(vx/window.STEP)*window.STEP; vy=Math.round(vy/window.STEP)*window.STEP; }
+      if(dd.snap){ vx=Math.round(vx/STEP)*STEP; vy=Math.round(vy/STEP)*STEP; }
       const vf = dd.activeFormat==='master'?dd.masterFormat:dd.activeFormat;
       const m = apToMaster(type, vx, vy, dd.masterFormat, vf);
       const el = apMake(type, Math.round(m.x), Math.round(m.y));
@@ -3576,7 +3588,7 @@ function App({ initialDoc }){
   function applySeriesTpl(ev, t, title, titleVi){
     const snap = JSON.parse(JSON.stringify(t.doc));
     const idMap = {};
-    snap.elements.forEach(e=>{ const nid=window.uid(); idMap[e.id]=nid; e.id=nid; });
+    snap.elements.forEach(e=>{ const nid=uid(); idMap[e.id]=nid; e.id=nid; });
     const overrides = {};
     Object.keys(snap.overrides||{}).forEach(f=>{ const fo=snap.overrides[f]||{}; const nfo={};
       Object.keys(fo).forEach(id=>{ if(idMap[id]) nfo[idMap[id]]=fo[id]; }); overrides[f]=nfo; });
@@ -3618,7 +3630,7 @@ function App({ initialDoc }){
      route (Delete, saved over, displaced by an import). */
   const [tplBin, setTplBin] = React.useState([]);
   const refreshBin = React.useCallback(async ()=>{
-    try{ const b = await window.RStore.binGetAll(); setTplBin(Array.isArray(b)?b:[]); }catch(e){}
+    try{ const b = await RStore.binGetAll(); setTplBin(Array.isArray(b)?b:[]); }catch(e){}
   }, []);
   /* Put one back. If its id has since been taken by a different template, the
      restored copy gets a new one rather than overwriting the sitting tenant. */
@@ -3626,9 +3638,9 @@ function App({ initialDoc }){
     if(!entry || !entry.tpl) return;
     const taken = userTpls.some(t=>t.id===entry.tpl.id);
     const t = Object.assign({}, entry.tpl, taken ? { id: tplId() } : null);
-    try{ await window.RStore.tplPut(t); }
+    try{ await RStore.tplPut(t); }
     catch(e){ console.error(e); window.alert('Couldn’t put that template back right now — try again.'); return; }
-    try{ await window.RStore.binDelete(entry.id); }catch(e){}
+    try{ await RStore.binDelete(entry.id); }catch(e){}
     setUserTpls(prev=>{
       const i = prev.findIndex(p=>p.id===t.id);
       if(i<0) return [t, ...prev];
@@ -3643,14 +3655,14 @@ function App({ initialDoc }){
   const [restoring, setRestoring] = React.useState(false);
   async function restoreFromCloud(){
     if(restoring) return;
-    if(!window.RCloud || !window.RCloud.isSignedIn()){
+    if(!RCloud || !RCloud.isSignedIn()){
       window.alert('Sign in to the REALITY hub first (top right) — that’s where the off-machine copies live.');
       return;
     }
     setRestoring(true); setCloudMsg('Checking the hub…');
     try{
-      const r = await window.RStore.cloudRestore((done,total)=>setCloudMsg('Restoring '+done+'/'+total+'…'));
-      try{ const after = await window.RStore.tplGetAll();
+      const r = await RStore.cloudRestore((done,total)=>setCloudMsg('Restoring '+done+'/'+total+'…'));
+      try{ const after = await RStore.tplGetAll();
         if(Array.isArray(after) && after.length) setUserTpls(sortTpls(after)); }catch(e){}
       window.alert(r.restored
         ? 'Restored '+r.restored+' template'+(r.restored===1?'':'s')+' from the hub.'
@@ -3670,7 +3682,7 @@ function App({ initialDoc }){
   const captureTplThumb = React.useCallback((id, thumb)=>{
     if(!id || !thumb) return;
     setTplThumbs(m => m[id] ? m : Object.assign({}, m, { [id]:thumb }));
-    try{ Promise.resolve(window.RStore.thumbPut(id, thumb)).catch(()=>{}); }catch(e){}
+    try{ Promise.resolve(RStore.thumbPut(id, thumb)).catch(()=>{}); }catch(e){}
   }, []);
   /* Forget a card's picture — the template it drew is gone or has been saved
      over, and a stale thumbnail showing the poster it replaced is worse than a
@@ -3680,8 +3692,8 @@ function App({ initialDoc }){
   }, []);
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
-      const m = await window.RStore.migrate();
-      const local = await window.RStore.tplGetAll();
+      const m = await RStore.migrate();
+      const local = await RStore.tplGetAll();
       /* Show what's on THIS disk immediately, before the cloud round-trip.
          That trip spends one request per template it has to restore and can run
          for minutes; the library used to stay empty for all of it, and two
@@ -3700,20 +3712,20 @@ function App({ initialDoc }){
          IndexedDB (verbatim, read back, every id present) it's freed there.
          Best-effort: anything it can't prove, it leaves exactly where it is. */
       try{
-        const rt = window.RStore.retireLegacyTpls ? await window.RStore.retireLegacyTpls() : null;
+        const rt = RStore.retireLegacyTpls ? await RStore.retireLegacyTpls() : null;
         if(rt && rt.retired) console.info('[studio] filed the localStorage template backup ('+rt.retired+' templates, '
           +Math.round(rt.bytes/1024)+' KB; '+rt.live+' still live) in IndexedDB and freed it from localStorage.');
         else if(rt && rt.kept) console.info('[studio] kept the localStorage template backup where it is: '+rt.kept+'.');
       }catch(e){ console.warn('[studio] could not retire the localStorage template backup — left in place.', e); }
       /* One read for the whole library's card pictures. Best-effort: without
          them every card just renders itself live, exactly as it used to. */
-      try{ const thumbs = await window.RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
+      try{ const thumbs = await RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
       if(live) refreshBin();
       /* WP9: migrate this browser's library UP to the account, then pull any cloud
          templates this browser is missing. IndexedDB stays the source of truth —
          both calls never throw and no-op when signed-out / hub dormant. */
-      try{ if(window.RStore.cloudPushAll) await window.RStore.cloudPushAll(); }catch(e){}
-      try{ if(window.RStore.cloudPull) await window.RStore.cloudPull(cloudProgress); }catch(e){}
+      try{ if(RStore.cloudPushAll) await RStore.cloudPushAll(); }catch(e){}
+      try{ if(RStore.cloudPull) await RStore.cloudPull(cloudProgress); }catch(e){}
       if(live) setCloudMsg(null);
       /* Re-READ rather than trust what the pull returned: its list was taken
          before the round-trip, so a template saved while it ran is on disk but
@@ -3721,7 +3733,7 @@ function App({ initialDoc }){
          an empty one is left alone, since Delete and Import are the only ways to
          empty the store and both update the list themselves. */
       try{
-        const after = await window.RStore.tplGetAll();
+        const after = await RStore.tplGetAll();
         if(live && Array.isArray(after) && after.length) setUserTpls(sortTpls(after));
       }catch(e){}
     }catch(e){
@@ -3751,7 +3763,7 @@ function App({ initialDoc }){
   async function fetchFeedRetry(params, tries){
     tries = tries || 3;
     for(let i=0;i<tries;i++){
-      const fd = window.RCloud && window.RCloud.fetchFeed ? await window.RCloud.fetchFeed(params) : null;
+      const fd = RCloud && RCloud.fetchFeed ? await RCloud.fetchFeed(params) : null;
       if(fd && Array.isArray(fd.events)) return fd;
       if(i < tries-1) await new Promise(r=>setTimeout(r, 1200*(i+1)));
     }
@@ -3759,7 +3771,7 @@ function App({ initialDoc }){
   }
   React.useEffect(()=>{ let live=true; (async()=>{
     try{
-      if(!window.RCloud || !window.RCloud.fetchFeed){ setQueueFeed({ events:[], err:'unavailable' }); return; }
+      if(!RCloud || !RCloud.fetchFeed){ setQueueFeed({ events:[], err:'unavailable' }); return; }
       const from = new Date(Date.now()+7*3600*1000).toISOString().slice(0,10);   // today, ICT
       const fd = await fetchFeedRetry({ from });
       if(!live) return;
@@ -3828,7 +3840,7 @@ function App({ initialDoc }){
        with two templates under one name and one of them apparently missing. */
     let library = userTpls;
     if(!tplReady){
-      try{ const fresh = await window.RStore.tplGetAll(); if(Array.isArray(fresh)) library = fresh; }catch(e){}
+      try{ const fresh = await RStore.tplGetAll(); if(Array.isArray(fresh)) library = fresh; }catch(e){}
     }
     const existing = library.find(t=>t.name.toLowerCase()===name.toLowerCase());
     if(existing && !window.confirm('A template called “'+existing.name+'” already exists. Replace it?')) return;
@@ -3843,13 +3855,13 @@ function App({ initialDoc }){
       archived: false, doc: snap };
     /* Saving over a template overwrites a finished poster. Keep the version it
        replaces in Recently deleted first, so "replace it?" is undoable. */
-    if(existing){ try{ await window.RStore.binPut(existing, 'saved over'); }catch(e){} }
-    try{ await window.RStore.tplPut(t); }
+    if(existing){ try{ await RStore.binPut(existing, 'saved over'); }catch(e){} }
+    try{ await RStore.tplPut(t); }
     catch(e){ console.error(e); window.alert('Couldn’t save the template — the browser blocked writing to storage. Your other templates are unaffected.'); return; }
     /* Saving over a template replaces its artwork, so its card picture is now a
        photo of the poster you just overwrote — drop it and let the card reshoot.
        (Which also makes re-saving the way to fix a thumbnail you don't like.) */
-    try{ await window.RStore.thumbDelete(t.id); }catch(e){}
+    try{ await RStore.thumbDelete(t.id); }catch(e){}
     forgetTplThumb(t.id);
     /* Functional, like every other list write below. `userTpls` here is whatever
        this handler closed over when it started — and a save waits on a prompt, a
@@ -3870,7 +3882,7 @@ function App({ initialDoc }){
     /* fresh element ids (and remapped overrides) so the loaded copy can never
        collide with anything else made this session */
     const idMap = {};
-    snap.elements.forEach(e=>{ const nid=window.uid(); idMap[e.id]=nid; e.id=nid; });
+    snap.elements.forEach(e=>{ const nid=uid(); idMap[e.id]=nid; e.id=nid; });
     const overrides = {};
     Object.keys(snap.overrides||{}).forEach(f=>{ const fo=snap.overrides[f]||{}; const nfo={};
       Object.keys(fo).forEach(id=>{ if(idMap[id]) nfo[idMap[id]]=fo[id]; }); overrides[f]=nfo; });
@@ -3888,7 +3900,7 @@ function App({ initialDoc }){
   async function setTplArchived(id, val){
     const t = userTpls.find(x=>x.id===id); if(!t) return;
     const next = Object.assign({}, t, { archived: !!val });
-    try{ await window.RStore.tplPut(next); }
+    try{ await RStore.tplPut(next); }
     catch(e){ console.error(e); window.alert('Couldn’t update that template right now — try again.'); return; }
     setUserTpls(prev=>prev.map(x=>x.id===id? next : x));
   }
@@ -3897,8 +3909,8 @@ function App({ initialDoc }){
     if(t && !window.confirm('Delete the template “'+t.name+'”?')) return;
     /* Into Recently deleted first — a mis-click on a 20px × next to a 20px ⤓
        used to be the end of that poster. */
-    if(t){ try{ await window.RStore.binPut(t, 'deleted'); }catch(e){} }
-    try{ await window.RStore.tplDelete(id); }
+    if(t){ try{ await RStore.binPut(t, 'deleted'); }catch(e){} }
+    try{ await RStore.tplDelete(id); }
     catch(e){ console.error(e); window.alert('Couldn’t delete that template right now — try again.'); return; }
     forgetTplThumb(id);
     setUserTpls(prev=>prev.filter(x=>x.id!==id));
@@ -3915,7 +3927,7 @@ function App({ initialDoc }){
        a backup taken while the library was still syncing was short — and a short
        backup imported later used to take the rest of the library with it. */
     let all = userTpls;
-    try{ const fresh = await window.RStore.tplGetAll(); if(Array.isArray(fresh) && fresh.length) all = fresh; }
+    try{ const fresh = await RStore.tplGetAll(); if(Array.isArray(fresh) && fresh.length) all = fresh; }
     catch(e){ console.error(e); }
     if(!all.length){ window.alert('No saved templates to export yet.'); return; }
     const payload = { kind:'reality-studio-templates', version:1,
@@ -3952,7 +3964,7 @@ function App({ initialDoc }){
          wasn't on screen at that instant. Nothing here clears anything, and
          an unreadable library aborts rather than guessing. */
       let current = [];
-      try{ current = await window.RStore.tplGetAll(); }
+      try{ current = await RStore.tplGetAll(); }
       catch(e){ console.error(e);
         window.alert('Couldn’t read your library, so nothing was imported and nothing was changed. Reload the page and try again.');
         return; }
@@ -3967,17 +3979,17 @@ function App({ initialDoc }){
       const replaced = drop.length + incoming.filter(t=>current.some(p=>p.id===t.id)).length;
       for(const id of drop){
         const old = current.find(p=>p.id===id);
-        if(old){ try{ await window.RStore.binPut(old, 'replaced by an import'); }catch(e){} }
+        if(old){ try{ await RStore.binPut(old, 'replaced by an import'); }catch(e){} }
       }
-      try{ await window.RStore.tplApply(incoming, drop); }
+      try{ await RStore.tplApply(incoming, drop); }
       catch(e){ console.error(e); window.alert('Couldn’t save the imported templates to storage — nothing was changed.'); return; }
       /* Everything the file touched carries new artwork under an id that may
          already have a card picture — drop those, keep the rest. */
       try{
-        const after = await window.RStore.tplGetAll();
+        const after = await RStore.tplGetAll();
         const touched = {}; incoming.forEach(t=>{ touched[t.id]=1; }); drop.forEach(id=>{ touched[id]=1; });
         const keep = after.filter(t=>!touched[t.id]).map(t=>t.id);
-        await window.RStore.thumbPrune(keep);
+        await RStore.thumbPrune(keep);
         setTplThumbs(m=>{ const n={}; keep.forEach(id=>{ if(m[id]) n[id]=m[id]; }); return n; });
         setUserTpls(sortTpls(after));
       }catch(e){ console.error(e); }
@@ -4121,10 +4133,10 @@ function App({ initialDoc }){
   ];
   const [eventPicker, setEventPicker] = React.useState(null);   // null | { open, loading, events, err }
   async function openEventPicker(){
-    if(!window.RCloud){ return; }
-    if(!window.RCloud.isSignedIn()){
+    if(!RCloud){ return; }
+    if(!RCloud.isSignedIn()){
       await cloudSignIn();
-      if(!window.RCloud.isSignedIn()){ window.alert('Cloud sign-in is needed to export to an event. (Stayed local-only.)'); return; }
+      if(!RCloud.isSignedIn()){ window.alert('Cloud sign-in is needed to export to an event. (Stayed local-only.)'); return; }
     }
     /* the event this poster was queued for (if any) gets pinned first in the picker */
     const origin = docRef.current.eventRef || null;
@@ -4141,7 +4153,7 @@ function App({ initialDoc }){
   /* scope: 'one' (this date) | 'series' (every upcoming date of the series).
      The picker only offers the choice when the target actually repeats. */
   async function exportToEvent(eventId, scope){
-    if(exporting || !window.htmlToImage || !window.RCloud) return;
+    if(exporting || !window.htmlToImage || !RCloud) return;
     /* grab the picker's feed rows before closing it — the post-send message needs
        to know whether the target belongs to a series, and the fan-out fallback
        needs the sibling dates */
@@ -4199,16 +4211,16 @@ function App({ initialDoc }){
            up unchanged, exactly as before. */
         let up = { blob, type: blob.type || 'image/png' };
         try{
-          if(window.RCloud.optimizeImage){
+          if(RCloud.optimizeImage){
             const f = AP_FMT[m.fmt];
             const sl = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
             const th = m.plate ? Math.max(1, Math.round((sl.hFrac||0.2)*f.h)) : f.h;
-            up = await window.RCloud.optimizeImage(blob, f.w, th,
+            up = await RCloud.optimizeImage(blob, f.w, th,
               (m.slot==='story' || m.slot==='square1x1') ? { prefer:'image/jpeg' } : undefined);
           }
         }catch(e){ /* keep the raw render */ }
         setExportMsg('Uploading '+label+'…');
-        const res = await window.RCloud.putPoster(eventId, m.slot, up.blob, up.type,
+        const res = await RCloud.putPoster(eventId, m.slot, up.blob, up.type,
           wantSeries ? { scope:'series' } : undefined);
         if(res && res.ok){ ok++; if(res.seriesWide) wideHits++; if(res.seriesForced) forcedHits++; }
         else { failed++; continue; }
@@ -4219,7 +4231,7 @@ function App({ initialDoc }){
         if(wantSeries && !res.seriesForced){
           for(let i=0;i<siblings.length;i++){
             setExportMsg(label+' — date '+(i+2)+' of '+(siblings.length+1)+'…');
-            const r2 = await window.RCloud.putPoster(siblings[i].id, m.slot, up.blob, up.type, { scope:'series' });
+            const r2 = await RCloud.putPoster(siblings[i].id, m.slot, up.blob, up.type, { scope:'series' });
             if(r2 && r2.ok) fanned[siblings[i].id] = 1; else fanFailed++;
           }
         }

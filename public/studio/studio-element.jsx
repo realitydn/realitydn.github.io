@@ -2,11 +2,16 @@
    REALITY POSTER STUDIO — Element renderer (per type)
    Exports: StudioElement
    ============================================================ */
-const { PALETTE: SE_PAL, ACCENTS: SE_ACC, themeColors: seTheme, surfaceStyle: seSurf, QRGlyph: SEQR } = window;
-/* shared vector geometry (studio-data.jsx) — the SAME functions Print Studio
-   draws its PDFs from, so a shape here and a shape there are one shape. */
-const { shapePath: seShapePath, shapeClip: seShapeClip, burstRays: seBurst,
-        ruleLayout: seRule, iconLayout: seIcon } = window;
+/* The shared vector geometry among these (shapePath … iconLayout) is the SAME
+   code Print Studio draws its PDFs from, so a shape here and a shape there are
+   one shape. */
+import {
+  PALETTE as SE_PAL, ACCENTS as SE_ACC, themeColors as seTheme, surfaceStyle as seSurf,
+  QRGlyph as SEQR, shapePath as seShapePath, shapeClip as seShapeClip, burstRays as seBurst,
+  ruleLayout as seRule, iconLayout as seIcon, textInsetModel, shadowModel, inkMarkLayout,
+  inkMarkCells, INK_MARK_DAY_ACCENT, inkMarkHex, relLuminance, QUIET_TIGHT, QUIET_SPEC, INK_MARK,
+  qrPatternOf, parseSessions, DAY_NAMES, DAY_ABBR, ACCENT_BY_DAY, contrastInk,
+} from './studio-data.jsx';
 const MONT = "'Montserrat',sans-serif";
 const ALT  = "'Montserrat Alternates',sans-serif";
 const GROT = "'Space Grotesk',sans-serif";
@@ -384,7 +389,7 @@ function seShadowCss(m, theme){
    shorthand (surface none→solid) and it clobbers the longhand that didn't
    change. Emitting one always-complete string sidesteps both. */
 function sePad(el, vert){
-  const m = window.textInsetModel(el);
+  const m = textInsetModel(el);
   const l = m.side==='left'  ? m.val : m.def;
   const r = m.side==='right' ? m.val : m.def;
   return { padding: vert+'px '+r+'px '+vert+'px '+l+'px' };
@@ -393,17 +398,17 @@ function sePad(el, vert){
    stacked lines, matchup's team names, the ticket banner): textAlign alone
    can't move those, they need alignItems to follow the text. */
 function seColAlign(el){
-  const a = window.textInsetModel(el).align;
+  const a = textInsetModel(el).align;
   return a==='left' ? 'flex-start' : a==='right' ? 'flex-end' : 'center';
 }
 /* Main-axis for a ROW container (qr) — there, horizontal is justifyContent. */
 function seRowAlign(el){
-  const a = window.textInsetModel(el).align;
+  const a = textInsetModel(el).align;
   return a==='left' ? 'flex-start' : a==='right' ? 'flex-end' : 'center';
 }
 /* drop-shadow form for the artwork family (photo / logo / block / weekly). */
 function seShadow(el, theme){
-  const css = seShadowCss(window.shadowModel(el, theme), theme);
+  const css = seShadowCss(shadowModel(el, theme), theme);
   return css ? { css, filter:`drop-shadow(${css})` } : null;
 }
 
@@ -580,10 +585,10 @@ function BurstEl({ el, theme, fillHex }){
    square-anchored form skips it — its ink cell IS the outer corner. */
 function InkmarkEl({ el, theme }){
   const form = el.form||'strip-v';
-  const lay = window.inkMarkLayout(form);
-  const cells = window.inkMarkCells(form, el.mode||'full');
-  const dayAccent = (window.INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
-  const hx = (n)=> window.inkMarkHex(n, dayAccent);
+  const lay = inkMarkLayout(form);
+  const cells = inkMarkCells(form, el.mode||'full');
+  const dayAccent = (INK_MARK_DAY_ACCENT||{})[el.day||'fri'] || 'red';
+  const hx = (n)=> inkMarkHex(n, dayAccent);
   /* Ground is OPT-IN (23.08): only an explicit `ground:true` draws the
      paper-shade plate. It used to be opt-out — absent meant grounded — which
      put a mat under every mark placed before the control existed, and under
@@ -621,13 +626,13 @@ function InkmarkEl({ el, theme }){
    on an outer corner of a paper surface); square-anchored never needs it,
    its ink cell IS the outer corner. Flat cells, no radius, static always. */
 function TicketInkMark({ form, mode, m, grounded, theme, day }){
-  const lay = window.inkMarkLayout(form);
-  const cells = window.inkMarkCells(form, mode);
+  const lay = inkMarkLayout(form);
+  const cells = inkMarkCells(form, mode);
   const pad = grounded ? 1 : 0;
   const shade = theme==='night' ? '#1c140b' : '#ece2c9';   /* --paper-shade */
   /* `day` only bites in daycode mode, where it picks the hue. Defaults to
      Friday/red so every existing ticket call renders exactly as before. */
-  const dayAccent = (window.INK_MARK_DAY_ACCENT||{})[day||'fri'] || 'red';
+  const dayAccent = (INK_MARK_DAY_ACCENT||{})[day||'fri'] || 'red';
   const nameOf = (slot)=> slot[0]==='b' ? cells.bands[+slot.slice(1)] : cells.field[+slot.slice(1)];
   return <div aria-hidden="true" style={{ position:'relative', flex:'none',
       width:(lay.cols+pad*2)*m, height:(lay.rows+pad*2)*m,
@@ -635,7 +640,7 @@ function TicketInkMark({ form, mode, m, grounded, theme, day }){
     {lay.boxes.map(b=>(
       <div key={b.slot} style={{ position:'absolute',
         left:(pad+b.x)*m, top:(pad+b.y)*m, width:b.w*m, height:b.h*m,
-        background:window.inkMarkHex(nameOf(b.slot), dayAccent) }} />
+        background:inkMarkHex(nameOf(b.slot), dayAccent) }} />
     ))}
   </div>;
 }
@@ -757,7 +762,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
      element shadows its letters (text-shadow, inherited by the children); a
      surfaced one shadows its card (box-shadow, overriding the surface's default).
      Defaults reproduce the old press shadow — see shadowModel. */
-  const _sm = window.shadowModel(el, theme);
+  const _sm = shadowModel(el, theme);
   const _shCss = seShadowCss(_sm, theme);
   const autoBox  = _sm.mode==='box'  ? (_shCss||'none') : 'none';
   const autoText = _sm.mode==='text' ? (_shCss||'none') : 'none';
@@ -769,7 +774,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     width:'100%', height:'100%', boxSizing:'border-box', overflow:'hidden',
     display:'flex', flexDirection:'column', justifyContent:'center'
   }, surf, { color:textCol, boxShadow:autoBox, textShadow:autoText },
-     { textAlign: window.textInsetModel(el).align }, extra);
+     { textAlign: textInsetModel(el).align }, extra);
 
   let inner = null;
 
@@ -894,10 +899,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
        around the pattern rather than a slab that outweighs the ink square
        beside it. */
     const bandBg = surf.background==='transparent'? t.paper : surf.background;
-    const bandIsDark = window.relLuminance(bandBg) < 0.5;
+    const bandIsDark = relLuminance(bandBg) < 0.5;
     const qrLight = bandIsDark ? '#fffbf1' : bandBg;
     const qrDark  = bandIsDark ? '#0d0905' : surf.color;
-    const qrQuiet = bandIsDark ? window.QUIET_TIGHT : window.QUIET_SPEC;
+    const qrQuiet = bandIsDark ? QUIET_TIGHT : QUIET_SPEC;
     /* Ink mark on the ticket — DEFAULT ON (an absent prop = on): the ticket
        is the brand carrier, so every saved poster and every template gains
        the mark on next open. Canon (ink-strip.json + the poster exception):
@@ -936,7 +941,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const stripGrounded = false;
     const stripCells = stripForm==='strip-h' ? 9 : 7;
     const stripCols = stripCells + (stripGrounded?2:0), stripRows = 2 + (stripGrounded?2:0);
-    const stripFloor = window.INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
+    const stripFloor = INK_MARK.floors[stripForm==='strip-h' ? 'strip' : 'short'];
     /* width cap: tighter when the strip shares the band with a QR, a little
        roomier for the 9×2 full strip — the centred text column never collides. */
     const stripWFrac = el.showQR ? 0.24 : (stripForm==='strip-h' ? 0.34 : 0.28);
@@ -949,7 +954,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
        (module = QR height/4, the quiet zone is the gap); standalone it sizes
        to the band height. */
     const squareEl = (m)=> <TicketInkMark form="square-anchored" mode={markMode} m={m} grounded={false} theme={theme} />;
-    const sqModule = (availH)=> Math.max(window.INK_MARK.floors.square, Math.floor(availH/4));
+    const sqModule = (availH)=> Math.max(INK_MARK.floors.square, Math.floor(availH/4));
     /* The flush square is sized off the QR's PATTERN, not its tile. A QR tile
        is 25 data modules inside a 4-module quiet zone per side, so only ~76%
        of the box it occupies is ink — match the boxes and the solid square
@@ -960,7 +965,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const qrBlock = (qs)=> (
       <div style={{ flex:'none', display:'flex', alignItems:'center' }}>
         <SEQR size={qs} dark={qrDark} light={qrLight} quiet={qrQuiet} />
-        {markOn && squareMark && squareEl(window.qrPatternOf(qs, qrQuiet)/4)}
+        {markOn && squareMark && squareEl(qrPatternOf(qs, qrQuiet)/4)}
       </div>
     );
     if(el.variant==='banner'){
@@ -983,7 +988,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
          Whichever side it lands on, the mark block reserves its width in that
          side's padding so the column can never slide under it — and the
          padding stays ONE shorthand (the longhand/shorthand desync trap). */
-      const tim = window.textInsetModel(el);
+      const tim = textInsetModel(el);
       const padL = tim.side==='left' ? tim.val : tim.def;
       const padR = tim.side==='right' ? tim.val : tim.def;
       const vPad = 30;
@@ -998,7 +1003,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
       /* block width = strip (if forced) + QR + its flush square, or whichever
          single mark is showing. The 14px gap matches the row variants'. */
       const markW = (stripOn ? stripCols*bm : 0)
-                  + (el.showQR ? qs + (markOn && squareMark ? window.qrPatternOf(qs, qrQuiet) : 0) : 0)
+                  + (el.showQR ? qs + (markOn && squareMark ? qrPatternOf(qs, qrQuiet) : 0) : 0)
                   + (stripOn && el.showQR ? 14 : 0)
                   + (sqSideOn ? 4*sqm : 0);
       const reserve = markW ? markW + 26 : 0;
@@ -1074,7 +1079,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const rowWt  = el.rowWeight||700;
     const rowTr  = EM(el.rowTracking!=null?el.rowTracking:TRACK.name);
     const headFs = (el.headingSize!=null?el.headingSize:15)*B;
-    const items  = window.parseSessions(el.raw);
+    const items  = parseSessions(el.raw);
     const markers = items.reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
     const rich = markers.length>0 || items.some(r=>r.time);
     /* category colour/name: explicit markerKey wins, else a default accent per
@@ -1164,7 +1169,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
        unknown day falls back to the poster accent. Day chip + name · time over an
        optional description. Heading takes the poster accent. Fonts ride B like
        the other list blocks so a 9:16 boost scales the type in step. */
-    const dayNames = window.DAY_NAMES||[], dayAbbr = window.DAY_ABBR||[], byDay = window.ACCENT_BY_DAY||{};
+    const dayNames = DAY_NAMES||[], dayAbbr = DAY_ABBR||[], byDay = ACCENT_BY_DAY||{};
     const items = el.items||[];
     const rowGap = el.rowGap!=null?el.rowGap:16;
     const rowTr  = EM(el.rowTracking!=null?el.rowTracking:TRACK.name);
@@ -1188,7 +1193,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
           borderTop:i?`1.5px solid ${ruleC}22`:'none', padding:rowGap+'px 0' }}>
           <div style={{ flex:'none', width:chipW, borderRadius:Math.round(6*B), background:col, alignSelf:'flex-start',
             display:'flex', alignItems:'center', justifyContent:'center', padding:Math.round(nameFs*0.3)+'px 0',
-            fontFamily:MONT, fontWeight:800, fontSize:abbrFs, letterSpacing:EM(TRACK.label), color:window.contrastInk(col) }}>{dayShort(it.day)}</div>
+            fontFamily:MONT, fontWeight:800, fontSize:abbrFs, letterSpacing:EM(TRACK.label), color:contrastInk(col) }}>{dayShort(it.day)}</div>
           <div style={{ flex:'1 1 auto', minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'baseline', gap:Math.round(10*B), flexWrap:'wrap' }}>
               <span style={{ fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase', fontSize:nameFs, letterSpacing:rowTr, lineHeight:1.04 }}>{it.name}</span>
@@ -1216,12 +1221,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
        real cream tile with the tight 2-module safe area rather than an
        inverted code that only some scanners read. */
     const qrElBg = surf.background==='transparent'? t.paper : surf.background;
-    const qrElDark = window.relLuminance(qrElBg) < 0.5;
+    const qrElDark = relLuminance(qrElBg) < 0.5;
     inner = <div style={box(Object.assign({ flexDirection:'row', alignItems:'center', justifyContent:seRowAlign(el), gap:16 }, sePad(el, qrPad)))}>
       {el.showQR && <SEQR size={qrFill}
         dark={qrElDark ? '#0d0905' : surf.color}
         light={qrElDark ? '#fffbf1' : qrElBg}
-        quiet={qrElDark ? window.QUIET_TIGHT : window.QUIET_SPEC} />}
+        quiet={qrElDark ? QUIET_TIGHT : QUIET_SPEC} />}
       {/* Tracking is declared on each LINE, never on this wrapper: an em value
           resolves against the element that carries it, so 0.16em set here
           computed off the wrapper's inherited 16px and then landed as 0.142em
@@ -1253,7 +1258,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
        so a Weekly bar and a When chip on the same accent disagreed. One rule,
        one answer; el.textColor still overrides. */
     const accent = accentHex, ink='#0d0905', cream='#fffbf1';
-    const barText = el.textColor!=null ? textCol : window.contrastInk(accent);
+    const barText = el.textColor!=null ? textCol : contrastInk(accent);
     const H=el.h, barH=Math.round(H*0.6), badgeD=H, pad=Math.round(el.w*0.05);
     /* fonts derive from el.h (which boostForStory already scales per format), so
        they must NOT also multiply by B — that would scale the text twice. */
@@ -1295,7 +1300,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
       <div style={team}>{el.teamA}</div>
       <div style={{ width:vsD, height:vsD, borderRadius:'50%', background:accentHex, margin:gap+'px 0', flex:'none',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:window.contrastInk(accentHex), letterSpacing:EM(TRACK.name) }}>{el.vs||'VS'}</span>
+        <span style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:vsF, color:contrastInk(accentHex), letterSpacing:EM(TRACK.name) }}>{el.vs||'VS'}</span>
       </div>
       <div style={team}>{el.teamB}</div>
       {/* kickoff date · time = facts → Grotesk; the team names stay Montserrat */}
@@ -1342,17 +1347,22 @@ function Wrap({ el, wrap, sel, onDown, children }){
    identity while its contents are unchanged, and the pointer-down handler is
    one stable function. (The library's thumbnails use the plain component —
    they render once and are captured.) */
-window.StudioElement = React.memo(StudioElement);
-/* The photo press, shared with the Inspector's treatment strip. */
-window.photoSources = photoSources;
-/* One decode per photo, shared with the library's thumbnail warm-up. */
-window.loadCachedImage = loadCachedImage;
-/* The title's rendered line height (Vietnamese-aware) — the canvas editor and
-   the Inspector's Line spacing hint read it from here. */
-window.titleLineHeight = titleLineHeight;
-window.drawPhotoPress = drawPhotoPress;
-window.risoSig = risoSig;
-/* The mark at an explicit module, in a shrink-wrapped box — the ticket's own
-   renderer, shared with the Inspector's mark editor so a swatch in the panel
-   and the mark on the canvas can never be drawn by two different code paths. */
-window.InkMarkSwatch = TicketInkMark;
+const StudioElementMemo = React.memo(StudioElement);
+export {
+  StudioElementMemo as StudioElement,
+  /* The photo press, shared with the Inspector's treatment strip. */
+  photoSources, drawPhotoPress, risoSig,
+  /* One decode per photo, shared with the library's thumbnail warm-up. */
+  loadCachedImage,
+  /* The title's rendered line height (Vietnamese-aware) — the canvas editor and
+     the Inspector's Line spacing hint read it from here. */
+  titleLineHeight,
+  /* The mark at an explicit module, in a shrink-wrapped box — the ticket's own
+     renderer, shared with the Inspector's mark editor so a swatch in the panel
+     and the mark on the canvas can never be drawn by two different code paths. */
+  TicketInkMark as InkMarkSwatch,
+  /* the day-colour ink rule + the poster's day, for the Inspector */
+  SE_DAY_INK, posterDayOf,
+  /* the stand-in photos, for main.jsx's test hook */
+  getSample,
+};

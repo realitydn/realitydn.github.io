@@ -9,10 +9,6 @@ dist/
 # studio-store.js, cloud-client.js, print-store.js, vendor/*) that MUST stay
 # tracked, so a blanket public/*/*.js would delete real source from the repo.
 # The .jsx beside each of these is the file you edit.
-public/studio/studio-data.js
-public/studio/studio-element.js
-public/studio/studio-canvas.js
-public/studio/studio-app.js
 public/studio-shared/studio-ui.js
 
 # Studio bundles built by scripts/build-studios.mjs (prebuild) from each

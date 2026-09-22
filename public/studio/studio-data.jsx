@@ -1272,7 +1272,7 @@ function buildTemplate(tpl){
   return { elements, masterFormat:'4x5', theme: tpl.theme||'day', accent: tpl.accent||'blue', overrides };
 }
 
-Object.assign(window, {
+export {
   PALETTE, ACCENTS, INK_CHOICES, ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, DAY_ABBR, DAY_NAMES, accentDay,
   FORMATS, OUTPUT_FORMATS, STANDEE_FORMATS, HANDOUT_FORMATS, MODULE, STEP, TYPE_SCALE, LAYOUT_KEYS,
   snapToScale, scaleStep,
@@ -1282,4 +1282,4 @@ Object.assign(window, {
   shapePath, shapeClip, roundedRectPath, burstRays, ruleLayout, iconLayout,
   resolveElements, mapElementToFormat, pointToMaster,
   TEMPLATES, TEMPLATE_GROUPS, buildTemplate
-});
+};

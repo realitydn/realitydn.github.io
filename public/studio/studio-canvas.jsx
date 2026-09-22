@@ -3,8 +3,11 @@
    Renders the RESOLVED element list for the active format.
    Exports: StudioCanvas
    ============================================================ */
-const { FORMATS:SC_FMT, MODULE:SC_MOD, STEP:SC_STEP, PALETTE:SC_PAL,
-        themeColors:scTheme, safeRect:scSafe, StudioElement:SCElement } = window;
+import {
+  FORMATS as SC_FMT, MODULE as SC_MOD, STEP as SC_STEP, PALETTE as SC_PAL, themeColors as scTheme,
+  safeRect as scSafe,
+} from './studio-data.jsx';
+import { StudioElement as SCElement, titleLineHeight } from './studio-element.jsx';
 const SC_MONT = "'Montserrat',sans-serif";
 /* Selection + snap-guide colour. These used to be the accent pink — which is
    also THURSDAY's day colour, so on a Thursday poster the selection box, its
@@ -46,7 +49,7 @@ function scEditFont(el){
     fontSize: (el.fontSize||48),
     // the title's RENDERED line height (Vietnamese stacks lift it) — the editor
     // has to sit line-for-line on the words it covers
-    lineHeight: el.type==='title' ? window.titleLineHeight(el) : (el.lineHeight!=null ? el.lineHeight : 1.3),
+    lineHeight: el.type==='title' ? titleLineHeight(el) : (el.lineHeight!=null ? el.lineHeight : 1.3),
     letterSpacing: ((el.letterSpacing!=null?el.letterSpacing:0))+'em',
     textAlign: el.align||'left',
     textTransform: (el.type==='title'||el.type==='stamp') ? 'uppercase' : 'none',
@@ -394,4 +397,4 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
   );
 }
 
-window.StudioCanvas = StudioCanvas;
+export { StudioCanvas };

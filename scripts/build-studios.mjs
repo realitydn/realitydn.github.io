@@ -45,8 +45,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // MIGRATION (Phase 1 of docs/REFACTOR-PLAN.md): Studios still on ordered
 // classic scripts get the old file-by-file JSX transform until they move to
 // a bundle. Shared with tools/studio-jsx.cjs — keep the two in step.
-const BUNDLED = ['schedule', 'print'];
-const LEGACY_DIRS = ['studio', 'studio-shared'];
+const BUNDLED = ['schedule', 'print', 'studio'];
+const LEGACY_DIRS = ['studio-shared'];
 export const JSX_TRANSFORM = {
   loader: 'jsx',
   target: 'esnext',

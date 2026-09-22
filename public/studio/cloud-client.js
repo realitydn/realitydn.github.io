@@ -1,8 +1,10 @@
 /* ============================================================
    REALITY STUDIOS — shared cloud client  (window.RCloud)
    ------------------------------------------------------------
-   WP9 (Events Platform) part E. Loaded as a plain UMD/IIFE via
-   <script> AFTER studio-store.js, BEFORE the .jsx apps.
+   WP9 (Events Platform) part E. An ES module in the Studio's bundle
+   (imported by main.jsx before the app modules). The IIFE below still
+   sets window.RCloud — a permanent global, see main.jsx — and the
+   module exports that same object as RCloud.
 
    THE ONE RULE: cloud sync is STRICTLY ADDITIVE and best-effort.
    localStorage / IndexedDB (RStore) stay the source of truth.
@@ -407,3 +409,6 @@
     fetchFeed: fetchFeed,
   };
 })();
+
+// The one RCloud (the guard above keeps an earlier copy if there is one).
+export const RCloud = window.RCloud;

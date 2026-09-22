@@ -13,6 +13,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { serveCompiledJsx } = require('./studio-jsx.cjs');
+const { serveBundle } = require('./studio-bundle.cjs');
 
 // Default 4501 (what "Poster Studio.bat" expects). Honour PORT when set, so a
 // second instance — e.g. a preview server — can run on an assigned free port
@@ -81,6 +82,7 @@ const server = http.createServer((req, res) => {
 
   // index.html asks for .js; the app files are .jsx on disk. Compile on demand
   // so editing a .jsx and hitting refresh is all it takes — no build step.
+  if (serveBundle('studio', rel, res)) return;
   if (serveCompiledJsx(filePath, res)) return;
 
   fs.readFile(filePath, (err, data) => {

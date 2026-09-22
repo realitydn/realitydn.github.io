@@ -14,8 +14,9 @@
      photos so they're stored once and the records shrink — the
      shape that maps onto a Cloudflare R2/KV sync.)
    • migrate(): on first run, copies the old localStorage list
-     (key 'reality-studio-templates-v1') in and NEVER deletes it
-     — that copy stays as an untouched backup. A one-time flag
+     (key 'reality-studio-templates-v1') in and never deletes it
+     itself (retireLegacyTpls, later, files that backup verbatim in
+     IndexedDB and only then frees the localStorage copy). A one-time flag
      means it copies once (so templates you later delete can't
      come back) and it's idempotent if interrupted.
    • The {getAll,put,delete,replaceAll} surface is deliberately
@@ -61,11 +62,68 @@
      hit the hub's ~5MB doc cap (413) and simply stay local; that's acceptable.
      ------------------------------------------------------------------------ */
   function _rc(){ return (typeof window!=='undefined' && window.RCloud) ? window.RCloud : null; }
+
+  /* ---- the cloud copy keeps the OLD photo size ------------------------------
+     Photos used to be cut to 860px on the long edge as they came in, because
+     the working doc lived in localStorage and every byte counted. The working
+     doc lives in IndexedDB now, so they come in at 2000px — what Print Studio
+     keeps, and enough for a 2160px export without a soft upscale.
+     The hub didn't get any bigger, though: a doc over its ~5MB cap is refused
+     (413), and a template is pushed whole, every photo inline. So everything
+     that leaves this browser is re-cut to the 860px it always was — the cloud
+     payload is exactly what it was before the change, and the full-size photo
+     stays on this disk. A template restored from the hub onto another machine
+     comes back at 860px, same as it always did.
+     Cached by source, so a working doc pushed every few seconds re-encodes each
+     photo once, not once per push. */
+  const SLIM_EDGE = 860, SLIM_MIN_LEN = 300000;   // below ~220KB of image it isn't worth a decode
+  const _slim = new Map();
+  function slimSrc(src){
+    if(typeof src!=='string' || src.indexOf('data:image/')!==0 || src.length < SLIM_MIN_LEN) return Promise.resolve(src);
+    if(_slim.has(src)) return _slim.get(src);
+    const p = new Promise(res=>{
+      try{
+        const im = new Image();
+        im.onload = ()=>{
+          try{
+            const long = Math.max(im.width, im.height);
+            if(!long || long <= SLIM_EDGE){ res(src); return; }
+            const sc = SLIM_EDGE/long, c = document.createElement('canvas');
+            c.width = Math.round(im.width*sc); c.height = Math.round(im.height*sc);
+            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+            res(src.indexOf('data:image/png')===0 ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.82));
+          }catch(e){ res(src); }
+        };
+        im.onerror = ()=>res(src);
+        im.src = src;
+      }catch(e){ res(src); }
+    });
+    _slim.set(src, p);
+    if(_slim.size > 32) _slim.delete(_slim.keys().next().value);
+    return p;
+  }
+  /* A doc with every inline photo re-cut for the hub. Never throws; anything it
+     can't shrink goes up as it is, which is what happened before. */
+  async function slimDocForCloud(doc){
+    try{
+      if(!doc || !Array.isArray(doc.elements)) return doc;
+      const els = await Promise.all(doc.elements.map(async el=>{
+        if(!el || (!el.src && !el.src2)) return el;
+        const patch = {};
+        if(el.src){ const s = await slimSrc(el.src); if(s!==el.src) patch.src = s; }
+        if(el.src2){ const s = await slimSrc(el.src2); if(s!==el.src2) patch.src2 = s; }
+        return Object.keys(patch).length ? Object.assign({}, el, patch) : el;
+      }));
+      return Object.assign({}, doc, { elements: els });
+    }catch(e){ return doc; }
+  }
+
   function cloudPutTpl(t){
     try{
       const rc = _rc();
       if(!rc || !rc.isSignedIn() || !t || !t.id) return;
-      Promise.resolve(rc.putDoc('poster', 'tpl:'+t.id, t.name||'', t, t.savedAt||Date.now()))
+      Promise.resolve(slimDocForCloud(t.doc))
+        .then(d=>rc.putDoc('poster', 'tpl:'+t.id, t.name||'', d===t.doc ? t : Object.assign({}, t, { doc:d }), t.savedAt||Date.now()))
         .catch(()=>{});
     }catch(e){}
   }
@@ -348,8 +406,64 @@
   async function metaGet(k){ await open(); const v = await reqVal(store(M_STORE, 'readonly').get(k)); return v ? v.v : undefined; }
   async function metaPut(k, v){ await open(); const s = store(M_STORE, 'readwrite'); s.put({ k, v }); return txDone(s.transaction); }
 
+  /* ---- the working doc ------------------------------------------------------
+     The poster on screen autosaved to localStorage on every change — photos
+     and all — into the same ~5MB box as the legacy template backup, Print
+     Studio and Schedule Studio. When that box filled, setItem threw, the throw
+     was swallowed, and the Studio carried on looking saved while nothing was
+     being kept. It lives here now, behind a 'doc:' key in the meta store: no
+     DB_VER bump (same reasoning as the thumbnails), and the quota is the
+     disk's rather than 5MB. Stored as { at, doc } so a reader can tell which of
+     two copies is newer. Rejects on failure — the caller shows it. */
+  const DOC_PREFIX = 'doc:';
+  async function docGet(k){
+    const v = await metaGet(DOC_PREFIX + (k||'working'));
+    return (v && v.doc && Array.isArray(v.doc.elements)) ? v : null;
+  }
+  async function docPut(k, doc){ return metaPut(DOC_PREFIX + (k||'working'), { at: Date.now(), doc: doc }); }
+
+  /* ---- retire the legacy localStorage template backup ----------------------
+     migrate() deliberately left the old library in localStorage as a backup,
+     and it has sat there ever since — often megabytes of inline photos, in the
+     one box the working doc (then) and two other Studios all write to. This
+     files that backup inside IndexedDB, VERBATIM, reads it back, checks that
+     every template id in it is accounted for, and only then frees the
+     localStorage copy. Nothing is ever lost: the exact string is kept under
+     'legacy:<key>', and the report says how many of its ids are still live
+     templates (the rest were deleted on purpose since the move — they're in
+     the archived copy, and some in Recently deleted).
+     Refuses — and leaves localStorage alone — on anything it can't prove:
+     not migrated yet, unparseable, a record without an id, or an archive that
+     doesn't read back identical. */
+  const LEGACY_PREFIX = 'legacy:';
+  async function retireLegacyTpls(){
+    let raw = null;
+    try{ raw = localStorage.getItem(LS_TPL_KEY); }catch(e){ return { kept:'localStorage unreadable' }; }
+    if(!raw) return { none:true };
+    await open();
+    if(!(await metaGet('migrated_v1'))) return { kept:'not migrated yet' };
+    let arr = null;
+    try{ arr = JSON.parse(raw); }catch(e){ return { kept:'backup is not JSON' }; }
+    if(!Array.isArray(arr)) return { kept:'backup is not a list' };
+    if(arr.some(t=>!t || !t.id)) return { kept:'a backed-up template has no id' };
+    const key = LEGACY_PREFIX + LS_TPL_KEY;
+    const prior = await metaGet(key);
+    if(!prior || prior.raw !== raw) await metaPut(key, { at: Date.now(), raw: raw });
+    const back = await metaGet(key);
+    if(!back || back.raw !== raw) return { kept:'archive did not read back identical' };
+    let archived = null;
+    try{ archived = JSON.parse(back.raw); }catch(e){ return { kept:'archive unreadable' }; }
+    const inArchive = {}; (archived||[]).forEach(t=>{ if(t && t.id) inArchive[t.id]=1; });
+    if(arr.some(t=>!inArchive[t.id])) return { kept:'an id is missing from the archive' };
+    const live = {}; (await tplGetAll()).forEach(t=>{ if(t && t.id) live[t.id]=1; });
+    const liveCount = arr.filter(t=>live[t.id]).length;
+    try{ localStorage.removeItem(LS_TPL_KEY); }catch(e){ return { kept:'localStorage refused the delete' }; }
+    return { retired: arr.length, live: liveCount, bytes: raw.length };
+  }
+
   /* One-time copy of the legacy localStorage library into IndexedDB.
-     • Keeps the localStorage entry intact (an untouched backup).
+     • Keeps the localStorage entry intact (an untouched backup) —
+       retireLegacyTpls moves it, once it is provably filed here.
      • Guarded by the 'migrated_v1' flag: runs the copy once, ever — so a
        template you delete after migrating can't be resurrected on reload.
      • Uses bulkPut (upsert by id), so an interrupted run that re-fires can't
@@ -368,5 +482,6 @@
   window.RStore = { open, tplGetAll, tplPut, tplDelete, tplBulkPut, tplApply,
                     binPut, binGetAll, binDelete,
                     thumbGetAll, thumbPut, thumbDelete, thumbPrune,
-                    metaGet, metaPut, migrate, cloudPull, cloudPushAll, cloudRestore, LS_TPL_KEY };
+                    metaGet, metaPut, migrate, cloudPull, cloudPushAll, cloudRestore, LS_TPL_KEY,
+                    docGet, docPut, retireLegacyTpls, slimDocForCloud };
 })();

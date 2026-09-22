@@ -6,6 +6,16 @@
 const { FORMATS:SC_FMT, MODULE:SC_MOD, STEP:SC_STEP, PALETTE:SC_PAL,
         themeColors:scTheme, safeRect:scSafe, StudioElement:SCElement } = window;
 const SC_MONT = "'Montserrat',sans-serif";
+/* Selection + snap-guide colour. These used to be the accent pink — which is
+   also THURSDAY's day colour, so on a Thursday poster the selection box, its
+   handles and every snap guide dissolved into the artwork. Cyan is outside the
+   REALITY palette entirely (no day, no ink, no stock is anywhere near it), so
+   it can't collide with a poster; the thin ink edge keeps it legible over
+   cream stock and pale photos too. The handles are ink with a cyan rim (cyan
+   on a white handle all but vanishes). Pink stays the chrome's accent
+   everywhere else. */
+const SC_SEL = '#00e5ff';
+const SC_SEL_EDGE = 'rgba(13,9,5,.72)';
 
 function scSnap(v, step){ return Math.round(v/step)*step; }
 
@@ -34,7 +44,9 @@ function scEditFont(el){
     fontFamily: grot ? "'Space Grotesk',sans-serif" : SC_MONT,
     fontWeight: el.weight!=null ? el.weight : (grot?400:800),
     fontSize: (el.fontSize||48),
-    lineHeight: el.lineHeight!=null ? el.lineHeight : (el.type==='title'?0.84:1.3),
+    // the title's RENDERED line height (Vietnamese stacks lift it) — the editor
+    // has to sit line-for-line on the words it covers
+    lineHeight: el.type==='title' ? window.titleLineHeight(el) : (el.lineHeight!=null ? el.lineHeight : 1.3),
     letterSpacing: ((el.letterSpacing!=null?el.letterSpacing:0))+'em',
     textAlign: el.align||'left',
     textTransform: (el.type==='title'||el.type==='stamp') ? 'uppercase' : 'none',
@@ -60,9 +72,9 @@ function ScTextEditor({ el, value, onChange, onDone }){
       style={Object.assign({
         position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h,
         transform: el.rot ? 'rotate('+el.rot+'deg)' : null,
-        background:'rgba(237,27,114,.10)', border:'2px solid #ed1b72', outline:'none',
+        background:'rgba(0,229,255,.10)', border:'2px solid '+SC_SEL, outline:'1px solid '+SC_SEL_EDGE, outlineOffset:0,
         color:'inherit', padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
-        caretColor:'#ed1b72', WebkitTextFillColor:'currentColor',
+        caretColor:SC_SEL, WebkitTextFillColor:'currentColor',
       }, scEditFont(el))} />
   );
 }
@@ -77,6 +89,18 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
   const [guides, setGuides] = React.useState([]);
   const [editId, setEditId] = React.useState(null);
   const dragRef = React.useRef(null);
+  /* Web fonts land after the first paint. The elements are memoised now, so
+     nothing else would make a box that measured its text in the fallback face
+     (a match-up's fitted team names) measure again — a font arriving is a
+     re-render of its own. */
+  const [fontGen, setFontGen] = React.useState(0);
+  React.useEffect(()=>{
+    const fs = document.fonts; if(!fs) return;
+    let live = true;
+    const bump = ()=>{ if(live) setFontGen(g=>g+1); };
+    try{ fs.addEventListener('loadingdone', bump); fs.ready.then(bump); }catch(e){}
+    return ()=>{ live=false; try{ fs.removeEventListener('loadingdone', bump); }catch(e){} };
+  }, []);
   // Leaving the element (or the format) drops the editor rather than stranding
   // it over whatever is now in that spot.
   React.useEffect(()=>{ if(editId && editId!==selectedId) setEditId(null); }, [selectedId]);
@@ -200,8 +224,38 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
     if(d && d.mode==='move' && d.group && !d.moved) onSelect(d.id, false);
     dragRef.current = null; setGuides([]); removeListeners(); onCommit && onCommit();
   }
-  function addListeners(){ window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); }
-  function removeListeners(){ window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); }
+  /* The browser took the pointer away mid-drag (a touch turned into a scroll,
+     the window lost focus, a system gesture). No pointerup is coming, so end the
+     drag here — where it got to stands, and nothing is left listening. Unlike
+     onUp this never re-selects: a cancel isn't a click. */
+  function onCancel(){
+    if(!dragRef.current) return;
+    dragRef.current = null; setGuides([]); removeListeners(); onCommit && onCommit();
+  }
+  /* The window listeners are STABLE trampolines onto this render's handlers.
+     They used to be the handlers themselves, re-created every render — so the
+     unmount cleanup (captured on the first render) removed functions that had
+     never been added, and a drag in flight at unmount left its real listeners
+     on the window for good. The trampolines are the same functions for the
+     life of the canvas, so add and remove always pair up, and a drag always
+     runs the latest handler (current scale, snap and elements). */
+  const liveRef = React.useRef(null);
+  liveRef.current = { onMove, onUp, onCancel, startMove };
+  const tramp = React.useRef(null);
+  if(!tramp.current) tramp.current = {
+    move:   (e)=>liveRef.current.onMove(e),
+    up:     (e)=>liveRef.current.onUp(e),
+    cancel: (e)=>liveRef.current.onCancel(e),
+    // the element's pointer-down — stable, so the memoised elements don't
+    // re-render on every canvas render just because this function is new
+    down:   (e, el)=>liveRef.current.startMove(e, el),
+  };
+  function addListeners(){ const t = tramp.current;
+    window.addEventListener('pointermove', t.move); window.addEventListener('pointerup', t.up);
+    window.addEventListener('pointercancel', t.cancel); }
+  function removeListeners(){ const t = tramp.current;
+    window.removeEventListener('pointermove', t.move); window.removeEventListener('pointerup', t.up);
+    window.removeEventListener('pointercancel', t.cancel); }
   React.useEffect(()=>removeListeners, []);
 
   const hs = 26/scale, bw = 2.5/scale;
@@ -241,7 +295,7 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
             onDoubleClick={e=>{ if(SC_EDITABLE[el.type]){ e.stopPropagation(); onSelect(el.id, false); setEditId(el.id); } }}>
             <SCElement el={el} theme={theme} posterAccentHex={accentHex} posterAccent={accent} posterDay={posterDay}
               selected={el.id===selectedId} dragging={isDragging(el.id)}
-              onElPointerDown={startMove} exporting={exporting} />
+              onElPointerDown={tramp.current.down} exporting={exporting} fontGen={fontGen} />
           </div>
         ))}
 
@@ -282,8 +336,8 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
           pointerEvents:'none', zIndex:40 }} />}
 
         {guides.map((g,i)=> g.axis==='v'
-          ? <div key={i} style={{ position:'absolute', left:g.pos-1/scale, top:0, width:2/scale, height:f.h, background:SC_PAL.pink, pointerEvents:'none', zIndex:50 }} />
-          : <div key={i} style={{ position:'absolute', top:g.pos-1/scale, left:0, height:2/scale, width:f.w, background:SC_PAL.pink, pointerEvents:'none', zIndex:50 }} />
+          ? <div key={i} style={{ position:'absolute', left:g.pos-1/scale, top:0, width:2/scale, height:f.h, background:SC_SEL, boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}`, pointerEvents:'none', zIndex:50 }} />
+          : <div key={i} style={{ position:'absolute', top:g.pos-1/scale, left:0, height:2/scale, width:f.w, background:SC_SEL, boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}`, pointerEvents:'none', zIndex:50 }} />
         )}
 
         {/* secondary multi-selection — thin outlines, no handles (handles live
@@ -292,22 +346,23 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
           const e = elements.find(x=>x.id===id && !x.hidden); if(!e) return null;
           return <div key={'ms-'+id} style={{ position:'absolute', left:0, top:0, width:e.w, height:e.h,
             transform:`translate(${e.x}px,${e.y}px) rotate(${e.rot||0}deg)`, transformOrigin:'center center',
-            border:`${bw}px solid ${SC_PAL.pink}`, opacity:.5, pointerEvents:'none', zIndex:55 }} />;
+            border:`${bw}px solid ${SC_SEL}`, boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}`, opacity:.6, pointerEvents:'none', zIndex:55 }} />;
         })}
 
         {sel && !exporting && (
           <div style={{ position:'absolute', left:0, top:0, width:sel.w, height:sel.h,
             transform:`translate(${sel.x}px,${sel.y}px) rotate(${sel.rot||0}deg)`, transformOrigin:'center center',
             pointerEvents:'none', zIndex:60 }}>
-            <div style={{ position:'absolute', inset:-bw, border:`${bw}px solid ${SC_PAL.pink}`, boxSizing:'border-box' }} />
+            <div style={{ position:'absolute', inset:-bw, border:`${bw}px solid ${SC_SEL}`, boxSizing:'border-box',
+              boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}, inset 0 0 0 ${1/scale}px ${SC_SEL_EDGE}` }} />
             <div onPointerDown={(e)=>startRotate(e, sel)} style={{ position:'absolute', left:'50%', top:-(46/scale),
-              width:hs, height:hs, marginLeft:-hs/2, borderRadius:'50%', background:'#fff', border:`${bw}px solid ${SC_PAL.pink}`,
+              width:hs, height:hs, marginLeft:-hs/2, borderRadius:'50%', background:'#0d0906', border:`${bw}px solid ${SC_SEL}`, boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}`,
               pointerEvents:'auto', cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ width:hs*0.42, height:hs*0.42, borderRadius:'50%', borderWidth:`${1.5/scale}px`, borderStyle:'solid', borderColor:`${SC_PAL.pink} ${SC_PAL.pink} transparent ${SC_PAL.pink}` }} />
+              <div style={{ width:hs*0.42, height:hs*0.42, borderRadius:'50%', borderWidth:`${1.5/scale}px`, borderStyle:'solid', borderColor:`${SC_SEL} ${SC_SEL} transparent ${SC_SEL}` }} />
             </div>
-            <div style={{ position:'absolute', left:'50%', top:-(46/scale)+hs, width:bw, height:(46/scale)-hs, marginLeft:-bw/2, background:SC_PAL.pink }} />
+            <div style={{ position:'absolute', left:'50%', top:-(46/scale)+hs, width:bw, height:(46/scale)-hs, marginLeft:-bw/2, background:SC_SEL }} />
             <div onPointerDown={(e)=>startResize(e, sel)} style={{ position:'absolute', left:sel.w, top:sel.h,
-              width:hs, height:hs, marginLeft:-hs/2, marginTop:-hs/2, background:'#fff', border:`${bw}px solid ${SC_PAL.pink}`,
+              width:hs, height:hs, marginLeft:-hs/2, marginTop:-hs/2, background:'#0d0906', border:`${bw}px solid ${SC_SEL}`, boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}`,
               pointerEvents:'auto', cursor:'nwse-resize' }} />
           </div>
         )}
@@ -323,14 +378,14 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
               <div style={{ position:'absolute', left:0, top:0, width:f.w, height:sy, background:dim, pointerEvents:'none', zIndex:58 }} />
               <div style={{ position:'absolute', left:0, top:sy+sh, width:f.w, height:Math.max(0, f.h-sy-sh), background:dim, pointerEvents:'none', zIndex:58 }} />
               <div onPointerDown={(e)=>startSlice(e, 'move')} style={{ position:'absolute', left:0, top:sy, width:f.w, height:sh,
-                border:`${lw}px solid ${SC_PAL.pink}`, boxSizing:'border-box', cursor:'grab', pointerEvents:'auto', zIndex:59 }}>
+                border:`${lw}px solid ${SC_SEL}`, boxSizing:'border-box', cursor:'grab', pointerEvents:'auto', zIndex:59 }}>
                 <div style={{ position:'absolute', left:8/scale, top:6/scale, fontFamily:SC_MONT, fontWeight:700,
-                  fontSize:13/scale, letterSpacing:'.12em', color:SC_PAL.pink, pointerEvents:'none' }}>FEED SLICE</div>
+                  fontSize:13/scale, letterSpacing:'.12em', color:SC_SEL, pointerEvents:'none' }}>FEED SLICE</div>
               </div>
               <div onPointerDown={(e)=>startSlice(e, 'top')} title="Drag to set the slice top" style={{ position:'absolute', left:'50%', top:sy,
-                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#fff', border:`${lw}px solid ${SC_PAL.pink}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
+                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#0d0906', border:`${lw}px solid ${SC_SEL}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
               <div onPointerDown={(e)=>startSlice(e, 'bot')} title="Drag to set the slice bottom" style={{ position:'absolute', left:'50%', top:sy+sh,
-                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#fff', border:`${lw}px solid ${SC_PAL.pink}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
+                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#0d0906', border:`${lw}px solid ${SC_SEL}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
             </React.Fragment>
           );
         })()}

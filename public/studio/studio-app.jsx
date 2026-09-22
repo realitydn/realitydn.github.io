@@ -32,7 +32,63 @@ function starterDoc(){
     ]
   };
 }
-function loadDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r){ const d=JSON.parse(r); if(d&&d.elements){ const doc=Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.15}, d); if(doc.storyScale===1.3) doc.storyScale=1.15; /* old default bled off the story sides; 1.15 keeps the column in-frame */ if(doc.activeFormat!=='master' && !AP_FMT[doc.activeFormat]) doc.activeFormat='master'; /* retired view (e.g. the old FB cover) saved as active → back to Master */ return doc; } } }catch(e){} return starterDoc(); }
+/* A stored working doc → one the app can run on (defaults for fields added
+   since it was saved). Null if it isn't a doc at all. */
+function normalizeDoc(d){
+  if(!d || !Array.isArray(d.elements)) return null;
+  const doc=Object.assign({overrides:{},activeFormat:'master',masterFormat:'4x5',title:'',exportFormat:'png',storyBoost:true,storyScale:1.15}, d);
+  if(doc.storyScale===1.3) doc.storyScale=1.15; /* old default bled off the story sides; 1.15 keeps the column in-frame */
+  if(doc.activeFormat!=='master' && !AP_FMT[doc.activeFormat]) doc.activeFormat='master'; /* retired view (e.g. the old FB cover) saved as active → back to Master */
+  delete doc._savedAt;   // the localStorage fallback's timestamp — storage bookkeeping, not part of the poster
+  return doc;
+}
+/* Why a storage write failed, in words for the topbar. */
+function describeStoreError(e){
+  const n = e && e.name, m = (e && e.message) || '';
+  if(n==='QuotaExceededError' || /quota/i.test(m) || (e && e.code===22)) return 'storage full';
+  return m || n || 'write failed';
+}
+/* Arrow-key nudge: a ninth of the grid step (5px at STEP 45), so nine presses
+   walk exactly one step and a nudged box can always be walked back onto the
+   armature a drag snaps to. Shift moves one whole step. */
+const NUDGE = Math.round((window.STEP||45)/9);
+/* The pre-IndexedDB autosave (and the fallback copy, if IndexedDB ever
+   refuses a write) — read once on boot, then retired. */
+function loadLegacyDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r) return JSON.parse(r); }catch(e){} return null; }
+
+/* ============================================================
+   THE WORKING DOC — where the poster on screen is kept.
+   ============================================================
+   It used to be written whole to localStorage on every change,
+   photos and all, into the ~5MB box it shares with the old
+   template backup, Print Studio and Schedule Studio. Once that
+   box was full every write threw, the throw was swallowed, and
+   the Studio went on looking saved: close the tab and the poster
+   was whatever it was the last time a write fitted.
+
+   It lives in IndexedDB now (RStore 'doc:working'), written
+   ~500ms after the last change and flushed on the way out, with a
+   save-state in the topbar that goes red when a write fails. On
+   boot: the IndexedDB copy, else the old localStorage one — which
+   is then moved across and removed. If both exist (IndexedDB once
+   refused a write and the fallback kept it) the newer one wins. */
+async function bootDoc(){
+  let rec = null;
+  try{ if(window.RStore && window.RStore.docGet) rec = await window.RStore.docGet('working'); }catch(e){ rec = null; }
+  const legacy = loadLegacyDoc();
+  const legacyAt = (legacy && legacy._savedAt) || 0;    // only the fallback writer stamps this
+  if(rec && (!legacy || rec.at >= legacyAt)){
+    if(legacy){ try{ localStorage.removeItem(LS_KEY); }catch(e){} }
+    return normalizeDoc(rec.doc) || starterDoc();
+  }
+  const d = normalizeDoc(legacy);
+  if(d){
+    /* Move it across; only drop the localStorage copy once IndexedDB holds it. */
+    try{ await window.RStore.docPut('working', d); localStorage.removeItem(LS_KEY); }catch(e){}
+    return d;
+  }
+  return starterDoc();
+}
 
 /* Poster name → filename slug. Vietnamese-safe: đ/Đ are mapped by hand (they
    don't decompose under NFD), the rest of the diacritics strip normally.
@@ -65,6 +121,16 @@ function tplId(){
   try{ if(window.crypto && window.crypto.randomUUID) return 'tpl_'+window.crypto.randomUUID(); }catch(e){}
   return 'tpl_'+Date.now().toString(36)+'_'
     +Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);
+}
+/* Same keys, same values (by identity) — enough to know a resolved element
+   hasn't changed, since every edit replaces what it touches. */
+function shallowSame(a, b){
+  if(a===b) return true;
+  if(!a || !b) return false;
+  const ka = Object.keys(a);
+  if(ka.length!==Object.keys(b).length) return false;
+  for(let i=0;i<ka.length;i++){ if(a[ka[i]]!==b[ka[i]]) return false; }
+  return true;
 }
 /* Newest first — the library's one order, in one place. */
 function sortTpls(list){ return (list||[]).slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)); }
@@ -302,18 +368,55 @@ const TICKET_FORMATS = {
 };
 
 /* ---------- photo helpers ---------- */
-/* Read an image File/Blob, downscale to ≤860px on the long edge, and hand back
+/* Read an image File/Blob, downscale to ≤2000px on the long edge, and hand back
    a data URL. PNGs keep their alpha (re-encoded as PNG, for partner logos);
-   everything else is JPEG. Shared by the upload button and clipboard paste. */
-function processImageFile(file, onReady){
+   everything else is JPEG. Shared by the upload button, clipboard paste and
+   drag-and-drop.
+
+   2000px, not the old 860: that cap existed because the working doc lived in
+   localStorage, and it made a 4:5 export (2160px wide) an upscale of a photo
+   a third its size. The doc is in IndexedDB now, so photos keep what Print
+   Studio keeps. What goes to the hub is re-cut to 860 on the way out
+   (RStore.slimDocForCloud), so cloud payloads are exactly what they were.
+
+   A file the browser can't decode used to fail in silence — nothing
+   happened, nothing said why. The commonest one is an iPhone HEIC, which
+   Chrome on Windows can't open; `onError(message)` says so (an alert if the
+   caller didn't pass one). */
+const PHOTO_MAX_EDGE = 2000;
+function imageErrorMessage(file){
+  const name = (file && file.name) || 'that file';
+  const heic = /\.(heic|heif)$/i.test(name) || /hei[cf]/i.test((file && file.type)||'');
+  return heic
+    ? 'Couldn’t open “'+name+'” — this browser can’t read HEIC (iPhone) photos. Convert it to JPEG first, or screenshot it. (On the iPhone, Settings → Camera → Formats → Most Compatible stops new photos being HEIC.)'
+    : 'Couldn’t open “'+name+'” as an image — it may be damaged, or a format this browser can’t read. JPEG, PNG and WebP always work.';
+}
+function processImageFile(file, onReady, onError){
   if(!file) return;
+  const fail = ()=>{ const m = imageErrorMessage(file); if(typeof onError==='function') onError(m); else window.alert(m); };
   const png = file.type==='image/png';
-  const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{
-    const max=860, sc=Math.min(1,max/Math.max(im.width,im.height));
-    const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
-    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-    onReady(png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg',0.82));
-  }; im.src=fr.result; }; fr.readAsDataURL(file);
+  const fr=new FileReader();
+  fr.onerror=fail;
+  fr.onload=()=>{ const im=new Image();
+    im.onerror=fail;
+    im.onload=()=>{
+      if(!im.width || !im.height){ fail(); return; }
+      const sc=Math.min(1,PHOTO_MAX_EDGE/Math.max(im.width,im.height));
+      const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      onReady(png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg',0.82));
+    };
+    im.src=fr.result; };
+  fr.readAsDataURL(file);
+}
+/* Is this dropped/pasted file meant to be a picture? By type, or — because
+   Windows hands HEIC over with an empty type — by name, so an iPhone photo
+   reaches processImageFile and gets told why it won't open instead of being
+   ignored. */
+function looksLikeImage(f){
+  if(!f) return false;
+  if(f.type && f.type.indexOf('image/')===0) return true;
+  return /\.(jpe?g|png|webp|gif|avif|bmp|heic|heif)$/i.test(f.name||'');
 }
 /* Pull the first image out of a paste payload (DataTransfer), or null. */
 function imageFromClipboard(cd){
@@ -322,7 +425,7 @@ function imageFromClipboard(cd){
   if(items){ for(let i=0;i<items.length;i++){ const it=items[i];
     if(it.kind==='file' && it.type && it.type.indexOf('image/')===0) return it.getAsFile(); } }
   const files=cd.files;
-  if(files){ for(let i=0;i<files.length;i++){ if(files[i].type && files[i].type.indexOf('image/')===0) return files[i]; } }
+  if(files){ for(let i=0;i<files.length;i++){ if(looksLikeImage(files[i])) return files[i]; } }
   return null;
 }
 function PhotoUpload({ onPick, label }){
@@ -1912,15 +2015,20 @@ function thumbFontCss(node){
   return _thumbFontCss;
 }
 /* The press only paints a photo once its source has decoded, so a capture taken
-   on mount catches empty frames. Warm the sources first (RISO.loadImage is
-   cached), then wait one fully painted frame — same shape as settleFormat, rAF
-   raced against a timeout so a backgrounded tab can't stall the queue. */
+   on mount catches empty frames. Warm the sources first, then wait one fully
+   painted frame — same shape as settleFormat, rAF raced against a timeout so a
+   backgrounded tab can't stall the queue.
+   The warm-up goes through the element renderer's own image cache
+   (loadCachedImage). This comment used to claim RISO.loadImage was cached; it
+   isn't, so every card decoded each photo twice — once here, once again in
+   the press. Now the press finds the decode waiting for it. */
 async function settleThumb(doc){
   try{
     const srcs = [];
     (doc.elements||[]).forEach(el=>{ if(el && el.src) srcs.push(el.src); if(el && el.src2) srcs.push(el.src2); });
-    if(srcs.length && window.RISO && window.RISO.loadImage)
-      await Promise.all(srcs.map(s=>window.RISO.loadImage(s).catch(()=>null)));
+    const load = window.loadCachedImage || (window.RISO && window.RISO.loadImage);
+    if(srcs.length && load)
+      await Promise.all(srcs.map(s=>load(s).catch(()=>null)));
   }catch(e){}
   await new Promise(r=>{ let done=false; const fin=()=>{ if(!done){ done=true; r(); } };
     requestAnimationFrame(()=>requestAnimationFrame(fin)); setTimeout(fin, 400); });
@@ -2101,8 +2209,12 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         <Fold id="d-keys" title="Shortcuts">
           <div className="rs-mini" style={{ marginBottom:10 }}>
             <b>Ctrl-K</b> find any control · <b>Ctrl-Z</b> undo · <b>Ctrl-⇧-Z</b> redo · <b>Ctrl-D</b> duplicate ·
-            <b> Ctrl-A</b> select all · arrows nudge 6px (<b>⇧</b> 30) · <b>⇧-click</b> multi-select ·
-            <b> double-click</b> text to edit it on the poster · <b>Ctrl-V</b> paste an image onto a photo.
+            <b> Ctrl-A</b> select all · <b>Ctrl-S</b> save as template · <b>Ctrl-E</b> save images ·
+            arrows nudge {NUDGE}px (<b>⇧</b> one grid step, {window.STEP}px) · <b>[</b> / <b>]</b> send backward / bring forward
+            (<b>⇧</b> to back / front) · <b>Delete</b> removes it — or, on an output format, hides it there only ·
+            <b> ⇧-click</b> multi-select · <b>double-click</b> text to edit it on the poster ·
+            <b> Ctrl-V</b> paste an image onto a photo · <b>drop</b> an image on a photo to replace it, anywhere else to add one ·
+            <b> click</b> a part to drop it in the middle.
           </div>
         </Fold>
       </React.Fragment>
@@ -2280,7 +2392,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       </div>
       <div className="rs-actions">
         <button className="rs-iconbtn" onClick={dup} title="Duplicate (Ctrl-D)">Duplicate</button>
-        <button className="rs-iconbtn rs-del" onClick={del} title="Delete">Delete</button>
+        <button className="rs-iconbtn rs-del" onClick={del}
+          title={isOutput ? 'Delete from EVERY format — to drop it from '+activeLabel+' only, set Visibility to Hidden below' : 'Delete'}>Delete</button>
       </div>
 
       {/* ===================== CONTENT ===================== */}
@@ -2306,6 +2419,16 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           {caps.weight && <Chips label="Weight" options={WEIGHTS} value={el.weight!=null?el.weight:defWeight} onChange={v=>update({weight:v})} />}
           {isText && <Slider label="Letter spacing" val={el.letterSpacing!=null?el.letterSpacing:lsDefault} min={-0.05} max={0.6} step={0.005} onChange={v=>update({letterSpacing:v})} suffix="em" />}
           {caps.lineHeight && <Slider label="Line spacing" val={el.lineHeight!=null?el.lineHeight:caps.lineHeight.def} min={caps.lineHeight.min} max={caps.lineHeight.max} step={0.05} onChange={v=>update({lineHeight:v})} />}
+          {/* The renderer lifts a title's line height under Vietnamese stacked
+              capitals (see titleLineHeight). Say so, or a slider that stops
+              doing anything below 1.08 reads as broken. */}
+          {el.type==='title' && window.titleLineHeight && (()=>{
+            const set = el.lineHeight!=null ? el.lineHeight : caps.lineHeight.def;
+            const eff = window.titleLineHeight(el);
+            return eff > set + 0.001
+              ? <Hint tight>Showing at <b>{eff.toFixed(2)}</b> — the Vietnamese accents (Ấ Ổ Ặ…) need that much room to clear the line above. Your {set.toFixed(2)} is kept and comes back if they go.</Hint>
+              : null;
+          })()}
           {caps.align && <Chips label="Align" options={[{v:'left',l:'Left'},{v:'center',l:'Center'},{v:'right',l:'Right'}]} value={inset.align} onChange={v=>update({align:v})} />}
           {caps.align && inset.applies &&
             <Slider label={'Edge offset · from the '+inset.side} val={inset.val} min={0} max={inset.max} step={1}
@@ -2467,9 +2590,29 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   );
 }
 
+/* ---------- save state ----------
+   The working doc's autosave, said out loud. It used to fail in silence (see
+   bootDoc); now a failed write is a red NOT SAVED you can't miss, with the
+   reason on hover. 'fallback' = IndexedDB refused and the copy went to
+   localStorage instead — kept, but in the small box, so it says so. */
+function SaveState({ state, msg }){
+  const st = state || 'saved';
+  const label = st==='saving' ? 'Saving…'
+    : st==='error'    ? (msg && /full|quota/i.test(msg) ? 'NOT SAVED — storage full' : 'NOT SAVED')
+    : st==='fallback' ? 'Saved · backup box'
+    : 'Saved';
+  const tip = st==='error'
+    ? 'The last change could NOT be written to this browser’s storage'+(msg?' ('+msg+')':'')+'. Save a template or export before closing this tab. Clearing old templates or site data frees room.'
+    : st==='fallback'
+      ? 'IndexedDB refused the write'+(msg?' ('+msg+')':'')+', so the poster was kept in localStorage instead. It is saved, but that box is small — big photos may not fit next time.'
+      : st==='saving' ? 'Writing the poster to this browser…'
+      : 'The poster on screen is kept in this browser (IndexedDB) and comes back on reload.';
+  return <span className={'rs-savestate '+st} title={tip} role="status" aria-live="polite">{label}</span>;
+}
+
 /* ---------- topbar ---------- */
 function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
-                  onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit }){
+                  onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit, saveState, saveMsg }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!window.RCloud;
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
@@ -2489,134 +2632,150 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
   return (
     <div className="rs-top">
       <div className="rs-brand">Reality<small>POSTER STUDIO</small></div>
-      <div className="rs-tgroup"><span className="gl">View</span>
-        <div className="rs-seg">
-          <button className={'master'+(doc.activeFormat==='master'?' on':'')} onClick={()=>setDoc(d=>({...d, activeFormat:'master'}))}>
-            Master<small>SOURCE</small>
-          </button>
-        </div>
-        <div className="rs-seg">
-          {AP_OUT.filter(fmt=>fmt!=='a4').map(fmt=>(
-            <button key={fmt} className={doc.activeFormat===fmt?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:fmt}))}>
-              {AP_FMT[fmt].label}<small>{AP_FMT[fmt].sub}</small>
+      {/* TWO ROWS. This was one row that had long since run out of room: at
+          1440px its contents were ~1930px wide, and the sticky export block
+          painted OVER zoom, Grid, Snap, Hints and Sign in — they looked like
+          buttons and couldn't be clicked unless you found the hidden sideways
+          scroll. Now the top row is what you're MAKING (formats, then the
+          save/export block you finish on) and the second is how you're
+          VIEWING it (palette, day, history, zoom, guides, save state, cloud).
+          Both rows wrap rather than overlap if a window is narrower still. */}
+      <div className="rs-toprow">
+        <div className="rs-tgroup"><span className="gl">View</span>
+          <div className="rs-seg">
+            <button className={'master'+(doc.activeFormat==='master'?' on':'')} onClick={()=>setDoc(d=>({...d, activeFormat:'master'}))}>
+              Master<small>SOURCE</small>
             </button>
-          ))}
-        </div>
-        {/* Print options — A4 / A1 XL / standees / handouts collapsed into one menu
-            to save menubar space. A4 stays in the Save-All bundle; the rest are
-            on-demand print views captured at true print resolution. */}
-        {/* The label used to read "Print options…" even while you were LOOKING at
-            an A1 — the selected size was only discoverable by opening the menu.
-            Now the closed state names what's active. */}
-        <select className={'rs-stsel'+(printOn?' on':'')}
-          aria-label="Print options"
-          value={printOn ? doc.activeFormat : ''}
-          onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
-          title="Print outputs — A4, A1 XL, roll-up standees, and handout flyers. A4 rides the Save-All bundle; the rest are on-demand at true print resolution (PDF as a real-world mm page a shop runs 1:1).">
-          <option value="">{printOn ? 'Print · '+AP_FMT[doc.activeFormat].label : 'Print options…'}</option>
-          <option value="a4">{AP_FMT['a4'].label} · {AP_FMT['a4'].sub}</option>
-          <option value="a1">{AP_FMT['a1'].label} · {AP_FMT['a1'].sub}</option>
-          <optgroup label="Standees">{AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}</optgroup>
-          <optgroup label="Handouts">{AP_HND.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label}</option>))}</optgroup>
-        </select>
-        {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
-          title="Clear all overrides for this format">↺ {overrideCount||0}</button>}
-      </div>
-      <div className="rs-tgroup">
-        <div className="rs-seg">
-          {[{v:'day',l:'Day'},{v:'night',l:'Night'}].map(o=>(
-            <button key={o.v} className={doc.theme===o.v?'on':''} onClick={()=>setDoc(d=>({...d, theme:o.v}))}>{o.l}</button>
-          ))}
-        </div>
-      </div>
-      <div className="rs-tgroup"><span className="gl">Accent</span>
-        <div className="rs-swatches">
-          {AP_ABYDAY.map(a=>{ const di=apAccentDay(a); return (
-            <div key={a} className={'rs-sw'+(doc.accent===a?' on':'')} style={{ background:AP_PAL[a], width:22, height:22 }}
-              onClick={()=>setDoc(d=>({...d, accent:a}))}
-              title={(di? di.n+' · '+di.abbr+' — ' : '') + a + (AP_DAYS[a] ? ' (' + AP_DAYS[a] + '’s colour on the weekly schedule)' : '')} />
-          ); })}
-        </div>
-      </div>
-      <div className="rs-tgroup">
-        <div className="rs-seg">
-          <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
-          <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
-        </div>
-      </div>
-      <div className="rs-tgroup">
-        <div className="rs-seg">
-          <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
-          <button onClick={onZoomFit} title="Fit the poster to the pane">{zoomPct}</button>
-          <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
-        </div>
-      </div>
-      <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
-      <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
-      <HintsToggle />
-      <div className="spacer" />
-      {/* WP9: cloud sync + poster write-back. Hidden entirely if RCloud failed to
-          load; otherwise a sign-in toggle + an "Export to event…" affordance.
-          Sign-in/out and the picker are fully best-effort (no-op when dormant). */}
-      {hasCloud && <div className="rs-tgroup">
-        {/* The group label names the ACCOUNT once signed in. Templates are stored
-            per account, so signing in with the other Google account looks exactly
-            like an empty library — this is where you notice. */}
-        <span className="gl" title={cloudUser ? 'Signed in as '+cloudUser : undefined}>
-          {cloudMsg || (cloudUser ? String(cloudUser).split('@')[0] : 'Cloud')}</span>
-        {cloudUser
-          ? <React.Fragment>
-              <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
-                title="Send this poster's 4:5 / 9:16 / 1:1 to an event's poster slots">→ Event</button>
-              <button className="rs-iconbtn" onClick={onCloudSignOut}
-                title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
-            </React.Fragment>
-          : <button className="rs-iconbtn" onClick={onCloudSignIn}
-              title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
-      </div>}
-      {/* Keeping the poster and exporting it are the two things you finish on, so
-          they share the sticky right-hand block — Save template used to live
-          only at the foot of the template list, a scroll away down the library. */}
-      <div className="rs-export">
-        <div className="rs-tgroup">
-          <button className="rs-iconbtn" onClick={onSaveTpl} disabled={!doc.elements.length}
-            title="Keep this poster in My templates — filed under the weekday its accent codes for (also the ＋ at the foot of the template list)">
-            ⤓ Save template</button>
-        </div>
-        <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
-          <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
-            onChange={e=>setName(e.target.value)} onBlur={commit}
-            onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
-            title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
-          <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
-            onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
-            <option value="png">PNG</option>
-            <option value="jpg">JPG</option>
-            <option value="pdf">PDF</option>
+          </div>
+          <div className="rs-seg">
+            {AP_OUT.filter(fmt=>fmt!=='a4').map(fmt=>(
+              <button key={fmt} className={doc.activeFormat===fmt?'on':''} onClick={()=>setDoc(d=>({...d, activeFormat:fmt}))}>
+                {AP_FMT[fmt].label}<small>{AP_FMT[fmt].sub}</small>
+              </button>
+            ))}
+          </div>
+          {/* Print options — A4 / A1 XL / standees / handouts collapsed into one menu
+              to save menubar space. A4 stays in the Save-All bundle; the rest are
+              on-demand print views captured at true print resolution. */}
+          {/* The label used to read "Print options…" even while you were LOOKING at
+              an A1 — the selected size was only discoverable by opening the menu.
+              Now the closed state names what's active. */}
+          <select className={'rs-stsel'+(printOn?' on':'')}
+            aria-label="Print options"
+            value={printOn ? doc.activeFormat : ''}
+            onChange={e=>{ if(e.target.value) setDoc(d=>({...d, activeFormat:e.target.value})); }}
+            title="Print outputs — A4, A1 XL, roll-up standees, and handout flyers. A4 rides the Save-All bundle; the rest are on-demand at true print resolution (PDF as a real-world mm page a shop runs 1:1).">
+            <option value="">{printOn ? 'Print · '+AP_FMT[doc.activeFormat].label : 'Print options…'}</option>
+            <option value="a4">{AP_FMT['a4'].label} · {AP_FMT['a4'].sub}</option>
+            <option value="a1">{AP_FMT['a1'].label} · {AP_FMT['a1'].sub}</option>
+            <optgroup label="Standees">{AP_STD.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label} cm</option>))}</optgroup>
+            <optgroup label="Handouts">{AP_HND.map(fmt=>(<option key={fmt} value={fmt}>{AP_FMT[fmt].label}</option>))}</optgroup>
           </select>
-          <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
-            title={(printDef
-              ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
-              : isOutput
-                ? 'Export the format you’re viewing'
-                : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
-            Save Images<small>{scope}</small>
-          </button>
+          {isOutput && <button className="rs-iconbtn" disabled={!overrideCount} onClick={resetFormat}
+            title="Clear all overrides for this format">↺ {overrideCount||0}</button>}
         </div>
+        <div className="spacer" />
+        {/* Keeping the poster and exporting it are the two things you finish on, so
+            they share the right-hand end of the top row — Save template used to
+            live only at the foot of the template list, a scroll away down the
+            library. (No longer sticky: nothing scrolls under it now.) */}
+        <div className="rs-export">
+          <div className="rs-tgroup">
+            <button className="rs-iconbtn" onClick={onSaveTpl} disabled={!doc.elements.length}
+              title="Keep this poster in My templates — filed under the weekday its accent codes for (also the ＋ at the foot of the template list)">
+              ⤓ Save template</button>
+          </div>
+          <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
+            <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
+              onChange={e=>setName(e.target.value)} onBlur={commit}
+              onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
+              title='Names the exported files — "Board Game Night" → board-game-night-4x5.png' />
+            <select className="rs-tsel" value={kind} disabled={exporting} aria-label="Image format"
+              onChange={e=>{ const v=e.target.value; setDoc(d=>({...d, exportFormat:v})); }}>
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="pdf">PDF</option>
+            </select>
+            <button className="rs-savebtn" disabled={exporting} onClick={()=>{ commit(); onExport(name); }}
+              title={(printDef
+                ? `Print-resolution ${AP_FMT[doc.activeFormat].label} — ${Math.round(printDef.wmm/25.4*printDef.dpi)}px wide (${printDef.dpi} dpi)`+(kind==='pdf'?`, a true ${printDef.wmm}×${printDef.hmm}mm PDF a shop runs 1:1`:'')
+                : isOutput
+                  ? 'Export the format you’re viewing'
+                  : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
+              Save Images<small>{scope}</small>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="rs-toprow rs-toprow2">
+        <div className="rs-tgroup">
+          <div className="rs-seg">
+            {[{v:'day',l:'Day'},{v:'night',l:'Night'}].map(o=>(
+              <button key={o.v} className={doc.theme===o.v?'on':''} onClick={()=>setDoc(d=>({...d, theme:o.v}))}>{o.l}</button>
+            ))}
+          </div>
+        </div>
+        <div className="rs-tgroup"><span className="gl">Accent</span>
+          <div className="rs-swatches">
+            {AP_ABYDAY.map(a=>{ const di=apAccentDay(a); return (
+              <div key={a} className={'rs-sw'+(doc.accent===a?' on':'')} style={{ background:AP_PAL[a], width:22, height:22 }}
+                onClick={()=>setDoc(d=>({...d, accent:a}))}
+                title={(di? di.n+' · '+di.abbr+' — ' : '') + a + (AP_DAYS[a] ? ' (' + AP_DAYS[a] + '’s colour on the weekly schedule)' : '')} />
+            ); })}
+          </div>
+        </div>
+        <div className="rs-tgroup">
+          <div className="rs-seg">
+            <button disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl-Z)">↶</button>
+            <button disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl-⇧-Z)">↷</button>
+          </div>
+        </div>
+        <div className="rs-tgroup">
+          <div className="rs-seg">
+            <button onClick={()=>onZoomStep(-1)} title="Zoom out">−</button>
+            <button onClick={onZoomFit} title="Fit the poster to the pane">{zoomPct}</button>
+            <button onClick={()=>onZoomStep(1)} title="Zoom in">＋</button>
+          </div>
+        </div>
+        <button className={'rs-iconbtn'+(doc.showGrid?' on':'')} onClick={()=>setDoc(d=>({...d,showGrid:!d.showGrid}))}>Grid</button>
+        <button className={'rs-iconbtn'+(doc.snap?' on':'')} onClick={()=>setDoc(d=>({...d,snap:!d.snap}))}>Snap</button>
+        <HintsToggle />
+        <div className="spacer" />
+        <SaveState state={saveState} msg={saveMsg} />
+        {/* WP9: cloud sync + poster write-back. Hidden entirely if RCloud failed to
+            load; otherwise a sign-in toggle + an "Export to event…" affordance.
+            Sign-in/out and the picker are fully best-effort (no-op when dormant). */}
+        {hasCloud && <div className="rs-tgroup">
+          {/* The group label names the ACCOUNT once signed in. Templates are stored
+              per account, so signing in with the other Google account looks exactly
+              like an empty library — this is where you notice. */}
+          <span className="gl" title={cloudUser ? 'Signed in as '+cloudUser : undefined}>
+            {cloudMsg || (cloudUser ? String(cloudUser).split('@')[0] : 'Cloud')}</span>
+          {cloudUser
+            ? <React.Fragment>
+                <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
+                  title="Send this poster's 4:5 / 9:16 / 1:1 to an event's poster slots">→ Event</button>
+                <button className="rs-iconbtn" onClick={onCloudSignOut}
+                  title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
+              </React.Fragment>
+            : <button className="rs-iconbtn" onClick={onCloudSignIn}
+                title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
+        </div>}
       </div>
     </div>
   );
 }
 
 /* ---------- app ---------- */
-function App(){
-  const [doc, setDoc] = React.useState(loadDoc);
+function App({ initialDoc }){
+  const [doc, setDoc] = React.useState(()=>initialDoc || starterDoc());
   const [selectedIds, setSelectedIds] = React.useState([]);
   const selectedId = selectedIds.length ? selectedIds[selectedIds.length-1] : null;  // primary (last clicked)
   const [scale, setScale] = React.useState(0.4);
   const [spawn, setSpawn] = React.useState(null);
   const [tplOpen, setTplOpen] = React.useState(false);
   const [exporting, setExporting] = React.useState(false);
+  const exportingRef = React.useRef(false); exportingRef.current = exporting;   // for window-level handlers
   const [plateOnly, setPlateOnly] = React.useState(false);   // image-only/text-less render for the 'feed' slot
   const [sliceMode, setSliceMode] = React.useState(false);   // editing the feed-slice band
   const setFeedSlice = (s)=>setDoc(d=>({ ...d, feedSlice:s }));
@@ -2638,7 +2797,84 @@ function App(){
   const activeLabel = AP_FMT[viewFormat].label;
   const docRef = React.useRef(doc); docRef.current = doc;
 
-  React.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(stampEngine(doc))); }catch(e){} }, [doc]);
+  /* ---- autosave — the working doc into IndexedDB (see bootDoc) ----
+     ~500ms after the last change, so a drag or a slider sweep is one write
+     rather than sixty, and flushed at once when the tab is hidden or closed.
+     `saveState` drives the topbar badge. beforeunload objects ONLY while a
+     write is pending or has failed, so a saved Studio closes without asking. */
+  const [saveState, setSaveState] = React.useState('saved');
+  const [saveMsg, setSaveMsg] = React.useState('');
+  const saveRef = React.useRef({ timer:null, dirty:false, busy:false, failed:false, first:true });
+  const writeDoc = React.useCallback(async ()=>{
+    const sv = saveRef.current;
+    clearTimeout(sv.timer); sv.timer = null;
+    if(sv.busy || !sv.dirty) return;          // a write in flight re-checks `dirty` when it lands
+    sv.busy = true;
+    try{
+      while(sv.dirty){
+        sv.dirty = false;
+        const snap = stampEngine(docRef.current);
+        let err = null;
+        try{
+          if(!window.RStore || !window.RStore.docPut) throw new Error('IndexedDB store not loaded');
+          await window.RStore.docPut('working', snap);
+        }catch(e){ err = e || new Error('write failed'); }
+        if(!err){
+          sv.failed = false;
+          // a fallback copy from an earlier refusal is now stale — free the small box
+          try{ if(localStorage.getItem(LS_KEY)!=null) localStorage.removeItem(LS_KEY); }catch(e){}
+          if(!sv.dirty){ setSaveState('saved'); setSaveMsg(''); }
+          continue;
+        }
+        const why = describeStoreError(err);
+        /* IndexedDB refused. Try the old box before giving up — a poster with
+           small photos still fits there, and kept-but-cramped beats lost. */
+        let fellBack = false;
+        try{ localStorage.setItem(LS_KEY, JSON.stringify(Object.assign({}, snap, { _savedAt: Date.now() }))); fellBack = true; }catch(e){}
+        sv.failed = !fellBack;
+        setSaveState(fellBack ? 'fallback' : 'error'); setSaveMsg(why);
+        if(!fellBack) console.error('[studio] autosave failed — the poster is NOT saved', err);
+      }
+    }finally{ sv.busy = false; }
+  }, []);
+  React.useEffect(()=>{
+    const sv = saveRef.current;
+    if(sv.first){ sv.first = false; return; }   // the doc boot just read — nothing new to keep
+    sv.dirty = true;
+    // a standing failure stays on screen until a write actually succeeds
+    setSaveState(s=> (s==='error'||s==='fallback') ? s : 'saving');
+    clearTimeout(sv.timer);
+    sv.timer = setTimeout(writeDoc, 500);
+  }, [doc]);
+  React.useEffect(()=>{
+    const onVis = ()=>{ if(document.visibilityState==='hidden') writeDoc(); };
+    const onPageHide = ()=>{ writeDoc(); };
+    const onBeforeUnload = (e)=>{
+      const sv = saveRef.current;
+      if(!(sv.dirty || sv.busy || sv.failed)) return;
+      writeDoc();
+      e.preventDefault(); e.returnValue = ''; return '';
+    };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return ()=>{
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [writeDoc]);
+
+  /* A short note at the foot of the stage — for things worth saying that
+     don't deserve a dialog (Delete on an output format hid rather than
+     deleted; a dropped file wasn't a picture). */
+  const [toast, setToast] = React.useState(null);
+  const toastTimer = React.useRef(null);
+  const say = React.useCallback((msg, ms)=>{
+    clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(()=>setToast(null), ms||3200);
+  }, []);
 
   /* ---- undo / redo ----
      Poster Studio never had this, which is a strange thing to say about a tool
@@ -2676,9 +2912,18 @@ function App(){
     setDoc(nxt); setHistVer(v=>v+1);
     setSelectedIds(ids=>ids.filter(id=>nxt.elements.some(e=>e.id===id)));
   }, []);
+  /* A doc change that ISN'T an edit — export flipping the view through every
+     format and back. Marked with the same `skip` the undo uses, so the history
+     files it as the new baseline instead of an undo step. Every Save Images
+     from Master used to leave five format flips in the undo stack, so the
+     first Ctrl-Z after an export only changed which format you were looking
+     at. (Only ever call it with an update that produces a NEW doc — a skip
+     nobody consumes would swallow the next real edit.) */
+  const setDocQuiet = (fn)=>{ hist.current.skip = true; setDoc(fn); };
 
-  /* ---- WP9 cloud sign-in state (best-effort; localStorage stays the source of
-     truth). `cloudUser` is just for the toolbar label; null = local-only. ---- */
+  /* ---- WP9 cloud sign-in state (best-effort; this browser's IndexedDB stays
+     the source of truth). `cloudUser` is just for the toolbar label; null =
+     local-only. ---- */
   const [cloudUser, setCloudUser] = React.useState(()=>{ try{ return window.RCloud && window.RCloud.isSignedIn() ? (window.RCloud.currentEmail()||'signed in') : null; }catch(e){ return null; } });
   /* Restoring a library onto a new computer is one request per template — say so,
      rather than looking idle for a few minutes. */
@@ -2707,18 +2952,31 @@ function App(){
       }
     }catch(e){ /* never throws into render */ }
   }
-  function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){} setCloudUser(null); }
+  /* Signing out re-arms the "newer draft in the cloud?" check below. It used to
+     run once per page load, full stop, so signing out and back in (say, into
+     the other account) never looked for that account's draft. The session
+     clock restarts too: a draft this tab pushed before signing out is not
+     "newer" than what's on screen. */
+  function cloudSignOut(){ try{ if(window.RCloud) window.RCloud.signOut(); }catch(e){}
+    cloudPullDoneRef.current = false; sessionStartRef.current = Date.now();
+    setCloudUser(null); }
 
-  /* ---- WP9 working-doc cloud sync — beside the localStorage autosave above.
+  /* ---- WP9 working-doc cloud sync — beside the IndexedDB autosave above.
      Debounced ~2s push of the working doc to studio_documents (poster/working).
-     localStorage is the offline source of truth; this is purely additive and
-     fully guarded (RCloud no-ops when signed-out / hub dormant). ---- */
+     IndexedDB is the offline source of truth; this is purely additive and
+     fully guarded (RCloud no-ops when signed-out / hub dormant). Photos go up
+     re-cut to 860px (RStore.slimDocForCloud) — the hub's per-doc cap didn't
+     grow when the local photo size did. ---- */
   const cloudPushRef = React.useRef(null);
   React.useEffect(()=>{
     if(!cloudUser || !window.RCloud) return;
     if(cloudPushRef.current) clearTimeout(cloudPushRef.current);
     cloudPushRef.current = setTimeout(()=>{
-      try{ window.RCloud.putDoc('poster','working', docRef.current.title||'', stampEngine(docRef.current), Date.now()); }catch(e){}
+      try{
+        const d = stampEngine(docRef.current);
+        const slim = window.RStore && window.RStore.slimDocForCloud ? window.RStore.slimDocForCloud(d) : Promise.resolve(d);
+        Promise.resolve(slim).then(sd=>window.RCloud.putDoc('poster','working', d.title||'', sd, Date.now())).catch(()=>{});
+      }catch(e){}
     }, 2000);
     return ()=>{ if(cloudPushRef.current) clearTimeout(cloudPushRef.current); };
   }, [doc, cloudUser]);
@@ -2741,6 +2999,12 @@ function App(){
         const remoteAt = typeof remote.updatedAt==='number' ? remote.updatedAt : Date.parse(remote.updatedAt||'')||0;
         let remoteDoc = remote.json;
         if(typeof remoteDoc==='string'){ try{ remoteDoc = JSON.parse(remoteDoc); }catch(e){ remoteDoc = null; } }
+        /* Same poster as the one on screen (photos aside — the cloud copy's are
+           re-cut smaller) → nothing to offer. Catches this tab's own push
+           coming back after a sign-out/in, whatever the clocks say. */
+        const sig = (d)=>{ try{ return JSON.stringify([d.elements, d.overrides||{}, d.theme, d.accent, d.title||''],
+          (k,v)=>(k==='src'||k==='src2') ? (v?1:0) : v); }catch(e){ return Math.random(); } };
+        if(remoteDoc && remoteDoc.elements && sig(remoteDoc)===sig(docRef.current)) return;
         if(remoteDoc && remoteDoc.elements && remoteAt > sessionStartRef.current){
           if(window.confirm('A newer Poster Studio working draft was found in the cloud. Load it? (Replaces what’s on screen.)')){
             setDoc(d=>Object.assign({}, d, remoteDoc));
@@ -2752,13 +3016,20 @@ function App(){
     return ()=>{ live=false; };
   }, [cloudUser]);
 
-  /* Delete / Backspace removes the selected element(s) — but not while you're
-     typing in an inspector field. */
+  /* Keyboard. Nothing here fires while you're typing in an inspector field
+     (bar the save/export chords, which blur the field first so its value
+     commits), nor while a dialog is up. */
   const selIdsRef = React.useRef(selectedIds); selIdsRef.current = selectedIds;
   /* kept current each render (assigned below, once sel / updateEl exist) so the
      window-level paste handler always sees the live selection + edit routing. */
   const selRef = React.useRef(null);
   const updateElRef = React.useRef(null);
+  /* The handlers the keyboard reaches that are defined further down (save,
+     export, layer order). Through a ref, re-pointed every render: the listener
+     is installed once, and a handler it captured on the first render would save
+     against the library as it was on that render — which is how a template ends
+     up saved twice under one name. */
+  const actionsRef = React.useRef({});
   /* Resolved elements (Master values with this format's overrides folded in) —
      the arrow-nudge needs the positions you can actually SEE, then writes back
      through updateEl so the edit lands in the right place: on Master, or as an
@@ -2766,11 +3037,25 @@ function App(){
   const resolvedRef = React.useRef([]);
   React.useEffect(()=>{
     function onKey(e){
+      if(document.querySelector('.rs-overlay')) return;     // the event picker has the keyboard
       const ae = document.activeElement;
       const typing = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable);
       const mod = e.ctrlKey||e.metaKey;
       if(mod && (e.key==='z'||e.key==='Z')){ if(typing) return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
       if(mod && (e.key==='y'||e.key==='Y')){ if(typing) return; e.preventDefault(); redo(); return; }
+      /* Ctrl-S keeps the poster as a template (never the browser's "save page"),
+         Ctrl-E saves the images. Both work from inside a field: blur it first so
+         whatever you just typed — the poster name, usually — is committed, then
+         act once React has rendered it. */
+      if(mod && !e.altKey && (e.key==='s'||e.key==='S'||e.key==='e'||e.key==='E')){
+        e.preventDefault();
+        if(e.repeat) return;
+        const save = e.key==='s'||e.key==='S';
+        if(typing && ae.blur) ae.blur();
+        setTimeout(()=>{ const A = actionsRef.current;
+          if(save) A.saveTpl && A.saveTpl(); else A.exportImages && A.exportImages(); }, 0);
+        return;
+      }
       if(typing) return;
       const ids = selIdsRef.current;
 
@@ -2786,9 +3071,31 @@ function App(){
       }
       if(e.key==='Escape'){ setSelectedIds([]); return; }
 
+      /* [ and ] step the selected box back / forward one layer; with Shift
+         (which types { and }) all the way to the back / front. */
+      if(!mod && (e.key==='['||e.key===']'||e.key==='{'||e.key==='}')){
+        if(!ids.length) return;
+        e.preventDefault();
+        const L = actionsRef.current.layer; if(!L) return;
+        L(e.key==='[' ? -1 : e.key===']' ? 1 : e.key==='{' ? 'back' : 'front');
+        return;
+      }
+
       if(e.key==='Delete' || e.key==='Backspace'){
         if(!ids.length) return;
         e.preventDefault();
+        /* On an output format, Delete HIDES the box in that format — the same
+           thing the inspector's Visibility · Hidden does. It used to delete the
+           element from Master, i.e. from every format, without a word, while
+           you were looking at just one of them. Master still deletes. */
+        const cur = docRef.current;
+        if(cur.activeFormat!=='master'){
+          const up = updateElRef.current;
+          ids.forEach(id=>up && up(id, { hidden:true }));
+          const lab = (AP_FMT[cur.activeFormat]||{}).label || cur.activeFormat;
+          say('Hidden in '+lab+' only — it’s still in every other format. Delete on Master removes it everywhere; Visibility in the inspector brings it back here.', 4600);
+          return;
+        }
         setDoc(d=>{ const overrides=Object.assign({}, d.overrides);
           Object.keys(overrides).forEach(f=>{ let fo=overrides[f]; if(!fo) return; let changed=false;
             ids.forEach(id=>{ if(fo[id]){ if(!changed){ fo=Object.assign({},fo); changed=true; } delete fo[id]; } });
@@ -2802,9 +3109,11 @@ function App(){
       if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
         if(!ids.length) return;
         e.preventDefault();
-        // 6px = one grid step, so a nudge lands on the same armature a drag
-        // snaps to. Shift moves five steps.
-        const st = e.shiftKey?30:6;
+        /* A small nudge (NUDGE, a ninth of a step), or with Shift one whole grid
+           step — so Shift-arrows move along the same armature a drag snaps to.
+           (This used to say "6px = one grid step"; the step has been 45 since
+           the 23.08 grid, so Shift's 30 landed off it every time.) */
+        const st = e.shiftKey ? window.STEP : NUDGE;
         const dx = e.key==='ArrowLeft'?-st : e.key==='ArrowRight'?st : 0;
         const dy = e.key==='ArrowUp'?-st : e.key==='ArrowDown'?st : 0;
         const up = updateElRef.current;
@@ -2815,7 +3124,7 @@ function App(){
     }
     window.addEventListener('keydown', onKey);
     return ()=>window.removeEventListener('keydown', onKey);
-  }, [undo, redo]);
+  }, [undo, redo, say]);
 
   /* Ctrl/⌘-V over a selected photo replaces its image — same downscale → JPEG
      pipeline as the upload button. Ignored while typing in an inspector field,
@@ -2829,11 +3138,80 @@ function App(){
       const file = imageFromClipboard(e.clipboardData);
       if(!file) return;
       e.preventDefault();
-      processImageFile(file, src=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); });
+      processImageFile(file, src=>{ const fn=updateElRef.current; if(fn) fn(el.id, { src }); }, m=>window.alert(m));
     }
     window.addEventListener('paste', onPaste);
     return ()=>window.removeEventListener('paste', onPaste);
   }, []);
+
+  /* ---- drag-and-drop images ----
+     The empty canvas has always said "DROP YOUR PHOTO", and nothing listened:
+     the browser took the drop itself and NAVIGATED to the image, throwing the
+     Studio (and, before the IndexedDB autosave, anything unsaved) away.
+     Now every file drag is caught at the window, so a drop that misses can
+     never navigate — and on the stage it does what the words say:
+       • onto a photo (or logo) → replaces its image, like Ctrl-V;
+       • anywhere else on the stage → a new photo, centred where it landed.
+     Same processImageFile as upload and paste, so the same 2000px cap and the
+     same message for a file the browser can't open. */
+  React.useEffect(()=>{
+    const isFiles = (e)=>{ const t = e.dataTransfer && e.dataTransfer.types;
+      return !!t && Array.prototype.indexOf.call(t, 'Files')>=0; };
+    const overStage = (e)=>{ const st = stageRef.current; if(!st) return false;
+      const r = st.getBoundingClientRect();
+      return e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom; };
+    const mark = (on)=>{ const st = stageRef.current; if(st) st.classList.toggle('dropping', !!on); };
+    function onOver(e){
+      if(!isFiles(e)) return;
+      e.preventDefault();
+      const on = overStage(e);
+      e.dataTransfer.dropEffect = on ? 'copy' : 'none';
+      mark(on);
+    }
+    function onLeave(e){ if(!e.relatedTarget) mark(false); }   // left the window
+    function onDrop(e){
+      if(!isFiles(e)) return;
+      e.preventDefault();
+      mark(false);
+      if(!overStage(e)){ say('Drop images onto the poster.'); return; }
+      const files = Array.prototype.slice.call(e.dataTransfer.files||[]);
+      const file = files.find(looksLikeImage);
+      if(!file){ say(files.length ? 'That isn’t an image — drop a JPEG, PNG or WebP.' : 'Nothing to drop.'); return; }
+      if(exportingRef.current) return;
+      /* What's under the pointer: the element wrapper carries data-elid. */
+      const hit = document.elementFromPoint(e.clientX, e.clientY);
+      const box = hit && hit.closest ? hit.closest('[data-elid]') : null;
+      const target = box ? resolvedRef.current.find(x=>x.id===box.getAttribute('data-elid')) : null;
+      if(target && (target.type==='photo' || target.type==='logo')){
+        processImageFile(file, src=>{ const fn=updateElRef.current; if(fn) fn(target.id, { src });
+          setSelectedIds([target.id]); }, m=>window.alert(m));
+        return;
+      }
+      /* A new photo, its box centred on the drop point — mapped from the view
+         you're in back to Master, exactly like dragging a part in. */
+      const cv = canvasRef.current; if(!cv) return;
+      const cr = cv.getBoundingClientRect(), sc = scaleRef.current, d = AP_DEF.photo;
+      const px = (e.clientX-cr.left)/sc, py = (e.clientY-cr.top)/sc;
+      processImageFile(file, src=>{
+        const dd = docRef.current;
+        let vx = px - d.w/2, vy = py - d.h/2;
+        if(dd.snap){ vx=Math.round(vx/window.STEP)*window.STEP; vy=Math.round(vy/window.STEP)*window.STEP; }
+        const vf = dd.activeFormat==='master'?dd.masterFormat:dd.activeFormat;
+        const m = apToMaster('photo', vx, vy, dd.masterFormat, vf);
+        const el = Object.assign(apMake('photo', Math.round(m.x), Math.round(m.y)), { src });
+        setDoc(x=>({ ...x, elements:[...x.elements, el] }));
+        setSelectedIds([el.id]);
+      }, m=>window.alert(m));
+    }
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('drop', onDrop);
+    return ()=>{
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [say]);
 
   /* Zoom. The stage has always fitted the poster to the pane and left it there,
      which is fine until you're nudging a 6px inset on a 1080px canvas rendered
@@ -2862,11 +3240,24 @@ function App(){
   });
   const zoomPct = Math.round(fit*zoom*100)+'%';
 
-  /* resolved elements for the current view */
-  const resolved = React.useMemo(()=> doc.activeFormat==='master'
-    ? doc.elements.map(e=>Object.assign({}, e, {_overridden:false}))
-    : apResolve(doc, doc.activeFormat)
-  , [doc]);
+  /* resolved elements for the current view.
+     Each box KEEPS its object identity across renders while nothing in it has
+     changed: the canvas's elements are memoised, and a fresh object for every
+     box on every doc change made that memo worthless — drag one box and all
+     twenty re-rendered, photos re-fingerprinting their press dials each frame.
+     A shallow compare against the last list, by id; any changed prop (or a
+     nested list that was replaced) hands over the new object. */
+  const prevResolvedRef = React.useRef(new Map());
+  const resolved = React.useMemo(()=>{
+    const fresh = doc.activeFormat==='master'
+      ? doc.elements.map(e=>Object.assign({}, e, {_overridden:false}))
+      : apResolve(doc, doc.activeFormat);
+    const prev = prevResolvedRef.current, next = new Map();
+    const out = fresh.map(r=>{ const p = prev.get(r.id);
+      const keep = (p && shallowSame(p, r)) ? p : r; next.set(r.id, keep); return keep; });
+    prevResolvedRef.current = next;
+    return out;
+  }, [doc]);
   const sel = resolved.find(e=>e.id===selectedId) || null;
   resolvedRef.current = resolved;
   selRef.current = sel;
@@ -2941,7 +3332,7 @@ function App(){
 
      Deliberately NOT snapped to the grid even when Snap is on — the
      whole point of "centre" and "distribute" is the exact number, and
-     rounding it to the 54px step would put it visibly off.
+     rounding it to the 45px step (STEP) would put it visibly off.
      ============================================================ */
   function selBoxes(){ return selectedIds.map(id=>resolved.find(e=>e.id===id)).filter(Boolean); }
 
@@ -3016,21 +3407,35 @@ function App(){
     });
   }
 
-  /* spawn-drag from library — always adds to Master (mapped from drop point) */
+  /* spawn-drag from library — always adds to Master (mapped from drop point).
+     A CLICK (no real travel, released back in the library) used to do nothing
+     at all: it "missed" the stage. It now drops the part in the middle of the
+     canvas you're looking at — the obvious thing for a click to mean. */
   function startSpawn(e, item){
     e.preventDefault();
     const type = item.type, preset = item.preset||null;
+    const x0 = e.clientX, y0 = e.clientY;
+    let travelled = false;
     setSpawn({ type:item.label||type, x:e.clientX, y:e.clientY });
-    function mv(ev){ setSpawn(s=> s?{...s, x:ev.clientX, y:ev.clientY}:s); }
-    function up(ev){
+    function mv(ev){
+      if(Math.abs(ev.clientX-x0)>4 || Math.abs(ev.clientY-y0)>4) travelled = true;
+      setSpawn(s=> s?{...s, x:ev.clientX, y:ev.clientY}:s); }
+    function done(){
       window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', done);
       setSpawn(null);
+    }
+    function up(ev){
+      done();
       const st = stageRef.current, cv = canvasRef.current; if(!st||!cv) return;
       const sr = st.getBoundingClientRect();
-      if(ev.clientX<sr.left||ev.clientX>sr.right||ev.clientY<sr.top||ev.clientY>sr.bottom) return;
+      const onStage = !(ev.clientX<sr.left||ev.clientX>sr.right||ev.clientY<sr.top||ev.clientY>sr.bottom);
+      if(!onStage && travelled) return;                       // dragged out and let go elsewhere — a miss
       const cr = cv.getBoundingClientRect(), sc = scaleRef.current, d = AP_DEF[type], dd = docRef.current;
       const pw = (preset&&preset.w!=null)?preset.w:d.w, ph = (preset&&preset.h!=null)?preset.h:d.h;
-      let vx = (ev.clientX-cr.left)/sc - pw/2, vy = (ev.clientY-cr.top)/sc - ph/2;
+      const vfmt = AP_FMT[dd.activeFormat==='master'?dd.masterFormat:dd.activeFormat];
+      let vx = onStage ? (ev.clientX-cr.left)/sc - pw/2 : vfmt.w/2 - pw/2,
+          vy = onStage ? (ev.clientY-cr.top)/sc - ph/2 : vfmt.h/2 - ph/2;
       if(dd.snap){ vx=Math.round(vx/window.STEP)*window.STEP; vy=Math.round(vy/window.STEP)*window.STEP; }
       const vf = dd.activeFormat==='master'?dd.masterFormat:dd.activeFormat;
       const m = apToMaster(type, vx, vy, dd.masterFormat, vf);
@@ -3040,6 +3445,7 @@ function App(){
       setSelectedIds([el.id]);
     }
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', done);
   }
 
   /* load a starting layout (replaces the current elements) */
@@ -3065,8 +3471,21 @@ function App(){
      cloud send offers it first and a template save claims it off the queue. */
   function applyQueueItem(ev){
     const title = ev.title_en || ev.title_vi || 'Untitled event';
+    /* The Vietnamese name, when it's a different name (not a copy of the EN). */
+    const titleVi = (ev.title_en && ev.title_vi && searchNorm(ev.title_vi).trim()!==searchNorm(ev.title_en).trim()) ? ev.title_vi : '';
+    /* A weekly that already has a poster of its own: saving one files it with
+       eventId = the series key (see saveUserTpl), so next week's row can start
+       from LAST week's poster — photos, treatment, layout — instead of a bare
+       Classic starter every time. Newest save wins; archived ones only if
+       nothing else is left. The event's own facts are re-stamped over it below. */
+    const k = queueKey(ev);
+    const own = k ? sortTpls((userTplsRef.current||[]).filter(t=>t && t.eventId===k && t.doc && Array.isArray(t.doc.elements))) : [];
+    const mine = own.find(t=>!t.archived) || own[0] || null;
     if(docRef.current.elements.length &&
-       !window.confirm('Replace the current poster with a starter for “'+title+'”?')) return;
+       !window.confirm(mine
+         ? 'Replace the current poster with your saved “'+mine.name+'”, restamped for '+feedDayLabel(ev.startsAt)+'?'
+         : 'Replace the current poster with a starter for “'+title+'”?')) return;
+    if(mine){ applySeriesTpl(ev, mine, title, titleVi); return; }
     const tpl = (AP_TPL||[]).find(t=>t.id==='talk-classic') || (AP_TPL||[])[0];
     if(!tpl) return;
     const built = apBuildTpl(tpl);
@@ -3078,20 +3497,59 @@ function App(){
        Storyteller print a date because their artwork is only true for one night.
        Sentence case, not caps: the chip is a FACT and renders in Grotesk, which
        is never uppercased (canon M3) — AP_DABBR is already in the house form. */
-    const when = ((di!=null?AP_DABBR[di]:'')
-      + (seriesWidePoster(ev) ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
+    const when = queueWhen(ev, di);
     /* Fill every box the feed can populate: the day·time chip, the host credit,
        and the price chip. Host keeps the template placeholder when the event has
        none; cost reads "Free" when the event carries no price (the feed's null
-       cost means free — matching the app's own event page). */
+       cost means free — matching the app's own event page). A Vietnamese name
+       rides the title's stacked subtitle — the one bilingual slot the Classic
+       has — instead of being dropped. */
     built.elements.forEach(el=>{
-      if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); }
+      if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); if(titleVi) el.subtitle = titleVi; }
       if(el.type==='when'){ el.text = when; el.w = 450; }
       if(el.type==='host' && ev.host){ el.name = ev.host; }
       if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
     });
     setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
       elements:built.elements, theme:built.theme, accent, title,
+      eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt, cost:ev.cost||null } }));
+    setSelectedIds([]);
+  }
+  /* The day·time chip text for a feed event (see the note above). */
+  function queueWhen(ev, di){
+    return ((di!=null?AP_DABBR[di]:'')
+      + (seriesWidePoster(ev) ? '' : ' '+feedDayLabel(ev.startsAt)) + ' · ' + feedTime(ev.startsAt)).trim();
+  }
+  /* Load a saved poster for this event's series and restamp the facts that
+     change from date to date. Deliberately light-handed — this is somebody's
+     finished artwork: the date/time chip and the price are always rewritten,
+     the host only when the feed has one, and the title's words only when the
+     event's name has actually CHANGED (so a hand-set line break or size in
+     "PULSE / SESSIONS" survives week after week). Box sizes, photos and
+     per-format nudges are the template's own. Fresh element ids, overrides
+     remapped, exactly as applyUserTpl does. */
+  function applySeriesTpl(ev, t, title, titleVi){
+    const snap = JSON.parse(JSON.stringify(t.doc));
+    const idMap = {};
+    snap.elements.forEach(e=>{ const nid=window.uid(); idMap[e.id]=nid; e.id=nid; });
+    const overrides = {};
+    Object.keys(snap.overrides||{}).forEach(f=>{ const fo=snap.overrides[f]||{}; const nfo={};
+      Object.keys(fo).forEach(id=>{ if(idMap[id]) nfo[idMap[id]]=fo[id]; }); overrides[f]=nfo; });
+    const di = feedDayIdx(ev.startsAt);
+    const when = queueWhen(ev, di);
+    const same = (a,b)=> searchNorm(a).replace(/\s+/g,' ').trim() === searchNorm(b).replace(/\s+/g,' ').trim();
+    snap.elements.forEach(el=>{
+      if(el.type==='title'){
+        if(!same(el.text||'', title)){ el.text = title; el.fontSize = queueTitleSize(title); }
+        if(titleVi && el.subtitle!=null && String(el.subtitle).trim()) el.subtitle = titleVi;   // only where the poster has the slot
+      }
+      if(el.type==='when'){ el.text = when; }
+      if(el.type==='host' && ev.host){ el.name = ev.host; }
+      if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
+    });
+    setDoc(d=>({ ...d, masterFormat:snap.masterFormat||'4x5', activeFormat:'master', overrides,
+      elements:snap.elements, theme:snap.theme||d.theme,
+      accent: di!=null ? AP_ABYDAY[di] : (snap.accent||d.accent), title,
       eventRef:{ id:ev.id, key:queueKey(ev), title, startsAt:ev.startsAt, cost:ev.cost||null } }));
     setSelectedIds([]);
   }
@@ -3104,6 +3562,7 @@ function App(){
      if IndexedDB is unavailable it falls back to showing the localStorage
      copy read-only so nothing is ever hidden. ---- */
   const [userTpls, setUserTpls] = React.useState([]);
+  const userTplsRef = React.useRef([]); userTplsRef.current = userTpls;   // read by the queue / deep link
   const [tplReady, setTplReady] = React.useState(false);
   /* Non-null when the IndexedDB library could not be read — the panel is then
      showing the legacy localStorage backup, and says so. */
@@ -3189,6 +3648,16 @@ function App(){
       setUserTpls(sortTpls(local));
       setTplReady(true);
       if(m && m.migrated) console.info('[studio] moved '+m.migrated+' template(s) into IndexedDB; the old localStorage copy is kept as a backup.');
+      /* That backup has sat in localStorage ever since — megabytes, in the box
+         Print and Schedule Studio still write to. Once it's provably filed in
+         IndexedDB (verbatim, read back, every id present) it's freed there.
+         Best-effort: anything it can't prove, it leaves exactly where it is. */
+      try{
+        const rt = window.RStore.retireLegacyTpls ? await window.RStore.retireLegacyTpls() : null;
+        if(rt && rt.retired) console.info('[studio] filed the localStorage template backup ('+rt.retired+' templates, '
+          +Math.round(rt.bytes/1024)+' KB; '+rt.live+' still live) in IndexedDB and freed it from localStorage.');
+        else if(rt && rt.kept) console.info('[studio] kept the localStorage template backup where it is: '+rt.kept+'.');
+      }catch(e){ console.warn('[studio] could not retire the localStorage template backup — left in place.', e); }
       /* One read for the whole library's card pictures. Best-effort: without
          them every card just renders itself live, exactly as it used to. */
       try{ const thumbs = await window.RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
@@ -3289,7 +3758,8 @@ function App(){
      lands, load that event's starter directly. */
   const deepLinkDoneRef = React.useRef(false);
   React.useEffect(()=>{
-    if(deepLinkDoneRef.current || !queueFeed) return;
+    // wait for the library too — the event's series may have a saved poster to open
+    if(deepLinkDoneRef.current || !queueFeed || !tplReady) return;
     deepLinkDoneRef.current = true;
     try{
       const id = new URLSearchParams(window.location.search).get('event');
@@ -3299,7 +3769,7 @@ function App(){
       else if(queueFeed.err) window.alert('Couldn’t reach the events feed to open that event — check the connection and reload.');
       else window.alert('That event isn’t in the public feed yet (draft or unpublished) — publish it in the app, then try again.');
     }catch(e){ /* never disturb the app over a deep link */ }
-  }, [queueFeed]);
+  }, [queueFeed, tplReady]);
   async function saveUserTpl(){
     const d = docRef.current;
     if(!d.elements.length){ window.alert('Nothing on the poster to save yet.'); return; }
@@ -3550,22 +4020,29 @@ function App(){
         const prev = doc.activeFormat;
         const zip = kind!=='pdf' ? new window.JSZip() : null;
         let pdf = null;
-        for(const fmt of AP_OUT){
-          setExportMsg('Rendering '+AP_FMT[fmt].label+'…');
-          setDoc(d=>({ ...d, activeFormat:fmt }));
-          await settleFormat(fmt, 380);   // sentinel + painted frame + riso-repaint floor
-          const f = AP_FMT[fmt];
-          if(kind==='pdf'){
-            const url = await capture(f);
-            if(!pdf) pdf = new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
-            else pdf.addPage([f.w,f.h], f.w>f.h?'l':'p');
-            pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST');
-          } else {
-            const url = await capture(f, kind);
-            zip.file(storyStem(fmt, base, doc.accent)+'.'+kind, url.split(',')[1], { base64:true });
+        /* The view flips through every format and MUST come back, whatever
+           happens: a capture that threw used to skip the restore and strand you
+           on the last format with no idea why. The flips are quiet (see
+           setDocQuiet) — they're not edits and don't belong in undo. */
+        try{
+          for(const fmt of AP_OUT){
+            setExportMsg('Rendering '+AP_FMT[fmt].label+'…');
+            setDocQuiet(d=>({ ...d, activeFormat:fmt }));
+            await settleFormat(fmt, 380);   // sentinel + painted frame + riso-repaint floor
+            const f = AP_FMT[fmt];
+            if(kind==='pdf'){
+              const url = await capture(f);
+              if(!pdf) pdf = new JS({ unit:'px', format:[f.w,f.h], orientation: f.w>f.h?'landscape':'portrait', hotfixes:['px_scaling'] });
+              else pdf.addPage([f.w,f.h], f.w>f.h?'l':'p');
+              pdf.addImage(url,'PNG',0,0,f.w,f.h,undefined,'FAST');
+            } else {
+              const url = await capture(f, kind);
+              zip.file(storyStem(fmt, base, doc.accent)+'.'+kind, url.split(',')[1], { base64:true });
+            }
           }
+        }finally{
+          setDocQuiet(d=>({ ...d, activeFormat:prev }));
         }
-        setDoc(d=>({ ...d, activeFormat:prev }));
         if(kind==='pdf'){
           pdf.save((slug? slug+'-poster' : 'reality-posters')+'.pdf');
         } else {
@@ -3660,7 +4137,7 @@ function App(){
         const label = m.plate ? 'image-only' : AP_FMT[m.fmt].label;
         setExportMsg('Rendering '+label+'…');
         if(m.plate) setPlateOnly(true);
-        setDoc(d=>({ ...d, activeFormat:m.fmt }));
+        setDocQuiet(d=>({ ...d, activeFormat:m.fmt }));   // a view flip, not an edit
         await settleFormat(m.fmt, m.plate?440:380);   // sentinel + painted frame + riso-repaint floor
         let blob = null;
         try{ blob = await (m.plate ? toBlobSlice() : toBlob(AP_FMT[m.fmt])); }catch(e){ blob = null; }
@@ -3700,7 +4177,7 @@ function App(){
           }
         }
       }
-      setDoc(d=>({ ...d, activeFormat:prev }));
+      setDocQuiet(d=>({ ...d, activeFormat:prev }));
       if(ok){
         /* the event now has a poster — take it (and its weekly series) off the queue */
         const hit = ((queueFeed && queueFeed.events) || []).find(e=>e.id===eventId);
@@ -3728,13 +4205,19 @@ function App(){
     }catch(err){
       console.error('export-to-event failed', err);
       setPlateOnly(false);
-      setDoc(d=>({ ...d, activeFormat:prev }));
+      setDocQuiet(d=>({ ...d, activeFormat:prev }));
       setExportMsg('Export to event failed'); await new Promise(r=>setTimeout(r,1600));
     }
     setExporting(false); setExportMsg('');
   }
 
   const h = hist.current;
+  /* re-pointed every render — see actionsRef */
+  actionsRef.current = {
+    saveTpl: saveUserTpl,
+    exportImages: ()=>doExport(docRef.current.title||''),
+    layer,
+  };
 
   /* Ctrl-K. The Fold index covers every inspector control on its own; these are
      the poster-level commands, which otherwise live only as 10px buttons in a
@@ -3767,7 +4250,8 @@ function App(){
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
         onSaveTpl={saveUserTpl}
         canUndo={h.past.length>0||h.pending!=null} canRedo={h.future.length>0} onUndo={undo} onRedo={redo}
-        zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)} />
+        zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={()=>setZoom(1)}
+        saveState={saveState} saveMsg={saveMsg} />
       <div className="rs-body">
         <div className="rs-lib">
           {/* ---- In queue — upcoming app events still missing a poster ---- */}
@@ -3806,7 +4290,7 @@ function App(){
               );
             })}
             {queueFeed && !queueFeed.err && queueItems.length>0 &&
-              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter — saving it as a template, or sending the poster to the event, clears it from the queue. Events whose name, host, price or day/time changed after the poster was made re-appear (“out of date”) until a fresh poster is sent or you dismiss them.</div>}
+              <div className="rs-mini" style={{ margin:'2px 0 12px' }}>Events created in the app’s calendar that still need a poster. Click one for a prefilled Classic starter (or, when that series already has a saved poster, the newest one restamped with this date) — saving it as a template, or sending the poster to the event, clears it from the queue. Events whose name, host, price or day/time changed after the poster was made re-appear (“out of date”) until a fresh poster is sent or you dismiss them.</div>}
           </React.Fragment>}
           {AP_TPL && AP_TPL.length>0 && <React.Fragment>
             <div className="rs-sech" onClick={()=>setTplOpen(o=>!o)}
@@ -3945,7 +4429,7 @@ function App(){
               <Hint>Loading a starter replaces the poster.</Hint>
             </React.Fragment>}
           </React.Fragment>}
-          <div className="rs-libtitle">Parts<span className="hint">drag onto the poster</span></div>
+          <div className="rs-libtitle">Parts<span className="hint">drag in, or click</span></div>
           {AP_CAT.map(g=>(
             <Sec key={g.group} id={'c:'+g.group} title={g.group} count={g.items.length}>
               {g.items.map(it=>(
@@ -3960,7 +4444,7 @@ function App(){
           {/* GRAPHICS — four families that differ only by one prop, so they're
               grids of silhouettes rather than 60 more library rows. Drag a tile
               out exactly like a part; it lands with that kind preset. */}
-          <div className="rs-libtitle">Graphics<span className="hint">drag a silhouette</span></div>
+          <div className="rs-libtitle">Graphics<span className="hint">drag in, or click</span></div>
           {AP_GFX.map(g=>(
             <Sec key={g.id} id={'g:'+g.id} title={g.title} count={g.items?g.items.length:null}>
               {g.groups
@@ -3970,7 +4454,7 @@ function App(){
             </Sec>
           ))}
 
-          <Hint>Drag a part onto the poster — it snaps to the grid and joins the Master layout.</Hint>
+          <Hint>Drag a part onto the poster — it snaps to the grid and joins the Master layout. A click drops it in the middle of the canvas.</Hint>
         </div>
 
         <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent} posterDay={posterDayOf(doc)}
@@ -3997,6 +4481,7 @@ function App(){
       </div>
 
       {spawn && <div className="rs-ghost" style={{ left:spawn.x, top:spawn.y }}>{spawn.type}</div>}
+      {toast && <div className="rs-toast" role="status" onClick={()=>setToast(null)}>{toast}</div>}
       {palOpen && <RUI.Palette onClose={()=>setPalOpen(false)} />}
 
       {eventPicker && eventPicker.open &&
@@ -4045,6 +4530,15 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
      for the scope question first: nothing goes series-wide by accident, and
      nothing silently misses the other dates. */
   const [scopeStep, setScopeStep] = React.useState(null);   // null | the picked feed row
+
+  /* Escape closes it, like every other dialog (it used to take a click on
+     Cancel or the backdrop). Capture phase, so it wins over the search field's
+     own Escape-to-clear. */
+  React.useEffect(()=>{
+    const onKey = (e)=>{ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); onClose(); } };
+    window.addEventListener('keydown', onKey, true);
+    return ()=>window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
   function choose(ev){
     if(!ev) return;
     if(datesOf(ev).length > 1) setScopeStep(ev);
@@ -4166,4 +4660,26 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+/* Boot: read the working doc out of IndexedDB BEFORE the Studio mounts, so the
+   first thing on screen is your poster rather than the demo flashing up and
+   being swapped out (and so nothing can autosave the demo over it). A read
+   takes milliseconds; the timeout is only there so a wedged IndexedDB — a
+   second tab mid-upgrade — can't leave a blank page. */
+function Boot(){
+  const [ready, setReady] = React.useState(null);
+  React.useEffect(()=>{
+    let done = false;
+    const go = (d)=>{ if(!done){ done = true; setReady({ doc:d }); } };
+    bootDoc().then(go, ()=>go(normalizeDoc(loadLegacyDoc()) || starterDoc()));
+    setTimeout(()=>{ if(!done){ console.warn('[studio] working doc read timed out — starting from the fallback copy.');
+      go(normalizeDoc(loadLegacyDoc()) || starterDoc()); } }, 4000);
+    /* Ask the browser not to evict this origin's storage under pressure — the
+       library and the working doc are the only copy of a lot of work. The
+       answer doesn't change anything here, so it isn't read. */
+    try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+  }, []);
+  if(!ready) return null;
+  return <App initialDoc={ready.doc} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Boot/>);

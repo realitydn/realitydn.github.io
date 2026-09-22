@@ -51,9 +51,68 @@ const FACT = (size, extra) => Object.assign({
   fontVariantNumeric:'tabular-nums'
 }, extra||{});
 
-/* riso image caches (shared across photo elements) */
+/* riso image caches (shared across photo elements).
+   The decoded image, keyed by the photo's own data URL. This used to be a
+   plain Map that never let go: every photo dropped in during a session stayed
+   decoded — swap a photo ten times and all ten sat in memory, and at 2000px a
+   decode is ~12MB. It's a small LRU now: 24 covers every photo on a poster
+   plus an evening of library thumbnails, and anything evicted simply decodes
+   again the next time it's drawn. Concurrent asks for the same source share
+   one decode (two frames of one photo used to decode it twice). */
+const IMG_CACHE_CAP = 24;
 const _imgCache = new Map();
+const _imgPending = new Map();
+function imgCacheGet(url){
+  const im = _imgCache.get(url);
+  if(im){ _imgCache.delete(url); _imgCache.set(url, im); }   // re-insert = most recently used
+  return im;
+}
+function imgCachePut(url, im){
+  _imgCache.delete(url); _imgCache.set(url, im);
+  while(_imgCache.size > IMG_CACHE_CAP) _imgCache.delete(_imgCache.keys().next().value);
+}
+/* One decode per source, for everything that draws a photo: the press, the
+   bleed preview, the treatment strip and the library's thumbnail warm-up. */
+function loadCachedImage(url){
+  const c = imgCacheGet(url); if(c) return Promise.resolve(c);
+  if(_imgPending.has(url)) return _imgPending.get(url);
+  const p = window.RISO.loadImage(url).then(
+    im=>{ _imgPending.delete(url); imgCachePut(url, im); return im; },
+    e=>{ _imgPending.delete(url); throw e; });
+  _imgPending.set(url, p);
+  return p;
+}
 const _sampleCache = {};
+
+/* ---- Vietnamese capitals need their headroom ---------------------------
+   Titles set uppercase at line-height .84 — tight on purpose, for Latin caps
+   (cap height .70). Vietnamese puts a mark over the capital, and stacks a tone
+   mark ON a circumflex or breve: measured in Montserrat 800, Á/Ô rise to .91em
+   and Ấ Ổ Ỗ Ẵ to .99–1.08em — straight through the bottom of the line above.
+   So the renderer reads the text and lifts the EFFECTIVE line height when it
+   has to: 1.08 under a stacked capital, .94 under a single mark. The saved
+   value is never touched — take the accents out and the title closes back up
+   to exactly what was set. Horn (Ơ Ư) and dot-below (Ạ) add no height above
+   the cap, so they don't count. */
+const VI_ABOVE = /[̀́̂̃̆̉]/;   // grave acute circumflex tilde breve hook-above
+const VI_MARK  = /[̀-ͯ]/;
+function viLineHeight(text, lh){
+  const s = String(text||'');
+  if(!s || !/[^\x00-\x7f]/.test(s)) return lh;          // plain ASCII — the common case, no work
+  let floor = 0, above = 0;
+  for(const ch of s.toUpperCase().normalize('NFD')){
+    if(VI_ABOVE.test(ch)){ above++; floor = Math.max(floor, above>=2 ? 1.08 : 0.94); if(floor>=1.08) break; }
+    else if(!VI_MARK.test(ch)) above = 0;                // a new base letter
+  }
+  return floor > lh ? floor : lh;
+}
+/* The title's line height as it actually renders — its set value (or the .84
+   default) lifted for Vietnamese stacks. The canvas editor and the Inspector
+   read the same number, so none of the three disagree. */
+function titleLineHeight(el){
+  const lh = el && el.lineHeight!=null ? el.lineHeight : 0.84;
+  return viLineHeight(el && el.text, lh);
+}
 
 /* Largest Montserrat-800 size at which `text` (uppercased) fits `availW`, capped
    at maxSize. Measured for real (not estimated) so a match-up's two team names
@@ -161,11 +220,9 @@ function risoSig(el){ let s=''; for(let i=0;i<OPT_KEYS.length;i++) s += '|'+el[O
    canvas are never two different decodes of the same file. Resolves
    [main, second]; a logo with no file resolves [null, …] and stays blank. */
 function photoSources(el){
-  const getImg=(url)=>{ const c=_imgCache.get(url); if(c) return Promise.resolve(c);
-    return window.RISO.loadImage(url).then(im=>{ _imgCache.set(url,im); return im; }); };
-  const p1 = el.src ? getImg(el.src).catch(()=>getSample(el.sample))
+  const p1 = el.src ? loadCachedImage(el.src).catch(()=>getSample(el.sample))
                     : Promise.resolve(el.type==='logo'? null : getSample(el.sample));
-  const p2 = el.src2 ? getImg(el.src2).catch(()=>null) : Promise.resolve(null);
+  const p2 = el.src2 ? loadCachedImage(el.src2).catch(()=>null) : Promise.resolve(null);
   return Promise.all([p1,p2]);
 }
 
@@ -245,8 +302,8 @@ function PhotoEl({ el, theme, inkKey, inkDensity, selected, exporting }){
       cx.drawImage(src, -dw/2, -dh/2, dw, dh);
       cx.restore();
     };
-    if(el.src){ const c=_imgCache.get(el.src); if(c) drawSrc(c);
-      else window.RISO.loadImage(el.src).then(im=>{ _imgCache.set(el.src,im); drawSrc(im); }).catch(()=>drawSrc(getSample(el.sample))); }
+    if(el.src){ const c=imgCacheGet(el.src); if(c) drawSrc(c);
+      else loadCachedImage(el.src).then(drawSrc).catch(()=>drawSrc(getSample(el.sample))); }
     else drawSrc(getSample(el.sample));
     return ()=>{ alive=false; };
   /* Same story as the press above: undeclared deps meant this redrew on every
@@ -367,7 +424,10 @@ function BlockEl({ el, theme, fillHex, exporting }){
     const cx=cv.getContext('2d');
     cx.fillStyle=fillHex; cx.fillRect(0,0,W,H);
     window.RISO.grain(cv, el.grain, el.grainSize!=null?el.grainSize:2, el.grainInk, el.grainBlend);
-  });
+  /* Same lesson as the photo press: with no dependency list this re-ran the
+     whole noise pass on every render of the app — every frame of dragging
+     anything. It depends on the size, the fill and the grain dials; not x/y. */
+  }, [grainy, el.w, el.h, fillHex, el.grain, el.grainSize, el.grainInk, el.grainBlend, exporting]);
   const bsh = seShadow(el, theme);   // off by default; casts off the block shape when on
   return <div style={{ position:'absolute', inset:0, overflow:'hidden',
     opacity: el.opacity!=null?el.opacity:1,
@@ -415,7 +475,9 @@ function ShapeGrain({ el, fillHex, path, exporting }){
     if(path) cx.fill(new Path2D(path));
     else { cx.beginPath(); cx.ellipse(el.w/2, el.h/2, el.w/2, el.h/2, 0, 0, 6.2832); cx.fill(); }
     cx.restore();
-  });
+  /* `path` is the shape's `d` string, so it compares by value — a new kind or
+     a resize re-cuts the silhouette, a drag doesn't. */
+  }, [path, el.w, el.h, fillHex, el.grain, el.grainSize, el.grainInk, el.grainBlend, exporting]);
   return <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%', display:'block' }} />;
 }
 
@@ -735,7 +797,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
       <div style={container}>
         <div style={{
           fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase',
-          fontSize:el.fontSize+'px', lineHeight:(el.lineHeight!=null?el.lineHeight:.84),
+          fontSize:el.fontSize+'px', lineHeight:titleLineHeight(el),   // .84, lifted under Vietnamese stacks
           letterSpacing: EM(el.letterSpacing!=null?el.letterSpacing:TRACK.display),
           color:textCol, textAlign:el.align,
           writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb',
@@ -1273,9 +1335,21 @@ function Wrap({ el, wrap, sel, onDown, children }){
   );
 }
 
-window.StudioElement = StudioElement;
+/* Memoised for the canvas. Every doc change used to re-render every element
+   on the poster — each one rebuilding its styles, re-fingerprinting its press
+   dials and re-measuring its text — even though a drag changes one box. The
+   canvas hands this stable props: the App keeps each resolved element's
+   identity while its contents are unchanged, and the pointer-down handler is
+   one stable function. (The library's thumbnails use the plain component —
+   they render once and are captured.) */
+window.StudioElement = React.memo(StudioElement);
 /* The photo press, shared with the Inspector's treatment strip. */
 window.photoSources = photoSources;
+/* One decode per photo, shared with the library's thumbnail warm-up. */
+window.loadCachedImage = loadCachedImage;
+/* The title's rendered line height (Vietnamese-aware) — the canvas editor and
+   the Inspector's Line spacing hint read it from here. */
+window.titleLineHeight = titleLineHeight;
 window.drawPhotoPress = drawPhotoPress;
 window.risoSig = risoSig;
 /* The mark at an explicit module, in a shrink-wrapped box — the ticket's own

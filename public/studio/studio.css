@@ -11,29 +11,47 @@ body{ background:#0e0c09; overflow:hidden; }
   background:#0e0c09; color:#efe7d8; font-family:var(--rs-grot); }
 
 /* ---- TOPBAR ---- */
-/* gap was 18px with fewer groups in here; History, Zoom and Hints have joined
-   since, so it tightens and scrolls rather than crushing the export controls on
-   a narrower screen (the same thing Print Studio's topbar does). */
-.rs-top{ display:flex; align-items:center; gap:12px; padding:0 14px; height:60px;
-  border-bottom:1px solid #2a2318; background:#15110b; overflow-x:auto; }
-.rs-top::-webkit-scrollbar{ height:0; }
+/* Two rows beside the wordmark. It was ONE 60px row that scrolled sideways,
+   with the export block stuck to its right edge — and by the time History,
+   Zoom, Hints, Cloud and the print menu had joined, the row was ~1930px of
+   controls in a 1440px window: the sticky block sat on top of zoom, Grid,
+   Snap, Hints and Sign in, which looked like buttons and ate the clicks.
+   Row one is what you're making (formats → save/export), row two how you're
+   looking at it. Each row wraps instead of overlapping, so a window narrower
+   than the 1280 it's laid out for grows a line rather than hiding anything. */
+.rs-top{ display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto;
+  column-gap:18px; row-gap:6px; align-items:center; padding:7px 14px 7px;
+  border-bottom:1px solid #2a2318; background:#15110b; }
+.rs-toprow{ grid-column:2; display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; min-width:0; }
+.rs-toprow > *{ flex:none; }
+.rs-toprow2{ padding-top:6px; border-top:1px solid #221b12; }
 .rs-brand, .rs-tgroup .gl, .rs-iconbtn, .rs-savebtn, .rs-seg button{ white-space:nowrap; }
-.rs-top .spacer{ min-width:8px; }
-.rs-brand{ font-family:'Montserrat Alternates',sans-serif; font-weight:600; text-transform:uppercase;
+.rs-toprow .spacer{ flex:1 1 0; min-width:8px; }
+.rs-brand{ grid-row:1 / span 2; align-self:center;
+  font-family:'Montserrat Alternates',sans-serif; font-weight:600; text-transform:uppercase;
   letter-spacing:.02em; font-size:26px; line-height:1; color:#fffbf1; }
-.rs-brand small{ display:block; font-family:var(--rs-mont); font-weight:700; font-size:8.5px;
-  letter-spacing:.22em; color:#8a7f6c; margin-top:2px; }
-.rs-top .spacer{ flex:1; }
+.rs-brand small{ display:block; font-family:var(--rs-mont); font-weight:700; font-size:10px;
+  letter-spacing:.2em; color:#8a7f6c; margin-top:3px; }
 .rs-tgroup{ display:flex; align-items:center; gap:8px; }
 .rs-tgroup .gl{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.12em;
-  font-size:9px; color:#6f6553; }
+  font-size:10px; color:#7a6f5c; }
+/* the working doc's autosave, out loud — see SaveState in studio-app.jsx */
+.rs-savestate{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+  font-size:10px; color:#7a6f5c; padding:6px 9px; border:1px solid transparent; border-radius:7px;
+  white-space:nowrap; cursor:default; display:inline-flex; align-items:center; gap:6px; }
+.rs-savestate::before{ content:''; width:7px; height:7px; border-radius:50%; background:#43b02a; }
+.rs-savestate.saving::before{ background:#fdb515; }
+.rs-savestate.fallback{ color:#fdcf6a; border-color:#5a4a1c; }
+.rs-savestate.fallback::before{ background:#fdb515; }
+.rs-savestate.error{ color:#fff; background:#b3121f; border-color:#ed2224; }
+.rs-savestate.error::before{ background:#fff; }
 
 /* segmented control */
 .rs-seg{ display:flex; border:1px solid #3a2f1f; border-radius:7px; overflow:hidden; background:#0e0b07; }
 .rs-seg button{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
   font-size:10.5px; color:#9b9079; background:none; border:none; padding:7px 12px; cursor:pointer;
   display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.1; transition:.12s; }
-.rs-seg button small{ font-size:8px; letter-spacing:.08em; color:#6a6051; font-weight:600; }
+.rs-seg button small{ font-size:10px; letter-spacing:.06em; color:#7a6f5c; font-weight:600; }
 .rs-seg button:hover{ color:#efe7d8; }
 .rs-seg button.on{ background:#ed1b72; color:#0d0905; }
 .rs-seg button.on small{ color:rgba(13,9,5,.6); }
@@ -63,11 +81,11 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-iconbtn.on{ background:#241a10; border-color:#ed1b72; color:#fff; }
 
 /* The block you finish on — Save template, then the export controls (poster
-   name, format select, Save Images). Sticky so a narrow window scrolls the
-   view/accent groups UNDER it instead of pushing Save off the edge, and a flex
-   row of its own since two groups ride it rather than one. */
-.rs-top .rs-export{ position:sticky; right:0; background:#15110b; padding-left:12px; z-index:3;
-  box-shadow:-16px 0 16px -8px #15110b; display:flex; align-items:center; gap:12px; }
+   name, format select, Save Images): the right-hand end of the top row, a flex
+   row of its own since two groups ride it. It used to be sticky over a
+   scrolling bar and paint over whatever slid under it; nothing slides under it
+   now, so it's just a group. */
+.rs-top .rs-export{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; }
 .rs-tname{ width:132px; background:#0e0b07; border:1px solid #3a2f1f; border-radius:7px;
   color:#fffbf1; font-family:var(--rs-grot); font-size:12.5px; padding:8px 10px; outline:none; transition:.12s; }
 .rs-tname:focus{ border-color:#ed1b72; }
@@ -81,7 +99,7 @@ body{ background:#0e0c09; overflow:hidden; }
   font-size:10.5px; color:#0d0905; background:#ed1b72; border:1px solid #ed1b72; border-radius:7px;
   padding:6px 14px; cursor:pointer; transition:.12s; display:flex; flex-direction:column; align-items:center;
   gap:1px; line-height:1.15; }
-.rs-savebtn small{ font-size:8px; letter-spacing:.08em; font-weight:600; color:rgba(13,9,5,.6); text-transform:uppercase; }
+.rs-savebtn small{ font-size:10px; letter-spacing:.06em; font-weight:600; color:rgba(13,9,5,.66); text-transform:uppercase; }
 .rs-savebtn:hover{ background:#ff4d94; border-color:#ff4d94; }
 .rs-savebtn:disabled{ opacity:.45; cursor:default; }
 
@@ -97,7 +115,7 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-inspector{ border-left:1px solid #2a2318; padding:16px 16px 60px; }
 
 .rs-sech{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
-  font-size:9.5px; color:#7d7260; margin:18px 0 10px; }
+  font-size:11px; color:#8a7f6c; margin:18px 0 10px; }
 .rs-sech:first-child{ margin-top:0; }
 
 /* Collapsible inspector sections. These used to be a photo-panel-only device
@@ -116,7 +134,7 @@ body{ background:#0e0c09; overflow:hidden; }
 /* The badge is the count of props inside that differ from this element's
    defaults — a closed fold still says whether anything in it is set. */
 .rs-foldhead .badge{ flex:none; background:#ed1b72; color:#0d0905; border-radius:9px;
-  padding:1px 7px; font-family:var(--rs-grot); font-weight:600; font-size:9px; letter-spacing:.04em; }
+  padding:1px 7px; font-family:var(--rs-grot); font-weight:600; font-size:10px; letter-spacing:.04em; }
 .rs-fold.open .rs-foldhead{ color:#e9ddc5; border-radius:8px 8px 0 0; }
 .rs-fold.open .rs-foldhead .chev{ color:#ed1b72; }
 .rs-foldbody{ padding:12px 10px 2px; border-top:1px solid #2a2318; }
@@ -148,7 +166,7 @@ body{ background:#0e0c09; overflow:hidden; }
 .rs-gfxtile.on{ border-color:#ed1b72; background:#2a1620; color:#ed1b72; }
 .rs-gfxtile .gp{ display:block; width:100%; height:30px; }
 .rs-gfxtile .gp svg{ width:100%; height:100%; }
-.rs-gfxtile .gl{ font-family:var(--rs-grot); font-size:8.5px; letter-spacing:.02em; line-height:1.1;
+.rs-gfxtile .gl{ font-family:var(--rs-grot); font-size:10px; letter-spacing:.01em; line-height:1.1;
   color:#8a7f6c; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-gfxtile:hover .gl, .rs-gfxtile.on .gl{ color:inherit; }
 .rs-gfxsearch{ margin-bottom:2px; }
@@ -167,17 +185,21 @@ body{ background:#0e0c09; overflow:hidden; }
   object-fit:contain; border-radius:4px; background:#0e0b07; }
 
 /* stage */
-.rs-stage{ position:relative; overflow:hidden;
+/* .dropping = files are being dragged over it (see the App's drop handler) */
+.rs-stage{ position:relative; overflow:hidden; transition:box-shadow .12s;
   background:
     linear-gradient(45deg,#191510 25%,transparent 25%,transparent 75%,#191510 75%) 0 0/26px 26px,
     linear-gradient(45deg,#191510 25%,transparent 25%,transparent 75%,#191510 75%) 13px 13px/26px 26px,
     #14110c; }
+.rs-stage.dropping{ box-shadow:inset 0 0 0 3px #00e5ff, inset 0 0 0 4px rgba(13,9,5,.7); }
 .rs-canvas{ will-change:transform; }
 
 /* inspector controls */
 .rs-row{ margin-bottom:14px; }
-.rs-lab{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
-  font-size:9px; color:#8a7f6c; margin-bottom:6px; display:flex; justify-content:space-between; }
+/* Labels floor at 10px. At 8–9.5px, uppercase and tracked, they were the
+   hardest thing on screen to read — in a tool whose whole panel is labels. */
+.rs-lab{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.09em;
+  font-size:10px; color:#8a7f6c; margin-bottom:6px; display:flex; justify-content:space-between; }
 .rs-lab .val{ color:#cbb; font-weight:600; letter-spacing:.04em; }
 .rs-input, .rs-area{ width:100%; background:#0e0b07; border:1px solid #33291b; border-radius:7px;
   color:#fffbf1; font-family:var(--rs-grot); font-size:13px; padding:8px 10px; outline:none; transition:.12s; }
@@ -186,7 +208,7 @@ body{ background:#0e0c09; overflow:hidden; }
 
 .rs-chips{ display:flex; flex-wrap:wrap; gap:5px; }
 .rs-chip{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:9.5px; color:#b6ab97; background:#0e0b07; border:1px solid #33291b; border-radius:6px;
+  font-size:10px; color:#b6ab97; background:#0e0b07; border:1px solid #33291b; border-radius:6px;
   padding:6px 9px; cursor:pointer; transition:.12s; }
 .rs-chip:hover{ border-color:#6f6553; color:#fffbf1; }
 .rs-chip.on{ background:#ed1b72; color:#0d0905; border-color:#ed1b72; }
@@ -252,7 +274,7 @@ body{ background:#0e0c09; overflow:hidden; }
 
 /* context banner + override tag */
 .rs-context{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:9.5px; padding:9px 11px; border-radius:8px; margin-bottom:16px; line-height:1.5; }
+  font-size:10px; padding:9px 11px; border-radius:8px; margin-bottom:16px; line-height:1.5; }
 .rs-context b{ font-size:11px; letter-spacing:.04em; }
 .rs-context.master{ background:#241d10; border:1px solid #5a4a1c; color:#fdcf6a; }
 .rs-context.out{ background:#2a1422; border:1px solid #5a2348; color:#f59ac9; }
@@ -266,10 +288,10 @@ body{ background:#0e0c09; overflow:hidden; }
    all expanded, all the time. Print Studio already had the right
    shape for this, so these are its .ps-sec / .ps-tplcard rules
    in Poster's register (rounded, hairline, warm dark). */
-.rs-libtitle{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.16em;
-  font-size:9px; color:#6f6553; margin:18px 0 9px; display:flex; justify-content:space-between; align-items:baseline; }
+.rs-libtitle{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+  font-size:11px; color:#7a6f5c; margin:18px 0 9px; display:flex; justify-content:space-between; align-items:baseline; }
 .rs-libtitle:first-child{ margin-top:0; }
-.rs-libtitle .hint{ font-weight:600; letter-spacing:.03em; font-size:8.5px; color:#6f6553; text-transform:none; }
+.rs-libtitle .hint{ font-weight:600; letter-spacing:.03em; font-size:10px; color:#7a6f5c; text-transform:none; }
 .rs-sec{ width:100%; display:flex; align-items:center; gap:8px; padding:9px 10px; margin-bottom:5px;
   border:1px solid #33291b; border-radius:8px; background:#1b1610; cursor:pointer; transition:.12s;
   font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
@@ -296,17 +318,17 @@ body{ background:#0e0c09; overflow:hidden; }
    line — "Thứ Tư Acoustic — Mai Thúc Lân" is a normal template name here, and a
    card is 100px wide. Nothing collides: the buttons sit over the thumbnail. */
 .rs-tplcard .tn{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.02em;
-  font-size:9.5px; color:#fffbf1; line-height:1.2; overflow-wrap:anywhere;
+  font-size:10px; color:#fffbf1; line-height:1.2; overflow-wrap:anywhere;
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-.rs-tplcard .ts{ font-family:var(--rs-grot); font-size:9px; color:#8a7f6c; }
+.rs-tplcard .ts{ font-family:var(--rs-grot); font-size:10px; color:#8a7f6c; }
 .rs-thumbbox{ overflow:hidden; border:1px solid rgba(255,251,241,.12); border-radius:4px; margin:0 auto;
   max-width:100%; }
 
 /* numeric arrange fields — the precise cousin of the position sliders */
 .rs-numgrid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
 .rs-num{ display:flex; flex-direction:column; gap:3px; }
-.rs-num span{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.08em;
-  font-size:8px; color:#8a7f6c; }
+.rs-num span{ font-family:var(--rs-mont); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+  font-size:10px; color:#8a7f6c; }
 .rs-num input{ width:100%; background:#0e0b07; border:1px solid #33291b; border-radius:6px; color:#fffbf1;
   font-family:var(--rs-grot); font-size:12px; padding:5px; outline:none; -moz-appearance:textfield; }
 .rs-num input::-webkit-outer-spin-button, .rs-num input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
@@ -331,13 +353,21 @@ body{ background:#0e0c09; overflow:hidden; }
   border-radius:7px; background:none; cursor:pointer; text-align:left; font-family:var(--rs-grot); }
 .rs-palrow .l{ flex:1 1 auto; font-size:13px; color:#efe7d8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-palrow .g{ flex:none; font-family:var(--rs-mont); font-weight:700; text-transform:uppercase;
-  letter-spacing:.1em; font-size:8.5px; color:#7d7260; }
+  letter-spacing:.1em; font-size:10px; color:#7d7260; }
 .rs-palrow.on{ background:#241a10; }
 .rs-palrow.on .l{ color:#fff; }
 .rs-palrow.on .g{ color:#ed1b72; }
 .rs-palempty{ padding:18px 14px; font-size:12px; line-height:1.5; color:#7d7260; }
 .rs-palfoot{ border-top:1px solid #2a2318; padding:8px 14px; font-family:var(--rs-mont); font-weight:700;
-  text-transform:uppercase; letter-spacing:.1em; font-size:8.5px; color:#6a6051; }
+  text-transform:uppercase; letter-spacing:.1em; font-size:10px; color:#7a6f5c; }
 @keyframes rs-flashkf{ 0%,100%{ background:transparent; } 22%{ background:rgba(237,27,114,.22); } }
 .rs-flash{ animation:rs-flashkf 1.25s ease-out; border-radius:7px; }
 @media (prefers-reduced-motion: reduce){ .rs-flash{ animation:none; box-shadow:0 0 0 2px #ed1b72; } }
+
+/* A short note over the foot of the stage — things worth saying that don't
+   deserve a dialog (Delete hid rather than deleted; that file isn't a picture).
+   Click to dismiss; it goes by itself. */
+.rs-toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:9998;
+  max-width:min(560px, 86vw); padding:11px 16px; border-radius:9px; cursor:pointer;
+  background:#0d0906; color:#fffbf1; border:1px solid #4a3d29; box-shadow:0 14px 34px rgba(0,0,0,.5);
+  font-family:var(--rs-grot); font-size:13px; line-height:1.4; text-align:center; }

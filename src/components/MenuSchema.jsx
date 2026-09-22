@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { MENU } from '../data/menu';
+import { useMenu } from '../data/menu-i18n';
 import { langByCode, pathFor } from '../data/languages';
 
 /**
@@ -8,9 +8,9 @@ import { langByCode, pathFor } from '../data/languages';
  * drift from what customers actually see. Pre-rendering captures it into the
  * static HTML for crawlers; search engines and LLMs both read it.
  *
- * Every language reads its own fields: menu.js carries name/tag/desc/label
- * with an EN/VI/RU/UK/KO/JA suffix, EN canonical. The suffix is the LANGS
- * code except Vietnamese, whose fields are *VI (its UI code is 'VN').
+ * Every language reads its own menu: useMenu(lang) hands back that language
+ * only, name/desc/label already resolved with the EN fallback (see
+ * data/menu-i18n.js and the menu plugin in vite.config.js).
  * The @id is shared with the LocalBusiness `hasMenu` in index.html.
  *
  * Prices in menu.js are thousands of VND ('95' → ₫95,000).
@@ -28,9 +28,8 @@ const NAMES = {
 };
 
 export default function MenuSchema({ lang = 'EN', id = 'menu-schema' }) {
+  const MENU = useMenu(lang);
   useEffect(() => {
-    const suffix = lang === 'VN' ? 'VI' : lang;
-    const pick = (obj, field) => obj[field + suffix] || obj[field + 'EN'];
     const page = SITE + pathFor(lang, '/');
 
     const schema = {
@@ -43,17 +42,16 @@ export default function MenuSchema({ lang = 'EN', id = 'menu-schema' }) {
       mainEntityOfPage: page,
       hasMenuSection: MENU.map((cat) => ({
         '@type': 'MenuSection',
-        name: pick(cat, 'label'),
+        name: cat.label,
         hasMenuSection: cat.sections.map((section) => ({
           '@type': 'MenuSection',
-          name: pick(section, 'label'),
+          name: section.label,
           hasMenuItem: section.items.map((item) => {
             const entry = {
               '@type': 'MenuItem',
-              name: pick(item, 'name'),
+              name: item.name,
             };
-            const desc = pick(item, 'desc');
-            if (desc) entry.description = desc;
+            if (item.desc) entry.description = item.desc;
             const price = Number(item.price);
             if (Number.isFinite(price) && price > 0) {
               entry.offers = {
@@ -82,7 +80,7 @@ export default function MenuSchema({ lang = 'EN', id = 'menu-schema' }) {
       const existing = document.getElementById(id);
       if (existing) existing.remove();
     };
-  }, [lang, id]);
+  }, [MENU, lang, id]);
 
   return null;
 }

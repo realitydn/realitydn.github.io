@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MENU } from '../data/menu';
+import { useMenu } from '../data/menu-i18n';
 import { URLS } from '../data/translations';
 import Reveal from './Reveal';
 
@@ -28,12 +28,9 @@ const SECTION_PALETTE = [
   'var(--pink)',
 ];
 
-// Site language code → menu-data field suffix (the site says VN, the data says
-// VI; everything else matches). A missing translation falls back to EN.
-const MENU_LANG = { EN: 'EN', VN: 'VI', RU: 'RU', UK: 'UK', KO: 'KO', JA: 'JA' };
-const menuText = (obj, field, lang) => obj[field + (MENU_LANG[lang] || 'EN')] || obj[field + 'EN'];
-
 export default function MenuSection({ lang, t }) {
+  // This language only, fields resolved with the EN fallback (menu-i18n.js).
+  const MENU = useMenu(lang);
   const [index, setIndex] = useState(0);
   const panelRef = React.useRef(null);
 
@@ -148,7 +145,7 @@ export default function MenuSection({ lang, t }) {
                   style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                   aria-hidden="true"
                 />
-                {menuText(c, 'label', lang)}
+                {c.label}
               </button>
             ))}
           </nav>
@@ -183,7 +180,7 @@ export default function MenuSection({ lang, t }) {
                     style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                     aria-hidden="true"
                   />
-                  {menuText(c, 'label', lang)}
+                  {c.label}
                 </button>
               ))}
             </div>
@@ -222,7 +219,7 @@ export default function MenuSection({ lang, t }) {
                     aria-hidden="true"
                   />
                   <h3 className="h-section text-2xl md:text-3xl">
-                    {menuText(cat, 'label', lang)}
+                    {cat.label}
                   </h3>
                 </header>
 
@@ -236,14 +233,14 @@ export default function MenuSection({ lang, t }) {
                         style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
                         aria-hidden="true"
                       />
-                      {menuText(section, 'label', lang)}
+                      {section.label}
                     </h4>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                       {section.items.map((item, idx) => (
                         <li key={idx} className="border-b border-ink/10 pb-2">
                           <div className="flex items-baseline justify-between gap-4">
                             <span className="font-body font-semibold text-[15px] md:text-base">
-                              {menuText(item, 'name', lang)}
+                              {item.name}
                             </span>
                             {item.price && (
                               <span className="font-body text-ink tabular-nums font-medium shrink-0">
@@ -251,14 +248,14 @@ export default function MenuSection({ lang, t }) {
                               </span>
                             )}
                           </div>
-                          {(item.tagEN || item.tagVI) && (
+                          {item.tag && (
                             <div className="text-ink/70 text-sm italic mt-1 font-body">
-                              {menuText(item, 'tag', lang)}
+                              {item.tag}
                             </div>
                           )}
-                          {(item.descEN || item.descVI) && (
+                          {item.desc && (
                             <div className="text-gray-600 text-sm mt-1 font-body">
-                              {menuText(item, 'desc', lang)}
+                              {item.desc}
                             </div>
                           )}
                         </li>

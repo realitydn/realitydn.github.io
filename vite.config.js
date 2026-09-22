@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // Cache-busting for the Studios. Poster / Print / Schedule Studio are classic-
 // script apps copied verbatim from public/ into dist/, so their .js/.css keep
@@ -79,6 +80,54 @@ const studioCacheBust = () => {
   };
 };
 
+// One language of the drinks menu per chunk. src/data/menu.js is generated
+// (by the app repo) with all six languages on every item; the site imports it
+// as `./menu.js?menu-lang=XX` (src/data/menu-i18n.js) and this plugin answers
+// with only that language, each field already resolved with the EN fallback —
+// { key, label, sections: [{ label, items: [{ name, tag?, desc?, price }] }] }.
+// menu.js stays the single source (Node scripts keep importing it whole), and
+// because the query variants are the same file in Vite's module graph, editing
+// menu.js in dev invalidates all six.
+const MENU_FILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'src/data/menu.js');
+const MENU_SUFFIX = { EN: 'EN', VN: 'VI', RU: 'RU', UK: 'UK', KO: 'KO', JA: 'JA' };
+
+function projectMenu(menu, lang) {
+  const suffix = MENU_SUFFIX[lang] || 'EN';
+  const pick = (obj, field) => obj[field + suffix] || obj[field + 'EN'];
+  return menu.map((cat) => ({
+    key: cat.key,
+    label: pick(cat, 'label'),
+    sections: cat.sections.map((section) => ({
+      label: pick(section, 'label'),
+      items: section.items.map((item) => {
+        const out = { name: pick(item, 'name') };
+        const tag = pick(item, 'tag');
+        const desc = pick(item, 'desc');
+        if (tag) out.tag = tag;
+        if (desc) out.desc = desc;
+        if (item.price) out.price = item.price;
+        return out;
+      }),
+    })),
+  }));
+}
+
+const menuPerLanguage = () => ({
+  name: 'reality-menu-per-language',
+  enforce: 'pre',
+  async load(id) {
+    const [file, query] = id.split('?');
+    if (!query) return null;
+    const lang = new URLSearchParams(query).get('menu-lang');
+    if (!lang || path.resolve(file).toLowerCase() !== MENU_FILE.toLowerCase()) return null;
+    this.addWatchFile(MENU_FILE);
+    // mtime in the URL: Node caches ESM imports, so an edited menu.js needs a
+    // fresh specifier to be re-read in a long-running dev server.
+    const { MENU } = await import(pathToFileURL(MENU_FILE).href + '?t=' + statSync(MENU_FILE).mtimeMs);
+    return `export const MENU = ${JSON.stringify(projectMenu(MENU, lang))};\n`;
+  },
+});
+
 // Pre-rendering: after `vite build`, renders each route in a headless browser
 // and saves the resulting HTML. Users with JS get the same React SPA experience
 // (hydration kicks in), but crawlers see fully rendered content.
@@ -113,7 +162,7 @@ const prerender = () => ({
 });
 
 export default defineConfig({
-  plugins: [react(), studioCacheBust(), prerender()],
+  plugins: [menuPerLanguage(), react(), studioCacheBust(), prerender()],
   server: {
     port: 3000,
     open: true,
@@ -123,6 +172,12 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
+        // The per-language menu chunks all come from menu.js, so Rollup would
+        // name them menu-<hash> ×5; tag them with their language instead.
+        chunkFileNames: (chunk) => {
+          const m = /[?&]menu-lang=([A-Z]+)/.exec(chunk.facadeModuleId || '');
+          return m ? `assets/menu-${m[1].toLowerCase()}-[hash].js` : 'assets/[name]-[hash].js';
+        },
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'carousel': ['embla-carousel-react', 'embla-carousel-autoplay'],

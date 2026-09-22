@@ -175,12 +175,29 @@ async function prerender() {
         // 500ms settle happened to land on.
         await page.evaluateOnNewDocument(() => { window.__PRERENDER__ = true; });
 
+        // Every same-origin JS chunk the route pulls in while rendering. The
+        // non-EN languages' strings and menus are lazy chunks that main.jsx
+        // awaits before its first render; Vite only preloads static imports,
+        // so without a hint a visitor to /vn/ would fetch the bundle, run it,
+        // and only THEN discover vi-*.js. Listing them as modulepreloads in the
+        // captured <head> fetches them alongside the bundle.
+        const chunks = new Set();
+        page.on('request', (req) => {
+          const u = new URL(req.url());
+          if (u.port === String(PORT) && /^\/assets\/[^/]+\.js$/.test(u.pathname)) chunks.add(u.pathname);
+        });
+
         await page.goto(url, { waitUntil: 'networkidle0', timeout });
 
         // Wait a beat for any React effects to settle
         await new Promise((r) => setTimeout(r, 500));
 
         let html = (await page.content()).replace(NOSCRIPT_RE, '');
+        const preloads = [...chunks]
+          .filter((p) => !html.includes(`"${p}"`))
+          .map((p) => `<link rel="modulepreload" crossorigin="" href="${p}">`)
+          .join('');
+        if (preloads) html = html.replace('</head>', preloads + '</head>');
         if (!HOME_ROUTES.has(route)) html = html.replace(HOME_ONLY_RE, '');
         // Seed goes ahead of the module bundle so useFeed sees it on first render.
         else if (feedSeed) html = html.replace(/<script type="module"/, (m) => feedSeed + m);

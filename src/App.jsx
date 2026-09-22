@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
@@ -16,13 +16,16 @@ import MenuSchema from "./components/MenuSchema";
 import HostGuide from "./pages/HostGuide";
 import EventGuidelines from "./pages/EventGuidelines";
 import NotFound from "./pages/NotFound";
-import { STR } from "./data/translations";
+import { STR, useLocale } from "./data/translations";
 import { LANGS, langByCode, langFromPath, pathFor, routeFor } from "./data/languages";
+import { loadMenu } from "./data/menu-i18n";
 import { buildFaq } from "./data/faq";
 import useFeed from "./hooks/useFeed";
 import useHashLanding from "./hooks/useHashLanding";
 
 // Builds the `t` helper from a language code. Callers use `t.use('path.to.key')`.
+// The catalogue must be loaded — every route renders under <Localized>, which
+// guarantees it.
 // Missing keys fall back to the EN catalogue (the reference copy), then to the
 // key string itself — so an incomplete locale shows English, not key paths.
 function makeT(lang) {
@@ -90,24 +93,41 @@ function HomePage({ lang }) {
   );
 }
 
+// The render-time gate for a route's language: its catalogue is a lazy chunk
+// (data/translations.js), so this suspends until it has landed. On a first
+// load it never does — main.jsx awaits the page's language before rendering —
+// and a client-side language switch runs in React Router's startTransition,
+// which keeps the old page on screen until the new catalogue is in. Home
+// routes also need that language's menu chunk (MenuSection/MenuSchema wait on
+// it themselves); starting it here fetches both together, not one after the other.
+function Localized({ lang, menu = false, children }) {
+  if (menu) loadMenu(lang);
+  useLocale(lang);
+  return children;
+}
+
 export default function App() {
   return (
-    <Routes>
-      {/* One route trio per language — EN unprefixed, the rest under their
-          prefix (/vn, /ru, /uk, /ko, /ja). See data/languages.js. */}
-      {LANGS.map(({ code }) => (
-        <React.Fragment key={code}>
-          <Route path={routeFor(code, '/')} element={<HomePage lang={code} />} />
-          <Route path={routeFor(code, '/event-guidelines')} element={<EventGuidelinesRoute lang={code} />} />
-          <Route path={routeFor(code, '/host-guide')} element={<HostGuideRoute lang={code} />} />
-        </React.Fragment>
-      ))}
+    // fallback={null}: only reachable if a chunk is somehow not preloaded —
+    // see Localized above.
+    <Suspense fallback={null}>
+      <Routes>
+        {/* One route trio per language — EN unprefixed, the rest under their
+            prefix (/vn, /ru, /uk, /ko, /ja). See data/languages.js. */}
+        {LANGS.map(({ code }) => (
+          <React.Fragment key={code}>
+            <Route path={routeFor(code, '/')} element={<Localized lang={code} menu><HomePage lang={code} /></Localized>} />
+            <Route path={routeFor(code, '/event-guidelines')} element={<Localized lang={code}><EventGuidelinesRoute lang={code} /></Localized>} />
+            <Route path={routeFor(code, '/host-guide')} element={<Localized lang={code}><HostGuideRoute lang={code} /></Localized>} />
+          </React.Fragment>
+        ))}
 
-      {/* Any unknown path → a real 404 page (prerendered to dist/404.html,
-          which Cloudflare Pages serves with a 404 status). Redirecting to
-          home made every typo a soft-404 duplicate of the homepage. */}
-      <Route path="*" element={<NotFoundRoute />} />
-    </Routes>
+        {/* Any unknown path → a real 404 page (prerendered to dist/404.html,
+            which Cloudflare Pages serves with a 404 status). Redirecting to
+            home made every typo a soft-404 duplicate of the homepage. */}
+        <Route path="*" element={<NotFoundRoute />} />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -186,6 +206,7 @@ function GuidelinesSchema({ lang, title, description, id = 'guidelines-schema' }
 function NotFoundRoute() {
   const { pathname } = useLocation();
   const lang = langFromPath(pathname);
+  useLocale(lang);
   const t = makeT(lang);
   const seo = seoOf(lang);
   return (

@@ -151,6 +151,35 @@ eq('costLabel free EN', costLabel({ cost: null }, 'EN'), 'Free');
 eq('costLabel free VN', costLabel({ cost: null }, 'VN'), 'Miễn phí');
 eq('cfStr unknown lang falls back to EN', cfStr('DE').upNext, 'Up next');
 
+// ── locale parity: every catalogue mirrors locales/en.js ─────────────────────
+// Same key paths, same value types, same array lengths — so a string added to
+// EN and forgotten elsewhere fails here, not as silent English on /ja/. Loaded
+// through the site's own lazy loader (translations.js), which also proves each
+// language chunk resolves and none fell back to EN.
+{
+  const { STR, LANGS, loadAllLocales } = {
+    ...(await import('../src/data/translations.js')),
+    ...(await import('../src/data/languages.js')),
+  };
+  await loadAllLocales();
+  const shape = (v, p = '', out = []) => {
+    if (Array.isArray(v)) { out.push(`${p}[]#${v.length}`); v.forEach((x, i) => shape(x, `${p}[${i}]`, out)); }
+    else if (v && typeof v === 'object') for (const k of Object.keys(v)) shape(v[k], `${p}.${k}`, out);
+    else out.push(`${p}:${typeof v}`);
+    return out;
+  };
+  const en = new Set(shape(STR.EN));
+  for (const { code } of LANGS) {
+    if (code === 'EN') continue;
+    check(`locale ${code} loaded (not the EN fallback)`, !!STR[code] && STR[code] !== STR.EN);
+    const got = new Set(shape(STR[code] || {}));
+    const missing = [...en].filter((k) => !got.has(k));
+    const extra = [...got].filter((k) => !en.has(k));
+    check(`locale ${code} mirrors EN (missing: ${missing.slice(0, 5).join(' ') || '-'}; extra: ${extra.slice(0, 5).join(' ') || '-'})`,
+      missing.length === 0 && extra.length === 0);
+  }
+}
+
 // ── summary ──────────────────────────────────────────────────────────────────
 if (failures.length) {
   console.error(`\nselftest: ${failures.length} FAILED, ${passed} passed`);

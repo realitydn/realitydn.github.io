@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LANGS, langByCode, pathFor, stripLangPrefix } from '../data/languages';
-import { STR } from '../data/translations';
+import { STR, loadLocale } from '../data/translations';
+import { loadMenu } from '../data/menu-i18n';
 
 /**
  * LangMenu — the language switcher, grown from the old EN↔VN toggle into a
@@ -14,6 +15,9 @@ import { STR } from '../data/translations';
  * mounting it on open meant the prerendered HTML carried no links to the
  * other languages at all, so crawlers couldn't discover them from the page.
  * Links keep the current #hash, so switching language mid-page stays put.
+ *
+ * Each language other than EN is a lazy chunk (data/translations.js); hovering
+ * or focusing a pick starts fetching it, so the switch is usually instant.
  */
 export default function LangMenu({ lang, compact = false }) {
   const [open, setOpen] = useState(false);
@@ -21,6 +25,10 @@ export default function LangMenu({ lang, compact = false }) {
   const location = useLocation();
   const base = stripLangPrefix(location.pathname);
   const current = langByCode(lang);
+  const prefetch = (code) => {
+    loadLocale(code);
+    if (base === '/') loadMenu(code);
+  };
   const menuLabel =
     (STR[lang] && STR[lang].langMenuLabel) || STR.EN.langMenuLabel;
 
@@ -77,6 +85,8 @@ export default function LangMenu({ lang, compact = false }) {
               hrefLang={l.iso}
               lang={l.iso}
               aria-current={active ? 'page' : undefined}
+              onPointerEnter={() => prefetch(l.code)}
+              onFocus={() => prefetch(l.code)}
               className={`flex items-baseline gap-2 px-4 py-2.5 font-title text-xs tracking-[0.08em] transition-colors ${
                 active ? 'bg-ink text-cream' : 'text-ink hover:bg-ink/5'
               }`}

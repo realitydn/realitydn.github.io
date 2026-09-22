@@ -363,7 +363,8 @@ async function main() {
   const today = ymd(now);
 
   const { LANGS, pathFor } = await load('src/data/languages.js');
-  const { STR } = await load('src/data/translations.js');
+  // Only EN is a static import there (the site lazy-loads the rest); pull all six in.
+  const STR = await (await load('src/data/translations.js')).loadAllLocales();
   const { MENU, MENU_VERSION } = await load('src/data/menu.js');
   const { ROOM_RATES, RATE_SLOTS } = await load('src/data/room-rates.js');
   const { buildFaq } = await load('src/data/faq.js');

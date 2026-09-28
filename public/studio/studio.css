@@ -71,7 +71,52 @@
 
 /* context banner: Master = amber (the base rule), an output format = pink */
 .rs-context.out{ background:var(--st-accent-bg); border-color:#5a2348; color:#f59ac9; }
-.rs-ovtag{ color:#ed7aa8; font-weight:700; }
+
+/* ---- the Inspector's header row (panels/inspector/index.jsx) ----
+   type + scope chip stacked on the left, six icon buttons on the right, one
+   ~38px band. The chip wears the banner's colours: Master amber, an output
+   format pink, and a brighter edge once the element is detached there. */
+.rs-elhead{ display:flex; align-items:center; gap:6px; min-height:38px; margin:0 0 12px; }
+.rs-elhead .who{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+.rs-elhead .ty{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.1;
+  font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.14em;
+  font-size:var(--st-fs-small); color:var(--st-text); }
+/* "last of N" (multi-select only) takes a third line rather than share one */
+.rs-elhead .cnt{ font-family:var(--st-grot); font-size:var(--st-fs-label); line-height:1.1; color:var(--st-dim); white-space:nowrap; }
+/* a chip too long for the column (a standee view, detached) ellipsises —
+   its tooltip carries the whole of it */
+.rs-scope{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1; padding:3px 5px;
+  font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:var(--st-fs-label);
+  background:var(--st-warn-bg); border:1px solid var(--st-warn-line); color:var(--st-warn-soft); cursor:default; }
+.rs-scope.out{ background:var(--st-accent-bg); border-color:#5a2348; color:#f59ac9; }
+.rs-scope.det{ border-color:var(--st-accent); color:#fff; }
+.rs-elbtns{ flex:none; display:flex; align-items:center; gap:2px; }
+.rs-elbtns .gap{ width:4px; }
+.rs-hbtn{ width:24px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center;
+  background:var(--st-field); border:var(--st-bw) solid var(--st-line-strong); color:var(--st-soft); cursor:pointer; transition:.12s; }
+.rs-hbtn:hover{ border-color:var(--st-line-hover); color:var(--st-ink); }
+.rs-hbtn svg{ display:block; width:14px; height:14px; }
+
+/* ---- swatch rows in the Inspector: ten to a line ----
+   Auto + Ink + Cream + the seven accents is ten, and at 26px + 6px they
+   wrapped to two lines in the 312px column. 20px + 3px fits ten in a fold
+   (227px). A row of ten or fewer never wraps: if a nested fold plus a
+   scrollbar leaves less than 227px, its swatches give up a pixel or two each
+   instead (aspect-ratio keeps them square). Longer rows (the 11 stocks) wrap
+   as before. The top bar's accent picker is outside .rs-inspector — untouched. */
+.rs-inspector .rs-swatches{ gap:3px; align-items:flex-start; }
+.rs-inspector .rs-swatches:not(:has(> :nth-child(11))){ flex-wrap:nowrap; }
+.rs-inspector .rs-sw{ flex:0 1 20px; width:auto; height:auto; min-width:14px; aspect-ratio:1; }
+/* Auto is painted in what it resolves to (often the poster accent — the same
+   colour as one of the accents beside it), so it carries a bold A. Ringed in
+   ink so it reads on cream, on the accent and on the ink/cream split alike. */
+.rs-sw.auto::after{ content:'A'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:var(--st-mont); font-weight:800; font-size:11px; line-height:1; color:#fffbf1; pointer-events:none;
+  text-shadow:1px 0 #0d0905, -1px 0 #0d0905, 0 1px #0d0905, 0 -1px #0d0905, 1px 1px #0d0905, -1px -1px #0d0905, 1px -1px #0d0905, -1px 1px #0d0905; }
+
+/* NumField's scrub handle (Transform's X/Y/W/H/Rot° labels) */
+.rs-num .scrub{ cursor:ew-resize; user-select:none; touch-action:none; }
+.rs-num .scrub:hover{ color:var(--st-soft); }
 
 /* graphics picker — shape / rule / burst / icon grids. One component serves
    both the library (drag to spawn) and the Inspector (click to swap kind), so

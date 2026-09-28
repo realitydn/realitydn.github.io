@@ -1,7 +1,7 @@
 /* ============================================================
    REALITY POSTER STUDIO — inspector · colour, surface and shadow
    ============================================================ */
-import { PALETTE as AP_PAL, shadowModel } from '../../studio-data.jsx';
+import { PALETTE as AP_PAL, ACCENTS as AP_ACC, ACCENT_BY_DAY, parseSessions, shadowModel } from '../../studio-data.jsx';
 import { Chips, Slider, Fold, Hint, Swatches, SURFACES } from '../controls.jsx';
 /* One shadow control for every element. Defaults + slider ranges come from the
    shared window.shadowModel, so what you see matches what renders, and a brand
@@ -61,15 +61,63 @@ function applyLift(v, m){
   return { shadowLift:'custom', shadowOn:true };
 }
 
+/* ---- does Fill do anything to this element, as it stands? ----
+   Read off the renderer (studio-element.jsx), not guessed. `el.fill` becomes
+   accentHex there, and accentHex reaches the art two ways:
+     1. through the surface — surfaceStyle() paints accentHex ONLY for
+        'accent' (solid/paper/outline/scrim/none are theme ink and paper;
+        'outline' borders and the list row rules are t.fg, not the accent),
+        and on an accent card the Auto text colour follows it too;
+     2. straight from a renderer, for the accent highlights:
+          lineup   — the heading and the first row's name
+          sessions — the heading; the row number in a plain (no time, no
+                     marker) list
+          agenda   — the heading; a row whose day isn't a weekday name
+          qr       — the website line
+          badge    — the big word
+          matchup  — the competition line, the VS coin, the date · time dot
+          host     — the kicker, while its own colour is Auto
+   Every other surfaced type (title, tagline, info, when, cost, stamp, ticket,
+   specials, wordmark) only takes Fill on an Accent surface. When Fill does
+   nothing, the swatches go and a one-line note says when it would. */
+function fillMatters(el){
+  if(el.surface==='accent') return true;
+  const has = (s)=> s!=null && String(s).trim()!=='';
+  switch(el.type){
+    case 'lineup':   return has(el.heading) || (el.items||[]).length>0;
+    case 'sessions': {
+      if(has(el.heading)) return true;
+      const rows = parseSessions(el.raw);
+      return !rows.some(r=>r.marker || r.time) && rows.some(r=>r.num);
+    }
+    /* the renderer's dayCol: a row's own accent, else its weekday's — and the
+       poster fill for anything that resolves to neither */
+    case 'agenda':   return has(el.heading) || (el.items||[]).some(it=>{
+      const d = String(it.day||'');
+      return AP_ACC.indexOf(it.accent || ACCENT_BY_DAY[d.charAt(0).toUpperCase()+d.slice(1).toLowerCase()])<0;
+    });
+    case 'qr':       return has(el.site);
+    case 'badge':    return has(el.big);
+    case 'matchup':  return true;
+    case 'host':     return has(el.kicker) && !(el.kickerColor==='ink' || el.kickerColor==='cream' || AP_ACC.indexOf(el.kickerColor)>=0);
+    default:         return false;
+  }
+}
+
 function SurfaceFold({ el, doc, update, caps, dSurface }){
+  const fillOn = caps.surface && fillMatters(el);
   return (
     <React.Fragment>
       {caps.surface &&
         <Fold id="f-surface" title="Colour & surface" dirty={dSurface}>
           <Chips label="Surface" options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
-          <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
-            onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
-          <Hint tight>Fill colours an <b>Accent</b> surface and the element’s accent highlights (heading, first row…).</Hint>
+          {fillOn
+            ? <React.Fragment>
+                <Swatches label={el.type==='host'?'Background / fill':'Fill / accent'} value={el.fill!=null?el.fill:el.color}
+                  onChange={v=>update({fill:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+                <Hint tight>Fill colours an <b>Accent</b> surface and the element’s accent highlights (heading, first row…).</Hint>
+              </React.Fragment>
+            : <div className="rs-mini" style={{ margin:'-6px 0 12px' }}>Fill applies on an <b>Accent</b> surface.</div>}
         </Fold>}
       {el.type==='weekly' &&
         <Fold id="f-surface" title="Accent" dirty={dSurface}>
@@ -80,4 +128,4 @@ function SurfaceFold({ el, doc, update, caps, dSurface }){
   );
 }
 
-export { ShadowControls, LIFTS, shadowLift, applyLift, SurfaceFold };
+export { ShadowControls, LIFTS, shadowLift, applyLift, SurfaceFold, fillMatters };

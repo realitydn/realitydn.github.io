@@ -117,16 +117,19 @@ function App({ initialDoc, bootClean }){
           sliceMode={sliceMode} feedSlice={doc.feedSlice} onSliceChange={setFeedSlice} />
 
         <div className="rs-inspector">
-          <div className={'rs-context'+(isOutput?' out':' master')}>
+          {/* The banner heads the document panel only. With an element selected,
+              the scope chip in the Inspector's header row says the same thing
+              (its tooltip carries this sentence and the override count). */}
+          {!sel && <div className={'rs-context'+(isOutput?' out':' master')}>
             {isOutput
               ? <React.Fragment><b>{activeLabel}</b> output · layout edits override Master{overrideCount?` · ${overrideCount} overridden`:''}</React.Fragment>
               : <React.Fragment><b>Master</b> source · edits flow to every format</React.Fragment>}
-          </div>
+          </div>}
           {/* Feed slice moved INTO the inspector's no-selection panel — it's a
               whole-poster setting, and riding along under every element edit
               was three controls of tax on every selection. */}
           <Inspector el={sel} doc={doc} feedEvents={queueFeed && queueFeed.events} update={update} dup={dup} del={del} layer={layer}
-            clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel}
+            clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel} overrideCount={overrideCount}
             resetOverride={resetOverride} toggleHidden={toggleHidden}
             selCount={selectedIds.length} align={alignSel} distribute={distributeSel} centre={centreSel}
             formatLabel={activeLabel}

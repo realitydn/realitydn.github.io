@@ -72,9 +72,9 @@ const TREATS = [
 const PRESS_BLENDS = [
   { v:'normal',     l:'Opaque',   note:'The print covers the photo. Opaque ink — the classic riso.' },
   { v:'multiply',   l:'Multiply', note:'Transparent ink over the photograph — the picture reads THROUGH the screen. The one to reach for on a halftone.' },
-  { v:'screen',     l:'Screen',   note:'Ink that only ever lightens. Glows on night stock; nearly invisible on day.' },
+  { v:'screen',     l:'Screen (lighten)', note:'Ink that only ever lightens. Glows on night stock; nearly invisible on day.' },
   { v:'overlay',    l:'Overlay',  note:'Multiplies the shadows and screens the lights at once — contrast without losing either end.' },
-  { v:'soft-light', l:'Soft',     note:'The gentlest of them. A tint of the treatment rather than a print of it.' },
+  { v:'soft-light', l:'Soft light', note:'The gentlest of them. A tint of the treatment rather than a print of it.' },
   { v:'hard-light', l:'Hard',     note:"Overlay's opposite — the PRINT decides. Hard, poster-ish, unsubtle." },
   { v:'darken',     l:'Darken',   note:'Keeps whichever is darker. Ink lands only where it would be seen.' },
   { v:'lighten',    l:'Lighten',  note:'Keeps whichever is lighter. The night-stock twin of Darken.' }
@@ -149,7 +149,7 @@ const TREAT_PRESETS = {
 const TREAT_LOOKS = {
   /* the press's looks — each is a real job a shop would quote */
   separation: [
-    { v:'grain',   l:'Grain',        p:{ screen:'fm', inks:null, stock:null, opaque:null, drift:3, skew:5, stretch:7, starve:0.2, drumStreak:0, pull:0 } },
+    { v:'grain',   l:'Machine grain', p:{ screen:'fm', inks:null, stock:null, opaque:null, drift:3, skew:5, stretch:7, starve:0.2, drumStreak:0, pull:0 } },
     { v:'four',    l:'Four colour',  p:{ screen:'fm', inks:['ink','pink','blue','yellow'], stock:null, opaque:null, tac:2.2, sepGCR:0.2, drift:0, skew:0, stretch:0, starve:0 } },
     { v:'s43',     l:'Screen 43',    p:{ screen:'am', pitch:13, levels:195, sepShape:'chain' } },
     { v:'s71',     l:'Screen 71',    p:{ screen:'am', pitch:8,  levels:72,  sepShape:'chain' } },

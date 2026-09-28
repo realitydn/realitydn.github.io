@@ -19,9 +19,12 @@ const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap
 /* Auto adapts to the surface/theme; Ink and Cream are literal and fixed, so
    any element (esp. text over a photo) can be forced dark or light. The Auto
    swatch is relabelled / recoloured per role (text contrast vs poster accent).
-   The row itself is RUI.Swatches; Poster's fixed trio is the parameter. */
+   The row itself is RUI.Swatches; Poster's fixed trio is the parameter.
+   Auto is painted in what it resolves to — often the poster accent, which
+   also sits in the accent run beside it — so it carries a bold "A"
+   (`.rs-sw.auto`, studio.css) to tell the two apart. */
 const Swatches = ({ autoTitle, autoBg, ...p })=> <RUI.Swatches {...p} fixed={[
-  { v:'fg',    bg: autoBg || 'linear-gradient(135deg,#0d0905 0 50%,#fffbf1 50% 100%)',
+  { v:'fg',    bg: autoBg || 'linear-gradient(135deg,#0d0905 0 50%,#fffbf1 50% 100%)', cls:'auto',
                title: autoTitle || 'Auto — adapts to surface / theme' },
   { v:'ink',   bg:'#0d0905', title:'Ink' },
   { v:'cream', bg:'#fffbf1', title:'Cream' },

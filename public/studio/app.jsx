@@ -21,6 +21,7 @@ import { useCloudSession, useCloud } from './hooks/useCloud.js';
 import { useLibrary } from './hooks/useLibrary.js';
 import { useQueue } from './hooks/useQueue.js';
 import { useExport } from './hooks/useExport.js';
+import { useWeekPosters } from './hooks/useWeekPosters.js';
 import { useKeys } from './hooks/useKeys.js';
 import { useViewport } from './hooks/useViewport.js';
 import { useImageDrop } from './hooks/useImageDrop.js';
@@ -51,6 +52,7 @@ function App({ initialDoc, bootClean }){
   const { queueFeed } = queue;
   const { exporting, exportingRef, exportMsg, plateOnly, doExport, eventPicker, setEventPicker, openEventPicker, exportToEvent } =
     useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQuiet, queueFeed, setQueueSent:queue.setQueueSent, cloudSignIn });
+  const week = useWeekPosters({ doc, say });
 
   /* The handlers the keyboard reaches that are defined further down (save,
      export, layer order). Through a ref, re-pointed every render: the listener
@@ -69,6 +71,7 @@ function App({ initialDoc, bootClean }){
   actionsRef.current = {
     saveTpl: saveUserTpl,
     exportImages: ()=>doExport(docRef.current.title||''),
+    exportWeek: week.exportWeek,
     layer,
   };
 
@@ -92,7 +95,8 @@ function App({ initialDoc, bootClean }){
        { label:'Redo', group:'Edit', run:redo },
        { label:'Select all', group:'Edit', run:()=>setSelectedIds(docRef.current.elements.map(x=>x.id)) },
        { label:'Save current poster as a template', group:'Templates', run:saveUserTpl },
-       { label:'Save images', group:'Export', run:()=>doExport(docRef.current.title||'') }]
+       { label:'Save images', group:'Export', run:()=>doExport(docRef.current.title||'') },
+       { label:'Save the week’s 4:5 posters (next 7 days)', group:'Export', run:()=>actionsRef.current.exportWeek() }]
     ));
   }, [doc.activeFormat, doc.theme, doc.showGrid, doc.snap, undo, redo]);
 
@@ -100,6 +104,7 @@ function App({ initialDoc, bootClean }){
     <div className="rs-app">
       <Topbar doc={doc} setDoc={setDoc} overrideCount={overrideCount} resetFormat={resetFormat}
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
+        onExportWeek={week.exportWeek} weekBusy={week.weekBusy} weekMsg={week.weekMsg}
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
         onSaveTpl={saveUserTpl}
         canUndo={hist.canUndo} canRedo={hist.canRedo} onUndo={undo} onRedo={redo}

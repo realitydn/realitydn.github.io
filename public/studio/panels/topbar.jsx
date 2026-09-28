@@ -30,7 +30,7 @@ function SaveState({ state, msg }){
 }
 
 /* ---------- topbar ---------- */
-function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
+function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, onExportWeek, weekBusy, weekMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
                   onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit, saveState, saveMsg }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!RCloud;
@@ -104,7 +104,7 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
               title="Keep this poster in My templates — filed under the weekday its accent codes for (also the ＋ at the foot of the template list)">
               ⤓ Save template</button>
           </div>
-          <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : 'Export'}</span>
+          <div className="rs-tgroup"><span className="gl">{exporting? (exportMsg||'Exporting…') : weekBusy ? (weekMsg||'Working…') : 'Export'}</span>
             <input className="rs-tname" placeholder="Poster name…" value={name} spellCheck={false}
               onChange={e=>setName(e.target.value)} onBlur={commit}
               onKeyDown={e=>{ if(e.key==='Enter'){ commit(); e.currentTarget.blur(); } }}
@@ -122,6 +122,14 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
                   ? 'Export the format you’re viewing'
                   : 'Master view — export all five formats'+(kind==='pdf'?' as one PDF':' as a ZIP'))+' → '+outName}>
               Save Images<small>{scope}</small>
+            </button>
+            {/* Not this poster — every event's published 4:5 for the coming week,
+                straight off the feed (hooks/useWeekPosters.js). Same format select. */}
+            <button className="rs-savebtn alt" disabled={weekBusy} onClick={onExportWeek}
+              title={'Every event in the next 7 days — its published 4:5 poster, as '
+                +(kind==='pdf' ? 'one PDF, a page per event' : 'a ZIP of '+kind.toUpperCase()+'s named like 3-wed-karaoke-4x5.'+kind)
+                +'. Events with no 4:5 yet are listed when it finishes.'}>
+              Week’s 4:5<small>Next 7 days</small>
             </button>
           </div>
         </div>

@@ -10,8 +10,8 @@ import { Chips, Slider, Hint } from '../controls.jsx';
    gaussian soft, motion streak, zoom rush, spin sweep, lens defocus, and a
    tilt-shift focus band. */
 const BLUR_TYPES = [
-  {v:'gauss',l:'Soft'},{v:'motion',l:'Motion'},{v:'zoom',l:'Zoom'},
-  {v:'spin',l:'Spin'},{v:'lens',l:'Lens'},{v:'tilt',l:'Band'}
+  {v:'gauss',l:'Gaussian'},{v:'motion',l:'Motion'},{v:'zoom',l:'Zoom'},
+  {v:'spin',l:'Spin'},{v:'lens',l:'Lens'},{v:'tilt',l:'Tilt-shift'}
 ];
 function BlurControls({ el, update, prefix, label, max }){
   const P = k => prefix+k;
@@ -132,7 +132,7 @@ function SepControls({ el, update, theme, inkKey }){
             <Slider label="Tone steps" val={el.levels||0} min={0} max={256} step={1} onChange={v=>update({levels:v})} />
           </React.Fragment>
         : <Slider label="Grain size" val={el.grainPitch!=null?el.grainPitch:0.5} min={0.25} max={3} step={0.05} onChange={v=>update({grainPitch:v})} suffix="px" />}
-      <Hint tight>Grain is the machine's own stochastic screen — what a riso does on most jobs. 43 / 71 / 106 are the dot screens, coarse to fine; a fine screen holds fewer tones and bands on a long gradient (Tone steps, 0 = unlimited).</Hint>
+      <Hint tight><b>FM grain</b> is the machine's own stochastic screen — what a riso does on most jobs. 43 / 71 / 106 are the dot screens, coarse to fine; a fine screen holds fewer tones and bands on a long gradient (Tone steps, 0 = unlimited).</Hint>
 
       <div className="rs-sech">Separation</div>
       <Slider label="GCR" val={r.gcr} min={0} max={0.8} step={0.01} onChange={v=>update({sepGCR:v})} />

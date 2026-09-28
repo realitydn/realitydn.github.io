@@ -250,14 +250,16 @@ import { ACCENTS, PALETTE } from './brand.js';
 
   /* A colour choice: the Studio's own fixed swatches first (each
      { v, bg, title } — Poster's Auto/Ink/Cream, Print's Auto/Ink(K)/White),
-     then the seven accents. The fixed set is the parameter; the row is one. */
+     then the seven accents. The fixed set is the parameter; the row is one.
+     A fixed entry may carry `cls` — an extra class on that swatch (Poster
+     marks its Auto swatch with one, so a Studio sheet can badge it). */
   function Swatches({ label, value, onChange, fixed }){
     return (
       <div className={cls('row')}>
         {label && <div className={cls('lab')}>{label}</div>}
         <div className={cls('swatches')}>
           {(fixed||[]).map(s=>(
-            <div key={s.v} className={cls('sw')+(value===s.v?' on':'')} title={s.title}
+            <div key={s.v} className={cls('sw')+(s.cls?' '+s.cls:'')+(value===s.v?' on':'')} title={s.title}
               style={{ background:s.bg, border:'1.5px solid '+CFG.swatchBorder }} onClick={()=>onChange(s.v)} />
           ))}
           {ACCENTS.map(a=>(
@@ -269,14 +271,44 @@ import { ACCENTS, PALETTE } from './brand.js';
   }
   function swatchBorder(){ return CFG.swatchBorder; }
 
-  /* numeric field — the precise cousin of the position sliders */
-  function NumField({ label, value, onChange, min, step }){
+  /* numeric field — the precise cousin of the position sliders.
+     `scrub` (opt-in; Poster's Transform passes it) makes the label a drag
+     handle: pull it sideways and the value moves one `step` per pixel, ten
+     with Shift held, clamped at `min`, each move committed through onChange
+     like a keystroke would be. A plain click on the label still focuses the
+     field; a drag doesn't. */
+  function NumField({ label, value, onChange, min, step, scrub }){
     const [txt, setTxt] = React.useState(null);
+    const dragged = React.useRef(false);
     const shown = txt!=null ? txt : String(value!=null?value:0);
     const commit = (s)=>{ const v=parseFloat(s); if(!isNaN(v)) onChange(min!=null?Math.max(min,v):v); setTxt(null); };
+    const startScrub = (e)=>{
+      if(e.button!==0) return;
+      e.preventDefault();
+      dragged.current = false;
+      let lastX = e.clientX;
+      let acc = parseFloat(value); if(isNaN(acc)) acc = 0;
+      const unit = step||1;
+      const move = (ev)=>{
+        const dx = ev.clientX - lastX; if(!dx) return;
+        lastX = ev.clientX; dragged.current = true;
+        acc += dx * unit * (ev.shiftKey ? 10 : 1);
+        if(min!=null) acc = Math.max(min, acc);
+        setTxt(null); onChange(acc);
+      };
+      const end = ()=>{
+        window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end);
+        window.removeEventListener('pointercancel', end); document.body.style.cursor = '';
+      };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end); document.body.style.cursor = 'ew-resize';
+    };
     return (
       <label className={cls('num')}>
-        <span>{label}</span>
+        {scrub
+          ? <span className="scrub" title="Drag sideways to change · Shift for ×10" onPointerDown={startScrub}
+              onClick={e=>{ if(dragged.current){ e.preventDefault(); dragged.current = false; } }}>{label}</span>
+          : <span>{label}</span>}
         <input type="number" step={step||1} value={shown}
           onChange={e=>{ setTxt(e.target.value); const v=parseFloat(e.target.value); if(!isNaN(v)) onChange(min!=null?Math.max(min,v):v); }}
           onBlur={e=>commit(e.target.value)}

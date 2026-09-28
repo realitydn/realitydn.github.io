@@ -43,8 +43,10 @@ function press(){ return window.RISO && window.RISO.press; }
 /* the stocks, by name — the picker's tooltips and the hint's lead word */
 const STOCK_LABEL = { day:'Cream', white:'White', news:'Newsprint', straw:'Straw', kraft:'Kraft', salmon:'Salmon',
                       grey:'Grey board', flint:'Flint', steel:'Steel', night:'Night' };
-/* the separation's screens: the machine's own grain, or a dot screen */
-const SEP_SCREENS = [{v:'grain',l:'Grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
+/* the separation's screens: the machine's own grain, or a dot screen.
+   "FM grain", not "Grain" — the photo panel also has a separation LOOK called
+   Machine grain and a Finish slider called Film grain, three different things */
+const SEP_SCREENS = [{v:'grain',l:'FM grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
 
 /* ---- STOCK ------------------------------------------------------------
    `stockKey` / `opaque` are what the host resolved (the stock this element

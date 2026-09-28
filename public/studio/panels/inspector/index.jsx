@@ -23,14 +23,30 @@ import { posterDayOf } from '../../studio-element.jsx';
 import { Fold } from '../controls.jsx';
 import { PhotoControls } from '../photo-panel/index.jsx';
 import { TYPE_CAPS } from './caps.js';
-import { ShadowControls, SurfaceFold } from './appearance.jsx';
+import { ShadowControls, SurfaceFold, fillMatters } from './appearance.jsx';
 import { BlockControls, ShapeControls, IconControls, RuleControls, BurstControls } from './graphics.jsx';
 import { InkmarkControls } from './inkmark.jsx';
 import { ContentFields, TypeFold, SubtitleFold, KickerFold } from './text.jsx';
 import { RowsFold } from './lists.jsx';
 import { ArrangeFold, TransformFold, OverrideFold } from './layout.jsx';
 import { DocumentPanel } from './document.jsx';
-function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice, feedEvents }){
+/* The header's six buttons, drawn rather than typed: ⤓/⤒ and ⧉ fall back to
+   whatever symbol font the machine has, at whatever weight it has them. Square
+   caps and mitres, like the rest of the chrome. The one-step pair stay the
+   filled ▼ ▲ the hints refer to. */
+const HEAD_ICONS = {
+  back:  <path d="M7 1.5v7.5M3.8 5.8L7 9l3.2-3.2M2 12.5h10" />,
+  down:  <path d="M2.5 4.5h9L7 10z" fill="currentColor" stroke="none" />,
+  up:    <path d="M2.5 9.5h9L7 4z" fill="currentColor" stroke="none" />,
+  front: <path d="M2 1.5h10M7 12.5V5M3.8 8.2L7 5l3.2 3.2" />,
+  dup:   <path d="M2 9.5V2h7.5M4.5 4.5h7.5V12H4.5z" />,
+  del:   <path d="M1.5 3.5h11M5.2 3.5V1.8h3.6v1.7M3 3.5l.8 9h6.4l.8-9M5.8 6v4.5M8.2 6v4.5" />,
+};
+function HeadIcon({ k }){
+  return <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">{HEAD_ICONS[k]}</svg>;
+}
+
+function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, overrideCount, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice, feedEvents }){
   if(!el) return <DocumentPanel doc={doc} setDoc={setDoc} isOutput={isOutput} clearAll={clearAll}
     sliceMode={sliceMode} setSliceMode={setSliceMode} setFeedSlice={setFeedSlice} />;
 
@@ -47,7 +63,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
                            'price','time','every','day','allYear','comp','teamA','teamB','date','vs',
                            'variant','showQR','mark','markForm','markMode','kind','preset','glyph','pattern']);
   const dType      = dirt(['fontSize','weight','letterSpacing','lineHeight','align','textInset','orient','textColor','headingSize']);
-  const dSurface   = dirt(['surface','fill']);
+  // fill only counts where it does something — a hidden control can't badge its fold
+  const dSurface   = dirt(fillMatters(el) ? ['surface','fill'] : ['surface']);
   const dSub       = dirt(['subtitle','subSize','subWeight','subTracking','subColor','subLayout']);
   const dKicker    = dirt(['kicker','kickerColor']);
   const dRows      = dirt(['rowSize','rowWeight','rowTracking','rowGap','markerKey']);
@@ -60,23 +77,38 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {selCount>=2 &&
         <ArrangeFold selCount={selCount} align={align} distribute={distribute} centre={centre} formatLabel={formatLabel} del={del} />}
 
-      {/* ---- actions: always bare, always first ---- */}
-      <div className="rs-sech" style={{ display:'flex', justifyContent:'space-between' }}>
-        <span>{el.type}{el._overridden && <span className="rs-ovtag"> · overridden</span>}</span>
-        {selCount>=2 && <span style={{ fontSize:10, opacity:.6 }}>last of {selCount}</span>}
-      </div>
-      {/* Two rows: stacking order, then the destructive pair. Six buttons on one
-          row crushed "Duplicate"/"Delete" to illegible at 312px. */}
-      <div className="rs-actions" style={{ marginBottom:6 }}>
-        <button className="rs-iconbtn" onClick={()=>layer('back')} title="Send to back">⤓ Back</button>
-        <button className="rs-iconbtn" onClick={()=>layer(-1)} title="Send back one">▼</button>
-        <button className="rs-iconbtn" onClick={()=>layer(1)} title="Bring forward one">▲</button>
-        <button className="rs-iconbtn" onClick={()=>layer('front')} title="Bring to front">⤒ Front</button>
-      </div>
-      <div className="rs-actions">
-        <button className="rs-iconbtn" onClick={dup} title="Duplicate (Ctrl-D)">Duplicate</button>
-        <button className="rs-iconbtn rs-del" onClick={del}
-          title={isOutput ? 'Delete from EVERY format — to drop it from '+activeLabel+' only, set Visibility to Hidden below' : 'Delete'}>Delete</button>
+      {/* ---- the header: what it is, where edits land, what you can do to it ----
+          One row. It was a section head plus two rows of labelled buttons
+          (stacking, then Duplicate/Delete) under a separate Master/format
+          banner — ~130px before the first control. The type and the scope
+          chip stack on the left; the buttons are icons, each keeping its
+          tooltip (shortcut, and the every-format delete warning). The chip
+          is the banner's replacement while something is selected: MASTER, or
+          the format you're editing (DETACHED once this element's layout
+          there is its own), with the banner's sentence as its tooltip. */}
+      <div className="rs-elhead">
+        <div className="who">
+          <span className="ty">{el.type}</span>
+          {isOutput
+            ? <span className={'rs-scope out'+(el._overridden?' det':'')}
+                title={activeLabel+' output · layout edits override Master'
+                  +(overrideCount?' · '+overrideCount+' overridden in '+activeLabel:'')
+                  +(el._overridden?'. This element’s layout is detached for '+activeLabel+' — reset it under “'+activeLabel+' only”.':'')}>
+                {activeLabel}{el._overridden?' · detached':''}</span>
+            : <span className="rs-scope" title="Master source · edits flow to every format">Master</span>}
+          {/* its own line, so a long chip can never squeeze it out */}
+          {selCount>=2 && <small className="cnt" title={'The last of the '+selCount+' selected — the one these controls edit'}>last of {selCount}</small>}
+        </div>
+        <div className="rs-elbtns">
+          <button className="rs-hbtn" onClick={()=>layer('back')} title="Send to back"><HeadIcon k="back" /></button>
+          <button className="rs-hbtn" onClick={()=>layer(-1)} title="Send back one"><HeadIcon k="down" /></button>
+          <button className="rs-hbtn" onClick={()=>layer(1)} title="Bring forward one"><HeadIcon k="up" /></button>
+          <button className="rs-hbtn" onClick={()=>layer('front')} title="Bring to front"><HeadIcon k="front" /></button>
+          <span className="gap" />
+          <button className="rs-hbtn" onClick={dup} title="Duplicate (Ctrl-D)"><HeadIcon k="dup" /></button>
+          <button className="rs-hbtn rs-del" onClick={del}
+            title={isOutput ? 'Delete from EVERY format — to drop it from '+activeLabel+' only, set Visibility to Hidden below' : 'Delete'}><HeadIcon k="del" /></button>
+        </div>
       </div>
 
       {/* ===================== CONTENT ===================== */}
@@ -113,7 +145,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
 
       {/* ===================== TRANSFORM ===================== */}
-      <TransformFold el={el} update={update} caps={caps} isText={isText} isOutput={isOutput} activeLabel={activeLabel}
+      <TransformFold el={el} update={update} caps={caps} isOutput={isOutput} activeLabel={activeLabel}
         selCount={selCount} centre={centre} formatLabel={formatLabel} dTransform={dTransform} />
 
       {/* ===================== PER-FORMAT OVERRIDE ===================== */}

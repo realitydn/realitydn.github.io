@@ -1,7 +1,7 @@
 /* ============================================================
    REALITY POSTER STUDIO — inspector · arrange, transform, this-format override
    ============================================================ */
-import { NumField, Slider, Chips, Fold, Hint } from '../controls.jsx';
+import { NumField, Chips, Fold, Hint } from '../controls.jsx';
 import { TAG_HEIGHTS } from './caps.js';
 /* Centre-on-canvas row — the same three buttons serve one box and a group of
    them (the handler centres the selection's bounding box either way), so the
@@ -70,28 +70,25 @@ function ArrangeFold({ selCount, align, distribute, centre, formatLabel, del }){
   );
 }
 
-function TransformFold({ el, update, caps, isText, isOutput, activeLabel, selCount, centre, formatLabel, dTransform }){
-  // Tags get a height dial too (chips auto-centre their text); paragraph text
-  // auto-sizes to its box, so height stays hidden there.
-  const showHeight = !isText || !!caps.tag;
+function TransformFold({ el, update, caps, isOutput, activeLabel, selCount, centre, formatLabel, dTransform }){
   return (
       <Fold id="f-transform" title={'Transform'+(isOutput?' · '+activeLabel:'')} dirty={dTransform}>
-        {/* Numbers first: nudging a slider to an exact 540 is a fight, and
-            these are the same X/Y/W/H fields Print Studio has. */}
+        {/* One way to set each thing. The numbers are the exact control (the
+            same X/Y/W/H fields Print Studio has); drag a field's LABEL sideways
+            to scrub it (1 per px, Shift ×10) — which is what the Rotation /
+            Width / Height sliders that used to sit under these were for, so
+            they're gone. The presets below stay: they're answers, not dials. */}
         <div className="rs-numgrid" style={{ marginBottom:12 }}>
-          <NumField label="X" value={Math.round(el.x)} onChange={v=>update({x:Math.round(v)})} />
-          <NumField label="Y" value={Math.round(el.y)} onChange={v=>update({y:Math.round(v)})} />
-          <NumField label="W" value={Math.round(el.w)} min={60} onChange={v=>update({w:Math.round(v)})} />
-          <NumField label="H" value={Math.round(el.h)} min={40} onChange={v=>update({h:Math.round(v)})} />
-          <NumField label="Rot°" value={Math.round(el.rot||0)} onChange={v=>update({rot:Math.round(v)})} />
+          <NumField scrub label="X" value={Math.round(el.x)} onChange={v=>update({x:Math.round(v)})} />
+          <NumField scrub label="Y" value={Math.round(el.y)} onChange={v=>update({y:Math.round(v)})} />
+          <NumField scrub label="W" value={Math.round(el.w)} min={60} onChange={v=>update({w:Math.round(v)})} />
+          <NumField scrub label="H" value={Math.round(el.h)} min={40} onChange={v=>update({h:Math.round(v)})} />
+          <NumField scrub label="Rot°" value={Math.round(el.rot||0)} onChange={v=>update({rot:Math.round(v)})} />
         </div>
         {selCount<2 && <CentreRow label="Centre on the canvas" centre={centre}
           hint={'Exact centre of the '+formatLabel+' canvas — never snapped to the grid.'} />}
         <Chips label="Tilt presets" options={[{v:0,l:'0°'},{v:-3,l:'-3°'},{v:3,l:'+3°'},{v:-6,l:'-6°'},{v:6,l:'+6°'}]} value={el.rot||0} onChange={v=>update({rot:v})} />
-        <Slider label="Rotation" val={el.rot||0} min={-45} max={45} onChange={v=>update({rot:v})} suffix="°" />
-        <Slider label="Width" val={el.w} min={120} max={1080} step={6} onChange={v=>update({w:v})} suffix="px" />
         {caps.widthPreset && <Chips label="Width presets" options={[{v:540,l:'Half'},{v:756,l:'Wide'},{v:900,l:'Safe'},{v:1080,l:'Bleed'}]} value={el.w} onChange={v=>update({w:v})} />}
-        {showHeight && <Slider label="Height" val={el.h} min={70} max={1920} step={6} onChange={v=>update({h:v})} suffix="px" />}
         {caps.height && <Chips label="Height presets — match across tags" options={TAG_HEIGHTS} value={el.h} onChange={v=>update({h:v})} />}
         <Chips label="Anchor (all formats)" options={[{v:'safe',l:'Safe cluster'},{v:'bottom',l:'Pin to base'}]} value={el.anchor||'safe'} onChange={v=>update({anchor:v})} />
       </Fold>

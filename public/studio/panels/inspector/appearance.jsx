@@ -16,7 +16,7 @@ function ShadowControls({ el, update, theme }){
   // default is the absence of a decision, and badging it says nothing.
   const deflt = m.defOn ? 'lift' : 'off';
   return (
-    <Fold id="sh" title="Shadow" badge={lift===deflt?null:label} dirty={lift==='custom'?1:0}>
+    <Fold id="sh" title="Shadow" open badge={lift===deflt?null:label} dirty={lift==='custom'?1:0}>
       <Chips label="Lift" options={LIFTS} value={lift} onChange={v=>update(applyLift(v,m))} />
       {lift==='custom' && <React.Fragment>
         <Slider label="Distance" val={m.dist} min={0} max={m.maxDist} step={1} onChange={v=>update({shadowDist:v})} suffix="px" />
@@ -109,7 +109,7 @@ function SurfaceFold({ el, doc, update, caps, dSurface }){
   return (
     <React.Fragment>
       {caps.surface &&
-        <Fold id="f-surface" title="Colour & surface" dirty={dSurface}>
+        <Fold id="f-surface" title="Colour & surface" open dirty={dSurface}>
           <Chips label="Surface" options={SURFACES} value={el.surface} onChange={v=>update({surface:v})} />
           {fillOn
             ? <React.Fragment>

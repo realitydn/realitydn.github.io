@@ -12,7 +12,9 @@ import { TYPE_SCALE as AP_SCALE, snapToScale as apSnapScale, scaleStep as apScal
    Studio loads, so the two can't drift to different components again. What
    stays here is Poster's parameters: the px type scale, and Swatches' fixed
    Auto/Ink/Cream trio (Print's is K-only ink and paper white). */
-RUI.configure({ prefix:'rs', storeKey:'reality-studio' });
+/* compact: a dial is one 28px line (label · track · value) — Poster only;
+   Print and Schedule keep the label-over-track layout */
+RUI.configure({ prefix:'rs', storeKey:'reality-studio', compact:true });
 const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
 const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnapScale} step={apScaleStep} suffix="px" note="snapped" />;
 

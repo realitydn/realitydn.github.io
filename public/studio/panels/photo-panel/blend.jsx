@@ -42,7 +42,7 @@ function BlendFold({ el, update, blendDirty }){
             <Hint tight>Off the shape the photograph shows through. Turn on <b>Comp over the original</b> below and pull its saturation to 0 for a mono photograph under a coloured print — a subject left photographic in a room gone to ink.</Hint>
           </React.Fragment>}
 
-          <div className="rs-sech">The photo underneath</div>
+          <div className="rs-sech">Photo under the print</div>
           {/* Switching on SEEDS the second grade from the press's own, so the
               toggle itself never moves a pixel — the split starts as a copy and
               only becomes a decision when you drag one of the dials. */}
@@ -57,9 +57,9 @@ function BlendFold({ el, update, blendDirty }){
                 <Slider label="Photo hue shift" val={el.underHue!=null?el.underHue:0} min={-180} max={180} step={5} onChange={v=>update({underHue:v})} suffix="°" />
                 <Slider label="Photo warmth" val={el.underTemp!=null?el.underTemp:0} min={-1} max={1} step={0.02} onChange={v=>update({underTemp:v})} />
                 <button className="rs-addrow" onClick={()=>update(pressGrade)}>↺ Match the press again</button>
-                <Hint tight>The photograph showing <b>through</b> the print, graded on its own. <b>Adjust &amp; focus</b> still decides what the press sees — so the press can read a crushed mono version while this stays a full-colour photo.{el.treatWhere && el.treatWhere!=='all' ? ' With the print landing on one tonal end only, this is where it gets interesting.' : ''}</Hint>
+                <Hint tight>The photograph showing <b>through</b> the print, graded on its own. <b>Before the press</b> (Image tab) still decides what the press sees — so the press can read a crushed mono version while this stays a full-colour photo.{el.treatWhere && el.treatWhere!=='all' ? ' With the print landing on one tonal end only, this is where it gets interesting.' : ''}</Hint>
               </React.Fragment>
-            : <Hint tight>Off, the photo under the print is the same one the press read, and <b>Adjust &amp; focus</b> grades both at once. Turn it on to split them.</Hint>}
+            : <Hint tight>Off, the photo under the print is the same one the press read, and <b>Before the press</b> (Image tab) grades both at once. Turn it on to split them.</Hint>}
         </Fold>
   );
 }

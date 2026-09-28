@@ -1,27 +1,28 @@
 /* ============================================================
-   INSPECTOR — one canonical order, every section a fold.
+   INSPECTOR — tabs by job, every section a fold.
    ============================================================
-   This used to be a flat wall: 82–88 controls and ~2,100px of
-   scroll for a title, with folds only inside the photo panel.
-   Now it reads the same way for every element type —
+   One header row (what it is, where edits land, what you can do to
+   it), then tabs (./tabs.jsx):
+     photo, logo  Image · Press · Finish · Layout — the engine's order
+     text, lists  Text (content, type, subtitle / kicker, rows) ·
+                  Box (colour & surface, shadow) · Layout
+     graphics     Shape (its own panel, shadow) · Layout
+   Layout is the same everywhere: size & border (photos), shadow
+   (photos), transform, this-format visibility.
 
-     Actions → Content → Type → Subtitle → Rows →
-     Colour & surface → Shadow → Transform → Format override
-
-   — and each section is a Fold that (a) carries a badge counting
-   the props inside it that differ from this type's defaults, and
-   (b) opens itself the first time it has something in it. Once
-   you click a fold your choice is stored and wins from then on.
-
-   Same shape as Print Studio's inspector, deliberately: the two
-   tools are used within minutes of each other and there is no
-   reason for "where is the size control" to have two answers.
+   Each section is a Fold that (a) badges the props inside it that
+   differ from this type's defaults, and (b) opens itself the first
+   time it has something in it; a fold you've clicked keeps your
+   choice. No fold holds another fold. Each tab shows the sum of its
+   folds' counts, so a changed dial in a tab you aren't looking at
+   still shows.
    ============================================================ */
 import { RUI } from '../../../studio-shared/studio-ui.jsx';
 import { DEFAULTS as AP_DEF } from '../../studio-data.jsx';
 import { posterDayOf } from '../../studio-element.jsx';
 import { Fold } from '../controls.jsx';
-import { PhotoControls } from '../photo-panel/index.jsx';
+import { PhotoControls, photoDirt } from '../photo-panel/index.jsx';
+import { familyOf, useTab, noteFamily, Tabs } from './tabs.jsx';
 import { TYPE_CAPS } from './caps.js';
 import { ShadowControls, SurfaceFold, fillMatters } from './appearance.jsx';
 import { BlockControls, ShapeControls, IconControls, RuleControls, BurstControls } from './graphics.jsx';
@@ -47,10 +48,14 @@ function HeadIcon({ k }){
 }
 
 function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, overrideCount, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice, feedEvents }){
+  const caps = el ? (TYPE_CAPS[el.type] || {}) : {};
+  /* hooks before the early return — the tab is remembered per family */
+  const family = el ? familyOf(el, caps) : 'text';
+  const tab = useTab(family);
+  noteFamily(el ? family : null);
   if(!el) return <DocumentPanel doc={doc} setDoc={setDoc} isOutput={isOutput} clearAll={clearAll}
     sliceMode={sliceMode} setSliceMode={setSliceMode} setFeedSlice={setFeedSlice} />;
 
-  const caps = TYPE_CAPS[el.type] || {};
   const isText = !!caps.text;
 
   /* Badges + auto-open, counted against what this type is born with. Note the
@@ -71,6 +76,14 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   const dTransform = dirt(['rot','anchor']);   // NOT w/h/x/y — placing a box sets those, so counting them badges everything
 
   const hasContent = ['title','tagline','info','when','cost','stamp','host','ticket','qr','badge','wordmark','weekly','matchup'].indexOf(el.type)>=0 || !!caps.list;
+
+  /* what each tab shows a count for: dials moved off this type's defaults */
+  const PD = family==='media' ? photoDirt(el) : null;
+  const layoutN = dTransform + (el._overridden?1:0) + (PD ? PD.placeDirty : 0);
+  const counts = family==='media' ? Object.assign({}, PD.tabs, { layout:layoutN })
+               : family==='text'  ? { text:dContent+dType+dSub+dKicker+dRows, box:dSurface, layout:layoutN }
+               :                    { shape:dContent, layout:layoutN };
+  const photo = (t)=> <PhotoControls el={el} update={update} theme={doc.theme} accent={doc.accent} day={posterDayOf(doc)} tab={t} />;
 
   return (
     <React.Fragment>
@@ -111,46 +124,50 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
         </div>
       </div>
 
-      {/* ===================== CONTENT ===================== */}
-      {/* A photo's content IS its image + press panels, which bring their own
-          folds — wrapping them in one more would be a fold inside a fold for
-          no gain. Everything else gets a Content fold of its own. */}
-      {caps.media && <PhotoControls el={el} update={update} theme={doc.theme} accent={doc.accent} day={posterDayOf(doc)} />}
-      {el.type==='block' && <Fold id="f-content" title="Block" dirty={dContent}><BlockControls el={el} doc={doc} update={update} /></Fold>}
-      {el.type==='shape' && <Fold id="f-content" title="Shape" dirty={dContent}><ShapeControls el={el} doc={doc} update={update} /></Fold>}
-      {el.type==='icon'  && <Fold id="f-content" title="Icon"  dirty={dContent}><IconControls  el={el} doc={doc} update={update} /></Fold>}
-      {el.type==='rule'  && <Fold id="f-content" title="Rule"  dirty={dContent}><RuleControls  el={el} doc={doc} update={update} /></Fold>}
-      {el.type==='burst' && <Fold id="f-content" title="Burst" dirty={dContent}><BurstControls el={el} doc={doc} update={update} /></Fold>}
-      {el.type==='inkmark' && <Fold id="f-content" title="Ink mark" open><InkmarkControls el={el} doc={doc} update={update} /></Fold>}
-      {hasContent && <Fold id="f-content" title="Content" open dirty={dContent}><ContentFields el={el} doc={doc} update={update} caps={caps} feedEvents={feedEvents} /></Fold>}
+      <Tabs family={family} value={tab} counts={counts} />
 
-      {/* ===================== TYPE ===================== */}
-      {(caps.size || caps.sizePreset || caps.weight || caps.align || isText) &&
-        <TypeFold el={el} caps={caps} isText={isText} isOutput={isOutput} activeLabel={activeLabel} update={update} dType={dType} />}
+      {/* ===================== PHOTO / LOGO: Image · Press · Finish ===================== */}
+      {family==='media' && tab!=='layout' && photo(tab)}
 
-      {/* ===================== SUBTEXT ===================== */}
-      {caps.subtitle &&
-        <SubtitleFold el={el} isOutput={isOutput} activeLabel={activeLabel} update={update} dSub={dSub} />}
-      {el.type==='host' &&
-        <KickerFold el={el} doc={doc} update={update} dKicker={dKicker} />}
+      {/* ===================== TEXT: content, type, subtext, rows ===================== */}
+      {family==='text' && tab==='text' && <React.Fragment>
+        {hasContent && <Fold id="f-content" title="Content" open dirty={dContent}><ContentFields el={el} doc={doc} update={update} caps={caps} feedEvents={feedEvents} /></Fold>}
+        {(caps.size || caps.sizePreset || caps.weight || caps.align || isText) &&
+          <TypeFold el={el} caps={caps} isText={isText} isOutput={isOutput} activeLabel={activeLabel} update={update} dType={dType} />}
+        {caps.subtitle &&
+          <SubtitleFold el={el} isOutput={isOutput} activeLabel={activeLabel} update={update} dSub={dSub} />}
+        {el.type==='host' &&
+          <KickerFold el={el} doc={doc} update={update} dKicker={dKicker} />}
+        {caps.list &&
+          <RowsFold el={el} update={update} dRows={dRows} />}
+      </React.Fragment>}
 
-      {/* ===================== ROWS ===================== */}
-      {caps.list &&
-        <RowsFold el={el} update={update} dRows={dRows} />}
+      {/* ===================== BOX: colour & surface, shadow ===================== */}
+      {family==='text' && tab==='box' && <React.Fragment>
+        <SurfaceFold el={el} doc={doc} update={update} caps={caps} dSurface={dSurface} />
+        {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
+      </React.Fragment>}
 
-      {/* ===================== COLOUR & SURFACE ===================== */}
-      <SurfaceFold el={el} doc={doc} update={update} caps={caps} dSurface={dSurface} />
+      {/* ===================== SHAPE: the graphic's own panel, shadow ===================== */}
+      {family==='graphic' && tab==='shape' && <React.Fragment>
+        {el.type==='block' && <Fold id="f-content" title="Block" open dirty={dContent}><BlockControls el={el} doc={doc} update={update} /></Fold>}
+        {el.type==='shape' && <Fold id="f-content" title="Shape" open dirty={dContent}><ShapeControls el={el} doc={doc} update={update} /></Fold>}
+        {el.type==='icon'  && <Fold id="f-content" title="Icon" open dirty={dContent}><IconControls  el={el} doc={doc} update={update} /></Fold>}
+        {el.type==='rule'  && <Fold id="f-content" title="Rule" open dirty={dContent}><RuleControls  el={el} doc={doc} update={update} /></Fold>}
+        {el.type==='burst' && <Fold id="f-content" title="Burst" open dirty={dContent}><BurstControls el={el} doc={doc} update={update} /></Fold>}
+        {el.type==='inkmark' && <Fold id="f-content" title="Ink mark" open><InkmarkControls el={el} doc={doc} update={update} /></Fold>}
+        {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
+      </React.Fragment>}
 
-      {/* ===================== SHADOW ===================== */}
-      {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
-
-      {/* ===================== TRANSFORM ===================== */}
-      <TransformFold el={el} update={update} caps={caps} isOutput={isOutput} activeLabel={activeLabel}
-        selCount={selCount} centre={centre} formatLabel={formatLabel} dTransform={dTransform} />
-
-      {/* ===================== PER-FORMAT OVERRIDE ===================== */}
-      {isOutput &&
-        <OverrideFold el={el} isText={isText} activeLabel={activeLabel} resetOverride={resetOverride} toggleHidden={toggleHidden} />}
+      {/* ===================== LAYOUT: the same tab for everything ===================== */}
+      {tab==='layout' && <React.Fragment>
+        {family==='media' && photo('layout')}
+        {family==='media' && caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
+        <TransformFold el={el} update={update} caps={caps} isOutput={isOutput} activeLabel={activeLabel}
+          selCount={selCount} centre={centre} formatLabel={formatLabel} dTransform={dTransform} />
+        {isOutput &&
+          <OverrideFold el={el} isText={isText} activeLabel={activeLabel} resetOverride={resetOverride} toggleHidden={toggleHidden} />}
+      </React.Fragment>}
     </React.Fragment>
   );
 }

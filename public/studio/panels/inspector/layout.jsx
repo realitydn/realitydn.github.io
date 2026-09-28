@@ -72,7 +72,7 @@ function ArrangeFold({ selCount, align, distribute, centre, formatLabel, del }){
 
 function TransformFold({ el, update, caps, isOutput, activeLabel, selCount, centre, formatLabel, dTransform }){
   return (
-      <Fold id="f-transform" title={'Transform'+(isOutput?' · '+activeLabel:'')} dirty={dTransform}>
+      <Fold id="f-transform" title={'Transform'+(isOutput?' · '+activeLabel:'')} open dirty={dTransform}>
         {/* One way to set each thing. The numbers are the exact control (the
             same X/Y/W/H fields Print Studio has); drag a field's LABEL sideways
             to scrub it (1 per px, Shift ×10) — which is what the Rotation /

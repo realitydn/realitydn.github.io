@@ -47,7 +47,7 @@ import { ACCENTS, PALETTE } from './brand.js';
      swatchBorder — the outline a light/neutral swatch takes. It is the
      --st-sw-border token (studio-base.css; Print sets its own), so the
      Studios no longer pass it — configure() still takes one to override. */
-  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'var(--st-sw-border)', hintsDefault:false };
+  const CFG = { prefix:'rs', storeKey:'reality-studio', swatchBorder:'var(--st-sw-border)', hintsDefault:false, compact:false, compactChips:164 };
   function cls(suffix){ return CFG.prefix + '-' + suffix; }
 
   /* ---------- a minimal external store (subscribe + snapshot) ----------
@@ -156,8 +156,15 @@ import { ACCENTS, PALETTE } from './brand.js';
 
   function setActions(list){ actions = list||[]; }
 
+  /* A Studio whose inspector is split into tabs registers a hook here, so a
+     palette jump can bring the right tab forward before the fold is looked
+     for (a fold in a tab that isn't showing isn't in the DOM at all). */
+  let revealHook = null;
+  function setRevealHook(fn){ revealHook = fn || null; }
+
   /* Open the fold a control lives in, scroll to it, and flash it. */
   function reveal(foldId, label){
+    if(foldId && revealHook) revealHook(foldId);
     if(foldId) setFold(foldId, true);
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const scope = document.querySelector('.'+cls('inspector')) || document;
@@ -201,7 +208,30 @@ import { ACCENTS, PALETTE } from './brand.js';
     );
   }
 
+  /* COMPACT ROWS (opt-in: RUI.configure({ compact:true }) — Poster). A dial
+     is one 28px line — label, track, value — instead of a label line over a
+     track line; the photo panel alone carried ~40 of them. The value is a
+     button: click it and type an exact number (Enter commits, Esc leaves it). */
+  function ValueEdit({ val, suffix, step, min, max, onChange }){
+    const [edit, setEdit] = React.useState(null);
+    if(edit!=null){
+      const done = (commit)=>{ if(commit){ const v=parseFloat(edit); if(!isNaN(v)) onChange(Math.max(min!=null?min:-Infinity, Math.min(max!=null?max:Infinity, v))); } setEdit(null); };
+      return <input className={cls('valedit')} type="number" autoFocus value={edit} step={step||1}
+        onChange={e=>setEdit(e.target.value)} onBlur={()=>done(true)}
+        onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); done(true); } else if(e.key==='Escape'){ e.preventDefault(); done(false); } }} />;
+    }
+    return <button type="button" className={cls('val')} title="Click to type a value" onClick={()=>setEdit(String(val))}>{val}{suffix||''}</button>;
+  }
+
   function Slider({ label, val, min, max, step, onChange, suffix }){
+    if(CFG.compact) return (
+      <div className={cls('row')+' cmp'}>
+        <div className={cls('lab')}>{label}</div>
+        <input className={cls('slider')} type="range" min={min} max={max} step={step||1} value={val}
+          aria-label={label} onChange={e=>onChange(parseFloat(e.target.value))} />
+        <ValueEdit val={val} suffix={suffix} step={step} min={min} max={max} onChange={onChange} />
+      </div>
+    );
     return (
       <div className={cls('row')}>
         <div className={cls('lab')}>{label}<span className="val">{val}{suffix||''}</span></div>
@@ -217,6 +247,21 @@ import { ACCENTS, PALETTE } from './brand.js';
     const isOn = v => multi ? (value||[]).indexOf(v)>=0 : value===v;
     const pick = v => { if(!multi) return onChange(v);
       const cur = value||[]; onChange(isOn(v) ? cur.filter(x=>x!==v) : cur.concat([v])); };
+    /* compact: a short choice sits beside its label; a long one (the weights,
+       the blend modes) keeps the label above, where it has the full width */
+    const inline = CFG.compact && label && options.length<=4 &&
+      options.reduce((w,o)=>w+String(o.l).length*7.2+19,0)+(options.length-1)*5 <= CFG.compactChips;
+    if(inline) return (
+      <div className={cls('row')+' cmp chipsrow'}>
+        <div className={cls('lab')}>{label}</div>
+        <div className={cls('chips')}>
+          {options.map(o=>(
+            <button key={String(o.v)} className={cls('chip')+(isOn(o.v)?' on':'')}
+              title={o.t||null} onClick={()=>pick(o.v)}>{o.l}</button>
+          ))}
+        </div>
+      </div>
+    );
     return (
       <div className={cls('row')}>
         {label && <div className={cls('lab')}>{label}</div>}
@@ -235,6 +280,18 @@ import { ACCENTS, PALETTE } from './brand.js';
      maths (px in Poster, pt in Print). */
   function ScaleControl({ label, val, onChange, scale, snap, step, suffix, note }){
     const idx = scale.indexOf(snap(val));
+    if(CFG.compact) return (
+      <div className={cls('row')+' cmp'}>
+        <div className={cls('lab')}>{label}</div>
+        <div className={cls('stepper')}>
+          <button onClick={()=>onChange(step(val,-1))} aria-label="Smaller">A−</button>
+          <input className={cls('slider')} type="range" min={0} max={scale.length-1} step={1} value={idx<0?0:idx}
+            aria-label={label} onChange={e=>onChange(scale[parseInt(e.target.value)])} />
+          <button onClick={()=>onChange(step(val,1))} aria-label="Bigger">A+</button>
+        </div>
+        <ValueEdit val={val} suffix={suffix} onChange={v=>onChange(snap(v))} />
+      </div>
+    );
     return (
       <div className={cls('row')}>
         <div className={cls('lab')}>{label}<span className="val">{val}{suffix||''}{note?' · '+note:''}</span></div>
@@ -485,6 +542,7 @@ import { ACCENTS, PALETTE } from './brand.js';
     if(opts && opts.storeKey) CFG.storeKey = opts.storeKey;
     if(opts && opts.swatchBorder) CFG.swatchBorder = opts.swatchBorder;
     if(opts && opts.hintsDefault!=null) CFG.hintsDefault = !!opts.hintsDefault;
+    if(opts && opts.compact!=null) CFG.compact = !!opts.compact;
     hydrate();
   }
 
@@ -493,7 +551,7 @@ import { ACCENTS, PALETTE } from './brand.js';
     Field, Slider, Chips, ScaleControl, NumField, Fold, Hint, HintsToggle, Swatches, swatchBorder,
     Palette, usePalette,
     hintsOn, setHints, useStore, hintStore, foldStore, setFold,
-    dirtyCount, isSet, reveal, setActions, indexStore,
+    dirtyCount, isSet, reveal, setActions, indexStore, setRevealHook,
   };
 })();
 

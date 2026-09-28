@@ -1,8 +1,14 @@
 /* ============================================================
    REALITY POSTER STUDIO — photo panel
-   Image → second exposure → treatment (strip, looks, ink, blend, tune, the
-   press, proof) → adjust → finish → frame → mask. The press / proof folds
-   are ../../../studio-shared/press-panels.jsx; each other fold is a file here.
+   Split by the Inspector's tabs, each in the order the engine works:
+     Image  — the source, framing the shot, the second exposure, the
+              Recompose move, and what the press reads (Before the press)
+     Press  — the treatment (strip, look, ink), its Tune dials, the press
+              itself, how the print sits on the photo, and the proof
+     Finish — what happens to the printed sheet, and the mask
+   (Layout — size & border, shadow, transform — is the Inspector's.)
+   No fold holds another fold. The press / proof folds are
+   ../../../studio-shared/press-panels.jsx; each other fold is a file here.
    ============================================================ */
 import { RUI } from '../../../studio-shared/studio-ui.jsx';
 import { inkTitle } from '../../../studio-shared/brand.js';
@@ -18,9 +24,44 @@ import { adoptResult } from '../../photos.js';
 import { BlendFold } from './blend.jsx';
 import { TuneFold } from './tune.jsx';
 import { AdjustFold, FinishFold } from './finish.jsx';
-import { FrameFold, MaskFold } from './frame.jsx';
+import { FrameFold, PlaceFold, MaskFold } from './frame.jsx';
 import { RecomposeFold } from './recompose.jsx';
-function PhotoControls({ el, update, theme, accent, day }){
+
+/* How far each part of a photo sits off where it started — the fold badges,
+   and summed per tab for the tab bar. Counted against the photo's defaults,
+   except the treatment's own dials, which count against "the treatment, plus
+   whatever named look is selected": picking Deep is a choice you made ONE
+   click ago and can see highlighted, so counting its dials as tuning would
+   badge the fold for doing exactly what the chip says it did. */
+function photoDirt(el){
+  const t = el.treatment;
+  const looks = TREAT_LOOKS[t] || [];
+  const activeLook = looks.find(x=>x.v===el.look);
+  const photoBase = (AP_DEF[el.type]||{}).props || {};
+  const pressBase = Object.assign({}, photoBase, TREAT_PRESETS[t]||{}, activeLook?activeLook.p:{});
+  const d = (keys, base)=>RUI.dirtyCount(el, keys, base||photoBase);
+  const r = {
+    pressDirty:  d(Object.keys(TREAT_PRESETS[t]||{}), pressBase),
+    adjustDirty: d(['brightness','contrast','saturation','hue','temperature','blurUnder'], pressBase),
+    shotDirty:   d(['imgScale','imgX','imgY','imgRot']),
+    placeDirty:  d(['frame','bleed','bleedBottom']),
+    /* the second grade only counts while it is switched on: turning comp off
+       keeps the dials (so flipping back doesn't lose the grade), and a badge
+       that kept counting them would claim something that changes nothing */
+    blendDirty:  d(['treatStrength','treatWhere','treatBlend','compOrig','treatRegion'].concat(
+                   el.compOrig ? ['underBright','underContrast','underSat','underHue','underTemp'] : [])),
+    finishCount: [el.blurOver>0, el.grain>0, el.vignette>0, el.paperTex>0, el.inkBleed>0, el.dust>0, el.misprint>0,
+                  !!el.finBright, el.finContrast!=null&&el.finContrast!==1, el.finSat!=null&&el.finSat!==1].filter(Boolean).length,
+  };
+  r.tabs = {
+    image:  (el.src2?1:0) + (el.compose && el.compose!=='none' ? 1 : 0) + r.adjustDirty + r.shotDirty,
+    press:  r.pressDirty + r.blendDirty,
+    finish: r.finishCount + (el.mask && el.mask!=='none' ? 1 : 0),
+  };
+  return r;
+}
+
+function PhotoControls({ el, update, theme, accent, day, tab }){
   const t = el.treatment;
   const tDef = TREATS.find(x=>x.v===t);
   const pressLabel = tDef? tDef.l : t;
@@ -34,29 +75,10 @@ function PhotoControls({ el, update, theme, accent, day }){
   /* the job the press will run — plates, stock, physics — resolved like the engine does */
   const sepR = t==='separation' ? sepResolved(el, inkKey, theme) : null;
   const pressR = t==='separation' ? sepR : pressResolved(el, t, inkKey, theme);
-
-  /* The named looks for whatever press is selected, and how far off its preset
-     the dials currently sit. TREAT_PRESETS[t] is exactly "what choosing this
-     treatment sets", so deviation from it is exactly "you tuned it" — no second
-     list to keep in step. */
   const looks = TREAT_LOOKS[t] || [];
-  const activeLook = looks.find(x=>x.v===el.look);
-  const photoBase = (AP_DEF[el.type]||{}).props || {};
-  /* The baseline the Tune badge counts against is "the treatment, plus whatever
-     named look is selected". Picking Deep is a choice you made ONE click ago and
-     can see highlighted — counting its three dials as tuning would badge the
-     fold for doing exactly what the chip above says it did. */
-  const pressBase = Object.assign({}, photoBase, TREAT_PRESETS[t]||{}, activeLook?activeLook.p:{});
-  const pressDirty = RUI.dirtyCount(el, Object.keys(TREAT_PRESETS[t]||{}), pressBase);
-  const adjustDirty = RUI.dirtyCount(el, ['brightness','contrast','saturation','hue','temperature','blurUnder'], pressBase);
-  const frameDirty = RUI.dirtyCount(el, ['imgScale','imgX','imgY','imgRot','frame','bleed','bleedBottom','fit'], photoBase);
-  /* The second grade only counts while it is switched on. Turning comp off
-     leaves the dials where you left them — so flipping back and forth doesn't
-     lose the grade — and a badge that kept counting them would be claiming
-     something is set that changes nothing on the poster. */
-  const blendDirty = RUI.dirtyCount(el, ['treatStrength','treatWhere','treatBlend','compOrig','treatRegion'].concat(
-    el.compOrig ? ['underBright','underContrast','underSat','underHue','underTemp'] : []), photoBase);
-  return (
+  const D = photoDirt(el);
+
+  if(tab==='image') return (
     <React.Fragment>
       <Fold id="ph-img" title="Image" open>
         <PhotoUpload onImage={r=>adoptResult(r).then(({ data })=>update({ src:data }))} />
@@ -70,7 +92,7 @@ function PhotoControls({ el, update, theme, accent, day }){
           : <Chips label="Or a sample" options={[{v:'spotlight',l:'DJ'},{v:'crowd',l:'Crowd'},{v:'portrait',l:'Portrait'}]}
               value={el.src?null:el.sample} onChange={v=>update({ sample:v, src:null })} />}
       </Fold>
-
+      <FrameFold el={el} update={update} frameDirty={D.shotDirty} />
       <Fold id="ph-mix" title="Second exposure" badge={el.src2?'on':null}>
         {!el.src2 && <Hint tight>Blend a second image into the source — the press treats the two as one photo.</Hint>}
         <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onImage={r=>adoptResult(r).then(({ data })=>update({ src2:data }))} />
@@ -84,11 +106,14 @@ function PhotoControls({ el, update, theme, accent, day }){
           <button className="rs-addrow" onClick={()=>update({ src2:null })}>✕ Remove second image</button>
         </React.Fragment>}
       </Fold>
-
-      {/* the move happens to the original, before the press — so it sits
-          between the photo's own sources and the treatment that prints it */}
+      {/* the move happens to the original, before the press */}
       {el.type==='photo' && <RecomposeFold el={el} update={update} inkKey={inkKey} theme={theme} />}
+      <AdjustFold el={el} update={update} t={t} adjustDirty={D.adjustDirty} />
+    </React.Fragment>
+  );
 
+  if(tab==='press') return (
+    <React.Fragment>
       <Fold id="ph-treat" title={'Treatment · '+pressLabel} open>
         {/* A logo with no file has nothing to develop, so it keeps the words. */}
         {(el.type==='logo' && !el.src)
@@ -147,36 +172,30 @@ function PhotoControls({ el, update, theme, accent, day }){
             ))}
           </div>
         </React.Fragment>}
-
-        {/* Where the print meets the photograph underneath it. Its own fold
-            because it is now three separate decisions plus a second grade —
-            and because it auto-opens the moment any of them is set, so a
-            composited photo never hides behind a collapsed head. */}
-        {t!=='none' && <BlendFold el={el} update={update} blendDirty={blendDirty} />}
-
-        {/* Every dial the chosen press exposes, folded away. Choosing a
-            treatment already lands on a good default (TREAT_PRESETS) and the
-            Look chips above cover the variants worth naming — this is where
-            you go when none of them is quite it. The badge counts how many
-            dials you've moved off the preset. */}
-        {t!=='none' && <TuneFold el={el} update={update} theme={theme} t={t} inkKey={inkKey} pressR={pressR}
-          pressLabel={pressLabel} pressDirty={pressDirty} />}
-        {/* The press and the proof are folds of their own: the press is a dozen
-            dials that describe a machine, not a look, and the proof changes what
-            the canvas shows — neither belongs under Tune. */}
-        {pressR && <PressFold el={el} update={update} plates={pressR.inks} other={t!=='separation' ? pressLabel.toLowerCase() : null} dirtyBase={TREAT_PRESETS.separation} />}
-        {pressR && <ProofFold el={el} update={update} plates={pressR.inks} />}
       </Fold>
+      {/* Every dial the chosen press exposes. Choosing a treatment already lands
+          on a good default (TREAT_PRESETS) and the Look chips cover the variants
+          worth naming — this is where you go when none of them is quite it. */}
+      {t!=='none' && <TuneFold el={el} update={update} theme={theme} t={t} inkKey={inkKey} pressR={pressR}
+        pressLabel={pressLabel} pressDirty={D.pressDirty} />}
+      {/* the press is a dozen dials that describe a machine, not a look */}
+      {pressR && <PressFold el={el} update={update} plates={pressR.inks} other={t!=='separation' ? pressLabel.toLowerCase() : null} dirtyBase={TREAT_PRESETS.separation} />}
+      {/* where the print meets the photograph under it — after the press */}
+      {t!=='none' && <BlendFold el={el} update={update} blendDirty={D.blendDirty} />}
+      {/* the proof changes what the canvas shows, so it closes the tab */}
+      {pressR && <ProofFold el={el} update={update} plates={pressR.inks} />}
+    </React.Fragment>
+  );
 
-      <AdjustFold el={el} update={update} t={t} adjustDirty={adjustDirty} />
-
+  if(tab==='finish') return (
+    <React.Fragment>
       <FinishFold el={el} update={update} />
-
-      <FrameFold el={el} update={update} frameDirty={frameDirty} />
-
       <MaskFold el={el} update={update} />
     </React.Fragment>
   );
+
+  /* layout: the box itself — the Inspector adds shadow, transform and format */
+  return <PlaceFold el={el} update={update} placeDirty={D.placeDirty} />;
 }
 
-export { PhotoControls };
+export { PhotoControls, photoDirt };

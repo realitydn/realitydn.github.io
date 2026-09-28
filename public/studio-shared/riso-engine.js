@@ -71,8 +71,14 @@
     ctx.drawImage(src, -dw/2, -dh/2, dw, dh);
     ctx.restore();
   }
-  /* what the press photographs: the main image + the optional second exposure */
+  /* what the press photographs: the main image + the optional second exposure,
+     RECOMPOSED when a move is set (see RECOMPOSE below). Every treatment reads
+     the photo through here, so a move reaches all of them. */
   function drawCover(ctx,w,h,fit){
+    if(COMPOSE && SRC){ ctx.drawImage(composedCover(w,h,fit),0,0); return; }
+    drawCoverRaw(ctx,w,h,fit);
+  }
+  function drawCoverRaw(ctx,w,h,fit){
     if(!SRC){ ctx.fillStyle='#777'; ctx.fillRect(0,0,w,h); return; }
     drawOne(ctx,w,h,fit,SRC,TF);
     if(SRC2 && MIX2.amount>0.001){
@@ -1054,6 +1060,63 @@
     }
   }
 
+  /* Tone read on a FIXED 520-wide grid and sampled bilinearly in device px, so
+     a band edge or a keyline is decided at design resolution — the preview
+     (≤900) and a 2× export draw the same geometry (the Outline's ADET rule,
+     applied to a smooth field). Stretched like posterize's, so bands read
+     whatever the photo's key. */
+  function toneGrid(w,h,contrast,blur){
+    const gw=520, gh=Math.max(2,Math.round(520*h/w)), L=stretch(lumBuffer(gw,gh,contrast,blur));
+    const sx=(gw-1)/Math.max(1,w-1), sy=(gh-1)/Math.max(1,h-1);
+    return function(x,y){
+      let fx=x*sx, fy=y*sy; if(fx<0)fx=0; if(fy<0)fy=0; if(fx>gw-1)fx=gw-1; if(fy>gh-1)fy=gh-1;
+      const ix=fx|0, iy=fy|0, tx=fx-ix, ty=fy-iy, ix1=ix<gw-1?ix+1:ix, iy1=iy<gh-1?iy+1:iy;
+      const a=L[iy*gw+ix], b=L[iy*gw+ix1], c=L[iy1*gw+ix], d=L[iy1*gw+ix1];
+      return a+(b-a)*tx+(c-a+(d-b-c+a)*tx)*ty;
+    };
+  }
+
+  /* 16 · POP — bands filled with the shop's own patterns instead of flat ink,
+        dark to light: black, solid accent, stripes in the partner ink, Ben-Day
+        dots, paper — with a keyline round every band for the comic-book read.
+        One ink can carry four tones this way, which is what a jobbing printer
+        did with a tint screen before there were halftones.
+        params: popBands (3–5), popPitch (dot/stripe pitch, design px),
+          popAngle, popLine (keyline weight, design px; 0 = none),
+          popSmooth (pre-blur, design px), popDotInk ('accent' | 'partner') */
+  function pop(cv,o){
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),K=w/520;
+    const n=Math.max(3,Math.min(5,(o.popBands|0)||5));
+    const T=toneGrid(w,h,o.contrast,o.popSmooth!=null?o.popSmooth:2.4);
+    const pitch=Math.max(3,o.popPitch||7)*K, ang=((o.popAngle!=null?o.popAngle:45))*Math.PI/180;
+    const ca=Math.cos(ang), sa=Math.sin(ang);
+    const pap=paperRGB(o), acc=accentRGB(o), par=partnerRGB(o), blk=inkBaseRGB(o);
+    const plan = n===3 ? ['black','dots','paper']
+               : n===4 ? ['black','accent','dots','paper']
+               :         ['black','accent','lines','dots','paper'];
+    const dotInk = o.popDotInk==='partner' ? par : acc;
+    const bandAt=(x,y)=>Math.min(n-1,(T(x,y)*n)|0);
+    const line=o.popLine!=null?o.popLine:1.3, off=line*K;
+    const out=cx.createImageData(w,h), d=out.data;
+    for(let y=0,p=0;y<h;y++) for(let x=0;x<w;x++,p++){
+      const b=bandAt(x,y), kind=plan[b];
+      let c=pap;
+      if(kind==='black') c=blk;
+      else if(kind==='accent') c=acc;
+      else if(kind==='dots'||kind==='lines'){
+        const u=(ca*x+sa*y)/pitch, v=(-sa*x+ca*y)/pitch;
+        let a, ink;
+        if(kind==='dots'){ const fx=u-Math.floor(u)-0.5, fy=v-Math.floor(v)-0.5; a=pitch*0.36-Math.sqrt(fx*fx+fy*fy)*pitch+0.5; ink=dotInk; }
+        else { a=pitch*0.22-Math.abs(v-Math.floor(v)-0.5)*pitch+0.5; ink=par; }
+        a=a<0?0:a>1?1:a;
+        c=[pap[0]+(ink[0]-pap[0])*a, pap[1]+(ink[1]-pap[1])*a, pap[2]+(ink[2]-pap[2])*a];
+      }
+      if(line>0 && (bandAt(x+off,y)!==b || bandAt(x,y+off)!==b)) c=blk;
+      const i=p*4; d[i]=c[0]; d[i+1]=c[1]; d[i+2]=c[2]; d[i+3]=255;
+    }
+    cx.putImageData(out,0,0);
+  }
+
   /* 15 · SEPARATION — the press itself. A colour photograph becomes N
         greyscale plates (one per drum), each screened at its own angle and
         printed in its own translucent ink, in its own pass, with its own
@@ -1207,7 +1270,7 @@
   }
 
   const TREATMENTS = { separation, duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
-                       dither, hatch, photocopy, contour, edges, mosaic };
+                       dither, hatch, photocopy, contour, edges, mosaic, pop };
 
   /* ---- blend modes ----------------------------------------------------
      One channel of a separable blend: backdrop `a` (the photograph showing
@@ -1644,6 +1707,286 @@
     };
   }
 
+  /* ============================================================
+     RECOMPOSE — change WHERE the picture is, before the press
+     ============================================================
+     A treatment decides what the photograph becomes on paper. A move
+     decides where each part of it ends up: cut into strips and slid,
+     broken into pieces, dragged across the copier glass, repeated,
+     reframed. It happens to the ORIGINAL (the framed photo plus the
+     second exposure), inside drawCover, so every treatment prints the
+     recomposed photo as one picture — a collage made before the print,
+     not a print cut up after it.
+
+       slice   strips at any angle, each slid along itself
+       weave   strips taken in turn from the photo and the second exposure
+       radial  rings turned about a centre, or wedges pushed in and out
+       tiles   the frame cut into squares and laid back by hand
+       shards  broken glass: fixed cracks, the picture moved inside each piece
+       drag    the original pulled across the copier glass mid-scan
+       echo    trail (the frame repeated along a line) or tunnel (nested)
+       mirror  book (one half reflected) or quad (both axes)
+       panels  one photo, several crops, each closer than the last
+
+     Rules this keeps, the same as every pass here: sizes are DESIGN px on
+     the 520-wide frame; every random choice comes from composeSeed (so the
+     Studio's Shuffle is a new seed, and the same seed is the same collage
+     in the preview and in every export); fields are sampled in design
+     space. The press reads the photo several times per render (tone,
+     colour, the blend-through backdrop), at the frame size and at fixed
+     detection grids — each size is composed once and cached for the render.
+
+     composeGrid { step, ox, oy } (design px) snaps strip, tile, ring and
+     panel sizes to whole multiples of the poster's grid module and lines
+     their edges up with its lines, so the cuts meet the type blocks
+     placed on the same grid. The host computes it from the element's box.
+     Gaps (a slice's gap, tile grout, shard cracks, panel gutters) print as
+     paper, or as the mono drum's ink (composeGap:'ink'). */
+  let COMPOSE = null;
+  const COMPOSE_CACHE = new Map();
+  const cmpMk=(w,h)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; };
+  const cmpCtx=(c)=>c.getContext('2d',{willReadFrequently:true});
+  const cmpRnd=(o,salt)=>mulberry32(0xC0FFEE+((o.composeSeed|0)*7919)+salt);
+  const cmpGap=(o)=> o.composeGap==='ink' ? [13,9,5,255] : [255,255,255,255];
+  /* the poster grid in device px, or null */
+  function cmpGrid(o,K){ const g=o.composeGrid; if(!g||!(g.step>0)) return null;
+    return { step:g.step*K, ox:(g.ox||0)*K, oy:(g.oy||0)*K }; }
+  const snapLen=(v,G)=> G ? Math.max(1,Math.round(v/G.step))*G.step : v;
+  /* bilinear sample, mirrored at the edges so a slid strip never drags in a void */
+  function cmpSampler(img){
+    const w=img.width,h=img.height,d=img.data;
+    const mir=(v,n)=>{ const p=2*(n-1); if(p<=0) return 0; v=v<0?-v:v; v=v%p; return v>n-1?p-v:v; };
+    return function(x,y,out,o){
+      x=mir(x,w); y=mir(y,h);
+      const x0=x|0, y0=y|0, x1=x0<w-1?x0+1:x0, y1=y0<h-1?y0+1:y0, tx=x-x0, ty=y-y0;
+      const a=(y0*w+x0)*4, b=(y0*w+x1)*4, c=(y1*w+x0)*4, e=(y1*w+x1)*4;
+      for(let k=0;k<4;k++){ const top=d[a+k]+(d[b+k]-d[a+k])*tx, bot=d[c+k]+(d[e+k]-d[c+k])*tx; out[o+k]=top+(bot-top)*ty; }
+    };
+  }
+  /* for each output pixel fn(x,y,xy) writes where to read into xy and returns
+     true, or false for a gap */
+  function cmpRemap(src, fn, gap){
+    const w=src.width,h=src.height, S=cmpSampler(cmpCtx(src).getImageData(0,0,w,h));
+    const dst=cmpMk(w,h), dx=cmpCtx(dst), out=dx.createImageData(w,h), d=out.data, xy=[0,0];
+    for(let y=0,i=0;y<h;y++) for(let x=0;x<w;x++,i+=4){
+      if(fn(x+0.5,y+0.5,xy)) S(xy[0]-0.5,xy[1]-0.5,d,i);
+      else { d[i]=gap[0]; d[i+1]=gap[1]; d[i+2]=gap[2]; d[i+3]=gap[3]; }
+    }
+    dx.putImageData(out,0,0);
+    return dst;
+  }
+  /* a piece's offset, -1..1, by index: seeded random, stairs, alternate, wave.
+     A function of the index (not an array), so snapped cuts that start above
+     the frame still get a value. */
+  function cmpPattern(kind, i, n, o, salt){
+    if(kind==='stairs'){ const t=n>1? i/(n-1) : 0; return Math.max(-1,Math.min(1,t*2-1)); }
+    if(kind==='alternate') return (((i%2)+2)%2) ? 1 : -1;
+    if(kind==='wave') return Math.sin((n>0? i/n : 0)*Math.PI*2);
+    return mulberry32(0xC0FFEE+((o.composeSeed|0)*7919)+salt+(i+64)*374761)()*2-1;
+  }
+
+  function cmpSlice(src,o){
+    const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
+    const n=Math.max(2,(o.sliceCount|0)||12), amt=(o.sliceShift!=null?o.sliceShift:40)*K, gap=(o.sliceGap||0)*K;
+    const deg=o.sliceAngle||0, a=deg*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a);
+    const ext=Math.abs(sa)*w+Math.abs(ca)*h, sw=snapLen(ext/n,G), cnt=Math.max(2,Math.round(ext/sw));
+    /* snapped horizontal / vertical strips take the grid's phase too */
+    const along = G && Math.abs(deg)<0.5 ? 'y' : G && Math.abs(Math.abs(deg)-90)<0.5 ? 'x' : null;
+    const pat=o.slicePattern||'random', cx=w/2, cy=h/2;
+    return cmpRemap(src,(x,y,xy)=>{
+      const dx=x-cx, dy=y-cy, u=ca*dx+sa*dy, v=-sa*dx+ca*dy;
+      const t = along==='y' ? (y-G.oy) : along==='x' ? (x-G.ox) : (v+ext/2);
+      const i=Math.floor(t/sw), f=t-i*sw;
+      if(gap>0 && (f<gap/2 || sw-f<gap/2)) return false;
+      const u2=u-cmpPattern(pat,i,cnt,o,11)*amt;
+      xy[0]=ca*u2-sa*v+cx; xy[1]=sa*u2+ca*v+cy; return true;
+    }, cmpGap(o));
+  }
+  /* A = the photo, B = the second exposure (or the photo's mirror image) */
+  function cmpWeave(A,o,B){
+    const w=A.width,h=A.height,K=w/520, G=cmpGrid(o,K);
+    if(!B){ B=cmpMk(w,h); const bx=B.getContext('2d'); bx.translate(w,0); bx.scale(-1,1); bx.drawImage(A,0,0); }
+    const n=Math.max(2,(o.weaveCount|0)||12), ratio=o.weaveRatio!=null?o.weaveRatio:0.5;
+    const deg=o.weaveAngle!=null?o.weaveAngle:90, a=deg*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a);
+    const ext=Math.abs(sa)*w+Math.abs(ca)*h;
+    const pw = G ? Math.max(2,2*Math.round(ext/n/(2*G.step)))*G.step : ext/n;   // a pair = an even number of modules
+    const along = G && Math.abs(deg)<0.5 ? 'y' : G && Math.abs(Math.abs(deg)-90)<0.5 ? 'x' : null;
+    const Ad=cmpCtx(A).getImageData(0,0,w,h).data, Bd=cmpCtx(B).getImageData(0,0,w,h).data;
+    const dst=cmpMk(w,h), dx=cmpCtx(dst), out=dx.createImageData(w,h), d=out.data;
+    for(let y=0,i=0;y<h;y++) for(let x=0;x<w;x++,i+=4){
+      const t = along==='y' ? (y+0.5-G.oy) : along==='x' ? (x+0.5-G.ox) : (-sa*(x+0.5-w/2)+ca*(y+0.5-h/2)+ext/2);
+      const q=t/pw-Math.floor(t/pw), S= q<ratio ? Ad : Bd;
+      d[i]=S[i]; d[i+1]=S[i+1]; d[i+2]=S[i+2]; d[i+3]=S[i+3];
+    }
+    dx.putImageData(out,0,0);
+    return dst;
+  }
+  function cmpRadial(src,o){
+    const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
+    const cx=w*(0.5+(o.radX||0)), cy=h*(0.5+(o.radY||0)), gap=(o.radGap||0)*K, pat=o.radPattern||'random';
+    if(o.radMode==='wedges'){
+      const m=Math.max(3,(o.wedgeCount|0)||14), amt=(o.wedgePush!=null?o.wedgePush:28)*K, seg=2*Math.PI/m;
+      return cmpRemap(src,(x,y,xy)=>{
+        const dx=x-cx, dy=y-cy, r=Math.sqrt(dx*dx+dy*dy);
+        const th=Math.atan2(dy,dx)+Math.PI, i=Math.min(m-1,Math.floor(th/seg));
+        if(gap>0){ const f=(th-i*seg)*r; if(f<gap/2 || (seg*r-f)<gap/2) return false; }
+        const r2=r-cmpPattern(pat,i,m,o,23)*amt; if(r2<0) return false;
+        const k=r2/(r||1); xy[0]=cx+dx*k; xy[1]=cy+dy*k; return true;
+      }, cmpGap(o));
+    }
+    const rw=Math.max(4,snapLen((o.ringWidth||32)*K,G)), turn=(o.radTurn!=null?o.radTurn:26)*Math.PI/180;
+    const n=Math.ceil(Math.hypot(Math.max(cx,w-cx),Math.max(cy,h-cy))/rw)+1;
+    return cmpRemap(src,(x,y,xy)=>{
+      const dx=x-cx, dy=y-cy, r=Math.sqrt(dx*dx+dy*dy), i=Math.floor(r/rw);
+      if(gap>0){ const f=r-i*rw; if(f<gap/2 || rw-f<gap/2) return false; }
+      const t=-cmpPattern(pat,i,n,o,31)*turn, c=Math.cos(t), s=Math.sin(t);
+      xy[0]=cx+dx*c-dy*s; xy[1]=cy+dx*s+dy*c; return true;
+    }, cmpGap(o));
+  }
+  function cmpTiles(src,o){
+    const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
+    const c=Math.max(8,snapLen((o.tileSize||72)*K,G)), move=(o.tileMove!=null?o.tileMove:6)*K, turn=o.tileTurn!=null?o.tileTurn:5;
+    const grout=(o.tileGrout!=null?o.tileGrout:4)*K, shuffle=o.tileShuffle||0, rnd=cmpRnd(o,41);
+    /* on the grid, the tiles start on a grid line; otherwise at the frame corner */
+    const x0 = G ? G.ox-Math.ceil(G.ox/c)*c : 0, y0 = G ? G.oy-Math.ceil(G.oy/c)*c : 0;
+    const cols=Math.ceil((w-x0)/c), rows=Math.ceil((h-y0)/c);
+    const cells=[]; for(let j=0;j<rows;j++) for(let i=0;i<cols;i++) cells.push([i,j]);
+    const from=cells.map(q=>q.slice());
+    for(let k=0;k<cells.length;k++){ if(rnd()<shuffle){ const m=(rnd()*cells.length)|0; const t=from[k]; from[k]=from[m]; from[m]=t; } }
+    const order=cells.map((_,k)=>k); for(let k=order.length-1;k>0;k--){ const m=(rnd()*(k+1))|0; const t=order[k]; order[k]=order[m]; order[m]=t; }
+    const dst=cmpMk(w,h), x=dst.getContext('2d'), g=cmpGap(o);
+    x.fillStyle='rgb('+g[0]+','+g[1]+','+g[2]+')'; x.fillRect(0,0,w,h);
+    const s=Math.max(1,c-grout);
+    for(const k of order){
+      const i=cells[k][0], j=cells[k][1], si=from[k][0], sj=from[k][1];
+      x.save();
+      x.translate(x0+i*c+c/2+(rnd()*2-1)*move, y0+j*c+c/2+(rnd()*2-1)*move);
+      x.rotate((rnd()*2-1)*turn*Math.PI/180);
+      x.drawImage(src, x0+si*c+grout/2, y0+sj*c+grout/2, s, s, -s/2, -s/2, s, s);
+      x.restore();
+    }
+    return dst;
+  }
+  function cmpShards(src,o){
+    const w=src.width,h=src.height,K=w/520;
+    const n=Math.max(4,(o.shardCount|0)||42), push=(o.shardPush!=null?o.shardPush:14)*K, turn=(o.shardTurn!=null?o.shardTurn:3)*Math.PI/180;
+    const crack=(o.shardCrack!=null?o.shardCrack:1.6)*K;
+    const ix=w*(0.5+(o.shardX||0)), iy=h*(0.5+(o.shardY||0)), rnd=cmpRnd(o,53);
+    const S=[];
+    for(let k=0;k<n;k++){
+      let px,py;
+      if(k<n*0.6){ const a=rnd()*Math.PI*2, r=Math.pow(rnd(),1.6)*Math.max(w,h)*0.55; px=ix+Math.cos(a)*r; py=iy+Math.sin(a)*r; }
+      else { px=rnd()*w; py=rnd()*h; }
+      const dx=px-ix, dy=py-iy, dd=Math.hypot(dx,dy)||1, p=push*(0.35+0.65*rnd())*Math.min(1,dd/(0.15*w)+0.25);
+      const t=(rnd()*2-1)*turn;
+      S.push({ x:px, y:py, ox:dx/dd*p+(rnd()*2-1)*push*0.3, oy:dy/dd*p+(rnd()*2-1)*push*0.3, c:Math.cos(-t), s:Math.sin(-t) });
+    }
+    return cmpRemap(src,(x,y,xy)=>{
+      let b=0,d1=1e18,d2=1e18;
+      for(let k=0;k<n;k++){ const s=S[k], ex=x-s.x, ey=y-s.y, d=ex*ex+ey*ey; if(d<d1){ d2=d1; d1=d; b=k; } else if(d<d2) d2=d; }
+      if(crack>0 && Math.sqrt(d2)-Math.sqrt(d1)<crack) return false;
+      const s=S[b], rx=x-s.x-s.ox, ry=y-s.y-s.oy;
+      xy[0]=s.x+rx*s.c-ry*s.s; xy[1]=s.y+rx*s.s+ry*s.c; return true;
+    }, cmpGap(o));
+  }
+  /* the scanner drag: from the drag line on, each row reads further back up
+     the original (slow drag = streaks, fast = a stretched copy), the hand
+     wobbles, and the exposure thins toward the end of the pull */
+  function cmpDrag(src,o){
+    const w=src.width,h=src.height, dir=o.dragDir||'down';
+    const rot = dir==='down'?0 : dir==='up'?180 : dir==='right'?90 : -90;
+    const W=(rot%180===0)?w:h, Hh=(rot%180===0)?h:w, K=W/520;
+    const a=cmpMk(W,Hh), ax=a.getContext('2d');
+    ax.translate(W/2,Hh/2); ax.rotate(rot*Math.PI/180); ax.drawImage(src,-w/2,-h/2);
+    const b=cmpMk(W,Hh), bx=b.getContext('2d'); bx.drawImage(a,0,0);
+    const y0=Math.round(Hh*(o.dragPos!=null?o.dragPos:0.6));
+    const speed=o.dragSpeed!=null?o.dragSpeed:0.22, wob=(o.dragWobble!=null?o.dragWobble:0.4)*7*K;
+    const seed=(o.composeSeed|0)*131;
+    const nz=valueNoise(40, Math.ceil(Hh/K)+40, 30, 0xD2A6+seed), nz2=valueNoise(40, Math.ceil(Hh/K)+40, 55, 0x7A11+seed);
+    let sy=y0;
+    for(let y=y0;y<Hh;y++){
+      const dy=y/K;
+      sy+=speed*(0.15+1.1*nz2(3,dy)); if(sy>Hh-1) sy=Hh-1;
+      bx.drawImage(a, 0, Math.floor(sy), W, 1, (nz(5,dy)-0.5)*2*wob, y, W, 1);
+    }
+    const fade=o.dragFade!=null?o.dragFade:0.35;
+    if(fade>0 && y0<Hh){
+      const g=bx.createLinearGradient(0,y0,0,Hh); g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(1,'#ffffff');
+      bx.globalAlpha=Math.min(1,fade); bx.fillStyle=g; bx.fillRect(0,y0,W,Hh-y0); bx.globalAlpha=1;
+    }
+    const dst=cmpMk(w,h), dx=dst.getContext('2d');
+    dx.translate(w/2,h/2); dx.rotate(-rot*Math.PI/180); dx.drawImage(b,-W/2,-Hh/2);
+    return dst;
+  }
+  function cmpEcho(src,o){
+    const w=src.width,h=src.height,K=w/520;
+    const n=Math.max(2,(o.echoCount|0)||4), a=(o.echoAngle||0)*Math.PI/180, step=(o.echoStep!=null?o.echoStep:36)*K;
+    const dst=cmpMk(w,h), x=dst.getContext('2d');
+    x.drawImage(src,0,0);
+    if(o.echoMode==='tunnel'){
+      const sStep=o.echoScale!=null?o.echoScale:0.76, border=(o.echoBorder!=null?o.echoBorder:5)*K;
+      const cx=w*(0.5+(o.echoX||0)), cy=h*(0.5+(o.echoY||0)), g=cmpGap(o);
+      x.fillStyle='rgb('+g[0]+','+g[1]+','+g[2]+')';
+      for(let k=1;k<n;k++){
+        const s=Math.pow(sStep,k), fx=cx-cx*s, fy=cy-cy*s;
+        x.fillRect(fx-border,fy-border,w*s+border*2,h*s+border*2);
+        x.drawImage(src,fx,fy,w*s,h*s);
+      }
+      return dst;
+    }
+    x.globalCompositeOperation = o.echoBlend==='darken' ? 'darken' : 'lighten';
+    const fade=o.echoFade!=null?o.echoFade:0.78;
+    for(let k=n-1;k>=1;k--){ x.globalAlpha=Math.pow(fade,k); x.drawImage(src,-Math.cos(a)*step*k,-Math.sin(a)*step*k); }
+    x.globalAlpha=1; x.globalCompositeOperation='source-over';
+    return dst;
+  }
+  function cmpMirror(src,o){
+    const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
+    let cx=w*(0.5+(o.mirrorX||0)), cy=h*(0.5+(o.mirrorY||0));
+    if(G){ cx=G.ox+Math.round((cx-G.ox)/G.step)*G.step; cy=G.oy+Math.round((cy-G.oy)/G.step)*G.step; }
+    const flip=!!o.mirrorFlip, quad=o.mirrorMode==='quad';
+    return cmpRemap(src,(x,y,xy)=>{
+      let X=x, Y=y;
+      if(flip ? X<cx : X>cx) X=2*cx-X;
+      if(quad && (flip ? Y<cy : Y>cy)) Y=2*cy-Y;
+      xy[0]=X; xy[1]=Y; return true;
+    }, cmpGap(o));
+  }
+  function cmpPanels(src,o){
+    const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
+    const n=Math.max(2,(o.panelCount|0)||3), across=(o.panelDir||'across')==='across';
+    const z=o.panelZoom!=null?o.panelZoom:1.8, gut=(o.panelGutter!=null?o.panelGutter:6)*K;
+    const fx=w*(0.5+(o.panelX||0)), fy=h*(0.5+(o.panelY||0)), len=across?w:h;
+    /* panel edges: an even split, or the grid lines nearest to it */
+    const edges=[0]; for(let p=1;p<n;p++){ let b=p*len/n; if(G){ const off=across?G.ox:G.oy; b=off+Math.round((b-off)/G.step)*G.step; } edges.push(Math.max(edges[p-1]+1,Math.min(len-1,b))); } edges.push(len);
+    return cmpRemap(src,(x,y,xy)=>{
+      const along=across?x:y; let p=0; while(p<n-1 && along>=edges[p+1]) p++;
+      if(gut>0 && ((p>0 && along-edges[p]<gut/2) || (p<n-1 && edges[p+1]-along<gut/2))) return false;
+      const mid=(edges[p]+edges[p+1])/2, pcx=across?mid:w/2, pcy=across?h/2:mid, s=Math.pow(z,p);
+      xy[0]=fx+(x-pcx)/s; xy[1]=fy+(y-pcy)/s; return true;
+    }, cmpGap(o));
+  }
+  const COMPOSE_MOVES = { slice:cmpSlice, weave:cmpWeave, radial:cmpRadial, tiles:cmpTiles, shards:cmpShards,
+                          drag:cmpDrag, echo:cmpEcho, mirror:cmpMirror, panels:cmpPanels };
+  /* the framed photo at w×h, recomposed — once per size per render */
+  function composedCover(w,h,fit){
+    const key=w+'x'+h+'|'+(fit||'');
+    const hit=COMPOSE_CACHE.get(key); if(hit) return hit;
+    const o=COMPOSE, base=cmpMk(w,h);
+    let out;
+    if(o.compose==='weave'){
+      /* weave replaces the second exposure's blend: the two photos alternate */
+      drawOne(base.getContext('2d'),w,h,fit,SRC,TF);
+      let B=null; if(SRC2){ B=cmpMk(w,h); drawOne(B.getContext('2d'),w,h,fit,SRC2,TF2); }
+      out=cmpWeave(base,o,B);
+    } else {
+      drawCoverRaw(base.getContext('2d'),w,h,fit);
+      out=COMPOSE_MOVES[o.compose](base,o);
+    }
+    COMPOSE_CACHE.set(key,out);
+    return out;
+  }
+
   const RENDER_DEFAULTS = {
     treatStrength:1, treatWhere:'all', treatBlend:'normal',
     /* backfilled from the app's Darkroom, 08.09.26 */
@@ -1703,7 +2046,21 @@
     drumBand:0, bandPeriod:90, drumStreak:0, starve:0, wet:0.25,
     pull:0, pressRun:true, pressOff:false,
     fountainTo:null, fountainPlate:1, fountainAngle:0, fountainSoft:1,
-    screens:null, pitches:null, proofPlate:null, proofGrey:false
+    screens:null, pitches:null, proofPlate:null, proofGrey:false,
+    /* 16 · pop */
+    popBands:5, popPitch:7, popAngle:45, popLine:1.3, popSmooth:2.4, popDotInk:'accent',
+    /* recompose — 'none' skips the stage entirely, so a photo without a move
+       reads exactly as it always has */
+    compose:'none', composeSeed:1, composeGap:'paper', composeGrid:null,
+    sliceCount:12, sliceShift:40, sliceAngle:0, slicePattern:'random', sliceGap:0,
+    weaveCount:12, weaveRatio:0.5, weaveAngle:90,
+    radMode:'rings', ringWidth:32, radTurn:26, wedgeCount:14, wedgePush:28, radPattern:'random', radGap:0, radX:0, radY:0,
+    tileSize:72, tileMove:6, tileTurn:5, tileShuffle:0, tileGrout:4,
+    shardCount:42, shardPush:14, shardTurn:3, shardCrack:1.6, shardX:0, shardY:0,
+    dragDir:'down', dragPos:0.6, dragSpeed:0.22, dragWobble:0.4, dragFade:0.35,
+    echoMode:'trail', echoCount:4, echoStep:36, echoAngle:0, echoBlend:'lighten', echoFade:0.78, echoScale:0.76, echoBorder:5, echoX:0, echoY:0,
+    mirrorMode:'book', mirrorFlip:false, mirrorX:0, mirrorY:0,
+    panelCount:3, panelDir:'across', panelZoom:1.8, panelGutter:6, panelX:0, panelY:0
   };
 
   function render(cv, name, opts){
@@ -1716,6 +2073,9 @@
     PREBLUR = { amount:o.blurUnder||0, type:o.blurUnderType, angle:o.blurUnderAngle,
                 x:o.blurUnderX, y:o.blurUnderY, pos:o.blurUnderPos, width:o.blurUnderWidth };
     MIX2 = { amount: SRC2? (o.mix2||0) : 0, mode:o.mix2Mode||'screen' };
+    /* the move, if any — composed lazily by drawCover, once per size */
+    COMPOSE = (o.compose && o.compose!=='none' && COMPOSE_MOVES[o.compose]) ? o : null;
+    COMPOSE_CACHE.clear();
     o._stock = stockOf(name,o); o._dark = RP.isDark(o._stock);
     /* the mono drum follows the STOCK, not the theme: black on a light sheet, cream on a dark one (Print's white sheet has its own K) */
     o._ink = o.stock ? RP.inkOnStock(o.stock) : (o._dark ? PAL.cream : PAL.ink);
@@ -1797,6 +2157,8 @@
                   /* the core, for hosts that want the plates themselves (a proof export) */
                   press: RP,
                   TREATMENTS: Object.keys(TREATMENTS),
+                  /* the recompose moves, for a host's move picker */
+                  COMPOSE_MOVES: Object.keys(COMPOSE_MOVES),
                   /* the plates a treatment presses, for a host's Proof picker */
                   platesFor,
                   RENDER_DEFAULTS,

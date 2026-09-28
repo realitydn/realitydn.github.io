@@ -247,6 +247,15 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
           </React.Fragment>}
           <Hint tight>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust. Echo re-strikes the linework off-register in a second ink.</Hint>
         </React.Fragment>}
+        {t==='pop' && <React.Fragment>
+          <Chips label="Bands" options={[{v:3,l:'3 · black, dots'},{v:4,l:'4 · + solid'},{v:5,l:'5 · + stripes'}]} value={el.popBands!=null?el.popBands:5} onChange={v=>update({popBands:v})} />
+          <Slider label="Dot pitch" val={el.popPitch!=null?el.popPitch:7} min={4} max={14} step={0.5} onChange={v=>update({popPitch:v})} suffix="px" />
+          <Slider label="Screen angle" val={el.popAngle!=null?el.popAngle:45} min={0} max={90} step={1} onChange={v=>update({popAngle:v})} suffix="°" />
+          <Slider label="Keyline" val={el.popLine!=null?el.popLine:1.3} min={0} max={3} step={0.1} onChange={v=>update({popLine:v})} suffix="px" />
+          <Slider label="Smoothing" val={el.popSmooth!=null?el.popSmooth:2.4} min={0} max={6} step={0.2} onChange={v=>update({popSmooth:v})} />
+          <Chips label="Dots in" options={[{v:'accent',l:'Main ink'},{v:'partner',l:'Second ink'}]} value={el.popDotInk||'accent'} onChange={v=>update({popDotInk:v})} />
+          <Hint tight>Dark to light: black, the main ink solid, stripes in the second ink, Ben-Day dots, paper. <b>Smoothing</b> simplifies the bands; the keyline runs round each one.</Hint>
+        </React.Fragment>}
         {t==='mosaic' && <React.Fragment>
           <Slider label="Tile size" val={el.cellSize!=null?el.cellSize:16} min={4} max={48} step={1} onChange={v=>update({cellSize:v})} suffix="px" />
           <Slider label="Depth" val={el.mosaicDepth!=null?el.mosaicDepth:4} min={2} max={6} step={1} onChange={v=>update({mosaicDepth:v})} />

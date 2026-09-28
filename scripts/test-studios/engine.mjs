@@ -23,7 +23,7 @@ import { checkGolden, preparePage, startHarnessServer, dataUrlToBuffer, toleranc
 const W = 260, H = 325;
 export const TOL = { tol: 3, minMatch: 0.995 };   // across platforms; exact where the goldens were made
 
-export function buildCases(treatments) {
+export function buildCases(treatments, moves = []) {
   const TP = extractConst('TREAT_PRESETS').value;
   const FN = extractConst('FINISH_NEUTRAL').value;
   const FL = extractConst('FINISH_LOOKS').value;
@@ -58,6 +58,23 @@ export function buildCases(treatments) {
   add('dial-offregister-sep', 'offregister', { ink: 'blue', paper: 'day', ...TP.offregister, sep: true });
   add('dial-blend-multiply', 'halftone', { ink: 'pink', paper: 'day', ...TP.halftone, treatBlend: 'multiply', treatStrength: 0.85 });
   add('dial-blur-typed', 'duotone', { ink: 'pink', paper: 'day', ...TP.duotone, blurUnder: 4, blurUnderType: 'motion', blurUnderAngle: 30, blurOver: 2 });
+
+  // Recompose: every move at its defaults under one treatment (seeded, so a
+  // Shuffle that stops repeating fails here), then the variants each move
+  // carries and the poster-grid snap. The harness has no second exposure, so
+  // weave runs against the photo's mirror image.
+  for (const m of moves) add(`compose-${m}`, 'duotone', { ink: 'pink', paper: 'day', ...TP.duotone, compose: m, composeSeed: 3 });
+  const cmp = (p) => ({ ink: 'blue', paper: 'day', ...TP.duotone, composeSeed: 5, ...p });
+  add('compose-radial-wedges', 'duotone', cmp({ compose: 'radial', radMode: 'wedges', radGap: 2, radPattern: 'alternate' }));
+  add('compose-echo-tunnel', 'duotone', cmp({ compose: 'echo', echoMode: 'tunnel' }));
+  add('compose-mirror-quad', 'duotone', cmp({ compose: 'mirror', mirrorMode: 'quad', mirrorFlip: true }));
+  add('compose-slice-ink-gaps', 'duotone', cmp({ compose: 'slice', sliceAngle: -20, sliceGap: 3, slicePattern: 'stairs', composeGap: 'ink' }));
+  add('compose-drag-right', 'duotone', cmp({ compose: 'drag', dragDir: 'right', dragPos: 0.4 }));
+  add('compose-grid-slice', 'duotone', cmp({ compose: 'slice', sliceAngle: 0, composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
+  add('compose-grid-tiles', 'duotone', cmp({ compose: 'tiles', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
+  add('compose-grid-panels', 'duotone', cmp({ compose: 'panels', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
+  add('compose-under-pop', 'pop', { ink: 'pink', paper: 'day', ...(TP.pop || {}), compose: 'slice', slicePattern: 'alternate', sliceAngle: 90, sliceCount: 7 });
+  add('compose-under-separation', 'separation', sep('night', 'pink', { compose: 'shards', composeSeed: 2 }));
   return cases;
 }
 
@@ -71,7 +88,8 @@ export async function run({ browser, update, filter, loose }) {
     await page.goto(srv.url + 'scripts/test-studios/harness/engine.html', { waitUntil: 'load' });
     await page.evaluate(() => window.harnessReady);
     const treatments = await page.evaluate(() => window.RISO.TREATMENTS);
-    const cases = buildCases(treatments).filter((c) => !filter || filter.test(c.name));
+    const moves = await page.evaluate(() => window.RISO.COMPOSE_MOVES || []);
+    const cases = buildCases(treatments, moves).filter((c) => !filter || filter.test(c.name));
 
     const render = async (c) => {
       const r = await page.evaluate((t, o, w, h) => window.renderCase(t, o, w, h), c.treatment, c.opts, W, H);

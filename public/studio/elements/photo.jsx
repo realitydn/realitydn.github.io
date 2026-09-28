@@ -2,7 +2,7 @@
    REALITY POSTER STUDIO — photo element
    The decode cache, the stand-in photos, the press call and the photo / logo renderer.
    ============================================================ */
-import { themeColors as seTheme, shapePath as seShapePath, shapeClip as seShapeClip } from '../studio-data.jsx';
+import { themeColors as seTheme, shapePath as seShapePath, shapeClip as seShapeClip, STEP as SE_STEP } from '../studio-data.jsx';
 import { seResolve, seShadow } from './style.js';
 import { Photos, isRef } from '../photos.js';
 /* riso image caches (shared across photo elements).
@@ -83,7 +83,18 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'screens','pitches','proofPlate','proofGrey',
   /* the retrofit: separated plates for off-register / overprint, xerography for the copier,
      and how much of the shadows the night poster's black plate carries */
-  'sep','copyEdge','copyHollow','copySatellites','copyDrum','copyDrumPeriod','nightPlate'];
+  'sep','copyEdge','copyHollow','copySatellites','copyDrum','copyDrumPeriod','nightPlate',
+  /* 16 · pop, 28.09.26 */
+  'popBands','popPitch','popAngle','popLine','popSmooth','popDotInk',
+  /* recompose — the move before the press (composeSnap is the Studio's own
+     switch; drawPhotoPress turns it into the engine's composeGrid) */
+  'compose','composeSeed','composeGap','composeSnap',
+  'sliceCount','sliceShift','sliceAngle','slicePattern','sliceGap','weaveCount','weaveRatio','weaveAngle',
+  'radMode','ringWidth','radTurn','wedgeCount','wedgePush','radPattern','radGap','radX','radY',
+  'tileSize','tileMove','tileTurn','tileShuffle','tileGrout','shardCount','shardPush','shardTurn','shardCrack','shardX','shardY',
+  'dragDir','dragPos','dragSpeed','dragWobble','dragFade',
+  'echoMode','echoCount','echoStep','echoAngle','echoBlend','echoFade','echoScale','echoBorder','echoX','echoY',
+  'mirrorMode','mirrorFlip','mirrorX','mirrorY','panelCount','panelDir','panelZoom','panelGutter','panelX','panelY'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120
    primitives costs microseconds; re-running the press costs ~25ms, so this is
    what keeps a photo from re-developing on every unrelated re-render.
@@ -120,11 +131,22 @@ function photoSources(el){
    thumbnails cannot drift apart. `patch` overrides dials for a preview of a
    click you haven't made yet — the strip renders each treatment at its own
    TREAT_PRESETS baseline over your paper, inks, framing and exposure. */
+/* Snap to the poster grid: the grid's step and its first line inside this
+   frame, in the engine's design px (520 across the frame). The poster grid is
+   STEP on the canvas from its top-left corner, so a frame at x=100 meets its
+   first line 35px in. Uses the box as the canvas resolved it for the format
+   being drawn, so each format's cuts meet that format's grid. */
+function composeGridOf(el, opts){
+  if(!opts.composeSnap || !opts.compose || opts.compose==='none' || !(el.w>0)) return null;
+  const s = 520/el.w, ph = (v)=>((SE_STEP - (((v||0)%SE_STEP)+SE_STEP)%SE_STEP) % SE_STEP);
+  return { step:SE_STEP*s, ox:ph(el.x)*s, oy:ph(el.y)*s };
+}
 function drawPhotoPress(cv, el, inkKey, theme, src, src2, patch){
   const opts={ ink:inkKey, ink2:el.ink2, paper: theme==='night'?'night':'day',
     paperFill: (el.paperFill && el.paperFill!=='fg' && el.paperFill!=='paper') ? seResolve(el.paperFill, null) : null };
   OPT_KEYS.forEach(k=>{ opts[k]=el[k]; });
   if(patch) Object.assign(opts, patch);
+  opts.composeGrid = composeGridOf(el, opts);
   window.RISO.setSource(src);
   if(window.RISO.setSource2) window.RISO.setSource2(src2||null);
   if(window.RISO.setTransform) window.RISO.setTransform({ scale:el.imgScale, x:el.imgX, y:el.imgY, rot:el.imgRot });
@@ -167,7 +189,9 @@ function PhotoEl({ el, theme, inkKey, inkDensity, selected, exporting }){
      URLs, and hashing those each render would just move the cost. */
   }, [el.w, el.h, el.type, el.src, el.src2, el.sample, el.treatment, el.ink2, el.paperFill,
       el.imgScale, el.imgX, el.imgY, el.imgRot, el.img2Scale, el.img2X, el.img2Y, el.img2Rot,
-      inkKey, inkDensity, theme, exporting, risoSig(el)]);
+      inkKey, inkDensity, theme, exporting, risoSig(el),
+      /* a move snapped to the poster grid depends on where the box sits */
+      el.composeSnap && el.compose && el.compose!=='none' ? el.x+','+el.y : '']);
 
   /* editing aid: while this photo is selected, show the cropped image OUTSIDE
      the frame, faded — so it's clear what's kept vs cut. Raw source (not riso),

@@ -52,6 +52,9 @@ const TREATS = [
   {v:'mosaic',l:'Mosaic',tag:'tiled to the ramp',
    best:'Abstraction, backgrounds, covering a photo that is not quite good enough.',
    avoid:'Anyone needs to be recognisable.'},
+  {v:'pop',l:'Pop',tag:'comic-book tint screens',
+   best:'Faces and figures with clear shapes — portraits, a DJ, a crowd at the front.',
+   avoid:'Soft, low-contrast photos; the bands turn to mush.'},
   {v:'none',l:'None',tag:'no plate — the photo as shot',
    best:'Checking the frame before you print it.',
    avoid:'It is going on a poster — a raw photo breaks the palette.'}
@@ -132,6 +135,7 @@ const TREAT_PRESETS = {
   contour:    { contrast:1.2,  bands:5, contourWeight:2, contourFill:'tint', contourSmooth:2.2, contourTint:0.19, contourLine:'auto', contourInk:null, contourSlip:0, contourSlipAngle:45, contourEcho:0, contourEchoAngle:45, contourEchoInk:null },
   edges:      { contrast:1.2,  edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', inkMode:'single', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, fieldInk:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null, edgeSlip:0, edgeSlipAngle:45 },
   mosaic:     { contrast:1.2,  cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper' },
+  pop:        { contrast:1.15, popBands:5, popPitch:7, popAngle:45, popLine:1.3, popSmooth:2.4, popDotInk:'accent' },
   none:       { contrast:1.1,  brightness:0 }
 };
 /* ============================================================
@@ -222,6 +226,12 @@ const TREAT_LOOKS = {
     { v:'fine',    l:'Fine',        p:{ edgeDetail:0.22, edgeThick:1.4, edgeSmooth:1.6, edgeClean:0.2, edgeBackdrop:'paper' } },
     { v:'bold',    l:'Bold',        p:{ edgeDetail:0.4,  edgeThick:3,   edgeSmooth:2,   edgeClean:0.3, edgeBackdrop:'paper' } },
     { v:'onink',   l:'On ink',      p:{ edgeDetail:0.3,  edgeThick:2,   edgeSmooth:1.6, edgeClean:0.2, edgeBackdrop:'ink' } },
+  ],
+  pop: [
+    { v:'comic',   l:'Comic',       p:{ popBands:5, popPitch:7,  popLine:1.3, popSmooth:2.4 } },
+    { v:'benday',  l:'Ben-Day',     p:{ popBands:3, popPitch:6,  popLine:0,   popSmooth:2 } },
+    { v:'bold',    l:'Bold',        p:{ popBands:4, popPitch:11, popLine:2.4, popSmooth:4 } },
+    { v:'clean',   l:'No keyline',  p:{ popBands:5, popPitch:7,  popLine:0,   popSmooth:2.4 } },
   ],
   mosaic: [
     { v:'tile',    l:'Tile',        p:{ cellSize:16, mosaicDepth:4, mosaicShape:'square', mosaicGap:0.08, mosaicBond:'grid' } },

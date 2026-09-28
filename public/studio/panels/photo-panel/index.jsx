@@ -19,6 +19,7 @@ import { BlendFold } from './blend.jsx';
 import { TuneFold } from './tune.jsx';
 import { AdjustFold, FinishFold } from './finish.jsx';
 import { FrameFold, MaskFold } from './frame.jsx';
+import { RecomposeFold } from './recompose.jsx';
 function PhotoControls({ el, update, theme, accent, day }){
   const t = el.treatment;
   const tDef = TREATS.find(x=>x.v===t);
@@ -83,6 +84,10 @@ function PhotoControls({ el, update, theme, accent, day }){
           <button className="rs-addrow" onClick={()=>update({ src2:null })}>✕ Remove second image</button>
         </React.Fragment>}
       </Fold>
+
+      {/* the move happens to the original, before the press — so it sits
+          between the photo's own sources and the treatment that prints it */}
+      {el.type==='photo' && <RecomposeFold el={el} update={update} inkKey={inkKey} theme={theme} />}
 
       <Fold id="ph-treat" title={'Treatment · '+pressLabel} open>
         {/* A logo with no file has nothing to develop, so it keeps the words. */}

@@ -407,6 +407,19 @@ const DEFAULTS = {
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
              grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
+             popBands:5, popPitch:7, popAngle:45, popLine:1.3, popSmooth:2.4, popDotInk:'accent',
+             /* recompose — a move on the photo before the press (riso-engine RECOMPOSE).
+                'none' skips the stage; composeSnap lines the cuts up with the poster grid */
+             compose:'none', composeSeed:1, composeGap:'paper', composeSnap:false,
+             sliceCount:12, sliceShift:40, sliceAngle:0, slicePattern:'random', sliceGap:0,
+             weaveCount:12, weaveRatio:0.5, weaveAngle:90,
+             radMode:'rings', ringWidth:32, radTurn:26, wedgeCount:14, wedgePush:28, radPattern:'random', radGap:0, radX:0, radY:0,
+             tileSize:72, tileMove:6, tileTurn:5, tileShuffle:0, tileGrout:4,
+             shardCount:42, shardPush:14, shardTurn:3, shardCrack:1.6, shardX:0, shardY:0,
+             dragDir:'down', dragPos:0.6, dragSpeed:0.22, dragWobble:0.4, dragFade:0.35,
+             echoMode:'trail', echoCount:4, echoStep:36, echoAngle:0, echoBlend:'lighten', echoFade:0.78, echoScale:0.76, echoBorder:5, echoX:0, echoY:0,
+             mirrorMode:'book', mirrorFlip:false, mirrorX:0, mirrorY:0,
+             panelCount:3, panelDir:'across', panelZoom:1.8, panelGutter:6, panelX:0, panelY:0,
              src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
   /* Partner logo — same engine as a photo but untreated by default and with a
      transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark
@@ -442,6 +455,7 @@ const DEFAULTS = {
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
              grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
+             popBands:5, popPitch:7, popAngle:45, popLine:1.3, popSmooth:2.4, popDotInk:'accent',
              src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
 };
 

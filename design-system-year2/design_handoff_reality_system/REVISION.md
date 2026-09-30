@@ -1,5 +1,16 @@
 # REALITY Design System — Year 2 · Revision
 
+## Rev 30.9.2026 — the date format
+
+**Dates are d.m.yy with no leading zeros:** `1.7.26`, `30.9.26`, `12.10.26` —
+never `01.07.26`. Day-first, dots, two-digit year; the short form drops the
+year (`THU 2.7`, `Thứ 5 2.7`), a full-year form is `1.7.2026`, and ranges read
+`28.9–4.10`. Never month-first, never slashes, never a month name where a date
+is meant. Times keep their own form (`20:00`). This supersedes every zero-padded
+`DD.MM.YY` example in the pages below. Those examples predate the rule and are
+not re-drawn. Machine formats (ISO `2026-07-01` in data, URLs and filenames)
+are not display dates and don't change.
+
 ## Rev 19.08.2026 — the canon reconciliation
 
 The system was diffed against everything shipped: the app (in production since

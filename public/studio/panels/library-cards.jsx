@@ -158,12 +158,20 @@ function TplCard({ tpl, onApply }){
     </div>
   );
 }
+/* When a template was saved (or binned), as a card stamp: the house date —
+   day-first d.m, dot-separated, no leading zeros (30.9.26 rule), e.g. 2.7.
+   It used to go through toLocaleDateString, which printed "Jul 2" on a
+   US-locale laptop. The laptop's own calendar day, like before. */
+function savedDM(ms){
+  const d = new Date(ms);
+  return isNaN(d.getTime()) ? '' : d.getDate()+'.'+(d.getMonth()+1);
+}
 function UserTplCard({ t, onApply, onArchive, onDelete, archived, thumb, onCapture }){
   return (
     <div className="rs-tplcard" onClick={onApply} title={t.name} style={archived?{ opacity:.75 }:null}>
       <TplThumb doc={t.doc} w={88} thumb={thumb} onCapture={onCapture} />
       <span className="tn">{t.name}</span>
-      <span className="ts">{archived ? 'archived' : new Date(t.savedAt).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+      <span className="ts">{archived ? 'archived' : savedDM(t.savedAt)}</span>
       <button className="rs-tplx mild" style={{ right:28, top:4, width:20, height:20, fontSize:11 }}
         title={archived?'Restore to My templates':'Archive — tuck it into the Archive drawer'}
         onClick={e=>{ e.stopPropagation(); onArchive(); }}>{archived?'↩':'⤓'}</button>
@@ -173,4 +181,4 @@ function UserTplCard({ t, onApply, onArchive, onDelete, archived, thumb, onCaptu
   );
 }
 
-export { Sec, TplThumb, TplCard, UserTplCard };
+export { Sec, TplThumb, TplCard, UserTplCard, savedDM };

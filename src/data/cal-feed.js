@@ -3,15 +3,15 @@
 //
 // Dependency-free like feed-helpers.js so scripts/selftest.mjs can unit-test the
 // date math without a DOM. Mirrors the hub's src/lib/event-day.ts: same ICT
-// pinning, same weekday→colour map, same "MON 07.07" label shape (DD.MM house
-// style — never American month-first).
+// pinning, same weekday→colour map, same "MON 7.7" label shape (house style,
+// 30.9.26: day-first d.m, dot-separated, NO leading zeros — never month-first).
 
 const ICT = 'Asia/Ho_Chi_Minh';
 
 // Formatters are expensive to build; construct the constants once (the feed can
 // render 60+ slices per paint — same lesson as the hub's 1102 hardening).
 const FMT_WD = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: ICT });
-const FMT_DM = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', timeZone: ICT });
+const FMT_DM = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'numeric', timeZone: ICT });
 const FMT_YMD = new Intl.DateTimeFormat('en-CA', { timeZone: ICT, year: 'numeric', month: '2-digit', day: '2-digit' });
 
 const WD_CLASS = {
@@ -37,13 +37,23 @@ export function dayClassFromISO(iso) {
   return d ? WD_CLASS[FMT_WD.format(d)] || 'd-thu' : 'd-thu';
 }
 
-// fmtDM(iso) → '07.07' (DD.MM in ICT) — the big date on imageless panes.
+// fmtDM(iso) → '7.7' / '30.9' / '12.10' (d.m in ICT, no leading zeros) — the
+// big date on imageless panes. Read off formatToParts (not a '/'→'.' swap) so
+// the output never depends on a locale's separator or padding, and `+` strips
+// any zero an engine pads with anyway.
 export function fmtDM(iso) {
   const d = instant(iso);
-  return d ? FMT_DM.format(d).replace('/', '.') : '';
+  if (!d) return '';
+  let day = '';
+  let month = '';
+  for (const p of FMT_DM.formatToParts(d)) {
+    if (p.type === 'day') day = p.value;
+    else if (p.type === 'month') month = p.value;
+  }
+  return `${+day}.${+month}`;
 }
 
-// fmtDayDate(iso, lang) → 'MON 07.07' / 'THỨ 2 07.07' — the feed card date box,
+// fmtDayDate(iso, lang) → 'MON 7.7' / 'Thứ 2 7.7' — the feed card date box,
 // exactly the hub's dayDateLabel. Non-EN/VN languages read the EN weekday (the
 // three-letter short travels well and keeps the boxes compact).
 export function fmtDayDate(iso, lang = 'EN') {

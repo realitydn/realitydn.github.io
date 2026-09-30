@@ -353,7 +353,7 @@ const DEFAULTS = {
   /* Match-up combo: competition kicker, two team names auto-fitted to a matched
      size, an accent VS coin between, date · time below. One draggable unit. */
   matchup: { w:810, h:675, props:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', vs:'VS',
-             date:'Sat 14 Jun', time:'22:00', surface:'none', color:'fg', fill:'fg' } },
+             date:'Sat 14.6', time:'22:00', surface:'none', color:'fg', fill:'fg' } },
   block:   { w:540, h:450, props:{ fill:'fg', opacity:1, grain:0, grainSize:2, outline:false, color:'fg' } },
   /* ---- graphical elements. All four share the block's colour + grain
      vocabulary (fill 'fg' = Auto → the poster accent, so they follow the day

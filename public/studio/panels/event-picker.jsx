@@ -1,7 +1,8 @@
 /* ============================================================
    REALITY POSTER STUDIO — event picker
    ============================================================ */
-import { searchNorm, eventMatches, feedDayLabel } from '../feed.js';
+import { searchNorm, eventMatches, feedDayLabel, feedDayIdx, feedTime } from '../feed.js';
+import { DAY_ABBR as AP_DABBR } from '../studio-data.jsx';
 /* ---- WP9 event picker — lists upcoming events from the REALITY feed so the
    user can push the current poster's formats onto an event's poster slots.
    Drawn with the shared kit (studio-base.css): the dark modal, .rs-pick rows,
@@ -18,7 +19,12 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
   const originRef = picker.origin || null;
   const originEv = originRef ? picker.events.find(e=>e.id===originRef.id) : null;
   const origin = originEv ? originRef : null;
-  const whenOf = iso => (iso||'').slice(0,16).replace('T',' ');
+  /* "Thu 2.7 · 19:00" — the house date (d.m, no leading zeros), the same
+     shape the queue rows print. It used to show the raw ISO "2026-07-02 19:00". */
+  const whenOf = iso => {
+    const di = feedDayIdx(iso), t = feedTime(iso);
+    return ((di!=null ? AP_DABBR[di]+' ' : '') + feedDayLabel(iso) + (t ? ' · '+t : '')).trim();
+  };
 
   /* Search by name. The feed is loaded two months out, so this list is ~300 rows
      deep and the event you want is almost never on screen — scrolling for it was

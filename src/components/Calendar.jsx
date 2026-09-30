@@ -128,12 +128,12 @@ export default function Calendar({ lang }) {
 
   // One canon event card — the ink pass's Events-page .ev-card (canon
   // 22.08.26): a day-owned block of TEXT beside the event's 4:5 poster at its
-  // native aspect. Day plate + DD.MM lead the text column (same sources as the
+  // native aspect. Day plate + d.m date lead the text column (same sources as the
   // rows below), the name sets in Montserrat 700 sentence case, the qualifier
   // collapses when absent, and time · room · price ride as one plain meta line
   // (price is TEXT here, same helper as the rows — never a colour block). The
   // designed 4:5 export fills a 4:5 frame, so nothing crops; an event with no
-  // poster gets the flat day-colour plate + big DD.MM (.cal-noposter, same as
+  // poster gets the flat day-colour plate + big d.m date (.cal-noposter, same as
   // the overlay). The weekday hue carries as plate + spine only — the row
   // language, scaled up. The lead variant is full-width with a bigger poster
   // and the name one step larger; on phones the lead stacks (canon w390:
@@ -149,7 +149,7 @@ export default function Calendar({ lang }) {
       .filter(Boolean)
       .join(' · ');
     const dm = fmtDM(ev.startsAt);
-    // Localized weekday — peel the DD.MM tail off fmtDayDate (the rows' trick).
+    // Localized weekday — peel the d.m tail off fmtDayDate (the rows' trick).
     const full = fmtDayDate(ev.startsAt, lang);
     const wd = dm && full.endsWith(dm) ? full.slice(0, -dm.length).trim() : full;
     // Poster source: the designed 4:5 export leads (native in a 4:5 frame, no
@@ -222,7 +222,7 @@ export default function Calendar({ lang }) {
   };
 
   // One canon row (index.css "Calendar rows") — past the wall an event is
-  // typography: day plate + DD.MM, name (wraps, never truncated) with the
+  // typography: day plate + d.m date, name (wraps, never truncated) with the
   // qualifier collapsing when absent, time · room · price in tabular meta,
   // one arrow. The weekday hue survives as plate + spine only, and the price
   // rides as TEXT, never a colour block. Same sources as the slices, so all
@@ -234,7 +234,7 @@ export default function Calendar({ lang }) {
     const loc = pickLocName(ev.location, lang);
     const start = fmtTime(ev.startsAt);
     const dm = fmtDM(ev.startsAt);
-    // fmtDayDate prints "<weekday> <DD.MM>" in every language — peel the
+    // fmtDayDate prints "<weekday> <d.m>" in every language — peel the
     // date off the tail to get the localized weekday (VN's "Thứ 2" included)
     // without opening a second formatter path.
     const full = fmtDayDate(ev.startsAt, lang);

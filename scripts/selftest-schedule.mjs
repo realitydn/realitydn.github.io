@@ -52,11 +52,16 @@ const FNS = [
   'ictHHMM', 'ictDate', 'feedWindow', 'buildDocFromFeed', 'feedPrefKey', 'mergeFeedIntoDoc', 'applyFeedToDoc',
   'deleteEventFromDoc', 'restoreFeedEvent', 'clearRangeOccurrences', 'cloneToNextPeriod', 'storeDoc',
   'pickNewerDoc', 'writeBothDocs',
+  // the house date labels (d.m / d.m.yy, no leading zeros) and the paste parser
+  'dShort', 'dShortYr', 'rangeLabel', 'blankEvent', 'takeTail', 'parseQuickLine', 'parsePasteBlock',
 ];
 const code =
   // consts the extracted functions read (mirrors data-model.jsx / data-store.jsx)
   'const NIGHT_ROLLOVER_H = 6;\n' +
   "const SCH_LS = 'reality-schedule-doc-v2';\n" +
+  // data-parse.jsx's CODESET is an arrow const (extract() only finds functions);
+  // a fixed room list keeps LOCATIONS itself out of the sandbox.
+  "const CODESET = () => ['1L', '2L', '2E', '3P'];\n" +
   "let _sid = 1; function suid(){ return 'sid' + (_sid++); }\n" +
   FNS.map(extract).join('\n') + '\n' +
   'globalThis.__exports = { ' + FNS.join(', ') + ' };';
@@ -450,6 +455,28 @@ eq('storeDoc: a normal write → true', X.storeDoc({ events: [] }), true);
     eq('round trip: the old tab’s later edit wins the next load', pickNewerDoc(idbBox, lsBox).doc.tag, 'old-tab');
   };
   await run();
+}
+
+// ── house date labels + the paste parser (rule 30.9.26: d.m.yy, no leading
+// zeros). Labels print unpadded; a typed day header is read padded OR not.
+{
+  const { dShort, dShortYr, rangeLabel, parsePasteBlock } = X;
+  eq('dShort unpadded', dShort('2026-07-01'), '1.7');
+  eq('dShort two-digit month', dShort('2026-10-12'), '12.10');
+  eq('dShortYr unpadded', dShortYr('2026-09-30'), '30.9.26');
+  eq('rangeLabel across a month', rangeLabel({ start: '2026-09-28', days: 7 }), '28.9.26 - 4.10.26');
+  const doc = { range: { start: '2026-06-29', days: 7 } };   // Mon 29.6 … Sun 5.7
+  const p = parsePasteBlock(
+    '01.07\nCLOSED A\n2.7\nCLOSED B\n03.07.26\nCLOSED C\n4.7.2026\nCLOSED D\n5.7\n19:00 Board Game Night 2E', doc);
+  eq('paste: no errors for padded + unpadded headers', p.errors.join(' | '), '');
+  eq('paste: padded 01.07 header', p.notes['2026-07-01'] && p.notes['2026-07-01'].note, 'CLOSED A');
+  eq('paste: unpadded 2.7 header', p.notes['2026-07-02'] && p.notes['2026-07-02'].note, 'CLOSED B');
+  eq('paste: padded 03.07.26 header', p.notes['2026-07-03'] && p.notes['2026-07-03'].note, 'CLOSED C');
+  eq('paste: unpadded full-year 4.7.2026 header', p.notes['2026-07-04'] && p.notes['2026-07-04'].note, 'CLOSED D');
+  eq('paste: event lands on the unpadded header day', p.events[0] && p.events[0].date, '2026-07-05');
+  eq('paste: event room code', p.events[0] && p.events[0].locations.join(','), '2E');
+  const out = parsePasteBlock('10.07\nCLOSED', doc);
+  check('paste: a date outside the range is an error', out.errors.length === 1);
 }
 
 if (failures.length) {

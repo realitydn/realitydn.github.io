@@ -101,9 +101,10 @@ export function dateKey(iso) {
   }).format(d);
 }
 
-// fmtDayHeading(iso, lang) — a human day heading like "Sat, 28 Jun" (EN) for the
-// agenda group header, rendered in ICT. lang is a LANGS code (data/languages.js);
-// day headings localize fully even though event titles only exist in EN/VI.
+// fmtDayHeading(iso, lang) — a human day heading like "Sat 28.6" (EN) for the
+// agenda group header, rendered in ICT. lang is a LANGS code (data/languages.js):
+// the weekday localizes, the date is the house d.m in every language (30.9.26:
+// day-first, dot-separated, no leading zeros — never a month name or month-first).
 const HEADING_LOCALES = {
   EN: 'en-GB', VN: 'vi-VN', RU: 'ru-RU', UK: 'uk-UA', KO: 'ko-KR', JA: 'ja-JP',
 };
@@ -112,9 +113,14 @@ export function fmtDayHeading(iso, lang = 'EN') {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   const locale = HEADING_LOCALES[lang] || 'en-GB';
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: ICT, weekday: 'short', day: 'numeric', month: 'short',
-  }).format(d);
+  const wd = new Intl.DateTimeFormat(locale, { timeZone: ICT, weekday: 'short' }).format(d);
+  let day = '';
+  let month = '';
+  for (const p of new Intl.DateTimeFormat('en-GB', { timeZone: ICT, day: 'numeric', month: 'numeric' }).formatToParts(d)) {
+    if (p.type === 'day') day = p.value;
+    else if (p.type === 'month') month = p.value;
+  }
+  return `${wd} ${+day}.${+month}`;
 }
 
 // pickTitle / pickLocName — the feed only carries EN + VI content fields, so

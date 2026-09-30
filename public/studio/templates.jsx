@@ -42,7 +42,7 @@ const TEMPLATES = [
   /* ---- SPORTS · match screenings (Night · full-bleed + standard ticket) ---- */
   { id:'sports-matchup', name:'Matchup', group:'Sports', theme:'night', accent:'green', ov:{ '1x1':{ matchup:{ y:110, h:700 } } }, els:[
     BLEED(0, { contrast:1.32, brightness:-0.1 }),
-    { type:'matchup', k:'matchup', x:90, y:315, w:900, h:765, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'Sat 14 Jun', time:'22:00', textColor:'cream' } },
+    { type:'matchup', k:'matchup', x:90, y:315, w:900, h:765, p:{ comp:'WORLD CUP', teamA:'Brazil', teamB:'Argentina', date:'Sat 14.6', time:'22:00', textColor:'cream' } },
     TICKET(),
   ]},
   /* ---- TALK · single events (Day · full-bleed + bottom banner) ---- */
@@ -158,7 +158,7 @@ const TEMPLATES = [
     { type:'title', k:'band1', x:0, y:135, w:1080, h:360, p:{ text:'Event\nTitle', fontSize:144, weight:800, align:'left', surface:'accent', textInset:90 } },
     { type:'rule',  k:'r1', x:0, y:483, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
     { type:'info',  k:'facts', x:0, y:495, w:1080, h:270, p:{ surface:'none', align:'left', fontSize:32, lineHeight:1.5, textInset:90,
-      text:'Thu · 25.09.26 · 19:00\nThe Rooftop · Floor 3\nFree entry — all welcome' } },
+      text:'Thu · 25.9.26 · 19:00\nThe Rooftop · Floor 3\nFree entry — all welcome' } },
     { type:'rule',  k:'r2', x:0, y:753, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
     { type:'title', k:'action', x:0, y:765, w:1080, h:180, p:{ text:'Come early', fontSize:100, weight:800, align:'left', surface:'accent', fill:'red', textColor:'cream', textInset:90 } },
     TICKET(),

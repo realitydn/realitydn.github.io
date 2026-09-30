@@ -20,6 +20,7 @@ import {
   pickLocName,
   fmtTime,
   dateKey,
+  fmtDayHeading,
 } from '../src/data/feed-helpers.js';
 import {
   dayClassFromISO,
@@ -122,15 +123,23 @@ eq('fmtTime 19:00 +07', fmtTime('2026-06-28T19:00:00+07:00'), '19:00');
 eq('fmtTime crosses midnight Z→ICT', fmtTime('2026-06-28T17:30:00Z'), '00:30');
 eq('dateKey ICT day', dateKey('2026-06-29T00:30:00+07:00'), '2026-06-29');
 
-// ── cal-feed: the feed-widget helpers (day colours, DD.MM labels, split) ─────
-// 2026-06-28 is a Sunday; DD.MM is house style (never month-first).
+// ── cal-feed: the feed-widget helpers (day colours, d.m labels, split) ───────
+// 2026-06-28 is a Sunday; d.m with NO leading zeros is house style (30.9.26 —
+// never month-first, never zero-padded).
 eq('dayClassFromISO Sunday', dayClassFromISO('2026-06-28T19:00:00+07:00'), 'd-sun');
 // Midnight boundary: Sunday 17:30Z = Monday 00:30 ICT → Monday's green, not Sunday's.
 eq('dayClassFromISO midnight-boundary ICT', dayClassFromISO('2026-06-28T17:30:00Z'), 'd-mon');
 eq('dayClassFromISO garbage → default', dayClassFromISO('not-a-date'), 'd-thu');
-eq('fmtDM DD.MM', fmtDM('2026-07-07T20:00:00+07:00'), '07.07');
-eq('fmtDayDate EN', fmtDayDate('2026-07-07T20:00:00+07:00', 'EN'), 'TUE 07.07');
-eq('fmtDayDate VN numeric weekday', fmtDayDate('2026-07-07T20:00:00+07:00', 'VN'), 'Thứ 3 07.07');
+eq('fmtDM d.m unpadded', fmtDM('2026-07-07T20:00:00+07:00'), '7.7');
+eq('fmtDM two-digit day', fmtDM('2026-09-30T20:00:00+07:00'), '30.9');
+eq('fmtDM two-digit month', fmtDM('2026-10-12T20:00:00+07:00'), '12.10');
+// Midnight boundary: 30.6 17:30Z is 1.7 00:30 in ICT — the ICT date, unpadded.
+eq('fmtDM midnight-boundary ICT', fmtDM('2026-06-30T17:30:00Z'), '1.7');
+eq('fmtDM garbage → empty', fmtDM('not-a-date'), '');
+eq('fmtDayDate EN', fmtDayDate('2026-07-07T20:00:00+07:00', 'EN'), 'TUE 7.7');
+eq('fmtDayDate VN numeric weekday', fmtDayDate('2026-07-07T20:00:00+07:00', 'VN'), 'Thứ 3 7.7');
+eq('fmtDayHeading EN house d.m', fmtDayHeading('2026-06-28T19:00:00+07:00', 'EN'), 'Sun 28.6');
+eq('fmtDayHeading unpadded', fmtDayHeading('2026-07-02T19:00:00+07:00', 'EN'), 'Thu 2.7');
 // splitFeedSite: with "now" = Wed 2026-07-01 noon ICT, Wed+Thu are soon, Friday
 // is later, and soon leads with the next-to-start regardless of input order.
 const wedNoon = Date.parse('2026-07-01T12:00:00+07:00');

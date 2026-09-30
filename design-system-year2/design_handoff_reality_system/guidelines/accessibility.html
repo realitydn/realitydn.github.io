@@ -143,14 +143,15 @@ table.cx tr:last-child td{border-bottom:none}
 <div class="pane" style="margin-top:16px">
   <div class="plabel">Dual-language blocks &mdash; the layout convention</div>
   <div class="two">
-    <div class="dual"><span class="en">Open Mic</span><span class="vi">&#272;&ecirc;m nh&#7841;c m&#7903;</span><span class="fx">Thu 21.08 &middot; 20:00 &middot; free entry</span></div>
-    <div class="dual"><span class="en">Film Club</span><span class="vi">C&acirc;u l&#7841;c b&#7897; phim</span><span class="fx">Sat 23.08 &middot; 19:00 &middot; 45.000&#8363;</span></div>
+    <div class="dual"><span class="en">Open Mic</span><span class="vi">&#272;&ecirc;m nh&#7841;c m&#7903;</span><span class="fx">Thu 21.8 &middot; 20:00 &middot; free entry</span></div>
+    <div class="dual"><span class="en">Film Club</span><span class="vi">C&acirc;u l&#7841;c b&#7897; phim</span><span class="fx">Sat 23.8 &middot; 19:00 &middot; 45.000&#8363;</span></div>
   </div>
   <table class="cx" style="margin-top:18px">
     <tr><td class="k" style="width:24%">Order</td><td>English first as the display line, Vietnamese immediately beneath. Same block, no tabs, no toggle &mdash; both audiences read the same object.</td></tr>
     <tr><td class="k">Type roles</td><td>The English line takes the heading role; the Vietnamese takes <code>.type-page</code> or <code>.type-sub</code> in Grotesk. <b>Never two competing display lines.</b></td></tr>
     <tr><td class="k">Facts once</td><td>Times, prices and dates are numerals &mdash; they appear <b>once</b>, in Grotesk, serving both languages. Duplicating them is the most common bilingual layout error.</td></tr>
     <tr><td class="k">Money</td><td><code>45.000&#8363;</code> &mdash; dot thousands, currency trailing, no space. Tabular figures in any column.</td></tr>
+    <tr><td class="k">Dates</td><td>Day-first, dot-separated, <b>no leading zeros</b> (rule 30.9.26): <code>30.9.26</code> &middot; <code>1.7.26</code> &middot; <code>12.10.26</code>; <code>2.7</code> without the year, <code>Thu 2.7</code> / <code>Th&#7913; 5 2.7</code> with a weekday, <code>28.9&ndash;4.10</code> for a range. Same in every language &mdash; never month-first. Machine formats (keys, <code>datetime=</code>, JSON-LD, filenames) stay padded ISO.</td></tr>
     <tr><td class="k">lang attribute</td><td>Set <code>lang="vi"</code> on the Vietnamese element, not on the page, or the <code>:lang(vi)</code> type rules apply to the English too.</td></tr>
   </table>
 </div>

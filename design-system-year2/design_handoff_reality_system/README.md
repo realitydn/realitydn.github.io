@@ -188,6 +188,8 @@ Semantic app-layout tokens (locked "Comfortable" density): `--screen-pad` 20 · 
 
 **Vietnamese:** uppercase VI needs `line-height: 1.3` (stacked diacritics sit above cap height) and display steps to **weight 200** under `:lang(vi)`. Proper names keep their own capitalisation — *bảo anh* and *MIDNIGHT WOLVES* both render as written. Never strip diacritics. Money is `45.000₫` — dot thousands, currency trailing, no space.
 
+**Dates** (rule 30.9.26) are day-first, dot-separated, with **no leading zeros** on day or month: `30.9.26` · `1.7.26` · `12.10.26`. The year stays two digits; a full-year form, where one is needed, is `1.7.2026`. Without the year: `2.7`. With a weekday: `Thu 2.7` / `Thứ 5 2.7`. Ranges: `28.9–4.10`. The same form in every language — never month-first, never `MM/DD`, never a month name beside a day. Month-only labels (*July 2026*) and relative words (*Tonight*) stay words; times are unchanged (`19:00`). Machine formats — storage keys, URL/feed params, `datetime=`, JSON-LD, ICS, sortable filenames — stay zero-padded ISO (`2026-07-01`).
+
 ### Motion
 **Easing:** `--ease-stamp` `cubic-bezier(.2,1.4,.45,1)` (overshoot punch) · `--ease-snap` `cubic-bezier(.3,0,.2,1)` (quick settle) · `--ease-out` `cubic-bezier(.16,1,.3,1)`.
 **Durations:** `--dur-tap` 120ms · `--dur-quick` 200ms · `--dur-settle` 350ms (**interaction settle — not the theme flip**) · `--dur-enter` 700ms (entrances **and the Day↔Night flip**) · `--stagger` 90ms between siblings.

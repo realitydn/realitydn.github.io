@@ -758,7 +758,7 @@ section[id], div[id="proposal"] {
 }
 
 /* Imageless overlay pane — when an event has no poster, the overlay leads
-   with a day-colour plate and a big DD.MM instead of an empty grey box. */
+   with a day-colour plate and a big d.m date instead of an empty grey box. */
 .cal-noposter {
   display: flex;
   flex-direction: column;

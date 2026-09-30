@@ -49,7 +49,10 @@ function useCloud({ doc, docRef, dirtyRef, hist, setDocQuiet, setSelId, requestP
         const local = docRef.current, localAt = +local.savedAt || 0;
         const same = JSON.stringify(Object.assign({}, remoteDoc, { savedAt:0 })) === JSON.stringify(Object.assign({}, local, { savedAt:0 }));
         if(same || remoteAt <= localAt) return;
-        const when = new Date(remoteAt).toLocaleString();
+        /* house date (d.m.yy, no leading zeros — 30.9.26 rule) + the laptop's
+           own time; toLocaleString() printed a month-first date on a US locale */
+        const at = new Date(remoteAt);
+        const when = at.getDate()+'.'+(at.getMonth()+1)+'.'+String(at.getFullYear()).slice(2)+' '+at.toLocaleTimeString();
         if(window.confirm('The cloud has a newer Schedule Studio draft (last edited '+when+', '+a_rangeLabel(a_norm(remoteDoc).range)+').\n\nLoad it? This replaces what’s on screen — Ctrl+Z brings this copy back.\n\nCancel keeps this copy; the cloud draft is only overwritten once you edit here.')){
           /* an undo step of its own, so a wrong click is one Ctrl+Z */
           hist.record(local);

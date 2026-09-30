@@ -20,7 +20,7 @@ import useDialog from '../hooks/useDialog';
 //
 // Wears the event's weekday colour (the same day→palette map as the feed
 // slices): a day-colour date tab stamps the header, and when an event has no
-// poster the left pane becomes a day-colour plate with a big DD.MM — never an
+// poster the left pane becomes a day-colour plate with a big d.m date — never an
 // empty grey box.
 //
 // PORTALLED to <body> (a11y pass 23.09.26): every .section is z-index: 1, so
@@ -31,7 +31,7 @@ import useDialog from '../hooks/useDialog';
 
 const APP_BASE = 'https://app.realitydn.com';
 
-// Localized weekday — peel the DD.MM tail off fmtDayDate rather than
+// Localized weekday — peel the d.m tail off fmtDayDate rather than
 // splitting on the first space (VN's weekday is two words: "Thứ 2").
 function weekdayOf(iso, lang) {
   const full = fmtDayDate(iso, lang);

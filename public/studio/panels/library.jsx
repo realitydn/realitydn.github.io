@@ -9,7 +9,7 @@ import {
 import { TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG } from '../templates.jsx';
 import { Hint } from './controls.jsx';
 import { GfxGrid, IconPicker } from './gfx-grid.jsx';
-import { Sec, TplThumb, TplCard, UserTplCard } from './library-cards.jsx';
+import { Sec, TplThumb, TplCard, UserTplCard, savedDM } from './library-cards.jsx';
 function Library({ lib, startSpawn }){
   const [tplOpen, setTplOpen] = React.useState(false);
   const { userTpls, tplReady, tplStoreErr, tplBin, restoreFromBin, restoring, restoreFromCloud, tplThumbs, captureTplThumb,
@@ -116,7 +116,7 @@ function Library({ lib, startSpawn }){
                         onClick={()=>restoreFromBin(e)} style={{ opacity:.8 }}>
                         <TplThumb doc={e.tpl.doc} w={88} />
                         <span className="tn">{e.tpl.name}</span>
-                        <span className="ts">{e.reason} · {new Date(e.at).toLocaleDateString(undefined,{ day:'numeric', month:'short' })}</span>
+                        <span className="ts">{e.reason} · {savedDM(e.at)}</span>
                         <button className="rs-tplx mild" style={{ top:4, width:20, height:20, fontSize:11 }}
                           title={'Put “'+e.tpl.name+'” back in My templates'}
                           onClick={ev=>{ ev.stopPropagation(); restoreFromBin(e); }}>↩</button>

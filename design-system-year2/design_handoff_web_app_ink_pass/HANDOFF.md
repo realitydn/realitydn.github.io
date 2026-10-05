@@ -1,5 +1,7 @@
 # HANDOFF — REALITY website + app, Year 2 ink-mark pass
 
+> **REVISED 5.10.26** — read `../design_handoff_night_cream_tickets/CANON-REV-5.10.26.md` after this file. Where they disagree (accent pair, text on fills, Night surfaces, tickets, categories), the revision wins.
+
 Rev 22.08.2026 (updated after the focus decision). Read `CLAUDE.md` first;
 this document does not repeat it.
 

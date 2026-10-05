@@ -1,5 +1,7 @@
 # Agent brief — REALITY Design System, Year 2
 
+> **REVISED 5.10.26** — read `../design_handoff_night_cream_tickets/CANON-REV-5.10.26.md` after this file. Where they disagree (accent pair, text on fills, Night surfaces, tickets, categories), the revision wins.
+
 *(Copy this to `CLAUDE.md` at the root of the target repo.)*
 
 Read this first. It is the entry point for any agent working on REALITY

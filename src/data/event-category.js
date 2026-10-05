@@ -39,13 +39,16 @@ const RULES = [
   // before music: "PowerPoint Karaoke" and "Hitster: The Music Party Game" are games
   ['games', /\b(powerpoint karaoke|quiz|trivia|chess|board ?games?|geoguessr|shogi|tournament|game show|game night|party game|jackbox|video game|clocktower|hitster|poker|mahjong|bingo|werewolf|games?)\b/],
   ['music', /\b(dance|dancing|dj|karaoke|charaoke|singing|album|listening party|open mic|no mic|jam|jam session|concert|ballet|bachata|salsa|jive|band|musical|sing.?along|choir|orchestra|live music|acoustic|gig|vinyl|music)\b/],
-  ['wellness', /\b(therapy|healing|somatic|meditation|mindful|wellbeing|wellness|nutrition|hormone|menstrual|longevity|self.care|boundaries|vulnerability|anxiety|adhd|burnout|breathwork|yoga|sleep|stress|journaling|body doubling|life purpose|core values)\b/],
-  ['tech', /\b(startup|founder|freelanc|entrepreneur|business|marketing|linkedin|seo|client|pricing|invest|crypto|coding|developer|ai|product|sprint|career|virality|organic growth|content strateg|social media|copywriting|blockchain|web3|presentation|public speaking|skill.sharing)\b/],
+  ['wellness', /\b(therapy|healing|somatic|meditation|mindful\w*|wellbeing|wellness|nutrition|hormone|menstrual|longevity|self.care|boundaries|vulnerability|anxiety|adhd|burnout|breathwork|yoga|sleep|stress|journaling|body doubling|life purpose|core values)\b/],
+  ['tech', /\b(startups?|founders?|freelanc\w*|entrepreneurs?|business|marketing|linkedin|seo|client|pricing|invest\w*|compliance|crypto|coding|developer|ai|product|sprint|career|virality|organic growth|content strateg\w*|social media|copywriting|blockchain|web3|presentation|public speaking|skill.sharing)\b/],
   ['arts', /\b(art|paint|drawing|craft|crochet|writing|poetry|photo|photography|design|architecture|lecture|book club|book launch|exhibition|storyteller|creative|sketch)\b/],
   ['language', /\b(language|conversation|talk circle|philosophy|exchange|vietnamese|english|mandarin|french|russian|debate|discussion|talk)\b/],
   // the generic party words last, so "Album Listening Party" stays music
   ['party', /\b(party|parties|celebration|festival|rave|disco)\b/],
-  ['social', /\b(meet.?up|social|hangout|circle|community|chat|club)\b/],
+  ['social', /\b(meet.?ups?|social|hangout|circle|community|chat|club|swap|munch)\b/],
+  // last resort, as the analytics registry does it: a workshop or class
+  // nothing above recognised is personal growth
+  ['wellness', /\b(workshops?|class|classes|masterclass)\b/],
 ];
 
 function fold(s) {

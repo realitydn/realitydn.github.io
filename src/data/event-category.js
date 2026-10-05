@@ -1,30 +1,36 @@
-// event-category.js — the event CATEGORY (Night v2 "Cream Tickets", round 2,
-// 5.10.26 — design-system-year2/design_handoff_night_cream_tickets/).
+// event-category.js — the event CATEGORY (Night v2 "Cream Tickets").
 //
-// A PORT of the hub's src/lib/event-category.ts — same ten keys, same rule
-// table, same order, same fold. Change both together. Dependency-free like
+// A PORT of the hub's src/lib/event-category.ts — same keys, same fold, same
+// rule table in the same order. Change both together. Dependency-free like
 // cal-feed.js so scripts/selftest.mjs can unit-test it without a DOM.
 //
-// The ten keys are the event-analysis skill's categories (its names are the
-// label copy — see CAT_STR in cal-feed.js), plus `other` for the rest:
+// Six guest-facing groups since 6.10.26 (Donald: "Combine Games + Social +
+// Parties · Rename Language to Talk Events · Cut Drinks for now · Combine
+// Film + Arts + Music"):
 //
-//   music    → blue     party  → red      games / drinks → yellow
-//   language → pink     social → green    arts → purple   wellness → amber
-//   film / tech / other → NEUTRAL (an ink block on cream, no hue)
+//   social   (Games + Social)     → red
+//   arts     (Arts, Film, Music)  → blue
+//   language (Talk Events)        → pink
+//   wellness                      → amber
+//   tech / other                  → NEUTRAL (an ink block on cream, no hue)
 //
 // The colours live in index.css ([data-cat]); this file only names the key.
-//
-// SOURCE ORDER: the hub's feed is adding a `category` field (additive) —
-// categoryOf() prefers it whenever it is one of the ten keys. Until the hub
-// deploys (and for any row it leaves blank), the category is DERIVED from the
-// English title + qualifier by the rule table below.
+// The hub's feed publishes the resolved group (FeedEvent.category);
+// categoryOf() reads it, folding any older finer key (FOLDED) for a cached
+// feed, and falls back to the English title through the rule table, whose
+// families are still the rubric's finer ones (each answering with its group).
 
-export const CATEGORIES = [
-  'music', 'party', 'games', 'drinks', 'language',
-  'social', 'arts', 'wellness', 'film', 'tech', 'other',
-];
+export const CATEGORIES = ['social', 'arts', 'language', 'wellness', 'tech', 'other'];
 const KNOWN = new Set(CATEGORIES);
-export const NEUTRAL_CATEGORIES = new Set(['film', 'tech', 'other']);
+// The finer keys the hub stored (migration 0090) and their group today.
+export const FOLDED = { games: 'social', party: 'social', drinks: 'social', film: 'arts', music: 'arts' };
+export const NEUTRAL_CATEGORIES = new Set(['tech', 'other']);
+
+export function normalizeCategory(v) {
+  if (typeof v !== 'string') return null;
+  if (KNOWN.has(v)) return v;
+  return FOLDED[v] || null;
+}
 
 // First match wins. Titles are folded first (accents stripped, lowercased) and
 // every alternative is matched on WORD BOUNDARIES — \b(…)\b, the analytics
@@ -60,19 +66,35 @@ function fold(s) {
     .toLowerCase();
 }
 
-// eventCategory(title, qualifier?) → one of CATEGORIES ('other' when nothing matches)
-export function eventCategory(title, qualifier) {
+// eventFamily(title, qualifier?) → the rubric's FINER family a title names
+// (drinks, party, film, games, music, wellness, tech, arts, language, social,
+// or 'other') — what the deal ticket needs, since Drinks is no longer a group.
+export function eventFamily(title, qualifier) {
   const hay = fold(`${title ?? ''} ${qualifier ?? ''}`);
   for (const [cat, re] of RULES) if (re.test(hay)) return cat;
   return 'other';
 }
 
+// eventCategory(title, qualifier?) → one of CATEGORIES ('other' when nothing matches)
+export function eventCategory(title, qualifier) {
+  const fam = eventFamily(title, qualifier);
+  return FOLDED[fam] || fam;
+}
+
+// isDealEvent(feedEvent) — a drinks deal (Happy Hour: Buy 1 Get 1…), by its
+// title: the menu's deal ticket. A deal is yellow's JOB (deal/progress), not a
+// category, so it survives Drinks being folded into Games + Social.
+export function isDealEvent(ev) {
+  return eventFamily(ev?.title_en ?? ev?.title, ev?.qualifier_en ?? ev?.qualifier) === 'drinks';
+}
+
 // categoryOf(feedEvent) — a feed row's category: the feed's own `category`
-// when it is one of the ten keys, else derived from the ENGLISH title +
-// qualifier (the rules are English; a VI-only title falls through to other).
+// (folded, if an older feed carries a finer key), else derived from the
+// ENGLISH title + qualifier (the rules are English; a VI-only title falls
+// through to other).
 export function categoryOf(ev) {
-  if (ev && typeof ev.category === 'string' && KNOWN.has(ev.category)) return ev.category;
-  return eventCategory(ev?.title_en ?? ev?.title, ev?.qualifier_en ?? ev?.qualifier);
+  return normalizeCategory(ev && ev.category)
+    || eventCategory(ev?.title_en ?? ev?.title, ev?.qualifier_en ?? ev?.qualifier);
 }
 
 export function isNeutralCategory(cat) {

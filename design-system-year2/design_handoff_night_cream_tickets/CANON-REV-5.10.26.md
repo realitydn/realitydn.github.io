@@ -53,12 +53,17 @@ deal / progress.
 
 ## 4 · Event categories → colour
 
-The event-analysis rubric (nine categories) + Drinks: music → blue · party → red · games,
-drinks → yellow · language → pink · social → green · arts → purple · wellness → amber ·
-film, tech, other → neutral ink. Stored on `event_series.category` (+ an override on
-`member_events.category`, migration 0090), resolved own → series → title rules; exposed on
-the feed. The category replaces the weekday hue on EVENT UI (the `.d-*` day-code stays for
-posters, print and non-event surfaces).
+**Six guest-facing groups (Donald 6.10.26):** Games + Social (`social`) → red · Arts, Film,
+Music (`arts`) → blue · Talk Events (`language`) → pink · Wellness → amber · Tech, Other →
+neutral ink. Names use pluses, never ampersands. They grew out of the event-analysis rubric's
+ten (+ Drinks): games, parties and drinks folded into Games + Social; film and music into
+Arts, Film, Music. Drinks is cut "for now" — the finer keys stay STORED (`event_series.category`
+/ `member_events.category`, migration 0090) and are folded on every read (`FOLDED_CATEGORIES` /
+`normalizeCategory` in the app, `FOLDED` in the site's port), so a split can come back by
+editing the map — no migration. The feed only ever publishes the six. A deal (Happy Hour) is
+yellow's JOB, not a category: the site's menu deal ticket finds it by title (`isDealEvent`).
+The category replaces the weekday hue on EVENT UI (the `.d-*` day-code stays for posters,
+print and non-event surfaces).
 
 ## 5 · Kept from the house canon (the handoff's prototype differs)
 

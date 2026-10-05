@@ -141,13 +141,14 @@ export function isTodayICT(iso, now = Date.now()) {
   return !!d && FMT_YMD.format(d) === ictDateStr(now, 0);
 }
 
-// nextDealToday(events, categoryOf, now?) → the menu's deal ticket: the NEXT
-// drinks-category event that hasn't ended — shown ONLY when it is today (ICT)
-// (Donald, 5.10.26: "only on the day"). null otherwise. categoryOf is passed
-// in so this module stays free of the category table.
-export function nextDealToday(events, categoryOf, now = Date.now()) {
+// nextDealToday(events, isDeal, now?) → the menu's deal ticket: the NEXT
+// deal event (isDealEvent — a Happy Hour by its title) that hasn't ended —
+// shown ONLY when it is today (ICT) (Donald, 5.10.26: "only on the day").
+// null otherwise. The predicate is passed in so this module stays free of the
+// category table.
+export function nextDealToday(events, isDeal, now = Date.now()) {
   const next = (events || [])
-    .filter((ev) => ev && instant(ev.startsAt) && categoryOf(ev) === 'drinks')
+    .filter((ev) => ev && instant(ev.startsAt) && isDeal(ev))
     .filter((ev) => Date.parse(ev.endsAt || ev.startsAt) >= now)
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))[0];
   return next && isTodayICT(next.startsAt, now) ? next : null;
@@ -255,7 +256,7 @@ export function cfStr(lang = 'EN') {
 // per key — so RU/UK/KO/JA read the EN names until Donald adds theirs here
 // (TICKET_STR.RU = { cat: { music: '…' } } — missing keys still fall back).
 // `other` (uncategorised) has no name: the bar/meta line just omits it.
-// The names can be long ("MUSIC + DANCE + PERFORMANCE"): bars and meta lines
+// The names can be long ("WELLNESS + GROWTH"): bars and meta lines
 // WRAP, never truncate (index.css .tkt-top).
 //
 // WHEN / WHERE: the site had no standalone label for either in any language,
@@ -265,32 +266,25 @@ export function cfStr(lang = 'EN') {
 const TICKET_STR = {
   EN: {
     cat: {
-      music: 'Music + Dance + Performance',
-      party: 'Parties + Special Events',
-      games: 'Games + Trivia',
-      drinks: 'Drinks + Deals',
-      language: 'Language + Conversation',
-      social: 'Social + Community',
-      arts: 'Creative Arts',
+      social: 'Games + Social',
+      arts: 'Arts, Film, Music',
+      language: 'Talk Events',
       wellness: 'Wellness + Growth',
-      film: 'Film + Screenings',
       tech: 'Tech + Business',
+      // not a category — the menu's deal ticket (isDealEvent)
+      deal: 'Drinks + Deals',
     },
     when: 'When',
     where: 'Where',
   },
   VN: {
     cat: {
-      music: 'Âm nhạc + Nhảy + Trình diễn',
-      party: 'Tiệc + Sự kiện đặc biệt',
-      games: 'Trò chơi + Đố vui',
-      drinks: 'Đồ uống + Ưu đãi',
-      language: 'Ngôn ngữ + Trò chuyện',
-      social: 'Giao lưu + Cộng đồng',
-      arts: 'Nghệ thuật sáng tạo',
+      social: 'Trò chơi + Giao lưu',
+      arts: 'Nghệ thuật, Phim, Âm nhạc',
+      language: 'Sự kiện trò chuyện',
       wellness: 'Sức khoẻ + Phát triển bản thân',
-      film: 'Phim + Chiếu phim',
       tech: 'Công nghệ + Kinh doanh',
+      deal: 'Đồ uống + Ưu đãi',
     },
     when: 'Thời gian',
     where: 'Địa điểm',

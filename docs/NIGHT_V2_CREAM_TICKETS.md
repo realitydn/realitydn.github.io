@@ -412,3 +412,25 @@ every golden unchanged):
   filled with the day colour. The standard CTA (wordmark, address, QR) closes the card.
 
 The FB cover isn't ticketed (it has its own Cover styles).
+
+## Categories folded into six (6.10.26)
+
+Donald: "Combine Games + Social + Parties · Rename Language to Talk Events · Cut Drinks for now
+· Combine Film + Arts + Music"; names "Games + Social" and "Arts, Film, Music" (pluses, not
+ampersands); Games + Social red, Arts, Film, Music blue; drinks events into Games + Social.
+Guests see six keys — `social`, `arts`, `language` (Talk Events), `wellness`, `tech`, `other`.
+The 0090 finer keys stay in the data and fold on READ (`normalizeCategory`), so nothing was
+migrated and Drinks (or any family) can be split back out by editing one map; editors WRITE
+only the six. Old `?type=music` links land on Arts, Film, Music. The title rules keep the
+rubric's finer families in their order (a music party game is still a game). The site's menu
+deal ticket keys off `isDealEvent` (title), yellow by job.
+
+## Calendar — a short two-up list, then the app (6.10.26)
+
+Donald: "the four columns is overwhelming. Let's do smaller 2 columns as we get down the list,
+and only have a couple rows before the 'explore the full calendar in the webapp' so we don't have
+people endlessly scrolling … as they try to go check the info or menu sections." The feed is
+ordinary page content on every device now — the desktop self-scrolling PANE is gone. Five poster
+cards, then COMING UP renders only `ROW_CAP` (4) list tickets — two rows of two from 640px, one
+column on phones, each smaller (52px date block, 15px name) — then the app door ("See all N
+events in the app ↗"). The keyboard skip link went with the 60-row pane.

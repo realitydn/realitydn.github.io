@@ -6,7 +6,7 @@ import EventOverlay from './EventOverlay';
 import useFeed from '../hooks/useFeed';
 import { fmtTime, pickTitle, pickQualifier } from '../data/feed-helpers';
 import { whenKey, fmtDayDate, catLabel, nextDealToday } from '../data/cal-feed';
-import { categoryOf } from '../data/event-category';
+import { isDealEvent } from '../data/event-category';
 
 // NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the menu is
 // ONE neutral cream ticket with ruled rows. The category tabs, their accent
@@ -14,8 +14,8 @@ import { categoryOf } from '../data/event-category';
 // minors are allowed — Donald, 5.10.26 evening): they flip with the tokens.
 
 // The happy-hour ticket — ONLY ON THE DAY (Donald, 5.10.26): shown when the
-// feed's next DRINKS event (categoryOf → 'drinks', e.g. "Happy Hour: Buy 1
-// Get 1 Cocktails") is today in ICT (nextDealToday), as a yellow-top-bar
+// feed's next DEAL (isDealEvent, e.g. "Happy Hour: Buy 1 Get 1 Cocktails")
+// is today in ICT (nextDealToday), as a yellow-top-bar
 // ticket with a yellow print. Nothing is invented: title, day and time come
 // from the feed; on any other day it renders nothing.
 function DealTicket({ ev, lang, onOpen }) {
@@ -31,7 +31,6 @@ function DealTicket({ ev, lang, onOpen }) {
     <a
       href={href}
       className="tkt deal-tkt mb-8"
-      data-cat="drinks"
       onClick={(e) => {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
@@ -39,7 +38,7 @@ function DealTicket({ ev, lang, onOpen }) {
       }}
     >
       <span className="tkt-top">
-        <span>{catLabel('drinks', lang)}</span>
+        <span>{catLabel('deal', lang)}</span>
         <span>{[day, start ? (end ? `${start}–${end}` : start) : ''].filter(Boolean).join(' · ')}</span>
       </span>
       <span className="deal-tkt-b">
@@ -84,7 +83,7 @@ export default function MenuSection({ lang, t }) {
   // Today's drinks deal, if there is one, from the shared feed load (no
   // extra fetch — the calendar's request).
   const { events } = useFeed();
-  const deal = useMemo(() => nextDealToday(events, categoryOf), [events]);
+  const deal = useMemo(() => nextDealToday(events, isDealEvent), [events]);
   const [overlayEvent, setOverlayEvent] = useState(null);
 
   // Category panels differ a lot in height. If the viewport is deep in a

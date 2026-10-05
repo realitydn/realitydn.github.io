@@ -717,27 +717,19 @@ section[id], div[id="proposal"] {
 .d-sat { --day: var(--amber);  --on-day: #0d0905; }
 .d-sun { --day: var(--yellow); --on-day: #0d0905; }
 
-/* The feed has TWO modes, chosen by the pointer, not by JS (so the
-   prerendered HTML and the hydrated tree never disagree):
-
-   FLOW (default — every touch device, and anything under 768px): the feed
-   is ordinary page content. Five poster cards, then the first COMING UP
-   rows; the rest fold away behind the app door (.cal-more, "See all N
-   events in the app") so the page keeps scrolling and the count still says
-   how much is on. A nested scroller on a phone was a trap (03.09.26: a
-   visitor sent over from the app for the proposal form swiped through every
-   event and never got past the schedule) — the inner pane ate every swipe
-   until it ran out, and overscroll-behavior: contain stopped the fling from
-   ever chaining to the page.
-
-   PANE (mouse + ≥768px only): the original self-scrolling widget — a
-   phone-feed's worth of calendar that scrolls inside itself, so the
-   section stops eating the page. The wrapper paints a paper fade at the
-   bottom edge as the "more below" affordance; the labels stick inside. */
+/* The feed is ordinary page content on every device (Donald 6.10.26: "the
+   four columns is overwhelming … only have a couple rows before the explore
+   the full calendar … so we don't have people endlessly scrolling an
+   overwhelming thing as they try to go check the info or menu sections").
+   Five poster cards, then a SHORT Coming-up list (Calendar.jsx ROW_CAP), then
+   the app door (.cal-more, "See all N events in the app"): the full calendar
+   lives in the app. The old desktop PANE — a self-scrolling widget that
+   listed every row — is gone; so is the phone fold that hid the rows past
+   the cap, since only the capped rows render now. */
 .cal-feed-wrap { position: relative; }
 .cal-feed-pane { padding: 4px 6px 4px 4px; }
 .cal-more {
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   margin-top: 14px;
@@ -746,41 +738,9 @@ section[id], div[id="proposal"] {
   width: 100%;
   justify-content: center;
 }
-/* Flow mode (the complement of the pane query below): the rows past the cap
-   (.ev-extra) fold away for good and the app door takes their place. The
-   pane mode below shows every row itself, so neither rule applies there. */
-@media (max-width: 767.98px), (hover: none), (pointer: coarse) {
-  .wk-capped .ev-extra { display: none; }
-  .cal-more { display: inline-flex; }
-}
 
-@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
-  .cal-feed-wrap::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 12px; bottom: 0;
-    height: 56px;
-    pointer-events: none;
-    background: linear-gradient(to bottom, transparent, var(--bg));
-  }
-  .cal-feed-pane {
-    max-height: clamp(480px, 74vh, 820px);
-    overflow-y: auto;
-    /* side padding so the hover lift + misregister prints aren't clipped */
-    padding: 4px 6px 64px 4px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--fg) transparent;
-  }
-  .cal-feed-pane::-webkit-scrollbar { width: 8px; }
-  .cal-feed-pane::-webkit-scrollbar-thumb { background: var(--fg); border: 2px solid var(--bg); }
-  .cal-feed-pane::-webkit-scrollbar-track { background: transparent; }
-  /* Labels ride along while the pane scrolls (the app's SectionLabel). */
-  .cal-label { position: sticky; top: 0; }
-}
-
-/* Section labels — the app's SectionLabel. Static in flow mode (a sticky
-   label would slide under the masthead); sticky inside the pane (set in the
-   pane query above — no position here, or this later rule would win). */
+/* Section labels — the app's SectionLabel. Static (a sticky label would
+   slide under the masthead). */
 .cal-label {
   z-index: 6;
   display: flex;
@@ -1036,15 +996,12 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
    night lift #9a4faa, since #6e3179 vanishes as a print on the ink
    page) — a literal, because a ticket re-declares --purple to Day's. */
 [data-cat] { --cat: var(--ticket-neutral); --on-cat: var(--ticket-neutral-fg); --print: var(--print-neutral); }
-[data-cat="music"]    { --cat: var(--blue);   --on-cat: #fffbf1; --print: var(--blue); }
-[data-cat="party"]    { --cat: var(--red);    --on-cat: #fffbf1; --print: var(--red); }
-[data-cat="games"],
-[data-cat="drinks"]   { --cat: var(--yellow); --on-cat: #0d0905; --print: var(--yellow); }
+[data-cat="social"]   { --cat: var(--red);    --on-cat: #fffbf1; --print: var(--red); }
+[data-cat="arts"]     { --cat: var(--blue);   --on-cat: #fffbf1; --print: var(--blue); }
 [data-cat="language"] { --cat: var(--pink);   --on-cat: #fffbf1; --print: var(--pink); }
-[data-cat="social"]   { --cat: var(--green);  --on-cat: #fffbf1; --print: var(--green); }
 [data-cat="wellness"] { --cat: var(--amber);  --on-cat: #0d0905; --print: var(--amber); }
-[data-cat="arts"]     { --cat: #6e3179;       --on-cat: #fffbf1; --print: #6e3179; }
-[data-theme="dark"] [data-cat="arts"] { --cat: #9a4faa; --print: #9a4faa; }
+/* The menu's deal ticket: yellow is the DEAL job (not a category). */
+.deal-tkt             { --cat: var(--yellow); --on-cat: #0d0905; --print: var(--yellow); }
 /* The category replaces the weekday hue on event UI: whatever still reads
    --day (the no-poster pane, the overlay's poster ground) reads the
    category. The .d-* weekday code stays for posters and print. */
@@ -1110,7 +1067,7 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
   box-shadow: calc(var(--px) + 4px) calc(var(--px) + 4px) 0 var(--tkt-plate, var(--accent));
   background-color: var(--ticket);
 }
-[data-cat="music"] { --tkt-plate: var(--accent-2); }
+[data-cat="arts"] { --tkt-plate: var(--accent-2); }
 
 /* Top bar — category fill, label left / meta right, 2px ink rule. The
    category names are long ("MUSIC + DANCE + PERFORMANCE"): the bar WRAPS,
@@ -1300,17 +1257,15 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
 .cal-noposter-logo { display: inline-flex; }
 .cal-noposter:not(.absolute) { position: relative; }
 
-/* COMING UP — list tickets: a 60px category date block + body. 4-up on
-   desktop (22px), 2-up on tablet, one column on phones (18px). The name
-   wraps, never truncates; the price rides as TEXT. */
-.wk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; width: 100%; padding: 2px 0 10px; }
-@media (min-width: 768px) {
-  .wk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+/* COMING UP — list tickets, SMALL and two-up (Donald 6.10.26: four columns
+   was overwhelming): a 52px category date block + body, two columns from
+   640px, one on phones. The name wraps, never truncates; the price rides as
+   TEXT. Only ROW_CAP of them render (Calendar.jsx), then the app door. */
+.wk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; width: 100%; padding: 2px 0 6px; }
+@media (min-width: 640px) {
+  .wk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
 }
-@media (min-width: 1024px) {
-  .wk { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-.ev { position: relative; display: grid; grid-template-columns: 60px minmax(0, 1fr); align-items: stretch; text-align: left; }
+.ev { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: stretch; text-align: left; }
 .ev-dblock {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   background: var(--cat); color: var(--on-cat);
@@ -1318,18 +1273,18 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
   padding: 10px 2px; text-align: center;
 }
 .ev-dblock-wd { font-family: var(--mont); font-weight: 700; font-size: 10px; line-height: 1.15; letter-spacing: .12em; text-transform: uppercase; }
-.ev-dblock-d { font-family: var(--mont); font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ev-dblock-d small { font-size: 12px; }
-.ev-b { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 13px 15px 14px; }
+.ev-dblock-d { font-family: var(--mont); font-weight: 700; font-size: 19px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-dblock-d small { font-size: 11px; }
+.ev-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 13px 11px; }
 .ev-mline {
   display: block; margin-bottom: 2px;
   font-family: var(--mont); font-weight: 700; font-size: 11px; line-height: 1.3;
   letter-spacing: .1em; text-transform: uppercase; color: var(--ticket-dim);
 }
-.ev-n { font-family: var(--mont); font-weight: 700; font-size: 17px; line-height: 1.15; letter-spacing: .02em; text-transform: uppercase; margin: 0; }
+.ev-n { font-family: var(--mont); font-weight: 700; font-size: 15px; line-height: 1.15; letter-spacing: .02em; text-transform: uppercase; margin: 0; }
 :lang(vi) .ev .ev-n { line-height: 1.3; }
 .ev .ev-qual,
-.ev-sub { display: block; font-family: var(--grotesk); font-size: 13px; line-height: 1.5; color: var(--ticket-dim); }
+.ev-sub { display: block; font-family: var(--grotesk); font-size: 12.5px; line-height: 1.45; color: var(--ticket-dim); }
 
 /* ── The event overlay = one long ticket (detail anatomy): category top
    bar → poster on stripes → title + story → ruled When / Where / Entry →
@@ -1339,7 +1294,7 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
   border-bottom: 2px solid var(--ticket-line);
   padding: 8px 10px 8px 16px;
 }
-.ev-dlg[data-cat="music"] .plate-h { --accent: var(--accent-2); }
+.ev-dlg[data-cat="arts"] .plate-h { --accent: var(--accent-2); }
 .ev-dlg-bar {
   display: flex; flex-wrap: wrap; flex: 1; min-width: 0;
   justify-content: space-between; align-items: baseline; column-gap: 14px; row-gap: 3px;
@@ -1371,10 +1326,10 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
 /* ── Visit: the facts are a cream ticket, the map a ticket frame. At night
    both cast the blue (wayfinding) print on the ink page; by Day they sit on
    the blue field, where a blue print would vanish — so there (and for a
-   music ticket in the hero) the print falls to the neutral ink one. ── */
+   blue (arts) ticket on it) the print falls to the neutral ink one. ── */
 .visit-card { --print: var(--blue); padding: 24px 22px; }
 .visit-map { --sh-heavy: 7px 7px 0 var(--blue); }
-html:not([data-theme="dark"]) .b-wayfind :is(.visit-card, .tkt[data-cat="music"]) { --print: var(--print-neutral); }
+html:not([data-theme="dark"]) .b-wayfind :is(.visit-card, .tkt[data-cat="arts"]) { --print: var(--print-neutral); }
 html:not([data-theme="dark"]) .b-wayfind .visit-map { --sh-heavy: 7px 7px 0 var(--print-neutral); }
 
 /* ── Gallery: the photo cards are neutral tickets; the carousel slides

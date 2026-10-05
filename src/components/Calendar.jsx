@@ -20,9 +20,9 @@ import { LogoBox } from './Ticket';
 // rows are TICKETS — a category top bar / date block replaces the weekday
 // plate + spine (the category, src/data/event-category.js, carries the
 // colour; the .d-* weekday code stays for posters and print).
-// On mouse the pane scrolls INSIDE itself with sticky labels; on touch the
-// feed flows with the page and stops at ROW_CAP rows, where the app door
-// takes over (index.css, "The feed has TWO modes"). Tapping a card OR a row
+// The feed flows with the page on every device and stops at ROW_CAP rows
+// (two rows of two), where the app door takes over (Donald 6.10.26 — no more
+// self-scrolling pane, no four-column list). Tapping a card OR a row
 // opens the event in the EventOverlay — details + the open-in-app door.
 //
 // Graceful states (never a blank box):
@@ -107,15 +107,6 @@ export default function Calendar({ lang }) {
     setOverlayEvent(ev);
   };
 
-  // "Skip the calendar" — the desktop pane lists every row (60+ links), so
-  // a keyboard visitor gets a way past them to what follows.
-  const skipPast = (e) => {
-    const target = document.getElementById('cal-after');
-    if (!target) return;
-    e.preventDefault();
-    target.focus();
-  };
-
   // The five-poster cap: soon and later are each soonest-first, and later
   // starts strictly after soon's today+tomorrow window, so concatenating
   // keeps chronological order. The first five wear posters (the wall); the
@@ -126,12 +117,11 @@ export default function Calendar({ lang }) {
   // Which series visibly run every week in the feed — for "Every Tue".
   const weekly = useMemo(() => weeklyIds(events || []), [events]);
 
-  // Flow mode (touch / narrow — see index.css "The feed has TWO modes"):
-  // only the first ROW_CAP rows print; past that the app is the calendar,
-  // so the door below replaces them rather than expanding the page. The
-  // pane mode ignores the fold in CSS, so the markup is the same in both
-  // and prerender stays honest.
-  const ROW_CAP = 6;
+  // Then a SHORT list — two rows of two on a wide screen, four on a phone —
+  // and the app door (Donald 6.10.26: "only have a couple rows before …
+  // explore the full calendar … so we don't have people endlessly scrolling").
+  // Only these rows render; past them the app is the calendar.
+  const ROW_CAP = 4;
   const folded = rest.length > ROW_CAP;
 
   // One event card — the ink pass's Events-page .ev-card (canon 22.08.26) as
@@ -244,7 +234,7 @@ export default function Calendar({ lang }) {
   // (name wraps, never truncated; the qualifier collapses when absent), the
   // price riding as TEXT, never a colour block. Same sources as the cards,
   // so all six languages flow through unchanged.
-  const row = (ev, i) => {
+  const row = (ev) => {
     const title = pickTitle(ev, lang) || C.fallbackTitle;
     const when = whenLabel(ev);
     const qualifier = pickQualifier(ev, lang);
@@ -267,7 +257,7 @@ export default function Calendar({ lang }) {
       <a
         key={ev.id}
         href={eventHref(ev)}
-        className={`ev tkt${i >= ROW_CAP ? ' ev-extra' : ''}`}
+        className="ev tkt"
         data-cat={cat}
         onClick={(e) => openEvent(e, ev)}
       >
@@ -370,20 +360,12 @@ export default function Calendar({ lang }) {
               {rest.length > 0 && (
                 <>
                   <div className="cal-label mt-6 scroll-mt-24">{CF.comingUp}</div>
-                  <a
-                    href="#cal-after"
-                    onClick={skipPast}
-                    className="btn-secondary sr-only focus:not-sr-only focus:inline-block focus:mb-3 focus:px-3 focus:py-2 text-xs"
-                  >
-                    {C.skip}
-                  </a>
-                  <div className={`wk${folded ? ' wk-capped' : ''}`}>
-                    {rest.map(row)}
+                  <div className="wk">
+                    {rest.slice(0, ROW_CAP).map(row)}
                   </div>
-                  {/* Flow-mode door (CSS hides it in the desktop pane, which
-                      shows every row itself). The rest of the calendar lives
-                      in the app, so the end of the phone list IS the app's
-                      front door — the count says how much is behind it. */}
+                  {/* The app door: the rest of the calendar lives in the app,
+                      so the end of the short list IS the app's front door —
+                      the count says how much is behind it. */}
                   {folded && (
                     <a
                       href={`${URLS.APP}/?utm_source=website&utm_medium=schedule_see_all`}

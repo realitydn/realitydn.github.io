@@ -38,7 +38,7 @@ import {
   weekdayName,
   weeklyIds,
 } from '../src/data/cal-feed.js';
-import { eventCategory, categoryOf, isNeutralCategory } from '../src/data/event-category.js';
+import { eventCategory, categoryOf, isNeutralCategory, isDealEvent, normalizeCategory } from '../src/data/event-category.js';
 
 let passed = 0;
 const failures = [];
@@ -169,49 +169,55 @@ eq('costLabel free EN', costLabel({ cost: null }, 'EN'), 'Free');
 eq('costLabel free VN', costLabel({ cost: null }, 'VN'), 'Miễn phí');
 eq('cfStr unknown lang falls back to EN', cfStr('DE').upNext, 'Up next');
 
-// ── Night v2 "Cream Tickets" (round 2): event category, ten keys ───────────
-// The feed has no category yet, so it is derived from the EN title
-// (src/data/event-category.js — a port of the hub's rule table; the pins below
-// are real series names it must get right). The feed's own `category` wins
-// once the hub ships it. music → blue, party → red, games/drinks → yellow,
-// language → pink, social → green, arts → purple, wellness → amber,
-// film/tech/other → neutral.
+// ── Night v2 "Cream Tickets": event category — six groups (6.10.26) ────────
+// Derived from the EN title (src/data/event-category.js — a port of the hub's
+// rule table; the pins below are real series names), unless the feed carries
+// a category. social (Games + Social) red · arts (Arts, Film, Music) blue ·
+// language (Talk Events) pink · wellness amber · tech/other neutral.
 for (const [title, want] of [
-  ['REALITY Pub Quiz', 'games'],
-  ['Karaoke!', 'music'],
-  ['Happy Hour: Buy 1 Get 1 Cocktails', 'drinks'],
+  ['REALITY Pub Quiz', 'social'],
+  ['Karaoke!', 'arts'],
+  ['Happy Hour: Buy 1 Get 1 Cocktails', 'social'],
   ['Philosophy Café', 'language'],
   ['Teen Hangout', 'social'],
-  ['Film Club', 'film'],
+  ['Film Club', 'arts'],
   ['AI & Us: Understanding Our Changing World', 'tech'],
   ['Awareness Itself: Intro to Nondual Meditation', 'wellness'],
   ['Storyteller: Learn how great stories are built from the inside out', 'arts'],
-  ['Farewell Party for Mai', 'party'],
+  ['Farewell Party for Mai', 'social'],
   ['Weekly Creative Workshop', 'arts'],
   ['BODY DOUBLING: STOP PROCRASTINATING, START TOGETHER', 'wellness'],
-  ['Blood on the Clocktower', 'games'],
-  ['PowerPoint Karaoke', 'games'],
-  ['Hitster: The Music Party Game', 'games'],
-  ['No Mic Open Mic: Rooftop Acoustic Jam', 'music'],
-  ['Modern Jive Dancing for Beginners', 'music'],
-  ['Mid-Autumn Festival', 'party'],
-  ['Charaoke - Singing to Support the Elderly Loving Home', 'music'],
-  ['ALBUM LISTENING PARTY: DOM VENICE', 'music'],
-  ['Hadestown Proshot Watch Party', 'film'],
+  ['Blood on the Clocktower', 'social'],
+  ['PowerPoint Karaoke', 'social'],
+  ['Hitster: The Music Party Game', 'social'],
+  ['No Mic Open Mic: Rooftop Acoustic Jam', 'arts'],
+  ['Modern Jive Dancing for Beginners', 'arts'],
+  ['Mid-Autumn Festival', 'social'],
+  ['Charaoke - Singing to Support the Elderly Loving Home', 'arts'],
+  ['ALBUM LISTENING PARTY: DOM VENICE', 'arts'],
+  ['Hadestown Proshot Watch Party', 'arts'],
   ['Coffee + Conversation', 'language'],
 ]) eq(`eventCategory "${title}"`, eventCategory(title), want);
 eq('eventCategory empty → other', eventCategory('', ''), 'other');
-eq('eventCategory folds accents (nhậu → party)', eventCategory('Nhậu Night'), 'party');
-eq('categoryOf reads the EN title', categoryOf({ title_en: 'REALITY Pub Quiz', title_vi: 'Đố vui REALITY' }), 'games');
-eq('categoryOf prefers a feed category', categoryOf({ category: 'party', title_en: 'Film Club' }), 'party');
+eq('eventCategory folds accents (nhậu → party → social)', eventCategory('Nhậu Night'), 'social');
+eq('categoryOf reads the EN title', categoryOf({ title_en: 'REALITY Pub Quiz', title_vi: 'Đố vui REALITY' }), 'social');
+eq('categoryOf prefers a feed category', categoryOf({ category: 'language', title_en: 'Film Club' }), 'language');
 eq('categoryOf takes the new keys from the feed', categoryOf({ category: 'wellness', title_en: 'Karaoke!' }), 'wellness');
-eq('categoryOf ignores an unknown feed category', categoryOf({ category: 'sport', title_en: 'Karaoke!' }), 'music');
-check('film + tech + other are neutral, music + language are not',
-  isNeutralCategory('film') && isNeutralCategory('tech') && isNeutralCategory('other')
-  && !isNeutralCategory('music') && !isNeutralCategory('language'));
-eq("catLabel EN (the skill's name)", catLabel('music', 'EN'), 'Music + Dance + Performance');
-eq('catLabel VN', catLabel('games', 'VN'), 'Trò chơi + Đố vui');
-eq('catLabel RU falls back to EN', catLabel('arts', 'RU'), 'Creative Arts');
+eq('categoryOf folds an older feed key (music → arts)', categoryOf({ category: 'music', title_en: 'Chess Night' }), 'arts');
+eq('categoryOf folds drinks → social', categoryOf({ category: 'drinks', title_en: 'x' }), 'social');
+eq('categoryOf ignores an unknown feed category', categoryOf({ category: 'sport', title_en: 'Karaoke!' }), 'arts');
+eq('normalizeCategory junk → null', normalizeCategory('Games'), null);
+check('tech + other are neutral, arts + language are not',
+  isNeutralCategory('tech') && isNeutralCategory('other')
+  && !isNeutralCategory('arts') && !isNeutralCategory('language'));
+check('isDealEvent: a Happy Hour is a deal, a quiz is not',
+  isDealEvent({ title_en: 'Happy Hour: Buy 1 Get 1 Cocktails' }) && !isDealEvent({ title_en: 'REALITY Pub Quiz' }));
+eq("catLabel EN (Donald's names, pluses)", catLabel('social', 'EN'), 'Games + Social');
+eq('catLabel EN arts', catLabel('arts', 'EN'), 'Arts, Film, Music');
+eq('catLabel EN language', catLabel('language', 'EN'), 'Talk Events');
+eq('catLabel VN', catLabel('social', 'VN'), 'Trò chơi + Giao lưu');
+eq('catLabel RU falls back to EN', catLabel('arts', 'RU'), 'Arts, Film, Music');
+eq('catLabel deal (the menu ticket)', catLabel('deal', 'EN'), 'Drinks + Deals');
 eq('catLabel other → no label', catLabel('other', 'EN'), '');
 eq('catLabel unknown → no label', catLabel('nope', 'VN'), '');
 eq('ticketLabel when EN', ticketLabel('when', 'EN'), 'When');
@@ -219,15 +225,15 @@ eq('ticketLabel where KO falls back to EN', ticketLabel('where', 'KO'), 'Where')
 eq('ticketLabel entry reuses the site line (EN)', ticketLabel('entry', 'EN'), 'Entry');
 eq('ticketLabel entry reuses the site line (VN)', ticketLabel('entry', 'VN'), 'Vé vào');
 eq('ticketLabel entry reuses the site line (JA)', ticketLabel('entry', 'JA'), '入場料');
-// The menu's deal ticket: the NEXT drinks event, only when it is today (ICT).
+// The menu's deal ticket: the NEXT deal (a Happy Hour), only when it is today (ICT).
 {
   const hh = (id, s, e) => ({ id, title_en: 'Happy Hour: Buy 1 Get 1 Cocktails', startsAt: s, endsAt: e });
   const quiz = { id: 'quiz', title_en: 'REALITY Pub Quiz', startsAt: '2026-07-01T19:00:00+07:00' };
   const today = hh('today', '2026-07-01T17:00:00+07:00', '2026-07-01T21:00:00+07:00');
   const nextWeek = hh('next', '2026-07-08T17:00:00+07:00', '2026-07-08T21:00:00+07:00');
-  eq("nextDealToday: today's happy hour", (nextDealToday([quiz, nextWeek, today], categoryOf, wedNoon) || {}).id, 'today');
-  eq('nextDealToday: next one is another day → none', nextDealToday([quiz, nextWeek], categoryOf, wedNoon), null);
-  eq("nextDealToday: today's has ended → none", nextDealToday([today, nextWeek], categoryOf, Date.parse('2026-07-01T22:00:00+07:00')), null);
+  eq("nextDealToday: today's happy hour", (nextDealToday([quiz, nextWeek, today], isDealEvent, wedNoon) || {}).id, 'today');
+  eq('nextDealToday: next one is another day → none', nextDealToday([quiz, nextWeek], isDealEvent, wedNoon), null);
+  eq("nextDealToday: today's has ended → none", nextDealToday([today, nextWeek], isDealEvent, Date.parse('2026-07-01T22:00:00+07:00')), null);
   check('isTodayICT across the ICT midnight', isTodayICT('2026-07-01T16:30:00Z', wedNoon) && !isTodayICT('2026-07-01T17:30:00Z', wedNoon));
 }
 

@@ -10,9 +10,9 @@ export default {
   "heroTitle": "cà phê / cocktail / cộng đồng",
   "heroSub": "Chúng tôi muốn trở thành nơi dễ kết bạn nhất ở Đà Nẵng.",
   "heroPhotos": {
-    "label": "Ảnh REALITY",
-    "pause": "Tạm dừng ảnh",
-    "play": "Phát ảnh",
+    "label": "Hình ảnh tại REALITY",
+    "pause": "Tạm dừng trình chiếu",
+    "play": "Tiếp tục trình chiếu",
     "photo": "Ảnh {n}/{total}"
   },
   "eventsEyebrow": "Có gì hot",
@@ -169,7 +169,7 @@ export default {
     "posterAlt": "{title} — poster",
     "skip": "Bỏ qua phần còn lại của lịch",
     "fallbackTitle": "Sự kiện REALITY",
-    "hostedBy": "Dẫn dắt bởi {name}",
+    "hostedBy": "Do {name} tổ chức",
     "everyWeekday": "{weekday} hằng tuần"
   },
   "eventOverlay": {

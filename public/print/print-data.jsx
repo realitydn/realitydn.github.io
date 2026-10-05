@@ -98,7 +98,12 @@ const CATALOG = [
      echo  : false | true                       → misregistration ghost…
      echoAccent : 'auto'(partner) | accent name → …in this colour
      echoDx/echoDy : ghost offset (pt)
-     border: ink border width on surfaced boxes (pt) */
+     border: ink border width on surfaced boxes (pt)
+   TEXT COLOUR (6.10.26): every part that can sit on a Solid or Accent
+   surface is born `ink:'auto'`, never a hard-coded colour — only Auto goes
+   through print-paper.js textKeys, so only Auto turns readable (the APCA
+   rule) when you switch the Surface to a fill. A kicker's Auto is its accent
+   on paper, so the pink eyebrow still reads pink on the sheet. */
 const DEFAULTS = {
   // Tracking defaults follow the CANON LADDER (reality-tokens.css/.json,
   // baked per role — no size-derived formula) PLUS the print offset (+.01em,
@@ -109,13 +114,13 @@ const DEFAULTS = {
   headline:  { w:320, h:96,  props:{ text:'HEADLINE', fam:'mont', weight:800, fontSize:46, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0.025, leading:0.92, upper:true, border:2, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
   numeral:   { w:200, h:160, props:{ text:'01', fam:'mont', weight:100, fontSize:128, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0.025, leading:0.88, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:5, echoDy:5 } },
   bignum:    { w:220, h:120, props:{ text:'4–7', fam:'mont', weight:800, fontSize:90, align:'center', surface:'none', ink:'auto', fill:'pink', tracking:0.025, leading:0.9, upper:true, lift:'none', echo:false, echoAccent:'auto', echoDx:4, echoDy:4 } },
-  kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'pink', fill:'pink', tracking:0.17, leading:1.1, upper:true } },
+  kicker:    { w:240, h:24,  props:{ text:'EYEBROW LABEL', fam:'mont', weight:700, fontSize:11, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0.17, leading:1.1, upper:true } },
   body:      { w:300, h:80,  props:{ text:'Readable body copy goes here. Keep it short and bold.', fam:'grot', weight:400, fontSize:13, align:'left', surface:'none', ink:'auto', fill:'pink', tracking:0, leading:1.34, upper:false } },
-  pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', listStyle:'prices', marker:'•', markerColor:'auto', surface:'none', ink:'ink', fill:'pink', dotLeader:true, border:2, lift:'none', cols:1, rowSize:'m', headingColor:'auto', upper:true } },
+  pricelist: { w:280, h:150, props:{ heading:'HAPPY HOUR', items:[{l:'House pour',p:'50k'},{l:'Draft beer',p:'45k'},{l:'Highball',p:'65k'}], fam:'mont', listStyle:'prices', marker:'•', markerColor:'auto', surface:'none', ink:'auto', fill:'pink', dotLeader:true, border:2, lift:'none', cols:1, rowSize:'m', headingColor:'auto', upper:true } },
   qr:        { w:170, h:210, props:{ data:'https://app.realitydn.com/menu', caption:'SCAN THE MENU', ecl:'M', quiet:true,
                moduleStyle:'square', eyeStyle:'square', eye:'auto', logo:'none', logoColor:'auto', echo:false, echoAccent:'auto',
-               surface:'none', ink:'ink', fill:'pink', border:2, lift:'none' } },
-  coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'ink', fill:'pink', border:1.4, borderPattern:'dashed', borderColor:'auto', radius:0, lift:'none' } },
+               surface:'none', ink:'auto', fill:'pink', border:2, lift:'none' } },
+  coupon:    { w:300, h:150, props:{ heading:'VOUCHER', big:'1 FREE COFFEE', terms:'One per guest · dine-in', code:'REALITY-000', fam:'mont', surface:'outline', ink:'auto', fill:'pink', border:1.4, borderPattern:'dashed', borderColor:'auto', radius:0, lift:'none' } },
   block:     { w:240, h:120, props:{ fill:'pink', radius:0, border:0, lift:'none', echo:false, echoAccent:'auto', echoDx:8, echoDy:8, blend:'normal' } },
   slab:      { w:320, h:150, props:{ fill:'blue', angle:-12, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
   stripes:   { w:320, h:90,  props:{ fill:'red', bg:'white', dir:'diag', count:8, ratio:0.5, lift:'none', echo:false, echoAccent:'auto', echoDx:9, echoDy:9, blend:'normal' } },
@@ -148,7 +153,7 @@ const DEFAULTS = {
   badge:     { w:120, h:120, props:{ top:'EVERY', big:'WED', sub:'ALL YEAR', surface:'accent', fill:'amber', rot:-5, border:2, lift:'default' } },
   seal:      { w:130, h:130, props:{ top:'REALITY · ĐÀ NẴNG', big:'★', sub:'SINCE 2024', fill:'ink', ink:'ink', rot:-6 } },
   marquee:   { w:440, h:40,  props:{ text:'REALITY', sep:'★', surface:'solid', fill:'pink', ink:'auto', fontSize:15 } },
-  arrow:     { w:170, h:100, props:{ dir:'right', label:'TOILETS', fam:'mont', fontSize:18, ink:'ink', fill:'pink', surface:'none' } },
+  arrow:     { w:170, h:100, props:{ dir:'right', label:'TOILETS', fam:'mont', fontSize:18, ink:'auto', fill:'pink', surface:'none' } },
   contact:   { w:320, h:54,  props:{ site:SITE, addr:ADDR, fam:'mont', fontSize:11, ink:'ink', fill:'pink', surface:'none', align:'left' } },
   /* die-cut bed: the shaped white/accent ground a sticker sits on, with a
      contrasting keyline ring (the cut edge). shape: circle|rounded|squircle|rect.

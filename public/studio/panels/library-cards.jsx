@@ -5,6 +5,7 @@
 import { RUI } from '../../studio-shared/studio-ui.jsx';
 import { FORMATS as AP_FMT, PALETTE as AP_PAL, themeColors } from '../studio-data.jsx';
 import { buildTemplate as apBuildTpl } from '../templates.jsx';
+import { applyTextRule, TEXT_RULE } from '../doc.js';
 import { StudioElement, posterDayOf, loadCachedImage } from '../studio-element.jsx';
 /* ============================================================
    LIBRARY CHROME — collapsible sections + real previews.
@@ -124,12 +125,14 @@ function TplThumb({ doc, w, thumb, onCapture }){
         width:f.w, height:f.h, pixelRatio:sc*2, quality:0.82, backgroundColor:t.bg,
         fontEmbedCSS: await thumbFontCss(node),
         style:{ transform:'none', transformOrigin:'0 0' } });
-      if(alive && src) onCapture({ src, w:tw, h:th });
+      /* stamped with the text-on-fill rule it was drawn under (doc.js) */
+      if(alive && src) onCapture({ src, w:tw, h:th, rule:TEXT_RULE });
     });
     return ()=>{ alive=false; };
   }, [thumb]);
 
-  if(thumb && thumb.src){
+  /* a picture shot before the text-on-fill rule may show the old ink: redraw it */
+  if(thumb && thumb.src && (thumb.rule|0) >= TEXT_RULE){
     /* Height rides the capture, not this doc — a thumbnail shot at another tile
        width still lands on its own aspect rather than being squashed into it. */
     const ih = thumb.w ? Math.round((thumb.h||th) * (tw/thumb.w)) : th;
@@ -167,9 +170,10 @@ function savedDM(ms){
   return isNaN(d.getTime()) ? '' : d.getDate()+'.'+(d.getMonth()+1);
 }
 function UserTplCard({ t, onApply, onArchive, onDelete, archived, thumb, onCapture }){
+  const ruled = React.useMemo(()=>applyTextRule(t.doc), [t.doc]);
   return (
     <div className="rs-tplcard" onClick={onApply} title={t.name} style={archived?{ opacity:.75 }:null}>
-      <TplThumb doc={t.doc} w={88} thumb={thumb} onCapture={onCapture} />
+      <TplThumb doc={ruled} w={88} thumb={thumb} onCapture={onCapture} />
       <span className="tn">{t.name}</span>
       <span className="ts">{archived ? 'archived' : savedDM(t.savedAt)}</span>
       <button className="rs-tplx mild" style={{ right:28, top:4, width:20, height:20, fontSize:11 }}

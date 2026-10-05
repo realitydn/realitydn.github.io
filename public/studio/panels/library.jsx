@@ -10,6 +10,7 @@ import { TEMPLATES as AP_TPL, TEMPLATE_GROUPS as AP_TPLG } from '../templates.js
 import { Hint } from './controls.jsx';
 import { GfxGrid, IconPicker } from './gfx-grid.jsx';
 import { Sec, TplThumb, TplCard, UserTplCard, savedDM } from './library-cards.jsx';
+import { applyTextRule } from '../doc.js';
 function Library({ lib, startSpawn }){
   const [tplOpen, setTplOpen] = React.useState(false);
   const { userTpls, tplReady, tplStoreErr, tplBin, restoreFromBin, restoring, restoreFromCloud, tplThumbs, captureTplThumb,
@@ -114,7 +115,7 @@ function Library({ lib, startSpawn }){
                     {tplBin.map(e=>(
                       <div key={e.id} className="rs-tplcard" title={e.tpl.name+' — '+e.reason}
                         onClick={()=>restoreFromBin(e)} style={{ opacity:.8 }}>
-                        <TplThumb doc={e.tpl.doc} w={88} />
+                        <TplThumb doc={applyTextRule(e.tpl.doc)} w={88} />
                         <span className="tn">{e.tpl.name}</span>
                         <span className="ts">{e.reason} · {savedDM(e.at)}</span>
                         <button className="rs-tplx mild" style={{ top:4, width:20, height:20, fontSize:11 }}

@@ -6,7 +6,7 @@ import { RCloud } from '../../studio-shared/cloud.js';
 import { RStore } from '../studio-store.js';
 import { uid } from '../studio-data.jsx';
 import { buildTemplate as apBuildTpl } from '../templates.jsx';
-import { tplId, sortTpls, stampEngine, loadUserTpls } from '../doc.js';
+import { tplId, sortTpls, stampEngine, loadUserTpls, applyTextRule } from '../doc.js';
 function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress }){
   /* ---- My templates — save / load / delete full poster snapshots.
      The library lives in IndexedDB (window.RStore) — room for gigabytes, so
@@ -78,7 +78,8 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
   const [tplThumbs, setTplThumbs] = React.useState({});
   const captureTplThumb = React.useCallback((id, thumb)=>{
     if(!id || !thumb) return;
-    setTplThumbs(m => m[id] ? m : Object.assign({}, m, { [id]:thumb }));
+    /* keep a current picture; replace one drawn before the text-on-fill rule */
+    setTplThumbs(m => (m[id] && (m[id].rule|0) >= (thumb.rule|0)) ? m : Object.assign({}, m, { [id]:thumb }));
     try{ Promise.resolve(RStore.thumbPut(id, thumb)).catch(()=>{}); }catch(e){}
   }, []);
   /* Forget a card's picture — the template it drew is gone or has been saved
@@ -193,7 +194,8 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
   function applyUserTpl(t){
     if(docRef.current.elements.length &&
        !window.confirm('Replace the current poster with “'+t.name+'”?')) return;
-    const snap = JSON.parse(JSON.stringify(t.doc));
+    /* a template saved before the text-on-fill rule gets the one-time sweep */
+    const snap = applyTextRule(JSON.parse(JSON.stringify(t.doc)));
     /* fresh element ids (and remapped overrides) so the loaded copy can never
        collide with anything else made this session */
     const idMap = {};

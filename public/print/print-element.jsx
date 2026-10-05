@@ -8,7 +8,7 @@
 import { PrintImg } from './print-store.js';
 import {
   INK as PE_INK, WHITE as PE_WHITE, surfaceStyle as peSurf, resolveInk as peInk, LIFT as PE_LIFT,
-  shadowCss, shadowSpec,
+  shadowCss, shadowSpec, textKeys, keyHex,
 } from './print-paper.js';
 import {
   dotFieldLayout as peDots, stripeLayout as peStripes, arcTextLayout as peArc, fitTextSize as peFit,
@@ -128,7 +128,7 @@ function ArrowGlyph({ color }){
 const ARROW_ROT = { right:0, down:90, left:180, up:270 };
 
 /* shared text block (optional misregistration echo, auto-fit, vertical set) */
-function TextBlock({ el, textCol, justify }){
+function TextBlock({ el, textCol, justify, hidden }){
   const isUpper = el.upper!==false && el.type!=='body';
   let fs = el.fontSize;
   if(el.fit){
@@ -143,7 +143,7 @@ function TextBlock({ el, textCol, justify }){
     writingMode: vertical?'vertical-rl':'horizontal-tb'
   };
   return (
-    <div style={{ position:'relative', width:'100%', display:'flex', justifyContent:justify }}>
+    <div style={{ position:'relative', width:'100%', display:'flex', justifyContent:justify, visibility:hidden?'hidden':undefined }}>
       {el.echo && <div aria-hidden="true" style={Object.assign({}, style, { position:'absolute', left:(el.echoDx||4), top:(el.echoDy||4), color:echoHex(el, el._docAccent), width:'100%' })}>{el.text}</div>}
       <div style={Object.assign({}, style, { position:'relative', color:textCol })}>{el.text}</div>
     </div>
@@ -197,7 +197,7 @@ function borderOverlay(W, H, bw, color, pattern, radius){
     </svg>
   );
 }
-function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPointerDown }){
+function PrintElement({ el, docAccentHex, docAccent, selected, dragging, editing, onElPointerDown }){
   el = Object.assign({}, el, { _docAccent:docAccent });
   const accentHex = peFill(el.fill!=null?el.fill:'pink', docAccentHex);
   const surf = peSurf(el.surface||'none', accentHex);
@@ -208,12 +208,15 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   const _borderCol = (el.borderColor && el.borderColor!=='auto') ? peFill(el.borderColor, accentHex)
                      : (el.type==='block' ? PE_INK.rgb : (el.surface==='accent'?accentHex:PE_INK.rgb));
   if(_surfaced) surf.border = `${_borderW}px solid transparent`;
-  const textCol = peInk(el.ink!=null?el.ink:'auto', surf.color);
-  /* Accent-coloured TEXT (a list heading or marker, a coupon heading) is a
-     highlight against the surface; on an Accent surface it is the surface's
-     own colour and vanishes, so there it takes the surface's text colour —
-     the APCA text-on-fill rule. Mirrored in print-export.jsx. */
-  const accentText = el.surface==='accent' ? textCol : accentHex;
+  /* Text colour — print-paper.js textKeys, the ONE resolution the PDF and the
+     in-place editor read too, so the canvas stays a proof of the file. Auto
+     is the readable neutral on a fill (the APCA rule), ink on paper (a
+     kicker: its accent). Accent-coloured TEXT (a list heading or marker, a
+     coupon heading) is a highlight on paper; on a fill it is text on a fill
+     and takes the text colour — on its own Accent surface it would vanish. */
+  const tk = textKeys(el, docAccent);
+  const textCol = keyHex(tk.text);
+  const accentText = keyHex(tk.accentText);
   const lift = elShadow(el);
 
   const wrap = {
@@ -232,7 +235,10 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   if(t==='headline'||t==='kicker'||t==='body'||t==='bignum'||t==='numeral'){
     const justify = el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start';
     const pad = (el.surface && el.surface!=='none') ? '8px 12px' : '0';
-    inner = <div style={box({ alignItems:justify, padding:pad })}><TextBlock el={el} textCol={textCol} justify={justify} /></div>;
+    /* `editing`: the in-place editor (print-canvas.jsx) is typing these words
+       over the box, in this same colour — hide the set copy (layout kept) so
+       the two aren't read doubled, a few px apart */
+    inner = <div style={box({ alignItems:justify, padding:pad })}><TextBlock el={el} textCol={textCol} justify={justify} hidden={editing} /></div>;
   }
   else if(t==='pricelist'){
     const mode = el.listStyle || 'prices';
@@ -590,7 +596,9 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='arrow'){
     inner = <div style={box({ flexDirection:'column', alignItems:'center', gap:4, padding:0, boxShadow:'none' })}>
-      <div style={{ flex:'1 1 auto', width:'100%', minHeight:0, transform:`rotate(${ARROW_ROT[el.dir||'right']}deg)` }}><ArrowGlyph color={peFill(el.ink||'ink', accentHex)} /></div>
+      {/* the glyph is the sign — it takes the label's colour, so an Auto arrow
+          reads on a fill the way its label does (mirrored in print-export) */}
+      <div style={{ flex:'1 1 auto', width:'100%', minHeight:0, transform:`rotate(${ARROW_ROT[el.dir||'right']}deg)` }}><ArrowGlyph color={textCol} /></div>
       {el.label ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.sign), fontSize:(el.fontSize||18)+'px', color:textCol }}>{el.label}</div> : null}
     </div>;
   }

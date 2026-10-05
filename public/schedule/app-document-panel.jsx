@@ -120,7 +120,7 @@ function DocumentPanel({ doc, setDoc, setSelId, channelId, sizeInfo, setBaseSize
             <b>Wrap</b> shows full titles on two lines — nothing is cropped. <b>Short</b> uses each event's short title; <b>Crop</b> is one line with an ellipsis. Size auto-fits the previewed day; nudge it bigger or smaller here.
           </Hint>
           <Hint>
-            Every cover ends on <b>{QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned. On <b>Sidebar</b>, <b>Slice</b> and <b>Halftone</b> it sits in the colour panel and costs the events list nothing; on the other six it rides the footer and the text steps down a size to make room. Turn it on for a cover that will be projected or seen on desktop.
+            Every cover ends on <b>{QR_CTA}</b> — that line is always there. The <b>QR code</b> is off by default: a cover is mostly seen on the phone someone is holding, where a code can’t be scanned. On <b>Sidebar</b>, <b>Slice</b> and <b>Halftone</b> it sits in the colour panel and costs the events list nothing; on the other seven it rides the footer and the text steps down a size to make room. Turn it on for a cover that will be projected or seen on desktop.
           </Hint>
         </Fold>}
       <Fold id="doc-header" title="Header" open>

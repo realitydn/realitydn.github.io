@@ -25,6 +25,10 @@ const FLAGS = [
    engine. An archive
    naming a layout we no longer ship falls back to classic rather than blank. */
 const DAILY_CARD_IDS = ['classic','flood','misreg','spine','chrono','tickets'];
+/* FB cover style ids — duplicated from COVER_STYLES in render-cover-kit.jsx
+   for the same reason. A cover naming a style we don't ship normalises to
+   banner (CoverCard already drew banner for it; now the editor says so). */
+const COVER_LAYOUT_IDS = ['banner','sidebar','slice','halftone','centered','flood','misreg','spine','chrono','tickets'];
 
 /* ---- dates (all ISO yyyy-mm-dd strings; UTC-noon anchor avoids TZ drift) ---- */
 function dToDate(iso){ return new Date(iso + 'T12:00:00Z'); }
@@ -154,6 +158,7 @@ function normalizeDoc(d){
     doc.sizing[chId] = { base:(s.base==null ? 'auto' : s.base), perDay };
   });
   doc.cover = Object.assign({ layout:'banner', sizeOffset:0, cols:'auto', titles:'wrap', qr:false }, (d && d.cover) || {});
+  if(COVER_LAYOUT_IDS.indexOf(doc.cover.layout) < 0) doc.cover.layout = 'banner';
   doc.daily = Object.assign({ story:0, feed:0, card:'classic' }, (d && d.daily) || {});
   if(DAILY_CARD_IDS.indexOf(doc.daily.card) < 0) doc.daily.card = 'classic';
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,

@@ -127,6 +127,50 @@ function resolveInk(key, fallback){
   if(ACCENTS.indexOf(key)>=0) return PALETTE[key];
   return fallback;
 }
+/* An ink/fill KEY → screen hex: 'ink' · 'white' · an accent name. Anything
+   else ('auto', a stale name) → null, so callers can tell "no colour" apart. */
+function keyHex(key){
+  if(key==='ink') return INK.rgb;
+  if(key==='white') return WHITE.rgb;
+  return ACCENTS.indexOf(key)>=0 ? PALETTE[key] : null;
+}
+/* ---- text on a surface — ONE resolution for the canvas, the in-place
+   editor and the PDF (6.10.26). They used to resolve it separately, and the
+   PDF judged Auto text against the DOCUMENT accent whenever an element's own
+   fill was ink or white — on a yellow-accent sheet that printed K text on a K
+   box — so the proof and the file disagreed. Keys in, keys out: each renderer
+   maps a key to its own colour (screen hex via keyHex · PDF CMYK).
+
+     fill        the element's own fill key ('ink' · 'white' · an accent) —
+                 an Accent surface's colour and the accent highlights. Unset
+                 is pink; a name the palette doesn't know is the doc accent
+                 (exactly what the canvas has always drawn).
+     onFill      a Solid (K) or Accent surface — text on it is text on a FILL.
+     text        el.ink resolved: an explicit key stays; AUTO is —
+                   on a fill, the readable neutral by the APCA rule
+                   (contrastInk: K ink on yellow + amber, white on red, pink,
+                   blue, green, purple and on K ink itself);
+                   on paper (none · outline box · hairline), K ink — except a
+                   KICKER, whose Auto is its accent: the eyebrow label's colour,
+                   the way Poster Studio's kicker reads, so a pink kicker stays
+                   pink on the sheet and still turns readable on a fill.
+     accentText  accent-coloured TEXT (a list's heading + markers, a coupon's
+                 heading): the accent on paper; on a fill it IS text on a fill
+                 and takes `text` — an accent vanishes on its own Accent
+                 surface, and pink on a K box breaks the rule. */
+function textKeys(el, docAccent){
+  const f = el.fill!=null ? el.fill : 'pink';
+  const fill = keyHex(f) ? f : (ACCENTS.indexOf(docAccent)>=0 ? docAccent : 'pink');
+  const s = el.surface || 'none';
+  const onFill = s==='solid' || s==='accent';
+  const surfaceText = s==='solid' ? 'white'
+    : s==='accent' ? (contrastInk(keyHex(fill), NEUTRALS.print)===NEUTRALS.print.light ? 'white' : 'ink')
+    : 'ink';
+  const auto = (el.type==='kicker' && !onFill && fill!=='white') ? fill : surfaceText;
+  const ink = el.ink!=null ? el.ink : 'auto';
+  const text = keyHex(ink) ? ink : auto;
+  return { fill, onFill, surfaceText, text, accentText: onFill ? text : fill };
+}
 /* Surface → concrete box style (screen). Flat only — no scrim/blur on paper. */
 function surfaceStyle(surface, accentHex){
   const bw = 1.6;
@@ -226,5 +270,5 @@ function gridSpec(doc, dims){
 export {
   PALETTE_CMYK, INK, WHITE, PT_PER_MM, SIZES, SIZE_ORDER, sizeDims, GANG,
   TYPE_SCALE, snapToScale, scaleStep, FACES, faceFor,
-  resolveInk, surfaceStyle, LIFT, shadowSpec, shadowCss, gridSpec,
+  resolveInk, keyHex, textKeys, surfaceStyle, LIFT, shadowSpec, shadowCss, gridSpec,
 };

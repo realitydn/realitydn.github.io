@@ -41,9 +41,16 @@
 .ps-select:hover, .ps-select:focus{ border-color:var(--st-accent); }
 .ps-select option{ background:var(--st-panel); color:var(--st-ink); }
 
-/* the Trim button when art crosses the trim and bleed is off */
-.ps-seg button.warn, .ps-seg button.warn small{ color:var(--st-warn); }
-.ps-seg button.warn{ box-shadow:inset 0 0 0 2px var(--st-warn); }
+/* the Trim button when art crosses the trim and bleed is off. The warning
+   only ever lands on the LIT button (Trim is the choice it warns about), and
+   it used to just recolour the text — yellow over the pink on-state. So the
+   two states don't share a property: lit + warning is a WARNING FILL — yellow,
+   ink text (the APCA rule: ink on yellow), a K keyline; an unlit warning is
+   warning text on the dark field inside a yellow keyline. */
+.ps-seg button.warn{ color:var(--st-warn-soft); box-shadow:inset 0 0 0 2px var(--st-warn); }
+.ps-seg button.warn small{ color:var(--st-warn-soft); }
+.ps-seg button.on.warn{ background:var(--st-warn); color:var(--st-on-amber); box-shadow:inset 0 0 0 2px var(--st-k); }
+.ps-seg button.on.warn small{ color:var(--st-on-amber); }
 
 /* preflight chip + drop-down list */
 .ps-pf{ position:relative; }

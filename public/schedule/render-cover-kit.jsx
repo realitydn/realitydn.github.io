@@ -3,9 +3,10 @@
    The cover fit (wrap-aware stack, size ladder), the footer planner
    (what gives way first), each layout’s event-area rectangle, and
    the atoms every layout shares: the measured event list, the day
-   identity, the footer / panel CTA and the time axis.
+   identity, the footer / panel CTA and the time axis — plus the
+   Tickets style's own stack (the cream tickets, or one ruled ticket).
    ============================================================ */
-import { ThemeCtx, DAILY_VARIANTS } from './render-config.jsx';
+import { ThemeCtx, DAILY_VARIANTS, ticketTokens } from './render-config.jsx';
 import { DAILY_OPEN_MIN, DAILY_CLOSE_MIN, dailyMinutes } from './render-daily-kit.jsx';
 import { estW } from './render-fit.jsx';
 import { QRBlock } from './render-footer.jsx';
@@ -22,7 +23,9 @@ const COVER_LAD = [14,15,16,17,18,19,20,22,24,26,29,32,36];
    coverFit so the PLANNER below can ask "what does the schedule need?" using the
    same arithmetic the fitter uses to answer "what size fits?" — one measurement,
    so the two can never disagree. */
-function coverStack(doc, date, areaW, maxCols){
+function coverStack(doc, date, areaW, maxCols, layout){
+  /* Tickets measures its own furniture (edges, stubs, the print) — below */
+  if(layout==='tickets') return coverTicketStack(doc, date, areaW, maxCols, coverTicketsRuled(doc, date));
   const evs = r_eventsOn(doc, date, 'daily');
   const cfg = doc.cover || {};
   const titles = (cfg.titles==='crop' || cfg.titles==='short') ? cfg.titles : 'wrap';
@@ -48,25 +51,166 @@ function coverStack(doc, date, areaW, maxCols){
     /* the tallest column at size f — what the schedule needs */
     at: f => Math.max.apply(null, colItems.map(it=>colHeight(it,f)).concat([0])) };
 }
-/* event-area sizing for an arbitrary rectangle — wrap-aware, honours doc.cover */
-function coverFit(doc, date, areaW, areaH, maxCols){
+/* event-area sizing for an arbitrary rectangle — wrap-aware, honours doc.cover.
+   `layout` matters only to Tickets, whose stack is measured differently. */
+function coverFit(doc, date, areaW, areaH, maxCols, layout){
   const cfg = doc.cover || {};
-  const st = coverStack(doc, date, areaW, maxCols);
+  /* A stack that can say a name would be CUT (Tickets — its names wrap in a
+     narrow column beside the stub, or crop on one line) also has to keep
+     every name whole: the size steps down until none is. When no size on the
+     ladder manages that, height alone decides, as it does everywhere else. */
+  const wholeOf = st => !!st.ok && COVER_LAD.some(f=> st.ok(f) && st.at(f) <= areaH);
+  /* the largest ladder step at which a stack fits areaH×m, or -1 */
+  const top = (st, m) => {
+    const whole = wholeOf(st);
+    for(let i=COVER_LAD.length-1;i>=0;i--){
+      const f = COVER_LAD[i];
+      if(st.at(f) <= areaH*m && (!whole || st.ok(f))) return i;
+    }
+    return -1;
+  };
+  let st = coverStack(doc, date, areaW, maxCols, layout);
+  /* Tickets on auto columns offers each count. A count that keeps every
+     name whole beats one that cuts them; then the one that sets the bigger
+     type; then FEWER columns — a name on one line reads best, and a single
+     column fills the height a two-column grid leaves as air; then more room
+     to grow, then the shorter stack at the floor. */
+  if(st.cands){
+    const score = c => [wholeOf(c) ? 1 : 0, top(c, 0.94), -c.cols, top(c, 1.0), -c.at(COVER_LAD[0])];
+    const better = (a, b) => { for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i] > b[i]; } return false; };
+    st = st.cands.reduce((best, c)=> better(score(c), score(best)) ? c : best);
+  }
   const { cols, colGap, titles, useShort, colItems } = st;
-  const fits = (f, m) => st.at(f) <= areaH*m;
-  let baseIdx=0, maxIdx=0;
-  for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],0.94)){ baseIdx=i; break; } }
-  for(let i=COVER_LAD.length-1;i>=0;i--){ if(fits(COVER_LAD[i],1.0)){ maxIdx=i; break; } }
+  const baseIdx = Math.max(0, top(st, 0.94)), maxIdx = Math.max(0, top(st, 1.0));
   const off = Math.max(-5, Math.min(5, cfg.sizeOffset|0));
   const idx = Math.max(0, Math.min(baseIdx + off, Math.max(maxIdx, 0)));
   return { cols, colGap, titles, useShort, colItems, font:COVER_LAD[idx],
-    px:Math.round(COVER_LAD[idx]), isAuto: off===0 };
+    px:Math.round(COVER_LAD[idx]), isAuto: off===0, ruled:st.ruled, perCol:st.perCol };
+}
+/* ---- TICKETS on the cover (Donald 6.10.26) ----
+   The daily card's Tickets re-cut for 851×315. Each event is a cream ticket:
+   the time in a day-colour stub, the name in Montserrat caps, the palette's
+   ink as the 2px edge, the day colour as a hard offset PRINT. They sit in a
+   grid read DOWN each column, rows aligned across, so a heavy row doesn't
+   stagger its neighbour. Past COVER_TICKETS_MAX events the day is ONE ruled
+   ticket instead — a day-colour bar, a hairline row per event — the same
+   switch DailyTickets makes, at cover scale (six is two columns of three).
+   The switch is also FIT-aware: if separate tickets cannot stand at the
+   ladder's floor even with the leanest footer (one forced column, say), the
+   day is ruled rather than clipped. Inside a ticket it is always the Day
+   ink-on-cream tokens (ticketTokens), so it reads on every palette. */
+const COVER_TICKETS_MAX = 6;
+const CTK = {
+  edge:   2,
+  print:  f => Math.max(4, Math.round(f*0.24)),
+  stub:   f => Math.round(f*3.1),                          /* the time stub's width */
+  padY:   f => Math.round(f*0.3),
+  padX:   f => Math.round(f*0.45),
+  gap:    f => Math.max(Math.round(f*0.55), CTK.print(f)+5),   /* the print hangs into it */
+  colGap: f => Math.max(18, CTK.print(f)+14),
+  name:   0.86,                                            /* a ticket's name: caps at this share of f */
+  rowName:0.8,                                             /* a ruled row's name */
+  adv:    0.72,                                            /* Montserrat 700 caps, per letter per em, tracking in (measured ≤.72 on the stress week's words) */
+  space:  0.31,                                            /* …and its word space */
+  lead:   1.16,
+  bar:    f => Math.round(f*1.3),                          /* the ruled ticket's bar */
+  rowPadY:f => Math.max(2, Math.round(f*0.2)),
+  timeCol:f => Math.round(f*2.6),
+  hair:   1.5,
+  ul:     f => Math.max(3, Math.round(f*0.12)),            /* bold: the day-colour underline… */
+  ulPad:  f => Math.round(f*0.08),                         /* …and its air */
+};
+/* Columns: a forced 1 or 2 is honoured; AUTO offers every count the area
+   allows as candidates, and coverFit keeps the best — whole names first, then
+   the bigger type. Names beside a stub wrap early, so two columns are not
+   automatically the roomier choice the way they are for a bare list. `at`
+   (what the planner and the ruled switch ask) is the best candidate's. */
+function coverTicketStack(doc, date, areaW, maxCols, ruled){
+  const cfg = doc.cover || {};
+  const n = r_eventsOn(doc, date, 'daily').length;
+  const lim = Math.max(1, Math.min(maxCols||2, n));
+  if(cfg.cols===1 || cfg.cols===2) return coverTicketStackAt(doc, date, areaW, Math.min(cfg.cols, lim), ruled);
+  const cands = []; for(let c=1;c<=lim;c++) cands.push(coverTicketStackAt(doc, date, areaW, c, ruled));
+  if(cands.length===1) return cands[0];
+  return Object.assign({}, cands[0], { cands, ok:undefined,
+    at: f => Math.min.apply(null, cands.map(s=>s.at(f))) });
+}
+function coverTicketStackAt(doc, date, areaW, cols, ruled){
+  const evs = r_eventsOn(doc, date, 'daily');
+  const cfg = doc.cover || {};
+  const titles = (cfg.titles==='crop' || cfg.titles==='short') ? cfg.titles : 'wrap';
+  const useShort = titles==='short';
+  const n = evs.length;
+  const perCol = Math.max(1, Math.ceil(n/cols));
+  const colItems = []; for(let c=0;c<cols;c++) colItems.push(evs.slice(c*perCol, (c+1)*perCol));
+  const titleOf = ev => (useShort && ev.titleShort) ? ev.titleShort : ev.title;
+  /* Lines a name takes at type size s in width tw — a greedy WORD wrap on
+     estimated widths, because caps words are long and can't share a line: a
+     per-character estimate called TALK CIRCLE: PLAYFULNESS + ATTRACTION two
+     lines at a width where it sets three. A word wider than the line counts
+     as cut; so, under Crop, does a name wider than its one line. */
+  function lines(t, s, tw){
+    const words = String(t||'').split(/\s+/).filter(Boolean);
+    if(titles==='crop')
+      return { n:1, cut: words.reduce((w, wd, i)=> w + wd.length*s*CTK.adv + (i ? s*CTK.space : 0), 0) > tw };
+    let k = 1, cur = 0, cut = false;
+    words.forEach(wd=>{
+      const ww = wd.length * s * CTK.adv;
+      if(ww > tw) cut = true;
+      if(!cur) cur = ww;
+      else if(cur + s*CTK.space + ww <= tw) cur += s*CTK.space + ww;
+      else { k++; cur = ww; }
+    });
+    return { n:k, cut: cut || k > 2 };
+  }
+  /* At size f: the stack's height (names clamp at two lines, as every cover
+     list does, plus a bold underline) and whether any name would be CUT —
+     wrapped past two lines, or past its one line under Crop. Rows are as tall
+     as their tallest ticket: the grid aligns them across the columns. */
+  function measure(f){
+    if(!n) return { h:0, cut:false };
+    const pr = CTK.print(f), e = CTK.edge;
+    let tw, k, base, fixed;
+    if(ruled){
+      tw = (areaW - pr - 2*e)/cols - 2*CTK.padX(f) - CTK.timeCol(f) - f*0.4 - CTK.hair;
+      k = CTK.rowName; base = 2*CTK.rowPadY(f);
+      fixed = pr + 2*e + CTK.bar(f) + (perCol-1)*CTK.hair;
+    } else {
+      const colW = (areaW - pr - (cols-1)*CTK.colGap(f))/cols;
+      tw = colW - 2*e - CTK.stub(f) - 2*CTK.padX(f);
+      k = CTK.name; base = 2*e + 2*CTK.padY(f);
+      fixed = pr + (perCol-1)*CTK.gap(f);
+    }
+    tw = Math.max(20, tw);
+    let h = fixed, cut = false;
+    for(let r=0;r<perCol;r++){
+      let m = 0;
+      colItems.forEach(it=>{ const ev = it[r]; if(!ev) return;
+        const L = lines(titleOf(ev), f*k, tw); if(L.cut) cut = true;
+        m = Math.max(m, base + Math.min(2, L.n)*f*k*CTK.lead + (ev.emphasis==='bold' ? CTK.ul(f)+CTK.ulPad(f) : 0)); });
+      h += m;
+    }
+    return { h, cut };
+  }
+  return { cols, colGap:null, titles, useShort, colItems, perCol, ruled:!!ruled,
+    at: f => measure(f).h, ok: f => !measure(f).cut };
+}
+/* Tickets or one ruled ticket — by count first (DailyTickets' switch), then
+   by whether separate tickets could stand at the floor at all. A property of
+   the DAY, not of the footer tier, so the planner can't flip it mid-search. */
+function coverTicketsRuled(doc, date){
+  const n = r_eventsOn(doc, date, 'daily').length;
+  if(n > COVER_TICKETS_MAX) return true;
+  const a = coverArea('tickets', coverQrOn(doc), 'none', true);
+  return coverTicketStack(doc, date, a.w, a.cols, false).at(COVER_LAD[0]) > a.h;
 }
 /* cover stylings + their event-area rectangle (shared by render + the editor) */
-/* The first five are cover-native arrangements; the last four are the daily
+/* The first five are cover-native arrangements; the last five are the daily
    card's layouts re-cut for landscape, so a document can carry one visual idea
    across the story, the feed and the page cover. Names match DAILY_CARDS on
-   purpose — Spine means the same thing on both surfaces. */
+   purpose — Spine means the same thing on both surfaces. data-model.jsx keeps
+   a copy of the ids (COVER_LAYOUT_IDS) to normalise documents without the
+   render engine; add a style there too. */
 const COVER_STYLES = [
   { id:'banner',   name:'Banner' },
   { id:'sidebar',  name:'Sidebar' },
@@ -77,6 +221,7 @@ const COVER_STYLES = [
   { id:'misreg',   name:'Misreg' },
   { id:'spine',    name:'Spine' },
   { id:'chrono',   name:'Chrono' },
+  { id:'tickets',  name:'Tickets' },
 ];
 /* The cover's optional code. 72px is the floor at which a 25-module QR still
    reads off a screen at FB's ~820px render — below that it is decoration, and
@@ -152,7 +297,7 @@ function coverPlan(doc, date, layout){
   for(let i=0;i<opts.length;i++){
     const tier = opts[i][0], tight = opts[i][1];
     const a = coverArea(layout, qrOn, tier, tight);
-    if(coverStack(doc, date, a.w, a.cols).at(COVER_LAD[0]) <= a.h)
+    if(coverStack(doc, date, a.w, a.cols, layout).at(COVER_LAD[0]) <= a.h)
       return { tier, tight, a, qrOn };
   }
   const last = opts[opts.length-1];
@@ -182,13 +327,16 @@ function coverArea(layout, qrOn, tier, tight){
        footer the list cannot actually afford. */
     case 'chrono':   return { w:v.w-sp*2,
                               h:v.h-16-(g?62:70)-(g?6:11)-(g?35:39)-10-10-f, cols:2 };
+    /* Tickets: the flat day band (72, 62 tight), the body's 12 above and 8
+       below, and the footer's own 6px margin — the print is inside the grid */
+    case 'tickets':  return { w:v.w-sp*2,               h:v.h-(g?62:72)-12-8-6-f, cols:2 };
     default:         return { w:v.w-sp*2,               h:v.h-78-18-8-f,          cols:2 };
   }
 }
 function coverInfo(doc, date){
   const layout = (doc.cover && doc.cover.layout) || 'banner';
   const plan = coverPlan(doc, date, layout);
-  const fit = coverFit(doc, date, plan.a.w, plan.a.h, plan.a.cols);
+  const fit = coverFit(doc, date, plan.a.w, plan.a.h, plan.a.cols, layout);
   return { px:fit.px, isAuto:fit.isAuto, layout, cols:fit.cols, footTier:plan.tier };
 }
 const COVER_ADDR = 'realitydn.com · 86 Mai Thúc Lân, Đà Nẵng';
@@ -244,7 +392,108 @@ function CoverEvents({ fit, T, w, justify, chip }){
     </div>
   );
 }
-function CoverBody({ doc, date, T, w, fit, justify, chip }){
+/* The Tickets style's event area — the cream tickets, or one ruled ticket
+   (coverTicketStack decides and measures; this draws exactly that). Text
+   inside is Day ink on cream whatever the palette; the stub and the bar take
+   the day colour with its own text (the APCA rule, T.dt); a banner night
+   fills its ticket — or its row — with the day colour; bold underlines the
+   name in it. Reports its measured fit like CoverEvents. */
+function CoverTicketEvents({ fit, T, w }){
+  const f = fit.font, K = ticketTokens(T), dc = T.dc[w], dt = T.dt[w];
+  const pr = CTK.print(f), e = CTK.edge, cols = fit.cols, perCol = fit.perCol || 1;
+  const evs = [].concat.apply([], fit.colItems);
+  const report = React.useContext(CoverFitCtx);
+  const boxRef = React.useRef(null), rowsRef = React.useRef(null);
+  React.useLayoutEffect(()=>{
+    if(!report || !boxRef.current) return;
+    let over;
+    if(fit.ruled){ const r = rowsRef.current; over = !!r && r.scrollHeight > r.clientHeight + 1; }
+    else {
+      /* measured from the tickets themselves: the grid centres them, so an
+         overflow spills both ways and scrollHeight would see only half */
+      const box = boxRef.current, kids = box.children;
+      let top = Infinity, bot = 0;
+      for(let i=0;i<kids.length;i++){ top = Math.min(top, kids[i].offsetTop); bot = Math.max(bot, kids[i].offsetTop + kids[i].offsetHeight); }
+      over = kids.length > 0 && (bot - top) + pr > box.clientHeight + 1;
+    }
+    report({ over, level:0, denIdx:0 });
+  });
+  const title = ev => (fit.useShort && ev.titleShort) ? ev.titleShort : ev.title;
+  /* A name. Wrapped names are a flex column whose words are an ANONYMOUS
+     item: the export (html-to-image) pins every element's height at its live
+     value, so a name that wraps to two lines on screen but sets on one in the
+     capture — a hair's difference in width — sat at the top of a two-line
+     box. An anonymous box has no height to pin, so the line stays centred.
+     Two lines at most: the fit keeps names whole, this is only the backstop
+     (it clips, top-anchored). Crop is one line with an ellipsis. */
+  const name = (ev, k)=>{
+    const s = f*k, bold = ev.emphasis==='bold';
+    const st = { minWidth:0, fontFamily:R_MONT, fontWeight:700, fontSize:s, textTransform:'uppercase',
+      letterSpacing:'.03em', lineHeight:CTK.lead,
+      borderBottom: bold ? CTK.ul(f)+'px solid '+dc : 'none', paddingBottom: bold ? CTK.ulPad(f) : 0 };
+    if(fit.titles==='crop') return <div style={Object.assign(st, { maxWidth:'100%', whiteSpace:'nowrap',
+      overflow:'hidden', textOverflow:'ellipsis' })}>{title(ev)}</div>;
+    return <div style={Object.assign(st, { display:'flex', flexDirection:'column', justifyContent:'safe center',
+      overflow:'hidden', maxHeight:2*s*CTK.lead + 0.5 })}>{title(ev)}</div>;
+  };
+  const time = { fontFamily:R_MONT, fontWeight:700, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' };
+  if(fit.ruled) return (
+    <div ref={boxRef} style={{ flex:1, minHeight:0, width:'100%', height:'100%', boxSizing:'border-box',
+      paddingRight:pr, paddingBottom:pr, display:'flex' }}>
+      <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', background:K.bg, color:K.fg,
+        border:e+'px solid '+K.edge, boxShadow:pr+'px '+pr+'px 0 '+dc }}>
+        <div style={{ flex:'none', height:CTK.bar(f), background:dc, color:dt, display:'flex', alignItems:'center',
+          justifyContent:'space-between', padding:'0 '+CTK.padX(f)+'px', fontFamily:R_MONT, fontWeight:700,
+          fontSize:Math.max(10, Math.round(f*0.62)), letterSpacing:'.1em', whiteSpace:'nowrap' }}>
+          <span>{evs.length} EVENTS</span><span>86 MAI THÚC LÂN</span>
+        </div>
+        <div ref={rowsRef} style={{ flex:1, minHeight:0, overflow:'hidden', display:'grid',
+          gridTemplateColumns:'repeat('+cols+', minmax(0,1fr))', gridTemplateRows:'repeat('+perCol+', 1fr)',
+          gridAutoFlow:'column' }}>
+          {evs.map((ev,i)=>{
+            const banner = ev.emphasis==='banner', r = i % perCol, c = Math.floor(i / perCol);
+            return (
+              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:f*0.4, minWidth:0,
+                padding:CTK.rowPadY(f)+'px '+CTK.padX(f)+'px',
+                borderTop: r ? CTK.hair+'px solid '+K.hairline : 'none',
+                borderLeft: c ? CTK.hair+'px solid '+K.hairline : 'none',
+                background: banner ? dc : 'transparent', color: banner ? dt : K.fg }}>
+                <span style={Object.assign({ flex:'none', width:CTK.timeCol(f), fontSize:f*0.74 }, time)}>{ev.start}</span>
+                {name(ev, CTK.rowName)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    /* `safe center`: a day that overflows starts at the top and clips at the
+       bottom, like every other cover list — never off both edges */
+    <div ref={boxRef} style={{ flex:1, minHeight:0, width:'100%', height:'100%', overflow:'hidden', position:'relative',
+      boxSizing:'border-box', paddingRight:pr, paddingBottom:pr, display:'grid',
+      gridTemplateColumns:'repeat('+cols+', minmax(0,1fr))', gridTemplateRows:'repeat('+perCol+', auto)',
+      gridAutoFlow:'column', columnGap:CTK.colGap(f), rowGap:CTK.gap(f), alignContent:'safe center' }}>
+      {evs.map(ev=>{
+        const banner = ev.emphasis==='banner';
+        return (
+          <div key={ev.id} style={{ display:'flex', minWidth:0, background: banner ? dc : K.bg, color: banner ? dt : K.fg,
+            border:e+'px solid '+K.edge, boxShadow:pr+'px '+pr+'px 0 '+dc }}>
+            <div style={Object.assign({ flex:'none', width:CTK.stub(f), display:'flex', alignItems:'center',
+              justifyContent:'center', fontSize:f*0.78, background: banner ? K.fg : dc, color: banner ? K.bg : dt }, time)}>{ev.start}</div>
+            {/* the name centred in its half of the ticket; flex-start, so a
+                bold underline hugs the words rather than the whole width */}
+            <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', justifyContent:'center',
+              alignItems:'flex-start', padding:CTK.padY(f)+'px '+CTK.padX(f)+'px' }}>
+              {name(ev, CTK.name)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function CoverBody({ doc, date, T, w, fit, justify, chip, tickets }){
   const info = r_dayInfo(doc, date);
   const report = React.useContext(CoverFitCtx);
   const quiet = info.status==='closed' || fit.colItems.every(c=>!c.length);
@@ -253,6 +502,7 @@ function CoverBody({ doc, date, T, w, fit, justify, chip }){
     fontFamily:R_MONT, fontWeight:700, fontSize:36, letterSpacing:'.05em', textTransform:'uppercase', color:T.fg }}>{info.note||'CLOSED'}</div>;
   if(fit.colItems.every(c=>!c.length)) return <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center',
     fontFamily:R_MONT, fontWeight:600, fontSize:22, letterSpacing:'.08em', textTransform:'uppercase', color:T.dim }}>Open · come hang out</div>;
+  if(tickets) return <CoverTicketEvents fit={fit} T={T} w={w} />;
   return <CoverEvents fit={fit} T={T} w={w} justify={justify} chip={chip} />;
 }
 function CoverId({ T, w, date, color, dayFs, kFs }){

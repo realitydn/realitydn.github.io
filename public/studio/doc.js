@@ -6,7 +6,7 @@
    ============================================================ */
 import { RStore } from './studio-store.js';
 import { internDoc } from './photos.js';
-import { FORMATS as AP_FMT, accentDay as apAccentDay, makeElement as apMake, STEP } from './studio-data.jsx';
+import { FORMATS as AP_FMT, accentDay as apAccentDay, makeElement as apMake, STEP, PALETTE as AP_PAL, ACCENTS as AP_ACC, contrastInk as apContrastInk } from './studio-data.jsx';
 const LS_KEY = 'reality-studio-doc-v2';
 const TPL_KEY = 'reality-studio-templates-v1';
 
@@ -14,7 +14,7 @@ function starterDoc(){
   return {
     /* 4:5 (1080×1350) is the primary format — IG feed + the site pipeline */
     activeFormat:'master', masterFormat:'4x5',
-    theme:'night', accent:'pink', showGrid:true, snap:true, overrides:{},
+    theme:'night', accent:'pink', showGrid:true, snap:true, overrides:{}, textRule:TEXT_RULE,
     title:'', exportFormat:'png', storyBoost:true, storyScale:1.15,
     /* The empty-Studio demo, re-cut onto the 90/45 frame (23.08) — it used to
        sit on 80/96/150/280/1014, none of which Snap could reach, so the first
@@ -29,6 +29,51 @@ function starterDoc(){
     ]
   };
 }
+/* ============================================================
+   THE TEXT-ON-FILL RULE, applied to STORED posters (Donald 6.10.26: "the
+   text-on-accent default of Poster Studio templates is still ink on red").
+   ============================================================
+   Every Auto text colour already resolves by the APCA rule (contrastInk:
+   ink on yellow + amber, cream on red · pink · blue · green · purple · ink).
+   What didn't were the posters SAVED before it — a "Hosted by" card or a title
+   on an Accent block whose text had been stored as an explicit 'ink' (22 such
+   elements across the cloud's saved posters) — and the queue starts each
+   week's poster from LAST week's save, so the old ink travelled forward.
+
+   applyTextRule() sweeps a stored doc ONCE: on every Accent-surface element,
+   an explicit ink/cream text (or kicker / subtitle) colour that breaks the rule
+   for that block's fill goes back to Auto, and the doc is stamped textRule:1.
+   A doc stamped 1 is never swept again — so ink picked on purpose AFTER this
+   sticks. Every way a stored poster reaches the canvas runs through it: boot
+   (normalizeDoc), a saved template (applyUserTpl), the queue's own-series
+   starter (applySeriesTpl), a cloud draft (useCloud), and the library's live
+   thumbnails. Pure: returns a new doc, the input untouched. */
+const TEXT_RULE = 1;
+const LIT = { ink:'#0d0905', cream:'#fffbf1' };
+function keyHex(k, fallbackHex){
+  if(LIT[k]) return LIT[k];
+  return AP_ACC.indexOf(k)>=0 ? AP_PAL[k] : fallbackHex;
+}
+function applyTextRule(d){
+  if(!d || !Array.isArray(d.elements) || (d.textRule|0) >= TEXT_RULE) return d;
+  const posterHex = AP_PAL[d.accent] || AP_PAL.pink;
+  let fixed = 0;
+  const elements = d.elements.map(el=>{
+    if(!el || el.surface!=='accent') return el;
+    const fillHex = keyHex(el.fill!=null ? el.fill : el.color, posterHex);
+    const want = apContrastInk(fillHex);             // the rule's answer for this block
+    const breaks = (k)=> (k==='ink' || k==='cream') && LIT[k]!==want;
+    const out = Object.assign({}, el);
+    const textKey = el.textColor!=null ? el.textColor : el.color;
+    if(breaks(textKey)){ out.textColor = 'fg'; fixed++; }
+    if(breaks(el.kickerColor)){ out.kickerColor = 'fg'; fixed++; }
+    if(breaks(el.subColor)){ out.subColor = 'fg'; fixed++; }
+    return out;
+  });
+  if(fixed) console.info('[studio] text-on-fill rule: '+fixed+' stored ink/cream colour(s) back to Auto.');
+  return Object.assign({}, d, { elements, textRule:TEXT_RULE });
+}
+
 /* A stored working doc → one the app can run on (defaults for fields added
    since it was saved). Null if it isn't a doc at all. */
 function normalizeDoc(d){
@@ -37,7 +82,7 @@ function normalizeDoc(d){
   if(doc.storyScale===1.3) doc.storyScale=1.15; /* old default bled off the story sides; 1.15 keeps the column in-frame */
   if(doc.activeFormat!=='master' && !AP_FMT[doc.activeFormat]) doc.activeFormat='master'; /* retired view (e.g. the old FB cover) saved as active → back to Master */
   delete doc._savedAt;   // the localStorage fallback's timestamp — storage bookkeeping, not part of the poster
-  return doc;
+  return applyTextRule(doc);
 }
 /* Why a storage write failed, in words for the topbar: describeStoreError,
    ../studio-shared/store.js (the one Print's badges use too). */
@@ -146,7 +191,7 @@ function stampEngine(doc){
    saved by name in localStorage, separate from the working doc. */
 function loadUserTpls(){ try{ const r=localStorage.getItem(TPL_KEY); if(r){ const a=JSON.parse(r); if(Array.isArray(a)) return a; } }catch(e){} return []; }
 
-export {
+export { applyTextRule, TEXT_RULE,
   LS_KEY, TPL_KEY, starterDoc, normalizeDoc, NUDGE, loadLegacyDoc, bootDoc, bootState, storyStem, tplId, shallowSame,
   sortTpls, stampEngine, loadUserTpls,
 };

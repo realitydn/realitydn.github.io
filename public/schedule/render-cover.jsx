@@ -1,6 +1,6 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — render · the FB cover
-   The nine cover layouts (five cover-native, four re-cut from the
+   The ten cover layouts (five cover-native, five re-cut from the
    daily cards) and CoverCard, which frames whichever is chosen.
    ============================================================ */
 import { themeTokens, ThemeCtx, DAILY_VARIANTS } from './render-config.jsx';
@@ -291,8 +291,47 @@ function CoverChrono({ doc, date, T, w }){
     </React.Fragment>
   );
 }
+/* 10 — Tickets: the app's cream tickets (Donald 6.10.26), the daily card's
+   Tickets re-cut for landscape. A flat day-colour band carries the day — the
+   ticket world has one shadow, the print — and the events stand under it as
+   cream tickets, or as one ruled ticket on a heavy day (the switch and the
+   measuring live with the fit: render-cover-kit coverTicketStack). The band
+   and the prints may bleed; every word stays inside the mobile-safe centre,
+   and the band steps down (tight) before any footer note is dropped. */
+function CoverTickets({ doc, date, T, w }){
+  const v = DAILY_VARIANTS.cover, sp = v.bleed+24, plan = coverPlan(doc, date, 'tickets'), a = plan.a;
+  const fit = coverFit(doc, date, a.w, a.h, a.cols, 'tickets');
+  const tight = plan.tight, bandH = tight ? 62 : 72, dayFs = tight ? 30 : 36, dt = T.dt[w];
+  return (
+    <React.Fragment>
+      <div style={{ position:'absolute', left:0, right:0, top:0, height:bandH, background:T.dc[w], color:dt,
+        display:'flex', alignItems:'center', justifyContent:'space-between', gap:20,
+        paddingLeft:sp, paddingRight:sp, boxSizing:'border-box' }}>
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:12, letterSpacing:'.22em',
+            textTransform:'uppercase', opacity:.92 }}>TODAY AT REALITY</div>
+          <div style={{ display:'flex', alignItems:'baseline', gap:12, marginTop:tight?2:4 }}>
+            <span style={{ fontFamily:R_MONT, fontWeight:800, fontSize:dayFs, lineHeight:.95,
+              textTransform:'uppercase', whiteSpace:'nowrap' }}>{R_DF[w]}</span>
+            <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:Math.round(dayFs*0.6), lineHeight:1,
+              flex:'none' }}>{r_dshort(date)}</span>
+          </div>
+        </div>
+        <RWordmark tight height={tight?20:24} color={dt} />
+      </div>
+      <div style={{ position:'absolute', left:0, right:0, top:bandH, bottom:0, paddingLeft:sp, paddingRight:sp,
+        paddingTop:12, paddingBottom:8, boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:1, minHeight:0, display:'flex' }}>
+          <CoverBody doc={doc} date={date} T={T} w={w} fit={fit} tickets />
+        </div>
+        <CoverFootR T={T} doc={doc} layout="tickets" tier={plan.tier} />
+      </div>
+    </React.Fragment>
+  );
+}
 const COVER_COMPS = { banner:CoverBanner, sidebar:CoverSidebar, slice:CoverSlice, halftone:CoverHalftone,
-                      centered:CoverCentered, flood:CoverFlood, misreg:CoverMisreg, spine:CoverSpine, chrono:CoverChrono };
+                      centered:CoverCentered, flood:CoverFlood, misreg:CoverMisreg, spine:CoverSpine, chrono:CoverChrono,
+                      tickets:CoverTickets };
 function CoverCard({ doc, date, onFitReport }){
   const T = themeTokens(doc.style.theme);
   const w = r_wd(date);

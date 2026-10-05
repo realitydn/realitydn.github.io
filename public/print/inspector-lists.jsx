@@ -48,7 +48,9 @@ function PunchgridPanel({ el, update }){
 
 function QrPanel({ el, update }){
   const dests = QR_DESTINATIONS||[];
-  const modKey = el.ink!=null?el.ink:'ink';
+  /* the modules never take white (print-element.jsx qrDark): Auto and White
+     both print K ink, so neither is a scan risk */
+  const modKey = (el.ink==null || el.ink==='auto' || el.ink==='white') ? 'ink' : el.ink;
   const eyeKey = el.eye&&el.eye!=='auto'?el.eye:modKey;
   const risky = qrLum(modKey)>0.40 || qrLum(eyeKey)>0.40;
   const hasLogo = el.logo && el.logo!=='none';

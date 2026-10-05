@@ -15,11 +15,11 @@
    Exports: renderElement
    ============================================================ */
 import {
-  L, inkColor, whiteColor, tintK, accentColor, isAccent, colorForKey, surfTextFallback,
+  L, inkColor, whiteColor, tintK, accentColor, isAccent, colorForKey,
   chars, STAR_CH, starGlyphW, measure, wrapText,
 } from './print-pdf.js';
 
-import { INK, shadowSpec, resolveInk, surfaceStyle } from './print-paper.js';
+import { INK, shadowSpec, textKeys, keyHex } from './print-paper.js';
 import {
   blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
   stripeLayout, dotFieldLayout, arcTextLayout,
@@ -92,14 +92,19 @@ function renderElement(page, el, ctx){
   function localPath(d, color, ox, oy, extra){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm(Object.assign({ x:o.x, y:o.y, scale:1, rotate:ROT, color }, extra||{}))); }
   function localPathStroke(d, color, w, ox, oy, extra){ const o=place(ox||0, oy||0); page.drawSvgPath(d, bm(Object.assign({ x:o.x, y:o.y, scale:1, rotate:ROT, borderColor:color, borderWidth:w }, extra||{}))); }
 
-  const accentHex = isAccent(el.fill) ? PALETTE[el.fill] : PALETTE[accentName];
+  /* the colour of the shapes — blocks, slabs, stripes, dots, rays */
   const fillKey = el.fill!=null ? el.fill : accentName;
-  const textFallback = surfTextFallback(el.surface, accentHex);
-  const textColor = colorForKey(el.ink!=null?el.ink:'auto', textFallback);
-  /* The same text colour as a HEX, resolved exactly as print-element.jsx
-     resolves textCol — a contrast decision (a coupon chip's lettering, a
-     QR's modules) can't compare pdf-lib colours. */
-  const textHex = resolveInk(el.ink!=null?el.ink:'auto', surfaceStyle(el.surface||'none', accentHex).color);
+  /* Text on a surface — print-paper.js textKeys, the SAME resolution the
+     canvas draws (print-element.jsx). It judges Auto text against the box's
+     ACTUAL fill: the PDF used to judge it against the doc accent whenever the
+     fill was ink or white, so a yellow-accent sheet set K text on a K box. */
+  const tk = textKeys(el, accentName);
+  const textColor = colorForKey(tk.text);
+  /* the same colour as a HEX — a contrast decision (a coupon chip's
+     lettering, a QR's modules) can't compare pdf-lib colours */
+  const textHex = keyHex(tk.text);
+  /* accent-coloured text (list heading + markers, coupon heading) */
+  const accentTextColor = colorForKey(tk.accentText);
   const echoColor = el.echoAccent && el.echoAccent!=='auto' ? colorForKey(el.echoAccent) : accentColor(partnerOf(accentName));
 
   /* plane shadow from the shared spec — dx/dy offset, K-tint or accent ink.
@@ -134,12 +139,15 @@ function renderElement(page, el, ctx){
     const s=el.surface; if(!s||s==='none') return;
     const bw=el.border!=null?el.border:2, radius=el.radius||0;
     let fill=null;
+    /* the Accent surface is the element's own fill KEY — white is the paper,
+       ink the K plate (accentColor() knows only the seven accents and drew a
+       white badge as a K one) */
     if(s==='solid') fill=inkColor();
-    else if(s==='accent') fill=accentColor(fillKey);
+    else if(s==='accent') fill=colorForKey(tk.fill);
     else if(s==='paper') fill=whiteColor();
     liftRect(0,0,el.w,el.h);
     if(fill) fillBox(fill, radius);
-    const bcol = (el.borderColor && el.borderColor!=='auto') ? colorForKey(el.borderColor) : (s==='accent'?accentColor(fillKey):inkColor());
+    const bcol = (el.borderColor && el.borderColor!=='auto') ? colorForKey(el.borderColor) : (s==='accent'?colorForKey(tk.fill):inkColor());
     strokeBox(bw, bcol, el.borderPattern, radius);
   }
 
@@ -185,9 +193,9 @@ function renderElement(page, el, ctx){
     const mode=el.listStyle||'prices';
     let yTop=(el.surface&&el.surface!=='none')?12:6;
     const padX=(el.surface&&el.surface!=='none')?12:2;
-    /* accent text on its OWN Accent surface would vanish — it takes the text
-       colour there (print-element.jsx accentText: the APCA text-on-fill rule) */
-    const listAccent=el.surface==='accent' ? textColor : accentColor(isAccent(fillKey)?fillKey:accentName);
+    /* accent text on a fill takes the text colour (print-paper textKeys
+       accentText — an accent on its own Accent surface would vanish) */
+    const listAccent=accentTextColor;
     const headCol=(el.headingColor&&el.headingColor!=='auto')?colorForKey(el.headingColor):listAccent;
     if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
       drawLineStr(el.upper===false?el.heading:el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, TRACK.h2); yTop+=hs*1.1+8; }
@@ -307,7 +315,7 @@ function renderElement(page, el, ctx){
     drawSurface();   // shared styled border (dashed by default) + lift
     /* every offset below comes from the shared couponLayout the screen renders
        from — same wraps, same space-between gaps, same baselines. */
-    const headCol=el.surface==='accent' ? textColor : accentColor(isAccent(fillKey)?fillKey:accentName);
+    const headCol=accentTextColor;
     /* the code chip is a text-colour fill — its lettering is whichever neutral
        reads on it (white on K ink, as before; ink on a light accent) */
     const chipText=contrastInk(textHex, NEUTRALS.print)===NEUTRALS.print.light ? whiteColor() : inkColor();
@@ -539,7 +547,9 @@ function renderElement(page, el, ctx){
     const blockTop=(el.h - (ts*1.4 + (a2?ts*1.25:0)))/2 + 2;
     drawLineStr(a1, tx, blockTop+ta, tf, ts, colorForKey(el.ink||'ink',inkColor()), TRACK.button);
     /* address = fact -> Grotesk, as typed, no tracking */
-    if(a2) drawLineStr(a2, tx, blockTop+ts*1.4+ta, fontFor('grot',500)||tf, ts*0.92, inkColor(), TRACK.fact);
+    /* in the footer's own ink, like the site line above it (it was K whatever
+       the ink — a blue footer printed a black address) */
+    if(a2) drawLineStr(a2, tx, blockTop+ts*1.4+ta, fontFor('grot',500)||tf, ts*0.92, colorForKey(el.ink||'ink',inkColor()), TRACK.fact);
   }
   else if(t==='wordmark'){
     const wmH=Math.min(el.h,el.w*0.16), s=wmH/84, wmW=512*s, lx=(el.w-wmW)/2, lyTop=(el.h-wmH)/2;
@@ -577,7 +587,8 @@ function renderElement(page, el, ctx){
   else if(t==='arrow'){
     drawSurface();
     const labelH=el.label?24:0, aH=el.h-labelH;
-    localPath(arrowPath(el.dir||'right', el.w, aH), colorForKey(el.ink||'ink',accentColor(accentName)));
+    /* the glyph takes the label's colour (print-element.jsx) */
+    localPath(arrowPath(el.dir||'right', el.w, aH), textColor);
     if(el.label){ const f=fontFor('mont',800), s=el.fontSize||18, a=f.heightAtSize(s,{descender:false}), w=measure(el.label.toUpperCase(),f,s,TRACK.sign); drawLineStr(el.label.toUpperCase(), (el.w-w)/2, aH+(labelH+a)/2-2, f, s, textColor, TRACK.sign); }
   }
   else if(t==='contact'){

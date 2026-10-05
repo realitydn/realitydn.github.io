@@ -5,7 +5,7 @@
    ============================================================ */
 import { RCloud } from '../../studio-shared/cloud.js';
 import { RStore } from '../studio-store.js';
-import { stampEngine, sortTpls } from '../doc.js';
+import { stampEngine, sortTpls, applyTextRule } from '../doc.js';
 import { internDoc } from '../photos.js';
 function useCloudSession(){
   /* ---- WP9 cloud sign-in state (best-effort; this browser's IndexedDB stays
@@ -105,6 +105,7 @@ function useCloud({ session, doc, docRef, setDoc, setSelectedIds, setUserTpls })
             /* the draft's photos are inline — they come in as references */
             let incoming = remoteDoc;
             try{ incoming = await internDoc(remoteDoc); }catch(e){}
+            incoming = applyTextRule(incoming);
             if(!live) return;
             setDoc(d=>Object.assign({}, d, incoming));
             setSelectedIds([]);

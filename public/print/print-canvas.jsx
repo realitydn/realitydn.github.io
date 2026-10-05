@@ -8,7 +8,7 @@
    Exports: PrintCanvas
    ============================================================ */
 import { PALETTE as PC_PAL } from '../studio-shared/brand.js';
-import { INK } from './print-paper.js';
+import { textKeys, keyHex } from './print-paper.js';
 import { PrintElement as PCElement } from './print-element.jsx';
 const PC_STEP = 6;                     // fallback snap grid (pt)
 const PC_GUIDE = '#ed1b72';            // brand pink alignment line
@@ -36,7 +36,13 @@ function pcEditFont(el){
     textTransform: el.upper!==false ? 'uppercase' : 'none',
   };
 }
-function PcTextEditor({ el, onChange, onDone }){
+/* `color` is the element's RESOLVED text colour (print-paper textKeys — the
+   one the canvas and the PDF draw), so editing white-on-pink types white,
+   not K ink over the words it covers. The caret takes it too: the pink guide
+   colour vanished on a pink fill. The set copy underneath is hidden while
+   this is open (PrintElement `editing`), and the editor takes a surfaced
+   box's inset (8/12 less its own 2px edge) so the words stay where they sit. */
+function PcTextEditor({ el, color, onChange, onDone }){
   const ref = React.useRef(null);
   React.useEffect(()=>{ const n=ref.current; if(n){ n.focus(); n.select(); } }, []);
   return (
@@ -49,11 +55,11 @@ function PcTextEditor({ el, onChange, onDone }){
         if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); onDone(); }
       }}
       style={Object.assign({
-        position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h,
+        position:'absolute', left:el.x, top:el.y, width:el.w, height:el.h, boxSizing:'border-box',
         transform: el.rot ? 'rotate('+el.rot+'deg)' : null,
         background:'rgba(237,27,114,.08)', border:'2px solid '+PC_GUIDE, outline:'none',
-        color:INK.rgb, padding:0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
-        caretColor:PC_GUIDE,
+        color, padding:(el.surface && el.surface!=='none') ? '6px 10px' : 0, margin:0, resize:'none', overflow:'hidden', zIndex:60,
+        caretColor:color,
       }, pcEditFont(el))} />
   );
 }
@@ -194,7 +200,7 @@ function PrintCanvas({ elements, wpt, hpt, accent, grid, bleedPt, showGrid, show
           {elements.map(el=>(
             <div key={el.id}
               onDoubleClick={e=>{ if(PC_EDITABLE.indexOf(el.type)>=0){ e.stopPropagation(); onSelect(el.id, false); setEditId(el.id); } }}>
-              <PCElement el={el} docAccentHex={accentHex} docAccent={accent}
+              <PCElement el={el} docAccentHex={accentHex} docAccent={accent} editing={el.id===editId}
                 selected={el.id===selectedId} dragging={dragRef.current && dragRef.current.id===el.id}
                 onElPointerDown={startMove} />
             </div>
@@ -204,7 +210,7 @@ function PrintCanvas({ elements, wpt, hpt, accent, grid, bleedPt, showGrid, show
           {(()=>{
             const el = editId ? elements.find(x=>x.id===editId) : null;
             if(!el || PC_EDITABLE.indexOf(el.type)<0) return null;
-            return <PcTextEditor el={el} onChange={onChange} onDone={()=>setEditId(null)} />;
+            return <PcTextEditor el={el} color={keyHex(textKeys(el, accent).text)} onChange={onChange} onDone={()=>setEditId(null)} />;
           })()}
 
           {/* layout grid — column/row bands + a fine dot lattice */}

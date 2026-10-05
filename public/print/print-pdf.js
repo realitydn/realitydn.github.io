@@ -14,7 +14,7 @@
 import { PrintImg } from './print-store.js';
 import { FACES as FACES_, faceFor, PALETTE_CMYK, PT_PER_MM } from './print-paper.js';
 import { risoOpts } from './print-layout.js';
-import { ACCENTS, contrastInk, NEUTRALS } from '../studio-shared/brand.js';
+import { ACCENTS } from '../studio-shared/brand.js';
 
 function L(){ return window.PDFLib; }
 
@@ -84,14 +84,10 @@ function colorForKey(key, fallback){
   if(isAccent(key)) return accentColor(key);
   return inkColor();
 }
-/* auto text colour on a surfaced box — contrast is judged against the box's OWN
-   fill accent (accentHex), not the doc accent, so it matches the screen when the
-   surface accent is customised. */
-function surfTextFallback(surface, accentHex){
-  if(surface==='solid') return whiteColor();
-  if(surface==='accent') return contrastInk(accentHex, NEUTRALS.print)===NEUTRALS.print.light ? whiteColor() : inkColor();
-  return inkColor();
-}
+/* Auto TEXT colour isn't decided here: text on a surface is print-paper.js
+   textKeys, the one resolution the canvas draws too (the old surfTextFallback
+   was handed the DOC accent for an ink or white fill — K text on a K box).
+   The exporter maps its keys through colorForKey. */
 
 /* ---- text layout ---- */
 function chars(s){ return Array.from(s); }
@@ -120,6 +116,6 @@ function wrapText(text, font, size, tracking, maxW){
 
 export {
   L, loadFontBytes, embedFonts, RASTER_CAP, rasterizeImage,
-  cmykArr, inkColor, whiteColor, tintK, accentColor, isAccent, colorForKey, surfTextFallback,
+  cmykArr, inkColor, whiteColor, tintK, accentColor, isAccent, colorForKey,
   chars, STAR_CH, starGlyphW, measure, wrapText,
 };

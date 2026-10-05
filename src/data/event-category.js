@@ -38,6 +38,8 @@ export function normalizeCategory(v) {
 // that form makes a bare stem ("freelanc", "content strateg") match only when
 // a non-word character follows it; kept as-is so the two ports agree.
 const RULES = [
+  // Donald 6.10.26: Walkabout is a talk, though its titles say "presentation"
+  ['language', /\b(walkabout)\b/],
   ['drinks', /\b(happy hour|cocktails?|wine|beer|tasting|bar crawl|mixology)\b/],
   // the specific parties first, so "Farewell Party" never reads as a talk
   ['party', /\b(farewell|birthday|going.away|leaving party|nye|new year.s eve|halloween|drinking practice|nhau)\b/],
@@ -45,8 +47,8 @@ const RULES = [
   // before music: "PowerPoint Karaoke" and "Hitster: The Music Party Game" are games
   ['games', /\b(powerpoint karaoke|quiz|trivia|chess|board ?games?|geoguessr|shogi|tournament|game show|game night|party game|jackbox|video game|clocktower|hitster|poker|mahjong|bingo|werewolf|games?)\b/],
   ['music', /\b(dance|dancing|dj|karaoke|charaoke|singing|album|listening party|open mic|no mic|jam|jam session|concert|ballet|bachata|salsa|jive|band|musical|sing.?along|choir|orchestra|live music|acoustic|gig|vinyl|music)\b/],
-  ['wellness', /\b(therapy|healing|somatic|meditation|mindful\w*|wellbeing|wellness|nutrition|hormone|menstrual|longevity|self.care|boundaries|vulnerability|anxiety|adhd|burnout|breathwork|yoga|sleep|stress|journaling|body doubling|life purpose|core values)\b/],
-  ['tech', /\b(startups?|founders?|freelanc\w*|entrepreneurs?|business|marketing|linkedin|seo|client|pricing|invest\w*|compliance|crypto|coding|developer|ai|product|sprint|career|virality|organic growth|content strateg\w*|social media|copywriting|blockchain|web3|presentation|public speaking|skill.sharing)\b/],
+  ['wellness', /\b(therapy|healing|somatic|meditation|mindful\w*|wellbeing|wellness|nutrition|hormone|menstrual|longevity|self.care|boundaries|vulnerability|anxiety|adhd|burnout|breathwork|yoga|sleep|stress|journaling|life purpose|core values)\b/],
+  ['tech', /\b(startups?|founders?|freelanc\w*|entrepreneurs?|business|marketing|linkedin|seo|client|pricing|invest\w*|compliance|crypto|coding|developer|ai|product|sprint|career|virality|organic growth|content strateg\w*|social media|copywriting|blockchain|web3|presentation|public speaking|skill.sharing|body doubling)\b/],
   ['arts', /\b(art|paint|drawing|craft|crochet|writing|poetry|photo|photography|design|architecture|lecture|book club|book launch|exhibition|storyteller|creative|sketch)\b/],
   ['language', /\b(language|conversation|talk circle|philosophy|exchange|vietnamese|english|mandarin|french|russian|debate|discussion|talk)\b/],
   // the generic party words last, so "Album Listening Party" stays music

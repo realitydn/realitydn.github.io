@@ -20,9 +20,10 @@ const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
 const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap} step={apStep} suffix="pt" />;
 
 /* Print's fixed swatches — K-only ink, the paper white, an optional Auto —
-   ahead of the accents; the row itself is RUI.Swatches. */
-const Swatches = ({ auto, white, ...p })=> <RUI.Swatches {...p} fixed={[].concat(
-  auto  ? [{ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', title:'Auto — readable on the surface' }] : [],
+   ahead of the accents; the row itself is RUI.Swatches. `autoTitle` says
+   what Auto means where it differs (a kicker's Auto is its accent on paper). */
+const Swatches = ({ auto, autoTitle, white, ...p })=> <RUI.Swatches {...p} fixed={[].concat(
+  auto  ? [{ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', title:autoTitle||'Auto — readable on the surface' }] : [],
   [{ v:'ink', bg:AP_INK.rgb, title:'Ink (K-only)' }],
   white ? [{ v:'white', bg:'#ffffff', title:'White (paper / reverse)' }] : []
 )} />;

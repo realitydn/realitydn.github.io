@@ -251,18 +251,18 @@ export function cfStr(lang = 'EN') {
 // The category name on a ticket's top bar / meta line, and the key labels of
 // the event overlay's ruled rows.
 //
-// CATEGORY NAMES are the event-analysis skill's own (EN + its VI draft). Per
-// the skill's rule, a language without its own name falls back to ENGLISH,
-// per key — so RU/UK/KO/JA read the EN names until Donald adds theirs here
-// (TICKET_STR.RU = { cat: { music: '…' } } — missing keys still fall back).
+// CATEGORY NAMES are Donald's six groups (6.10.26 — pluses, never
+// ampersands), EN + VI. A language without its own name falls back to
+// ENGLISH, per key — so RU/UK/KO/JA read the EN names until they get theirs
+// here (TICKET_STR.RU = { cat: { arts: '…' } } — missing keys still fall back).
 // `other` (uncategorised) has no name: the bar/meta line just omits it.
 // The names can be long ("WELLNESS + GROWTH"): bars and meta lines
 // WRAP, never truncate (index.css .tkt-top).
 //
 // WHEN / WHERE: the site had no standalone label for either in any language,
-// so EN everywhere + a VI draft. ENTRY reuses the site's existing six-language
+// so EN everywhere + VI. ENTRY reuses the site's existing six-language
 // "Entry: {cost}" line (CF_STR.entry), minus its cost slot.
-// VI below is DRAFT — Donald corrects all Vietnamese.
+// VI written 6.10.26 (Donald: "You're pretty good at Vietnamese, do it").
 const TICKET_STR = {
   EN: {
     cat: {
@@ -281,8 +281,8 @@ const TICKET_STR = {
     cat: {
       social: 'Trò chơi + Giao lưu',
       arts: 'Nghệ thuật, Phim, Âm nhạc',
-      language: 'Sự kiện trò chuyện',
-      wellness: 'Sức khoẻ + Phát triển bản thân',
+      language: 'Trò chuyện + Thảo luận',
+      wellness: 'Sống khoẻ + Phát triển bản thân',
       tech: 'Công nghệ + Kinh doanh',
       deal: 'Đồ uống + Ưu đãi',
     },

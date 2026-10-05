@@ -6,7 +6,7 @@ import {
   ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR, uid,
 } from '../studio-data.jsx';
 import { TEMPLATES as AP_TPL, buildTemplate as apBuildTpl } from '../templates.jsx';
-import { sortTpls } from '../doc.js';
+import { sortTpls, applyTextRule } from '../doc.js';
 import {
   feedDate, feedTime, feedDayIdx, feedDayLabel, searchNorm, seriesWidePoster, queueKey, loadQueueDismissed,
   storeQueueDismissed, queueTitleSize, fetchFeedRetry,
@@ -153,7 +153,9 @@ function useQueue({ docRef, setDoc, setSelectedIds, userTpls, userTplsRef, tplRe
      per-format nudges are the template's own. Fresh element ids, overrides
      remapped, exactly as applyUserTpl does. */
   function applySeriesTpl(ev, t, title, titleVi){
-    const snap = JSON.parse(JSON.stringify(t.doc));
+    /* last week's poster, swept once by the text-on-fill rule (doc.js) — the
+       path the old stored ink used to ride forward week after week */
+    const snap = applyTextRule(JSON.parse(JSON.stringify(t.doc)));
     const idMap = {};
     snap.elements.forEach(e=>{ const nid=uid(); idMap[e.id]=nid; e.id=nid; });
     const overrides = {};

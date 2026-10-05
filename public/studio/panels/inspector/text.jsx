@@ -2,8 +2,9 @@
    REALITY POSTER STUDIO — inspector · text
    Content fields for every text-bearing type, then Type, Subtitle and Kicker.
    ============================================================ */
-import { DEFAULTS as AP_DEF, PALETTE as AP_PAL, textInsetModel } from '../../studio-data.jsx';
+import { DEFAULTS as AP_DEF, PALETTE as AP_PAL, textInsetModel, contrastInk } from '../../studio-data.jsx';
 import { titleLineHeight } from '../../studio-element.jsx';
+import { seResolve } from '../../elements/style.js';
 import { searchNorm } from '../../feed.js';
 import { Field, Slider, Chips, Fold, Hint, ScaleControl, Swatches, WEIGHTS_MONT, WEIGHTS_GROT } from '../controls.jsx';
 import { TicketContent } from './ticket.jsx';
@@ -148,10 +149,19 @@ function SubtitleFold({ el, isOutput, activeLabel, update, dSub }){
 }
 
 function KickerFold({ el, doc, update, dKicker }){
+  /* Auto is painted in what it resolves to (kickerHex, studio-element.jsx).
+     On an Accent surface that is NOT the accent — the accent is the card, so
+     the kicker takes the card's text colour, the APCA text-on-fill rule via
+     contrastInk. The swatch used to show the poster accent there too. */
+  const onFill = el.surface==='accent';
+  const autoBg = onFill
+    ? seResolve(el.textColor!=null?el.textColor:el.color, contrastInk(seResolve(el.fill!=null?el.fill:el.color, AP_PAL[doc.accent])))
+    : AP_PAL[doc.accent];
   return (
         <Fold id="f-kicker" title="Kicker" dirty={dKicker}>
           <Field label="Kicker (optional)" value={el.kicker} onChange={v=>update({kicker:v})} />
-          <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'} onChange={v=>update({kickerColor:v})} autoTitle="Auto — the poster accent" autoBg={AP_PAL[doc.accent]} />
+          <Swatches label="“Hosted by” colour" value={el.kickerColor!=null?el.kickerColor:'fg'} onChange={v=>update({kickerColor:v})}
+            autoTitle={onFill ? 'Auto — the text colour on this Accent fill (cream on red · pink · blue · green · purple, ink on yellow · amber)' : 'Auto — the poster accent'} autoBg={autoBg} />
         </Fold>
   );
 }

@@ -76,8 +76,9 @@
   /* Text on a colour fill follows the APCA text-on-fill rule (5.10.26,
      brand.js contrastInk): CREAM on red · pink · blue · green · purple, INK on
      amber · yellow. So the pink accent carries cream; Schedule, whose accent
-     is amber, sets --st-on-accent back to ink. */
+     is amber, sets --st-on-accent (and its -soft) back to ink. */
   --st-on-accent:#fffbf1;  /* text on the UI accent fill (pink → cream) */
+  --st-on-accent-soft:rgba(255,251,241,.72);  /* the quieter sub-label on that fill (a format's FEED, Save's scope) */
   --st-on-amber:#0d0905;   /* text on an amber / yellow fill */
   --st-on-good:#fffbf1;    /* text on the green fill */
   --st-k:#0d0905;          /* the ink neutral AS A COLOUR — the Ink swatch, a plate, a keyline */
@@ -145,7 +146,7 @@ body{ background:var(--st-bg); overflow:hidden; }
 :is(.rs-seg,.ps-seg,.ss-seg) button small{ font-size:var(--st-fs-label); letter-spacing:.06em; color:var(--st-faint); font-weight:600; }
 :is(.rs-seg,.ps-seg,.ss-seg) button:hover{ color:var(--st-text); }
 :is(.rs-seg,.ps-seg,.ss-seg) button.on{ background:var(--st-accent); color:var(--st-on-accent); }
-:is(.rs-seg,.ps-seg,.ss-seg) button.on small{ color:rgba(13,9,5,.6); }
+:is(.rs-seg,.ps-seg,.ss-seg) button.on small{ color:var(--st-on-accent-soft); }
 :is(.rs-seg,.ps-seg,.ss-seg) button:disabled{ opacity:.4; cursor:default; }
 
 /* icon / text button */
@@ -166,7 +167,7 @@ body{ background:var(--st-bg); overflow:hidden; }
   font-size:var(--st-fs-btn); color:var(--st-on-accent); background:var(--st-accent); border:var(--st-bw) solid var(--st-accent);
   padding:6px 14px; cursor:pointer; transition:.12s; display:flex; flex-direction:column; align-items:center;
   gap:1px; line-height:1.15; white-space:nowrap; }
-:is(.rs-savebtn,.ps-savebtn) small{ font-size:var(--st-fs-label); letter-spacing:.06em; font-weight:600; color:rgba(13,9,5,.66); text-transform:uppercase; }
+:is(.rs-savebtn,.ps-savebtn) small{ font-size:var(--st-fs-label); letter-spacing:.06em; font-weight:600; color:var(--st-on-accent-soft); text-transform:uppercase; }
 :is(.rs-savebtn,.ps-savebtn):hover{ background:var(--st-accent-hi); border-color:var(--st-accent-hi); }
 :is(.rs-savebtn,.ps-savebtn).alt{ background:var(--st-good); border-color:var(--st-good); }
 :is(.rs-savebtn,.ps-savebtn):disabled{ opacity:.45; cursor:default; }

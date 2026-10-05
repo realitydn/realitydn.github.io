@@ -11,7 +11,7 @@
    whose output (the week's schedule) is itself pink-heavy, so the
    selection must not read as a day colour. */
 :root{ --st-accent:#fdb515; --st-accent-hi:#fddf00; --st-accent-bg:#241a10;
-  --st-on-accent:var(--st-on-amber); }   /* amber + its yellow hover take INK (the APCA text-on-fill rule) */
+  --st-on-accent:var(--st-on-amber); --st-on-accent-soft:rgba(13,9,5,.6); }   /* amber + its yellow hover take INK (the APCA text-on-fill rule) */
 
 .ss-app{ grid-template-rows:auto auto 1fr; }
 

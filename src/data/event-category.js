@@ -21,9 +21,9 @@ const RULES = [
   // ("Music + Dance + Performance"), so it is here.
   ['drinks', /\b(happy hour|cocktails?|wine|beer|tasting|bar crawl|mixology)\b/],
   ['party', /\b(farewell|birthday|going.away|leaving party|nye|new year.s eve|halloween|drinking practice|nhau)\b/],
-  ['film', /\b(film|films|filmmakers?|movies?|screenings?|cinema|documentary)\b/],
-  ['games', /\b(quiz|trivia|chess|board ?games?|geoguessr|shogi|tournament|game show|game night|party game|jackbox|video game|clocktower|hitster|poker|mahjong|bingo|werewolf|games?)\b/],
-  ['music', /\b(dance|dancing|dj|karaoke|open mic|no mic|jam|jam session|concert|ballet|bachata|salsa|jive|band|musical|sing.?along|choir|orchestra|live music|acoustic|gig|vinyl|music)\b/],
+  ['film', /\b(film|films|filmmakers?|movies?|screenings?|cinema|documentary|watch party|proshot)\b/],
+  ['games', /\b(powerpoint karaoke|quiz|trivia|chess|board ?games?|geoguessr|shogi|tournament|game show|game night|party game|jackbox|video game|clocktower|hitster|poker|mahjong|bingo|werewolf|games?)\b/],
+  ['music', /\b(dance|dancing|dj|karaoke|charaoke|singing|album|listening party|open mic|no mic|jam|jam session|concert|ballet|bachata|salsa|jive|band|musical|sing.?along|choir|orchestra|live music|acoustic|gig|vinyl|music)\b/],
   ['party', /\b(party|parties|celebration|festival|rave|disco)\b/],
 ];
 

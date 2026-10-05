@@ -1,0 +1,19 @@
+/* ============================================================
+   REALITY · Year 2 — MOTION TOKENS
+   Stamp, don't float. Motion punches in with overshoot and
+   settles. No slow fades from nowhere.
+   ============================================================ */
+
+:root {
+  /* easing curves */
+  --ease-stamp: cubic-bezier(0.2, 1.4, 0.45, 1);   /* @kind other */
+  --ease-snap:  cubic-bezier(0.3, 0, 0.2, 1);      /* @kind other */
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);     /* @kind other */
+
+  /* duration scale */
+  --dur-tap:    120ms;   /* @kind other */
+  --dur-quick:  200ms;   /* @kind other */
+  --dur-settle: 350ms;   /* @kind other */
+  --dur-enter:  700ms;   /* @kind other */
+  --stagger:    90ms;    /* @kind other */
+}

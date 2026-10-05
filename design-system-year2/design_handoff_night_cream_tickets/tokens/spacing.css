@@ -1,0 +1,25 @@
+/* ============================================================
+   REALITY · Year 2 — SPACING & LAYOUT TOKENS
+   4px base ramp. Hard corners everywhere — there is NO radius
+   token because border-radius is 0, no exceptions.
+   ============================================================ */
+
+:root {
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;  --space-5: 20px;
+  --space-6: 24px;  --space-7: 32px;  --space-8: 48px;  --space-9: 64px;  --space-10: 96px;
+
+  /* semantic app-layout tokens — locked "Comfortable" density */
+  --screen-pad:   var(--space-5);  /* 20 · phone screen margin    */
+  --section-gap:  var(--space-4);  /* 16 · between screen blocks  */
+  --card-pad:     var(--space-5);  /* 20 · inside cards           */
+  --row-y:        var(--space-3);  /* 12 · list-row vertical      */
+  --tap-min:      var(--space-8);  /* 48 · touch-target floor     */
+  --grid-cols:    4;               /* @kind other */
+  --grid-gutter:  var(--space-3);  /* 12 · column gutter          */
+
+  /* ---- BORDERS — ink strokes, hard corners ---- */
+  --radius:        0;               /* LOCKED · no radius anywhere */
+  --border:        2px;             /* standard ink stroke         */
+  --border-rule:   1.5px;           /* section rules               */
+  --border-heavy:  3px;             /* mastheads & footers         */
+}

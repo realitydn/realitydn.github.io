@@ -183,6 +183,10 @@ for (const [title, want] of [
   ['Philosophy Café', 'talk'],
   ['Farewell Party for Mai', 'party'],
   ['Mid-Autumn Festival', 'party'],
+  ['Charaoke - Singing to Support the Elderly Loving Home', 'music'],
+  ['ALBUM LISTENING PARTY: DOM VENICE', 'music'],
+  ['Hadestown Proshot Watch Party', 'film'],
+  ['PowerPoint Karaoke', 'games'],
 ]) eq(`eventCategory "${title}"`, eventCategory(title), want);
 eq('eventCategory empty → talk', eventCategory('', ''), 'talk');
 eq('categoryOf reads the EN title', categoryOf({ title_en: 'REALITY Pub Quiz', title_vi: 'Đố vui REALITY' }), 'games');

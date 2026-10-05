@@ -1,0 +1,34 @@
+/* ============================================================
+   REALITY · Year 2 — SHADOW TOKENS
+   FLAT down-shadows — ink leaking beneath a lifted edge. No blur
+   spread softness; a hard offset block. Inverts to cream after dark.
+
+   [SHIPPED 17.08.26] Day values were tuned HEAVIER than the original
+   spec: 0.08 / 0.12 / 0.18 washed out on cream paper and cards did not
+   read as lifted. Night was already correct and is unchanged — the
+   asymmetry is deliberate, not drift.
+   ============================================================ */
+
+:root {
+  --sh-light:   0 4px 1px rgba(13, 9, 5, .10);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
+  --sh-heavy:   0 13px 3px rgba(13, 9, 5, .23);
+}
+
+/* Night — shadows invert: cream light leaking beneath a lifted edge */
+[data-theme="dark"] {
+  --sh-light:   0 4px 1px rgba(255, 251, 241, .14);
+  --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
+  --sh-heavy:   0 14px 3px rgba(255, 251, 241, .26);
+}
+
+.scope-day {
+  --sh-light:   0 4px 1px rgba(13, 9, 5, .10);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
+  --sh-heavy:   0 13px 3px rgba(13, 9, 5, .23);
+}
+.scope-night {
+  --sh-light:   0 4px 1px rgba(255, 251, 241, .14);
+  --sh-default: 0 9px 2px rgba(255, 251, 241, .18);
+  --sh-heavy:   0 14px 3px rgba(255, 251, 241, .26);
+}

@@ -1,0 +1,117 @@
+/* ============================================================
+   REALITY · Year 2 — COLOUR & SURFACE TOKENS
+   Silkscreen / riso DNA. Ink + paper carry everything; the
+   palette only ever appears as an accent. One tokened theme
+   that flips Day (ink-on-cream) ⇄ Night (cream-on-ink).
+
+   Reconciled against shipped app.realitydn.com — 17.08.26.
+   Values marked [SHIPPED] were corrected in production for a
+   stated reason and are now canon. See guidelines/canon-open-questions.
+   ============================================================ */
+
+:root {
+  /* ---- BRAND PALETTE — 3 majors + 4 minors. LOCKED. ---- */
+  /* MAJOR — working colours, carry attention */
+  --yellow: #fddf00;   /* drink deals · happy hour     */
+  --red:    #ed2224;   /* imperative · alerts          */
+  --blue:   #18a7e0;   /* live music                   */
+  /* MINOR — extend the category-coding */
+  --pink:   #ed1b72;   /* parties · default accent     */
+  --amber:  #fdb515;   /* warm · late                  */
+  --green:  #43b02a;   /* community · day              */
+  --purple: #6e3179;   /* after-dark · lifts in Night  */
+
+  /* category accent — swappable per context (party/music/drinks…)
+     UNRESOLVED: the palette rule says "lead with the majors", yet the
+     default accent is pink (a minor), and app + website currently ship
+     this pair INVERTED relative to each other. Do not treat either
+     order as settled. See guidelines/canon-open-questions. */
+  --accent:   var(--pink);   /* poster lead accent           */
+  --accent-2: var(--blue);   /* second misregistration layer */
+
+  /* ---- SURFACES — LIGHT / DAY (default) ---- */
+  --bg:          #fffbf1;          /* page / "paper"                 */
+  --surface:     #fffbf1;          /* cards (bordered, same paper)   */
+  --surface-2:   #f4ecd7;          /* [SHIPPED] ONE warm step off-paper:
+                                      insets, day headers, image
+                                      placeholders, skeletons. Previously
+                                      collapsed to --bg, which made every
+                                      inset invisible in Day.           */
+  --paper-shade: #ece2c9;          /* [SHIPPED] deeper off-paper — poster
+                                      placeholders before an image paints */
+  --fg:          #0d0905;          /* ink: text, 2px borders, fills   */
+  --fg-dim:      rgba(13, 9, 5, .72);
+  /* [SHIPPED] --fg-faint carries real reading text, not just decoration:
+     mobile bottom-nav labels, field hints, input placeholders, timestamps.
+     It must clear WCAG AA 4.5:1 against --bg in BOTH themes. It was .45
+     Day / .32 Night — 3.15:1 and 2.71:1, failing both. Now 4.53:1 / 4.84:1.
+     If you lower these, re-check the ratio first. --hairline below is
+     decoration only and is deliberately exempt. */
+  --fg-faint:    rgba(13, 9, 5, .56);
+  --hairline:    rgba(13, 9, 5, .16);
+  --on-ink:      #fffbf1;          /* text sitting on an ink fill     */
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   DARK / NIGHT — "after dark". Purple lifts to glow on the dark.
+   Surfaces flip; text/borders ride --fg.
+   ============================================================ */
+[data-theme="dark"] {
+  --purple:      #9a4faa;          /* lifted from #6e3179 for dark bg */
+
+  --bg:          #0a0703;
+  --surface:     #171109;
+  --surface-2:   #241a10;
+  --paper-shade: #1c140b;          /* [SHIPPED] */
+  --fg:          #fffbf1;
+  --fg-dim:      rgba(255, 251, 241, .60);
+  --fg-faint:    rgba(255, 251, 241, .48);   /* [SHIPPED] AA — was .32 */
+  --hairline:    #3a2c1c;
+  --on-ink:      #fffbf1;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------
+   Local theme scopes — render one block in the opposite mode
+   without flipping the whole page (a Night poster on a Day page).
+   Apply .scope-day / .scope-night to a container.
+   ------------------------------------------------------------ */
+.scope-day {
+  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
+  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56); --hairline: rgba(13, 9, 5, .16);
+  --purple: #6e3179;
+  color-scheme: light;
+}
+.scope-night {
+  --bg: #0a0703; --surface: #171109; --surface-2: #241a10; --paper-shade: #1c140b;
+  --fg: #fffbf1; --fg-dim: rgba(255, 251, 241, .60); --fg-faint: rgba(255, 251, 241, .48); --hairline: #3a2c1c;
+  --purple: #9a4faa;
+  color-scheme: dark;
+}
+
+/* ============================================================
+   DAY-OF-WEEK CODING — [SHIPPED, previously undocumented]
+   The calendar is the product, so this is in practice the LARGEST
+   colour system on any public surface: feed card fills, week-list
+   borders, the event-detail hero border and poster placeholder,
+   /now, and profile all read --day.
+
+   Each weekday class sets --day (its palette colour) and --on-day
+   (the higher-contrast text colour on that fill — computed: purple
+   takes paper, every other hue takes ink).
+
+   UNRESOLVED: this axis carries NO rank. Seven days, seven hues,
+   equal weight — and four of the seven are minors, including the
+   busiest night of the week. It is not reconciled with the
+   "lead with the majors" rule. See guidelines/canon-open-questions.
+   ============================================================ */
+.d-mon { --day: var(--green);  --on-day: #0d0905; }
+.d-tue { --day: var(--blue);   --on-day: #0d0905; }
+.d-wed { --day: var(--purple); --on-day: #fffbf1; }
+.d-thu { --day: var(--pink);   --on-day: #0d0905; }
+.d-fri { --day: var(--red);    --on-day: #0d0905; }
+.d-sat { --day: var(--amber);  --on-day: #0d0905; }
+.d-sun { --day: var(--yellow); --on-day: #0d0905; }

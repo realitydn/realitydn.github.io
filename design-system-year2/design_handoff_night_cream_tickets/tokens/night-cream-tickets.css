@@ -1,0 +1,78 @@
+/* ============================================================
+   REALITY · Night v2 — "Cream Tickets"
+   PROPOSED token layer. Load AFTER tokens/colors.css + shadow.css.
+   Additive: existing tokens keep their meaning; new role +
+   ticket tokens carry the new night behaviour.
+   ============================================================ */
+
+:root {
+  /* ---- ROLE TOKENS (both themes) — majors only ---- */
+  --lead:       var(--blue);    /* focus, active nav, selected day, eyebrows, links */
+  --action:     var(--red);     /* the ONE converting button per screen; "below par"; "needs cover" */
+  --action-fg:  #0d0905;        /* ink on red — 4.6:1 (cream-on-red fails at 4.19:1) */
+  --deal:       var(--yellow);  /* happy hour, drink deals, sidework progress */
+  --deal-fg:    #0d0905;
+
+  /* accent pair re-pointed: blue leads, red is the second print */
+  --accent:     var(--lead);
+  --accent-2:   var(--red);
+
+  /* ---- EVENT CATEGORY → MAJOR (replaces 7-hue day-code on event UI) ---- */
+  --cat-music:  var(--blue);
+  --cat-party:  var(--red);
+  --cat-games:  var(--yellow);
+  --cat-drinks: var(--yellow);
+  --cat-film:   var(--ticket-neutral);    /* neutral: no hue */
+  --cat-talk:   var(--ticket-neutral);
+  --cat-film-fg:var(--ticket-neutral-fg);
+
+  /* ---- STAFF ROLE → MAJOR (Backstage roster, sidework initials) ---- */
+  --role-bar:   var(--blue);
+  --role-floor: var(--red);
+  --role-cafe:  var(--yellow);
+
+  /* ---- TICKET SURFACE — a cream card in BOTH themes ---- */
+  --ticket:          #fffbf1;
+  --ticket-fg:       #0d0905;
+  --ticket-dim:      rgba(13, 9, 5, .72);
+  --ticket-line:     #0d0905;               /* internal 2px dividers */
+  --ticket-hairline: rgba(13, 9, 5, .16);   /* 1.5px row rules */
+  --ticket-inset:    #f4ecd7;               /* riso stripe A */
+  --ticket-inset-2:  #ece2c9;               /* riso stripe B */
+  --ticket-neutral:    #0d0905;             /* neutral category fill on a ticket */
+  --ticket-neutral-fg: #fffbf1;
+
+  /* print offset — the misregistered second ink behind a ticket */
+  --print:          var(--lead);
+  --print-neutral:  rgba(13, 9, 5, .20);
+  --sh-print:       7px 7px 0 var(--print);   /* hero / pass / large tickets */
+  --sh-print-sm:    6px 6px 0 var(--print);   /* list tickets */
+  --sh-print-xs:    4px 4px 0 var(--print);   /* calendar tickets */
+  --sh-print-xxs:   3px 3px 0 var(--print);   /* roster blocks */
+}
+
+[data-theme="dark"], .scope-night {
+  /* ONE dark. --surface no longer steps up; cards are tickets instead. */
+  --bg:          #0a0703;
+  --surface:     #0a0703;     /* was #171109 */
+  --surface-2:   #241a10;     /* riso stripe A on ink only */
+  --hairline:    rgba(255, 251, 241, .22);
+  --fg:          #fffbf1;
+  --fg-dim:      rgba(255, 251, 241, .62);
+  --fg-faint:    rgba(255, 251, 241, .48);
+
+  --print-neutral: rgba(255, 251, 241, .28);
+
+  /* cream down-shadows retired at night — tickets use --sh-print */
+  --sh-light:   none;
+  --sh-default: none;
+  --sh-heavy:   none;
+
+  --purple: #9a4faa;
+}
+
+/* Usage
+   .ticket            { background:var(--ticket); color:var(--ticket-fg); border:2px solid var(--ticket); box-shadow:var(--sh-print); }
+   .ticket--neutral   { --print: var(--print-neutral); }
+   .ticket [data-cat] { --print: var(--cat-*) }   set --print per category on the ticket element
+*/

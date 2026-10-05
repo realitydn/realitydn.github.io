@@ -1,0 +1,24 @@
+/* ============================================================
+   REALITY · Year 2 — TYPOGRAPHY TOKENS
+   Montserrat (UI / display, uppercase wide-tracked)
+   Montserrat Alternates (wordmark only — the A / I / Y forms)
+   Space Grotesk (body)
+   ============================================================ */
+
+:root {
+  --mont:    'Montserrat', sans-serif;             /* @kind font */
+  --alt:     'Montserrat Alternates', sans-serif;  /* @kind font */
+  --grotesk: 'Space Grotesk', sans-serif;          /* @kind font */
+
+  /* semantic aliases */
+  --font-display: var(--mont);     /* Montserrat 100 · clamp 40–82 · UPPERCASE */
+  --font-heading: var(--mont);     /* Montserrat 700/600 · UPPERCASE          */
+  --font-label:   var(--mont);     /* Montserrat 700 · .15em · UPPERCASE      */
+  --font-body:    var(--grotesk);  /* Space Grotesk 400 · lh 1.7              */
+  --font-wordmark:var(--alt);
+
+  /* tracking */
+  --track-display: .05em;
+  --track-label:   .15em;
+  --track-wordmark:.02em;
+}

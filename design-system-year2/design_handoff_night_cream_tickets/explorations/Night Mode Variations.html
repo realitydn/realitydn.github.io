@@ -1,0 +1,213 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="design_doc_mode" content="canvas">
+<title>REALITY — Night Mode Variations</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;font-family:var(--grotesk);-webkit-font-smoothing:antialiased}
+a{color:#0d0905}a:hover{color:#18a7e0}
+.frame{position:absolute;width:390px}
+.cap{height:118px;color:#0d0905;display:flex;flex-direction:column;gap:6px}
+.cap .no{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.cap .no i{display:inline-block;width:14px;height:14px;border:1.5px solid #0d0905}
+.cap .no em{font-style:normal;margin-left:auto;display:flex;gap:0}
+.cap h4{margin:0;font-family:var(--mont);font-weight:700;font-size:20px;letter-spacing:.03em;text-transform:uppercase}
+.cap p{margin:0;font-size:13px;line-height:1.45;color:rgba(13,9,5,.78);text-wrap:pretty}
+.ph{--line:var(--tx);width:390px;height:844px;box-sizing:border-box;background:var(--pg);color:var(--tx);border:3px solid #0d0905;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 13px 3px rgba(13,9,5,.23)}
+.ph *{box-sizing:border-box}
+.bar{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:3px solid var(--barline,var(--line));background:var(--barbg,var(--pg));color:var(--bartx,var(--tx));flex:none}
+.lm{width:18px;height:24px;background:currentColor;-webkit-mask:url(../assets/lettermark-r.svg) center/contain no-repeat;mask:url(../assets/lettermark-r.svg) center/contain no-repeat}
+.bar-r{display:flex;gap:14px;align-items:center}
+.scr{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--pg)}
+.top,.feed{background:var(--pg);color:var(--tx);padding:20px 20px 4px}
+.feed{padding:20px 20px 28px}
+.eb{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--lead)}
+h1{font-family:var(--mont);font-weight:700;font-size:34px;letter-spacing:.04em;line-height:.95;margin:6px 0 18px;text-transform:uppercase}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:20px}
+.d{border:2px solid var(--line);background:var(--daybg,transparent);color:var(--tx);padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.d span{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.d b{font-family:var(--mont);font-weight:700;font-size:16px}
+.d.on{background:var(--dayon);color:var(--dayontx);border-color:var(--dayonbd,var(--line))}.d.on span{color:inherit}
+.hero{--line:var(--cdline,var(--tx));border:2px solid var(--line);background:var(--cd);color:var(--cdtx);box-shadow:var(--sh);margin-bottom:20px}
+.hero-top{background:var(--hc);color:var(--hctx,#0d0905);border-bottom:2px solid var(--line);padding:10px 16px;display:flex;justify-content:space-between;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.hero-img{height:128px;background:repeating-linear-gradient(45deg,var(--img1) 0 14px,var(--img2) 14px 28px);position:relative;display:flex;align-items:center;justify-content:center;border-bottom:2px solid var(--line)}
+.lbl{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;background:var(--cd);color:var(--cdtx);border:2px solid var(--line);padding:5px 10px}
+.logo{position:absolute;left:10px;bottom:10px;background:#0d0905;color:#fffbf1;font-family:var(--alt);font-weight:600;text-transform:uppercase;font-size:15px;padding:4px 9px;border:2px solid var(--logobd,#0d0905)}
+.hero-b{padding:16px 18px 18px}
+h2{font-family:var(--mont);font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1;margin:0 0 7px;text-transform:uppercase}
+.hero-b p{font-size:14.5px;line-height:1.55;color:var(--cddim);margin:0 0 15px}
+.cta{width:100%;font-family:var(--mont);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:14px;background:var(--act);color:var(--acttx);border:2px solid var(--ctabd,var(--line));box-shadow:var(--shl);display:flex;justify-content:center;gap:9px;align-items:center}
+.hh{display:flex;justify-content:space-between;align-items:center;gap:12px;border:2px solid var(--hhbd,var(--line));background:var(--hhbg);color:var(--hhtx);padding:13px 16px;box-shadow:var(--sh)}
+.hh b{font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:2px}
+.hh span{font-size:13px}
+.sec{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;border-bottom:var(--secbd,2px solid var(--line));padding-bottom:9px;margin:26px 0 14px}
+.sec u{text-decoration:none;color:var(--tx)}
+.list{display:flex;flex-direction:column;gap:14px}
+.ev{--line:var(--cdline,var(--tx));--c:var(--cm);--ctx:var(--cmx);display:grid;grid-template-columns:60px minmax(0,1fr);border:2px solid var(--line);background:var(--cd);color:var(--cdtx);box-shadow:var(--sh)}
+.ev-d{background:var(--c);color:var(--ctx);border-right:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 0}
+.ev-d span{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.ev-d b{font-family:var(--mont);font-weight:700;font-size:22px;line-height:1}
+.ev-b{padding:13px 15px 14px}
+.ev-m{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--cddim);margin-bottom:5px}
+h3{font-family:var(--mont);font-weight:700;font-size:17px;letter-spacing:.02em;margin:0 0 3px;text-transform:uppercase}
+.ev-b p{font-size:13px;line-height:1.5;color:var(--cddim);margin:0}
+.nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:3px solid var(--navline,var(--line));background:var(--navbg);flex:none}
+.tab{padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--navtx)}
+.tab.on{background:var(--navon);color:var(--navontx)}
+.tab span{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+svg{display:block;flex:none;overflow:visible}
+
+/* ---------- shared night base ---------- */
+.ph{--pg:#0a0703;--tx:#fffbf1;--dim:rgba(255,251,241,.62);--cd:#0a0703;--cdtx:#fffbf1;--cddim:rgba(255,251,241,.68);--sh:none;--shl:none;--lead:var(--blue);--act:var(--red);--acttx:#0d0905;--dayon:#fffbf1;--dayontx:#0d0905;--hc:var(--blue);--img1:#241a10;--img2:#0a0703;--hhbg:var(--yellow);--hhtx:#0d0905;--hhbd:var(--yellow);--navbg:#0a0703;--navtx:#fffbf1;--navon:#fffbf1;--navontx:#0d0905;--nt:#fffbf1;--ntx:#0d0905}
+.day-tok{--pg:#fffbf1;--tx:#0d0905;--line:#0d0905;--dim:rgba(13,9,5,.72);--cd:#fffbf1;--cdtx:#0d0905;--cddim:rgba(13,9,5,.72);--cdline:#0d0905;--img1:#f4ecd7;--img2:#ece2c9;--sh:0 8px 2px rgba(13,9,5,.16);--shl:0 4px 1px rgba(13,9,5,.10);--dayon:#0d0905;--dayontx:#fffbf1;--nt:#0d0905;--ntx:#fffbf1}
+
+/* 00 current */
+.v0{--pg:#0a0703;--cd:#171109;--daybg:#171109;--img1:#241a10;--img2:#0a0703;--sh:0 9px 2px rgba(255,251,241,.18);--shl:0 4px 1px rgba(255,251,241,.14);--lead:var(--pink);--act:var(--pink);--dayon:var(--pink);--hc:var(--green);--hhbd:#fffbf1;--navbg:#171109;--navon:var(--pink);--cddim:rgba(255,251,241,.6);--dim:rgba(255,251,241,.6)}
+.v0 .ev{--c:var(--cc);--ctx:var(--ccx)}
+.v0 h1{text-shadow:3px 3px 0 var(--pink)}
+.v0 .bar{background:#171109}
+
+/* 01 cream tickets */
+.v1{--cd:#fffbf1;--cdtx:#0d0905;--cddim:rgba(13,9,5,.72);--cdline:#0d0905;--img1:#f4ecd7;--img2:#ece2c9;--nt:#0d0905;--ntx:#fffbf1}
+.v1 .hero{border-color:#fffbf1;box-shadow:7px 7px 0 var(--blue)}
+.v1 .ev{border-color:#fffbf1;box-shadow:6px 6px 0 var(--c)}
+.v1 .ev.neu{box-shadow:6px 6px 0 rgba(255,251,241,.28)}
+.v1 .list{gap:18px}
+
+/* 02 cream masthead */
+.v2{--barbg:#fffbf1;--bartx:#0d0905;--barline:#0d0905}
+.v2 .top{padding-bottom:24px;border-bottom:3px solid #fffbf1}
+.v2 .top .eb{color:#0d0905}
+.v2 .top .hero{--hc:var(--blue)}
+.v2 .feed .ev{border-width:1.5px}
+.v2 .feed .ev-d{border-right-width:1.5px}
+.v2{--navon:var(--blue);--navontx:#0d0905}
+
+/* 03 single ink · listing */
+.v3 .d{border:none;padding:8px 0}
+.v3 .d.on{box-shadow:inset 0 -3px 0 var(--blue);background:transparent;color:#fffbf1}
+.v3 .hero{border-width:1.5px}
+.v3 .hero-top{border-bottom-width:1.5px}.v3 .hero-img{border-bottom-width:1.5px}
+.v3 .hh{background:transparent;color:#fffbf1;border:1.5px solid var(--yellow)}
+.v3 .hh svg{color:var(--yellow)}
+.v3 .hh b{color:var(--yellow)}
+.v3 .sec{--secbd:1.5px solid #fffbf1}
+.v3 .list{gap:0}
+.v3 .ev{border:none;border-bottom:1.5px solid rgba(255,251,241,.22);grid-template-columns:48px minmax(0,1fr);gap:14px;padding:14px 0}
+.v3 .ev-d{border:none;height:52px;align-self:start;padding:0}
+.v3 .ev-b{padding:0}
+.v3 .ev-d b{font-size:19px}
+.v3{--navline:rgba(255,251,241,.3);--navon:transparent;--navontx:var(--blue)}
+.v3 .nav{border-top-width:1.5px}
+.v3 .tab.on{box-shadow:inset 0 3px 0 var(--blue)}
+.v3 .bar{border-bottom-width:1.5px}
+
+/* 04 ledger */
+.v4{--pg:#0d0905;--cd:#0d0905;--img2:#0d0905;--dayon:var(--blue);--dayonbd:var(--blue)}
+.v4 .hero-img{height:92px}
+.v4 .list{gap:0;border:2px solid #fffbf1}
+.v4 .ev{border:none;border-top:1.5px solid rgba(255,251,241,.28);grid-template-columns:66px minmax(0,1fr) auto}
+.v4 .ev:first-child{border-top:none}
+.v4 .ev-d{border-right:none}
+.v4 .ev-b{padding:12px 14px}
+.v4 .go{align-self:center;padding-right:14px;color:rgba(255,251,241,.68)}
+.v4 .hh{background:transparent;color:#fffbf1;border-color:#fffbf1}
+.v4 .hh-tag{display:inline-block;background:var(--yellow);color:#0d0905;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:5px 8px}
+
+/* 05 cream sheet */
+.v5 .scr{padding:12px 12px 0;background:#0a0703}
+.v5 .top,.v5 .feed{border-left:2px solid #fffbf1;border-right:2px solid #fffbf1}
+.v5 .top{padding-top:22px}
+.v5 .top .eb{color:#0d0905}
+.v5{--navon:var(--blue);--navontx:#0d0905}
+
+/* 06 soft ink */
+.v6{--pg:#1a1611;--cd:#1a1611;--tx:#f4ecd7;--cdtx:#f4ecd7;--dim:rgba(244,236,215,.7);--cddim:rgba(244,236,215,.72);--line:rgba(244,236,215,.42);--cdline:rgba(244,236,215,.42);--img1:#2a231b;--img2:#1a1611;--navbg:#1a1611;--navtx:#f4ecd7;--navon:transparent;--navontx:var(--blue);--dayon:#f4ecd7;--hc:transparent;--hctx:var(--blue);--hhbg:transparent;--hhtx:#f4ecd7;--hhbd:rgba(244,236,215,.42);--nt:transparent;--ntx:#f4ecd7;--act:#f4ecd7;--acttx:#1a1611;--ctabd:#f4ecd7}
+.v6 .d,.v6 .hero,.v6 .hh,.v6 .ev{border-width:1.5px}
+.v6 .hero-top,.v6 .hero-img{border-bottom-width:1.5px}
+.v6 .ev-d{background:transparent;color:var(--c);border-right-width:1.5px}
+.v6 .ev.neu .ev-d{color:#f4ecd7}
+.v6 .hh svg,.v6 .hh b{color:var(--yellow)}
+.v6 .bar,.v6 .nav{border-width:1.5px}
+.v6 .sec{--secbd:1.5px solid rgba(244,236,215,.42)}
+.v6 .ctaline{display:none}
+
+/* 07 strict riso — one accent per screen */
+.v7{--sh:0 6px 0 rgba(255,251,241,.16);--shl:0 4px 0 rgba(255,251,241,.12);--navon:var(--blue);--navontx:#0d0905;--dayon:var(--blue);--dayonbd:#fffbf1}
+.v7 .ev{--c:#fffbf1;--ctx:#0d0905}
+.v7 h1{text-shadow:3px 3px 0 var(--blue)}
+.v7 .hh{--hhbg:transparent;--hhtx:#fffbf1;--hhbd:#fffbf1}
+.v7 .hh svg{color:var(--yellow)}
+
+/* 08 cream chrome */
+.v8{--barbg:#fffbf1;--bartx:#0d0905;--barline:#fffbf1;--navbg:#fffbf1;--navtx:#0d0905;--navline:#fffbf1;--navon:#0d0905;--navontx:var(--yellow);--lead:var(--yellow);--dayon:var(--yellow);--dayonbd:var(--yellow)}
+.v8 .hero{--cd:#fffbf1;--cdtx:#0d0905;--cddim:rgba(13,9,5,.72);--cdline:#0d0905;--img1:#f4ecd7;--img2:#ece2c9;border-color:#fffbf1;box-shadow:0 8px 0 rgba(255,251,241,.18)}
+.v8 .hero-top{--hc:#0d0905;--hctx:#fffbf1}
+.v8 .hero .lbl{background:#fffbf1}
+</style>
+</head>
+<body>
+<div id="canvas"></div>
+<script>
+const IC={
+home:'<path d="M3.5 11 L12 3.5 L20.5 11 V20.5 H3.5 Z"/>',
+martini:'<polygon points="5 6 19 6 12 13.5"/><line x1="12" y1="13.5" x2="12" y2="19"/><line x1="8" y1="19.5" x2="16" y2="19.5"/><ellipse cx="13.6" cy="8.6" rx="1.05" ry="1.05"/>',
+scan:'<path d="M4 8.5 V4 H8.5"/><path d="M15.5 4 H20 V8.5"/><path d="M4 15.5 V20 H8.5"/><path d="M20 15.5 V20 H15.5"/><line x1="5" y1="12" x2="19" y2="12"/>',
+you:'<ellipse cx="12" cy="8.5" rx="3.7" ry="3.7"/><polygon points="5.5 20 6.8 14.5 17.2 14.5 18.5 20"/>',
+alerts:'<path d="M6 17 V11 a6 6 0 0 1 12 0 V17 H6 Z"/><line x1="4" y1="17" x2="20" y2="17"/><rect x="10.6" y="19" width="2.8" height="1.8"/>',
+sparkle:'<polygon points="12 3 13.6 10.4 21 12 13.6 13.6 12 21 10.4 13.6 3 12 10.4 10.4"/>',
+ticket:'<rect x="3.5" y="7.5" width="17" height="9"/><line x1="14" y1="7.5" x2="14" y2="16.5"/><polygon points="6.5 10 9.5 12 6.5 14"/>',
+arrow:'<path d="M9 5 L16 12 L9 19"/>'};
+const ic=(n,s=24,solid=false)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${solid?'currentColor':'none'}" stroke="${solid?'none':'currentColor'}" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square" aria-hidden="true">${IC[n]}</svg>`;
+
+/* cc/ccx = current day-code colour · cm/cmx = proposed major (or neutral) */
+const EV=[
+{d:'Tue',n:'06',t:'19:00',cat:'Games',room:'Front room',title:'Trivia Night',sub:'Teams of four · free to play',cc:'var(--blue)',ccx:'#0d0905',cm:'var(--yellow)',cmx:'#0d0905'},
+{d:'Thu',n:'08',t:'19:30',cat:'Film Club',room:'Upstairs',title:'Chungking Express',sub:'Wong Kar-wai, 1994 · with Đà Nẵng Film Forum',cc:'var(--pink)',ccx:'#0d0905',cm:'var(--nt)',cmx:'var(--ntx)',neu:1},
+{d:'Sat',n:'10',t:'21:00',cat:'Party',room:'Back room',title:'After Dark',sub:'DJ Misregistration · till late',cc:'var(--amber)',ccx:'#0d0905',cm:'var(--red)',cmx:'#0d0905'}];
+const DAYS=[['Mon','05'],['Tue','06'],['Wed','07'],['Thu','08'],['Fri','09'],['Sat','10'],['Sun','11']];
+
+const V=[
+{k:'v0',name:'Current Night',tag:'Reference',sw:['#0a0703','#171109','#ed1b72','#43b02a','#fdb515'],
+ desc:'As shipped: three dark steps, pink as lead, seven-hue day-code, cream shadows. Exciting, but every surface competes.'},
+{k:'v1',name:'Cream Tickets',sw:['#0a0703','#fffbf1','#18a7e0','#ed2224','#fddf00'],
+ desc:'Ink page, cream cards. Reading happens on paper; the major colour prints as an offset misregistration shadow behind each ticket.'},
+{k:'v2',name:'Cream Masthead',top:'day-tok',sw:['#fffbf1','#0a0703','#18a7e0','#ed2224','#fddf00'],
+ desc:'Tonight lives on cream — the bright, decisive part of the screen. The week below drops into ink. Day turns to night as you scroll.'},
+{k:'v3',name:'Single Ink Listing',sw:['#0a0703','#fffbf1','#18a7e0','#fddf00'],
+ desc:'One dark, no surface steps, no shadows. Separation from 1.5px cream rules only — a printed listings page. Quietest structure.'},
+{k:'v4',name:'Ink Ledger',sw:['#0d0905','#fffbf1','#18a7e0','#fddf00','#ed2224'],
+ desc:'The week as one bordered table. Full-height major date blocks make the colour a scanning index, not decoration.',ledger:1},
+{k:'v5',name:'Cream Sheet',top:'day-tok',feed:'day-tok',sw:['#0a0703','#fffbf1','#18a7e0','#ed2224','#fddf00'],
+ desc:'Ink chrome, cream content: the programme laid on a dark bar table. Maximum legibility while the app still reads as night.'},
+{k:'v6',name:'Soft Ink',sw:['#1a1611','#f4ecd7','#18a7e0','#fddf00','#ed2224'],
+ desc:'Warm graphite and cream-2 lower the glare. Colour moves to type only; strokes drop to 1.5px at reduced strength. Easiest at 1am.'},
+{k:'v7',name:'Strict Riso',sw:['#0a0703','#fffbf1','#18a7e0'],
+ desc:'Two inks plus one accent per screen. Blue leads everything; red only on the CTA, yellow only on the deal. Dates go cream.'},
+{k:'v8',name:'Cream Chrome',sw:['#fffbf1','#0a0703','#fddf00','#ed2224'],
+ desc:'Cream app bar and tab bar frame the night; the featured event is a cream card. Yellow leads — tonight is a highlight, not an alarm.'}];
+
+function phone(v){
+ const days=DAYS.map((d,i)=>`<div class="d${i?'':' on'}"><span>${d[0]}</span><b>${d[1]}</b></div>`).join('');
+ const evs=EV.map(e=>`<div class="ev${e.neu?' neu':''}" style="--cc:${e.cc};--ccx:${e.ccx};--cm:${e.cm};--cmx:${e.cmx}"><div class="ev-d"><span>${e.d}</span><b>${e.n}</b></div><div class="ev-b"><div class="ev-m">${e.t} · ${e.cat}</div><h3>${e.title}</h3><p>${e.sub}</p></div>${v.ledger?`<div class="go">${ic('arrow',18)}</div>`:''}</div>`).join('');
+ const tabs=[['home','Home'],['martini','Drinks'],['scan','Scan'],['you','You']].map((t,i)=>`<div class="tab${i?'':' on'}">${ic(t[0],24,!i)}<span>${t[1]}</span></div>`).join('');
+ return `<div class="ph ${v.k}" data-screen-label="${v.k.slice(1).padStart(2,'0')} ${v.name}">
+<div class="bar"><svg style=\"display:block;width:20px;height:26px\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 6 56 72\" role=\"img\" aria-label=\"R\"><g fill=\"currentColor\"><path d=\"M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z\"></path></g></svg><div class="bar-r">${ic('sparkle',22)}${ic('alerts',22)}</div></div>
+<div class="scr">
+<div class="top ${v.top||''}"><div class="eb">Mon 05.10 · Đà Nẵng</div><h1>This Week</h1><div class="days">${days}</div>
+<div class="hero"><div class="hero-top"><span>Tonight · 20:30</span><span>Live Music</span></div><div class="hero-img"><span class="lbl">Photo · The Hum</span><span class="logo">Reality</span></div>
+<div class="hero-b"><h2>The Hum</h2><p>Five-piece soul and funk in the front room. Doors 20:00, free entry.</p><div class="cta">${ic('ticket',18)}Get ticket</div></div></div></div>
+<div class="feed ${v.feed||''}"><div class="hh"><div><b>Happy Hour</b><span>Mon–Fri · 16–19h · 2-for-1 pours</span></div>${v.ledger?'<span class="hh-tag">Now</span>':ic('martini',28)}</div>
+<div class="sec"><span>Coming up</span><u>All 14</u></div><div class="list">${evs}</div></div>
+</div>
+<div class="nav">${tabs}</div></div>`;
+}
+const cv=document.getElementById('canvas'),W=390,GX=90,GY=90,H=118+844;
+V.forEach((v,i)=>{
+ const col=i%3,row=i/3|0,f=document.createElement('div');
+ f.className='frame';f.id=v.k;f.style.left=(80+col*(W+GX))+'px';f.style.top=(80+row*(H+GY))+'px';
+ f.innerHTML=`<div class="cap"><div class="no"><i style="background:${i?'#fffbf1':'#ed1b72'}"></i>${String(i).padStart(2,'0')}${v.tag?' · '+v.tag:''}<em>${v.sw.map(c=>`<i style="background:${c};border:1.5px solid #0d0905;margin-left:-1.5px"></i>`).join('')}</em></div><h4>${v.name}</h4><p>${v.desc}</p></div>${phone(v)}`;
+ cv.appendChild(f);
+});
+</script>
+</body></html>

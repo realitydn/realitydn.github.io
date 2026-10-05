@@ -1,0 +1,306 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="design_doc_mode" content="canvas">
+<title>REALITY — Night · Cream Tickets</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;font-family:var(--grotesk);-webkit-font-smoothing:antialiased}
+a{color:#0d0905}a:hover{color:#18a7e0}
+.frame{position:absolute;width:390px}
+.cap{height:118px;color:#0d0905;display:flex;flex-direction:column;gap:6px}
+.cap .no{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.cap .no i{display:inline-block;width:14px;height:14px;border:1.5px solid #0d0905}
+.cap .no em{font-style:normal;margin-left:auto;display:flex;gap:0}
+.cap h4{margin:0;font-family:var(--mont);font-weight:700;font-size:20px;letter-spacing:.03em;text-transform:uppercase}
+.cap p{margin:0;font-size:13px;line-height:1.45;color:rgba(13,9,5,.78);text-wrap:pretty}
+.ph{--line:var(--tx);width:390px;height:844px;box-sizing:border-box;background:var(--pg);color:var(--tx);border:3px solid #0d0905;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 13px 3px rgba(13,9,5,.23)}
+.ph *{box-sizing:border-box}
+.bar{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:3px solid var(--barline,var(--line));background:var(--barbg,var(--pg));color:var(--bartx,var(--tx));flex:none}
+.lm{width:18px;height:24px;background:currentColor;-webkit-mask:url(../assets/lettermark-r.svg) center/contain no-repeat;mask:url(../assets/lettermark-r.svg) center/contain no-repeat}
+.bar-r{display:flex;gap:14px;align-items:center}
+.scr{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--pg)}
+.top,.feed{background:var(--pg);color:var(--tx);padding:20px 20px 4px}
+.feed{padding:20px 20px 28px}
+.eb{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--lead)}
+h1{font-family:var(--mont);font-weight:700;font-size:34px;letter-spacing:.04em;line-height:.95;margin:6px 0 18px;text-transform:uppercase}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:20px}
+.d{border:2px solid var(--line);background:var(--daybg,transparent);color:var(--tx);padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.d span{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.d b{font-family:var(--mont);font-weight:700;font-size:16px}
+.d.on{background:var(--dayon);color:var(--dayontx);border-color:var(--dayonbd,var(--line))}.d.on span{color:inherit}
+.hero{--line:var(--cdline,var(--tx));border:2px solid var(--line);background:var(--cd);color:var(--cdtx);box-shadow:var(--sh);margin-bottom:20px}
+.hero-top{background:var(--hc);color:var(--hctx,#0d0905);border-bottom:2px solid var(--line);padding:10px 16px;display:flex;justify-content:space-between;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.hero-img{height:128px;background:repeating-linear-gradient(45deg,var(--img1) 0 14px,var(--img2) 14px 28px);position:relative;display:flex;align-items:center;justify-content:center;border-bottom:2px solid var(--line)}
+.lbl{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;background:var(--cd);color:var(--cdtx);border:2px solid var(--line);padding:5px 10px}
+.logo{position:absolute;left:10px;bottom:10px;background:#0d0905;color:#fffbf1;font-family:var(--alt);font-weight:600;text-transform:uppercase;font-size:15px;padding:4px 9px;border:2px solid var(--logobd,#0d0905)}
+.hero-b{padding:16px 18px 18px}
+h2{font-family:var(--mont);font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1;margin:0 0 7px;text-transform:uppercase}
+.hero-b p{font-size:14.5px;line-height:1.55;color:var(--cddim);margin:0 0 15px}
+.cta{width:100%;font-family:var(--mont);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:14px;background:var(--act);color:var(--acttx);border:2px solid var(--ctabd,var(--line));box-shadow:var(--shl);display:flex;justify-content:center;gap:9px;align-items:center}
+.hh{display:flex;justify-content:space-between;align-items:center;gap:12px;border:2px solid var(--hhbd,var(--line));background:var(--hhbg);color:var(--hhtx);padding:13px 16px;box-shadow:var(--sh)}
+.hh b{font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:2px}
+.hh span{font-size:13px}
+.sec{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;border-bottom:var(--secbd,2px solid var(--line));padding-bottom:9px;margin:26px 0 14px}
+.sec u{text-decoration:none;color:var(--tx)}
+.list{display:flex;flex-direction:column;gap:14px}
+.ev{--line:var(--cdline,var(--tx));--c:var(--cm);--ctx:var(--cmx);display:grid;grid-template-columns:60px minmax(0,1fr);border:2px solid var(--line);background:var(--cd);color:var(--cdtx);box-shadow:var(--sh)}
+.ev-d{background:var(--c);color:var(--ctx);border-right:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 0}
+.ev-d span{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.ev-d b{font-family:var(--mont);font-weight:700;font-size:22px;line-height:1}
+.ev-b{padding:13px 15px 14px}
+.ev-m{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--cddim);margin-bottom:5px}
+h3{font-family:var(--mont);font-weight:700;font-size:17px;letter-spacing:.02em;margin:0 0 3px;text-transform:uppercase}
+.ev-b p{font-size:13px;line-height:1.5;color:var(--cddim);margin:0}
+.nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:3px solid var(--navline,var(--line));background:var(--navbg);flex:none}
+.tab{padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--navtx)}
+.tab.on{background:var(--navon);color:var(--navontx)}
+.tab span{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+svg{display:block;flex:none;overflow:visible}
+
+/* ---------- shared night base ---------- */
+.ph{--pg:#0a0703;--tx:#fffbf1;--dim:rgba(255,251,241,.62);--cd:#0a0703;--cdtx:#fffbf1;--cddim:rgba(255,251,241,.68);--sh:none;--shl:none;--lead:var(--blue);--act:var(--red);--acttx:#0d0905;--dayon:#fffbf1;--dayontx:#0d0905;--hc:var(--blue);--img1:#241a10;--img2:#0a0703;--hhbg:var(--yellow);--hhtx:#0d0905;--hhbd:var(--yellow);--navbg:#0a0703;--navtx:#fffbf1;--navon:#fffbf1;--navontx:#0d0905;--nt:#fffbf1;--ntx:#0d0905}
+.day-tok{--pg:#fffbf1;--tx:#0d0905;--line:#0d0905;--dim:rgba(13,9,5,.72);--cd:#fffbf1;--cdtx:#0d0905;--cddim:rgba(13,9,5,.72);--cdline:#0d0905;--img1:#f4ecd7;--img2:#ece2c9;--sh:0 8px 2px rgba(13,9,5,.16);--shl:0 4px 1px rgba(13,9,5,.10);--dayon:#0d0905;--dayontx:#fffbf1;--nt:#0d0905;--ntx:#fffbf1}
+
+/* 01 cream tickets */
+.v1{--cd:#fffbf1;--cdtx:#0d0905;--cddim:rgba(13,9,5,.72);--cdline:#0d0905;--img1:#f4ecd7;--img2:#ece2c9;--nt:#0d0905;--ntx:#fffbf1}
+.v1 .hero{border-color:#fffbf1;box-shadow:7px 7px 0 var(--blue)}
+.v1 .ev{border-color:#fffbf1;box-shadow:6px 6px 0 var(--c)}
+.v1 .ev.neu{box-shadow:6px 6px 0 rgba(255,251,241,.28)}
+.v1 .list{gap:18px}
+
+
+.cap{height:96px}
+.wrap{padding:20px 20px 28px}
+.back{display:flex;align-items:center;gap:6px;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:16px}
+.back svg{transform:scaleX(-1)}
+.tk{--line:#0d0905;background:#fffbf1;color:#0d0905;border:2px solid #fffbf1;box-shadow:7px 7px 0 var(--sc,var(--blue))}
+.tk-top{background:var(--tc,var(--blue));color:#0d0905;border-bottom:2px solid #0d0905;padding:10px 16px;display:flex;justify-content:space-between;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.tk-b{padding:16px 18px 18px}
+.tk p{color:rgba(13,9,5,.72)}
+.perf{border-top:2px dashed rgba(13,9,5,.35);margin:0 -18px}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:1.5px solid rgba(13,9,5,.16)}
+.row:first-child{border-top:none}
+.row .k{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(13,9,5,.72);width:62px;flex:none}
+.row .v{font-size:14px;flex:1;min-width:0}
+.row .nm{font-family:var(--mont);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+.row .nt{font-size:12.5px;color:rgba(13,9,5,.72)}
+.row .pr{font-family:var(--mont);font-weight:700;font-size:15px}
+.badge{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:4px 7px;border:2px solid #0d0905;background:var(--bc,var(--yellow));color:#0d0905;flex:none}
+.btns{display:flex;gap:12px}
+.ghost{border:2px solid #fffbf1;color:#fffbf1;display:flex;align-items:center;justify-content:center;width:52px;flex:none}
+.alt{font-family:var(--mont);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:14px;border:2px solid #fffbf1;color:#fffbf1;display:flex;justify-content:center}
+.tabsx{display:flex;gap:6px;margin-bottom:20px}
+.tabsx div{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:2px solid #fffbf1;padding:8px 12px}
+.tabsx .on{background:#fffbf1;color:#0d0905}
+.qr{width:200px;height:200px;margin:4px auto 0;border:2px solid #0d0905;padding:12px;background:#fffbf1}
+.qr img{width:100%;height:100%;display:block}
+.wm{display:block;width:100%;height:72px;background:#fffbf1;-webkit-mask:url(../assets/wordmark.svg) left center/contain no-repeat;mask:url(../assets/wordmark.svg) left center/contain no-repeat}
+.av{width:64px;height:64px;border:2px solid #0d0905;background:var(--blue);color:#0d0905;font-family:var(--mont);font-weight:700;font-size:26px;display:flex;align-items:center;justify-content:center;flex:none}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2px solid #0d0905}
+.stats div{padding:12px 0;text-align:center;border-left:1.5px solid rgba(13,9,5,.16)}
+.stats div:first-child{border-left:none}
+.stats b{display:block;font-family:var(--mont);font-weight:700;font-size:22px}
+.stats span{font-family:var(--mont);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(13,9,5,.72)}
+.sw{width:46px;height:26px;border:2px solid #0d0905;background:#0d0905;position:relative;flex:none}
+.sw i{position:absolute;right:2px;top:2px;width:18px;height:18px;background:var(--blue)}
+.mini{display:grid;grid-template-columns:60px minmax(0,1fr)}
+
+.sect{position:absolute;color:#0d0905;font-family:var(--mont);font-weight:700;text-transform:uppercase}
+.sect b{display:block;font-size:44px;letter-spacing:.04em;line-height:1}
+.sect span{display:block;font-size:12px;letter-spacing:.16em;margin-top:8px;color:rgba(13,9,5,.72)}
+.cap.w{height:96px;width:1280px}
+.prog{height:12px;border:2px solid #0d0905;background:#fffbf1;position:relative}
+.prog i{position:absolute;left:0;top:0;bottom:0;background:var(--pc,var(--blue));border-right:2px solid #0d0905}
+.prog.dk-p{border-color:#fffbf1;background:transparent}.prog.dk-p i{border-color:#fffbf1}
+.cb{width:22px;height:22px;border:2px solid #0d0905;flex:none;display:flex;align-items:center;justify-content:center;color:#fffbf1}
+.cb.on{background:#0d0905}
+.row.done .nm{text-decoration:line-through;color:rgba(13,9,5,.5)}
+.ini{width:26px;height:26px;border:2px solid #0d0905;font-family:var(--mont);font-weight:700;font-size:10px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--ic,#fffbf1)}
+.step{display:flex;border:2px solid #0d0905;flex:none}
+.step span{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:var(--mont);font-weight:700;font-size:16px}
+.step b{width:38px;display:flex;align-items:center;justify-content:center;border-left:2px solid #0d0905;border-right:2px solid #0d0905;font-family:var(--mont);font-size:14px}
+.shift{display:grid;grid-template-columns:60px minmax(0,1fr);border:2px solid #fffbf1}
+.shift .ev-d{border-right:2px solid #fffbf1;background:transparent;color:#fffbf1}
+.shift.mine{background:#fffbf1;color:#0d0905;box-shadow:6px 6px 0 var(--c)}
+.shift.mine .ev-d{background:var(--c);color:#0d0905;border-right-color:#0d0905}
+.shift .ev-b p{color:var(--cddim)}
+.shift.off{border-style:dashed;border-color:rgba(255,251,241,.4)}
+.shift.off .ev-d{border-right:2px dashed rgba(255,251,241,.4);color:rgba(255,251,241,.62)}
+.note{border:2px solid #fffbf1;padding:14px 16px;font-size:13.5px;line-height:1.55;color:#fffbf1}
+.note b{display:block;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:4px}
+.ph.dk{width:1280px;height:800px;flex-direction:row}
+.side{width:224px;flex:none;border-right:3px solid #fffbf1;display:flex;flex-direction:column;padding:20px 0}
+.side .lmh{display:flex;align-items:center;gap:10px;padding:0 20px 22px;border-bottom:1.5px solid rgba(255,251,241,.25);margin-bottom:12px}
+.side .lmh span{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.si{display:flex;align-items:center;gap:12px;padding:11px 20px;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.si.on{background:#fffbf1;color:#0d0905;box-shadow:inset 5px 0 0 var(--blue)}
+.si em{margin-left:auto;font-style:normal;background:var(--red);color:#0d0905;padding:2px 6px;font-size:10px}
+.side .me{margin-top:auto;display:flex;gap:10px;align-items:center;padding:16px 20px 0;border-top:1.5px solid rgba(255,251,241,.25);font-size:13px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.mh{display:flex;align-items:flex-end;justify-content:space-between;padding:22px 28px 18px;border-bottom:3px solid #fffbf1;gap:20px}
+.mh h1{margin:4px 0 0;font-size:30px}
+.tools{display:flex;gap:10px;align-items:center}
+.seg{display:flex;border:2px solid #fffbf1}
+.seg div{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:9px 14px}
+.seg .on{background:#fffbf1;color:#0d0905}
+.btn{font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:10px 16px;border:2px solid #fffbf1;display:flex;gap:8px;align-items:center}
+.btn.r{background:var(--red);color:#0d0905}
+.body{flex:1;min-height:0;display:flex}
+.cal{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:auto 1fr}
+.ch{padding:10px 12px;border-right:1.5px solid rgba(255,251,241,.2);border-bottom:2px solid #fffbf1;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between}
+.ch b{color:#fffbf1;font-size:16px;letter-spacing:.02em}
+.ch.td{background:#fffbf1;color:#0d0905}.ch.td b{color:#0d0905}
+.cc{border-right:1.5px solid rgba(255,251,241,.2);padding:12px 9px 12px 7px;display:flex;flex-direction:column;gap:14px}
+.ct{background:#fffbf1;color:#0d0905;border:2px solid #fffbf1;box-shadow:4px 4px 0 var(--c)}
+.ct.sel{outline:3px solid var(--blue);outline-offset:3px}
+.ct .s{background:var(--c);color:var(--x,#0d0905);border-bottom:2px solid #0d0905;padding:5px 8px;font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.ct .t{padding:7px 7px 9px;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:0;text-transform:uppercase;line-height:1.2}
+.ct .t small{display:block;font-family:var(--grotesk);font-weight:400;font-size:11.5px;text-transform:none;color:rgba(13,9,5,.72);margin-top:3px;letter-spacing:0}
+.ct.dr{background:transparent;color:#fffbf1;border-style:dashed;box-shadow:none}.ct.dr .s{background:transparent;color:#fffbf1;border-bottom:2px dashed #fffbf1}.ct.dr small{color:var(--dim)}
+.pane{width:290px;flex:none;border-left:3px solid #fffbf1;padding:20px;overflow:hidden}
+.fl{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fl label{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(13,9,5,.72)}
+.fl .in{border:2px solid #0d0905;padding:10px 12px;font-size:14px;background:#fffbf1}
+.fl .in.f{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,167,224,.25)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:2px solid #0d0905;padding:6px 9px;display:flex;align-items:center;gap:6px}
+.chips span i{width:9px;height:9px;border:1.5px solid #0d0905;background:var(--c)}
+.chips span.on{background:#0d0905;color:#fffbf1}
+.rt{flex:1;overflow:hidden;padding:0 28px 20px}
+.rt table{width:100%;border-collapse:collapse;table-layout:fixed}
+.rt th{font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-align:left;padding:14px 8px 10px;border-bottom:2px solid #fffbf1}
+.rt th b{color:#fffbf1;font-size:15px;margin-left:4px}
+.rt td{padding:7px 6px;border-bottom:1.5px solid rgba(255,251,241,.18);vertical-align:middle;height:58px}
+.rt td.p{display:flex;align-items:center;gap:10px;height:58px;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.rt td.p small{display:block;font-family:var(--grotesk);font-weight:400;text-transform:none;letter-spacing:0;color:var(--dim);font-size:11.5px}
+.sb{background:#fffbf1;color:#0d0905;border:2px solid #fffbf1;box-shadow:3px 3px 0 var(--c);padding:5px 7px;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.04em}
+.sb small{display:block;font-family:var(--grotesk);font-weight:400;font-size:10.5px;letter-spacing:0;color:rgba(13,9,5,.72)}
+.sb.gap{background:transparent;color:var(--red);border:2px dashed var(--red);box-shadow:none}
+.rt tr.cov td{border-bottom:none;height:auto;padding-top:12px;font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.leg{display:flex;gap:16px;font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.leg span{display:flex;align-items:center;gap:6px}.leg i{width:12px;height:12px;background:var(--c);border:1.5px solid #fffbf1}
+.ph.dk.web{flex-direction:column}
+.wnav{display:flex;align-items:center;gap:30px;padding:18px 40px;border-bottom:3px solid #fffbf1}
+.wnav .lk{display:flex;gap:26px;font-family:var(--mont);font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-left:auto}
+.wnav .lk .on{box-shadow:inset 0 -3px 0 var(--blue);padding-bottom:4px}
+.whero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;padding:32px 40px 28px;align-items:center}
+.disp{font-family:var(--mont);font-weight:100;font-size:84px;line-height:.9;letter-spacing:.02em;text-transform:uppercase;margin:12px 0 20px}
+.disp b{font-weight:800}
+.wweek{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;padding:0 40px}
+</style>
+</head><body><div id="canvas"></div><script>const IC={
+home:'<path d="M3.5 11 L12 3.5 L20.5 11 V20.5 H3.5 Z"/>',
+martini:'<polygon points="5 6 19 6 12 13.5"/><line x1="12" y1="13.5" x2="12" y2="19"/><line x1="8" y1="19.5" x2="16" y2="19.5"/><ellipse cx="13.6" cy="8.6" rx="1.05" ry="1.05"/>',
+scan:'<path d="M4 8.5 V4 H8.5"/><path d="M15.5 4 H20 V8.5"/><path d="M4 15.5 V20 H8.5"/><path d="M20 15.5 V20 H15.5"/><line x1="5" y1="12" x2="19" y2="12"/>',
+you:'<ellipse cx="12" cy="8.5" rx="3.7" ry="3.7"/><polygon points="5.5 20 6.8 14.5 17.2 14.5 18.5 20"/>',
+alerts:'<path d="M6 17 V11 a6 6 0 0 1 12 0 V17 H6 Z"/><line x1="4" y1="17" x2="20" y2="17"/><rect x="10.6" y="19" width="2.8" height="1.8"/>',
+sparkle:'<polygon points="12 3 13.6 10.4 21 12 13.6 13.6 12 21 10.4 13.6 3 12 10.4 10.4"/>',
+ticket:'<rect x="3.5" y="7.5" width="17" height="9"/><line x1="14" y1="7.5" x2="14" y2="16.5"/><polygon points="6.5 10 9.5 12 6.5 14"/>',arrow:'<path d="M9 5 L16 12 L9 19"/>',
+wine:'<path d="M7.5 4 H16.5 C16.5 9.5 14 12 12 12 C10 12 7.5 9.5 7.5 4 Z"/><line x1="12" y1="12" x2="12" y2="19.2"/><line x1="8" y1="19.5" x2="16" y2="19.5"/>',
+pint:'<polygon points="8 5 16 5 15.2 20 8.8 20"/><path d="M8 8 Q10 6.6 12 8 T16 8"/><ellipse cx="11" cy="12.5" rx="0.85" ry="0.85"/><ellipse cx="13" cy="16" rx="0.85" ry="0.85"/>',
+rocks:'<polygon points="6.5 8 17.5 8 16.5 19 7.5 19"/><polygon points="12 11 15.5 13.5 12 16 8.5 13.5"/>',
+coffee:'<polygon points="6.5 9 16 9 15 18 7.5 18"/><path d="M16 11 h2 a1.5 1.5 0 0 1 0 4 H15.4"/><line x1="6" y1="20" x2="17" y2="20"/><line x1="9.5" y1="4.5" x2="9.5" y2="7"/><line x1="12.5" y1="4.5" x2="12.5" y2="7"/>',
+heart:'<path d="M12 19 L5.5 12 A3.4 3.4 0 0 1 12 8 A3.4 3.4 0 0 1 18.5 12 Z"/>',
+languages:'<ellipse cx="12" cy="12" rx="8" ry="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="12" y1="4" x2="12" y2="20"/><ellipse cx="12" cy="12" rx="3.4" ry="8"/>',
+music:'<ellipse cx="9.5" cy="17" rx="3" ry="2.4"/><line x1="12.5" y1="16.6" x2="12.5" y2="5"/><polygon points="12.5 5 19.5 7 19.5 10.5 12.5 8.5"/>'};
+const ic=(n,s=24,solid=false)=>'<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="'+(solid?'currentColor':'none')+'" stroke="'+(solid?'none':'currentColor')+'" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square" aria-hidden="true">'+IC[n]+'</svg>';
+const bar='<div class="bar"><svg style=\"display:block;width:20px;height:26px\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 6 56 72\" role=\"img\" aria-label=\"R\"><g fill=\"currentColor\"><path d=\"M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z\"></path></g></svg><div class="bar-r">'+ic('sparkle',22)+ic('alerts',22)+'</div></div>';
+const nav=a=>'<div class="nav">'+[['home','Home'],['martini','Drinks'],['scan','Scan'],['you','You']].map((t,i)=>'<div class="tab'+(i===a?' on':'')+'">'+ic(t[0],24,i===a)+'<span>'+t[1]+'</span></div>').join('')+'</div>';
+const ph=(lab,body,a,chrome=true)=>'<div class="ph v1" data-screen-label="'+lab+'">'+(chrome?bar:'')+'<div class="scr">'+body+'</div>'+(chrome?nav(a):'')+'</div>';
+const img=(l,h=128)=>'<div class="hero-img" style="height:'+h+'px"><span class="lbl">'+l+'</span><span class="logo">Reality</span></div>';
+const EV=[
+{d:'Tue',n:'06',t:'19:00',cat:'Games',title:'Trivia Night',sub:'Teams of four · free to play',c:'var(--yellow)',x:'#0d0905'},
+{d:'Thu',n:'08',t:'19:30',cat:'Film Club',title:'Chungking Express',sub:'Wong Kar-wai, 1994 · with Đà Nẵng Film Forum',c:'#0d0905',x:'#fffbf1',neu:1},
+{d:'Sat',n:'10',t:'21:00',cat:'Party',title:'After Dark',sub:'DJ Misregistration · till late',c:'var(--red)',x:'#0d0905'}];
+const evRow=e=>'<div class="ev'+(e.neu?' neu':'')+'" style="--cm:'+e.c+';--cmx:'+e.x+'"><div class="ev-d"><span>'+e.d+'</span><b>'+e.n+'</b></div><div class="ev-b"><div class="ev-m">'+e.t+' · '+e.cat+'</div><h3>'+e.title+'</h3><p>'+e.sub+'</p></div></div>';
+const DAYS=[['Mon','05'],['Tue','06'],['Wed','07'],['Thu','08'],['Fri','09'],['Sat','10'],['Sun','11']];
+
+const welcome=ph('01 Welcome','<div class="wrap" style="min-height:100%;display:flex;flex-direction:column;gap:26px;padding-top:56px"><div><div class="eb" style="margin-bottom:14px">Bar · Café · Community</div><svg style=\"display:block;width:100%;height:auto;color:#fffbf1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"60 6 384 72\" role=\"img\" aria-label=\"REALITY\"><g fill=\"currentColor\"><path d=\"M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z\"></path><path d=\"M142.6,55.8h28.4v7.9h-37.8V13.3h36.8v7.9h-27.4v34.6ZM141.8,34.3h25.1v7.7h-25.1v-7.7Z\"></path><path d=\"M188.2,63.7v-27.9c0-5,.9-9.3,2.8-12.7s4.5-6.1,7.8-7.8c3.4-1.8,7.2-2.6,11.7-2.6s8.4.9,11.8,2.6c3.4,1.8,6,4.4,7.8,7.8,1.8,3.5,2.8,7.7,2.8,12.7v27.9h-9.3v-28.8c0-4.8-1.2-8.3-3.6-10.6-2.4-2.3-5.6-3.5-9.5-3.5s-7.2,1.2-9.5,3.5c-2.4,2.3-3.6,5.9-3.6,10.6v28.8h-9.2ZM194.1,50.7v-7.8h32.8v7.8h-32.8Z\"></path><path d=\"M253.3,63.7V13.3h9.4v42.5h26.4v7.9h-35.7Z\"></path><path d=\"M299.8,21.2v-7.9h27.9v7.9h-27.9ZM299.8,63.7v-7.9h27.9v7.9h-27.9ZM309,62.6V14.3h9.4v48.3h-9.4Z\"></path><path d=\"M354.8,63.7V21.2h-16.7v-7.9h42.8v7.9h-16.7v42.5h-9.4Z\"></path><path d=\"M415.7,71.4c-4.2,0-8.1-.6-11.5-1.9-3.5-1.2-6.4-3-8.7-5.2l3.8-7.2c2.3,2,4.7,3.5,7.5,4.5,2.7,1,5.7,1.5,9,1.5s7.8-1.2,10.2-3.5c2.3-2.4,3.5-6,3.5-10.9v-9.8l2.7,1.2c-1.6,3.9-4,6.7-7,8.5-3,1.8-6.6,2.7-10.6,2.7-6.3,0-11.3-1.8-14.8-5.4-3.5-3.6-5.3-8.9-5.3-15.7V13.3h9.4v16.5c0,4.5,1.1,7.9,3.3,10.1,2.2,2.2,5.1,3.3,8.8,3.3s7.2-1.2,9.7-3.5c2.5-2.3,3.7-6,3.7-10.9v-15.6h9.4v35c0,5.1-.9,9.3-2.8,12.7s-4.5,6-7.9,7.7c-3.4,1.8-7.5,2.7-12.2,2.7Z\"></path></g></svg><p style="font-size:15px;line-height:1.6;color:var(--dim);margin:16px 0 0">86 Mai Thúc Lân · Đà Nẵng. Open daily 11:00–02:00. Your table for happy hour, live sets, and after dark.</p></div><div class="tk" style="--sc:var(--blue)">'+img('Photo · Tonight',230).replace('border-bottom','x')+'</div><div style="display:flex;flex-direction:column;gap:12px;margin-top:auto"><div class="cta" style="border-color:#fffbf1">'+ic('sparkle',18)+'Tonight at Reality</div><div class="alt">Browse the week</div></div></div>',0,false);
+
+const home=ph('02 Home','<div class="top"><div class="eb">Mon 05.10 · Đà Nẵng</div><h1>This Week</h1><div class="days">'+DAYS.map((d,i)=>'<div class="d'+(i?'':' on')+'"><span>'+d[0]+'</span><b>'+d[1]+'</b></div>').join('')+'</div><div class="hero"><div class="hero-top"><span>Tonight · 20:30</span><span>Live Music</span></div>'+img('Photo · The Hum')+'<div class="hero-b"><h2>The Hum</h2><p>Five-piece soul and funk in the front room. Doors 20:00, free entry.</p><div class="cta">'+ic('ticket',18)+'Get ticket</div></div></div></div><div class="feed"><div class="hh"><div><b>Happy Hour</b><span>Mon–Fri · 16–19h · 2-for-1 pours</span></div>'+ic('martini',28)+'</div><div class="sec"><span>Coming up</span><u>All 14</u></div><div class="list">'+EV.map(evRow).join('')+'</div></div>',0);
+
+const detail=ph('03 Event Detail','<div class="wrap"><div class="back">'+ic('arrow',14)+'Back</div><div class="tk"><div class="tk-top"><span>Mon 05 · 20:30</span><span>Live Music</span></div>'+img('Photo · The Hum',190)+'<div class="tk-b"><h2 style="font-size:34px;line-height:.92;margin-bottom:10px">The Hum</h2><p style="font-size:15px;line-height:1.65;margin:0">A five-piece out of Hội An playing soul and funk covers, plus a handful of their own. Two sets, short break for the bar.</p></div><div class="rows" style="border-top:2px solid #0d0905"><div class="row"><span class="k">When</span><span class="v">Mon 05.10 · doors 20:00 · set 20:30</span></div><div class="row"><span class="k">Where</span><span class="v">Front room · 86 Mai Thúc Lân</span></div><div class="row"><span class="k">Entry</span><span class="v">Free · table holds till 20:45</span><span class="badge" style="--bc:var(--blue)">18+</span></div></div></div><div class="btns" style="margin-top:26px"><div class="cta" style="flex:1;border-color:#fffbf1">'+ic('ticket',18)+'Get ticket</div><div class="ghost">'+ic('heart',20)+'</div></div><div class="sec" style="margin-top:30px"><span>Also this week</span><u>Music</u></div><div class="list">'+evRow({d:'Fri',n:'09',t:'21:30',cat:'Live Music',title:'Open Decks',sub:'Bring a record · back room',c:'var(--blue)',x:'#0d0905'})+'</div></div>',0);
+
+const D=[['martini','House Martini','Gin · dry vermouth','120k'],['rocks','Old Fashioned','Bourbon · bitters','140k'],['pint','Local Draft','Đà Nẵng pale','60k',1],['wine','Natural Red','Glass · by the bottle','95k'],['coffee','Cà Phê Sữa','Iced · condensed milk','45k']];
+const drinks=ph('04 Drinks','<div class="wrap"><div class="eb">Bar · Café</div><h1>Drinks</h1><div class="tabsx"><div class="on">All</div><div>Cocktails</div><div>Beer</div><div>Coffee</div></div><div class="tk" style="--sc:var(--yellow);margin-bottom:28px"><div class="tk-top" style="--tc:var(--yellow)"><span>Happy Hour</span><span>Now · till 19h</span></div><div class="tk-b" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h3 style="font-size:20px">2-for-1 Pours</h3><p style="font-size:13px;margin:0">House spirits and local draft · Mon–Fri 16–19h</p></div>'+ic('martini',34)+'</div></div><div class="sec"><span>The menu</span><u>5 of 32</u></div><div class="tk" style="--sc:rgba(255,251,241,.28)"><div class="rows">'+D.map(d=>'<div class="row">'+ic(d[0],26)+'<div style="flex:1;min-width:0"><div class="nm">'+d[1]+'</div><div class="nt">'+d[2]+'</div></div>'+(d[4]?'<span class="badge">Happy Hr</span>':'')+'<span class="pr">'+d[3]+'</span></div>').join('')+'</div></div></div>',1);
+
+const scan=ph('05 Entry Pass','<div class="wrap"><div class="eb">Entry pass</div><h1>Show at the door</h1><div class="tk" style="--sc:var(--blue)"><div class="tk-top"><span>Member #0286</span><span>Valid tonight</span></div><div class="tk-b" style="text-align:center;padding-top:22px"><div class="qr"><img src="../assets/qr-ink.svg" alt="QR"></div><p style="font-family:var(--alt);font-weight:600;text-transform:uppercase;font-size:26px;color:#0d0905;margin:18px 0 2px">Reality</p><p style="font-size:13px;margin:0 0 18px">Mai Linh · Regular since Y1</p><div class="perf"></div></div><div class="rows"><div class="row"><span class="k">Tonight</span><span class="v">The Hum · 20:30</span><span class="badge" style="--bc:var(--blue)">Held</span></div><div class="row"><span class="k">Perks</span><span class="v">10% off the bar · 1 guest</span></div></div></div><p style="font-size:13px;color:var(--dim);text-align:center;margin:26px 0 0">Brightness up. Hold it flat for the scanner.</p></div>',2);
+
+const R=[['ticket','My Tickets','2'],['heart','Saved Events','5'],['languages','Language','EN · VI'],['alerts','Notifications','On']];
+const you=ph('06 You','<div class="wrap"><div class="eb">Your Reality</div><h1>Profile</h1><div class="tk" style="--sc:var(--blue);margin-bottom:28px"><div class="tk-b" style="display:flex;gap:16px;align-items:center"><div class="av">M</div><div><h3 style="font-size:22px">Mai Linh</h3><p style="font-size:13px;margin:0">Member #0286 · since Y1</p></div></div><div class="stats"><div><b>28</b><span>Nights</span></div><div><b>11</b><span>Events</span></div><div><b>3</b><span>Quiz wins</span></div></div></div><div class="tk" style="--sc:rgba(255,251,241,.28);margin-bottom:22px"><div class="row" style="padding:16px"><div style="flex:1"><div class="nt" style="font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase">Theme</div><div class="nm" style="font-size:15px">After Dark</div></div><div class="sw"><i></i></div></div></div><div class="tk" style="--sc:rgba(255,251,241,.28)"><div class="rows">'+R.map(r=>'<div class="row">'+ic(r[0],22)+'<span class="nm" style="flex:1;font-size:13px">'+r[1]+'</span><span class="nt" style="font-size:13px">'+r[2]+'</span></div>').join('')+'</div></div></div>',3);
+
+const S=[
+['Welcome','First open. Cream wordmark on ink, one cream ticket for tonight, blue print behind it.',welcome],
+['Home','The frontpage from the exploration: tickets for tonight and the week, yellow deal strip.',home],
+['Event Detail','The whole event is one long ticket — photo, story, then the facts in ruled rows.',detail],
+['Drinks','Happy hour is a yellow-printed ticket; the menu reads as one cream card with hairline rows.',drinks],
+['Entry Pass','The pass is the purest ticket: ink QR on cream, perforation, tonight\'s booking below.',scan],
+['You','Profile, theme and settings each sit on cream. Neutral cream prints for non-event cards.',you]];
+
+const LM='<svg style=\"display:block;width:20px;height:26px\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 6 56 72\" role=\"img\" aria-label=\"R\"><g fill=\"currentColor\"><path d=\"M73.4,63.7V13.3h20.7c4.5,0,8.3.7,11.5,2.1,3.2,1.4,5.7,3.5,7.4,6.2,1.7,2.7,2.6,5.9,2.6,9.6s-.9,6.9-2.6,9.5c-1.7,2.6-4.2,4.7-7.4,6.1-3.2,1.4-7,2.2-11.5,2.2h-15.5l4.1-4.2v18.9h-9.4ZM82.7,45.9l-4.1-4.5h15c4.1,0,7.2-.9,9.3-2.7,2.1-1.8,3.1-4.2,3.1-7.4s-1-5.6-3.1-7.4c-2.1-1.8-5.2-2.6-9.3-2.6h-15l4.1-4.6v29.2ZM106.3,63.7l-12.7-18.3h10l12.8,18.3h-10.1Z\"></path></g></svg>';
+Object.assign(IC,{events:'<rect x="4" y="5.5" width="16" height="14.5"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3.5" x2="8" y2="6.5"/><line x1="16" y1="3.5" x2="16" y2="6.5"/><rect x="7" y="13" width="3.2" height="3.2"/>',
+check:'<path d="M4.5 12.5 L9.5 17.5 L19.5 6.5"/>',
+bar:'<polygon points="5 6 19 6 12 13.5"/><line x1="12" y1="13.5" x2="12" y2="19"/><line x1="8" y1="19.5" x2="16" y2="19.5"/>',
+group:'<ellipse cx="12" cy="8" rx="2.6" ry="2.6"/><polygon points="7 17.5 8 13 16 13 17 17.5"/><ellipse cx="5.5" cy="9.5" rx="1.9" ry="1.9"/><ellipse cx="18.5" cy="9.5" rx="1.9" ry="1.9"/>',
+leaders:'<rect x="4" y="13" width="4" height="7"/><rect x="10" y="9" width="4" height="11"/><rect x="16" y="5" width="4" height="15"/>',
+list:'<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><rect x="4" y="5" width="2" height="2"/><rect x="4" y="11" width="2" height="2"/><rect x="4" y="17" width="2" height="2"/>',
+plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'});
+const snav=a=>'<div class="nav">'+[['home','Today'],['events','Shifts'],['list','Sidework'],['bar','Stock']].map((t,i)=>'<div class="tab'+(i===a?' on':'')+'">'+ic(t[0],24,i===a&&t[0]==='home')+'<span>'+t[1]+'</span></div>').join('')+'</div>';
+const sbar='<div class="bar"><div style="display:flex;align-items:center;gap:10px">'+LM+'<span style="font-family:var(--mont);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;border:2px solid #fffbf1;padding:3px 7px">Staff</span></div><div class="bar-r">'+ic('alerts',22)+'</div></div>';
+const sph=(lab,body,a)=>'<div class="ph v1" data-screen-label="'+lab+'">'+sbar+'<div class="scr">'+body+'</div>'+snav(a)+'</div>';
+const ck=(t,who,done,tm,ic2)=>'<div class="row'+(done?' done':'')+'"><span class="cb'+(done?' on':'')+'">'+(done?ic('check',14):'')+'</span><div style="flex:1;min-width:0"><div class="nm" style="font-size:13px">'+t+'</div><div class="nt">'+tm+'</div></div><span class="ini" style="--ic:'+(ic2||'#fffbf1')+'">'+who+'</span></div>';
+
+const sToday=sph('07 Staff Today','<div class="wrap"><div class="eb">Mon 05.10 · Bar</div><h1>Evening, Tuấn</h1><div class="tk" style="margin-bottom:28px"><div class="tk-top"><span>Your shift</span><span>Bar</span></div><div class="tk-b"><h2 style="font-size:30px;margin-bottom:6px">16:00–00:30</h2><p style="font-size:13.5px;margin:0 0 16px">With Linh (floor) and Khoa (bar back). Break at 19:30.</p><div class="cta" style="border-color:#0d0905">'+ic('check',18)+'Clock in</div></div></div><div class="sec"><span>Sidework</span><u>8 of 12</u></div><div class="tk" style="--sc:var(--yellow);margin-bottom:28px"><div class="tk-b"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="nm" style="font-family:var(--mont);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em">Opening · Bar</span><span style="font-family:var(--mont);font-weight:700;font-size:13px">67%</span></div><div class="prog" style="--pc:var(--yellow)"><i style="width:67%"></i></div><p style="font-size:13px;margin:12px 0 0">Next: cut garnish, restock ice well</p></div></div><div class="sec"><span>Tonight on the floor</span><u>1</u></div><div class="list">'+evRow({d:'Mon',n:'05',t:'20:30 · Live Music',cat:'40 expected',title:'The Hum',sub:'Front room set by 19:30 · band rider in the office',c:'var(--blue)',x:'#0d0905'})+'</div><div class="note" style="margin-top:22px"><b>From Mai · manager</b>Draft line was cleaned this morning — first pour may foam. Log any comps on the till, not paper.</div></div>',0);
+
+const SH=[['Mon','05','16:00–00:30','Bar · with Linh, Khoa','var(--blue)',1],['Tue','06','—','Day off','',0,1],['Wed','07','11:00–19:00','Café · open','var(--yellow)',1],['Thu','08','18:00–02:00','Bar · close · Film Club','var(--blue)',1],['Fri','09','Open shift','Floor · 20:00–02:00 · tap to pick up','',0]];
+const sSched=sph('08 Shifts','<div class="wrap"><div class="eb">Week 41 · 32h scheduled</div><h1>Shifts</h1><div class="tabsx"><div class="on">Mine</div><div>Team</div><div>Swaps · 1</div></div><div style="display:flex;flex-direction:column;gap:14px">'+SH.map(s=>'<div class="shift'+(s[5]?' mine':'')+(s[6]?' off':'')+'" style="--c:'+s[4]+'"><div class="ev-d"><span>'+s[0]+'</span><b>'+s[1]+'</b></div><div class="ev-b"><div class="ev-m" style="color:inherit;opacity:'+(s[5]?.72:.68)+'">'+s[3]+'</div><h3>'+s[2]+'</h3></div></div>').join('')+'</div><div class="btns" style="margin-top:26px"><div class="alt" style="flex:1">Request swap</div><div class="alt" style="flex:1">Time off</div></div></div>',1);
+
+const sSide=sph('09 Sidework','<div class="wrap"><div class="eb">Mon 05.10 · Opening</div><h1>Sidework</h1><div class="tabsx"><div class="on">Opening</div><div>Pre-shift</div><div>Close</div></div><div style="display:flex;justify-content:space-between;font-family:var(--mont);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px"><span style="color:var(--dim)">8 of 12 done</span><span>Due 17:00</span></div><div class="prog dk-p" style="--pc:var(--yellow);margin-bottom:24px"><i style="width:67%"></i></div><div class="sec"><span>Bar</span><u>4 / 6</u></div><div class="tk" style="--sc:var(--blue);margin-bottom:28px"><div class="rows">'+ck('Ice well filled','TN',1,'16:08')+ck('Speed rail stocked','TN',1,'16:14')+ck('Draft lines flushed','KH',1,'16:20','var(--blue)')+ck('Syrups dated','KH',1,'16:31','var(--blue)')+ck('Cut garnish','TN',0,'Lime · lemon · orange')+ck('Glass washer test strip','KH',0,'Log the reading','var(--blue)')+'</div></div><div class="sec"><span>Floor</span><u>4 / 6</u></div><div class="tk" style="--sc:var(--yellow)"><div class="rows">'+ck('Tables wiped + set','LI',1,'15:55','var(--yellow)')+ck('Menus checked','LI',1,'16:02','var(--yellow)')+ck('Stage cleared for The Hum','LI',0,'By 19:30','var(--yellow)')+'</div></div><div class="cta" style="margin-top:26px;border-color:#fffbf1">Sign off opening</div></div>',2);
+
+const ST=[['Local Draft','Keg · par 3','2','Low'],['House Gin','Bottle · par 4','5'],['Limes','Bag · par 2','1','Low'],['Natural Red','Bottle · par 12','14'],['Condensed Milk','Can · par 6','6'],['Coffee Beans','1kg · par 3','3']];
+const sStock=sph('10 Stock Count','<div class="wrap"><div class="eb">Bar · counted by Tuấn</div><h1>Stock</h1><div class="tabsx"><div class="on">Bar</div><div>Café</div><div>Kitchen</div></div><div class="tk" style="--sc:var(--red);margin-bottom:28px"><div class="tk-top" style="--tc:var(--red)"><span>Below par</span><span>2 items</span></div><div class="tk-b" style="padding:14px 18px"><p style="font-size:13.5px;margin:0">Local Draft and limes. Order goes out with the 17:00 supplier run.</p></div></div><div class="sec"><span>Count</span><u>6 of 41</u></div><div class="tk" style="--sc:rgba(255,251,241,.28)"><div class="rows">'+ST.map(s=>'<div class="row"><div style="flex:1;min-width:0"><div class="nm" style="font-size:13px">'+s[0]+'</div><div class="nt">'+s[1]+'</div></div>'+(s[3]?'<span class="badge" style="--bc:var(--red)">Low</span>':'')+'<div class="step"><span>−</span><b>'+s[2]+'</b><span>+</span></div></div>').join('')+'</div></div><div class="cta" style="margin-top:26px;border-color:#fffbf1">Submit count</div></div>',3);
+
+/* ---------- desktop backend ---------- */
+const side=a=>'<div class="side"><div class="lmh">'+LM+'<span>Backstage</span></div>'+[['events','Events',''],['group','Roster','1'],['list','Sidework',''],['bar','Stock','2'],['martini','Menu',''],['you','Members',''],['leaders','Reports','']].map((s,i)=>'<div class="si'+(i===a?' on':'')+'">'+ic(s[0],20)+s[1]+(s[2]?'<em>'+s[2]+'</em>':'')+'</div>').join('')+'<div class="me"><div class="av" style="width:34px;height:34px;font-size:14px;border-color:#fffbf1">M</div><div>Mai<br><span style="color:var(--dim)">Manager</span></div></div></div>';
+const ct=(s,t,sm,c,x,o='')=>'<div class="ct'+o+'" style="--c:'+c+';--x:'+(x||'#0d0905')+'"><div class="s">'+s+'</div><div class="t">'+t+'<small>'+sm+'</small></div></div>';
+const CAL=[
+[ct('20:30 · Music','The Hum','Front room · 40','var(--blue)','',' sel')],
+[ct('19:00 · Games','Trivia Night','Front room · teams','var(--yellow)')],
+[ct('16:00 · Drinks','Happy Hour','All week','var(--yellow)'),ct('19:00 · Talk','Language Exchange','Upstairs','#0d0905','#fffbf1')],
+[ct('19:30 · Film','Chungking Express','Upstairs · DNFF','#0d0905','#fffbf1')],
+[ct('21:30 · Music','Open Decks','Back room','var(--blue)')],
+[ct('21:00 · Party','After Dark','Back room · till late','var(--red)'),ct('Draft','Poster drop','Needs artwork','','',' dr')],
+[ct('10:00 · Café','Slow Sunday','Front room','var(--yellow)')]];
+const dEvents='<div class="ph v1 dk" data-screen-label="11 Backstage Events">'+side(0)+'<div class="main"><div class="mh"><div><div class="eb">Week 41 · 05–11.10</div><h1>Events</h1></div><div class="tools"><div class="seg"><div>Day</div><div class="on">Week</div><div>Month</div></div><div class="btn">'+ic('arrow',14)+'</div><div class="btn r">'+ic('plus',16)+'New event</div></div></div><div class="body"><div class="cal">'+DAYS.map((d,i)=>'<div class="ch'+(i?'':' td')+'"><span>'+d[0]+'</span><b>'+d[1]+'</b></div>').join('')+CAL.map(c=>'<div class="cc">'+c.join('')+'</div>').join('')+'</div><div class="pane"><div class="tk" style="--sc:var(--blue)"><div class="tk-top"><span>Editing</span><span>Live Music</span></div><div class="tk-b"><div class="fl"><label>Title</label><div class="in f">The Hum</div></div><div class="two"><div class="fl"><label>Date</label><div class="in">Mon 05.10</div></div><div class="fl"><label>Doors · Start</label><div class="in">20:00 · 20:30</div></div></div><div class="fl"><label>Room</label><div class="in">Front room</div></div><div class="fl"><label>Category</label><div class="chips"><span class="on" style="--c:var(--blue)"><i></i>Music</span><span style="--c:var(--red)"><i></i>Party</span><span style="--c:var(--yellow)"><i></i>Games</span><span style="--c:#fffbf1"><i></i>Film</span></div></div><div class="fl"><label>Poster</label>'+img('Drop poster',84).replace('<span class="logo">Reality</span>','')+'</div><div class="cta" style="border-color:#0d0905;margin-top:6px">Publish changes</div></div></div></div></div></div></div>';
+
+const PPL=[['Tuấn','Bar','TN'],['Khoa','Bar back','KH'],['Linh','Floor','LI'],['An','Café','AN'],['Hương','Floor','HU'],['Bảo','Bar','BA']];
+const B='var(--blue)',Y='var(--yellow)',R2='var(--red)';
+const RO=[[[B,'16–00:30','Bar'],0,[Y,'11–19','Café'],[B,'18–02','Close'],0,[B,'18–02','Close'],0],
+[[B,'18–02','Back'],[B,'18–02','Back'],0,0,[B,'20–02','Back'],[B,'20–02','Back'],0],
+[[R2,'16–00','Floor'],0,[R2,'16–00','Floor'],[R2,'18–02','Floor'],'gap',[R2,'20–02','Floor'],0],
+[[Y,'07–15','Open'],[Y,'07–15','Open'],[Y,'07–15','Open'],0,[Y,'07–15','Open'],0,[Y,'09–17','Slow Sun']],
+[0,[R2,'16–00','Floor'],0,[R2,'18–02','Floor'],[R2,'20–02','Floor'],[R2,'20–02','Floor'],0],
+[0,[B,'16–00','Bar'],[B,'16–00','Bar'],0,[B,'18–02','Bar'],[B,'18–02','Bar'],[B,'14–22','Bar']]];
+const dRoster='<div class="ph v1 dk" data-screen-label="12 Backstage Roster">'+side(1)+'<div class="main"><div class="mh"><div><div class="eb">Week 41 · 214h scheduled</div><h1>Roster</h1></div><div class="tools"><div class="leg"><span style="--c:var(--blue)"><i></i>Bar</span><span style="--c:var(--red)"><i></i>Floor</span><span style="--c:var(--yellow)"><i></i>Café</span></div><div class="seg"><div class="on">Week</div><div>Month</div></div><div class="btn r">Publish roster</div></div></div><div class="rt"><table><tr><th style="width:170px">Team</th>'+DAYS.map(d=>'<th>'+d[0]+'<b>'+d[1]+'</b></th>').join('')+'</tr>'+PPL.map((p,i)=>'<tr><td class="p"><span class="ini" style="border-color:#fffbf1;color:#fffbf1;background:transparent">'+p[2]+'</span><div>'+p[0]+'<small>'+p[1]+'</small></div></td>'+RO[i].map(c=>'<td>'+(c==='gap'?'<div class="sb gap">Open<small>Needs cover</small></div>':c?'<div class="sb" style="--c:'+c[0]+'">'+c[1]+'<small>'+c[2]+'</small></div>':'')+'</td>').join('')+'</tr>').join('')+'<tr class="cov"><td>Coverage</td><td>4 / 4</td><td>4 / 4</td><td>4 / 4</td><td>4 / 4</td><td style="color:var(--red)">4 / 5</td><td>5 / 5</td><td>2 / 2</td></tr></table></div></div></div>';
+
+const dWeb='<div class="ph v1 dk web" data-screen-label="13 Website Home"><div class="wnav">'+LM+'<div class="lk"><span class="on">This week</span><span>Drinks</span><span>The space</span><span>Find us</span></div><div class="btn r">'+ic('ticket',16)+'Tonight</div></div><div class="whero"><div><div class="eb">Bar · Café · Community · Đà Nẵng</div><div class="disp">After<br><b>Dark</b></div><p style="font-size:17px;line-height:1.65;color:var(--dim);max-width:46ch;margin:0">86 Mai Thúc Lân. Open daily 11:00–02:00. Happy hour, live sets, film, trivia — and a table for you.</p></div><div class="tk"><div class="tk-top"><span>Tonight · 20:30</span><span>Live Music</span></div>'+img('Photo · The Hum',170)+'<div class="tk-b" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><div><h2 style="margin-bottom:4px">The Hum</h2><p style="font-size:14px;margin:0">Soul + funk · free entry</p></div><div class="cta" style="width:auto;border-color:#0d0905;padding:12px 16px">Get ticket</div></div></div></div><div class="wweek">'+[{d:'Tue',n:'06',t:'19:00',cat:'Games',title:'Trivia Night',sub:'Teams of four',c:'var(--yellow)',x:'#0d0905'},EV[1],{d:'Fri',n:'09',t:'21:30',cat:'Music',title:'Open Decks',sub:'Bring a record',c:'var(--blue)',x:'#0d0905'},EV[2]].map(evRow).join('')+'</div></div>';
+
+const cv=document.getElementById('canvas');
+
+const SS=[
+['Staff Today','Clock-in, sidework progress and tonight\'s floor brief — the shift as one ticket.',sToday],
+['Shifts','Your shifts print cream with their role colour; days off and open shifts stay as dashed outlines.',sSched],
+['Sidework','Checklists on cream with ink boxes. Role colour on the print and on the initials — who did what.',sSide],
+['Stock Count','Red means one thing: below par. Steppers stay ink-on-cream for fast thumbs.',sStock]];
+const DS=[['Backstage · Events','Week calendar on ink with cream event tickets; edit pane is a single cream ticket with fields.',dEvents],['Backstage · Roster','Shift blocks are mini tickets coded by role (bar blue, floor red, café yellow); gaps are dashed red.',dRoster],['Website · Home','Same skin on the public site: thin Montserrat display, tonight as the cream hero ticket.',dWeb]];
+const sec=(t,s,y)=>{const d=document.createElement('div');d.className='sect';d.style.left='80px';d.style.top=y+'px';d.innerHTML='<b>'+t+'</b><span>'+s+'</span>';cv.appendChild(d);};
+const put=(x,y,no,t,d,html,w)=>{const f=document.createElement('div');f.className='frame';f.style.left=x+'px';f.style.top=y+'px';if(w)f.style.width=w+'px';f.innerHTML='<div class="cap'+(w?' w':'')+'"><div class="no">'+no+'</div><h4>'+t+'</h4><p>'+d+'</p></div>'+html;cv.appendChild(f);};
+sec('Guest App','Night · Cream Tickets',80);
+S.forEach((s,i)=>put(80+i*480,220,String(i+1).padStart(2,'0')+' · Guest',s[0],s[1],s[2]));
+sec('Sidework · Staff','Phone tools for the shift',1280);
+SS.forEach((s,i)=>put(80+i*480,1420,String(i+7).padStart(2,'0')+' · Staff',s[0],s[1],s[2]));
+sec('Backstage · Web','Desktop backend + public site',2480);
+DS.forEach((s,i)=>put(80+i*1380,2620,String(i+11).padStart(2,'0')+' · Desktop',s[0],s[1],s[2],1280));
+</script></body></html>

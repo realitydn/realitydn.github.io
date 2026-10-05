@@ -11,6 +11,12 @@ export default {
   },
   "heroTitle": "coffee / cocktails / community",
   "heroSub": "We're on a mission to become the easiest place in Đà Nẵng to make friends.",
+  "heroPhotos": {
+    "label": "Photos of REALITY",
+    "pause": "Pause the photos",
+    "play": "Play the photos",
+    "photo": "Photo {n} of {total}"
+  },
   "eventsEyebrow": "What's on",
   "eventsTitle": "Upcoming Events",
   "infoTitle": "Info",

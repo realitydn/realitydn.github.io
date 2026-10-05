@@ -9,6 +9,12 @@ export default {
   },
   "heroTitle": "コーヒー / カクテル / コミュニティ",
   "heroSub": "ダナンでいちばん友だちを作りやすい場所を目指しています。",
+  "heroPhotos": {
+    "label": "REALITYの写真",
+    "pause": "写真を一時停止",
+    "play": "写真を再生",
+    "photo": "写真 {n}/{total}"
+  },
   "eventsEyebrow": "今週のお楽しみ",
   "eventsTitle": "これからのイベント",
   "infoTitle": "インフォ",

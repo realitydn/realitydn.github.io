@@ -1072,7 +1072,6 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
   box-shadow: var(--px) var(--px) 0 var(--print, var(--print-neutral));
 }
 /* Print sizes: 7px hero / detail / big reading tickets, 6px list, 4px small. */
-.hero-tkt,
 .hero-photo,
 .deal-tkt,
 .cal-card-lead,
@@ -1198,9 +1197,10 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
 }
 
 /* ── Hero (website screen 13): 1.1fr / .9fr at 48px, thin display with the
-   800 slam, a dim lede, tonight's ticket on the right. Phones stack. Day
-   sits the ticket on the blue field, Night on the ink page. ── */
-.hero-tkt, .deal-tkt { display: block; }
+   800 slam, a dim lede, the photo of the front on the right (Donald 5.10.26
+   — not a Tonight ticket). Phones stack. Day sits the photo on the blue
+   field, Night on the ink page. ── */
+.deal-tkt { display: block; }
 @media (min-width: 768px) {
   .hero-grid { grid-template-columns: 1.1fr .9fr; gap: 48px; }
   .hero-grid.hero-grid > * { grid-column: auto; }
@@ -1208,15 +1208,34 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
 .hero-h1 { font-size: clamp(40px, 5.8vw, 84px); }
 .hero-h1 > :is(.font-display, .font-display-bold):not(:lang(vi)) { line-height: .95; }
 .hero-lede { font-size: 17px; line-height: 1.65; color: var(--fg-dim); max-width: 46ch; }
-.hero-tkt-b {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 14px 20px; padding: 16px 18px 18px;
+/* The photos (HeroPhotos.jsx): stacked, the shown one opaque. One photo =
+   a still; more = a cross-fade carousel with a small control plate (pause +
+   one square dot per photo) in the frame's bottom-left corner. */
+.hero-photos { position: relative; background: var(--surface-2); }
+.hero-photos-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0;
+  transition: opacity 900ms var(--ease-out, ease);
 }
-.hero-tkt-meta { margin-top: 6px; font-size: 14px; }
+.hero-photos-img[data-on] { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .hero-photos-img { transition: none; } }
+.hero-photos-ctl {
+  position: absolute; left: 12px; bottom: 12px; z-index: 1;
+  display: flex; align-items: center; gap: 2px; padding: 2px 6px 2px 2px;
+  background: var(--ticket); color: var(--ticket-fg); border: 2px solid var(--tkt-edge);
+}
+.hero-photos-btn {
+  display: grid; place-items: center; width: 32px; height: 32px; color: inherit;
+}
+.hero-photos-btn svg { width: 10px; height: 10px; }
+/* 24px hit area around a 10px square (WCAG 2.2 target minimum). */
+.hero-photos-dot { position: relative; width: 24px; height: 32px; }
+.hero-photos-dot::before {
+  content: ""; position: absolute; left: 7px; top: 11px; width: 10px; height: 10px;
+  border: 1.5px solid currentColor;
+}
+.hero-photos-dot[aria-current="true"]::before { background: currentColor; }
 .deal-tkt-b { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; }
-@media (max-width: 520px) {
-  .hero-tkt-go { width: 100%; }
-}
 
 /* ── Calendar ── */
 /* Section labels (the handoff's section header): dim label over a 2px rule

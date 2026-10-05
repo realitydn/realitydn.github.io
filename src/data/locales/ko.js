@@ -9,6 +9,12 @@ export default {
   },
   "heroTitle": "커피 / 칵테일 / 커뮤니티",
   "heroSub": "다낭에서 친구 사귀기 가장 쉬운 곳이 되는 것, 그게 저희의 미션이에요.",
+  "heroPhotos": {
+    "label": "REALITY 사진",
+    "pause": "사진 일시정지",
+    "play": "사진 재생",
+    "photo": "사진 {n}/{total}"
+  },
   "eventsEyebrow": "요즘 REALITY",
   "eventsTitle": "다가오는 이벤트",
   "infoTitle": "안내",

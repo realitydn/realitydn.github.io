@@ -31,7 +31,6 @@ import {
   costLabel,
   dmParts,
   whenKey,
-  pickTonight,
   catLabel,
   ticketLabel,
   isTodayICT,
@@ -240,19 +239,6 @@ eq('whenKey today (daytime)', whenKey('2026-07-01T14:00:00+07:00', wedNoon), 'to
 eq('whenKey tomorrow', whenKey('2026-07-02T10:00:00+07:00', wedNoon), 'tomorrow');
 eq('whenKey later → none', whenKey('2026-07-03T19:00:00+07:00', wedNoon), '');
 eq('whenKey ICT midnight boundary', whenKey('2026-07-01T17:30:00Z', wedNoon), 'tomorrow');
-// pickTonight: the next event to START today wins over one already running;
-// with nothing left today, the next upcoming; nothing at all → null.
-{
-  const running = { id: 'running', startsAt: '2026-07-01T10:00:00+07:00', endsAt: '2026-07-01T18:00:00+07:00' };
-  const later = { id: 'tonight', startsAt: '2026-07-01T20:00:00+07:00' };
-  const tomorrow = { id: 'tomorrow', startsAt: '2026-07-02T19:00:00+07:00' };
-  const past = { id: 'past', startsAt: '2026-06-30T19:00:00+07:00' };
-  eq('pickTonight next to start today', (pickTonight([tomorrow, running, later, past], wedNoon) || {}).id, 'tonight');
-  eq('pickTonight running today when nothing else starts', (pickTonight([tomorrow, running, past], wedNoon) || {}).id, 'running');
-  eq('pickTonight next upcoming day', (pickTonight([tomorrow, past], wedNoon) || {}).id, 'tomorrow');
-  eq('pickTonight none', pickTonight([past], wedNoon), null);
-}
-
 // ── locale parity: every catalogue mirrors locales/en.js ─────────────────────
 // Same key paths, same value types, same array lengths — so a string added to
 // EN and forgotten elsewhere fails here, not as silent English on /ja/. Loaded

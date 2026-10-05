@@ -9,6 +9,12 @@ export default {
   },
   "heroTitle": "cà phê / cocktail / cộng đồng",
   "heroSub": "Chúng tôi muốn trở thành nơi dễ kết bạn nhất ở Đà Nẵng.",
+  "heroPhotos": {
+    "label": "Ảnh REALITY",
+    "pause": "Tạm dừng ảnh",
+    "play": "Phát ảnh",
+    "photo": "Ảnh {n}/{total}"
+  },
   "eventsEyebrow": "Có gì hot",
   "eventsTitle": "Sự kiện sắp tới",
   "infoTitle": "Thông tin",

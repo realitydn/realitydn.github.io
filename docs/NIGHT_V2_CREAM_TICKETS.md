@@ -225,14 +225,7 @@ Everything else in Day is unchanged:
 
 ### Hero (STRUCTURE: Night only)
 - **Layout.** At ≥768px the grid is 1.1fr / .9fr with a 48px gap. The display line is the real copy: "COFFEE / COCKTAILS /" in Montserrat 100 and "COMMUNITY" in 800, at `clamp(40px, 5.8vw, 84px)` with .95 leading. Vietnamese keeps its 1.3 leading. The lede is 17/1.65 dim. The two buttons stay: Events (cream solid) and Menus (cream outline).
-- **TONIGHT ticket (NEW).** In `Hero.jsx` the photo column is replaced by a ticket built from the live feed. It uses `pickTonight`: the next event to start today, else one still running today, else the next upcoming event. The ticket has:
-  - a category top bar ("TONIGHT · 19:00 / GAMES", or "TUE 6.10 · 19:00" when the event isn't today);
-  - the poster at its native 4:5 on riso stripes, or the stripes plus the logo box;
-  - the title and one meta line (qualifier · room · price);
-  - a red **Details →** ACTION. It is a real link to the event, and a plain click opens the same EventOverlay the calendar uses (a second instance, portalled).
-
-  It reads the shared feed load, so there is no extra request. If the feed has nothing left, the original photo shows inside a neutral ticket frame.
-- **Static HTML is unchanged.** The prerender is always Day, so the static HTML keeps the photo. The ticket only exists in the client at night.
+- **Hero photo — the front, as a carousel-ready ticket (5.10.26).** Round 2 had replaced the photo column with a TONIGHT ticket from the feed; Donald: "The hero on the website should still be the pic of the front. We'll get more pics of the space to do an auto-forward carousel there." So the column is the shopfront photo again (`public/images/hero.jpg`, still the LCP preload), framed as a neutral ticket (7px print, both themes). The photos live in `src/data/hero-photos.js`; add entries and `HeroPhotos.jsx` turns into an auto-advancing carousel by itself — a cross-fade every 6s, holding still on hover/focus, while the tab is hidden and under reduced motion, with a pause button and one dot per photo (WCAG 2.2.2). With one photo it renders just the photo, no controls. The TONIGHT ticket, `pickTonight` and its self-tests are gone (the calendar right below the hero does that job; git has them if wanted back).
 
 ### Calendar
 - **UP NEXT: wall cards become tickets.**

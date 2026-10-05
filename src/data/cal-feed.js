@@ -110,26 +110,6 @@ export function nextDealToday(events, categoryOf, now = Date.now()) {
   return next && isTodayICT(next.startsAt, now) ? next : null;
 }
 
-// pickTonight(events, now?) → the event the hero's Tonight ticket leads with:
-// the NEXT event to start today (ICT); else one still running today (the
-// latest-started, so a late set beats the afternoon's leftovers); else the
-// next upcoming event on a later day. null when nothing is left.
-export function pickTonight(events, now = Date.now()) {
-  const list = (events || [])
-    .filter((ev) => ev && instant(ev.startsAt))
-    .slice()
-    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
-  const today = ictDateStr(now, 0);
-  const isToday = (ev) => FMT_YMD.format(instant(ev.startsAt)) === today;
-  const starts = (ev) => Date.parse(ev.startsAt);
-  const ends = (ev) => (instant(ev.endsAt) ? Date.parse(ev.endsAt) : starts(ev) + 2 * 3600 * 1000);
-  const next = list.find((ev) => isToday(ev) && starts(ev) >= now);
-  if (next) return next;
-  const running = list.filter((ev) => isToday(ev) && starts(ev) < now && ends(ev) >= now);
-  if (running.length) return running[running.length - 1];
-  return list.find((ev) => starts(ev) >= now) || null;
-}
-
 // splitFeedSite(events, now?) → { soon, later } — the hub's splitFeed shape:
 // soon = events starting today or tomorrow (ICT), later = everything after,
 // both sorted by start instant so the next-to-start event leads. useFeed has

@@ -20,8 +20,7 @@ export function LogoBox({ className = '' }) {
 
 // The photo slot: riso stripes on cream, the event's poster at its NATIVE
 // 4:5 centred on them (never cropped to the slot), else the logo box.
-// `priority` marks the page's LCP image (the hero's): high fetch priority.
-export function TicketPhoto({ img, alt, className = '', priority = false }) {
+export function TicketPhoto({ img, alt, className = '' }) {
   return (
     <span className={`tkt-photo ${className}`}>
       {img ? (
@@ -31,7 +30,6 @@ export function TicketPhoto({ img, alt, className = '', priority = false }) {
           alt={alt}
           loading="eager"
           decoding="async"
-          fetchpriority={priority ? 'high' : undefined}
         />
       ) : (
         <LogoBox />

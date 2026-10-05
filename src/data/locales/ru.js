@@ -9,6 +9,12 @@ export default {
   },
   "heroTitle": "кофе / коктейли / комьюнити",
   "heroSub": "Наша миссия — стать местом, где легче всего в Дананге завести друзей.",
+  "heroPhotos": {
+    "label": "Фото REALITY",
+    "pause": "Остановить фото",
+    "play": "Листать фото",
+    "photo": "Фото {n} из {total}"
+  },
   "eventsEyebrow": "Что происходит",
   "eventsTitle": "Ближайшие события",
   "infoTitle": "Инфо",

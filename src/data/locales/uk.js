@@ -9,6 +9,12 @@ export default {
   },
   "heroTitle": "кава / коктейлі / ком'юніті",
   "heroSub": "Наша місія — стати місцем, де найлегше в Дананзі знайти друзів.",
+  "heroPhotos": {
+    "label": "Фото REALITY",
+    "pause": "Зупинити фото",
+    "play": "Гортати фото",
+    "photo": "Фото {n} з {total}"
+  },
   "eventsEyebrow": "Що відбувається",
   "eventsTitle": "Найближчі події",
   "infoTitle": "Інфо",

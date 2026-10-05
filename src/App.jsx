@@ -80,7 +80,7 @@ function HomePage({ lang }) {
         t={t}
       />
       <main id="main-content" tabIndex={-1}>
-        <Hero t={t} />
+        <Hero t={t} lang={lang} />
         <Calendar lang={lang} />
         <InfoHostSection t={t} lang={lang} />
         <DarkCTA lang={lang} />

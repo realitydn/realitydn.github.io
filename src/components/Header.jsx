@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
@@ -9,6 +9,47 @@ import { URLS } from '../data/translations';
 import { pathFor } from '../data/languages';
 import { scrollBehavior } from '../hooks/motion';
 
+// The one-pager's sections, in page order: nav anchor → the section whose
+// presence on screen makes that link current. #events is a marker inside
+// the calendar section, so the calendar owns it.
+const SPY = [
+  { href: '#events', target: 'calendar', key: 'nav.events' },
+  { href: '#info', target: 'info', key: 'nav.info' },
+  { href: '#menus', target: 'menus', key: 'nav.menus' },
+  { href: '#visit', target: 'visit', key: 'nav.visit' },
+];
+
+// Scroll-spy (Night v2, website screen 13: the ACTIVE nav link carries a 3px
+// blue underline). One IntersectionObserver watching a thin reading line 35%
+// down the viewport: the section crossing it is current; above the calendar
+// (the hero) and past the visit band (gallery, footer) nothing is. Lightweight
+// on purpose — no scroll listener, no layout reads.
+function useScrollSpy(ids) {
+  const [active, setActive] = useState(null);
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return undefined;
+    const els = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    if (!els.length) return undefined;
+    const on = new Set();
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) on.add(e.target.id);
+          else on.delete(e.target.id);
+        });
+        // At a seam two sections can touch the line — the later one wins.
+        const hit = ids.filter((id) => on.has(id));
+        setActive(hit.length ? hit[hit.length - 1] : null);
+      },
+      { rootMargin: '-35% 0px -64% 0px', threshold: 0 }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return active;
+}
+
 export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
   const location = useLocation();
   const path = location.pathname;
@@ -16,6 +57,8 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
   const homeHref = pathFor(lang, '/');
   const headerRef = useRef(null);
   const toggleRef = useRef(null);
+  const activeSection = useScrollSpy(SPY.map((x) => x.target));
+  const current = (target) => (activeSection === target ? 'true' : undefined);
 
   const onLogoClick = (e) => {
     // homeHref is the slash form (/vn/); dev servers also answer /vn.
@@ -91,18 +134,18 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
         {/* Desktop Navigation — whitespace-nowrap: at 1024px Ukrainian's
             "В гості" wrapped onto two lines. */}
         <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em] whitespace-nowrap">
-          <a href="#events" className="hover:opacity-70 transition-opacity focus:underline">
-            {t.use('nav.events')}
-          </a>
-          <a href="#info" className="hover:opacity-70 transition-opacity focus:underline">
-            {t.use('nav.info')}
-          </a>
-          <a href="#menus" className="hover:opacity-70 transition-opacity focus:underline">
-            {t.use('nav.menus')}
-          </a>
-          <a href="#visit" className="hover:opacity-70 transition-opacity focus:underline">
-            {t.use('nav.visit')}
-          </a>
+          {/* aria-current marks the section in view (scroll-spy above); the
+              3px accent underline is .mast-link[aria-current] in index.css. */}
+          {SPY.map(({ href, target, key }) => (
+            <a
+              key={href}
+              href={href}
+              className="mast-link hover:opacity-70 transition-opacity focus:underline"
+              aria-current={current(target)}
+            >
+              {t.use(key)}
+            </a>
+          ))}
         </nav>
 
         {/* Desktop Actions — only at lg+ so the md (tablet) viewport uses the
@@ -114,7 +157,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             href={`${URLS.APP}/?utm_source=website&utm_medium=header`}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary px-3.5 py-2 flex items-center gap-2 text-xs"
+            className="btn-primary act-night px-3.5 py-2 flex items-center gap-2 text-xs"
             aria-label={t.use('getApp.title')}
           >
             {Icons.app()}
@@ -159,7 +202,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             href={`${URLS.APP}/?utm_source=website&utm_medium=header_mobile`}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="btn-primary act-night p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label={t.use('getApp.title')}
           >
             {Icons.app()}
@@ -198,7 +241,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               href={`${URLS.APP}/?utm_source=website&utm_medium=header_menu`}
               target="_blank"
               rel="noreferrer"
-              className="btn-primary col-span-2 px-4 py-3 flex items-center justify-center gap-2"
+              className="btn-primary act-night col-span-2 px-4 py-3 flex items-center justify-center gap-2"
               style={{ '--ri': 0 }}
             >
               {Icons.app()} {t.use('getApp.title')}

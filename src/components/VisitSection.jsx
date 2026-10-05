@@ -23,7 +23,10 @@ export default function VisitSection({ lang, t }) {
       <BandField lead="blue" />
       <div className="max-w-7xl mx-auto px-4 py-16">
         <Reveal stagger className="grid grid-cols-12 gap-6 items-start">
-          <div className="col-span-12 md:col-span-5">
+          {/* NIGHT v2: the facts + buttons are a cream ticket (reading),
+              the map a ticket frame — both with the blue (wayfinding) print;
+              the band itself is the ink page. Day: no styles on either. */}
+          <div className="visit-card tkt col-span-12 md:col-span-5">
             <h2 className="h-section text-3xl md:text-4xl text-ink">
               {t.use('findUs')}
             </h2>
@@ -100,7 +103,7 @@ export default function VisitSection({ lang, t }) {
             {/* The map is MEDIA on the band: 2px ink frame + the hard
                 down-shadow, sitting on the blue. */}
             <div
-              className="overflow-hidden"
+              className="visit-map overflow-hidden"
               style={{ border: '2px solid var(--fg)', boxShadow: 'var(--sh-heavy)' }}
             >
               <iframe

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import useNight from '../hooks/useNight';
 
 /**
  * BandField — the Press Loop, on the live coloured bands.
@@ -253,6 +254,11 @@ function paint(rig, t, dt) {
 export default function BandField({ lead = 'blue' }) {
   const ref = useRef(null);
   const [live, setLive] = useState(false);
+  /* Night v2 (5.10.26): at night the coloured bands are the ink page — the
+     majors move into ticket bars and prints — so the field sits out
+     entirely (no rig, no frames) and comes back on a flip to Day. */
+  const night = useNight();
+  const running = live && !night;
 
   /* Decide once, on the client. Anything that says "do not animate" leaves
      the band exactly as it shipped before: a flat panel of its role colour. */
@@ -264,7 +270,7 @@ export default function BandField({ lead = 'blue' }) {
   }, []);
 
   useEffect(() => {
-    if (!live || !ref.current) return;
+    if (!running || !ref.current) return;
     const el = ref.current;
     const band = el.closest('.band');
     if (band) band.classList.add('band-live');
@@ -307,8 +313,8 @@ export default function BandField({ lead = 'blue' }) {
       if (band) band.classList.remove('band-live');
       el.innerHTML = '';
     };
-  }, [live, lead]);
+  }, [running, lead]);
 
-  if (!live) return null;
+  if (!running) return null;
   return <div className="band-fld" ref={ref} aria-hidden="true" />;
 }

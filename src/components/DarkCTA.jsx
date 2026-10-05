@@ -6,11 +6,13 @@ import { URLS, STR } from '../data/translations';
 
 /**
  * DarkCTA — the page's ONE red ACT band (canon 22.08.26: red commands, once
- * per page). The on-red contract in index.css does the colour work: body copy
- * goes ink, the display heading re-creams via reg-far, btn-primary flips to
- * cream-on-red and btn-secondary to an ink outline. The band supplies the
- * top rule; the bottom rule stays inline because what follows is plain paper,
- * not a band.
+ * per page). The on-red contract in index.css does the colour work: all copy
+ * goes ink — the display heading too since Night v2 (5.10.26: no cream on a
+ * red fill, in either theme) — btn-primary becomes a cream button with an ink
+ * label and btn-secondary an ink outline. The band supplies the top rule.
+ *
+ * NIGHT v2: the band is the ink page (majors are strips, not full fills), and
+ * the red moves into the app button — the band's command as a red ACTION.
  */
 export default function DarkCTA({ lang }) {
   return (
@@ -36,7 +38,7 @@ export default function DarkCTA({ lang }) {
             href={`${URLS.APP}/?utm_source=website&utm_medium=after_dark`}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary px-5 py-3 text-sm flex items-center gap-2"
+            className="btn-primary act-night px-5 py-3 text-sm flex items-center gap-2"
           >
             {Icons.app()} {STR[lang].getApp.button}
           </a>

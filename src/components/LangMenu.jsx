@@ -71,7 +71,7 @@ export default function LangMenu({ lang, compact = false }) {
 
       <nav
         aria-label={menuLabel}
-        className={`absolute right-0 top-full mt-2 z-50 min-w-[164px] bg-cream border-2 border-ink stamp-in ${
+        className={`lang-pop absolute right-0 top-full mt-2 z-50 min-w-[164px] bg-cream border-2 border-ink stamp-in ${
           open ? '' : 'hidden'
         }`}
         style={{ boxShadow: 'var(--sh-light)' }}

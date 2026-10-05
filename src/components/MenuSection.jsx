@@ -1,7 +1,56 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMenu } from '../data/menu-i18n';
-import { URLS } from '../data/translations';
+import { URLS, STR } from '../data/translations';
 import Reveal from './Reveal';
+import EventOverlay from './EventOverlay';
+import useFeed from '../hooks/useFeed';
+import useNight from '../hooks/useNight';
+import { fmtTime, pickTitle, pickQualifier } from '../data/feed-helpers';
+import { whenKey, fmtDayDate, catLabel } from '../data/cal-feed';
+import { categoryOf } from '../data/event-category';
+
+// NIGHT v2 ("Cream Tickets", 5.10.26): the menu is ONE neutral cream ticket
+// with ruled rows, the category tabs are cream-outline filter tabs (active =
+// cream fill), and every colour swatch below collapses to neutral — majors
+// only, and none of these categories is a deal. The accent maps stay as the
+// Day look; index.css (NIGHT v2) overrides them at night.
+
+// The happy-hour ticket (Night only — Day has no such block): the feed's next
+// DRINKS event (categoryOf → 'drinks', e.g. "Happy Hour: Buy 1 Get 1
+// Cocktails"), as a yellow-top-bar ticket with a yellow print. Nothing is
+// invented: title, day and time come from the feed, and with no drinks event
+// coming up it renders nothing.
+function DealTicket({ ev, lang, onOpen }) {
+  const C = STR[lang].cal;
+  const title = pickTitle(ev, lang) || C.fallbackTitle;
+  const qualifier = pickQualifier(ev, lang);
+  const start = fmtTime(ev.startsAt);
+  const end = ev.endsAt ? fmtTime(ev.endsAt) : '';
+  const wk = whenKey(ev.startsAt);
+  const day = wk ? C[wk] : fmtDayDate(ev.startsAt, lang);
+  const href = ev.sourceUrl || `${URLS.APP}/events/${ev.id}`;
+  return (
+    <a
+      href={href}
+      className="tkt deal-tkt mb-8"
+      data-cat="drinks"
+      onClick={(e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        onOpen(ev);
+      }}
+    >
+      <span className="tkt-top">
+        <span>{catLabel('drinks', lang)}</span>
+        <span>{[day, start ? (end ? `${start}–${end}` : start) : ''].filter(Boolean).join(' · ')}</span>
+      </span>
+      <span className="deal-tkt-b">
+        <span className="tkt-title">{title}</span>
+        {qualifier && <span className="tkt-dim">{qualifier}</span>}
+      </span>
+    </a>
+  );
+}
 
 // Accent color per top-level menu category — Year 2 category-coding with
 // the majors on the big three (cocktails / beer & wine / coffee) and the
@@ -33,6 +82,20 @@ export default function MenuSection({ lang, t }) {
   const MENU = useMenu(lang);
   const [index, setIndex] = useState(0);
   const panelRef = React.useRef(null);
+
+  // Night only: the next drinks deal from the shared feed load (no extra
+  // fetch — the calendar's request).
+  const night = useNight();
+  const { events } = useFeed();
+  const deal = useMemo(() => {
+    if (!night) return null;
+    const now = Date.now();
+    return (events || [])
+      .filter((ev) => ev && ev.startsAt && categoryOf(ev) === 'drinks')
+      .filter((ev) => Date.parse(ev.endsAt || ev.startsAt) >= now)
+      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))[0] || null;
+  }, [night, events]);
+  const [overlayEvent, setOverlayEvent] = useState(null);
 
   // Category panels differ a lot in height. If the viewport is deep in a
   // tall category when a shorter one is picked, the page would land in
@@ -78,7 +141,7 @@ export default function MenuSection({ lang, t }) {
   };
 
   const tabClasses = (active) =>
-    `text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
+    `ftab text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
       active
         ? 'bg-ink text-cream border-ink'
         : 'bg-transparent text-ink border-ink/20 hover:border-ink/60'
@@ -141,7 +204,7 @@ export default function MenuSection({ lang, t }) {
                 style={tabStyle(c.key, i === index)}
               >
                 <span
-                  className="w-2.5 h-2.5 shrink-0"
+                  className="sw w-2.5 h-2.5 shrink-0"
                   style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                   aria-hidden="true"
                 />
@@ -153,6 +216,7 @@ export default function MenuSection({ lang, t }) {
 
         {/* Main content area */}
         <div className="col-span-12 md:col-span-9">
+          {night && deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
           {/* Mobile horizontal nav */}
           <div className="md:hidden -mx-2 px-2 mb-4">
             <div
@@ -176,7 +240,7 @@ export default function MenuSection({ lang, t }) {
                   style={tabStyle(c.key, i === index)}
                 >
                   <span
-                    className="w-2.5 h-2.5 shrink-0"
+                    className="sw w-2.5 h-2.5 shrink-0"
                     style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                     aria-hidden="true"
                   />
@@ -195,9 +259,8 @@ export default function MenuSection({ lang, t }) {
               against the parallax collage — on a flat paper band a 2px ink
               section rule does the structural work. */}
           <div
-            className="scroll-mt-24"
+            className="menu-panels tkt scroll-mt-24"
             ref={panelRef}
-            style={{ borderTop: '2px solid var(--fg)' }}
           >
             {MENU.map((cat, i) => (
               <section
@@ -210,7 +273,7 @@ export default function MenuSection({ lang, t }) {
               >
                 <header className="flex items-start gap-3 md:gap-4">
                   <span
-                    className="inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
+                    className="sw sw-box inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
                     style={{
                       backgroundColor: CATEGORY_ACCENTS[cat.key] || 'var(--fg)',
                       border: '2px solid var(--fg)',
@@ -227,9 +290,9 @@ export default function MenuSection({ lang, t }) {
                     each one in turn */}
                 {cat.sections.map((section, sIdx) => (
                   <div key={sIdx}>
-                    <h4 className="font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
+                    <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
                       <span
-                        className="inline-block w-3 h-3 shrink-0"
+                        className="sw inline-block w-3 h-3 shrink-0"
                         style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
                         aria-hidden="true"
                       />
@@ -237,24 +300,24 @@ export default function MenuSection({ lang, t }) {
                     </h4>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                       {section.items.map((item, idx) => (
-                        <li key={idx} className="border-b border-ink/10 pb-2">
+                        <li key={idx} className="menu-item border-b border-ink/10 pb-2">
                           <div className="flex items-baseline justify-between gap-4">
-                            <span className="font-body font-semibold text-[15px] md:text-base">
+                            <span className="menu-item-n font-body font-semibold text-[15px] md:text-base">
                               {item.name}
                             </span>
                             {item.price && (
-                              <span className="font-body text-ink tabular-nums font-medium shrink-0">
+                              <span className="menu-item-p font-body text-ink tabular-nums font-medium shrink-0">
                                 {item.price}k
                               </span>
                             )}
                           </div>
                           {item.tag && (
-                            <div className="text-ink/70 text-sm italic mt-1 font-body">
+                            <div className="menu-item-note text-ink/70 text-sm italic mt-1 font-body">
                               {item.tag}
                             </div>
                           )}
                           {item.desc && (
-                            <div className="text-gray-600 text-sm mt-1 font-body">
+                            <div className="menu-item-note text-gray-600 text-sm mt-1 font-body">
                               {item.desc}
                             </div>
                           )}
@@ -269,6 +332,7 @@ export default function MenuSection({ lang, t }) {
         </div>
       </div>
       <div className="h-6"/>
+      {night && <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />}
     </section>
   );
 }

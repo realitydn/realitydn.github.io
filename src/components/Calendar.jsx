@@ -5,8 +5,10 @@ import { FEED_ICS_URL } from '../data/feed';
 import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
-import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
-import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel } from '../data/cal-feed';
+import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName, pickDescription } from '../data/feed-helpers';
+import { splitFeedSite, dayClassFromISO, fmtDM, fmtDayDate, cfStr, costLabel, catLabel, dmParts } from '../data/cal-feed';
+import { categoryOf } from '../data/event-category';
+import { LogoBox } from './Ticket';
 
 // Calendar — the "what's on" feed, wearing the app's calendar look. Posters
 // are spent on the next FIVE events only (Donald, 22.08 — the all-poster feed
@@ -155,34 +157,37 @@ export default function Calendar({ lang }) {
     // Poster source: the designed 4:5 export leads (native in a 4:5 frame, no
     // crop); the feed slice is only ever the fallback when no 4:5 exists.
     const img = ev.posters?.poster4x5 || ev.posters?.feed || null;
+    // Night v2: the card is a TICKET — the category's top bar (when · time /
+    // category) leads, the day plate row steps aside. data-cat drives the
+    // bar, the print offset and --day at night (index.css); Day ignores it.
+    // The card's old inline styles moved to .cal-card / -n / -p (same Day
+    // values) so Night can restyle them.
+    const cat = categoryOf(ev);
+    const desc = lead ? pickDescription(ev, lang) : '';
     return (
       <a
         key={ev.id}
         href={eventHref(ev)}
-        className={`relative grid w-full cursor-pointer items-start gap-5 py-4 pl-5 pr-1 text-left ${
+        className={`cal-card tkt relative grid w-full cursor-pointer items-start gap-5 py-4 pl-5 pr-1 text-left ${
           lead
-            ? 'grid-cols-1 sm:grid-cols-[1fr_220px] md:grid-cols-[1fr_260px]'
+            ? 'cal-card-lead grid-cols-1 sm:grid-cols-[1fr_220px] md:grid-cols-[1fr_260px]'
             : 'grid-cols-[1fr_160px] sm:grid-cols-[1fr_200px]'
         } ${dayClassFromISO(ev.startsAt)}`}
-        style={{ color: 'var(--fg)', borderBottom: '2px solid var(--hairline)', borderRadius: 0 }}
+        data-cat={cat}
         onClick={(e) => openEvent(e, ev)}
       >
         <span className="day-spine" aria-hidden="true" />
-        <span className="flex min-w-0 flex-col items-start gap-2">
-          <span className="flex flex-wrap items-center gap-2.5">
+        <span className="tkt-top cal-card-top">
+          <span>{[when || `${wd} ${dm}`, start].filter(Boolean).join(' · ')}</span>
+          <span>{catLabel(cat, lang)}</span>
+        </span>
+        <span className="cal-card-b flex min-w-0 flex-col items-start gap-2">
+          <span className="cal-card-when flex flex-wrap items-center gap-2.5">
             <span className="day-plate">{wd}</span>
             <span className="ev-date">{dm}</span>
             {when && <span className="when-chip">{when}</span>}
           </span>
-          <span
-            style={{
-              fontFamily: 'var(--mont)',
-              fontWeight: 700,
-              fontSize: lead ? '24px' : '20px',
-              lineHeight: 1.2,
-              letterSpacing: 'var(--tr-name)',
-            }}
-          >
+          <span className="cal-card-n">
             {title}
           </span>
           {qualifier && <span className="ev-qual">{qualifier}</span>}
@@ -191,17 +196,11 @@ export default function Calendar({ lang }) {
               {meta}
             </span>
           )}
+          {/* Night only: the lead ticket carries its story (ticket body
+              copy, clamped) — display:none in Day. */}
+          {lead && desc && <span className="cal-card-desc">{desc}</span>}
         </span>
-        <span
-          className="relative block w-full overflow-hidden"
-          style={{
-            aspectRatio: '4 / 5',
-            border: '2px solid var(--fg)',
-            boxShadow: 'var(--sh-default)',
-            background: 'var(--day)',
-            borderRadius: 0,
-          }}
-        >
+        <span className="cal-card-p relative block w-full overflow-hidden">
           {img ? (
             <img
               className="absolute inset-0 h-full w-full object-cover"
@@ -214,6 +213,7 @@ export default function Calendar({ lang }) {
             <span className="cal-noposter absolute inset-0" aria-hidden="true">
               <span className="cal-noposter-wd">{wd}</span>
               <span className="cal-noposter-dm">{dm}</span>
+              <LogoBox className="cal-noposter-logo" />
             </span>
           )}
         </span>
@@ -239,22 +239,38 @@ export default function Calendar({ lang }) {
     // without opening a second formatter path.
     const full = fmtDayDate(ev.startsAt, lang);
     const wd = dm && full.endsWith(dm) ? full.slice(0, -dm.length).trim() : full;
+    // Night v2 list ticket: a category date block (weekday + d.m, the day
+    // number big) and a meta line ("19:00 · GAMES") the Day row doesn't
+    // print; the Day row's plate/meta/arrow columns step aside at night.
+    // The new pieces are display:none in Day (index.css): Day is unchanged.
+    const cat = categoryOf(ev);
+    const { d, m } = dmParts(ev.startsAt);
+    const sub = [loc, costLabel(ev, lang)].filter(Boolean).join(' · ');
     return (
       <a
         key={ev.id}
         href={eventHref(ev)}
-        className={`ev ${dayClassFromISO(ev.startsAt)}${i >= ROW_CAP ? ' ev-extra' : ''}`}
+        className={`ev tkt ${dayClassFromISO(ev.startsAt)}${i >= ROW_CAP ? ' ev-extra' : ''}`}
+        data-cat={cat}
         onClick={(e) => openEvent(e, ev)}
       >
         <span className="day-spine" aria-hidden="true" />
+        <span className="ev-dblock" aria-hidden="true">
+          <span className="ev-dblock-wd">{wd}</span>
+          <span className="ev-dblock-d">{d}<small>{m ? `.${m}` : ''}</small></span>
+        </span>
         <span className="ev-when">
           <span className="day-plate">{wd}</span>
           <span className="ev-date">{dm}</span>
           {when && <span className="when-chip">{when}</span>}
         </span>
         <span className="ev-b">
+          <span className="ev-mline">
+            {[when, start, catLabel(cat, lang)].filter(Boolean).join(' · ')}
+          </span>
           <span className="ev-n">{title}</span>
           {qualifier && <span className="ev-qual">{qualifier}</span>}
+          {sub && <span className="ev-sub">{sub}</span>}
         </span>
         <span className="ev-meta">
           {start && <span className="ev-time">{start}</span>}
@@ -341,7 +357,7 @@ export default function Calendar({ lang }) {
               <div className="cal-label">{CF.upNext}</div>
               {card(wall[0], true)}
               {wall.length > 1 && (
-                <div className="grid md:grid-cols-2 md:gap-x-6">
+                <div className="cal-wall grid md:grid-cols-2 md:gap-x-6">
                   {wall.slice(1).map((ev) => card(ev))}
                 </div>
               )}

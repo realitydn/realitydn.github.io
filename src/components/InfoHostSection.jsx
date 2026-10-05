@@ -36,6 +36,12 @@ function linkifyPhrases(text, links) {
   return parts.filter((p) => p !== '');
 }
 
+// NIGHT v2 ("Cream Tickets", 5.10.26): the panels are one neutral cream
+// ticket (reading), the tabs stay chrome on ink as cream-outline filter tabs
+// (active = cream fill), and every swatch (.sw) collapses to neutral — majors
+// only, and none of these is a deal or an action. The accent maps below stay
+// the Day look; index.css (NIGHT v2) overrides them at night.
+
 // Main panels
 const MAIN_PANELS = ['welcome', 'rules', 'host'];
 
@@ -180,7 +186,7 @@ export default function InfoHostSection({ t, lang }) {
   };
 
   const mainTabClasses = (active) =>
-    `text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
+    `ftab text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
       active
         ? 'bg-ink text-cream border-ink'
         : 'bg-transparent text-ink border-ink/20 hover:border-ink/60'
@@ -228,7 +234,7 @@ export default function InfoHostSection({ t, lang }) {
           style={mainTabStyle(panel, activeMain === panel)}
         >
           <span
-            className="w-2.5 h-2.5 shrink-0"
+            className="sw w-2.5 h-2.5 shrink-0"
             style={{ backgroundColor: NAV_ACCENTS[panel] }}
             aria-hidden="true"
           />
@@ -259,11 +265,11 @@ export default function InfoHostSection({ t, lang }) {
           aria-controls={panelId(`host-${type}`)}
           tabIndex={activeEventType === type ? 0 : -1}
           onClick={() => goTo('host', type)}
-          className="text-left px-4 py-2.5 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-2.5"
+          className="ftab ftab-sub text-left px-4 py-2.5 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-2.5"
           style={subTabStyle(type, activeEventType === type)}
         >
           <span
-            className="w-2 h-2 shrink-0"
+            className="sw w-2 h-2 shrink-0"
             style={{ backgroundColor: EVENT_ACCENTS[type] }}
             aria-hidden="true"
           />
@@ -336,9 +342,8 @@ export default function InfoHostSection({ t, lang }) {
               panel against the parallax collage; on the flat band a 2px
               ink section rule replaces it. */}
           <div
-            className="scroll-mt-24"
+            className="ih-panels tkt scroll-mt-24"
             ref={panelRef}
-            style={{ borderTop: '2px solid var(--fg)' }}
           >
             <Panel id={panelId('welcome')} labelledBy="info-desktop-tab-welcome" active={activeMain === 'welcome'}>
               <PanelTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</PanelTitle>
@@ -444,7 +449,7 @@ function PanelTitle({ children, accent }) {
     <div className="flex items-start gap-3 md:gap-4 mb-6">
       {accent && (
         <span
-          className="inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
+          className="sw sw-box inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
           style={{
             backgroundColor: accent,
             border: '2px solid var(--fg)',
@@ -465,7 +470,7 @@ function SectionLabel({ children, accent = 'var(--fg)' }) {
   return (
     <div className="flex items-center gap-2.5 mb-3 mt-6">
       <span
-        className="inline-block w-2.5 h-2.5 shrink-0"
+        className="sw inline-block w-2.5 h-2.5 shrink-0"
         style={{ backgroundColor: accent }}
         aria-hidden="true"
       />
@@ -487,7 +492,7 @@ function ColorList({ items, className = '', palette = CHROMATIC, startIndex = 0 
           <li key={i} className="flex gap-3 items-start">
             <span className="flex items-center gap-2 shrink-0 mt-[3px]">
               <span
-                className="inline-block w-3 h-3 shrink-0"
+                className="sw inline-block w-3 h-3 shrink-0"
                 style={{ backgroundColor: color }}
                 aria-hidden="true"
               />
@@ -537,7 +542,7 @@ function PricingTable({ ih, roomLabel }) {
     <div className="my-8">
       <div className="flex items-center gap-2.5 mb-2">
         <span
-          className="inline-block w-3.5 h-3.5 shrink-0"
+          className="sw inline-block w-3.5 h-3.5 shrink-0"
           style={{ backgroundColor: 'var(--red)' }}
           aria-hidden="true"
         />
@@ -594,7 +599,7 @@ function PricingTable({ ih, roomLabel }) {
                 <th scope="row" className="py-2 pr-2 text-left font-normal align-middle">
                   <span className="flex items-center gap-2.5">
                     <span
-                      className="inline-block w-3.5 h-3.5 shrink-0"
+                      className="sw inline-block w-3.5 h-3.5 shrink-0"
                       style={{ backgroundColor: room.color }}
                       aria-hidden="true"
                     />
@@ -648,7 +653,7 @@ function PricingTable({ ih, roomLabel }) {
           return (
             <li key={i} className="flex gap-3 items-start text-sm text-gray-700">
               <span
-                className="inline-block w-2 h-2 mt-2 shrink-0"
+                className="sw inline-block w-2 h-2 mt-2 shrink-0"
                 style={{ backgroundColor: color }}
                 aria-hidden="true"
               />
@@ -703,7 +708,7 @@ function ProposalCTA({ t, accent, label, onOpen }) {
         className="btn-primary px-6 py-4 text-sm inline-flex items-center gap-3"
       >
         <span
-          className="inline-block w-2.5 h-2.5"
+          className="sw inline-block w-2.5 h-2.5"
           style={{ backgroundColor: accent }}
           aria-hidden="true"
         />

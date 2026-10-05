@@ -113,7 +113,7 @@ export default function CardsCarousel({ items, renderCard, eyebrow, title, t }) 
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex gap-6">
           {items.map((item, i) => (
-            <article key={i} className="basis-[85%] md:basis-[46%] xl:basis-[30%] shrink-0 py-1">
+            <article key={i} className="cc-slide basis-[85%] md:basis-[46%] xl:basis-[30%] shrink-0 py-1">
               {renderCard(item)}
             </article>
           ))}

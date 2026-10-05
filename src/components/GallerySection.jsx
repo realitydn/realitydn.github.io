@@ -25,7 +25,7 @@ export default function GallerySection({ t }) {
   const renderGalleryCard = (img) => (
     <button
       type="button"
-      className="card cursor-pointer overflow-hidden block w-full text-left p-0"
+      className="card gal-card cursor-pointer overflow-hidden block w-full text-left p-0"
       onClick={() => setPhoto({ src: img.src, alt: img.alt || fallbackAlt })}
       aria-label={img.alt ? `${t.use('a11y.openImage')}: ${img.alt}` : t.use('a11y.openImage')}
     >

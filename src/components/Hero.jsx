@@ -1,7 +1,64 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import BandField from './BandField';
+import EventOverlay from './EventOverlay';
+import { TicketPhoto } from './Ticket';
+import { STR, URLS } from '../data/translations';
+import useFeed from '../hooks/useFeed';
+import useNight from '../hooks/useNight';
+import { fmtTime, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
+import { pickTonight, whenKey, fmtDayDate, catLabel, costLabel } from '../data/cal-feed';
+import { categoryOf } from '../data/event-category';
 
-export default function Hero({ t }) {
+// The Night hero's right column (Night v2 "Cream Tickets", website screen 13):
+// a TONIGHT ticket built from the live feed — the next event to start today,
+// else the next one coming up (pickTonight). Top bar in the event's category
+// major, the poster at its native 4:5 on riso stripes (or the logo box),
+// name, one meta line, and the red ACTION, which opens the same event
+// overlay the calendar uses. Night-only STRUCTURE: Day keeps the photo.
+function TonightTicket({ ev, lang, onOpen }) {
+  const C = STR[lang].cal;
+  const cat = categoryOf(ev);
+  const title = pickTitle(ev, lang) || C.fallbackTitle;
+  const qualifier = pickQualifier(ev, lang);
+  const loc = pickLocName(ev.location, lang);
+  const start = fmtTime(ev.startsAt);
+  const wk = whenKey(ev.startsAt);
+  const day = wk ? C[wk] : fmtDayDate(ev.startsAt, lang);
+  const meta = [qualifier, loc, costLabel(ev, lang)].filter(Boolean).join(' · ');
+  const img = ev.posters?.poster4x5 || ev.posters?.feed || null;
+  const href = ev.sourceUrl || `${URLS.APP}/events/${ev.id}`;
+  return (
+    <article className="tkt hero-tkt" data-cat={cat}>
+      <div className="tkt-top">
+        <span>{[day, start].filter(Boolean).join(' · ')}</span>
+        <span>{catLabel(cat, lang)}</span>
+      </div>
+      <TicketPhoto img={img} alt={C.posterAlt.replace('{title}', title)} className="hero-tkt-photo" />
+      <div className="hero-tkt-b">
+        <div className="min-w-0">
+          <h2 className="tkt-title">{title}</h2>
+          {meta && <p className="tkt-dim hero-tkt-meta">{meta}</p>}
+        </div>
+        {/* The one red ACTION: a real link to the event (crawlers, new-tab
+            clicks), a plain click opens the overlay — the calendar's
+            contract. */}
+        <a
+          href={href}
+          className="btn-action hero-tkt-go px-5 py-3 text-sm"
+          onClick={(e) => {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            onOpen(ev);
+          }}
+        >
+          {C.details} <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </article>
+  );
+}
+
+export default function Hero({ t, lang = 'EN' }) {
   // "coffee / cocktails / community" → Thin lines + an 800 slam on the last
   // segment, per the Year 2 display pattern (One system, DAY AND AFTER DARK).
   const title = t.use('heroTitle');
@@ -9,25 +66,32 @@ export default function Hero({ t }) {
   const lead = segments.slice(0, -1);
   const slam = segments[segments.length - 1];
 
+  // Night only: the shared feed load (the same request Calendar uses — no
+  // extra fetch) picks tonight's ticket.
+  const night = useNight();
+  const { events } = useFeed();
+  const tonight = useMemo(() => (night ? pickTonight(events) : null), [night, events]);
+  const [overlayEvent, setOverlayEvent] = useState(null);
+
   return (
     // The approved blue wayfinding band (roles: blue wayfinds — this is the
     // page's "what/where/when"). .b-wayfind re-declares the fg/bg pair, so
-    // everything inside resolves to ink-on-blue without local colour patches,
-    // and the field is theme-FIXED: Night stays saturated, no hero-local
-    // theme scope. The band is opaque, so the parallax planes never show
-    // through it — the field stays flat.
+    // everything inside resolves to ink-on-blue without local colour patches.
+    // At NIGHT (v2) the band is the ink page instead — majors live in thin
+    // strips (ticket bars + prints), not full-bleed fills — and the right
+    // column becomes tonight's ticket (see index.css, NIGHT v2).
     <section className="band b-wayfind section">
       {/* The Press Loop, led by this band's own ink so blue still wayfinds.
           Renders nothing until it decides to run, so the flat blue band
-          remains the pre-rendered and reduced-motion state. */}
+          remains the pre-rendered and reduced-motion state (and Night). */}
       <BandField lead="blue" />
-      <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid grid-cols-12 gap-6 items-center">
+      <div className="hero-grid max-w-7xl mx-auto px-4 py-16 md:py-24 grid grid-cols-12 gap-6 items-center">
         {/* Text content — straight on the field; the band IS the surface. */}
         <div className="col-span-12 md:col-span-6 lg:col-span-5">
           <p className="eyebrow mb-4">
             86 Mai Thúc Lân · Đà Nẵng
           </p>
-          <h1 className="text-ink" style={{ fontSize: 'clamp(32px, 4.5vw, 54px)' }}>
+          <h1 className="hero-h1 text-ink">
             {/* Screen-reader/crawler-only lead so the page's one H1 reads
                 "REALITY Đà Nẵng — coffee / cocktails / community" (localized)
                 while the visual stays the three-part display line. */}
@@ -44,7 +108,7 @@ export default function Hero({ t }) {
             {lead.length > 0 && ' '}
             <span className="font-display-bold block">{slam}</span>
           </h1>
-          <p className="mt-6 text-ink font-body text-lg leading-relaxed">
+          <p className="hero-lede mt-6 text-ink font-body text-lg leading-relaxed">
             {t.use('heroSub')}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
@@ -66,34 +130,40 @@ export default function Hero({ t }) {
               QR square is its sanctioned partner). */}
         </div>
 
-        {/* Hero photo — 2px ink frame + the hard down-shadow, sitting ON the
-            blue (the band keeps Day shadows). */}
         <div className="col-span-12 md:col-span-6 lg:col-span-7">
-          <div
-            className="overflow-hidden aspect-[4/5] md:aspect-[5/4] lg:aspect-[4/3]"
-            style={{ border: '2px solid var(--fg)', boxShadow: 'var(--sh-heavy)' }}
-          >
-            <div className="w-full h-full" style={{ background: 'var(--surface-2)' }}>
-              <img
-                src="/images/hero.jpg"
-                alt="Inside REALITY — coffee shop, bar and community space in Đà Nẵng"
-                className="w-full h-full object-cover"
-                /* LCP candidate: eager + high fetch priority so it loads before
-                   below-the-fold content. */
-                loading="eager"
-                fetchpriority="high"
-                decoding="async"
-                /* Dimensions are placeholders — the aspect-ratio container
-                   controls the final size. Providing any width/height tells
-                   the browser to reserve the box and suppresses CLS warnings. */
-                width="1200"
-                height="900"
-                onError={(e) => e.target.style.display = 'none'}
-              />
+          {night && tonight ? (
+            <TonightTicket ev={tonight} lang={lang} onOpen={setOverlayEvent} />
+          ) : (
+            /* Hero photo — 2px ink frame + the hard down-shadow, sitting ON
+               the blue (the band keeps Day shadows). At night with nothing
+               left in the feed, the same photo sits in a neutral ticket. */
+            <div
+              className="hero-photo overflow-hidden aspect-[4/5] md:aspect-[5/4] lg:aspect-[4/3]"
+              style={{ border: '2px solid var(--fg)', boxShadow: 'var(--sh-heavy)' }}
+            >
+              <div className="w-full h-full" style={{ background: 'var(--surface-2)' }}>
+                <img
+                  src="/images/hero.jpg"
+                  alt="Inside REALITY — coffee shop, bar and community space in Đà Nẵng"
+                  className="w-full h-full object-cover"
+                  /* LCP candidate: eager + high fetch priority so it loads before
+                     below-the-fold content. */
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
+                  /* Dimensions are placeholders — the aspect-ratio container
+                     controls the final size. Providing any width/height tells
+                     the browser to reserve the box and suppresses CLS warnings. */
+                  width="1200"
+                  height="900"
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
+      {night && <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />}
     </section>
   );
 }

@@ -88,7 +88,10 @@ export default function Footer({ lang }) {
                 and its 4 modules must equal the QR's rendered height, so the
                 QR box is pinned at 96px (module 24) on every width. Ink
                 cells dropping out against the Night ground IS the Night
-                form — no plate behind it. */}
+                form — no plate behind it. The QR box itself is a small cream
+                TICKET (Night v2 round 2): cream edge on the ink strip and the
+                faint neutral print, in both themes — the strip is always
+                .scope-night, so it reads the same by Day and at Night. */}
             <a
               href={URLS.WA}
               target="_blank"
@@ -106,14 +109,7 @@ export default function Footer({ lang }) {
               </div>
               <div className="flex items-center">
                 <InkMark form="square" mode="full" module={24} idle="slow" />
-                <div
-                  className="w-24 h-24 flex items-center justify-center"
-                  style={{
-                    backgroundColor: '#fffbf1',
-                    border: '2px solid var(--fg)',
-                    boxShadow: 'var(--sh-default)',
-                  }}
-                >
+                <div className="tkt qr-tkt w-24 h-24 flex items-center justify-center">
                   <img
                     src="/images/whatsapp-qr.png"
                     alt={F.qrAlt}

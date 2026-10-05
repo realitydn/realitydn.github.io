@@ -36,11 +36,11 @@ function linkifyPhrases(text, links) {
   return parts.filter((p) => p !== '');
 }
 
-// NIGHT v2 ("Cream Tickets", 5.10.26): the panels are one neutral cream
-// ticket (reading), the tabs stay chrome on ink as cream-outline filter tabs
-// (active = cream fill), and every swatch (.sw) collapses to neutral — majors
-// only, and none of these is a deal or an action. The accent maps below stay
-// the Day look; index.css (NIGHT v2) overrides them at night.
+// NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the panels
+// are one neutral cream ticket (reading). The tabs, tab dots, swatches and
+// room keys keep the Day look in both themes — the minors are allowed
+// (Donald, 5.10.26 evening); the majors keep their jobs. They flip with the
+// tokens, and inside the ticket they are the Day palette as-is.
 
 // Main panels
 const MAIN_PANELS = ['welcome', 'rules', 'host'];
@@ -186,7 +186,7 @@ export default function InfoHostSection({ t, lang }) {
   };
 
   const mainTabClasses = (active) =>
-    `ftab text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
+    `text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
       active
         ? 'bg-ink text-cream border-ink'
         : 'bg-transparent text-ink border-ink/20 hover:border-ink/60'
@@ -234,7 +234,7 @@ export default function InfoHostSection({ t, lang }) {
           style={mainTabStyle(panel, activeMain === panel)}
         >
           <span
-            className="sw w-2.5 h-2.5 shrink-0"
+            className="w-2.5 h-2.5 shrink-0"
             style={{ backgroundColor: NAV_ACCENTS[panel] }}
             aria-hidden="true"
           />
@@ -265,11 +265,11 @@ export default function InfoHostSection({ t, lang }) {
           aria-controls={panelId(`host-${type}`)}
           tabIndex={activeEventType === type ? 0 : -1}
           onClick={() => goTo('host', type)}
-          className="ftab ftab-sub text-left px-4 py-2.5 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-2.5"
+          className="text-left px-4 py-2.5 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-2.5"
           style={subTabStyle(type, activeEventType === type)}
         >
           <span
-            className="sw w-2 h-2 shrink-0"
+            className="w-2 h-2 shrink-0"
             style={{ backgroundColor: EVENT_ACCENTS[type] }}
             aria-hidden="true"
           />
@@ -449,7 +449,7 @@ function PanelTitle({ children, accent }) {
     <div className="flex items-start gap-3 md:gap-4 mb-6">
       {accent && (
         <span
-          className="sw sw-box inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
+          className="inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
           style={{
             backgroundColor: accent,
             border: '2px solid var(--fg)',
@@ -470,7 +470,7 @@ function SectionLabel({ children, accent = 'var(--fg)' }) {
   return (
     <div className="flex items-center gap-2.5 mb-3 mt-6">
       <span
-        className="sw inline-block w-2.5 h-2.5 shrink-0"
+        className="inline-block w-2.5 h-2.5 shrink-0"
         style={{ backgroundColor: accent }}
         aria-hidden="true"
       />
@@ -492,7 +492,7 @@ function ColorList({ items, className = '', palette = CHROMATIC, startIndex = 0 
           <li key={i} className="flex gap-3 items-start">
             <span className="flex items-center gap-2 shrink-0 mt-[3px]">
               <span
-                className="sw inline-block w-3 h-3 shrink-0"
+                className="inline-block w-3 h-3 shrink-0"
                 style={{ backgroundColor: color }}
                 aria-hidden="true"
               />
@@ -521,10 +521,11 @@ function PricingTable({ ih, roomLabel }) {
     { id: 'peak',  accent: 'var(--red)' },
     { id: 'night', accent: 'var(--blue)' },
   ];
-  // Text on an accent fill is always literal ink — cream text on yellow
-  // would vanish, so these don't ride the theme. Peak (red) takes ink too:
-  // cream on the red fill is 4.19:1, ink is 4.59:1.
-  const onAccent = { day: '#0d0905', peak: '#0d0905', night: '#0d0905' };
+  // Text on an accent fill is a literal, never the theme's --fg. The fill
+  // rule (Donald, 5.10.26, settled by APCA — both themes): INK on yellow and
+  // amber, CREAM on red, pink, blue, green and purple. So Day (yellow) takes
+  // ink, Peak (red) and Night (blue) take cream.
+  const onAccent = { day: '#0d0905', peak: '#fffbf1', night: '#fffbf1' };
   const rooms = [
     { id: '2e', color: 'var(--pink)' },
     { id: '2l', color: 'var(--purple)' },
@@ -542,7 +543,7 @@ function PricingTable({ ih, roomLabel }) {
     <div className="my-8">
       <div className="flex items-center gap-2.5 mb-2">
         <span
-          className="sw inline-block w-3.5 h-3.5 shrink-0"
+          className="inline-block w-3.5 h-3.5 shrink-0"
           style={{ backgroundColor: 'var(--red)' }}
           aria-hidden="true"
         />
@@ -599,7 +600,7 @@ function PricingTable({ ih, roomLabel }) {
                 <th scope="row" className="py-2 pr-2 text-left font-normal align-middle">
                   <span className="flex items-center gap-2.5">
                     <span
-                      className="sw inline-block w-3.5 h-3.5 shrink-0"
+                      className="inline-block w-3.5 h-3.5 shrink-0"
                       style={{ backgroundColor: room.color }}
                       aria-hidden="true"
                     />
@@ -653,7 +654,7 @@ function PricingTable({ ih, roomLabel }) {
           return (
             <li key={i} className="flex gap-3 items-start text-sm text-gray-700">
               <span
-                className="sw inline-block w-2 h-2 mt-2 shrink-0"
+                className="inline-block w-2 h-2 mt-2 shrink-0"
                 style={{ backgroundColor: color }}
                 aria-hidden="true"
               />
@@ -708,7 +709,7 @@ function ProposalCTA({ t, accent, label, onOpen }) {
         className="btn-primary px-6 py-4 text-sm inline-flex items-center gap-3"
       >
         <span
-          className="sw inline-block w-2.5 h-2.5"
+          className="inline-block w-2.5 h-2.5"
           style={{ backgroundColor: accent }}
           aria-hidden="true"
         />

@@ -4,22 +4,20 @@ import { URLS, STR } from '../data/translations';
 import Reveal from './Reveal';
 import EventOverlay from './EventOverlay';
 import useFeed from '../hooks/useFeed';
-import useNight from '../hooks/useNight';
 import { fmtTime, pickTitle, pickQualifier } from '../data/feed-helpers';
-import { whenKey, fmtDayDate, catLabel } from '../data/cal-feed';
+import { whenKey, fmtDayDate, catLabel, nextDealToday } from '../data/cal-feed';
 import { categoryOf } from '../data/event-category';
 
-// NIGHT v2 ("Cream Tickets", 5.10.26): the menu is ONE neutral cream ticket
-// with ruled rows, the category tabs are cream-outline filter tabs (active =
-// cream fill), and every colour swatch below collapses to neutral — majors
-// only, and none of these categories is a deal. The accent maps stay as the
-// Day look; index.css (NIGHT v2) overrides them at night.
+// NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the menu is
+// ONE neutral cream ticket with ruled rows. The category tabs, their accent
+// swatches and the misregistered echo keep the Day look in both themes (the
+// minors are allowed — Donald, 5.10.26 evening): they flip with the tokens.
 
-// The happy-hour ticket (Night only — Day has no such block): the feed's next
-// DRINKS event (categoryOf → 'drinks', e.g. "Happy Hour: Buy 1 Get 1
-// Cocktails"), as a yellow-top-bar ticket with a yellow print. Nothing is
-// invented: title, day and time come from the feed, and with no drinks event
-// coming up it renders nothing.
+// The happy-hour ticket — ONLY ON THE DAY (Donald, 5.10.26): shown when the
+// feed's next DRINKS event (categoryOf → 'drinks', e.g. "Happy Hour: Buy 1
+// Get 1 Cocktails") is today in ICT (nextDealToday), as a yellow-top-bar
+// ticket with a yellow print. Nothing is invented: title, day and time come
+// from the feed; on any other day it renders nothing.
 function DealTicket({ ev, lang, onOpen }) {
   const C = STR[lang].cal;
   const title = pickTitle(ev, lang) || C.fallbackTitle;
@@ -83,18 +81,10 @@ export default function MenuSection({ lang, t }) {
   const [index, setIndex] = useState(0);
   const panelRef = React.useRef(null);
 
-  // Night only: the next drinks deal from the shared feed load (no extra
-  // fetch — the calendar's request).
-  const night = useNight();
+  // Today's drinks deal, if there is one, from the shared feed load (no
+  // extra fetch — the calendar's request).
   const { events } = useFeed();
-  const deal = useMemo(() => {
-    if (!night) return null;
-    const now = Date.now();
-    return (events || [])
-      .filter((ev) => ev && ev.startsAt && categoryOf(ev) === 'drinks')
-      .filter((ev) => Date.parse(ev.endsAt || ev.startsAt) >= now)
-      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))[0] || null;
-  }, [night, events]);
+  const deal = useMemo(() => nextDealToday(events, categoryOf), [events]);
   const [overlayEvent, setOverlayEvent] = useState(null);
 
   // Category panels differ a lot in height. If the viewport is deep in a
@@ -141,7 +131,7 @@ export default function MenuSection({ lang, t }) {
   };
 
   const tabClasses = (active) =>
-    `ftab text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
+    `text-left px-4 py-3 border-2 font-title font-bold uppercase tracking-[0.12em] text-xs transition-all flex items-center gap-3 ${
       active
         ? 'bg-ink text-cream border-ink'
         : 'bg-transparent text-ink border-ink/20 hover:border-ink/60'
@@ -204,7 +194,7 @@ export default function MenuSection({ lang, t }) {
                 style={tabStyle(c.key, i === index)}
               >
                 <span
-                  className="sw w-2.5 h-2.5 shrink-0"
+                  className="w-2.5 h-2.5 shrink-0"
                   style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                   aria-hidden="true"
                 />
@@ -216,7 +206,7 @@ export default function MenuSection({ lang, t }) {
 
         {/* Main content area */}
         <div className="col-span-12 md:col-span-9">
-          {night && deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
+          {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
           {/* Mobile horizontal nav */}
           <div className="md:hidden -mx-2 px-2 mb-4">
             <div
@@ -240,7 +230,7 @@ export default function MenuSection({ lang, t }) {
                   style={tabStyle(c.key, i === index)}
                 >
                   <span
-                    className="sw w-2.5 h-2.5 shrink-0"
+                    className="w-2.5 h-2.5 shrink-0"
                     style={{ backgroundColor: CATEGORY_ACCENTS[c.key] || 'var(--fg)' }}
                     aria-hidden="true"
                   />
@@ -273,7 +263,7 @@ export default function MenuSection({ lang, t }) {
               >
                 <header className="flex items-start gap-3 md:gap-4">
                   <span
-                    className="sw sw-box inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
+                    className="inline-block w-5 h-5 md:w-6 md:h-6 mt-1 md:mt-1.5 shrink-0"
                     style={{
                       backgroundColor: CATEGORY_ACCENTS[cat.key] || 'var(--fg)',
                       border: '2px solid var(--fg)',
@@ -292,7 +282,7 @@ export default function MenuSection({ lang, t }) {
                   <div key={sIdx}>
                     <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
                       <span
-                        className="sw inline-block w-3 h-3 shrink-0"
+                        className="inline-block w-3 h-3 shrink-0"
                         style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
                         aria-hidden="true"
                       />
@@ -332,7 +322,7 @@ export default function MenuSection({ lang, t }) {
         </div>
       </div>
       <div className="h-6"/>
-      {night && <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />}
+      <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </section>
   );
 }

@@ -4,17 +4,19 @@ import EventOverlay from './EventOverlay';
 import { TicketPhoto } from './Ticket';
 import { STR, URLS } from '../data/translations';
 import useFeed from '../hooks/useFeed';
-import useNight from '../hooks/useNight';
 import { fmtTime, pickTitle, pickQualifier, pickLocName } from '../data/feed-helpers';
 import { pickTonight, whenKey, fmtDayDate, catLabel, costLabel } from '../data/cal-feed';
 import { categoryOf } from '../data/event-category';
 
-// The Night hero's right column (Night v2 "Cream Tickets", website screen 13):
-// a TONIGHT ticket built from the live feed — the next event to start today,
-// else the next one coming up (pickTonight). Top bar in the event's category
-// major, the poster at its native 4:5 on riso stripes (or the logo box),
-// name, one meta line, and the red ACTION, which opens the same event
-// overlay the calendar uses. Night-only STRUCTURE: Day keeps the photo.
+// The hero's right column (Night v2 "Cream Tickets", website screen 13 — in
+// BOTH themes since round 2, 5.10.26): a TONIGHT ticket built from the feed —
+// the next event to start today, else the next one coming up (pickTonight).
+// Top bar in the event's category colour, the poster at its native 4:5 on
+// riso stripes (or the logo box), name, one meta line, and the red ACTION,
+// which opens the same event overlay the calendar uses. Day sits it on the
+// blue band, Night on the ink page. The prerender renders it too: it reads
+// the shared feed load, which the static capture resolves (and the shipped
+// page's inline seed feeds on the first client render).
 function TonightTicket({ ev, lang, onOpen }) {
   const C = STR[lang].cal;
   const cat = categoryOf(ev);
@@ -27,13 +29,16 @@ function TonightTicket({ ev, lang, onOpen }) {
   const meta = [qualifier, loc, costLabel(ev, lang)].filter(Boolean).join(' · ');
   const img = ev.posters?.poster4x5 || ev.posters?.feed || null;
   const href = ev.sourceUrl || `${URLS.APP}/events/${ev.id}`;
+  const label = catLabel(cat, lang);
   return (
     <article className="tkt hero-tkt" data-cat={cat}>
       <div className="tkt-top">
         <span>{[day, start].filter(Boolean).join(' · ')}</span>
-        <span>{catLabel(cat, lang)}</span>
+        {label && <span>{label}</span>}
       </div>
-      <TicketPhoto img={img} alt={C.posterAlt.replace('{title}', title)} className="hero-tkt-photo" />
+      {/* The hero poster is the page's LCP candidate now (it replaced the
+          hero photo): eager + high fetch priority. */}
+      <TicketPhoto img={img} alt={C.posterAlt.replace('{title}', title)} className="hero-tkt-photo" priority />
       <div className="hero-tkt-b">
         <div className="min-w-0">
           <h2 className="tkt-title">{title}</h2>
@@ -66,24 +71,26 @@ export default function Hero({ t, lang = 'EN' }) {
   const lead = segments.slice(0, -1);
   const slam = segments[segments.length - 1];
 
-  // Night only: the shared feed load (the same request Calendar uses — no
-  // extra fetch) picks tonight's ticket.
-  const night = useNight();
+  // The shared feed load (the same request Calendar uses — no extra fetch)
+  // picks tonight's ticket, in both themes.
   const { events } = useFeed();
-  const tonight = useMemo(() => (night ? pickTonight(events) : null), [night, events]);
+  const tonight = useMemo(() => pickTonight(events), [events]);
   const [overlayEvent, setOverlayEvent] = useState(null);
 
   return (
     // The approved blue wayfinding band (roles: blue wayfinds — this is the
     // page's "what/where/when"). .b-wayfind re-declares the fg/bg pair, so
-    // everything inside resolves to ink-on-blue without local colour patches.
+    // everything inside resolves to cream-on-blue (the APCA fill rule,
+    // 5.10.26) without local colour patches — ink again while the field is
+    // live (stock + yellow blocks under the type).
     // At NIGHT (v2) the band is the ink page instead — majors live in thin
-    // strips (ticket bars + prints), not full-bleed fills — and the right
-    // column becomes tonight's ticket (see index.css, NIGHT v2).
+    // strips (ticket bars + prints), not full-bleed fills. The right column is
+    // tonight's ticket in both themes (on the blue field by Day).
     <section className="band b-wayfind section">
       {/* The Press Loop, led by this band's own ink so blue still wayfinds.
           Renders nothing until it decides to run, so the flat blue band
-          remains the pre-rendered and reduced-motion state (and Night). */}
+          remains the pre-rendered and reduced-motion state; it sits out at
+          Night, where the band is the ink page. */}
       <BandField lead="blue" />
       <div className="hero-grid max-w-7xl mx-auto px-4 py-16 md:py-24 grid grid-cols-12 gap-6 items-center">
         {/* Text content — straight on the field; the band IS the surface. */}
@@ -131,16 +138,12 @@ export default function Hero({ t, lang = 'EN' }) {
         </div>
 
         <div className="col-span-12 md:col-span-6 lg:col-span-7">
-          {night && tonight ? (
+          {tonight ? (
             <TonightTicket ev={tonight} lang={lang} onOpen={setOverlayEvent} />
           ) : (
-            /* Hero photo — 2px ink frame + the hard down-shadow, sitting ON
-               the blue (the band keeps Day shadows). At night with nothing
-               left in the feed, the same photo sits in a neutral ticket. */
-            <div
-              className="hero-photo overflow-hidden aspect-[4/5] md:aspect-[5/4] lg:aspect-[4/3]"
-              style={{ border: '2px solid var(--fg)', boxShadow: 'var(--sh-heavy)' }}
-            >
+            /* Nothing left in the feed (or it is still loading without a
+               seed): the hero photo stands in, as a neutral ticket. */
+            <div className="tkt hero-photo overflow-hidden aspect-[4/5] md:aspect-[5/4] lg:aspect-[4/3]">
               <div className="w-full h-full" style={{ background: 'var(--surface-2)' }}>
                 <img
                   src="/images/hero.jpg"
@@ -163,7 +166,7 @@ export default function Hero({ t, lang = 'EN' }) {
           )}
         </div>
       </div>
-      {night && <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />}
+      <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </section>
   );
 }

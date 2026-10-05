@@ -28,12 +28,15 @@
   /* ---- ROLE TOKENS (both themes) — majors only, one job each ---- */
   --lead:      #18a7e0;   /* focus, active nav, eyebrows, selected */
   --action:    #ed2224;   /* the ONE converting button per screen */
-  --action-fg: #0d0905;   /* ink on red 4.6:1 — cream-on-red (4.19:1) fails AA */
+  --action-fg: #fffbf1;   /* CREAM on red (Donald 5.10.26; APCA Lc 70.7 vs ink 36.1) */
   --deal:      #fddf00;   /* happy hour, drink deals */
   --deal-fg:   #0d0905;
 
-  /* ---- TICKET — the cream reading card (Night v2). Theme-FIXED: a ticket
-     is "already Day", so these never flip. ---- */
+  /* ---- TICKET — the cream reading card (Night v2; both themes since
+     round 2). Theme-FIXED: a ticket is "already Day", so these never flip —
+     only its outer EDGE does (--tkt-edge: ink on the Day page, cream on the
+     night page and in .scope-night). ---- */
+  --tkt-edge:          #0d0905;
   --ticket:            #fffbf1;
   --ticket-fg:         #0d0905;
   --ticket-dim:        rgba(13, 9, 5, .72);
@@ -167,6 +170,7 @@
   --bg-rgb: 10 7 3;
 
   --print-neutral: rgba(255, 251, 241, .28);
+  --tkt-edge: #fffbf1;   /* the ticket's outer edge is the cream itself */
 
   --sh-light:   0 0 0 transparent;   /* was 0 4px 1px rgba(255,251,241,.14) */
   --sh-default: 0 0 0 transparent;   /* was 0 9px 2px rgba(255,251,241,.18) */
@@ -184,7 +188,7 @@
   --hairline: rgba(255, 251, 241, .22); --purple: #9a4faa;
   --blue-text: #18a7e0; --red-text: #ff4d4f;
   --fg-rgb: 255 251 241; --bg-rgb: 10 7 3;
-  --print-neutral: rgba(255, 251, 241, .28);
+  --print-neutral: rgba(255, 251, 241, .28); --tkt-edge: #fffbf1;
   --sh-light: 0 0 0 transparent;
   --sh-default: 0 0 0 transparent;
   --sh-heavy: 0 0 0 transparent;
@@ -345,13 +349,14 @@ body {
 }
 
 /* Role fills (canon buttons card, 19.08.26): blue = INFO / wayfinding
-   ("take me to more of this" — listings, calendar subscribe). Coloured
-   fills take ink — the one exception is the red ACTION, which is cream (see
-   the canon AA exception). The site has no NOTICE (yellow) or ACTION-role
-   button, so only INFO is defined here; the canon card has the others. */
+   ("take me to more of this" — listings, calendar subscribe). TEXT ON A FILL
+   (Donald, 5.10.26, settled by APCA — both themes): INK on yellow and amber;
+   CREAM on red, pink, blue, green and purple. So INFO is cream on blue
+   (Lc 55 vs ink 51). The red ACTION is .btn-action (below, with the
+   tickets). */
 .btn-info {
   background-color: var(--blue);
-  color: #0d0905;
+  color: #fffbf1;
   border-color: var(--blue);
 }
 
@@ -445,13 +450,13 @@ input[type="radio"] {
   box-shadow: var(--sh-light);
   padding: 16px;
   font-family: var(--grotesk);
-  color: #0d0905;
+  color: #fffbf1;
 }
+/* Cream on the green and red fills (the APCA fill rule, 5.10.26 — see
+   .btn-info). */
 .alert-success { background: var(--green); }
-/* Ink on the red fill (4.59:1), not cream (4.19:1 — under AA at body size):
-   coloured fills take ink, per the buttons canon. */
-.alert-error   { background: var(--red); color: #0d0905; }
-.alert-error a { color: #0d0905; }
+.alert-error   { background: var(--red); color: #fffbf1; }
+.alert-error a { color: #fffbf1; }
 
 /* ============================================================
    Focus / a11y — canon G1, 22.08.26: the misregister plate.
@@ -501,7 +506,7 @@ a:not([class]):focus-visible {
    notice → red, red action → yellow, day-coded field → ink. */
 .b-wayfind, .btn-info { --accent: var(--pink); }
 .b-act { --accent: var(--yellow); }
-.cal-datetab, .cal-noposter { --accent: var(--fg); }
+.cal-noposter { --accent: var(--fg); }
 /* Night v2: majors only — the blue INFO button's partner plate is red (the
    second print), never pink. The bands are ink at night (see NIGHT v2), so
    their partner overrides fall away there. */
@@ -696,20 +701,21 @@ section[id], div[id="proposal"] {
    ============================================================ */
 
 /* Day-of-week colour coding — each class sets --day (palette colour) and
-   --on-day (the higher-contrast text colour on that fill: purple takes
-   paper, the rest take ink). Source of truth: design-system-year2/
-   design_handoff_reality_system/tokens/day-colours.json — never hardcode
-   a weekday hue outside this block. */
-.d-mon { --day: var(--green);  --on-day: #0d0905; }
-.d-tue { --day: var(--blue);   --on-day: #0d0905; }
+   --on-day (the text colour on that fill). TEXT ON A FILL (Donald, 5.10.26,
+   settled by APCA — both themes): INK on yellow and amber; CREAM on red,
+   pink, blue, green and purple (the night purple #9a4faa included — the old
+   night flip to ink was wrong). Source of truth for the hues:
+   design-system-year2/design_handoff_reality_system/tokens/day-colours.json
+   — never hardcode a weekday hue outside this block. Event UI reads the
+   CATEGORY now ([data-cat], with the tickets); these stay for posters,
+   print and anything still weekday-coded. */
+.d-mon { --day: var(--green);  --on-day: #fffbf1; }
+.d-tue { --day: var(--blue);   --on-day: #fffbf1; }
 .d-wed { --day: var(--purple); --on-day: #fffbf1; }
-.d-thu { --day: var(--pink);   --on-day: #0d0905; }
-.d-fri { --day: var(--red);    --on-day: #0d0905; }
+.d-thu { --day: var(--pink);   --on-day: #fffbf1; }
+.d-fri { --day: var(--red);    --on-day: #fffbf1; }
 .d-sat { --day: var(--amber);  --on-day: #0d0905; }
 .d-sun { --day: var(--yellow); --on-day: #0d0905; }
-/* Night lifts purple to #9a4faa, light enough to carry ink — Wednesday's
-   text flips with it (canon tokens, 19.08.26). */
-[data-theme="dark"] .d-wed { --on-day: #0d0905; }
 
 /* The feed has TWO modes, chosen by the pointer, not by JS (so the
    prerendered HTML and the hydrated tree never disagree):
@@ -793,27 +799,17 @@ section[id], div[id="proposal"] {
 
 .cal-bx { background: var(--bg); color: var(--fg); padding: 3px 8px; max-width: 100%; }
 
-/* Date tab — theme fill framed in the weekday colour (matches the feed cards);
-   the event overlay's header stamp (hub .cal-datetab). */
-.cal-datetab {
-  display: inline-block;
-  background: var(--bg); color: var(--fg);
-  border: 2px solid var(--day);
-  padding: 5px 11px;
-  font-family: var(--mont); font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.07em; font-size: 12px;
-}
-
-/* Imageless overlay pane — when an event has no poster, the overlay leads
-   with a day-colour plate and a big d.m date instead of an empty grey box. */
+/* Imageless poster pane (wall cards + the overlay) — when an event has no
+   poster: riso stripes, a big d.m date and the logo box (Ticket.jsx), never
+   an empty grey box. */
 .cal-noposter {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  background: var(--day);
-  color: var(--on-day);
+  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
+  color: var(--ticket-fg);
   min-height: 160px;
   padding: 24px;
 }
@@ -880,15 +876,20 @@ section[id], div[id="proposal"] {
 .band { border-top: 3px solid var(--fg); }
 .band:first-child { border-top: 0; }
 .b-wayfind, .b-act { --fg-dim: currentColor; --fg-faint: currentColor; --surface: transparent; }
+/* Both coloured bands carry CREAM type (the APCA fill rule, 5.10.26: cream
+   on blue Lc 55 vs ink 51; on red 71 vs 36): --fg cream / --bg ink, so a
+   primary button is a cream plate with an ink label and a secondary is a
+   cream outline — no local patches. (Tickets on a band re-declare their own
+   Day tokens, so they stay ink-on-cream.) */
 .b-wayfind {
-  --fg: #0d0905; --bg: #fffbf1; --on-ink: #fffbf1;
-  --hairline: rgba(13, 9, 5, .26); --surface-2: rgba(13, 9, 5, .08);
-  color: #0d0905;
+  --fg: #fffbf1; --bg: #0d0905; --on-ink: #fffbf1;
+  --hairline: rgba(255, 251, 241, .32); --surface-2: rgba(255, 251, 241, .12);
+  color: #fffbf1;
 }
 .b-wayfind { background: var(--blue); }
 .b-act {
   background: var(--red);
-  --fg: #fffbf1; --bg: #0d0905; --on-ink: #0d0905;
+  --fg: #fffbf1; --bg: #0d0905; --on-ink: #fffbf1;
   --hairline: rgba(255, 251, 241, .32); --surface-2: rgba(255, 251, 241, .12);
   color: #fffbf1;
 }
@@ -911,17 +912,22 @@ section[id], div[id="proposal"] {
 .band-fld > i { display: block; position: absolute; will-change: transform; }
 /* the content rides above the field, and stays ink on every block colour */
 .band-live > *:not(.band-fld) { position: relative; z-index: 1; }
-/* ON-RED CONTRACT (Day — the act band is ink at night, see NIGHT v2): on a
-   red field EVERYTHING is ink, display type included. Night v2 (5.10.26)
-   retired the cream-on-red exception in BOTH themes — a red ACTION fill
-   takes ink (4.6:1); cream on red is 4.19:1 and fails AA. (Was: display-size
-   .reg-far type re-creamed on the flat band; the live band already dropped
-   it to ink.) The cream button keeps its ink label. Doubled specificity so
-   later component rules never win the tie. */
-html:not([data-theme="dark"]) .b-act.b-act,
-html:not([data-theme="dark"]) .b-act.b-act * { color: #0d0905; }
-html:not([data-theme="dark"]) .b-act.b-act .btn-primary { background: #fffbf1; border-color: #fffbf1; color: #0d0905; }
-html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transparent; border-color: #0d0905; color: #0d0905; }
+/* ON A LIVE FIELD the type stays INK. The flat bands are cream-on-colour
+   (above), but the live field is unprinted stock with blue, red and yellow
+   blocks stamped over it — cream type would vanish on the stock and the
+   yellow — so a live band takes the ink pair back: the blue band as one
+   token swap, the red band as the old on-red contract (everything ink, the
+   cream button with an ink label, ink outlines). Day only: BandField sits
+   out at night. Doubled specificity so later component rules never win. */
+html:not([data-theme="dark"]) .b-wayfind.band-live {
+  --fg: #0d0905; --bg: #fffbf1;
+  --hairline: rgba(13, 9, 5, .26); --surface-2: rgba(13, 9, 5, .08);
+  color: #0d0905;
+}
+html:not([data-theme="dark"]) .b-act.band-live.band-live,
+html:not([data-theme="dark"]) .b-act.band-live.band-live * { color: #0d0905; }
+html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-primary { background: #fffbf1; border-color: #fffbf1; color: #0d0905; }
+html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { background: transparent; border-color: #0d0905; color: #0d0905; }
 
 /* ── Overlays — one plate vocabulary. An ink-bordered plate on a scrim,
    hard down-shadow, zero radius; nothing fades, a plate arrives stamped. */
@@ -950,14 +956,18 @@ html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transpar
    page behind. */
 .ev-dlg { width: min(672px, calc(100% - 32px)); max-height: 90vh; max-height: 90dvh; }
 .ev-dlg-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; }
-.ev-dlg-poster { flex: none; display: flex; justify-content: center; padding: 16px; background: var(--day); border-bottom: 3px solid var(--fg); }
+.ev-dlg-poster {
+  flex: none; display: flex; justify-content: center; padding: 16px;
+  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
+  border-bottom: 2px solid var(--ticket-line);
+}
 .ev-dlg-poster img { display: block; height: min(34vh, 340px); height: min(34dvh, 340px); width: auto; aspect-ratio: 4 / 5; object-fit: cover; border: 2px solid var(--fg); }
 .ev-dlg-poster.is-plain { display: block; padding: 0; }
 .ev-dlg-body .plate-b { overflow: visible; }
-.ev-dlg .plate-f .btn-primary { text-align: center; }
+.ev-dlg .plate-f .btn-action { text-align: center; }
 @media (min-width: 768px) {
   .ev-dlg-body { flex-direction: row; overflow: hidden; }
-  .ev-dlg-poster { width: 40%; padding: 0; border-bottom: 0; background: var(--bg); }
+  .ev-dlg-poster { width: 40%; padding: 0; border-bottom: 0; border-right: 2px solid var(--ticket-line); }
   .ev-dlg-poster img { width: 100%; height: 100%; aspect-ratio: auto; border: 0; }
   .ev-dlg-body .plate-b { overflow-y: auto; overscroll-behavior: contain; }
 }
@@ -969,59 +979,12 @@ html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transpar
 .lbx .lbx-frame { position: relative; overflow: hidden; border-bottom: 3px solid var(--on-ink); }
 .lbx .lbx-cap { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 18px; font-family: var(--grotesk); font-size: 14px; font-variant-numeric: tabular-nums; }
 
-/* ── Calendar rows — the typographic event row (canon 22.08.26). Posters
-   are spent on the next-up wall and the event overlay; past the wall an
-   event is a ROW: day plate + date, name (wraps, never truncated) with the
-   qualifier collapsing when absent, time · room in tabular figures, one
-   arrow. The weekday hue carries identity as plate + spine only. */
-/* Solid paper under the rows: the parallax riso plates read as collage
-   between sections, but showing through a typographic list they read as
-   clutter — the list owns its ground. */
-.wk { display: grid; gap: 0; width: 100%; border-top: 2px solid var(--fg); background: var(--bg); }
-.ev {
-  position: relative;
-  display: grid; grid-template-columns: 132px 1fr auto auto; gap: 20px; align-items: center;
-  padding: 16px 0 16px 26px;
-  border-bottom: 2px solid var(--hairline);
-  color: var(--fg);
-  text-align: left;
-}
-.ev-when { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-.ev-date { font-family: var(--grotesk); font-weight: 500; font-size: 13px; line-height: 1; font-variant-numeric: tabular-nums; }
-.ev-b { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.ev-n { font-family: var(--mont); font-weight: 700; font-size: 18px; line-height: 1.25; letter-spacing: var(--tr-name); margin: 0; }
+/* ── Calendar rows — since Night v2 round 2 (5.10.26) every row is a LIST
+   TICKET in both themes (date block + type); the rules live with the
+   tickets at the end of this file. The old typographic row (day plate +
+   spine, time/room columns, the arrow) is retired. .ev-qual is the shared
+   secondary line (cards + rows). */
 .ev-qual { font-family: var(--grotesk); font-size: 14px; line-height: 1.45; color: var(--fg-dim); margin: 0; }
-.ev-meta { display: flex; gap: 14px; align-items: baseline; font-variant-numeric: tabular-nums; }
-.ev-time { font-family: var(--grotesk); font-weight: 600; font-size: 17px; line-height: 1; }
-.ev-room { font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1; letter-spacing: 0.1em; border: 2px solid var(--fg); padding: 5px 7px; }
-.ev-go { font-family: var(--mont); font-weight: 700; font-size: 16px; line-height: 1; color: var(--fg-dim); padding-right: 4px; }
-.day-plate {
-  display: inline-block;
-  background: var(--day); color: var(--on-day);
-  border: 2px solid var(--fg);
-  padding: 5px 9px;
-  font-family: var(--mont); font-weight: 800; font-size: 14px; line-height: 1.1;
-  letter-spacing: 0.04em; text-transform: uppercase;
-}
-.day-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 9px; background: var(--day); }
-/* TONIGHT / TODAY / TOMORROW — a small ink chip beside the date, only on
-   events in the soon window. Ink, not a day hue: the weekday colour already
-   owns the plate, and the chip is a FACT (when), not a category. */
-.when-chip {
-  display: inline-block;
-  background: var(--fg); color: var(--bg);
-  padding: 3px 7px;
-  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.1;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  white-space: nowrap;
-}
-@media (max-width: 640px) {
-  /* the row re-stacks rather than shrinking: when / name / meta as rows */
-  .ev { grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 8px 14px; padding-left: 20px; }
-  .ev-when { flex-direction: row; align-items: center; gap: 10px; }
-  .ev-b { grid-column: 1 / -1; }
-  .ev-go { grid-row: 1; grid-column: 2; }
-}
 
 /* ── States — a state is a FACT, not a mood. Skeletons are --surface-2 /
    --paper-shade blocks at the exact geometry of the real rows, and the
@@ -1043,29 +1006,174 @@ html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transpar
 }
 
 /* ============================================================
-   DAY HOMES for styles that used to be inline (Night v2 prep,
-   5.10.26). Same values as the inline styles they replace — the
-   Day render is unchanged — but a class can be restyled at night
-   where an inline style can't.
+   TICKETS — Night v2 "Cream Tickets" (handoff 5.10.26:
+   design-system-year2/design_handoff_night_cream_tickets/),
+   in BOTH THEMES since round 2 (Donald, 5.10.26 evening: flipping
+   to Day must not erase the ticket boxes).
+
+   A ticket is the Day palette CONTAINED: cream #fffbf1, ink type,
+   a hard unblurred PRINT offset in its category colour. Everything
+   inside a ticket is identical in both themes. The two themes
+   differ only at the ticket's OUTER EDGE and the page it sits on:
+     Day   — cream page, 2px INK edge (cream-on-cream would vanish),
+             neutral print rgba(13,9,5,.20);
+     Night — ink page, 2px CREAM edge (the outer edge is the cream
+             itself), neutral print rgba(255,251,241,.28).
+   (--tkt-edge and --print-neutral flip with the theme scopes at the
+   top of this file; a ticket never re-declares them, so it reads
+   the page's.)
+   The test (README §4): "Can I read this at the bar?" → it is on
+   cream. "Is this chrome or navigation?" → it is on the page.
    ============================================================ */
-.hero-h1 { font-size: clamp(32px, 4.5vw, 54px); }
-.cal-card { color: var(--fg); border-bottom: 2px solid var(--hairline); }
-.cal-card-n {
-  font-family: var(--mont); font-weight: 700; font-size: 20px;
-  line-height: 1.2; letter-spacing: var(--tr-name);
+
+/* ── Event category → colour (src/data/event-category.js; the feed's
+   own `category` wins once the hub ships it). --cat fills the top bar
+   and the date block, --on-cat is the text on it, --print the offset.
+   Text on a fill (Donald, 5.10.26, settled by APCA): INK on yellow and
+   amber; CREAM on red, pink, blue, green and purple — both themes.
+   Film / tech / other are NEUTRAL: an ink block with cream text and
+   the faint neutral print. Purple is per theme (#6e3179 by Day; the
+   night lift #9a4faa, since #6e3179 vanishes as a print on the ink
+   page) — a literal, because a ticket re-declares --purple to Day's. */
+[data-cat] { --cat: var(--ticket-neutral); --on-cat: var(--ticket-neutral-fg); --print: var(--print-neutral); }
+[data-cat="music"]    { --cat: var(--blue);   --on-cat: #fffbf1; --print: var(--blue); }
+[data-cat="party"]    { --cat: var(--red);    --on-cat: #fffbf1; --print: var(--red); }
+[data-cat="games"],
+[data-cat="drinks"]   { --cat: var(--yellow); --on-cat: #0d0905; --print: var(--yellow); }
+[data-cat="language"] { --cat: var(--pink);   --on-cat: #fffbf1; --print: var(--pink); }
+[data-cat="social"]   { --cat: var(--green);  --on-cat: #fffbf1; --print: var(--green); }
+[data-cat="wellness"] { --cat: var(--amber);  --on-cat: #0d0905; --print: var(--amber); }
+[data-cat="arts"]     { --cat: #6e3179;       --on-cat: #fffbf1; --print: #6e3179; }
+[data-theme="dark"] [data-cat="arts"] { --cat: #9a4faa; --print: #9a4faa; }
+/* The category replaces the weekday hue on event UI: whatever still reads
+   --day (the no-poster pane, the overlay's poster ground) reads the
+   category. The .d-* weekday code stays for posters and print. */
+[data-cat] { --day: var(--cat); --on-day: var(--on-cat); }
+
+/* ── THE TICKET. It re-declares the Day tokens on itself, so every nested
+   button, rule, field and link resolves ink-on-cream without patches (the
+   .b-wayfind trick). Generic .card / .card-static, the event overlay and
+   the language list are tickets too. ── */
+.tkt,
+.card,
+.card-static,
+.plate.ev-dlg,
+.lang-pop {
+  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
+  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56);
+  --hairline: rgba(13, 9, 5, .16); --on-ink: #fffbf1;
+  --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
+  --blue-text: #0a6fa0; --red-text: #c8161a; --purple: #6e3179;
+  --px: var(--print-md);
+  color-scheme: light;
+  background-color: var(--ticket);
+  color: var(--ticket-fg);
+  border: 2px solid var(--tkt-edge);
+  box-shadow: var(--px) var(--px) 0 var(--print, var(--print-neutral));
 }
-.cal-card-lead .cal-card-n { font-size: 24px; }
-.cal-card-p { aspect-ratio: 4 / 5; border: 2px solid var(--fg); box-shadow: var(--sh-default); background: var(--day); }
-.menu-panels, .ih-panels { border-top: 2px solid var(--fg); }
+/* Print sizes: 7px hero / detail / big reading tickets, 6px list, 4px small. */
+.hero-tkt,
+.hero-photo,
+.deal-tkt,
+.cal-card-lead,
+.plate.ev-dlg,
+.card-lg,
+.menu-panels,
+.ih-panels,
+.visit-card { --px: var(--print-lg); }
+.qr-tkt { --px: var(--print-sm); }
+/* The language list's print rides its inline var(--sh-light). */
+.lang-pop { --px: var(--print-sm); --sh-light: var(--px) var(--px) 0 var(--print-neutral); }
+/* A ticket inside a ticket: ink border, small ink-wash print. */
+:is(.tkt, .card, .card-static, .plate.ev-dlg) :is(.tkt, .card, .card-static) {
+  border-color: var(--ticket-line);
+  --print: rgba(13, 9, 5, .20);
+  --px: var(--print-sm);
+}
 
-/* Night-only pieces of shared markup sit out in Day. */
-.cal-card-top, .cal-card-desc, .ev-dblock, .ev-mline, .ev-sub,
-.ev-dlg-bar, .ev-dlg-rows, .cal-noposter-logo { display: none; }
+/* Hover lifts and the print grows 2px; press stamps it down to 3px.
+   --ease-stamp, --dur-tap. Focus: the face slips 4px up-left off a plate in
+   the accent (canon G1) — on a blue-print ticket the plate takes the
+   partner, red, so it never reads as the print. */
+:is(a.tkt, button.tkt, .card) {
+  transition: transform var(--dur-tap) var(--ease-stamp), box-shadow var(--dur-tap) var(--ease-stamp);
+}
+:is(a.tkt, button.tkt, .card):hover {
+  transform: translateY(-3px);
+  box-shadow: calc(var(--px) + 2px) calc(var(--px) + 2px) 0 var(--print, var(--print-neutral));
+}
+:is(a.tkt, button.tkt, .card):active {
+  transform: translateY(2px);
+  box-shadow: var(--print-xs) var(--print-xs) 0 var(--print, var(--print-neutral));
+}
+:is(a.tkt, button.tkt, .card):focus-visible {
+  transform: translate(-4px, -4px);
+  box-shadow: calc(var(--px) + 4px) calc(var(--px) + 4px) 0 var(--tkt-plate, var(--accent));
+  background-color: var(--ticket);
+}
+[data-cat="music"] { --tkt-plate: var(--accent-2); }
 
-/* ACTION — the red converting button (canon buttons card). Ink label on
-   red in BOTH themes (Night v2: cream-on-red 4.19:1 fails AA, ink 4.6:1).
-   The border is the ground's partner: ink inside a ticket, cream on the
-   night page. One per screen. */
+/* Top bar — category fill, label left / meta right, 2px ink rule. The
+   category names are long ("MUSIC + DANCE + PERFORMANCE"): the bar WRAPS,
+   never truncates — when the two don't fit one line, the second drops to
+   its own line, flush right. */
+.tkt-top {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline;
+  column-gap: 14px; row-gap: 3px;
+  background: var(--cat, var(--ticket-neutral)); color: var(--on-cat, var(--ticket-neutral-fg));
+  border-bottom: 2px solid var(--ticket-line);
+  padding: 10px 16px;
+  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.tkt-top > * { min-width: 0; }
+.tkt-top > :last-child:not(:first-child) { margin-left: auto; text-align: right; }
+.tkt-title {
+  display: block; margin: 0;
+  font-family: var(--mont); font-weight: 700; font-size: 26px; line-height: 1.05;
+  letter-spacing: .02em; text-transform: uppercase;
+}
+.tkt-dim { display: block; font-family: var(--grotesk); font-size: 14.5px; line-height: 1.55; color: var(--ticket-dim); }
+.deal-tkt .tkt-title { font-size: 22px; }
+:lang(vi) .tkt-title { line-height: 1.3; }
+
+/* Photo slot — riso stripes, the poster at its native 4:5 (never cropped),
+   else the logo box. */
+.tkt-photo {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  padding: 18px; min-height: 170px;
+  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
+  border-bottom: 2px solid var(--ticket-line);
+}
+.tkt-photo-img {
+  display: block; height: clamp(220px, 24vw, 320px); width: auto; max-width: 100%;
+  aspect-ratio: 4 / 5; object-fit: cover; border: 2px solid var(--ticket-line);
+}
+/* The logo box — ink, cream mark, bottom-left of a placeholder photo slot.
+   The vector has air built into its viewBox; the negative margins trim it
+   so the box pads evenly around the caps. */
+.tkt-logo {
+  position: absolute; left: 10px; bottom: 10px; z-index: 1;
+  display: inline-flex; align-items: center; line-height: 0;
+  background: #0d0905; border: 2px solid #0d0905; padding: 6px 9px;
+}
+.tkt-logo-mark { display: block; height: 24px; width: auto; margin: -4px -19px -4px -21px; }
+/* Ruled rows — key + value, 1.5px hairlines. The key column is at least
+   62px and grows for a longer word (VI "THỜI GIAN") rather than wrapping. */
+.tkt-rows { margin: 0; }
+.tkt-row { display: flex; align-items: baseline; gap: 14px; padding: 12px 0; border-top: 1.5px solid var(--ticket-hairline); }
+.tkt-row:first-child { border-top: 0; }
+.tkt-row dt {
+  flex: none; min-width: 62px; max-width: 40%;
+  font-family: var(--mont); font-weight: 700; font-size: 11px; line-height: 1.3;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ticket-dim);
+}
+.tkt-row dd { margin: 0; flex: 1; min-width: 0; font-family: var(--grotesk); font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+
+/* ── ACTION — the red converting button (canon buttons card). CREAM label
+   on red in both themes (Donald, 5.10.26: cream on red reads better — APCA
+   Lc 70.7 vs ink 36.1). The border is the ground's partner: ink inside a
+   ticket, cream on the night page (var(--fg) is each). One per screen. ── */
 .btn-action {
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
   font-family: var(--mont); font-weight: 700; text-transform: uppercase;
@@ -1089,48 +1197,17 @@ html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transpar
   height: 3px; background: var(--accent);
 }
 
-/* Event category → major (Night v2). Every event element carries
-   data-cat (src/data/event-category.js); these set its fill (--cat), the
-   text on that fill (--on-cat) and its print colour. Declared for both
-   themes, CONSUMED only at night (Day keeps the weekday .d-* code). Film
-   and talk are NEUTRAL: an ink block on cream, a faint print. */
-[data-cat] { --cat: var(--ticket-neutral); --on-cat: var(--ticket-neutral-fg); --print: var(--print-neutral); }
-[data-cat="music"] { --cat: var(--blue); --on-cat: #0d0905; --print: var(--blue); }
-[data-cat="party"] { --cat: var(--red); --on-cat: #0d0905; --print: var(--red); }
-[data-cat="games"], [data-cat="drinks"] { --cat: var(--yellow); --on-cat: #0d0905; --print: var(--yellow); }
-
-/* Ticket pieces that only ever render at night (Ticket.jsx, the hero and
-   deal tickets, the overlay rows) — unscoped is safe: Day never mounts
-   them, or hides them above. */
-.tkt-photo {
-  position: relative; display: flex; align-items: center; justify-content: center;
-  padding: 18px; min-height: 170px;
-  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
-  border-bottom: 2px solid var(--ticket-line);
-}
-.tkt-photo-img {
-  display: block; height: clamp(220px, 24vw, 320px); width: auto; max-width: 100%;
-  aspect-ratio: 4 / 5; object-fit: cover; border: 2px solid var(--ticket-line);
-}
-/* The logo box — ink, cream mark, bottom-left of a placeholder photo slot.
-   The vector has air built into its viewBox; the negative margins trim it
-   so the box pads evenly around the caps. */
-.tkt-logo {
-  position: absolute; left: 10px; bottom: 10px; z-index: 1;
-  display: inline-flex; align-items: center; line-height: 0;
-  background: #0d0905; border: 2px solid #0d0905; padding: 6px 9px;
-}
-.tkt-logo-mark { display: block; height: 24px; width: auto; margin: -4px -19px -4px -21px; }
-.tkt-rows { margin: 0; }
-.tkt-row { display: flex; align-items: baseline; gap: 14px; padding: 12px 0; border-top: 1.5px solid var(--ticket-hairline); }
-.tkt-row:first-child { border-top: 0; }
-.tkt-row dt {
-  flex: none; width: 62px;
-  font-family: var(--mont); font-weight: 700; font-size: 11px; line-height: 1.3;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ticket-dim);
-}
-.tkt-row dd { margin: 0; flex: 1; min-width: 0; font-family: var(--grotesk); font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+/* ── Hero (website screen 13): 1.1fr / .9fr at 48px, thin display with the
+   800 slam, a dim lede, tonight's ticket on the right. Phones stack. Day
+   sits the ticket on the blue field, Night on the ink page. ── */
 .hero-tkt, .deal-tkt { display: block; }
+@media (min-width: 768px) {
+  .hero-grid { grid-template-columns: 1.1fr .9fr; gap: 48px; }
+  .hero-grid.hero-grid > * { grid-column: auto; }
+}
+.hero-h1 { font-size: clamp(40px, 5.8vw, 84px); }
+.hero-h1 > :is(.font-display, .font-display-bold):not(:lang(vi)) { line-height: .95; }
+.hero-lede { font-size: 17px; line-height: 1.65; color: var(--fg-dim); max-width: 46ch; }
 .hero-tkt-b {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 14px 20px; padding: 16px 18px 18px;
@@ -1141,20 +1218,150 @@ html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transpar
   .hero-tkt-go { width: 100%; }
 }
 
+/* ── Calendar ── */
+/* Section labels (the handoff's section header): dim label over a 2px rule
+   in the page's ink/cream. */
+.cal-label {
+  border-bottom: 2px solid var(--fg);
+  padding: 6px 0 9px; margin-bottom: 18px; letter-spacing: .15em;
+}
+.cal-label::after { display: none; }
+/* a ticket focused from the keyboard scrolls in BELOW the sticky label, so
+   its top bar (the date) is never hidden under it */
+.cal-feed-pane :is(.cal-card, .ev) { scroll-margin-top: 52px; }
+
+/* UP NEXT — the wall cards: top bar across, the text beside the poster at
+   its native 4:5 (never cropped), a category print. */
+.cal-card { padding: 0; gap: 0; }
+.cal-card-lead { margin-bottom: 22px; }
+.cal-card-top { grid-column: 1 / -1; }
+.cal-card-b { padding: 16px 18px 18px; gap: 8px; }
+.cal-card-n {
+  font-family: var(--mont); font-weight: 700; font-size: 20px; line-height: 1.1;
+  letter-spacing: .02em; text-transform: uppercase;
+}
+.cal-card-lead .cal-card-n { font-size: 26px; }
+:lang(vi) .cal-card-n { line-height: 1.3; }
+.cal-card .ev-qual { color: var(--ticket-dim); }
+.cal-card-desc {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
+  margin-top: 6px; max-width: 64ch;
+  font-family: var(--grotesk); font-size: 14.5px; line-height: 1.55; color: var(--ticket-dim);
+}
+.cal-card-p {
+  aspect-ratio: 4 / 5;
+  border-left: 2px solid var(--ticket-line);
+  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
+}
+.cal-wall.cal-wall { row-gap: 18px; column-gap: 22px; }
+@media (min-width: 768px) {
+  .cal-wall.cal-wall { row-gap: 22px; }
+}
+@media (max-width: 639.98px) {
+  /* the lead stacks: bar → poster → text (ticket anatomy) */
+  .cal-card-lead .cal-card-top { order: -2; }
+  .cal-card-lead .cal-card-p { order: -1; border-left: 0; border-bottom: 2px solid var(--ticket-line); }
+  /* two-up cards keep the text column readable on a phone */
+  .cal-card:not(.cal-card-lead) { grid-template-columns: minmax(0, 1fr) 128px; }
+  .cal-card:not(.cal-card-lead) .cal-card-n { font-size: 17px; }
+  .cal-card:not(.cal-card-lead) .cal-card-b { padding: 13px 14px 14px; }
+}
+.cal-noposter-logo { display: inline-flex; }
+.cal-noposter:not(.absolute) { position: relative; }
+
+/* COMING UP — list tickets: a 60px category date block + body. 4-up on
+   desktop (22px), 2-up on tablet, one column on phones (18px). The name
+   wraps, never truncates; the price rides as TEXT. */
+.wk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; width: 100%; padding: 2px 0 10px; }
+@media (min-width: 768px) {
+  .wk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+}
+@media (min-width: 1024px) {
+  .wk { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.ev { position: relative; display: grid; grid-template-columns: 60px minmax(0, 1fr); align-items: stretch; text-align: left; }
+.ev-dblock {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--cat); color: var(--on-cat);
+  border-right: 2px solid var(--ticket-line);
+  padding: 10px 2px; text-align: center;
+}
+.ev-dblock-wd { font-family: var(--mont); font-weight: 700; font-size: 10px; line-height: 1.15; letter-spacing: .12em; text-transform: uppercase; }
+.ev-dblock-d { font-family: var(--mont); font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-dblock-d small { font-size: 12px; }
+.ev-b { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 13px 15px 14px; }
+.ev-mline {
+  display: block; margin-bottom: 2px;
+  font-family: var(--mont); font-weight: 700; font-size: 11px; line-height: 1.3;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ticket-dim);
+}
+.ev-n { font-family: var(--mont); font-weight: 700; font-size: 17px; line-height: 1.15; letter-spacing: .02em; text-transform: uppercase; margin: 0; }
+:lang(vi) .ev .ev-n { line-height: 1.3; }
+.ev .ev-qual,
+.ev-sub { display: block; font-family: var(--grotesk); font-size: 13px; line-height: 1.5; color: var(--ticket-dim); }
+
+/* ── The event overlay = one long ticket (detail anatomy): category top
+   bar → poster on stripes → title + story → ruled When / Where / Entry →
+   the red ACTION. ── */
+.ev-dlg .plate-h {
+  background: var(--cat); color: var(--on-cat);
+  border-bottom: 2px solid var(--ticket-line);
+  padding: 8px 10px 8px 16px;
+}
+.ev-dlg[data-cat="music"] .plate-h { --accent: var(--accent-2); }
+.ev-dlg-bar {
+  display: flex; flex-wrap: wrap; flex: 1; min-width: 0;
+  justify-content: space-between; align-items: baseline; column-gap: 14px; row-gap: 3px;
+  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.ev-dlg-cat { margin-left: auto; text-align: right; }
+.ev-dlg .plate-x { background: transparent; color: var(--on-cat); border-color: var(--on-cat); }
+.ev-dlg .plate-x:focus-visible { background-color: var(--cat); }
+.ev-dlg-rows { display: block; width: 100%; border-top: 2px solid var(--ticket-line); }
+.ev-dlg .plate-f { border-top: 2px solid var(--ticket-line); }
+
+/* ── Menu: one neutral ticket with ruled rows; names in Montserrat caps,
+   prices Montserrat 700 15px. Today's happy-hour deal ticket (MenuSection's
+   DealTicket — only on the day) leads it in yellow. The category tabs, their
+   swatches and echo keep the Day look in both themes. ── */
+.menu-panels,
+.ih-panels { padding: 0 22px; }
+@media (max-width: 767.98px) {
+  .menu-panels,
+  .ih-panels { padding: 0 16px; }
+}
+.menu-panels .menu-sec { color: var(--ticket-dim); border-bottom: 2px solid var(--ticket-line); }
+.menu-panels .menu-item { border-bottom: 1.5px solid var(--ticket-hairline); padding-bottom: 10px; }
+.menu-panels .menu-item-n { font-family: var(--mont); font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+.menu-panels .menu-item-p { font-family: var(--mont); font-weight: 700; font-size: 15px; }
+.menu-panels .menu-item-note { font-size: 13px; color: var(--ticket-dim); }
+
+/* ── Visit: the facts are a cream ticket, the map a ticket frame. At night
+   both cast the blue (wayfinding) print on the ink page; by Day they sit on
+   the blue field, where a blue print would vanish — so there (and for a
+   music ticket in the hero) the print falls to the neutral ink one. ── */
+.visit-card { --print: var(--blue); padding: 24px 22px; }
+.visit-map { --sh-heavy: 7px 7px 0 var(--blue); }
+html:not([data-theme="dark"]) .b-wayfind :is(.visit-card, .tkt[data-cat="music"]) { --print: var(--print-neutral); }
+html:not([data-theme="dark"]) .b-wayfind .visit-map { --sh-heavy: 7px 7px 0 var(--print-neutral); }
+
+/* ── Gallery: the photo cards are neutral tickets; the carousel slides
+   leave room for the print. ── */
+.cc-slide { padding: 4px 10px 12px 0; }
+
 /* ============================================================
-   NIGHT v2 — "CREAM TICKETS" (handoff 5.10.26:
-   design-system-year2/design_handoff_night_cream_tickets/).
-   Ink page, cream tickets, majors only. Everything below is
-   scoped to [data-theme="dark"]: Day renders exactly as before.
-   The test (README §4): "Can I read this at the bar?" → it is on
-   cream. "Is this chrome or navigation?" → it is on ink.
+   NIGHT v2 — the theme deltas. Everything above renders in both
+   themes; this block is only what Night does differently: the
+   coloured bands go ink, and the chrome takes the majors' jobs.
    ============================================================ */
 
 /* ── The coloured bands are the INK PAGE at night. Full-bleed blue/red
    fields contradict "majors as thin strips, not full fills" — the colour
-   moves into ticket bars, prints and the one red action. The 3px cream
-   seams (.band) stay. Re-declares both halves of the pair, like the Day
-   band rules do, so nested components resolve without patches. ── */
+   moves into ticket bars, prints and the one red action. (By Day they stay
+   FIELDS — Day's identity.) The 3px cream seams (.band) stay. Re-declares
+   both halves of the pair, like the Day band rules do, so nested
+   components resolve without patches. ── */
 [data-theme="dark"] .b-wayfind,
 [data-theme="dark"] .b-act {
   --fg: #fffbf1; --bg: #0a0703; --on-ink: #fffbf1;
@@ -1174,264 +1381,9 @@ html:not([data-theme="dark"]) .b-act.b-act .btn-secondary { background: transpar
    inside a cream ticket (tickets re-declare it). */
 [data-theme="dark"] .eyebrow { color: var(--blue-text); }
 [data-theme="dark"] .mast-link { letter-spacing: .14em; }
-/* The masthead / overlay / act-band app buttons become the red ACTION:
-   ink label, 2px border in the ground's partner (cream on the page, ink on
-   a ticket — var(--fg) is each). */
+/* The masthead and act-band app buttons become the red ACTION: cream label,
+   2px cream border on the ink page. */
 [data-theme="dark"] .act-night {
   background: var(--action); color: var(--action-fg); border-color: var(--fg);
 }
 [data-theme="dark"] .act-night:focus-visible { background-color: var(--action); }
-
-/* Filter tabs (menu categories, info panels + event types): 2px cream
-   outline on ink, ACTIVE = cream fill + ink label. No echo shadow, no
-   colour tint — majors only, and none of these is a deal. !important
-   because the Day look rides inline styles; the focus plate is exempt
-   (faces stay opaque: the page ink, never transparent). */
-[data-theme="dark"] .ftab {
-  background: var(--bg) !important; color: var(--fg) !important;
-  border-color: var(--fg) !important;
-}
-[data-theme="dark"] .ftab:not(:focus-visible) { box-shadow: none !important; }
-[data-theme="dark"] .ftab[aria-selected="true"] { background: var(--fg) !important; color: var(--bg) !important; }
-/* Decorative swatches (tabs, panel titles, list bullets, room keys) fold to
-   neutral: the colour of the text they sit beside. */
-[data-theme="dark"] .sw { background-color: currentColor !important; }
-
-/* ── THE TICKET — cream #fffbf1, ink type, a 2px CREAM border (the outer
-   edge is the cream itself) and a hard, unblurred PRINT offset in its
-   category colour (--print; neutral = cream .28). It re-declares the Day
-   tokens on itself, so every nested button, rule, field and link resolves
-   ink-on-cream without patches (the .b-wayfind trick). Generic .card /
-   .card-static, the event overlay and the language list are tickets too. ── */
-[data-theme="dark"] .tkt,
-[data-theme="dark"] .card,
-[data-theme="dark"] .card-static,
-[data-theme="dark"] .plate.ev-dlg,
-[data-theme="dark"] .lang-pop {
-  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
-  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56);
-  --hairline: rgba(13, 9, 5, .16); --on-ink: #fffbf1;
-  --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
-  --blue-text: #0a6fa0; --red-text: #c8161a; --purple: #6e3179;
-  --px: var(--print-md);
-  color-scheme: light;
-  background-color: var(--ticket);
-  color: var(--ticket-fg);
-  border: 2px solid var(--ticket);
-  box-shadow: var(--px) var(--px) 0 var(--print, var(--print-neutral));
-}
-/* Print sizes: 7px hero / detail / big reading tickets, 6px list. */
-[data-theme="dark"] .hero-tkt,
-[data-theme="dark"] .deal-tkt,
-[data-theme="dark"] .cal-card-lead,
-[data-theme="dark"] .plate.ev-dlg,
-[data-theme="dark"] .card-lg,
-[data-theme="dark"] .menu-panels,
-[data-theme="dark"] .ih-panels,
-[data-theme="dark"] .visit-card { --px: var(--print-lg); }
-[data-theme="dark"] .lang-pop { --px: var(--print-sm); --sh-light: 4px 4px 0 var(--print-neutral); }
-/* A ticket inside a ticket: ink border, small ink-wash print. */
-[data-theme="dark"] :is(.tkt, .card, .card-static, .plate.ev-dlg) :is(.tkt, .card, .card-static) {
-  border-color: var(--ticket-line);
-  --print: rgba(13, 9, 5, .20);
-  --px: var(--print-sm);
-}
-
-/* Hover lifts and the print grows 2px; press stamps it down to 3px.
-   --ease-stamp, --dur-tap. Focus: the face slips 4px up-left off a plate in
-   the accent (canon G1) — on a blue-print ticket the plate takes the
-   partner, red, so it never reads as the print. */
-[data-theme="dark"] :is(a.tkt, button.tkt, .card) {
-  transition: transform var(--dur-tap) var(--ease-stamp), box-shadow var(--dur-tap) var(--ease-stamp);
-}
-[data-theme="dark"] :is(a.tkt, button.tkt, .card):hover {
-  transform: translateY(-3px);
-  box-shadow: calc(var(--px) + 2px) calc(var(--px) + 2px) 0 var(--print, var(--print-neutral));
-}
-[data-theme="dark"] :is(a.tkt, button.tkt, .card):active {
-  transform: translateY(2px);
-  box-shadow: var(--print-xs) var(--print-xs) 0 var(--print, var(--print-neutral));
-}
-[data-theme="dark"] :is(a.tkt, button.tkt, .card):focus-visible {
-  transform: translate(-4px, -4px);
-  box-shadow: calc(var(--px) + 4px) calc(var(--px) + 4px) 0 var(--tkt-plate, var(--accent));
-  background-color: var(--ticket);
-}
-[data-theme="dark"] [data-cat="music"] { --tkt-plate: var(--accent-2); }
-
-/* Category → major replaces the weekday hue on Night event UI: whatever
-   still reads --day (date tab, plates, poster panes) reads the category. */
-[data-theme="dark"] [data-cat] { --day: var(--cat); --on-day: var(--on-cat); }
-
-/* Top bar — category fill, ink label left / meta right, 2px ink rule. */
-[data-theme="dark"] .tkt-top {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  background: var(--cat, var(--ticket-neutral)); color: var(--on-cat, var(--ticket-neutral-fg));
-  border-bottom: 2px solid var(--ticket-line);
-  padding: 10px 16px;
-  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.25;
-  letter-spacing: .12em; text-transform: uppercase;
-}
-[data-theme="dark"] .tkt-top > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-[data-theme="dark"] .tkt-top > :last-child { flex: none; }
-[data-theme="dark"] .tkt-title {
-  display: block; margin: 0;
-  font-family: var(--mont); font-weight: 700; font-size: 26px; line-height: 1.05;
-  letter-spacing: .02em; text-transform: uppercase;
-}
-[data-theme="dark"] .tkt-dim { display: block; font-family: var(--grotesk); font-size: 14.5px; line-height: 1.55; color: var(--ticket-dim); }
-[data-theme="dark"] .deal-tkt .tkt-title { font-size: 22px; }
-[data-theme="dark"]:lang(vi) .tkt-title { line-height: 1.3; }
-
-/* ── Hero (website screen 13): 1.1fr / .9fr at 48px, thin display with the
-   800 slam, a dim lede, tonight's ticket on the right. Phones stack. ── */
-@media (min-width: 768px) {
-  [data-theme="dark"] .hero-grid { grid-template-columns: 1.1fr .9fr; gap: 48px; }
-  [data-theme="dark"] .hero-grid > * { grid-column: auto; }
-}
-[data-theme="dark"] .hero-h1 { font-size: clamp(40px, 5.8vw, 84px); }
-[data-theme="dark"] .hero-h1 > :is(.font-display, .font-display-bold):not(:lang(vi)) { line-height: .95; }
-[data-theme="dark"] .hero-lede { font-size: 17px; line-height: 1.65; color: var(--fg-dim); max-width: 46ch; }
-/* No events left in the feed: the photo stands in, as a neutral ticket. */
-[data-theme="dark"] .hero-photo { --sh-heavy: 7px 7px 0 var(--print-neutral); }
-
-/* ── Calendar ── */
-[data-theme="dark"] .cal-label {
-  color: var(--fg-dim); letter-spacing: .15em;
-  border-bottom: 2px solid var(--fg);
-  padding: 6px 0 9px; margin-bottom: 18px;
-}
-[data-theme="dark"] .cal-label::after { display: none; }
-/* room for the print + hover lift inside the scrolling pane */
-[data-theme="dark"] .cal-feed-pane { padding-right: 14px; }
-/* a ticket focused from the keyboard scrolls in BELOW the sticky label,
-   so its top bar (the date) is never hidden under it */
-[data-theme="dark"] .cal-feed-pane :is(.cal-card, .ev) { scroll-margin-top: 52px; }
-
-/* Day-only pieces of the cards and rows step aside. */
-[data-theme="dark"] :is(.ev, .cal-card) :is(.day-spine, .ev-when, .ev-meta, .ev-go, .cal-card-when) { display: none; }
-
-/* UP NEXT — the wall cards are tickets: top bar across, the text beside
-   the poster at its native 4:5 (never cropped), a category print. */
-[data-theme="dark"] .cal-card { padding: 0; gap: 0; }
-[data-theme="dark"] .cal-card-lead { margin-bottom: 22px; }
-[data-theme="dark"] .cal-card-top { grid-column: 1 / -1; }
-[data-theme="dark"] .cal-card-b { padding: 16px 18px 18px; gap: 8px; }
-[data-theme="dark"] .cal-card-n { font-size: 20px; line-height: 1.1; letter-spacing: .02em; text-transform: uppercase; }
-[data-theme="dark"] .cal-card-lead .cal-card-n { font-size: 26px; }
-[data-theme="dark"]:lang(vi) .cal-card-n { line-height: 1.3; }
-[data-theme="dark"] .cal-card .ev-qual { color: var(--ticket-dim); }
-[data-theme="dark"] .cal-card-desc {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
-  margin-top: 6px; max-width: 64ch;
-  font-family: var(--grotesk); font-size: 14.5px; line-height: 1.55; color: var(--ticket-dim);
-}
-[data-theme="dark"] .cal-card-p {
-  border: 0; border-left: 2px solid var(--ticket-line); box-shadow: none;
-  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
-}
-[data-theme="dark"] .cal-wall { row-gap: 18px; column-gap: 22px; }
-@media (min-width: 768px) {
-  [data-theme="dark"] .cal-wall { row-gap: 22px; }
-}
-@media (max-width: 639.98px) {
-  /* the lead stacks: bar → poster → text (ticket anatomy) */
-  [data-theme="dark"] .cal-card-lead .cal-card-top { order: -2; }
-  [data-theme="dark"] .cal-card-lead .cal-card-p { order: -1; border-left: 0; border-bottom: 2px solid var(--ticket-line); }
-  /* two-up cards keep the text column readable on a phone */
-  [data-theme="dark"] .cal-card:not(.cal-card-lead) { grid-template-columns: minmax(0, 1fr) 128px; }
-  [data-theme="dark"] .cal-card:not(.cal-card-lead) .cal-card-n { font-size: 17px; }
-  [data-theme="dark"] .cal-card:not(.cal-card-lead) .cal-card-b { padding: 13px 14px 14px; }
-}
-/* An event with no poster: riso stripes, the date, the logo box. */
-[data-theme="dark"] .cal-noposter {
-  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
-  color: var(--ticket-fg);
-}
-[data-theme="dark"] .cal-noposter:not(.absolute) { position: relative; }
-[data-theme="dark"] .cal-noposter-logo { display: inline-flex; }
-
-/* COMING UP — list tickets: a 60px category date block + body. 4-up on
-   desktop (22px), 2-up on tablet, one column on phones (18px). */
-[data-theme="dark"] .wk {
-  grid-template-columns: minmax(0, 1fr); gap: 18px;
-  border-top: 0; background: transparent; padding: 2px 0 10px;
-}
-@media (min-width: 768px) {
-  [data-theme="dark"] .wk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
-}
-@media (min-width: 1024px) {
-  [data-theme="dark"] .wk { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-[data-theme="dark"] .ev { grid-template-columns: 60px minmax(0, 1fr); gap: 0; padding: 0; align-items: stretch; }
-[data-theme="dark"] .ev-dblock {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  background: var(--cat); color: var(--on-cat);
-  border-right: 2px solid var(--ticket-line);
-  padding: 10px 2px; text-align: center;
-}
-.ev-dblock-wd { font-family: var(--mont); font-weight: 700; font-size: 10px; line-height: 1.15; letter-spacing: .12em; text-transform: uppercase; }
-.ev-dblock-d { font-family: var(--mont); font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ev-dblock-d small { font-size: 12px; }
-[data-theme="dark"] .ev-b { grid-column: 2; padding: 13px 15px 14px; gap: 3px; }
-[data-theme="dark"] .ev-mline {
-  display: block; margin-bottom: 2px;
-  font-family: var(--mont); font-weight: 700; font-size: 11px; line-height: 1.3;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--ticket-dim);
-}
-[data-theme="dark"] .ev .ev-n { font-size: 17px; line-height: 1.15; letter-spacing: .02em; text-transform: uppercase; }
-[data-theme="dark"]:lang(vi) .ev .ev-n { line-height: 1.3; }
-[data-theme="dark"] .ev .ev-qual,
-[data-theme="dark"] .ev-sub { display: block; font-family: var(--grotesk); font-size: 13px; line-height: 1.5; color: var(--ticket-dim); }
-
-/* ── The event overlay = one long ticket (detail anatomy): category top
-   bar → poster on stripes → title + story → ruled When / Where / Entry →
-   the red ACTION. ── */
-[data-theme="dark"] .ev-dlg .plate-h {
-  background: var(--cat); color: var(--on-cat);
-  border-bottom: 2px solid var(--ticket-line);
-  padding: 8px 10px 8px 16px;
-}
-[data-theme="dark"] .ev-dlg[data-cat="music"] .plate-h { --accent: var(--accent-2); }
-[data-theme="dark"] .ev-dlg .plate-t { display: none; }
-[data-theme="dark"] .ev-dlg-bar {
-  display: flex; flex: 1; min-width: 0; justify-content: space-between; align-items: center; gap: 12px;
-  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.25;
-  letter-spacing: .12em; text-transform: uppercase;
-}
-[data-theme="dark"] .ev-dlg .plate-x { background: transparent; color: var(--on-cat); border-color: var(--on-cat); }
-[data-theme="dark"] .ev-dlg .plate-x:focus-visible { background-color: var(--cat); }
-[data-theme="dark"] .ev-dlg-poster {
-  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
-  border-bottom: 2px solid var(--ticket-line);
-}
-@media (min-width: 768px) {
-  [data-theme="dark"] .ev-dlg-poster { border-bottom: 0; border-right: 2px solid var(--ticket-line); }
-}
-[data-theme="dark"] .ev-dlg :is(.cal-datetab, .ev-dlg-facts) { display: none; }
-[data-theme="dark"] .ev-dlg-rows { display: block; width: 100%; border-top: 2px solid var(--ticket-line); }
-[data-theme="dark"] .ev-dlg .plate-f { border-top: 2px solid var(--ticket-line); }
-
-/* ── Menu: one neutral ticket with ruled rows; names in Montserrat caps,
-   prices Montserrat 700 15px. The happy-hour deal ticket (MenuSection's
-   DealTicket) leads it in yellow. ── */
-[data-theme="dark"] .menu-panels,
-[data-theme="dark"] .ih-panels { padding: 0 22px; }
-@media (max-width: 767.98px) {
-  [data-theme="dark"] .menu-panels,
-  [data-theme="dark"] .ih-panels { padding: 0 16px; }
-}
-[data-theme="dark"] .menu-sec { color: var(--ticket-dim); border-bottom: 2px solid var(--ticket-line); }
-[data-theme="dark"] .menu-item { border-bottom: 1.5px solid var(--ticket-hairline); padding-bottom: 10px; }
-[data-theme="dark"] .menu-item-n { font-family: var(--mont); font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
-[data-theme="dark"] .menu-item-p { font-family: var(--mont); font-weight: 700; font-size: 15px; }
-[data-theme="dark"] .menu-item-note { font-size: 13px; color: var(--ticket-dim); }
-
-/* ── Visit: the facts are a cream ticket, the map a ticket frame — both
-   with the blue wayfinding print. ── */
-[data-theme="dark"] .visit-card { --print: var(--blue); padding: 24px 22px; }
-[data-theme="dark"] .visit-map { --sh-heavy: 7px 7px 0 var(--blue); }
-
-/* ── Gallery: the photo cards are neutral tickets; the carousel slides
-   leave room for the print. ── */
-[data-theme="dark"] .cc-slide { padding: 4px 10px 12px 0; }

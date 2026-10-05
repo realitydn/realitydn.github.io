@@ -6,13 +6,17 @@ import { URLS, STR } from '../data/translations';
 
 /**
  * DarkCTA — the page's ONE red ACT band (canon 22.08.26: red commands, once
- * per page). The on-red contract in index.css does the colour work: all copy
- * goes ink — the display heading too since Night v2 (5.10.26: no cream on a
- * red fill, in either theme) — btn-primary becomes a cream button with an ink
- * label and btn-secondary an ink outline. The band supplies the top rule.
+ * per page). The band tokens in index.css do the colour work: everything on
+ * the flat red field is CREAM (Donald, 5.10.26 — cream on red, settled by
+ * APCA: Lc 71 vs ink 36), so btn-primary is a cream plate with an ink label
+ * and btn-secondary a cream outline. While the field is LIVE (stock + yellow
+ * blocks under the type) the band takes the old on-red contract back:
+ * everything ink, the cream button, ink outlines. The band supplies the top
+ * rule.
  *
  * NIGHT v2: the band is the ink page (majors are strips, not full fills), and
- * the red moves into the app button — the band's command as a red ACTION.
+ * the red moves into the app button — the band's command as a red ACTION with
+ * a cream label.
  */
 export default function DarkCTA({ lang }) {
   return (
@@ -20,9 +24,9 @@ export default function DarkCTA({ lang }) {
     // idiom) — no own bottom border, or the seam doubles to 6px.
     <section className="section band b-act py-16">
       {/* Red leads here, so the one act band still reads red. While the
-          field is live the display type drops back to ink (see index.css):
-          the cream exception is a hole over a mosaic that also prints
-          yellow and stock. */}
+          field is live the type drops back to ink (see index.css): cream
+          type would be a hole over a mosaic that also prints yellow and
+          stock. */}
       <BandField lead="red" />
       <Reveal stagger className="max-w-7xl mx-auto px-4 grid md:grid-cols-12 gap-6 items-center">
         <div className="md:col-span-7">

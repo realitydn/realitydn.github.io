@@ -1,9 +1,9 @@
 import React from 'react';
 import Logo from './Logo';
 
-// Night v2 "Cream Tickets" (handoff 5.10.26) — the small shared pieces of a
-// ticket. The ticket itself is CSS (.tkt in index.css): any element can be
-// one. These are the bits with markup.
+// Night v2 "Cream Tickets" (handoff 5.10.26; both themes since round 2) — the
+// small shared pieces of a ticket. The ticket itself is CSS (.tkt in
+// index.css): any element can be one. These are the bits with markup.
 
 // The REALITY logo box — mandatory on a ticket's photo slot when the slot
 // shows the riso placeholder instead of a poster. Ink box, cream mark. The
@@ -20,11 +20,19 @@ export function LogoBox({ className = '' }) {
 
 // The photo slot: riso stripes on cream, the event's poster at its NATIVE
 // 4:5 centred on them (never cropped to the slot), else the logo box.
-export function TicketPhoto({ img, alt, className = '' }) {
+// `priority` marks the page's LCP image (the hero's): high fetch priority.
+export function TicketPhoto({ img, alt, className = '', priority = false }) {
   return (
     <span className={`tkt-photo ${className}`}>
       {img ? (
-        <img className="tkt-photo-img" src={img} alt={alt} loading="eager" decoding="async" />
+        <img
+          className="tkt-photo-img"
+          src={img}
+          alt={alt}
+          loading="eager"
+          decoding="async"
+          fetchpriority={priority ? 'high' : undefined}
+        />
       ) : (
         <LogoBox />
       )}

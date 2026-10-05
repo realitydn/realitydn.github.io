@@ -92,7 +92,25 @@ export function whenKey(iso, now = Date.now()) {
   return parseInt(FMT_HOUR.format(d), 10) >= 17 ? 'tonight' : 'today';
 }
 
-// pickTonight(events, now?) → the event the Night hero ticket leads with:
+// isTodayICT(iso, now?) → true when the instant falls on today's date in ICT.
+export function isTodayICT(iso, now = Date.now()) {
+  const d = instant(iso);
+  return !!d && FMT_YMD.format(d) === ictDateStr(now, 0);
+}
+
+// nextDealToday(events, categoryOf, now?) → the menu's deal ticket: the NEXT
+// drinks-category event that hasn't ended — shown ONLY when it is today (ICT)
+// (Donald, 5.10.26: "only on the day"). null otherwise. categoryOf is passed
+// in so this module stays free of the category table.
+export function nextDealToday(events, categoryOf, now = Date.now()) {
+  const next = (events || [])
+    .filter((ev) => ev && instant(ev.startsAt) && categoryOf(ev) === 'drinks')
+    .filter((ev) => Date.parse(ev.endsAt || ev.startsAt) >= now)
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))[0];
+  return next && isTodayICT(next.startsAt, now) ? next : null;
+}
+
+// pickTonight(events, now?) → the event the hero's Tonight ticket leads with:
 // the NEXT event to start today (ICT); else one still running today (the
 // latest-started, so a late set beats the afternoon's leftovers); else the
 // next upcoming event on a later day. null when nothing is left.
@@ -205,30 +223,68 @@ export function cfStr(lang = 'EN') {
   return CF_STR[lang] || CF_STR.EN;
 }
 
-// ── Night v2 ticket labels ──────────────────────────────────────────────────
-// The category word on a ticket's top bar / meta line, and the key labels of
-// the event overlay's ruled rows. ENGLISH ONLY for now — Donald writes the
-// copy (canon: no generated VI/RU/UK/KO/JA), so every other language falls
-// back to these per key until its words land here. Add a language as
-// NIGHT_STR.VN = { cat: { music: '…', … }, when: '…', … } — missing keys
-// still fall back to EN.
-const NIGHT_STR = {
+// ── Ticket labels (Night v2 "Cream Tickets", round 2 — both themes) ─────────
+// The category name on a ticket's top bar / meta line, and the key labels of
+// the event overlay's ruled rows.
+//
+// CATEGORY NAMES are the event-analysis skill's own (EN + its VI draft). Per
+// the skill's rule, a language without its own name falls back to ENGLISH,
+// per key — so RU/UK/KO/JA read the EN names until Donald adds theirs here
+// (TICKET_STR.RU = { cat: { music: '…' } } — missing keys still fall back).
+// `other` (uncategorised) has no name: the bar/meta line just omits it.
+// The names can be long ("MUSIC + DANCE + PERFORMANCE"): bars and meta lines
+// WRAP, never truncate (index.css .tkt-top).
+//
+// WHEN / WHERE: the site had no standalone label for either in any language,
+// so EN everywhere + a VI draft. ENTRY reuses the site's existing six-language
+// "Entry: {cost}" line (CF_STR.entry), minus its cost slot.
+// VI below is DRAFT — Donald corrects all Vietnamese.
+const TICKET_STR = {
   EN: {
-    cat: { music: 'Music', party: 'Party', games: 'Games', drinks: 'Drinks', film: 'Film', talk: 'Talk' },
+    cat: {
+      music: 'Music + Dance + Performance',
+      party: 'Parties + Special Events',
+      games: 'Games + Trivia',
+      drinks: 'Drinks + Deals',
+      language: 'Language + Conversation',
+      social: 'Social + Community',
+      arts: 'Creative Arts',
+      wellness: 'Wellness + Growth',
+      film: 'Film + Screenings',
+      tech: 'Tech + Business',
+    },
     when: 'When',
     where: 'Where',
-    entry: 'Entry',
+  },
+  VN: {
+    cat: {
+      music: 'Âm nhạc + Nhảy + Trình diễn',
+      party: 'Tiệc + Sự kiện đặc biệt',
+      games: 'Trò chơi + Đố vui',
+      drinks: 'Đồ uống + Ưu đãi',
+      language: 'Ngôn ngữ + Trò chuyện',
+      social: 'Giao lưu + Cộng đồng',
+      arts: 'Nghệ thuật sáng tạo',
+      wellness: 'Sức khoẻ + Phát triển bản thân',
+      film: 'Phim + Chiếu phim',
+      tech: 'Công nghệ + Kinh doanh',
+    },
+    when: 'Thời gian',
+    where: 'Địa điểm',
   },
 };
 
+// catLabel(cat, lang) → the category's name; '' for `other` / unknown keys.
 export function catLabel(cat, lang = 'EN') {
-  const own = NIGHT_STR[lang] && NIGHT_STR[lang].cat;
-  return (own && own[cat]) || NIGHT_STR.EN.cat[cat] || NIGHT_STR.EN.cat.talk;
+  const own = TICKET_STR[lang] && TICKET_STR[lang].cat;
+  return (own && own[cat]) || TICKET_STR.EN.cat[cat] || '';
 }
 
-export function nightLabel(key, lang = 'EN') {
-  const own = NIGHT_STR[lang];
-  return (own && own[key]) || NIGHT_STR.EN[key] || key;
+// ticketLabel('when' | 'where' | 'entry', lang) → the overlay row key.
+export function ticketLabel(key, lang = 'EN') {
+  if (key === 'entry') return cfStr(lang).entry.replace(/\s*[:：]?\s*\{cost\}\s*$/, '');
+  const own = TICKET_STR[lang];
+  return (own && own[key]) || TICKET_STR.EN[key] || key;
 }
 
 // costLabel(ev, lang) — the badge text: the price when the event has one,

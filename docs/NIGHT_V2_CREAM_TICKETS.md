@@ -5,6 +5,169 @@ Spec: `design-system-year2/design_handoff_night_cream_tickets/` (README + `token
 
 **To preview:** run `npm run dev` and press the theme toggle in the masthead. To open the site straight in Night, run `localStorage.setItem('reality-theme','dark')` in the console and reload. The theme follows the OS setting when nothing is saved.
 
+> **Round 2 (5.10.26 evening) supersedes round 1 wherever they disagree.** Read the Round 2 section first. The round-1 notes below it are kept as history: they still describe the ticket anatomy, but several of their "Day is unchanged", "ink on red" and "minors fold to neutral" statements no longer hold.
+
+## Round 2 (5.10.26 evening)
+
+Donald reviewed round 1. Round 2 does three things:
+- It puts the tickets in **both** themes.
+- It switches every coloured fill to the **APCA text rule**.
+- It replaces the six categories with the **ten real ones**.
+
+### What changed, and why
+
+1. **Tickets render in Day too.** Donald noticed that flipping to Day "erases the ticket boxes".
+   - **What is now a ticket in both themes:**
+     - the wall cards (category top bar, poster on a 2px ink rule, clamped story on the lead);
+     - the list tickets (date block, meta line, name, qualifier, room · price);
+     - the hero's Tonight ticket;
+     - the event overlay (top bar, ruled When / Where / Entry rows, red ACTION);
+     - the menu ticket and the deal ticket;
+     - the info, visit and gallery tickets;
+     - the language list;
+     - the error and empty calendar cards;
+     - nested tickets;
+     - hover, press and focus.
+   - **What differs by theme:** only the page and the ticket's outer edge.
+     - **Day:** a 2px **ink** edge; neutral print `rgba(13,9,5,.20)`.
+     - **Night:** a 2px **cream** edge; neutral print `rgba(255,251,241,.28)`.
+     - These are two new theme-scoped tokens, `--tkt-edge` and `--print-neutral`. A ticket never re-declares them, so it reads the page's values.
+   - **What stays the same:** everything inside a ticket is identical in both themes.
+   - **The bands:**
+     - Day keeps the blue hero and visit bands and the red act band as **fields**. The Tonight ticket sits on the blue field by Day and on the ink page at Night.
+     - Full-bleed bands still go ink at night.
+     - On the blue field, a blue print would vanish. So the visit card, the map frame and a music-category hero ticket fall back to the neutral ink print by Day.
+   - **Night-only gating is gone.** `useNight` now drives only `BandField`.
+2. **The text colour on every palette fill (Donald, settled by APCA).** **Ink on yellow and amber. Cream `#fffbf1` on red, pink, blue, green and purple, in both themes.**
+   - The APCA |Lc| scores, cream vs ink:
+
+     | Fill | Cream | Ink |
+     |---|---|---|
+     | yellow | 16 | 87 |
+     | amber | 34 | 71 |
+     | red | 71 | 36 |
+     | pink | 70 | 37 |
+     | blue | 55 | 51 |
+     | green | 56 | 50 |
+     | purple, Day | 92 | 14 |
+     | purple, Night | 78 | 29 |
+
+   - Where the rule is applied:
+     - `--action-fg` is cream. The red ACTION buttons (masthead and act band at night, hero Details, overlay "Open in the app") are red with a cream label. The border is cream on the ink page and ink inside a ticket.
+     - **The act band (`.b-act`):** everything on the flat red field is cream, heading included. The primary button is a cream plate with an ink label; the secondary buttons are cream outlines.
+     - **The blue bands (`.b-wayfind`, hero and visit):** these are now cream-on-blue. The token pair is re-declared (`--fg` cream, `--bg` ink, cream hairline and surface washes), so the hero's buttons resolve to a cream plate and a cream outline without patches.
+     - **Exception: the live band field.** When `BandField` is running (Day, motion allowed), the band is unprinted stock with blue, red and yellow blocks under the type. Cream would vanish on the stock and the yellow, so a live band takes the **ink** pair back. That is exactly the pre-round-1 live look; see `day-1440-*-liveband.png`. The type therefore flips cream → ink at the moment the field starts. That is the same moment the flat blue steps back to stock.
+     - `.btn-info` is cream on blue.
+     - `.alert-success` (green) and `.alert-error` (red) are cream.
+     - The pricing table's Peak (red) and Late night (blue) headers are cream; Daytime (yellow) stays ink.
+     - **The `.d-*` weekday pairs:** mon, tue, wed, thu and fri are cream; sat and sun are ink. The night override that flipped Wednesday's purple to ink is removed.
+     - **Category fills:** see the table below.
+   - **Not done here:** the studios (`public/**`), `day-colours.json` and `tools/verify-day-colours.mjs` belong to a second agent.
+3. **The minors are back at night, and the majors keep their jobs.** Blue still leads (accent, active nav, eyebrows, focus), red is the action and yellow is the deal. Round 1's night fold of the minors is removed:
+   - the menu category swatches, section swatches and active-tab echo shadows;
+   - the InfoHost tab dots, panel-title squares, list bullets, room keys and sub-tab tints.
+
+   They now render at night exactly as by Day, flipped by the tokens. The `.sw` / `.ftab` override classes are deleted.
+4. **Ten real categories** (see the table). `categoryOf(ev)` prefers the feed's `category` when it is one of the keys, which covers the hub's additive field once it ships. Otherwise it derives the category from the EN title and qualifier with the new rule table. `src/data/event-category.js` is a faithful port of that table, with the same order and the same `\b(…)\b` form.
+5. **Labels are the event-analysis skill's names** in EN and VI. RU, UK, KO and JA fall back to EN per key, as the skill's rule says. `other` has no label: the bar or meta line just omits it.
+   - Long names wrap, and nothing truncates. The top bar is `flex-wrap`; when the date and the category don't fit on one line, the category drops to its own line, flush right.
+   - The overlay's row keys have a 62px *minimum* (VI "THỜI GIAN" grows instead of wrapping).
+6. **The deal ticket appears only on the day.** `nextDealToday()` takes the next drinks-category event that hasn't ended, and shows it only if it starts today (ICT). It shows in both themes. Today, the 5.10 Happy Hour ended at 21:00, so the live page shows no deal; the `*-menu-deal.png` shots fake one by moving it to "now".
+7. **The footer strip (your call).** The QR box is now a small **cream ticket**: a cream edge on the always-ink strip and the faint neutral print (4px, `rgba(255,251,241,.28)`). It reads as part of the ticket system rather than a missing shadow, and because the strip is always `.scope-night`, it is identical by Day and at Night.
+8. **The scroll-spy underline stays on in Day** (unchanged).
+
+### Structure changes
+- **Calendar (`Calendar.jsx`).** The Day-only row and card markup is deleted: the day plate, spine, `ev-when`, `ev-meta` / time / room / arrow, and the when-chip. Its CSS (`.day-plate`, `.day-spine`, `.when-chip`, `.ev-when`, `.ev-meta`, `.ev-time`, `.ev-room`, `.ev-go`, `.ev-date`) is gone too. Cards and rows carry `data-cat`, not the `.d-*` weekday class. List tickets gain an `sr-only` weekday and date, because the date block is `aria-hidden`; at night in round 1, the date wasn't announced at all.
+- **Overlay (`EventOverlay.jsx`).** The header title (`.plate-t`), the date tab (`.cal-datetab`, with its CSS) and the one-line facts are deleted, so the top bar and the ruled rows are the only versions. Entry prints the price or "Free". The app button is `.btn-action`.
+- **Hero (`Hero.jsx`).**
+  - The Tonight ticket renders in both themes and in the prerender. The static HTML now carries the ticket (Day), fed by the build's feed; the shipped page's inline seed feeds the first client render, and `main.jsx` uses `createRoot`, so there is no hydration to mismatch.
+  - The hero poster is now the LCP image, with `fetchpriority="high"` via `TicketPhoto priority`.
+  - When nothing is left in the feed, the hero photo shows as a neutral ticket.
+  - The hero layout (1.1fr / .9fr, the 84px display line, the dim lede) is now both themes.
+- **Menu (`MenuSection.jsx`).** The deal ticket and its overlay are no longer gated on the theme.
+- **CSS (`src/index.css`).** The round-1 `[data-theme="dark"]` ticket block is now an unscoped **TICKETS** block, followed by a short **NIGHT v2 deltas** block: the bands go ink, blue eyebrows, nav tracking, and the masthead and act-band ACTION. The `[data-cat]` table now lives in TICKETS.
+- **Specificity.** Tailwind emits its responsive variants (`md:`/`lg:`) at the **end** of the stylesheet, so they beat same-specificity rules in `index.css`. Round 1 hid this behind the `[data-theme]` prefix. A few unscoped rules are therefore doubled or prefixed: `.hero-grid.hero-grid > *`, `.cal-wall.cal-wall`, and `.menu-panels .menu-item-n` etc.
+
+### The category table
+
+| key | EN label | VI label | fill | text on it | print |
+|---|---|---|---|---|---|
+| music | Music + Dance + Performance | Âm nhạc + Nhảy + Trình diễn | blue #18a7e0 | cream | blue (neutral on the Day blue field) |
+| party | Parties + Special Events | Tiệc + Sự kiện đặc biệt | red #ed2224 | cream | red |
+| games | Games + Trivia | Trò chơi + Đố vui | yellow #fddf00 | ink | yellow |
+| drinks | Drinks + Deals | Đồ uống + Ưu đãi | yellow #fddf00 | ink | yellow |
+| language | Language + Conversation | Ngôn ngữ + Trò chuyện | pink #ed1b72 | cream | pink |
+| social | Social + Community | Giao lưu + Cộng đồng | green #43b02a | cream | green |
+| arts | Creative Arts | Nghệ thuật sáng tạo | purple: Day #6e3179, Night #9a4faa | cream (both) | the same per-theme purple |
+| wellness | Wellness + Growth | Sức khoẻ + Phát triển bản thân | amber #fdb515 | ink | amber |
+| film | Film + Screenings | Phim + Chiếu phim | neutral (ink #0d0905) | cream | neutral |
+| tech | Tech + Business | Công nghệ + Kinh doanh | neutral | cream | neutral |
+| other | (none, so the label is omitted) | (none) | neutral | cream | neutral |
+
+The overlay's row keys:
+- **When:** EN "When". There was no site string for it in any language.
+- **Where:** EN "Where". There was no site string for it in any language.
+- **Entry:** reuses the site's existing six-language `Entry: {cost}` line from `cal-feed.js` `CF_STR.entry`, minus the cost slot. That gives VN "Vé vào", RU "Вход", UK "Вхід", KO "입장료" and JA "入場料".
+
+### Vietnamese introduced in round 2 (draft: Donald corrects all Vietnamese)
+- Category names, from the event-analysis skill's VI draft: Âm nhạc + Nhảy + Trình diễn · Tiệc + Sự kiện đặc biệt · Trò chơi + Đố vui · Đồ uống + Ưu đãi · Ngôn ngữ + Trò chuyện · Giao lưu + Cộng đồng · Nghệ thuật sáng tạo · Sức khoẻ + Phát triển bản thân · Phim + Chiếu phim · Công nghệ + Kinh doanh
+- Overlay row keys: **Thời gian** (When) · **Địa điểm** (Where)
+- (Entry "Vé vào" was already on the site.)
+
+All of these are in `TICKET_STR` in `src/data/cal-feed.js`.
+
+### The live feed under the new rules (69 distinct titles, 5.10.26)
+- **The split:** arts 12 · language 12 · games 7 · film 7 · tech 6 · wellness 5 · music 5 · social 3 · party 3 · drinks 1 · other 8.
+- **Obvious misfires (fix in both ports):**
+  - **"Entrepreneurs-Only Meetup" → social.** The rule word is `entrepreneur`, and `\b…\b` doesn't match the plural; it should be tech. The same `\b` trap means the stems `freelanc` and `content strateg` can never match ("freelancer", "content strategy"). Suggestion: `entrepreneurs?`, `freelanc\w*`, `content strateg\w*`, in the hub's table too.
+  - **The "Workshop: …" series → other:**
+    - "Emotions Decoded"
+    - "The Authentic Self and The Survival Self"
+    - "The Hidden Patterns Holding You Back"
+
+    The analytics registry's last rule (`workshop|class|course|talk|seminar` → Wellness) isn't in the new table. These are wellness.
+  - **"WALKABOUT PRESENCE – Workshop 7: Audience Engagement & Interaction" → other**, while its "PHASE II: Presentation Skills…" sibling is tech (via `presentation`). The series splits.
+  - **"SHIP FAST WITHOUT CREATING A COMPLIANCE TIME BOMB" → other.** Probably tech.
+  - **"Free Clothing Swap at REALITY" and "Da Nang + Hoi An Kink Munch" → other.** Probably social.
+  - **"Fun with Math: The Monty Hall Problem" → other.** Language/talk, or games.
+  - **"Ghosted: A Halloween Talk Circle" → party.** `halloween` beats `talk circle`; defensible.
+- **The rest:** these read right, including:
+  - Pub Quiz, Clocktower and PowerPoint Karaoke → games;
+  - Karaoke! and Modern Jive → music;
+  - Philosophy Café and Coffee + Conversation → language;
+  - Book Club and Storyteller → arts;
+  - AI Dojo → tech;
+  - Body Doubling and Journaling → wellness.
+- **The feed carries no `category` field yet.**
+
+### Verification (round 2)
+- **`npm run selftest`:** 108 checks pass, including:
+  - the 22 category pins from the brief, plus round-1 regressions;
+  - `categoryOf` preferring the feed's key;
+  - the labels: the EN and VN names, the RU→EN fallback, `other` with no label, and Entry reused in EN/VN/JA;
+  - `nextDealToday` (today / another day / ended), and `isTodayICT` across the ICT midnight.
+- **`npm run build`:** passes, including prebuild, verify-day-colours and all 19 prerendered routes. `public/feed-snapshot.json` was reverted afterwards.
+  - The prerendered `dist/index.html` is Day (no `data-theme`) and carries the hero ticket ("Tonight · 19:00 | Games + Trivia | Monday Board Game Night …") with `fetchpriority="high"` on its poster, plus the inline seed.
+  - `/vn/` prints the VI category names; `/ja/` prints the EN fallback.
+- **Theme flip** (Day → Night → Day, `flip2.mjs` on the production preview :4660):
+  - The hero ticket is present in all three states.
+  - The band field runs at 3 → 0 → 3.
+  - The overlay opens and closes from the hero ticket.
+  - The scroll-spy marks Events / Info / Menus / Visit and nothing over the gallery.
+  - The only console errors are the expected CORS refusals of the live feed from `localhost`; the page falls back to the snapshot.
+- **Screenshots** are in `C:/Users/donal/AppData/Local/Temp/nct/shots/site2/`, taken from the production build under reduced motion.
+  - **Each theme × 1440 / 390 has:** `home`, `calendar` (up next), `rows`, `overlay`, `hero-overlay`, `menu`, `menu-deal` (faked today), `info`, `host-pricing`, `host-form`, `visit`, `gallery`, `footer`, `cta`, `focus` and `lang`.
+  - **Day 1440 only, with motion on (the live band field):** `day-1440-home-liveband` and `day-1440-cta-liveband`.
+- **Not verified:**
+  - real devices and Safari;
+  - RU/UK/KO/JA pages beyond the prerender text;
+  - the no-poster fallbacks in round 2 (only incidentally: the overlay and wall stripes render);
+  - the Event Guidelines / Host Guide pages beyond a Day 390 glance. They have no tickets, but they use `.alert-*`, which is now cream on green and red.
+
+---
+
+# Round 1 notes (history)
+
 ## The idea in one paragraph
 
 Night is one ink page. Anything you read sits on a **cream ticket** with ink type: event cards, the event overlay, the menu, the info panels, the visit facts and gallery cards. Chrome stays on ink: the masthead, tabs, section headings and the footer. Only the three majors carry colour, and each has one job:

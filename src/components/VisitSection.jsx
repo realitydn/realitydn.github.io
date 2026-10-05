@@ -16,16 +16,19 @@ export default function VisitSection({ lang, t }) {
   return (
     // The visit band — wayfinding is blue's whole job (hero, visit,
     // subscribe are the blue bands). Same contract as the hero: .b-wayfind
-    // resolves every nested component to ink-on-blue, theme-fixed, and the
-    // buttons fall out of the band tokens (primary = ink fill, secondary =
-    // ink outline) with no local patches.
+    // resolves every nested component to cream-on-blue (the APCA fill rule,
+    // 5.10.26), and the buttons fall out of the band tokens (primary = cream
+    // fill, secondary = cream outline) with no local patches. The facts sit on
+    // a ticket, which brings its own ink-on-cream.
     <section id="visit" className="band b-wayfind section">
       <BandField lead="blue" />
       <div className="max-w-7xl mx-auto px-4 py-16">
         <Reveal stagger className="grid grid-cols-12 gap-6 items-start">
-          {/* NIGHT v2: the facts + buttons are a cream ticket (reading),
-              the map a ticket frame — both with the blue (wayfinding) print;
-              the band itself is the ink page. Day: no styles on either. */}
+          {/* Night v2 (both themes since round 2): the facts + buttons are a
+              cream ticket (reading), the map a ticket frame. At night the band
+              is the ink page and both cast the blue (wayfinding) print; by Day
+              they sit on the blue field, so the print falls to the neutral
+              ink one (blue on blue would vanish). */}
           <div className="visit-card tkt col-span-12 md:col-span-5">
             <h2 className="h-section text-3xl md:text-4xl text-ink">
               {t.use('findUs')}

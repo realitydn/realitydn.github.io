@@ -1267,6 +1267,17 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
   margin-top: 6px; max-width: 64ch;
   font-family: var(--grotesk); font-size: 14.5px; line-height: 1.55; color: var(--ticket-dim);
 }
+/* Option A (6.10.26): the text column runs the card's full height (the
+   poster's 4:5 sets it), the story under the meta, the facts pinned to the
+   foot — so the column reads as composed, not as a gap. */
+.cal-card-b { align-self: stretch; }
+.cal-card:not(.cal-card-lead) .cal-card-desc { -webkit-line-clamp: 3; margin-top: 2px; font-size: 13.5px; line-height: 1.5; }
+.cal-card-facts { margin-top: auto; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.cal-card-facts > span {
+  font-family: var(--grotesk); font-size: 13px; line-height: 1; color: var(--ticket-fg);
+  border: 1.5px solid currentColor; padding: 6px 9px;
+}
+.cal-card-by { margin-top: auto; padding-top: 8px; font-family: var(--grotesk); font-size: 13px; line-height: 1.35; color: var(--ticket-dim); }
 .cal-card-p {
   aspect-ratio: 4 / 5;
   border-left: 2px solid var(--ticket-line);
@@ -1284,6 +1295,7 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
   .cal-card:not(.cal-card-lead) { grid-template-columns: minmax(0, 1fr) 128px; }
   .cal-card:not(.cal-card-lead) .cal-card-n { font-size: 17px; }
   .cal-card:not(.cal-card-lead) .cal-card-b { padding: 13px 14px 14px; }
+  .cal-card:not(.cal-card-lead) .cal-card-desc { -webkit-line-clamp: 2; font-size: 13px; }
 }
 .cal-noposter-logo { display: inline-flex; }
 .cal-noposter:not(.absolute) { position: relative; }

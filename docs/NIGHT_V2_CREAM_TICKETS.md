@@ -372,3 +372,19 @@ A negative test (canon red set back to ink) fails five ways.
 - 31 goldens were re-rendered: 13 Poster, 4 Print and 14 Schedule. Every diff is a text flip on a fill, and every Print QR still decodes.
 - Before and after sheets (seven accents per starter) are in `%TEMP%/nct/shots/studio/`, with the golden montages in `goldens/`.
 - Commit `5a4e4b5`. Not pushed or deployed.
+
+## Calendar wall — option A: stories and facts on every card (6.10.26)
+
+Donald: "the calendar feed, the top items feel kind of empty — too much white space" → picked
+option A of three mockups. The wall cards' height is set by the poster's 4:5, and beside it
+a side card had only a name and one meta line. Now every wall card carries its story
+(`pickDescription`, clamped: 6 lines on the lead, 3 beside a small poster, 2 on phones) and
+its facts pinned to the foot of the text column (`.cal-card-b` stretches; facts take
+`margin-top: auto`): on the lead as outlined chips, on the others as one quiet line —
+"Hosted by Alex · Every Tue". **"Every Tue" is earned, not assumed:** `weeklyIds()`
+(cal-feed.js) marks an event weekly only when the feed holds an instance of the same series
+exactly 7 days before or after (±2h); a series id alone doesn't say how often it runs, so
+fortnightly/monthly nights never claim it. `weekdayName()` speaks each language's weekday
+(EN Tue · VN Thứ 3 · RU/UK вт · KO 화 · JA 火); `cal.hostedBy` / `cal.everyWeekday` in all six
+catalogues (VN/RU/UK/KO/JA drafts). 8 new self-test checks (112 total). Data today: 260/317
+events carry a description, 222 a host.

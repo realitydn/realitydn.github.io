@@ -168,7 +168,9 @@ export default {
     "tonight": "Сегодня вечером",
     "posterAlt": "{title} — постер",
     "skip": "Пропустить остальной календарь",
-    "fallbackTitle": "Событие REALITY"
+    "fallbackTitle": "Событие REALITY",
+    "hostedBy": "Ведущий: {name}",
+    "everyWeekday": "Еженедельно · {weekday}"
   },
   "eventOverlay": {
     "openInApp": "Открыть в приложении REALITY",

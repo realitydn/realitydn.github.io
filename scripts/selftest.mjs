@@ -35,6 +35,8 @@ import {
   ticketLabel,
   isTodayICT,
   nextDealToday,
+  weekdayName,
+  weeklyIds,
 } from '../src/data/cal-feed.js';
 import { eventCategory, categoryOf, isNeutralCategory } from '../src/data/event-category.js';
 
@@ -239,6 +241,30 @@ eq('whenKey today (daytime)', whenKey('2026-07-01T14:00:00+07:00', wedNoon), 'to
 eq('whenKey tomorrow', whenKey('2026-07-02T10:00:00+07:00', wedNoon), 'tomorrow');
 eq('whenKey later → none', whenKey('2026-07-03T19:00:00+07:00', wedNoon), '');
 eq('whenKey ICT midnight boundary', whenKey('2026-07-01T17:30:00Z', wedNoon), 'tomorrow');
+// weeklyIds: "Every Tue" only when the feed shows the series a week apart;
+// weekdayName speaks each language's own weekday.
+{
+  const s = (id, seriesId, startsAt) => ({ id, seriesId, startsAt });
+  const w = weeklyIds([
+    s('w1', 'A', '2026-10-06T12:30:00+07:00'),
+    s('w2', 'A', '2026-10-13T12:30:00+07:00'),
+    s('f1', 'B', '2026-10-06T19:00:00+07:00'),
+    s('f2', 'B', '2026-10-20T19:00:00+07:00'),
+    s('m1', 'C', '2026-10-06T19:00:00+07:00'),
+    s('x1', null, '2026-10-06T19:00:00+07:00'),
+    s('t1', 'D', '2026-10-07T18:00:00+07:00'),
+    s('t2', 'D', '2026-10-14T19:30:00+07:00'),
+  ]);
+  eq('weeklyIds: a 7-day series is weekly', w.has('w1') && w.has('w2'), true);
+  eq('weeklyIds: a fortnightly series is not', w.has('f1') || w.has('f2'), false);
+  eq('weeklyIds: a lone instance or no series is not', w.has('m1') || w.has('x1'), false);
+  eq('weeklyIds: a 90-min time shift still reads weekly', w.has('t1') && w.has('t2'), true);
+  eq('weekdayName EN', weekdayName('2026-10-06T12:30:00+07:00', 'EN'), 'Tue');
+  eq('weekdayName VN', weekdayName('2026-10-06T12:30:00+07:00', 'VN'), 'Thứ 3');
+  eq('weekdayName JA', weekdayName('2026-10-06T12:30:00+07:00', 'JA'), '火');
+  eq('weekdayName ICT midnight boundary (Mon 23:30 ICT)', weekdayName('2026-10-05T16:30:00Z', 'EN'), 'Mon');
+}
+
 // ── locale parity: every catalogue mirrors locales/en.js ─────────────────────
 // Same key paths, same value types, same array lengths — so a string added to
 // EN and forgotten elsewhere fails here, not as silent English on /ja/. Loaded

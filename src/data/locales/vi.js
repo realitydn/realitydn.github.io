@@ -168,7 +168,9 @@ export default {
     "tonight": "Tối nay",
     "posterAlt": "{title} — poster",
     "skip": "Bỏ qua phần còn lại của lịch",
-    "fallbackTitle": "Sự kiện REALITY"
+    "fallbackTitle": "Sự kiện REALITY",
+    "hostedBy": "Dẫn dắt bởi {name}",
+    "everyWeekday": "{weekday} hằng tuần"
   },
   "eventOverlay": {
     "openInApp": "Mở trong app REALITY",

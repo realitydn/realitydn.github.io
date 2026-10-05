@@ -168,7 +168,9 @@ export default {
     "tonight": "今夜",
     "posterAlt": "{title} — ポスター",
     "skip": "カレンダーの残りをスキップ",
-    "fallbackTitle": "REALITYのイベント"
+    "fallbackTitle": "REALITYのイベント",
+    "hostedBy": "ホスト：{name}",
+    "everyWeekday": "毎週{weekday}曜日"
   },
   "eventOverlay": {
     "openInApp": "REALITYアプリで開く",

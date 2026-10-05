@@ -6,7 +6,7 @@ import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
 import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName, pickDescription } from '../data/feed-helpers';
-import { splitFeedSite, fmtDM, fmtDayDate, cfStr, costLabel, catLabel, dmParts } from '../data/cal-feed';
+import { splitFeedSite, fmtDM, fmtDayDate, cfStr, costLabel, catLabel, dmParts, weekdayName, weeklyIds } from '../data/cal-feed';
 import { categoryOf } from '../data/event-category';
 import { LogoBox } from './Ticket';
 
@@ -123,6 +123,8 @@ export default function Calendar({ lang }) {
   const all = [...soon, ...later];
   const wall = all.slice(0, 5);
   const rest = all.slice(5);
+  // Which series visibly run every week in the feed — for "Every Tue".
+  const weekly = useMemo(() => weeklyIds(events || []), [events]);
 
   // Flow mode (touch / narrow — see index.css "The feed has TWO modes"):
   // only the first ROW_CAP rows print; past that the app is the calendar,
@@ -166,7 +168,16 @@ export default function Calendar({ lang }) {
     // (index.css, TICKETS).
     const cat = categoryOf(ev);
     const label = catLabel(cat, lang);
-    const desc = lead ? pickDescription(ev, lang) : '';
+    // Option A (Donald 6.10.26 — "the top items feel kind of empty"): every
+    // wall card carries its story (clamped: 6 lines on the lead, 3 beside a
+    // small poster) and its facts — who hosts it, and "Every Tue" when the
+    // feed shows it running weekly. The poster's 4:5 sets the card's height,
+    // so this fills the text column instead of leaving it blank.
+    const desc = pickDescription(ev, lang);
+    const facts = [
+      ev.host ? C.hostedBy.replace('{name}', ev.host) : '',
+      weekly.has(ev.id) ? C.everyWeekday.replace('{weekday}', weekdayName(ev.startsAt, lang)) : '',
+    ].filter(Boolean);
     return (
       <a
         key={ev.id}
@@ -193,8 +204,20 @@ export default function Calendar({ lang }) {
               {meta}
             </span>
           )}
-          {/* The lead ticket carries its story (ticket body copy, clamped). */}
-          {lead && desc && <span className="cal-card-desc">{desc}</span>}
+          {/* The story (ticket body copy, clamped), then the facts at the
+              foot of the column — chips on the lead, one quiet line beside
+              a small poster. */}
+          {desc && <span className="cal-card-desc">{desc}</span>}
+          {facts.length > 0 &&
+            (lead ? (
+              <span className="cal-card-facts">
+                {facts.map((f) => (
+                  <span key={f}>{f}</span>
+                ))}
+              </span>
+            ) : (
+              <span className="cal-card-by">{facts.join(' · ')}</span>
+            ))}
         </span>
         <span className="cal-card-p relative block w-full overflow-hidden">
           {img ? (

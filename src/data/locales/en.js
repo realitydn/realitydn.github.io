@@ -170,7 +170,9 @@ export default {
     "tonight": "Tonight",
     "posterAlt": "{title} — poster",
     "skip": "Skip the rest of the calendar",
-    "fallbackTitle": "REALITY event"
+    "fallbackTitle": "REALITY event",
+    "hostedBy": "Hosted by {name}",
+    "everyWeekday": "Every {weekday}"
   },
   "eventOverlay": {
     "openInApp": "Open in the REALITY app",

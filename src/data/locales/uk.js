@@ -168,7 +168,9 @@ export default {
     "tonight": "Сьогодні ввечері",
     "posterAlt": "{title} — постер",
     "skip": "Пропустити решту календаря",
-    "fallbackTitle": "Подія REALITY"
+    "fallbackTitle": "Подія REALITY",
+    "hostedBy": "Веде: {name}",
+    "everyWeekday": "Щотижня · {weekday}"
   },
   "eventOverlay": {
     "openInApp": "Відкрити в застосунку REALITY",

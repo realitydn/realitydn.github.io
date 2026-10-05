@@ -71,6 +71,49 @@ function ictDateStr(now, plusDays) {
 // dmParts(iso) → { d: '6', m: '10' } — the house d.m split for the Night v2
 // list-ticket date block (big day number, small .month). Same source as
 // fmtDM, so no leading zeros, ever.
+// weekdayName(iso, lang) → the weekday for "Every {weekday}" on a wall card
+// (option A, 6.10.26): EN "Tue", VN "Thứ 3", and the language's own short
+// weekday elsewhere (RU/UK "вт", KO "화", JA "火") — the templates in each
+// locale's cal.everyWeekday carry the grammar around it.
+const WD_INTL = {};
+export function weekdayName(iso, lang = 'EN') {
+  const d = instant(iso);
+  if (!d) return '';
+  const en = FMT_WD.format(d);
+  if (lang === 'EN') return en;
+  if (lang === 'VN') return WD_VI[en] || en;
+  const loc = { RU: 'ru', UK: 'uk', KO: 'ko', JA: 'ja' }[lang];
+  if (!loc) return en;
+  WD_INTL[loc] = WD_INTL[loc] || new Intl.DateTimeFormat(loc, { weekday: 'short', timeZone: ICT });
+  return WD_INTL[loc].format(d).replace(/\.$/, '');
+}
+
+// weeklyIds(events) → the ids whose series visibly repeats every 7 days in
+// the feed itself — a neighbour in the same series exactly a week before or
+// after (±2h, so a one-off time shift doesn't break it). Only those cards
+// say "Every Tue": a series id alone doesn't say how often it runs, and a
+// fortnightly or monthly night must never claim to be weekly.
+export function weeklyIds(events) {
+  const bySeries = new Map();
+  for (const ev of events || []) {
+    if (!ev || !ev.seriesId || !instant(ev.startsAt)) continue;
+    if (!bySeries.has(ev.seriesId)) bySeries.set(ev.seriesId, []);
+    bySeries.get(ev.seriesId).push(ev);
+  }
+  const WEEK = 7 * 86400000, SLACK = 2 * 3600000;
+  const out = new Set();
+  for (const list of bySeries.values()) {
+    list.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    for (let i = 0; i < list.length; i++) {
+      const t = Date.parse(list[i].startsAt);
+      const prev = i > 0 ? t - Date.parse(list[i - 1].startsAt) : NaN;
+      const next = i < list.length - 1 ? Date.parse(list[i + 1].startsAt) - t : NaN;
+      if (Math.abs(prev - WEEK) <= SLACK || Math.abs(next - WEEK) <= SLACK) out.add(list[i].id);
+    }
+  }
+  return out;
+}
+
 export function dmParts(iso) {
   const dm = fmtDM(iso);
   if (!dm) return { d: '', m: '' };

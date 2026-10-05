@@ -168,7 +168,9 @@ export default {
     "tonight": "오늘 밤",
     "posterAlt": "{title} — 포스터",
     "skip": "나머지 일정 건너뛰기",
-    "fallbackTitle": "REALITY 이벤트"
+    "fallbackTitle": "REALITY 이벤트",
+    "hostedBy": "진행: {name}",
+    "everyWeekday": "매주 {weekday}요일"
   },
   "eventOverlay": {
     "openInApp": "REALITY 앱에서 열기",

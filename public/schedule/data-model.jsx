@@ -24,7 +24,7 @@ const FLAGS = [
    the data layer must be able to normalise a document without the render
    engine. An archive
    naming a layout we no longer ship falls back to classic rather than blank. */
-const DAILY_CARD_IDS = ['classic','flood','misreg','spine','chrono'];
+const DAILY_CARD_IDS = ['classic','flood','misreg','spine','chrono','tickets'];
 
 /* ---- dates (all ISO yyyy-mm-dd strings; UTC-noon anchor avoids TZ drift) ---- */
 function dToDate(iso){ return new Date(iso + 'T12:00:00Z'); }

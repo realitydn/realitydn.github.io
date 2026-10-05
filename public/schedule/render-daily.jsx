@@ -1,10 +1,10 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — render · the daily card
-   Classic · Flood · Misreg · Spine · Chrono, and the dispatcher
+   Classic · Flood · Misreg · Spine · Chrono · Tickets, and the dispatcher
    every caller (preview, export, the digest) goes through.
    ============================================================ */
-import { themeTokens, ThemeCtx, DAILY_VARIANTS } from './render-config.jsx';
-import { dailyCardOf, DAILY_METRICS, D_S, dailyLongLocs, dailySizing, dailyPlate, dailyFitName,
+import { themeTokens, ThemeCtx, DAILY_VARIANTS, ticketTokens } from './render-config.jsx';
+import { dailyCardOf, DAILY_METRICS, DAILY_TICKETS_MAX, D_S, dailyLongLocs, dailySizing, dailyPlate, dailyFitName,
   dailyTail, dailyRooms, DAILY_SPREAD, DailyClosed, DailyCTA, dailyTitleStyle, DailyNameRow,
   DAILY_OPEN_MIN, DAILY_CLOSE_MIN, dailyMinutes } from './render-daily-kit.jsx';
 import { codesText } from './render-fit.jsx';
@@ -399,10 +399,114 @@ function DailyChrono({ doc, date, variant }){
   );
 }
 
+/* ---- 06 · TICKETS — the app's cream tickets (Donald 6.10.26) ----
+   The day's colour is a full-bleed band carrying the day's name; under it
+   every event is its own cream ticket — a time block in the day's colour,
+   the name in Montserrat caps, the room and any end time beneath, the
+   palette's ink as the edge, the day's colour as the print. Past
+   DAILY_TICKETS_MAX events a stack of tickets turns into a wall of edges, so
+   the day becomes ONE ruled ticket: the day's colour as its bar, a row per
+   event. Inside a ticket it is always ink on cream (ticketTokens), so it
+   reads on every palette. Emphasis: bold underlines the name in the day's
+   colour; a banner night fills its ticket with the day's colour. */
+function DailyTickets({ doc, date, variant }){
+  const story = (variant||'story')==='story';
+  const v = DAILY_VARIANTS[story?'story':'feed'];
+  const T = themeTokens(doc.style.theme), K = ticketTokens(T);
+  const w = r_wd(date), dc = T.dc[w], dt = T.dt[w];
+  const info = r_dayInfo(doc, date);
+  const evs = r_eventsOn(doc, date, 'daily');
+  const n = Math.max(1, evs.length);
+  const ruled = evs.length > DAILY_TICKETS_MAX;
+  const m = DAILY_METRICS.tickets[story?'story':'feed'];
+  const D = dailySizing(doc, variant||'story', date);
+  const font = D.font, gap = m.gap(n);
+  const hpad = story ? 72 : 60;
+  const pr = Math.max(6, Math.round(font*0.22));
+  const inner = Math.round(font*0.42);
+  const dateFs = story ? 52 : 42;
+  const name = dailyFitName(D_S(n,[story?118:94, story?108:86, story?98:80, story?90:74]), R_DF[w],
+    v.w - hpad*2 - dateFs*2.6);
+  const titleStyle = (ev, k)=>({ fontFamily:R_MONT, fontWeight:700, fontSize:font*k, textTransform:'uppercase',
+    letterSpacing:'.03em', lineHeight:1.18, minWidth:0,
+    borderBottom: ev.emphasis==='bold' ? Math.max(4, Math.round(font*0.12))+'px solid '+dc : 'none',
+    paddingBottom: ev.emphasis==='bold' ? Math.round(font*0.1) : 0 });
+  const roomLine = ev=>[dailyTail(ev), dailyRooms(ev, n)].filter(Boolean).join('  ·  ');
+  return (
+    <ThemeCtx.Provider value={T}>
+      <div style={{ width:v.w, height:v.h, background:T.bg, color:T.fg, position:'relative', overflow:'hidden',
+        boxSizing:'border-box', display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:'none', background:dc, color:dt, padding:(story?60:44)+'px '+hpad+'px '+(story?44:32)+'px' }}>
+          <div style={{ fontFamily:R_MONT, fontWeight:700, fontSize:story?26:22, letterSpacing:'.22em',
+            textTransform:'uppercase', opacity:.92 }}>TODAY AT REALITY</div>
+          <div style={{ display:'flex', alignItems:'baseline', gap:story?28:22, marginTop:story?14:10 }}>
+            <span style={{ fontFamily:R_MONT, fontWeight:800, fontSize:name, lineHeight:.95,
+              textTransform:'uppercase', whiteSpace:'nowrap' }}>{R_DF[w]}</span>
+            <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:dateFs, flex:'none' }}>{r_dshort(date)}</span>
+          </div>
+        </div>
+        <div style={{ flex:1, minHeight:0, padding:(story?48:36)+'px '+(hpad+pr)+'px '+(story?40:30)+'px '+hpad+'px',
+          display:'flex', flexDirection:'column', justifyContent:DAILY_SPREAD, gap }}>
+          {info.status==='closed'
+            ? <DailyClosed note={info.note} font={story?44:36} color={T.fg} />
+            : ruled
+            ? <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', background:K.bg, color:K.fg,
+                border:'2px solid '+K.edge, boxShadow:(pr+2)+'px '+(pr+2)+'px 0 '+dc }}>
+                <div style={{ flex:'none', background:dc, color:dt, display:'flex', justifyContent:'space-between',
+                  padding:Math.round(font*0.3)+'px '+Math.round(font*0.5)+'px', fontFamily:R_MONT, fontWeight:700,
+                  fontSize:Math.round(font*0.5), letterSpacing:'.1em' }}>
+                  <span>{evs.length} EVENTS</span><span>86 MAI THÚC LÂN</span>
+                </div>
+                <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', justifyContent:'space-evenly' }}>
+                  {evs.map((ev,i)=>{
+                    const banner = ev.emphasis==='banner';
+                    return (
+                      <div key={ev.id} style={{ display:'grid', gridTemplateColumns:(font*2.9)+'px minmax(0,1fr) auto',
+                        columnGap:font*0.4, alignItems:'baseline', padding:(gap/2)+'px '+Math.round(font*0.5)+'px',
+                        borderTop: i ? '1.5px solid '+K.hairline : 'none',
+                        background: banner ? dc : 'transparent', color: banner ? dt : K.fg }}>
+                        <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:font*0.74,
+                          fontVariantNumeric:'tabular-nums' }}>{ev.start}</span>
+                        <span style={titleStyle(ev, 0.8)}>{ev.title}</span>
+                        <span style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.58, whiteSpace:'nowrap',
+                          color: banner ? dt : K.dim }}>{codesText(ev)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            : evs.map(ev=>{
+                const banner = ev.emphasis==='banner';
+                const rooms = roomLine(ev);
+                return (
+                  <div key={ev.id} style={{ display:'grid', gridTemplateColumns:(font*3.2)+'px minmax(0,1fr)',
+                    background: banner ? dc : K.bg, color: banner ? dt : K.fg,
+                    border:'2px solid '+K.edge, boxShadow:pr+'px '+pr+'px 0 '+dc }}>
+                    <div style={{ background: banner ? K.fg : dc, color: banner ? K.bg : dt, display:'grid',
+                      placeItems:'center', fontFamily:R_MONT, fontWeight:700, fontSize:font*0.78,
+                      fontVariantNumeric:'tabular-nums' }}>{ev.start}</div>
+                    <div style={{ padding:inner+'px '+Math.round(font*0.5)+'px', minWidth:0 }}>
+                      <div style={titleStyle(ev, 0.84)}>{ev.title}</div>
+                      {rooms ? <div style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.6,
+                        color: banner ? dt : K.dim, marginTop:Math.round(font*0.18) }}>{rooms}</div> : null}
+                    </div>
+                  </div>
+                );
+              })}
+        </div>
+        <div style={{ flex:'none', margin:'0 '+hpad+'px', borderTop:'3px solid '+T.fg,
+          padding:(story?32:24)+'px 0 '+(story?56:40)+'px' }}>
+          <DailyCTA n={n} story={story} T={T} />
+        </div>
+      </div>
+    </ThemeCtx.Provider>
+  );
+}
+
 /* The dispatcher every caller goes through — preview, export and the digest
    all render the same component, so what you pick is what ships. */
 const DAILY_IMPL = { classic:DailyClassic, flood:DailyFlood, misreg:DailyMisreg,
-                     spine:DailySpine, chrono:DailyChrono };
+                     spine:DailySpine, chrono:DailyChrono, tickets:DailyTickets };
 function DailyCard({ doc, date, variant }){
   const Impl = DAILY_IMPL[dailyCardOf(doc)] || DailyClassic;
   return <Impl doc={doc} date={date} variant={variant} />;

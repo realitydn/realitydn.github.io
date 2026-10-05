@@ -1,6 +1,6 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — render · daily card kit
-   What the five daily-card layouts share (and the FB cover borrows):
+   What the six daily-card layouts share (and the FB cover borrows):
    the layout registry, the per-layout furniture budgets and the fit
    engine, the ink plate, the WEDNESDAY name fit, rooms / tails,
    the call to action, emphasis styling and the day-axis clock.
@@ -12,7 +12,7 @@ import { eventsOn as r_eventsOn, GROT as R_GROT, LOCATIONS as R_LOCS, MONT as R_
   QR_CTA as R_QR_CTA, QR_HOST as R_QR_HOST, Wordmark as RWordmark } from './schedule-data.jsx';
 
 /* ============================================================
-   DAILY CARD — five layouts over one fit engine
+   DAILY CARD — six layouts over one fit engine
    ============================================================
    The daily card is the only surface that travels alone, so it carries the
    full furniture every time and has to survive both a two-event Tuesday and
@@ -26,6 +26,8 @@ import { eventsOn as r_eventsOn, GROT as R_GROT, LOCATIONS as R_LOCS, MONT as R_
      misreg   the house off-register plate at card scale
      spine    a full-height colour rail, day name set vertically
      chrono   the colour as the day's time axis, plus a chip per row
+     tickets  the app's cream tickets: one per event, or (8+) one ruled
+              ticket holding them all (Donald 6.10.26)
 
    The layout is a DOCUMENT setting (doc.daily.card), not a per-day one: a
    week of cards posted one a morning has to look like one week. ---- */
@@ -35,6 +37,7 @@ const DAILY_CARDS = [
   { id:'misreg',  name:'Misreg',  hint:'the house misprint' },
   { id:'spine',   name:'Spine',   hint:'full-height rail' },
   { id:'chrono',  name:'Chrono',  hint:'colour as time axis' },
+  { id:'tickets', name:'Tickets', hint:'a cream ticket per event' },
 ];
 function dailyCardOf(doc){
   const k = doc && doc.daily && doc.daily.card;
@@ -74,7 +77,25 @@ const DAILY_METRICS = {
             feed: { pad:64, head:n=>D_S(n,[330,300,272,250]), foot:()=>224, gap:n=>D_S(n,[23,18,13,10]),
                     titleW:(f,n)=>1080-128-(f*0.8*3.1+2*D_S(n,[16,14,12,10]))-D_S(n,[21,18,14,12]),
                     sub:()=>true, subH:(f,n)=>f*0.66*1.3+D_S(n,[11,8,6,5]) } },
+  /* tickets: the band and the CTA are full furniture, so pad is 0 and head/foot
+     carry every vertical px. Up to DAILY_TICKETS_MAX events each is its own
+     ticket — its padding, edges and room line ride on subH; past that one
+     ruled ticket holds the day, its bar rides on head and the row padding on
+     gap. Titles set in Montserrat caps at 0.84 of the row size: a hair wider
+     per em than the Grotesk the estimate assumes, hence the 0.94 on titleW. */
+  tickets:{ story:{ pad:0, head:n=>D_S(n,[388,373,418,404]), foot:n=>D_S(n,[250,250,215,190]),
+                    gap:n=>D_S(n,[30,24,22,18]),
+                    titleW:(f,n)=> 0.94*(n<=DAILY_TICKETS_MAX ? 1080-144-4-f*3.2-f*1.0-f*0.22 : 1080-148-f*6.9),
+                    sub:n=>n<=DAILY_TICKETS_MAX, subH:f=>f*1.8+4 },
+            feed: { pad:0, head:n=>D_S(n,[296,286,326,316]), foot:n=>D_S(n,[210,210,185,165]),
+                    gap:n=>D_S(n,[22,18,16,13]),
+                    titleW:(f,n)=> 0.94*(n<=DAILY_TICKETS_MAX ? 1080-120-4-f*3.2-f*1.0-f*0.22 : 1080-124-f*6.9),
+                    sub:n=>n<=DAILY_TICKETS_MAX, subH:f=>f*1.8+4 } },
 };
+/* Past this many events the Tickets card stops giving each its own ticket
+   and sets the day as one ruled ticket — nine tickets stacked was the
+   mockup's limit, and a ruled list holds ten and more comfortably. */
+const DAILY_TICKETS_MAX = 7;
 /* Density tiers — airy · normal · tight · packed. Structural choices (how much
    room the masthead takes, whether a room is spelled out) step per tier; TYPE
    steps per event, off the fit engine below. */
@@ -270,6 +291,6 @@ function dailyMinutes(hhmm){
   return (h < 6 ? h+24 : h)*60 + (+p[2]);
 }
 
-export { DAILY_CARDS, dailyCardOf, DAILY_METRICS, D_S, dailyLongLocs, dailySizing, dailyPlate,
+export { DAILY_CARDS, dailyCardOf, DAILY_METRICS, DAILY_TICKETS_MAX, D_S, dailyLongLocs, dailySizing, dailyPlate,
   dailyFitName, dailyTail, dailyRooms, DAILY_SPREAD, DailyClosed, DailyCTA, dailyTitleStyle,
   DailyNameRow, DAILY_OPEN_MIN, DAILY_CLOSE_MIN, dailyMinutes };

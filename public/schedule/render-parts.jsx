@@ -6,7 +6,7 @@
    them out (carousel day stack, grid area, print/WA column).
    ============================================================ */
 import { ThemeCtx, GEOM, gridColsFor, gridGapFor, stackBannerH, gridStripH, gridPad, dayGapFor,
-  SHORT_STEP, entryFont, entryLead } from './render-config.jsx';
+  SHORT_STEP, entryFont, entryLead, ticketTokens, ticketBarH, ticketPad, ticketPrint } from './render-config.jsx';
 import { codesText, timeColW, timeTail, fontFor } from './render-fit.jsx';
 import { LegendBlock, QRBlock } from './render-footer.jsx';
 import { DAY_ABBR as R_DA, dayInfo as r_dayInfo, dShort as r_dshort, eventsOn as r_eventsOn,
@@ -182,6 +182,45 @@ function StackDay({ doc, date, channel, font, lead, useShort, evs:evsOverride, c
   );
 }
 
+/* ---- TICKETS day group: the cream ticket (render-config.jsx, ticketTokens) ----
+   Bar in the day's colour (name · date left, the count or CONT. right), the
+   rows in ink on cream inside, the palette's ink as the edge, the day's
+   colour as the print. A closed day is a bar alone, its note on the bar. */
+function TicketDay({ doc, date, channel, font, lead, useShort, evs:evsOverride, cut }){
+  const T = React.useContext(ThemeCtx);
+  const K = ticketTokens(T);
+  const w = r_wd(date);
+  const info = r_dayInfo(doc, date);
+  const evs = evsOverride || r_eventsOn(doc, date, channel);
+  const tW = timeColW(font);
+  const bH = ticketBarH(font), pad = ticketPad(font), pr = ticketPrint(font);
+  const closed = info.status==='closed';
+  return (
+    /* color is NOT optional: an EventRow title inherits it, and on a dark
+       palette the page's colour is cream — cream on the cream ticket. */
+    <div style={{ background:K.bg, color:K.fg, border:'2px solid '+K.edge, boxShadow:pr+'px '+pr+'px 0 '+K.dc[w] }}>
+      <div style={{ height:bH, background:K.dc[w], color:K.dt[w], display:'flex', alignItems:'center',
+        justifyContent:'space-between', padding:'0 '+pad+'px', boxSizing:'border-box' }}>
+        <span style={{ fontFamily:R_MONT, fontWeight:700, fontSize:font*1.05, letterSpacing:'.04em' }}>
+          {R_DA[w]}<span style={{ fontWeight:500, marginLeft:font*0.5, fontSize:font*0.86 }}>{r_dshort(date)}</span>
+        </span>
+        {closed
+          ? <span style={{ fontFamily:R_MONT, fontWeight:600, fontSize:font*0.74, letterSpacing:'.08em' }}>{info.note||'CLOSED'}</span>
+          : <span style={{ fontFamily:R_MONT, fontWeight:600, fontSize:font*0.66, letterSpacing:'.14em', opacity:.85 }}>
+              {cut ? (cut==='head' ? 'CONT. →' : 'CONT.')
+                   : (evs.length ? String(evs.length).padStart(2,'0')+' EVENTS' : '')}</span>}
+      </div>
+      {!closed &&
+        <ThemeCtx.Provider value={K}>
+          <div style={{ padding:(pad*0.7)+'px '+pad+'px '+(pad*0.8)+'px' }}>
+            {evs.map(ev=><EventRow key={ev.id} ev={ev} font={font} lead={lead} timeW={tW} useShort={useShort}
+              dayColor={K.dc[w]} dayText={K.dt[w]} />)}
+          </div>
+        </ThemeCtx.Provider>}
+    </div>
+  );
+}
+
 /* ---- GRID: bordered day cells, color strip header ---- */
 function GridCell({ doc, date, channel, level, onOverflow }){
   const T = React.useContext(ThemeCtx);
@@ -248,11 +287,11 @@ function GridMetaCell({ doc, channel, level, legend }){
 }
 
 function DayStack({ doc, dates, channel, look, sizing, stepDown, gap, evenly }){
-  const Day = look==='stack' ? StackDay : LedgerDay;
+  const Day = look==='stack' ? StackDay : look==='tickets' ? TicketDay : LedgerDay;
   return (
     <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column',
       justifyContent: evenly===false ? 'flex-start' : 'space-evenly',
-      rowGap: look==='stack' ? gap*0.78 : gap }}>
+      rowGap: look==='stack' ? gap*0.78 : look==='tickets' ? gap*0.92 : gap }}>
       {dates.map(date=>{
         const want = (sizing && sizing.byDate[date]) ? sizing.byDate[date].step : 0;
         const step = Math.max(0, want - (stepDown||0));
@@ -283,6 +322,8 @@ function ColumnStack({ doc, segs, channelId, look, level, colW, g }){
     <div style={{ width:colW, display:'flex', flexDirection:'column', rowGap:dayGapFor(g, look), minWidth:0 }}>
       {segs.map((s,i)=> look==='stack'
         ? <StackDay key={s.date+'-'+i} doc={doc} date={s.date} evs={s.evs} cut={s.cut} channel={channelId} font={font} lead={lead} useShort={useShort} />
+        : look==='tickets'
+        ? <TicketDay key={s.date+'-'+i} doc={doc} date={s.date} evs={s.evs} cut={s.cut} channel={channelId} font={font} lead={lead} useShort={useShort} />
         : <LedgerDay key={s.date+'-'+i} doc={doc} date={s.date} evs={s.evs} cut={s.cut} channel={channelId} font={font} lead={lead} useShort={useShort} />)}
     </div>
   );

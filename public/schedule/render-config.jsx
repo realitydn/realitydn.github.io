@@ -88,8 +88,28 @@ const LOOKS_LIST = [
   { id:'ledger', l:'Ledger', hint:'day rail · time table' },
   { id:'stack',  l:'Stack',  hint:'full-width day banners' },
   { id:'grid',   l:'Grid',   hint:'modular day cells' },
+  { id:'tickets', l:'Tickets', hint:'a cream ticket per day' },
 ];
-function lookOf(doc){ const k = doc.style && doc.style.look; return (k==='stack'||k==='grid') ? k : 'ledger'; }
+function lookOf(doc){ const k = doc.style && doc.style.look; return (k==='stack'||k==='grid'||k==='tickets') ? k : 'ledger'; }
+
+/* ---- TICKETS (Donald 6.10.26 — the app's Night v2 "cream tickets" as a
+   Schedule Studio option) ----
+   A Stack-family look: each day is a CREAM TICKET — the day's colour as the
+   ticket's top bar, the rows inside in ink on cream, a 2px edge in the
+   palette's ink (ink on a light ground, cream on a dark one — the app's
+   --tk-edge), and a hard offset PRINT in the day's colour. Inside the ticket
+   it is always the Day ink-on-cream world, whatever the palette: that is the
+   whole idea of a ticket, and why it reads on Night and Carbon too. The bar
+   and print take the PALETTE's day colours, so Night still lifts Wednesday's
+   purple and Press stays one-colour. */
+function ticketTokens(T){
+  const day = themeTokens('day');
+  return Object.assign({}, day, { edge:T.fg, dc:T.dc, dt:T.dt });
+}
+const TICKET_F   = 0.94;                       /* the ticket's padding costs width; type gives a little back */
+const ticketBarH  = f => f*1.9;
+const ticketPad   = f => f*0.55;
+const ticketPrint = f => Math.max(5, Math.round(f*0.26));
 
 /* ---- geometry per channel (base = Ledger; Stack shares; Grid scales down) ---- */
 const GEOM = {
@@ -106,11 +126,12 @@ const gridColsFor = ch => GEOM[ch].gridCols || 2;
 const gridGapFor = ch => (ch==='print'||ch==='wa') ? GEOM[ch].dayGap*0.8 : GEOM[ch].dayGap;
 const GRID_F = 0.82;            /* grid cells run smaller type */
 const STACK_F = 0.97;           /* banners cost height; type gives a hair back */
-const lookF = look => look==='grid' ? GRID_F : look==='stack' ? STACK_F : 1;
+const lookF = look => look==='grid' ? GRID_F : look==='stack' ? STACK_F : look==='tickets' ? TICKET_F : 1;
 const stackBannerH = f => f*2.05;
 const gridStripH  = f => f*1.75;
 const gridPad     = f => f*0.55;
-const dayGapFor = (g, look) => look==='stack' ? g.dayGap*0.78 : g.dayGap;
+/* tickets keep most of the gap: the print hangs into it below each ticket */
+const dayGapFor = (g, look) => look==='stack' ? g.dayGap*0.78 : look==='tickets' ? g.dayGap*0.92 : g.dayGap;
 
 /* ---- per-day text sizing (weekly carousels: Stories + Feed, stacked looks) ----
    A wider, taller ladder than the auto-fit type levels so entries can read BIG on
@@ -141,5 +162,6 @@ const CAROUSEL_QR = { 0:112, 1:80, 2:0 };
 
 export { R_LUM, themeTokens, ThemeCtx, RED, PALETTES, CHANNELS, DAILY_VARIANTS, channelById,
   LOOKS_LIST, lookOf, GEOM, gridColsFor, gridGapFor, GRID_F, lookF, stackBannerH, gridStripH, gridPad,
+  ticketTokens, TICKET_F, ticketBarH, ticketPad, ticketPrint,
   dayGapFor, SHORT_STEP, SIZE_COMFORT, SIZE_BRIM, sizedChannel, ladderLen, clampStep, entryFont,
   entryLead, CAROUSEL_QR };

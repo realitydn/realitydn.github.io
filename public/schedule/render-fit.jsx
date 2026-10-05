@@ -9,7 +9,7 @@
    ============================================================ */
 import { CHANNELS, channelById, lookOf, GEOM, gridColsFor, gridGapFor, GRID_F, lookF, stackBannerH,
   gridStripH, gridPad, dayGapFor, SHORT_STEP, SIZE_COMFORT, SIZE_BRIM, sizedChannel, ladderLen,
-  clampStep, entryFont, entryLead, CAROUSEL_QR } from './render-config.jsx';
+  clampStep, entryFont, entryLead, CAROUSEL_QR, ticketBarH, ticketPad, TICKET_F } from './render-config.jsx';
 import { dayInfo as r_dayInfo, eventsOn as r_eventsOn, partDates as r_partDates,
   rangeDates as r_rangeDates, usedLegend as r_usedLegend } from './schedule-data.jsx';
 
@@ -55,6 +55,8 @@ function measureDayAt(doc, date, channel, look, font, lead, useShort, rowAreaW, 
   });
   if(look==='ledger') return Math.max(rows, g.block);
   if(look==='stack')  return stackBannerH(font) + font*0.32 + rows;
+  /* tickets: the bar, the inner padding (0.7 + 0.8 of a pad) and the 2px edges */
+  if(look==='tickets') return ticketBarH(font) + ticketPad(font)*1.5 + 4 + rows;
   return gridStripH(font) + gridPad(font)*2 + rows;   /* grid: cell content height */
 }
 function measureDay(doc, date, channel, look, level, rowAreaW, evsOverride){
@@ -65,6 +67,7 @@ function rowAreaWidth(channel, look, contentW){
   const g = GEOM[channel];
   if(look==='ledger') return contentW - g.block - g.blockGap;
   if(look==='stack')  return contentW - g.block*0.15;
+  if(look==='tickets') return contentW - ticketPad(g.font[0]*TICKET_F)*2 - 4;   /* ticket inner */
   return contentW - gridPad(g.font[0]*GRID_F)*2 - 4;  /* grid cell inner */
 }
 

@@ -388,3 +388,27 @@ fortnightly/monthly nights never claim it. `weekdayName()` speaks each language'
 (EN Tue · VN Thứ 3 · RU/UK вт · KO 화 · JA 火); `cal.hostedBy` / `cal.everyWeekday` in all six
 catalogues (VN/RU/UK/KO/JA drafts). 8 new self-test checks (112 total). Data today: 260/317
 events carry a description, 222 a host.
+
+## Schedule Studio — "Tickets" (6.10.26)
+
+Donald: "let's add this theme in as an option to Schedule Studio" (after the cream-ticket
+schedule mockups). Two opt-in choices, nothing else moves (defaults stay Ledger + Classic,
+every golden unchanged):
+
+- **Layout → Tickets** (`LOOKS_LIST`, render-config.jsx): a Stack-family look for the weekly
+  outputs — IG/FB feed, Stories, WhatsApp, Print. Each day is a cream ticket: the day colour
+  as its top bar (name · date, the count or CONT.), the rows in ink on cream, the palette's
+  ink as the 2px edge (ink on Day/Paper/Press, cream on Night/Carbon — the app's
+  `--tk-edge`), the day colour as a hard offset print. Inside a ticket it's always the Day
+  tokens (`ticketTokens`), so it reads on every palette; bar + print take the palette's day
+  colours (Night lifts Wednesday's purple; Press stays one-colour). The fit engine knows the
+  ticket's bar, padding and edges (`measureDayAt` / `rowAreaWidth`), so the per-day size
+  ladder, the two-column splits and CONT. all work as they do for Stack.
+- **Daily card → Tickets** (`DAILY_CARDS`, render-daily-kit.jsx + `DailyTickets`): the
+  day colour as a full-bleed band with the day's name, then a cream ticket per event (time
+  block in the day colour, name in Montserrat caps, room + end time under it); past
+  `DAILY_TICKETS_MAX` (7) events the day becomes ONE ruled ticket (bar "9 EVENTS", a row per
+  event) — the 9-item mockup's verdict. Bold = day-colour underline, banner = the ticket
+  filled with the day colour. The standard CTA (wordmark, address, QR) closes the card.
+
+The FB cover isn't ticketed (it has its own Cover styles).

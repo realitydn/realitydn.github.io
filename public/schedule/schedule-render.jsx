@@ -1,6 +1,6 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — render engine
-   Looks (Ledger / Stack / Grid) · Day & Night themes · channel
+   Looks (Ledger / Stack / Grid / Tickets) · Day & Night themes · channel
    frames · auto-fit: estimate first, then MEASURE the real DOM
    and bump density until it fits (type ladder → footer ladder).
    Contract: never overflow silently, never go below the floor.

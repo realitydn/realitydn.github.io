@@ -29,7 +29,13 @@ import {
   splitFeedSite,
   cfStr,
   costLabel,
+  dmParts,
+  whenKey,
+  pickTonight,
+  catLabel,
+  nightLabel,
 } from '../src/data/cal-feed.js';
+import { eventCategory, categoryOf, isNeutralCategory } from '../src/data/event-category.js';
 
 let passed = 0;
 const failures = [];
@@ -159,6 +165,58 @@ eq('costLabel priced', costLabel({ cost: '100k' }, 'EN'), '100k');
 eq('costLabel free EN', costLabel({ cost: null }, 'EN'), 'Free');
 eq('costLabel free VN', costLabel({ cost: null }, 'VN'), 'Miễn phí');
 eq('cfStr unknown lang falls back to EN', cfStr('DE').upNext, 'Up next');
+
+// ── Night v2 "Cream Tickets": event category → major ─────────────────────────
+// The feed has no category yet, so it is derived from the EN title
+// (src/data/event-category.js — a port of the hub's rule table; the pins below
+// are the real series names it must get right). music → blue, party → red,
+// games/drinks → yellow, film/talk → neutral. Dance is MUSIC (the analytics
+// registry's "Music + Dance + Performance"); party is actual parties only.
+for (const [title, want] of [
+  ['REALITY Pub Quiz', 'games'],
+  ['Hitster: The Music Party Game', 'games'],
+  ['No Mic Open Mic: Rooftop Acoustic Jam', 'music'],
+  ['Karaoke!', 'music'],
+  ['Modern Jive Dancing for Beginners', 'music'],
+  ['Film Club', 'film'],
+  ['Happy Hour: Buy 1 Get 1 Cocktails', 'drinks'],
+  ['Philosophy Café', 'talk'],
+  ['Farewell Party for Mai', 'party'],
+  ['Mid-Autumn Festival', 'party'],
+]) eq(`eventCategory "${title}"`, eventCategory(title), want);
+eq('eventCategory empty → talk', eventCategory('', ''), 'talk');
+eq('categoryOf reads the EN title', categoryOf({ title_en: 'REALITY Pub Quiz', title_vi: 'Đố vui REALITY' }), 'games');
+eq('categoryOf prefers a feed category', categoryOf({ category: 'party', title_en: 'Film Club' }), 'party');
+eq('categoryOf ignores an unknown feed category', categoryOf({ category: 'sport', title_en: 'Karaoke!' }), 'music');
+check('film + talk are neutral, music is not',
+  isNeutralCategory('film') && isNeutralCategory('talk') && !isNeutralCategory('music'));
+eq('catLabel EN', catLabel('games', 'EN'), 'Games');
+eq('catLabel falls back to EN per key', catLabel('film', 'VN'), 'Film');
+eq('catLabel unknown → talk', catLabel('nope', 'EN'), 'Talk');
+eq('nightLabel EN', nightLabel('entry', 'EN'), 'Entry');
+
+// ── Night v2 ticket dates + the hero pick ────────────────────────────────────
+// The list-ticket date block: the house d.m split, never zero-padded.
+eq('dmParts 6.10', JSON.stringify(dmParts('2026-10-06T19:00:00+07:00')), JSON.stringify({ d: '6', m: '10' }));
+eq('dmParts garbage', JSON.stringify(dmParts('nope')), JSON.stringify({ d: '', m: '' }));
+// whenKey: "now" = Wed 1.7 noon ICT; today splits on 17:00.
+eq('whenKey tonight', whenKey('2026-07-01T20:00:00+07:00', wedNoon), 'tonight');
+eq('whenKey today (daytime)', whenKey('2026-07-01T14:00:00+07:00', wedNoon), 'today');
+eq('whenKey tomorrow', whenKey('2026-07-02T10:00:00+07:00', wedNoon), 'tomorrow');
+eq('whenKey later → none', whenKey('2026-07-03T19:00:00+07:00', wedNoon), '');
+eq('whenKey ICT midnight boundary', whenKey('2026-07-01T17:30:00Z', wedNoon), 'tomorrow');
+// pickTonight: the next event to START today wins over one already running;
+// with nothing left today, the next upcoming; nothing at all → null.
+{
+  const running = { id: 'running', startsAt: '2026-07-01T10:00:00+07:00', endsAt: '2026-07-01T18:00:00+07:00' };
+  const later = { id: 'tonight', startsAt: '2026-07-01T20:00:00+07:00' };
+  const tomorrow = { id: 'tomorrow', startsAt: '2026-07-02T19:00:00+07:00' };
+  const past = { id: 'past', startsAt: '2026-06-30T19:00:00+07:00' };
+  eq('pickTonight next to start today', (pickTonight([tomorrow, running, later, past], wedNoon) || {}).id, 'tonight');
+  eq('pickTonight running today when nothing else starts', (pickTonight([tomorrow, running, past], wedNoon) || {}).id, 'running');
+  eq('pickTonight next upcoming day', (pickTonight([tomorrow, past], wedNoon) || {}).id, 'tomorrow');
+  eq('pickTonight none', pickTonight([past], wedNoon), null);
+}
 
 // ── locale parity: every catalogue mirrors locales/en.js ─────────────────────
 // Same key paths, same value types, same array lengths — so a string added to

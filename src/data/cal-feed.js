@@ -68,6 +68,50 @@ function ictDateStr(now, plusDays) {
   return FMT_YMD.format(new Date(now + plusDays * 86400000));
 }
 
+// dmParts(iso) → { d: '6', m: '10' } — the house d.m split for the Night v2
+// list-ticket date block (big day number, small .month). Same source as
+// fmtDM, so no leading zeros, ever.
+export function dmParts(iso) {
+  const dm = fmtDM(iso);
+  if (!dm) return { d: '', m: '' };
+  const [d, m] = dm.split('.');
+  return { d, m };
+}
+
+// whenKey(iso, now?) → 'tonight' | 'today' | 'tomorrow' | '' — the soon
+// chip, as a key into the cal.* strings. Same split the calendar's chips use:
+// today (ICT) splits on 17:00 — "tonight" for the evening programme, "today"
+// for a daytime class; tomorrow is tomorrow; anything later has no chip.
+const FMT_HOUR = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: ICT });
+export function whenKey(iso, now = Date.now()) {
+  const d = instant(iso);
+  if (!d) return '';
+  const key = FMT_YMD.format(d);
+  if (key === ictDateStr(now, 1)) return 'tomorrow';
+  if (key !== ictDateStr(now, 0)) return '';
+  return parseInt(FMT_HOUR.format(d), 10) >= 17 ? 'tonight' : 'today';
+}
+
+// pickTonight(events, now?) → the event the Night hero ticket leads with:
+// the NEXT event to start today (ICT); else one still running today (the
+// latest-started, so a late set beats the afternoon's leftovers); else the
+// next upcoming event on a later day. null when nothing is left.
+export function pickTonight(events, now = Date.now()) {
+  const list = (events || [])
+    .filter((ev) => ev && instant(ev.startsAt))
+    .slice()
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  const today = ictDateStr(now, 0);
+  const isToday = (ev) => FMT_YMD.format(instant(ev.startsAt)) === today;
+  const starts = (ev) => Date.parse(ev.startsAt);
+  const ends = (ev) => (instant(ev.endsAt) ? Date.parse(ev.endsAt) : starts(ev) + 2 * 3600 * 1000);
+  const next = list.find((ev) => isToday(ev) && starts(ev) >= now);
+  if (next) return next;
+  const running = list.filter((ev) => isToday(ev) && starts(ev) < now && ends(ev) >= now);
+  if (running.length) return running[running.length - 1];
+  return list.find((ev) => starts(ev) >= now) || null;
+}
+
 // splitFeedSite(events, now?) → { soon, later } — the hub's splitFeed shape:
 // soon = events starting today or tomorrow (ICT), later = everything after,
 // both sorted by start instant so the next-to-start event leads. useFeed has
@@ -159,6 +203,32 @@ const CF_STR = {
 
 export function cfStr(lang = 'EN') {
   return CF_STR[lang] || CF_STR.EN;
+}
+
+// ── Night v2 ticket labels ──────────────────────────────────────────────────
+// The category word on a ticket's top bar / meta line, and the key labels of
+// the event overlay's ruled rows. ENGLISH ONLY for now — Donald writes the
+// copy (canon: no generated VI/RU/UK/KO/JA), so every other language falls
+// back to these per key until its words land here. Add a language as
+// NIGHT_STR.VN = { cat: { music: '…', … }, when: '…', … } — missing keys
+// still fall back to EN.
+const NIGHT_STR = {
+  EN: {
+    cat: { music: 'Music', party: 'Party', games: 'Games', drinks: 'Drinks', film: 'Film', talk: 'Talk' },
+    when: 'When',
+    where: 'Where',
+    entry: 'Entry',
+  },
+};
+
+export function catLabel(cat, lang = 'EN') {
+  const own = NIGHT_STR[lang] && NIGHT_STR[lang].cat;
+  return (own && own[cat]) || NIGHT_STR.EN.cat[cat] || NIGHT_STR.EN.cat.talk;
+}
+
+export function nightLabel(key, lang = 'EN') {
+  const own = NIGHT_STR[lang];
+  return (own && own[key]) || NIGHT_STR.EN[key] || key;
 }
 
 // costLabel(ev, lang) — the badge text: the price when the event has one,

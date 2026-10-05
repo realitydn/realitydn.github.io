@@ -330,3 +330,52 @@ Everything else in Day is unchanged:
   - real devices and Safari;
   - RU/UK/KO/JA pages at night;
   - the Google map iframe, which doesn't load in headless.
+
+## Text on fills (APCA rule): the Studios (5.10.26)
+
+**The rule** (canon `day-colours.json` rev 5.10.26, its `onRule` note): **ink on yellow and amber; cream on red, pink, blue, green and purple.** It holds in Day and Night, and the lifted Night purple #9a4faa takes cream too. It is measured with APCA (WCAG 3 draft), which models saturated hues and agrees with Donald's eye. WCAG 2 ratios put ink on red, pink, blue and green, which is why he kept switching ink to cream on accent blocks in Poster Studio.
+
+| Fill | Artwork cream / ink, \|Lc\| | Print white / #111111, \|Lc\| | Text |
+|---|---|---|---|
+| yellow #fddf00 | 16 / 87 | 19 / 87 | ink |
+| amber #fdb515 | 34 / 71 | 36 / 71 | ink |
+| red #ed2224 | 71 / 36 | 73 / 36 | cream / white |
+| pink #ed1b72 | 70 / 37 | 72 / 37 | cream / white |
+| blue #18a7e0 | 55 / 51 | 58 / 51 | cream / white |
+| green #43b02a | 56 / 50 | 59 / 50 | cream / white |
+| purple #6e3179 | 92 / 14 | 94 / 14 | cream / white |
+| Night purple #9a4faa | 78 / 29 | 80 / 28 | cream / white |
+
+**One function.** `contrastInk(hex, pair)` in `public/studio-shared/brand.js` is now APCA (APCA-W3 0.0.98G): the neutral with the larger |Lc| wins, and a true tie goes to ink. The new `apcaLc(txt, bg)` export does the measuring. Both substrate pairs give the rule on all eight fills, so nothing had to be forced. Schedule's `DAY_TEXT` comes from canon `on`, so its day blocks follow too.
+
+**What flips by itself** (computed colours, so saved docs change on the next open):
+- **Poster:**
+  - When and Cost chips, Stamp and Specials (all default Accent surfaces);
+  - any text element set to an Accent surface with Auto text colour;
+  - the Weekly bar's price and time, the Matchup VS coin, and the agenda day chips.
+  - Accent-coloured highlight text sitting on its *own* Accent surface used to vanish. That covers list headings, the headliner, the host kicker on Auto, the badge's big word and the QR site line. It now takes the surface's text colour.
+- **Print:**
+  - Auto ink on Accent surfaces, and the punch card's bonus label;
+  - the coupon chip's lettering, which is now contrast-picked;
+  - QR modules, which never take the white;
+  - list and coupon headings on their own Accent surface.
+- **Schedule:** every day block, strip, cover and daily card for Mon, Tue, Thu and Fri. Wed was already cream; Sat and Sun stay ink.
+- **Studio UI chrome:** the pink UI accent (on-chips, Save, fold badges) carries cream. Schedule's amber accent and Poster's amber Master keep ink.
+
+**What does not flip:**
+- A Poster element with an explicit Ink or Cream text colour keeps it.
+- A Print doc with an explicit `ink` keeps it. That includes docs made earlier from the green check-in, red rooftop and red happy-hour templates, which carried `ink:"ink"` on the flood. The templates themselves now say `white`. Re-apply the template, or pick White, to update an old copy.
+- The Three-ink bands template dropped its explicit cream on the red action band, because Auto gives cream now.
+
+**Guard.** `tools/verify-day-colours.mjs` (prebuild) checks four things:
+- it states the rule for all eight fills on both pairs;
+- it holds canon `on` and `hexNight` to the rule;
+- it pins APCA's reference values;
+- it requires both `design-system-year2/*/tokens/day-colours.json` copies to match `public/tokens/day-colours.json`.
+
+A negative test (canon red set back to ink) fails five ways.
+
+**Proof.**
+- 31 goldens were re-rendered: 13 Poster, 4 Print and 14 Schedule. Every diff is a text flip on a fill, and every Print QR still decodes.
+- Before and after sheets (seven accents per starter) are in `%TEMP%/nct/shots/studio/`, with the golden montages in `goldens/`.
+- Commit `5a4e4b5`. Not pushed or deployed.

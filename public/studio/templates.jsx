@@ -146,9 +146,11 @@ const TEMPLATES = [
      a typographic listing. All three keep the ticket (mark absent = on). ---- */
   /* Three-ink bands — a band-stack poster. Day-accent display band (title,
      Auto fill follows the day carousel), a paper band of facts (Grotesk,
-     name-role rows), and the red ACTION band: one imperative line set cream —
-     cream-on-red is CANON, the one knowing AA exception, which is why
-     textColor:'cream' is explicit (contrastInk would pick ink). 3px ink rules
+     name-role rows), and the red ACTION band: one imperative line set cream.
+     Both bands' text is Auto — the APCA text-on-fill rule (5.10.26) gives
+     cream on red, pink, blue, green and purple and ink on yellow and amber,
+     so the action band no longer needs an explicit textColor:'cream' and the
+     display band follows whatever day it is recoloured to. 3px ink rules
      between the bands; no decoration beyond the fields. The bands run
      edge-to-edge, so 9:16 pins their x/w back to the frame (the Story boost
      would otherwise push a full-width box past the canvas); text keeps the
@@ -160,7 +162,7 @@ const TEMPLATES = [
     { type:'info',  k:'facts', x:0, y:495, w:1080, h:270, p:{ surface:'none', align:'left', fontSize:32, lineHeight:1.5, textInset:90,
       text:'Thu · 25.9.26 · 19:00\nThe Rooftop · Floor 3\nFree entry — all welcome' } },
     { type:'rule',  k:'r2', x:0, y:753, w:1080, h:12, p:{ pattern:'solid', fill:'ink', weight:3 } },
-    { type:'title', k:'action', x:0, y:765, w:1080, h:180, p:{ text:'Come early', fontSize:100, weight:800, align:'left', surface:'accent', fill:'red', textColor:'cream', textInset:90 } },
+    { type:'title', k:'action', x:0, y:765, w:1080, h:180, p:{ text:'Come early', fontSize:100, weight:800, align:'left', surface:'accent', fill:'red', textInset:90 } },
     TICKET(),
   ]},
   /* Ink-mark hero — the mark AS the composition: one large square-anchored

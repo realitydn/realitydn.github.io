@@ -145,9 +145,15 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
   const accentHex = seResolve(el.fill!=null?el.fill:el.color, posterAccentHex);
   const surf = seSurf(el.surface, theme, accentHex, true);
   const textCol = seResolve(el.textColor!=null?el.textColor:el.color, surf.color);
+  /* Accent-coloured TEXT — list headings, the headliner, a kicker, a badge's
+     big word, the QR's site line — is a highlight against the surface. On an
+     Accent surface it is the surface's OWN colour and vanishes, so there it
+     takes the surface's text colour: the APCA text-on-fill rule (cream on
+     red · pink · blue · green · purple, ink on yellow · amber). */
+  const accentText = el.surface==='accent' ? textCol : accentHex;
   /* host "hosted by" kicker gets its own colour, defaulting to the accent so
      existing posters are unchanged — its own control, separate from the fill. */
-  const kickerHex = seResolve(el.kickerColor!=null?el.kickerColor:'fg', accentHex);
+  const kickerHex = seResolve(el.kickerColor!=null?el.kickerColor:'fg', accentText);
   /* 9:16 Story boost: elements with fixed internal type multiply it by B so the
      text grows in step with the (already-scaled) box. el.fontSize-driven text is
      scaled upstream in resolveElements, so it never reads B (no double-scale). */
@@ -529,12 +535,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const lpBase = el.rowSize || Math.max(13, Math.min(22, Math.floor(lpAvail/Math.max(1,el.items.length)) - 10));
     const lpName1 = Math.round(lpBase*1.24), lpTime = Math.max(11, Math.round(lpBase*0.62));
     inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
-      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentHex, marginBottom:10 }}>{el.heading}</div>
+      <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(el.headingSize!=null?el.headingSize:15)*B, color:accentText, marginBottom:10 }}>{el.heading}</div>
       {el.items.map((it,i)=>(
         <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:16,
           borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:(el.rowGap!=null?el.rowGap:7)+'px 0',
           fontFamily:MONT, fontWeight:el.rowWeight||700, textTransform:'uppercase' }}>
-          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentHex:'inherit', letterSpacing:EM(el.rowTracking!=null?el.rowTracking:TRACK.name) }}>{it.n}</span>
+          <span style={{ fontSize: (i===0?lpName1:lpBase)*B, color: i===0?accentText:'inherit', letterSpacing:EM(el.rowTracking!=null?el.rowTracking:TRACK.name) }}>{it.n}</span>
           {/* set time = fact → Grotesk; the artist name beside it stays Montserrat */}
           <span style={FACT(lpTime*B, { textTransform:'none', opacity:.72 })}>{it.t}</span>
         </div>
@@ -563,7 +569,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const headH = el.heading ? headFs+13 : 0;
     const legendH = (rich && markers.length) ? 26 : 0;
     const avail = el.h/B - 32 - headH - legendH;
-    const heading = el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:headFs, color:accentHex, marginBottom:10 }}>{el.heading}</div> : null;
+    const heading = el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:headFs, color:accentText, marginBottom:10 }}>{el.heading}</div> : null;
     const legend = (rich && markers.length) ? <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 18px', marginTop:10 }}>
       {markers.map(m=>{ const ms=Math.max(8,Math.round((rich?20:18)*B*0.5));
         return <span key={m} style={{ display:'flex', alignItems:'center', gap:6, fontFamily:MONT, fontWeight:700, textTransform:'uppercase', fontSize:Math.max(11,12*B), letterSpacing:EM(TRACK.label) }}>
@@ -609,7 +615,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
             fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }}>
             {/* the row inherits Montserrat caps for the TITLE (a name); the
                 number and the date are facts and opt out into Grotesk. */}
-            {it.num ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', color:accentHex })}>{it.num}</span> : null}
+            {it.num ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', color:accentText })}>{it.num}</span> : null}
             <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:rowTr }}>{it.title}</span>
             {it.date ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', opacity:.72 })}>{it.date}</span> : null}
           </div>
@@ -658,7 +664,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const dayShort = d => { const i = dayNames.findIndex(n=>n.toLowerCase()===String(d||'').toLowerCase()); return i>=0 ? dayAbbr[i] : String(d||'').slice(0,3).toUpperCase(); };
     const ruleC = seSurf('outline',theme,accentHex).color;
     inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 14)))}>
-      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.h2), fontSize:headFs, color:accentHex, marginBottom:12, lineHeight:.9 }}>{el.heading}</div> : null}
+      {el.heading ? <div style={{ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', letterSpacing:EM(TRACK.h2), fontSize:headFs, color:accentText, marginBottom:12, lineHeight:.9 }}>{el.heading}</div> : null}
       {items.map((it,i)=>{
         const col = dayCol(it);
         return <div key={i} style={{ display:'flex', alignItems:'stretch', gap:Math.round(14*B),
@@ -706,7 +712,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
           font-size lives. */}
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', lineHeight:1.15 }}>
         <div style={{ fontSize:18*B, letterSpacing:EM(TRACK.label) }}>{el.label}</div>
-        <div style={{ fontSize:12*B, color:accentHex, letterSpacing:EM(TRACK.button), marginTop:5 }}>{el.site}</div>
+        <div style={{ fontSize:12*B, color:accentText, letterSpacing:EM(TRACK.button), marginTop:5 }}>{el.site}</div>
       </div>
     </div>;
   }
@@ -718,7 +724,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
   else if(el.type==='badge'){
     inner = <div style={Object.assign(box(Object.assign({ alignItems:seColAlign(el) }, sePad(el, 0))), { borderRadius:'50%' })}>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:13*B }}>{el.top}</div>
-      <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56*B)+'px', lineHeight:.85, color:accentHex }}>{el.big}</div>
+      <div style={{ fontFamily:ALT, fontWeight:600, textTransform:'uppercase', fontSize:Math.min(el.w*0.28,56*B)+'px', lineHeight:.85, color:accentText }}>{el.big}</div>
       <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:11*B, opacity:.65 }}>{el.sub}</div>
     </div>;
   }
@@ -726,9 +732,10 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     /* accent bar (price left · time right) with a white day-badge on top.
        The bar text goes through contrastInk like every other accent
        fill in the Studio — it used to carry its OWN naive-luminance rule at a
-       0.6 threshold, which put cream on blue and green where canon says ink,
-       so a Weekly bar and a When chip on the same accent disagreed. One rule,
-       one answer; el.textColor still overrides. */
+       0.6 threshold, so a Weekly bar and a When chip on the same accent could
+       disagree. One rule (APCA, 5.10.26: cream on red · pink · blue · green ·
+       purple, ink on yellow · amber), one answer; el.textColor still
+       overrides. */
     const accent = accentHex, ink='#0d0905', cream='#fffbf1';
     const barText = el.textColor!=null ? textCol : contrastInk(accent);
     const H=el.h, barH=Math.round(H*0.6), badgeD=H, pad=Math.round(el.w*0.05);
@@ -768,7 +775,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const team={ fontFamily:MONT, fontWeight:800, textTransform:'uppercase', fontSize:teamSize, lineHeight:.9,
       color:textCol, letterSpacing:EM(TRACK.display), whiteSpace:'nowrap', maxWidth:'100%' };
     inner = <div style={box(Object.assign({ alignItems:seColAlign(el) }, sePad(el, pad)))}>
-      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:compF, color:accentHex, marginBottom:gap }}>{el.comp}</div> : null}
+      {el.comp ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:compF, color:accentText, marginBottom:gap }}>{el.comp}</div> : null}
       <div style={team}>{el.teamA}</div>
       <div style={{ width:vsD, height:vsD, borderRadius:'50%', background:accentHex, margin:gap+'px 0', flex:'none',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -777,7 +784,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
       <div style={team}>{el.teamB}</div>
       {/* kickoff date · time = facts → Grotesk; the team names stay Montserrat */}
       {(el.date||el.time) ? <div style={FACT(dtF, { color:textCol, marginTop:gap })}>
-        {el.date}{el.date&&el.time? <span style={{ color:accentHex }}>{'  ·  '}</span> : null}{el.time}</div> : null}
+        {el.date}{el.date&&el.time? <span style={{ color:accentText }}>{'  ·  '}</span> : null}{el.time}</div> : null}
     </div>;
   }
 

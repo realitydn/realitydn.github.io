@@ -35,8 +35,12 @@ const TEMPLATE_GROUPS = ['Stickers', 'QR standee', 'Wayfinding', 'Menus'];
        caps. Menus and table cards are NEAR — M2 names a printed menu
        explicitly — so their headings and item names are sentence case and
        `upper:false`. That is the one visible break with the old set.
-     · purple fills take cream text and everything else takes ink, straight
-       out of contrastInk;
+     · text on a colour flood follows the APCA text-on-fill rule (5.10.26,
+       brand.js contrastInk): white on red, pink, blue, green and purple, K
+       ink on yellow and amber. A text part can't see the block under it, so
+       the standees spell it out (`ink`) — and they spell the RULE, not a
+       taste: the green check-in and the red rooftop / happy-hour bands
+       carried ink under the old WCAG-2 call and now take white;
      · QR targets are the real ones: app.realitydn.com for check-in, menu and
        the hub; the printed site string stays realitydn.com.
    Prices stay in the short 85k form — that is the printed-menu register here,
@@ -93,10 +97,10 @@ const TEMPLATES = [
      plus the two A5s that genuinely get read across a room. ---- */
   { id:"qr-checkin-a6", name:"Check in — A6", group:"QR standee", size:"a6", orient:"portrait", accent:"green", els:[
     {"type":"block","x":-12,"y":-12,"w":322,"h":364,"p":{"fill":"green"}},
-    {"type":"kicker","x":24,"y":24,"w":252,"h":16,"p":{"text":"MỖI TỐI · EVERY NIGHT","ink":"ink","align":"left","fontSize":9}},
-    {"type":"headline","x":24,"y":44,"w":252,"h":116,"p":{"text":"CHECK\nIN","fontSize":62,"align":"left","weight":800,"ink":"ink","leading":0.88,"echo":true,"echoAccent":"purple","echoDx":5,"echoDy":5}},
+    {"type":"kicker","x":24,"y":24,"w":252,"h":16,"p":{"text":"MỖI TỐI · EVERY NIGHT","ink":"white","align":"left","fontSize":9}},
+    {"type":"headline","x":24,"y":44,"w":252,"h":116,"p":{"text":"CHECK\nIN","fontSize":62,"align":"left","weight":800,"ink":"white","leading":0.88,"echo":true,"echoAccent":"purple","echoDx":5,"echoDy":5}},
     {"type":"qr","x":74,"y":178,"w":150,"h":150,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
-    {"type":"kicker","x":24,"y":332,"w":252,"h":16,"p":{"text":"QUÉT KHI ĐẾN · SCAN ON ARRIVAL","ink":"ink","align":"center","fontSize":9}},
+    {"type":"kicker","x":24,"y":332,"w":252,"h":16,"p":{"text":"QUÉT KHI ĐẾN · SCAN ON ARRIVAL","ink":"white","align":"center","fontSize":9}},
     {"type":"footer","x":24,"y":360,"w":250,"h":48,"p":{"showQR":false}}
   ]},
   { id:"qr-hub-a6", name:"What’s on — A6", group:"QR standee", size:"a6", orient:"portrait", accent:"purple", els:[
@@ -146,10 +150,10 @@ const TEMPLATES = [
   ]},
   { id:"qr-checkin-a5", name:"Check in — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"green", els:[
     {"type":"block","x":-12,"y":-12,"w":444,"h":512,"p":{"fill":"green"}},
-    {"type":"kicker","x":36,"y":40,"w":348,"h":20,"p":{"text":"MỖI TỐI · EVERY NIGHT","ink":"ink","align":"left"}},
-    {"type":"headline","x":36,"y":68,"w":348,"h":162,"p":{"text":"CHECK\nIN","fontSize":86,"align":"left","weight":800,"ink":"ink","leading":0.88,"echo":true,"echoAccent":"purple","echoDx":7,"echoDy":7}},
+    {"type":"kicker","x":36,"y":40,"w":348,"h":20,"p":{"text":"MỖI TỐI · EVERY NIGHT","ink":"white","align":"left"}},
+    {"type":"headline","x":36,"y":68,"w":348,"h":162,"p":{"text":"CHECK\nIN","fontSize":86,"align":"left","weight":800,"ink":"white","leading":0.88,"echo":true,"echoAccent":"purple","echoDx":7,"echoDy":7}},
     {"type":"qr","x":110,"y":252,"w":200,"h":200,"p":{"data":"https://app.realitydn.com/here","caption":"","quiet":true,"moduleStyle":"rounded","eyeStyle":"square","logo":"star","ink":"ink"}},
-    {"type":"kicker","x":36,"y":466,"w":348,"h":20,"p":{"text":"QUÉT KHI ĐẾN · SCAN ON ARRIVAL","ink":"ink","align":"center"}},
+    {"type":"kicker","x":36,"y":466,"w":348,"h":20,"p":{"text":"QUÉT KHI ĐẾN · SCAN ON ARRIVAL","ink":"white","align":"center"}},
     {"type":"footer","x":36,"y":512,"w":348,"h":60,"p":{"showQR":false}}
   ]},
   { id:"qr-hub-a5", name:"What’s on — A5 standee", group:"QR standee", size:"a5", orient:"portrait", accent:"purple", els:[
@@ -177,8 +181,8 @@ const TEMPLATES = [
   ]},
   { id:"way-rooftop-a4", name:"Rooftop upstairs", group:"Wayfinding", size:"a4", orient:"portrait", accent:"red", els:[
     {"type":"block","x":-12,"y":-12,"w":619,"h":242,"p":{"fill":"red"}},
-    {"type":"kicker","x":44,"y":62,"w":507,"h":22,"p":{"text":"TẦNG THƯỢNG","ink":"ink","align":"center"}},
-    {"type":"headline","x":44,"y":92,"w":507,"h":118,"p":{"text":"ROOFTOP\nUPSTAIRS","weight":800,"fontSize":60,"ink":"ink","align":"center","leading":0.92}},
+    {"type":"kicker","x":44,"y":62,"w":507,"h":22,"p":{"text":"TẦNG THƯỢNG","ink":"white","align":"center"}},
+    {"type":"headline","x":44,"y":92,"w":507,"h":118,"p":{"text":"ROOFTOP\nUPSTAIRS","weight":800,"fontSize":60,"ink":"white","align":"center","leading":0.92}},
     {"type":"arrow","x":198,"y":290,"w":200,"h":210,"p":{"dir":"up","label":"","ink":"red"}},
     {"type":"body","x":74,"y":528,"w":447,"h":54,"p":{"text":"Third floor — the bar, the patio and most of the live music.\nTầng 3 — quầy bar, sân thượng và nhạc sống.","align":"center","fontSize":15,"leading":1.34}},
     {"type":"footer","x":44,"y":740,"w":507,"h":66,"p":{"showQR":false}}
@@ -243,8 +247,8 @@ const TEMPLATES = [
   ]},
   { id:"menu-happyhour-a3", name:"Happy hour — big board", group:"Menus", size:"a3", orient:"portrait", accent:"red", els:[
     {"type":"block","x":-12,"y":-12,"w":866,"h":312,"p":{"fill":"red"}},
-    {"type":"kicker","x":62,"y":92,"w":718,"h":26,"p":{"text":"MỖI NGÀY · EVERY DAY","ink":"ink","align":"center"}},
-    {"type":"headline","x":62,"y":128,"w":718,"h":148,"p":{"text":"HAPPY\nHOUR","weight":800,"fontSize":92,"ink":"ink","align":"center","leading":0.9}},
+    {"type":"kicker","x":62,"y":92,"w":718,"h":26,"p":{"text":"MỖI NGÀY · EVERY DAY","ink":"white","align":"center"}},
+    {"type":"headline","x":62,"y":128,"w":718,"h":148,"p":{"text":"HAPPY\nHOUR","weight":800,"fontSize":92,"ink":"white","align":"center","leading":0.9}},
     {"type":"bignum","x":221,"y":350,"w":400,"h":130,"p":{"text":"16–19","fontSize":96,"align":"center","weight":800}},
     {"type":"pricelist","x":141,"y":540,"w":560,"h":340,"p":{"heading":"Half price all night","upper":false,"rowSize":"xxl","dotLeader":true,"items":[
       {"l":"House pour","p":"50k"},{"l":"Draft beer","p":"45k"},

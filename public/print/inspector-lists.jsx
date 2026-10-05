@@ -18,7 +18,8 @@ const QR_LOGOS   = [{v:'none',l:'None'},{v:'star',l:'★ Star'},{v:'dot',l:'Dot'
 const LIST_STYLES = [{v:'prices',l:'Prices'},{v:'bulleted',l:'Bulleted'},{v:'numbered',l:'Numbered'},{v:'plain',l:'Plain'}];
 const LIST_MARKERS = [{v:'•',l:'•'},{v:'–',l:'–'},{v:'→',l:'→'},{v:'★',l:'★'}];
 const PUNCH_CELLS = [{v:'circle',l:'Circle'},{v:'square',l:'Square'},{v:'star',l:'Star'}];
-/* relative luminance of a QR ink choice (ink/white/accent) — matches contrastInk. */
+/* rough luminance (no gamma) of a QR ink choice (ink/white/accent) — only the
+   scan-risk warning reads it; text-on-fill colour is brand.js contrastInk (APCA). */
 function qrLum(key){
   const hex = key==='ink'?AP_INK.rgb : (key==='white'||key==null||key==='auto')?'#ffffff' : (AP_PAL[key]||AP_INK.rgb);
   const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;

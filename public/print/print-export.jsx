@@ -19,7 +19,7 @@ import {
   chars, STAR_CH, starGlyphW, measure, wrapText,
 } from './print-pdf.js';
 
-import { INK, shadowSpec } from './print-paper.js';
+import { INK, shadowSpec, resolveInk, surfaceStyle } from './print-paper.js';
 import {
   blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
   stripeLayout, dotFieldLayout, arcTextLayout,
@@ -96,6 +96,10 @@ function renderElement(page, el, ctx){
   const fillKey = el.fill!=null ? el.fill : accentName;
   const textFallback = surfTextFallback(el.surface, accentHex);
   const textColor = colorForKey(el.ink!=null?el.ink:'auto', textFallback);
+  /* The same text colour as a HEX, resolved exactly as print-element.jsx
+     resolves textCol — a contrast decision (a coupon chip's lettering, a
+     QR's modules) can't compare pdf-lib colours. */
+  const textHex = resolveInk(el.ink!=null?el.ink:'auto', surfaceStyle(el.surface||'none', accentHex).color);
   const echoColor = el.echoAccent && el.echoAccent!=='auto' ? colorForKey(el.echoAccent) : accentColor(partnerOf(accentName));
 
   /* plane shadow from the shared spec — dx/dy offset, K-tint or accent ink.
@@ -181,7 +185,9 @@ function renderElement(page, el, ctx){
     const mode=el.listStyle||'prices';
     let yTop=(el.surface&&el.surface!=='none')?12:6;
     const padX=(el.surface&&el.surface!=='none')?12:2;
-    const listAccent=accentColor(isAccent(fillKey)?fillKey:accentName);
+    /* accent text on its OWN Accent surface would vanish — it takes the text
+       colour there (print-element.jsx accentText: the APCA text-on-fill rule) */
+    const listAccent=el.surface==='accent' ? textColor : accentColor(isAccent(fillKey)?fillKey:accentName);
     const headCol=(el.headingColor&&el.headingColor!=='auto')?colorForKey(el.headingColor):listAccent;
     if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
       drawLineStr(el.upper===false?el.heading:el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, TRACK.h2); yTop+=hs*1.1+8; }
@@ -274,7 +280,8 @@ function renderElement(page, el, ctx){
     /* shared geometry → the SAME shape descriptors the screen SVG draws, so the
        stylized code is WYSIWYG down to the module. */
     const g=qrGeometry(el.data, { ecl:el.ecl, quiet:el.quiet, moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo });
-    const dataCol=textColor, eyeCol=colorForKey(el.eye, textColor), logoCol=colorForKey(el.logoColor, eyeCol), lightCol=whiteColor();
+    /* the modules never take the white (print-element.jsx qrDark) */
+    const dataCol=(textHex===NEUTRALS.print.light)?inkColor():textColor, eyeCol=colorForKey(el.eye, dataCol), logoCol=colorForKey(el.logoColor, eyeCol), lightCol=whiteColor();
     const realCol=(role)=> role==='eye'?eyeCol : (role==='eyeHole'||role==='logoBg')?lightCol : dataCol;
     const ghostCol=(role)=> (role==='eyeHole'||role==='logoBg')?null : (el.echoAccent&&el.echoAccent!=='auto'?accentColor(el.echoAccent):accentColor(partnerOf(accentName)));
     if(g){
@@ -300,11 +307,14 @@ function renderElement(page, el, ctx){
     drawSurface();   // shared styled border (dashed by default) + lift
     /* every offset below comes from the shared couponLayout the screen renders
        from — same wraps, same space-between gaps, same baselines. */
-    const headCol=accentColor(isAccent(fillKey)?fillKey:accentName);
+    const headCol=el.surface==='accent' ? textColor : accentColor(isAccent(fillKey)?fillKey:accentName);
+    /* the code chip is a text-colour fill — its lettering is whichever neutral
+       reads on it (white on K ink, as before; ink on a light accent) */
+    const chipText=contrastInk(textHex, NEUTRALS.print)===NEUTRALS.print.light ? whiteColor() : inkColor();
     couponLayout(el).blocks.forEach(b=>{
       if(b.kind==='chip'){
         rect(b.left, b.top, b.w, b.h, { color:textColor });
-        drawLineStr(b.text, b.left+b.padX, b.top+b.baseOff, fontFor(b.fam,b.weight), b.size, whiteColor(), b.tracking);
+        drawLineStr(b.text, b.left+b.padX, b.top+b.baseOff, fontFor(b.fam,b.weight), b.size, chipText, b.tracking);
         return;
       }
       const f=fontFor(b.fam,b.weight), col=(b.key==='heading')?headCol:textColor;

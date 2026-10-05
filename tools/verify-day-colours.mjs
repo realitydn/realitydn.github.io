@@ -10,7 +10,8 @@
 // Checks: the shared brand module (public/studio-shared/brand.js) — it must
 // derive the day hexes from day-colours.json, and its evaluated tables
 // (PALETTE, Schedule DAY_COLORS/DAY_TEXT, Poster ACCENT_DAYS, the INK_MARK
-// cells + fixed cell order, contrastInk's answers) must match canon — and no
+// cells + fixed cell order, contrastInk's answers — the APCA text-on-fill
+// rule of 5.10.26 on both substrate pairs) must match canon — and no
 // Studio source may define its own copy again · the event-report denylist of retired off-palette hexes · site strings · the
 // TYPE section: the canon tracking ladder on both studios' text presets
 // (print bakes the +.01em offset) and the ticket/footer wordmark staying the
@@ -57,6 +58,22 @@ const STUDIO_SOURCES = (() => {
   for (const dir of ["public/studio", "public/print", "public/schedule"]) walk(dir);
   return out;
 })();
+
+// ── 0 · One canon, several copies ──
+// public/tokens/day-colours.json is what the Studios build from; the design
+// canon bundles under design-system-year2/ ship the same file. They must stay
+// identical (line endings aside), or the repo states two rules at once — the
+// 5.10.26 text-on-fill change landed in all three. A bundle absent from a
+// checkout is not drift.
+{
+  const want = read("public/tokens/day-colours.json").replace(/\r\n/g, "\n");
+  for (const rel of ["design-system-year2/design_handoff_reality_system/tokens/day-colours.json",
+                     "design-system-year2/design_handoff_web_app_ink_pass/tokens/day-colours.json"]) {
+    let got = null;
+    try { got = read(rel).replace(/\r\n/g, "\n"); } catch { continue; }
+    if (got !== want) fail(`${rel}: differs from public/tokens/day-colours.json — copy the canon file over (one canon, several copies)`);
+  }
+}
 
 // ── 1–4 · The brand module: ONE source, derived from canon (Phase 2) ──
 // The palette, the weekday coding (Poster ACCENT_DAYS, Schedule DAY_COLORS /
@@ -119,7 +136,9 @@ if (brand) {
     if (brand.INK_MARK_DAY_ACCENT[day] !== accent) fail(`${B}: INK_MARK_DAY_ACCENT lacks ${day}:'${accent}' (canon pairing)`);
   });
   // contrastInk must land on canon's `on` for every day accent, on both pairs
-  // (artwork: ink/cream; print: the same answer on #111111/white).
+  // (artwork: ink/cream; print: the same answer on #111111/white). Since
+  // 5.10.26 contrastInk is APCA and canon's `on` is the APCA rule — cream on
+  // red · pink · blue · green · purple, ink on yellow · amber.
   for (const day of DAY_ORDER) {
     const hex = canon.days[day].hex, on = canon.days[day].on.toLowerCase();
     const art = lc(brand.contrastInk(hex));
@@ -127,6 +146,46 @@ if (brand) {
     const pr = lc(brand.contrastInk(hex, brand.NEUTRALS.print));
     const prWant = on === INK_ARTWORK.stock ? canon.print.stock.toLowerCase() : canon.print.ink.toLowerCase();
     if (pr !== prWant) fail(`${B}: contrastInk(${hex}, print) is ${pr}, canon says ${prWant}`);
+  }
+  // THE TEXT-ON-FILL RULE (Donald, 5.10.26 — day-colours.json `onRule`),
+  // stated outright so neither canon nor the picker can drift back to the
+  // WCAG-2 call (ink on red/pink/blue/green): ink on the two light fills,
+  // the pair's light on the rest — the lifted Night purple included — on
+  // BOTH substrate pairs. Canon's own `on` (and hexNight) is held to it too.
+  {
+    const RULE = [
+      ["yellow", "#fddf00", "ink"], ["amber", "#fdb515", "ink"],
+      ["red", "#ed2224", "light"], ["pink", "#ed1b72", "light"], ["blue", "#18a7e0", "light"],
+      ["green", "#43b02a", "light"], ["purple", "#6e3179", "light"], ["purple (Night)", "#9a4faa", "light"],
+    ];
+    const pairs = [["artwork", brand.NEUTRALS.artwork], ["print", brand.NEUTRALS.print]];
+    for (const [name, hex, want] of RULE) {
+      for (const [pn, pair] of pairs) {
+        const got = lc(brand.contrastInk(hex, pair));
+        if (got !== lc(pair[want]))
+          fail(`${B}: contrastInk(${hex} ${name}, ${pn}) is ${got} — the text-on-fill rule says ${want === "ink" ? "INK" : "the LIGHT"} (${pair[want]})`);
+      }
+    }
+    for (const day of DAY_ORDER) {
+      const d = canon.days[day], accent = accentOf(day);
+      const rule = RULE.find((r) => r[0] === accent);
+      if (!rule) { fail(`public/tokens/day-colours.json: ${day} codes for '${accent}', which the text-on-fill rule doesn't name`); continue; }
+      const want = rule[2] === "ink" ? INK_ARTWORK.ink : INK_ARTWORK.stock;
+      if (d.on.toLowerCase() !== want)
+        fail(`public/tokens/day-colours.json: ${day} (${accent}) on is ${d.on} — the text-on-fill rule says ${want}`);
+      if (d.hexNight && lc(brand.contrastInk(d.hexNight)) !== want)
+        fail(`${B}: contrastInk(${d.hexNight}, ${day} Night) is ${brand.contrastInk(d.hexNight)} — Night takes the same text as Day (${want})`);
+    }
+    if (!canon.onRule) fail("public/tokens/day-colours.json: the `onRule` note is gone — it is the stated text-on-fill rule");
+    // APCA-W3 0.0.98G's published reference values pin the constants.
+    if (typeof brand.apcaLc !== "function") fail(`${B}: apcaLc is gone — contrastInk is APCA`);
+    else {
+      const near1 = (a, b) => Math.abs(a - b) < 0.05;
+      for (const [txt, bg, want] of [["#000000", "#ffffff", 106.04], ["#ffffff", "#000000", -107.88], ["#888888", "#ffffff", 63.06]]) {
+        const got = brand.apcaLc(txt, bg);
+        if (!near1(got, want)) fail(`${B}: apcaLc(${txt} on ${bg}) is ${got.toFixed(2)}, APCA-W3 0.0.98G gives ${want}`);
+      }
+    }
   }
   // the neutrals: artwork literals + canon.print
   if (lc(brand.PALETTE.ink) !== INK_ARTWORK.ink || lc(brand.PALETTE.cream) !== INK_ARTWORK.stock)
@@ -168,7 +227,7 @@ if (brand) {
     "public/studio-shared/brand.js": ["PALETTE", "ACCENTS", "ACCENT_DAYS", "ACCENT_BY_DAY", "ACCENTS_BY_DAY",
       "DAY_COLORS", "DAY_TEXT", "DAY_FULL", "INK_CHOICES", "INK_MARK", "INK_MARK_CELLS", "INK_MARK_DAY_KEYS",
       "INK_MARK_DAY_ACCENT", "inkMarkCells", "inkMarkLayout", "inkMarkHex", "relLuminance", "contrastRatio",
-      "contrastInk", "accentDay", "WORDMARK_PATH", "WORDMARK_PATHS", "WM_PATHS", "PARTNER", "partnerOf",
+      "apcaLc", "apcaY", "contrastInk", "accentDay", "WORDMARK_PATH", "WORDMARK_PATHS", "WM_PATHS", "PARTNER", "partnerOf",
       "inkTitle", "MONT", "ALT", "GROT"],
     "public/studio-shared/wordmark.jsx": ["WordmarkSVG", "Wordmark"],
     "public/studio-shared/shapes.js": ["SHAPE_KINDS", "shapePath", "shapeClip", "roundedRectPath", "starPath",

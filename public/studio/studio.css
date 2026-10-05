@@ -27,17 +27,17 @@
 /* the working doc's autosave, out loud — see SaveState in panels/topbar.jsx */
 .rs-savestate::before{ content:''; width:7px; height:7px; background:var(--st-good); }
 .rs-savestate.saving::before{ background:var(--st-amber); }
-.rs-savestate.fallback::before{ background:var(--st-on-accent); }
+.rs-savestate.fallback::before{ background:var(--st-k); }
 .rs-savestate.error::before{ background:#fff; }
 
 /* Master (the source every format inherits from) is amber, not pink */
-.rs-seg button.master.on{ background:var(--st-amber); color:var(--st-on-accent); }
+.rs-seg button.master.on{ background:var(--st-amber); color:var(--st-on-amber); }
 .rs-seg button.master.on small{ color:rgba(13,9,5,.6); }
 /* the extra A1 print view — dashed frame + its own on-colour so it reads as
    an on-demand add-on, never part of the Save-All bundle of formats */
 .rs-seg.xtra{ border-style:dashed; background:transparent; }
-.rs-seg.xtra button.on{ background:var(--st-good); color:var(--st-on-accent); }
-.rs-seg.xtra button.on small{ color:rgba(13,9,5,.6); }
+.rs-seg.xtra button.on{ background:var(--st-good); color:var(--st-on-good); }
+.rs-seg.xtra button.on small{ color:rgba(255,251,241,.72); }
 /* standee size picker — same on-demand "extra print" tier as A1 (dashed frame,
    green on-state), but a dropdown since it's a family of sizes */
 .rs-stsel, .rs-tsel{ background:var(--st-field); border:1px solid var(--st-line-strong); border-radius:0; color:var(--st-soft);
@@ -45,7 +45,7 @@
   padding:8px 6px; cursor:pointer; outline:none; transition:.12s; }
 .rs-stsel{ background:transparent; border-style:dashed; color:var(--st-muted); }
 .rs-stsel:hover, .rs-stsel:focus, .rs-tsel:hover, .rs-tsel:focus{ border-color:var(--st-line-hover); color:var(--st-ink); }
-.rs-stsel.on{ background:var(--st-good); border-color:var(--st-good); border-style:solid; color:var(--st-on-accent); }
+.rs-stsel.on{ background:var(--st-good); border-color:var(--st-good); border-style:solid; color:var(--st-on-good); }
 .rs-stsel option, .rs-tsel option{ background:var(--st-panel); color:var(--st-soft); }
 .rs-tsel:disabled{ opacity:.4; cursor:default; }
 

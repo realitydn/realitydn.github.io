@@ -73,7 +73,14 @@
   --st-accent:#ed1b72;     /* the UI accent: on-states, focus, badges (Schedule sets its amber) */
   --st-accent-hi:#ff4d94;  /* primary button hover */
   --st-accent-bg:#2a1620;  /* a picked tile */
-  --st-on-accent:#0d0905;  /* text on an accent fill */
+  /* Text on a colour fill follows the APCA text-on-fill rule (5.10.26,
+     brand.js contrastInk): CREAM on red · pink · blue · green · purple, INK on
+     amber · yellow. So the pink accent carries cream; Schedule, whose accent
+     is amber, sets --st-on-accent back to ink. */
+  --st-on-accent:#fffbf1;  /* text on the UI accent fill (pink → cream) */
+  --st-on-amber:#0d0905;   /* text on an amber / yellow fill */
+  --st-on-good:#fffbf1;    /* text on the green fill */
+  --st-k:#0d0905;          /* the ink neutral AS A COLOUR — the Ink swatch, a plate, a keyline */
   --st-select:#00e5ff;     /* selection + guides on the canvas — deliberately OUT of the palette, so it can never be mistaken for artwork */
   --st-amber:#fdb515;      /* Poster's Master, Schedule's accent, "saving…" */
   --st-warn:#fddf00;       /* loud warning fill */
@@ -176,7 +183,7 @@ body{ background:var(--st-bg); overflow:hidden; }
   font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.1em;
   font-size:var(--st-fs-label); color:var(--st-faint); padding:6px 9px; border:var(--st-bw) solid transparent;
   white-space:nowrap; cursor:default; }
-:is(.rs-savestate.fallback,.ps-stat.warn){ color:var(--st-warn-ink); background:var(--st-warn); border-color:var(--st-on-accent); }
+:is(.rs-savestate.fallback,.ps-stat.warn){ color:var(--st-warn-ink); background:var(--st-warn); border-color:var(--st-k); }
 :is(.rs-savestate.error,.ps-stat.bad,.ss-unsaved){ color:#fff; background:var(--st-bad); border-color:var(--st-bad-deep); }
 /* × inside a chip or toast */
 :is(.rs-statx,.ps-statx,.ss-statx){ border:none; background:none; color:inherit; cursor:pointer; font-size:12px; line-height:1; padding:0 0 0 2px; }
@@ -230,7 +237,7 @@ body{ background:var(--st-bg); overflow:hidden; }
 :is(.rs-sw,.ps-sw,.ss-sw){ width:26px; height:26px; border:2px solid var(--st-line-soft); cursor:pointer; transition:.12s; position:relative; }
 :is(.rs-sw,.ps-sw,.ss-sw):hover{ transform:scale(1.1); }
 :is(.rs-sw,.ps-sw,.ss-sw).on{ border-color:var(--st-ink); box-shadow:0 0 0 2px var(--st-accent); }
-:is(.rs-sw,.ps-sw,.ss-sw).ink{ background:linear-gradient(135deg,var(--st-on-accent) 50%,var(--st-ink) 50%); }
+:is(.rs-sw,.ps-sw,.ss-sw).ink{ background:linear-gradient(135deg,var(--st-k) 50%,var(--st-ink) 50%); }
 
 /* slider — a square thumb on a hairline */
 :is(.rs-slider,.ps-slider,.ss-slider){ -webkit-appearance:none; appearance:none; width:100%; height:4px; background:var(--st-line); outline:none; }
@@ -294,7 +301,7 @@ body{ background:var(--st-bg); overflow:hidden; }
   text-transform:uppercase; padding:1px 5px; border:1px solid currentColor; opacity:.7; }
 /* an inline warning that must be read (QR contrast, …) */
 :is(.rs-warn,.ps-warn,.ss-warn){ font-family:var(--st-grot); font-size:var(--st-fs-small); line-height:1.4; color:var(--st-warn-ink);
-  background:var(--st-warn); border:var(--st-bw) solid var(--st-on-accent); padding:8px 10px; margin:-4px 0 13px; }
+  background:var(--st-warn); border:var(--st-bw) solid var(--st-k); padding:8px 10px; margin:-4px 0 13px; }
 
 /* ============================================================ folds */
 /* Collapsible sections (RUI.Fold). Boxed rather than hairline-divided — at a
@@ -373,7 +380,7 @@ body{ background:var(--st-bg); overflow:hidden; }
 /* the chip that follows the pointer while you drag a part in */
 :is(.rs-ghost,.ps-ghost,.ss-ghost){ position:fixed; z-index:9999; pointer-events:none; transform:translate(-50%,-50%);
   font-family:var(--st-mont); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:var(--st-fs-body);
-  color:var(--st-on-accent); background:var(--st-accent); border:2px solid var(--st-on-accent); padding:9px 14px;
+  color:var(--st-on-accent); background:var(--st-accent); border:2px solid var(--st-k); padding:9px 14px;
   box-shadow:0 10px 24px rgba(0,0,0,.4); }
 
 /* ============================================================ dialogs */

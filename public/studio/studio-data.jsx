@@ -103,8 +103,10 @@ function themeColors(theme){
     : { fg:'#0d0905', bg:'#fffbf1', paper:'#fffbf1', shadow:(a)=>`rgba(13,9,5,${a})` };
 }
 
-/* contrastInk — Poster's contrast-ratio rule, now canon for every Studio — is in
-   brand.js; with no pair it answers ink/cream, the artwork neutrals. */
+/* contrastInk — the APCA text-on-fill rule, canon for every Studio (5.10.26:
+   ink on yellow + amber, cream on red · pink · blue · green · purple) — is in
+   brand.js; with no pair it answers ink/cream, the artwork neutrals. Every
+   Auto text colour on an accent surface resolves through it. */
 
 /* surface → concrete box style (canvas px units) */
 function surfaceStyle(surface, theme, accentHex, lift){

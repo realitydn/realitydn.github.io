@@ -82,7 +82,8 @@ function accentDay(accent){
   return { name:day, abbr:DAY_ABBR[i], n:i+1 };
 }
 /* Schedule: keyed by ISO weekday 1=Mon..7=Sun. DAY_TEXT is canon's `on`
-   (cream on purple, ink on the rest). */
+   (rev 5.10.26: cream on green · blue · purple · pink · red, ink on amber ·
+   yellow — the APCA text-on-fill rule, see contrastInk below). */
 const DAY_COLORS = {}, DAY_TEXT = {}, DAY_FULL = {}, DAY_ABBR_ISO = {};
 DAY_KEYS.forEach((d,i)=>{
   const iso = i+1;
@@ -109,35 +110,72 @@ const SITE = CANON.site;
 const ADDR = '86 Mai Thúc Lân · Đà Nẵng';
 
 /* ---- contrast ----------------------------------------------------- */
-/* Pick the readable neutral for text sitting on a fill.
+/* Pick the readable neutral for text sitting on a fill — THE text-on-fill
+   rule (Donald, 5.10.26; day-colours.json `onRule`):
 
-   Real relative luminance (with the sRGB gamma expansion), and whichever
-   neutral of the pair actually contrasts better. On the artwork pair that
-   lands on exactly canon's `on` for all seven day accents — ink on blue ·
-   green · yellow · amber · pink · red, cream on purple — with no lookup
-   table, and keeps working for a fill the palette never named. Print's
-   pair (#111111 / white) gives the same answer: white only on purple.
+       INK on the two light fills — yellow, amber.
+       CREAM (the pair's light) on red, pink, blue, green and purple —
+       Day and Night (the lifted Night purple #9a4faa takes cream too).
 
-   Ties and near-ties go to INK — the Riso look — because `>` keeps ink
-   unless the light is strictly better (pink 4.72 vs 4.06, red 4.59 vs 4.19).
+   Judged by APCA (WCAG 3 draft contrast, APCA-W3 0.0.98G), not WCAG 2
+   ratios. WCAG 2 misjudges saturated mid-tones — it put ink on red, pink,
+   blue and green, which is exactly the ink-on-red Donald kept hand-fixing
+   to cream in Poster Studio. APCA models how a saturated hue actually reads
+   and agrees with the eye. |Lc|, light vs ink:
 
-   NOT generalised: cream-on-red is canon for the ACTION BUTTON only
-   (reality-tokens.json F2 — 4.19:1, a knowing AA exception). A red fill in
-   artwork still takes ink here; an element that wants the button read sets
-   its text colour explicitly. */
+                      artwork (cream/#0d0905)   print (white/#111111)
+       yellow #fddf00      16 / 87  → ink           19 / 87  → ink
+       amber  #fdb515      34 / 71  → ink           36 / 71  → ink
+       red    #ed2224      71 / 36  → cream         73 / 36  → white
+       pink   #ed1b72      70 / 37  → cream         72 / 37  → white
+       blue   #18a7e0      55 / 51  → cream         58 / 51  → white
+       green  #43b02a      56 / 50  → cream         59 / 50  → white
+       purple #6e3179      92 / 14  → cream         94 / 14  → white
+       night  #9a4faa      78 / 29  → cream         80 / 28  → white
+
+   Whichever neutral of the pair has the larger |Lc| wins, so there is still
+   no lookup table: it lands on canon's `on` for all seven day accents on
+   both pairs (tools/verify-day-colours.mjs holds it there) and keeps working
+   for a fill the palette never named. A true tie goes to INK — the Riso look.
+
+   This retires the old exception: cream-on-red was canon for the ACTION
+   BUTTON only and artwork red took ink. Now every red fill takes cream; an
+   element that wants a different read still sets its text colour
+   explicitly. */
 function relLuminance(hex){
   const ch = (i)=>{ const c = parseInt(hex.slice(i,i+2),16)/255;
     return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
   return 0.2126*ch(1) + 0.7152*ch(3) + 0.0722*ch(5);
 }
+/* WCAG 2 contrast ratio — kept for callers that report a ratio; it no longer
+   picks text colour (contrastInk is APCA). */
 function contrastRatio(a, b){
   const l1=relLuminance(a), l2=relLuminance(b);
   return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
 }
+/* APCA-W3 0.0.98G lightness contrast Lc of text `txt` on background `bg`
+   (#rrggbb). Positive = dark text on a lighter ground, negative = light text
+   on a darker one; |Lc| is the strength (≈15 invisible · 45 large type ·
+   60 body · 75+ fluent). */
+function apcaY(hex){
+  const ch = (i)=> Math.pow(parseInt(hex.slice(i,i+2),16)/255, 2.4);
+  const y = 0.2126729*ch(1) + 0.7151522*ch(3) + 0.0721750*ch(5);
+  return y > 0.022 ? y : y + Math.pow(0.022 - y, 1.414);     // soft black clamp
+}
+function apcaLc(txt, bg){
+  const Yt = apcaY(txt), Yb = apcaY(bg);
+  if(Math.abs(Yb - Yt) < 0.0005) return 0;
+  if(Yb > Yt){                                   // normal polarity: dark text, lighter ground
+    const S = (Math.pow(Yb,0.56) - Math.pow(Yt,0.57)) * 1.14;
+    return S < 0.1 ? 0 : (S - 0.027) * 100;
+  }
+  const S = (Math.pow(Yb,0.65) - Math.pow(Yt,0.62)) * 1.14;  // reverse: light text, darker ground
+  return S > -0.1 ? 0 : (S + 0.027) * 100;
+}
 function contrastInk(hex, pair){
   const p = pair || NEUTRALS.artwork;
   if(typeof hex!=='string' || hex[0]!=='#' || hex.length<7) return p.ink;
-  return contrastRatio(hex, p.light) > contrastRatio(hex, p.ink) ? p.light : p.ink;
+  return Math.abs(apcaLc(p.light, hex)) > Math.abs(apcaLc(p.ink, hex)) ? p.light : p.ink;
 }
 
 /* ============================================================
@@ -263,7 +301,7 @@ export {
   ACCENT_DAYS, ACCENT_BY_DAY, ACCENTS_BY_DAY, accentDay,
   DAY_COLORS, DAY_TEXT, DAY_FULL, DAY_ABBR_ISO,
   PARTNER, partnerOf, SITE, ADDR, MONT, ALT, GROT,
-  relLuminance, contrastRatio, contrastInk,
+  relLuminance, contrastRatio, apcaLc, contrastInk,
   INK_MARK, INK_MARK_CELLS, INK_MARK_CELLS_PRINT, INK_MARK_DAY_KEYS, INK_MARK_DAY_ACCENT,
   inkMarkCells, inkMarkLayout, inkMarkHex,
   WORDMARK_PATHS, WORDMARK_PATH, WORDMARK_VIEWBOX, WORDMARK_VIEWBOX_TIGHT,

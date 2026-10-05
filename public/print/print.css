@@ -73,7 +73,7 @@
 
 /* export error / warning — stays until dismissed, so it isn't click-to-close */
 .ps-toast{ display:flex; align-items:center; gap:14px; max-width:min(640px, 92vw); padding:11px 14px; cursor:default; text-align:left;
-  font-size:12.5px; color:var(--st-warn-ink); background:var(--st-warn); border-color:var(--st-on-accent); }
+  font-size:12.5px; color:var(--st-warn-ink); background:var(--st-warn); border-color:var(--st-k); }
 .ps-toast.bad{ color:#fff; background:var(--st-bad); }
 .ps-toast .ps-statx{ font-size:16px; }
 

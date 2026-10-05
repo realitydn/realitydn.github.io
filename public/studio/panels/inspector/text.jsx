@@ -125,7 +125,7 @@ function TypeFold({ el, caps, isText, isOutput, activeLabel, update, dType }){
           {caps.orient && <Chips label="Orientation" options={[{v:'h',l:'Horizontal'},{v:'v',l:'Vertical'}]} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
           {(caps.surface || caps.textColor) && !caps.list &&
             <Swatches label={el.type==='host'?'Name colour':el.type==='wordmark'?'Wordmark colour':el.type==='weekly'?'Bar text colour':'Text colour'} value={el.textColor!=null?el.textColor:el.color}
-              onChange={v=>update({textColor:v})} autoTitle="Auto — the readable neutral for this fill (ink, or cream on purple)" />}
+              onChange={v=>update({textColor:v})} autoTitle="Auto — the readable neutral for this fill (cream on red · pink · blue · green · purple, ink on yellow · amber)" />}
         </Fold>
   );
 }

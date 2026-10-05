@@ -10,7 +10,8 @@
    Schedule's accent is amber rather than pink: it is the one tool
    whose output (the week's schedule) is itself pink-heavy, so the
    selection must not read as a day colour. */
-:root{ --st-accent:#fdb515; --st-accent-hi:#fddf00; --st-accent-bg:#241a10; }
+:root{ --st-accent:#fdb515; --st-accent-hi:#fddf00; --st-accent-bg:#241a10;
+  --st-on-accent:var(--st-on-amber); }   /* amber + its yellow hover take INK (the APCA text-on-fill rule) */
 
 .ss-app{ grid-template-rows:auto auto 1fr; }
 
@@ -27,7 +28,7 @@
 .ss-iconbtn.ss-go:hover{ background:var(--st-accent-hi); border-color:var(--st-accent-hi); }
 /* the app-feed sync note, top-centre over everything */
 .ss-syncnote{ position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:10000; pointer-events:none;
-  background:var(--st-on-accent); color:var(--st-ink); border:1px solid var(--st-line-open); box-shadow:var(--st-shadow);
+  background:var(--st-k); color:var(--st-ink); border:1px solid var(--st-line-open); box-shadow:var(--st-shadow);
   font-family:var(--st-mont); font-weight:700; font-size:var(--st-fs-body); letter-spacing:.04em; padding:7px 14px; }
 
 /* ---- DAY STRIP ---- */

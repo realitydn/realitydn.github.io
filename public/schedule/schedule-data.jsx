@@ -17,7 +17,9 @@
 
 /* Brand atoms — the neutrals, the three faces and the Year 2 weekday coding
    (MON green · TUE blue · WED purple · THU pink · FRI red · SAT orange (amber)
-   · SUN yellow; purple is the one block that takes cream text) — come from
+   · SUN yellow; text on a day block is canon's `on` — cream on green, blue,
+   purple, pink and red, ink on amber and yellow: the APCA text-on-fill rule,
+   rev 5.10.26) — come from
    ../studio-shared/brand.js, which DERIVES the day tables from
    public/tokens/day-colours.json (canon 18.08.26) at build time. A canvas
    renderer can't read CSS custom properties, so the hexes are inlined into

@@ -114,10 +114,10 @@ function faceFor(fam, weight){
 }
 
 /* ---- colour resolution (screen) ----
-   Readable ink for text on a fill is brand.js contrastInk — Poster's
-   contrast-ratio rule — handed Print's pair (NEUTRALS.print), so the light
-   is the white sheet instead of cream: ink on pink and red, white only on
-   purple. Ties go to ink. */
+   Readable ink for text on a fill is brand.js contrastInk — the APCA
+   text-on-fill rule (5.10.26) — handed Print's pair (NEUTRALS.print), so the
+   light is the white sheet instead of cream: K ink on yellow and amber, white
+   (unprinted stock) on red, pink, blue, green and purple. Ties go to ink. */
 /* An element's ink choice → screen hex. 'ink'/'white' literal; an accent name
    → its hex; 'auto' → the supplied fallback (surface contrast or doc accent). */
 function resolveInk(key, fallback){

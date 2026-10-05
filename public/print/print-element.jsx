@@ -209,6 +209,11 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
                      : (el.type==='block' ? PE_INK.rgb : (el.surface==='accent'?accentHex:PE_INK.rgb));
   if(_surfaced) surf.border = `${_borderW}px solid transparent`;
   const textCol = peInk(el.ink!=null?el.ink:'auto', surf.color);
+  /* Accent-coloured TEXT (a list heading or marker, a coupon heading) is a
+     highlight against the surface; on an Accent surface it is the surface's
+     own colour and vanishes, so there it takes the surface's text colour —
+     the APCA text-on-fill rule. Mirrored in print-export.jsx. */
+  const accentText = el.surface==='accent' ? textCol : accentHex;
   const lift = elShadow(el);
 
   const wrap = {
@@ -231,8 +236,8 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='pricelist'){
     const mode = el.listStyle || 'prices';
-    const markerCol = peInk(el.markerColor||'auto', accentHex);
-    const headCol = peInk(el.headingColor||'auto', accentHex);
+    const markerCol = peInk(el.markerColor||'auto', accentText);
+    const headCol = peInk(el.headingColor||'auto', accentText);
     const glyph = el.marker || '•';
     const rs = listRowFont(el);
     const colsArr = listSplit(el.items, el.cols||1);
@@ -300,7 +305,12 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
   }
   else if(t==='qr'){
     const light = PE_WHITE.rgb;   /* QR modules always ride on white (paper) so they scan; `surface` frames it */
-    const eyeCol = peInk(el.eye||'auto', textCol);
+    /* …so the modules can never take the white: an Auto ink on a surface whose
+       text is white (solid, or red/pink/blue/green/purple accent under the
+       APCA rule) prints the code in K ink instead of white-on-white.
+       Mirrored in print-export.jsx. */
+    const qrDark = textCol===PE_WHITE.rgb ? PE_INK.rgb : textCol;
+    const eyeCol = peInk(el.eye||'auto', qrDark);
     const logoCol = peInk(el.logoColor||'auto', eyeCol);
     const cs = el.capScale||1;   // caption follows a paper-size change (mirrors print-export)
     const cap = el.caption, qrSize = cap ? Math.min(el.w, el.h-28*cs) : Math.min(el.w, el.h);
@@ -312,7 +322,7 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
           <QRView data={el.data} ecl={el.ecl} dark={echoCol} light={light} quiet={el.quiet} {...qStyle} bg="transparent" ghost />
         </div>}
         <div style={{ position:'absolute', inset:0 }}>
-          <QRView data={el.data} ecl={el.ecl} dark={textCol} light={light} quiet={el.quiet} {...qStyle} eye={eyeCol} logoColor={logoCol} />
+          <QRView data={el.data} ecl={el.ecl} dark={qrDark} light={light} quiet={el.quiet} {...qStyle} eye={eyeCol} logoColor={logoCol} />
         </div>
       </div>
       {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(12*cs)+'px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
@@ -336,10 +346,10 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, onElPoi
       {lay.blocks.map(b=> b.kind==='chip'
         ? <div key={b.key} style={Object.assign(at(b), { fontFamily:FAM_CSS.mont, fontWeight:b.weight, fontSize:b.size+'px',
             lineHeight:(b.h-6)+'px', letterSpacing:b.tracking+'em', padding:'3px '+b.padX+'px',
-            color:PE_WHITE.rgb, background:textCol, whiteSpace:'pre' })}>{b.text}</div>
+            color:contrastFor(textCol), background:textCol, whiteSpace:'pre' })}>{b.text}</div>
         : <div key={b.key} style={Object.assign(at(b), { width:lay.maxW+'px', fontFamily:FAM_CSS[b.fam], fontWeight:b.weight,
             fontSize:b.size+'px', lineHeight:b.lineH+'px', letterSpacing:b.tracking+'em', whiteSpace:'pre',
-            color:b.key==='heading'?accentHex:textCol, opacity:b.opacity!=null?b.opacity:1 })}>{b.lines.join('\n')}</div>
+            color:b.key==='heading'?accentText:textCol, opacity:b.opacity!=null?b.opacity:1 })}>{b.lines.join('\n')}</div>
       )}
     </div>;
   }

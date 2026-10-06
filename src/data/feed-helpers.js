@@ -152,3 +152,17 @@ export function pickLocName(loc, lang) {
   if (!loc) return '';
   return (lang === 'VN' ? loc.name_vi : loc.name_en) || loc.name_en || loc.name_vi || '';
 }
+
+// needsRsvp(ev) — a LIMITED-SPOT event (feed additive field `rsvpCapacity`,
+// number | null): non-null means the event needs an RSVP with a free REALITY
+// account, made on its app page (sourceUrl). A missing field reads exactly
+// like null (older hub / older snapshot), so an ordinary event — "just show
+// up" — renders as it always did. A numeric string is accepted defensively;
+// anything else (true, '', NaN) is not a capacity.
+export function needsRsvp(ev) {
+  if (!ev) return false;
+  const c = ev.rsvpCapacity;
+  if (typeof c === 'number') return Number.isFinite(c);
+  if (typeof c === 'string' && c.trim() !== '') return Number.isFinite(Number(c));
+  return false;
+}

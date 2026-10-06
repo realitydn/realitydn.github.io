@@ -183,6 +183,13 @@ export function splitFeedSite(events, now = Date.now()) {
 // Self-contained so this module never touches data/translations.js (which may
 // be mid-restructure). Covers the site's current + planned language codes;
 // anything unknown falls back to EN. {cost}/{n} are template slots.
+//
+// RSVP (limited-spot events — the feed's rsvpCapacity, feed-helpers needsRsvp):
+// rsvpRequired is Donald's sentence, verbatim, and must be prominent wherever
+// such an event is listed — the full sentence on cards and the overlay,
+// rsvpShort only on the dense COMING UP rows (the full sentence rides there
+// as the title + screen-reader text, and in the overlay the row opens).
+// rsvpInApp is the door to the event's app page, where the RSVP is made.
 const CF_STR = {
   EN: {
     upNext: 'Up next',
@@ -195,6 +202,9 @@ const CF_STR = {
     // this DOOR takes over — the count carries the scope, the app carries the
     // full calendar. Opens app.realitydn.com, not more rows.
     seeAllInApp: 'See all {n} events in the app',
+    rsvpRequired: 'This event requires RSVP with a free REALITY account.',
+    rsvpShort: 'RSVP required',
+    rsvpInApp: 'RSVP in the app',
   },
   VN: {
     upNext: 'Sắp diễn ra',
@@ -204,6 +214,9 @@ const CF_STR = {
     entry: 'Vé vào: {cost}',
     upcomingCount: '{n} sự kiện sắp tới',
     seeAllInApp: 'Xem tất cả {n} sự kiện trong ứng dụng',
+    rsvpRequired: 'Sự kiện này cần RSVP bằng tài khoản REALITY miễn phí.',
+    rsvpShort: 'Cần RSVP',
+    rsvpInApp: 'RSVP trong ứng dụng',
   },
   RU: {
     upNext: 'Скоро',
@@ -213,6 +226,9 @@ const CF_STR = {
     entry: 'Вход: {cost}',
     upcomingCount: 'Предстоящих событий: {n}',
     seeAllInApp: 'Все события ({n}) — в приложении',
+    rsvpRequired: 'На это событие нужна запись (RSVP) через бесплатный аккаунт REALITY.',
+    rsvpShort: 'Нужна запись',
+    rsvpInApp: 'Записаться в приложении',
   },
   UK: {
     upNext: 'Незабаром',
@@ -222,6 +238,9 @@ const CF_STR = {
     entry: 'Вхід: {cost}',
     upcomingCount: 'Подій попереду: {n}',
     seeAllInApp: 'Усі події ({n}) — у застосунку',
+    rsvpRequired: 'На цю подію потрібна реєстрація (RSVP) через безкоштовний акаунт REALITY.',
+    rsvpShort: 'Потрібна реєстрація',
+    rsvpInApp: 'Зареєструватися в застосунку',
   },
   KO: {
     upNext: '곧 시작',
@@ -231,6 +250,9 @@ const CF_STR = {
     entry: '입장료: {cost}',
     upcomingCount: '예정 이벤트 {n}개',
     seeAllInApp: '앱에서 이벤트 {n}개 모두 보기',
+    rsvpRequired: '이 이벤트는 무료 REALITY 계정으로 RSVP가 필요합니다.',
+    rsvpShort: 'RSVP 필수',
+    rsvpInApp: '앱에서 RSVP하기',
   },
   JA: {
     upNext: 'まもなく',
@@ -240,6 +262,9 @@ const CF_STR = {
     entry: '入場料: {cost}',
     upcomingCount: '今後のイベント{n}件',
     seeAllInApp: 'アプリでイベント{n}件をすべて見る',
+    rsvpRequired: 'このイベントは無料のREALITYアカウントでのRSVPが必要です。',
+    rsvpShort: 'RSVP必須',
+    rsvpInApp: 'アプリでRSVPする',
   },
 };
 

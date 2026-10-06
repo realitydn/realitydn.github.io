@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import useFeed from '../hooks/useFeed';
-import { dedupeSeries, pickTitle, pickDescription } from '../data/feed-helpers';
+import { dedupeSeries, pickTitle, pickDescription, needsRsvp } from '../data/feed-helpers';
 
 /**
  * EventsSchema — emits schema.org/Event JSON-LD for the next N upcoming events so
@@ -98,6 +98,9 @@ export default function EventsSchema({ lang = 'EN', id = 'events-schema' }) {
       if (images.length === 1) node.image = images[0];
       else if (images.length > 1) node.image = images;
       if (ev.sourceUrl) node.url = ev.sourceUrl;
+      // A limited-spot event (feed rsvpCapacity) states its seat count; an
+      // ordinary event's node is unchanged.
+      if (needsRsvp(ev)) node.maximumAttendeeCapacity = Number(ev.rsvpCapacity);
 
       // The feed's host is the person running the night; REALITY itself is
       // already the organizer, so it isn't repeated as a performer.

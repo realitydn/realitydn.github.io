@@ -118,11 +118,17 @@ function buildDocFromFeed(feedOrEvents, opts){
       // tag. `cost` is the app's source of truth for "costs money beyond a purchase"
       // (null/blank = free), so a priced event flags without a tag added by hand.
       const hasCost = ev.cost!=null && String(ev.cost).trim()!=='';
+      // * (prereg) flag, the same way: a non-null `rsvpCapacity` (feed additive
+      // field, number|null — a missing field reads as null) is a LIMITED-SPOT
+      // event that needs an RSVP with a free REALITY account in the app — the
+      // schedule's "Requires Pre-Registration". OR an explicit `prereg` tag.
+      const rc = ev.rsvpCapacity;
+      const hasRsvpCap = (typeof rc==='number' && isFinite(rc)) || (typeof rc==='string' && rc.trim()!=='' && isFinite(Number(rc)));
       events.push({
         id: mk(), date, start, end, title: TITLE(ev),
         titleShort: null, locations: mapped,
         // map the feed onto the schedule's flags/emphasis ($ = fee, * = prereg)
-        flags:{ prereg: tags.indexOf('prereg')>=0, fee: hasCost || tags.indexOf('fee')>=0 },
+        flags:{ prereg: hasRsvpCap || tags.indexOf('prereg')>=0, fee: hasCost || tags.indexOf('fee')>=0 },
         emphasis: tags.indexOf('featured')>=0 ? 'banner' : 'none', hide:[],
         repeat: weekly ? 'weekly' : null, repeatUntil:null, exceptions:[],
         notionId: ev.id || null,                                 // feed OCCURRENCE id (changes weekly)

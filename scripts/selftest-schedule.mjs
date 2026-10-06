@@ -180,6 +180,20 @@ eq('non-blank cost does not set prereg', tagged[3].flags.prereg, false);
 eq('whitespace-only cost → flags.fee false', tagged[4].flags.fee, false);
 eq('null cost → flags.fee false', tagged[5].flags.fee, false);
 
+// * (prereg) ALSO auto-sets from a non-null `rsvpCapacity` (limited-spot event:
+// RSVP with a free REALITY account). Missing field = null = no flag.
+const capped = buildDocFromFeed({ events: [
+  { id: 'c1', title_en: 'Mafia', startsAt: '2026-07-04T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [], rsvpCapacity: 10 },
+  { id: 'c2', title_en: 'Open Night', startsAt: '2026-07-05T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [], rsvpCapacity: null },
+  { id: 'c3', title_en: 'Old Feed', startsAt: '2026-07-06T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [] },
+  { id: 'c4', title_en: 'Free Capped', startsAt: '2026-07-07T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [], rsvpCapacity: 0, cost: '50k' },
+] }, { locations: LOCATIONS, makeId: () => 'cp' }).events;
+eq('rsvpCapacity 10 → flags.prereg', capped[0].flags.prereg, true);
+eq('rsvpCapacity does not set fee', capped[0].flags.fee, false);
+eq('rsvpCapacity null → no prereg', capped[1].flags.prereg, false);
+eq('rsvpCapacity missing → no prereg', capped[2].flags.prereg, false);
+eq('rsvpCapacity 0 (non-null) → prereg, cost still → fee', JSON.stringify(capped[3].flags), JSON.stringify({ prereg: true, fee: true }));
+
 // ── mergeFeedIntoDoc: idempotent App→Schedule sync (the auto-pull-on-open) ────
 const existing = [
   // a previously-synced feed row the user dressed up — presentation MUST survive

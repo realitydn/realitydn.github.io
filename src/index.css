@@ -1307,6 +1307,46 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
 .ev-dlg-rows { display: block; width: 100%; border-top: 2px solid var(--ticket-line); }
 .ev-dlg .plate-f { border-top: 2px solid var(--ticket-line); }
 
+/* ── RSVP notice — LIMITED-SPOT events (RsvpNote.jsx; the feed's
+   rsvpCapacity). "This event requires RSVP with a free REALITY account." is
+   a NOTICE, so it is yellow's job (canon B3b: yellow takes notices and
+   deals): the yellow fill with INK type in both themes (the APCA fill rule)
+   — --deal / --deal-fg, the theme-fixed yellow role pair, so Night needs no
+   override. On a card or row ticket it is the STUB: a strip across the
+   ticket's foot under a 2px ink rule (the top bar's mirror), the sentence
+   left, the door ("RSVP in the app →") right — wrapping, never truncating,
+   like .tkt-top. The dense rows carry the short label in the bar's caps.
+   In the overlay it pins under the top bar. 12px floor throughout. ── */
+.rsvp-stub {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline;
+  column-gap: 14px; row-gap: 4px;
+  background: var(--deal); color: var(--deal-fg);
+  border-top: 2px solid var(--ticket-line);
+  padding: 10px 16px;
+  text-align: left;
+}
+.rsvp-stub > * { min-width: 0; }
+.rsvp-stub-t,
+.rsvp-bar { font-family: var(--grotesk); font-weight: 600; font-size: 14px; line-height: 1.4; }
+.rsvp-stub-short,
+.rsvp-stub-go {
+  font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.rsvp-stub-go { margin-left: auto; text-align: right; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.rsvp-stub:hover .rsvp-stub-go { text-decoration-line: underline; }
+.ev .rsvp-stub { padding: 8px 13px; }
+.rsvp-bar {
+  flex: none; margin: 0;
+  background: var(--deal); color: var(--deal-fg);
+  border-bottom: 2px solid var(--ticket-line);
+  padding: 10px 16px;
+}
+/* The overlay's RSVP door may WRAP: .btn-action is nowrap, and the longer
+   labels (RU/UK) ran past a 375px plate's edge. */
+.ev-dlg .plate-f .btn-action.rsvp-cta { white-space: normal; }
+
 /* ── Menu: one neutral ticket with ruled rows; names in Montserrat caps,
    prices Montserrat 700 15px. Today's happy-hour deal ticket (MenuSection's
    DealTicket — only on the day) leads it in yellow. The category tabs, their

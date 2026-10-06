@@ -5,10 +5,11 @@ import { FEED_ICS_URL } from '../data/feed';
 import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
-import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName, pickDescription, pickPoster } from '../data/feed-helpers';
+import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName, pickDescription, pickPoster, needsRsvp } from '../data/feed-helpers';
 import { splitFeedSite, fmtDM, fmtDayDate, cfStr, costLabel, catLabel, dmParts, weekdayName, weeklyIds } from '../data/cal-feed';
 import { categoryOf } from '../data/event-category';
 import { LogoBox } from './Ticket';
+import { RsvpStub, openRsvpDoor } from './RsvpNote';
 
 // Calendar — the "what's on" feed, wearing the app's calendar look. Posters
 // are spent on the next FIVE events only (Donald, 22.08 — the all-poster feed
@@ -102,6 +103,9 @@ export default function Calendar({ lang }) {
   };
 
   const openEvent = (e, ev) => {
+    // A limited-spot event's yellow stub is the RSVP door (RsvpNote.jsx):
+    // a plain click on it goes straight to the app page.
+    if (openRsvpDoor(e, ev)) return;
     if (!isPlainClick(e)) return;
     e.preventDefault();
     setOverlayEvent(ev);
@@ -226,6 +230,8 @@ export default function Calendar({ lang }) {
             </span>
           )}
         </span>
+        {/* Limited-spot event: the RSVP stub across the ticket's foot. */}
+        {needsRsvp(ev) && <RsvpStub lang={lang} />}
       </a>
     );
   };
@@ -274,6 +280,8 @@ export default function Calendar({ lang }) {
           {qualifier && <span className="ev-qual">{qualifier}</span>}
           {sub && <span className="ev-sub">{sub}</span>}
         </span>
+        {/* Limited-spot event: the stub, short label (a dense row). */}
+        {needsRsvp(ev) && <RsvpStub lang={lang} compact />}
       </a>
     );
   };

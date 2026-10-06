@@ -8,10 +8,12 @@ import {
   pickLocName,
   pickPoster,
   fmtTime,
+  needsRsvp,
 } from '../data/feed-helpers';
-import { fmtDayDate, fmtDM, catLabel, ticketLabel, costLabel } from '../data/cal-feed';
+import { fmtDayDate, fmtDM, catLabel, ticketLabel, costLabel, cfStr } from '../data/cal-feed';
 import { categoryOf } from '../data/event-category';
 import { LogoBox } from './Ticket';
+import { RsvpBar } from './RsvpNote';
 import useDialog from '../hooks/useDialog';
 
 // EventOverlay — the "collapsible window on top of the page". Clicking an event
@@ -75,6 +77,9 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
     .filter(Boolean)
     .join(' · ');
   const appUrl = `${APP_BASE}/events/${event.id}?utm_source=website&utm_medium=event_overlay`;
+  // Limited-spot event (feed rsvpCapacity): the notice pins under the top
+  // bar and the app door names the RSVP — same page, the RSVP is made there.
+  const rsvp = needsRsvp(event);
   const titleId = `ev-dlg-title-${event.id}`;
 
   return createPortal(
@@ -92,6 +97,7 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={rsvp ? `${titleId}-rsvp` : undefined}
         tabIndex={-1}
       >
         <div className="plate-h">
@@ -113,6 +119,9 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
             </svg>
           </button>
         </div>
+
+        {/* Pinned, outside the scroller: never scrolled away on a phone. */}
+        {rsvp && <RsvpBar lang={lang} id={`${titleId}-rsvp`} />}
 
         {/* One scroller on phones (poster + text together), text-pane-only
             from md — see .ev-dlg-body in index.css. */}
@@ -176,9 +185,9 @@ export default function EventOverlay({ event, lang = 'EN', onClose }) {
             href={appUrl}
             target="_blank"
             rel="noreferrer"
-            className="btn-action px-6 py-3 text-sm"
+            className={`btn-action px-6 py-3 text-sm${rsvp ? ' rsvp-cta' : ''}`}
           >
-            {S.openInApp} <span aria-hidden="true">→</span>
+            {rsvp ? cfStr(lang).rsvpInApp : S.openInApp} <span aria-hidden="true">→</span>
           </a>
         </div>
       </div>

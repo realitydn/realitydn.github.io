@@ -21,6 +21,7 @@ import {
   fmtTime,
   dateKey,
   fmtDayHeading,
+  needsRsvp,
 } from '../src/data/feed-helpers.js';
 import {
   dayClassFromISO,
@@ -271,6 +272,29 @@ eq('whenKey ICT midnight boundary', whenKey('2026-07-01T17:30:00Z', wedNoon), 't
   eq('weekdayName VN', weekdayName('2026-10-06T12:30:00+07:00', 'VN'), 'Thứ 3');
   eq('weekdayName JA', weekdayName('2026-10-06T12:30:00+07:00', 'JA'), '火');
   eq('weekdayName ICT midnight boundary (Mon 23:30 ICT)', weekdayName('2026-10-05T16:30:00Z', 'EN'), 'Mon');
+}
+
+// ── RSVP: limited-spot events (feed additive field rsvpCapacity) ─────────────
+// non-null = needs an RSVP with a free REALITY account; a MISSING field reads
+// exactly like null (the field isn't live everywhere yet), so an ordinary
+// event renders as before.
+eq('needsRsvp capacity 10', needsRsvp({ rsvpCapacity: 10 }), true);
+eq('needsRsvp capacity 0 (non-null)', needsRsvp({ rsvpCapacity: 0 }), true);
+eq('needsRsvp null', needsRsvp({ rsvpCapacity: null }), false);
+eq('needsRsvp field missing', needsRsvp({ id: 'x' }), false);
+eq('needsRsvp numeric string', needsRsvp({ rsvpCapacity: '12' }), true);
+eq('needsRsvp junk (true / "" / NaN)', needsRsvp({ rsvpCapacity: true }) || needsRsvp({ rsvpCapacity: '' }) || needsRsvp({ rsvpCapacity: NaN }), false);
+eq('needsRsvp no event', needsRsvp(null), false);
+// The sentence is Donald's, verbatim in EN; every language carries its own
+// sentence, short label and door (no silent English on /vn/ … /ja/).
+eq('rsvpRequired EN verbatim', cfStr('EN').rsvpRequired, 'This event requires RSVP with a free REALITY account.');
+eq('rsvpRequired VN verbatim', cfStr('VN').rsvpRequired, 'Sự kiện này cần RSVP bằng tài khoản REALITY miễn phí.');
+eq('rsvpShort EN', cfStr('EN').rsvpShort, 'RSVP required');
+for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
+  for (const k of ['rsvpRequired', 'rsvpShort', 'rsvpInApp']) {
+    const v = cfStr(code)[k];
+    check(`cfStr ${code}.${k} is its own string`, typeof v === 'string' && v.trim() !== '' && v !== cfStr('EN')[k]);
+  }
 }
 
 // ── locale parity: every catalogue mirrors locales/en.js ─────────────────────

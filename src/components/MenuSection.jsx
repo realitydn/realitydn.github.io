@@ -4,9 +4,10 @@ import { URLS, STR } from '../data/translations';
 import Reveal from './Reveal';
 import EventOverlay from './EventOverlay';
 import useFeed from '../hooks/useFeed';
-import { fmtTime, pickTitle, pickQualifier } from '../data/feed-helpers';
+import { fmtTime, pickTitle, pickQualifier, needsRsvp } from '../data/feed-helpers';
 import { whenKey, fmtDayDate, catLabel, nextDealToday } from '../data/cal-feed';
 import { isDealEvent } from '../data/event-category';
+import { RsvpStub, openRsvpDoor } from './RsvpNote';
 
 // NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the menu is
 // ONE neutral cream ticket with ruled rows. The category tabs, their accent
@@ -32,6 +33,7 @@ function DealTicket({ ev, lang, onOpen }) {
       href={href}
       className="tkt deal-tkt mb-8"
       onClick={(e) => {
+        if (openRsvpDoor(e, ev)) return;
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         onOpen(ev);
@@ -45,6 +47,9 @@ function DealTicket({ ev, lang, onOpen }) {
         <span className="tkt-title">{title}</span>
         {qualifier && <span className="tkt-dim">{qualifier}</span>}
       </span>
+      {/* A limited-spot deal (feed rsvpCapacity) carries the RSVP stub like
+          every other listing (RsvpNote.jsx). */}
+      {needsRsvp(ev) && <RsvpStub lang={lang} />}
     </a>
   );
 }

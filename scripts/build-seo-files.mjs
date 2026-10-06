@@ -77,6 +77,12 @@ function readSnapshot() {
 
 const costText = (ev) => (ev.cost ? `entry ${ev.cost}` : 'free');
 
+// Limited-spot events (feed rsvpCapacity): main() swaps in the site's own
+// needsRsvp + the EN sentence (src/data/feed-helpers.js, cal-feed.js), so the
+// llms listings say what every on-site listing says. Until then — or if the
+// load fails — nothing is added and the lines read as before.
+let rsvpNote = () => '';
+
 // ---------------------------------------------------------------- sitemap
 function buildSitemap({ LANGS, pathFor }, today) {
   const guidelinesDate = gitDate(['src/pages/EventGuidelines.jsx', 'src/data/locales'], today);
@@ -140,7 +146,7 @@ function eventSections(events, now) {
     .map((d) => {
       const items = byDay.get(d)
         .sort((a, b) => hm(new Date(a.startsAt)).localeCompare(hm(new Date(b.startsAt))))
-        .map((e) => `${hm(new Date(e.startsAt))} ${oneLine(e.title_en)} (${costText(e)})`);
+        .map((e) => `${hm(new Date(e.startsAt))} ${oneLine(e.title_en)} (${costText(e)}${rsvpNote(e) ? ', RSVP required' : ''})`);
       return `- ${d}: ${items.join('; ')}`;
     });
 
@@ -150,7 +156,8 @@ function eventSections(events, now) {
     const where = e.location?.name_en ? ` · ${oneLine(e.location.name_en)}` : '';
     const host = e.host ? ` · hosted by ${oneLine(e.host)}` : '';
     const link = e.sourceUrl ? ` — ${e.sourceUrl}` : '';
-    return `- ${dayLabel(d)} ${hm(d)}${end} · ${oneLine(e.title_en)}${where}${host} · ${costText(e)}${link}`;
+    const rsvp = rsvpNote(e) ? ` · ${rsvpNote(e)}` : '';
+    return `- ${dayLabel(d)} ${hm(d)}${end} · ${oneLine(e.title_en)}${where}${host} · ${costText(e)}${rsvp}${link}`;
   });
   return { lineup, upcoming };
 }
@@ -370,6 +377,11 @@ async function main() {
   const { buildFaq } = await load('src/data/faq.js');
   let icsUrl = 'https://app.realitydn.com/api/feed/v1/events.ics';
   try { icsUrl = (await load('src/data/feed.js')).FEED_ICS_URL || icsUrl; } catch { /* keep default */ }
+  try {
+    const { needsRsvp } = await load('src/data/feed-helpers.js');
+    const sentence = (await load('src/data/cal-feed.js')).cfStr('EN').rsvpRequired;
+    if (typeof needsRsvp === 'function' && sentence) rsvpNote = (e) => (needsRsvp(e) ? sentence : '');
+  } catch { /* no RSVP notes — the listings read as before */ }
 
   const en = STR.EN;
   let geo = null;

@@ -113,9 +113,9 @@ eq('dedupe keeps soonest series instance', quiz && quiz.id, 'q-week1');
 eq('dedupe keeps both one-offs', deduped.filter((e) => e.seriesId === null).length, 2);
 eq('dedupe keeps distinct series', deduped.filter((e) => e.seriesId === 'ser_film').length, 1);
 
-// ── poster fallback: feed → poster4x5 → null(skip) ───────────────────────────
-eq('poster prefers feed', pickPoster({ feed: 'f.jpg', poster4x5: '4x5.jpg' }), 'f.jpg');
-eq('poster falls back to 4x5', pickPoster({ feed: null, poster4x5: '4x5.jpg' }), '4x5.jpg');
+// ── poster: the designed 4:5 or null(skip) — the feed slice is retired ───────
+eq('poster is the 4x5', pickPoster({ feed: 'f.jpg', poster4x5: '4x5.jpg' }), '4x5.jpg');
+eq('a lone feed slice is no poster', pickPoster({ feed: 'f.jpg', poster4x5: null }), null);
 eq('poster null when both absent', pickPoster({ feed: null, poster4x5: null }), null);
 eq('poster null when posters missing', pickPoster(null), null);
 

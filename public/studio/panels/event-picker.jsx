@@ -145,7 +145,7 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
         </div>
         {!scopeStep &&
           <div className="rs-modalsub" style={{ marginBottom:12 }}>
-            Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b>, 1:1 → <b>square1x1</b>, plus your text-less <b>feed slice</b> → <b>feed</b> onto the chosen event.
+            Sends 4:5 → <b>poster4x5</b>, 9:16 → <b>story</b> and 1:1 → <b>square1x1</b> onto the chosen event.
           </div>}
         {scopeStep ? renderScope() : renderList()}
         <div className="rs-modalfoot">
@@ -158,4 +158,48 @@ function EventPickerModal({ picker, onPick, onClose, onRetry }){
   );
 }
 
-export { EventPickerModal };
+/* ---- the send report — up whenever an "Export to event" didn't land all three
+   images, and it STAYS until dismissed. The old outcome was a 1.6s "· 3 failed"
+   in the toolbar, and Fun with Math went out with only its feed strip. One line
+   per format with what happened; "Retry" re-sends only the missing ones. ---- */
+function SendReportModal({ report, onRetry, onClose }){
+  React.useEffect(()=>{
+    const onKey = (e)=>{ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); onClose(); } };
+    window.addEventListener('keydown', onKey, true);
+    return ()=>window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
+  const sent = report.results.filter(r=>r.ok);
+  const missing = report.results.filter(r=>!r.ok);
+  const noPoster = missing.some(r=>r.slot==='poster4x5');
+  const slow = missing.some(r=>/timed out|reach the app/.test(r.why||''));
+  return (
+    <div className="rs-overlay" onClick={onClose}>
+      <div className="rs-modal narrow" role="alertdialog" aria-labelledby="rs-sendrep-t" onClick={e=>e.stopPropagation()}>
+        <div className="rs-modalhead" style={{ marginBottom:4 }}>
+          <div className="rs-modaltitle" id="rs-sendrep-t">{sent.length ? 'Only part of the poster went up' : 'The poster didn’t go up'}</div>
+        </div>
+        <div className="rs-modalsub" style={{ marginBottom:12 }}>
+          <b>{report.title}</b> — {sent.length} of {report.results.length} images reached the event.
+          {noPoster ? ' Until the 4:5 lands, the event keeps its old poster, or none.' : ''}
+        </div>
+        {report.results.map(r=>(
+          <div key={r.slot} className={'rs-mini'+(r.ok ? '' : ' err')} style={{ display:'flex', gap:8, marginBottom:4 }}>
+            <span aria-hidden="true">{r.ok ? '✓' : '✗'}</span>
+            <span><b>{r.label}</b> — {r.ok ? 'sent' : r.why}</span>
+          </div>
+        ))}
+        {slow &&
+          <div className="rs-mini" style={{ marginTop:10 }}>
+            Usually a slow or dropped connection. A retry normally gets through — each image gets a few minutes before it gives up.
+          </div>}
+        <div className="rs-modalfoot">
+          <button className="rs-iconbtn" onClick={onClose}>Close</button>
+          {missing.length>0 &&
+            <button className="rs-iconbtn on" onClick={onRetry}>Retry the missing {missing.length===1 ? 'one' : missing.length}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { EventPickerModal, SendReportModal };

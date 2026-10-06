@@ -38,7 +38,10 @@ function useQueue({ docRef, setDoc, setSelectedIds, userTpls, userTplsRef, tplRe
     if(!evs.length) return [];
     const claimed = {}; userTpls.forEach(t=>{ if(t && t.eventId) claimed[t.eventId]=1; });
     const horizon = new Date(Date.now()+7*3600*1000 + QUEUE_DAYS*86400000).toISOString().slice(0,10);
-    const hasPoster = ev=>{ const p=(ev&&ev.posters)||{}; return !!(p.poster4x5||p.feed||p.square1x1||p.story); };
+    /* The designed 4:5 IS the poster. The retired feed slice (or a lone story /
+       square from a send that half-failed) used to count as "has one" too —
+       which is how Fun with Math left the queue holding nothing but a strip. */
+    const hasPoster = ev=>!!(ev && ev.posters && ev.posters.poster4x5);
     /* posterStaleAt (hub 0033): something the ARTWORK prints changed after this
        poster was made — the name, the host, the price, or the day/time — so the
        poster now advertises the old one. Such events re-queue even though they

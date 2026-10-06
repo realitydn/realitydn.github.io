@@ -10,8 +10,6 @@ function useDoc(initialDoc){
   const [doc, setDoc] = React.useState(()=>initialDoc || starterDoc());
   const [selectedIds, setSelectedIds] = React.useState([]);
   const selectedId = selectedIds.length ? selectedIds[selectedIds.length-1] : null;  // primary (last clicked)
-  const [sliceMode, setSliceMode] = React.useState(false);   // editing the feed-slice band
-  const setFeedSlice = (s)=>setDoc(d=>({ ...d, feedSlice:s }));
 
   /* Shift-click adds/removes; a plain click selects one. */
   function select(id, additive){
@@ -138,7 +136,7 @@ function useDoc(initialDoc){
   }); };
   const clearAll = ()=>{ if(confirm('Remove all elements from the poster?')){ setDoc(d=>({...d, elements:[], overrides:{}, eventRef:null})); setSelectedIds([]); } };
 
-  return { doc, setDoc, docRef, selectedIds, setSelectedIds, selectedId, select, sliceMode, setSliceMode, setFeedSlice,
+  return { doc, setDoc, docRef, selectedIds, setSelectedIds, selectedId, select,
     viewFormat, isOutput, activeLabel, hist, undo, redo, setDocQuiet, resolved, resolvedRef, sel, selRef, selIdsRef,
     overrideCount, updateEl, updateElRef, update, resetOverride, resetFormat, toggleHidden, del, dup, layer, clearAll };
 }

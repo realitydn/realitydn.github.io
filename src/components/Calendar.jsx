@@ -5,7 +5,7 @@ import { FEED_ICS_URL } from '../data/feed';
 import useFeed from '../hooks/useFeed';
 import EventOverlay from './EventOverlay';
 import GetAppStrip from './GetAppStrip';
-import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName, pickDescription } from '../data/feed-helpers';
+import { fmtTime, dateKey, pickTitle, pickQualifier, pickLocName, pickDescription, pickPoster } from '../data/feed-helpers';
 import { splitFeedSite, fmtDM, fmtDayDate, cfStr, costLabel, catLabel, dmParts, weekdayName, weeklyIds } from '../data/cal-feed';
 import { categoryOf } from '../data/event-category';
 import { LogoBox } from './Ticket';
@@ -148,9 +148,9 @@ export default function Calendar({ lang }) {
     // Localized weekday — peel the d.m tail off fmtDayDate (the rows' trick).
     const full = fmtDayDate(ev.startsAt, lang);
     const wd = dm && full.endsWith(dm) ? full.slice(0, -dm.length).trim() : full;
-    // Poster source: the designed 4:5 export leads (native in a 4:5 frame, no
-    // crop); the feed slice is only ever the fallback when no 4:5 exists.
-    const img = ev.posters?.poster4x5 || ev.posters?.feed || null;
+    // Poster source: the designed 4:5 export (native in a 4:5 frame, no crop).
+    // No 4:5, no art — the retired feed slice would show as a close-up crop.
+    const img = pickPoster(ev.posters);
     // The card is a TICKET (both themes): the category's top bar (when ·
     // time / category) leads, then the name, the qualifier, one meta line
     // and — on the lead card — the story, beside the poster at its native

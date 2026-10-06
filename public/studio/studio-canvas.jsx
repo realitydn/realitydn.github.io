@@ -84,8 +84,7 @@ function ScTextEditor({ el, value, onChange, onDone }){
 }
 
 function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, snap, scale, pan,
-                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting, plateOnly,
-                        sliceMode, feedSlice, onSliceChange }){
+                        stageRef, canvasRef, selectedId, selectedIds, onSelect, onChange, onCommit, exporting }){
   const f = SC_FMT[format];
   const t = scTheme(theme);
   const safe = scSafe(format);
@@ -158,17 +157,6 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
     addListeners();
     onMove(e);
   }
-  // Feed-slice band: drag the band (move) or its top/bottom edge (resize). yFrac/hFrac
-  // are fractions of the canvas height, so the slice is format-agnostic.
-  function startSlice(e, mode){
-    e.stopPropagation();
-    const p = toCanvas(e);
-    const y = (feedSlice && feedSlice.yFrac != null ? feedSlice.yFrac : 0.4) * f.h;
-    const h = (feedSlice && feedSlice.hFrac != null ? feedSlice.hFrac : 0.2) * f.h;
-    dragRef.current = { mode:'slice-'+mode, oy:p.y - y, y0:y, h0:h };
-    addListeners();
-  }
-
   function onMove(e){
     const d = dragRef.current; if(!d) return;
     const p = toCanvas(e);
@@ -226,18 +214,6 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
       const r = (v,lo,hi)=>Math.round(Math.max(lo,Math.min(hi,v))*200)/200;
       if(hd.kind==='point') onChange(d.id, { [hd.keys[0]]:r(fx,-0.5,0.5), [hd.keys[1]]:r(fy,-0.5,0.5) });
       else onChange(d.id, { dragPos: r(hd.dir==='down'?fy+0.5 : hd.dir==='up'?0.5-fy : hd.dir==='right'?fx+0.5 : 0.5-fx, 0.05, 0.95) });
-    }
-    else if(d.mode==='slice-move'){
-      const ny = Math.max(0, Math.min(f.h - d.h0, p.y - d.oy));
-      onSliceChange && onSliceChange({ yFrac:ny/f.h, hFrac:d.h0/f.h });
-    }
-    else if(d.mode==='slice-top'){
-      const minH = 80, bottom = d.y0 + d.h0, ny = Math.max(0, Math.min(bottom - minH, p.y));
-      onSliceChange && onSliceChange({ yFrac:ny/f.h, hFrac:(bottom - ny)/f.h });
-    }
-    else if(d.mode==='slice-bot'){
-      const minH = 80, nh = Math.max(minH, Math.min(f.h - d.y0, p.y - d.y0));
-      onSliceChange && onSliceChange({ yFrac:d.y0/f.h, hFrac:nh/f.h });
     }
   }
   function onUp(){
@@ -313,9 +289,7 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
             fontFamily:SC_MONT, fontWeight:700, letterSpacing:'.26em', fontSize:13, color:'rgba(255,255,255,.4)', pointerEvents:'none' }}>▲ DROP YOUR PHOTO — FULL BLEED</div>}
         </div>
 
-        {/* plateOnly = image-only / text-less export: keep ONLY photo elements
-            (drop all text + design elements) for the clean 'feed' hero image. */}
-        {(plateOnly ? elements.filter(el=>el.type==='photo') : elements).map(el=>(
+        {elements.map(el=>(
           /* hidden-in-this-format: ghosted while editing as an aid, but fully
              dropped from exports (don't bake a 22% element into the image) */
           (exporting && el.hidden) ? null :
@@ -412,29 +386,6 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
               pointerEvents:'auto', cursor:'nwse-resize' }} />
           </div>
         )}
-
-        {/* Feed-slice selector: a draggable horizontal band; the area outside dims.
-            What's inside the band (photos only, no text) becomes the 'feed' export. */}
-        {sliceMode && !exporting && (() => {
-          const sy = (feedSlice && feedSlice.yFrac != null ? feedSlice.yFrac : 0.4) * f.h;
-          const sh = (feedSlice && feedSlice.hFrac != null ? feedSlice.hFrac : 0.2) * f.h;
-          const hh = 20 / scale, lw = 2.5 / scale, dim = 'rgba(13,9,5,.5)';
-          return (
-            <React.Fragment>
-              <div style={{ position:'absolute', left:0, top:0, width:f.w, height:sy, background:dim, pointerEvents:'none', zIndex:58 }} />
-              <div style={{ position:'absolute', left:0, top:sy+sh, width:f.w, height:Math.max(0, f.h-sy-sh), background:dim, pointerEvents:'none', zIndex:58 }} />
-              <div onPointerDown={(e)=>startSlice(e, 'move')} style={{ position:'absolute', left:0, top:sy, width:f.w, height:sh,
-                border:`${lw}px solid ${SC_SEL}`, boxSizing:'border-box', cursor:'grab', pointerEvents:'auto', zIndex:59 }}>
-                <div style={{ position:'absolute', left:8/scale, top:6/scale, fontFamily:SC_MONT, fontWeight:700,
-                  fontSize:13/scale, letterSpacing:'.12em', color:SC_SEL, pointerEvents:'none' }}>FEED SLICE</div>
-              </div>
-              <div onPointerDown={(e)=>startSlice(e, 'top')} title="Drag to set the slice top" style={{ position:'absolute', left:'50%', top:sy,
-                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#0d0906', border:`${lw}px solid ${SC_SEL}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
-              <div onPointerDown={(e)=>startSlice(e, 'bot')} title="Drag to set the slice bottom" style={{ position:'absolute', left:'50%', top:sy+sh,
-                width:hh*2.6, height:hh, marginLeft:-hh*1.3, marginTop:-hh/2, background:'#0d0906', border:`${lw}px solid ${SC_SEL}`, cursor:'ns-resize', pointerEvents:'auto', zIndex:60 }} />
-            </React.Fragment>
-          );
-        })()}
       </div>
     </div>
   );

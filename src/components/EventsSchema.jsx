@@ -69,10 +69,10 @@ export default function EventsSchema({ lang = 'EN', id = 'events-schema' }) {
       const name = pickTitle(ev, lang) || 'REALITY event';
       const description = pickDescription(ev, lang) || undefined;
       const locName = (lang === 'VN' ? ev.location?.name_vi : ev.location?.name_en) || ev.location?.name_en || placeName;
-      // Every rendition the feed carries, largest-first; Google picks the
-      // aspect it wants from the array.
+      // Every poster rendition the feed carries, largest-first; Google picks the
+      // aspect it wants from the array. (Not the retired text-less feed slice.)
       const posters = ev.posters || {};
-      const images = [posters.poster4x5, posters.feed, posters.square1x1, posters.story]
+      const images = [posters.poster4x5, posters.square1x1, posters.story]
         .filter((u, i, a) => u && a.indexOf(u) === i);
       const node = {
         '@context': 'https://schema.org',

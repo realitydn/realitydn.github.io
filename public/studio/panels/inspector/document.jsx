@@ -1,13 +1,12 @@
 /* ============================================================
    REALITY POSTER STUDIO — inspector · nothing selected
-   The whole-poster panel: day, story sizing, feed slice, canvas, shortcuts.
+   The whole-poster panel: day, story sizing, canvas, shortcuts.
    ============================================================ */
 import { ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR, PALETTE as AP_PAL, STEP } from '../../studio-data.jsx';
 import { NUDGE } from '../../doc.js';
 import { Slider, Chips, Fold, Hint } from '../controls.jsx';
-function DocumentPanel({ doc, setDoc, isOutput, clearAll, sliceMode, setSliceMode, setFeedSlice }){
+function DocumentPanel({ doc, setDoc, isOutput, clearAll }){
   const DAYS = AP_ABYDAY.map((a,i)=>({ n:i+1, abbr:AP_DABBR[i], accent:a }));
-  const slice = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
   return (
     <React.Fragment>
       {/* The day picker stays bare — it's the single most-used control in the
@@ -35,23 +34,6 @@ function DocumentPanel({ doc, setDoc, isOutput, clearAll, sliceMode, setSliceMod
             <Slider label="Scale" val={doc.storyScale||1.15} min={1} max={1.8} step={0.05} onChange={v=>setDoc(d=>({...d, storyScale:v}))} suffix="×" />}
           <Hint tight>Scales every element + its text up so the story reads on a phone — applies to all your templates. Anything you hand-size in 9:16 keeps its size.</Hint>
         </Fold>}
-
-      {/* Feed slice used to sit below the inspector on EVERY selection, which
-          meant carrying a document-level control through every element edit.
-          It belongs here, with the other whole-poster settings. */}
-      <Fold id="d-slice" title="Feed slice" badge={sliceMode?'picking':null}>
-        <Hint>The text-less strip used on the calendar’s “This week” cards (a thin band — far smaller than a full poster). Pick which part of the image to use.</Hint>
-        <button className="rs-addrow" onClick={()=>{ const on=!sliceMode; setSliceMode(on);
-          if(on) setDoc(d=>({ ...d, activeFormat:'master', feedSlice:d.feedSlice||{ yFrac:0.4, hFrac:0.2 } })); }}>
-          {sliceMode ? '✓ Done selecting' : '◧ Select feed slice…'}</button>
-        {sliceMode && <React.Fragment>
-          <Slider label="Top" val={Math.round(slice.yFrac*100)} min={0} max={92} step={1}
-            onChange={v=>setFeedSlice({ yFrac:v/100, hFrac:slice.hFrac })} suffix="%" />
-          <Slider label="Height" val={Math.round(slice.hFrac*100)} min={8} max={60} step={1}
-            onChange={v=>setFeedSlice({ yFrac:slice.yFrac, hFrac:v/100 })} suffix="%" />
-          <button className="rs-addrow" style={{ marginTop:6 }} onClick={()=>setFeedSlice({ yFrac:0.4, hFrac:0.2 })}>Center · 4:1 band</button>
-        </React.Fragment>}
-      </Fold>
 
       <Fold id="d-canvas" title="Canvas">
         <div className="rs-mini" style={{ textAlign:'center', marginBottom:12 }}>{doc.elements.length} element{doc.elements.length===1?'':'s'} placed</div>

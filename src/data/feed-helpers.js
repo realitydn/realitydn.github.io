@@ -44,10 +44,12 @@ export function orderByDay(list, now = new Date()) {
     .map((x) => x.e);
 }
 
-// pickPoster(posters) — feed → poster4x5 → null. The carousel skips a card when null.
+// pickPoster(posters) — the designed 4:5, or null (the card skips its art). The
+// text-less feed slice is retired (6.10.26): a 4:1 strip blown up into a poster
+// frame reads as a close-up crop, so it never stands in for the poster.
 export function pickPoster(posters) {
   if (!posters) return null;
-  return posters.feed || posters.poster4x5 || null;
+  return posters.poster4x5 || null;
 }
 
 // dedupeSeries(events) — collapse multiple instances of one recurring series

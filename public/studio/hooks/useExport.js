@@ -10,7 +10,6 @@ import { queueKey, fetchFeedRetry } from '../feed.js';
 function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQuiet, queueFeed, setQueueSent, cloudSignIn }){
   const [exporting, setExporting] = React.useState(false);
   const exportingRef = React.useRef(false); exportingRef.current = exporting;   // for window-level handlers
-  const [plateOnly, setPlateOnly] = React.useState(false);   // image-only/text-less render for the 'feed' slot
   const [exportMsg, setExportMsg] = React.useState('');
 
   /* ---- export — Save Images. Scope follows the active view (an output format
@@ -130,8 +129,11 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
        4x5  → poster4x5   (the designed 4:5 poster)
        9x16 → story
        1x1  → square1x1
-       4x5  → feed        (the text-less FEED SLICE: a horizontal band of the image
-                           only — the strip that fills the calendar's "This week" cards)
+     The text-less FEED SLICE (4x5 → feed) is retired (6.10.26): nothing shows it
+     any more, and as the smallest upload it was the one that survived a slow
+     connection — Fun with Math ended up with ONLY the strip, which the app blew
+     up into a poster-sized close-up. The hub still takes a 'feed' upload from an
+     old open tab; this build never sends one.
      Strictly additive: nothing here touches the local export path; all guarded.
      Photos are embedded inline as data URLs (content-addressing OUT OF SCOPE —
      TODO(WP9): content-address photos so big posters don't bloat R2). ---- */
@@ -139,9 +141,14 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
     { fmt:'4x5',  slot:'poster4x5' },
     { fmt:'9x16', slot:'story' },
     { fmt:'1x1',  slot:'square1x1' },
-    { fmt:'4x5',  slot:'feed', plate:true },   // image-only / text-less render
   ];
   const [eventPicker, setEventPicker] = React.useState(null);   // null | { open, loading, events, err }
+  /* The last send, when anything in it didn't land:
+     null | { eventId, scope, title, rows, results:[{ slot, label, ok, why }] }.
+     It stays on screen until dismissed. A partial send used to flash
+     "· 3 failed" for 1.6s and take the event off the queue anyway — which is how
+     an event came to show a strip instead of its poster with nobody noticing. */
+  const [sendReport, setSendReport] = React.useState(null);
   async function openEventPicker(){
     if(!RCloud){ return; }
     if(!RCloud.isSignedIn()){
@@ -160,17 +167,37 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
       setEventPicker({ open:true, loading:false, events:[], err:'Could not load the events feed.', origin });
     }
   }
+  /* Why one image didn't land, in words — putPoster says what happened (status 0
+     = the app never answered). */
+  function whyFailed(res){
+    if(!res) return 'no answer from the app';
+    if(res.rendered===false) return 'couldn’t render this format';
+    if(res.signedOut) return 'signed out — sign in again, then retry';
+    if(res.timedOut) return 'timed out — the upload was too slow';
+    if(res.status===0) return 'couldn’t reach the app';
+    if(res.error) return 'refused: '+res.error;
+    return 'failed (HTTP '+res.status+')';
+  }
+  /* Worth a second go on its own: a timeout, a dropped connection or a server
+     hiccup. A refusal (bad file, signed out) would only fail the same way again. */
+  const retryable = res => !!res && !res.ok && !res.signedOut &&
+    (res.timedOut || res.status===0 || res.status===408 || res.status===429 || res.status>=500);
   /* scope: 'one' (this date) | 'series' (every upcoming date of the series).
-     The picker only offers the choice when the target actually repeats. */
-  async function exportToEvent(eventId, scope){
+     The picker only offers the choice when the target actually repeats.
+     retry: { slots, rows, carried } — "Retry the missing ones" from the send
+     report: just those slots, the same feed rows, and the slots that already
+     landed carried forward so the report and the queue judge the whole set. */
+  async function exportToEvent(eventId, scope, retry){
     if(exporting || !window.htmlToImage || !RCloud) return;
     /* grab the picker's feed rows before closing it — the post-send message needs
        to know whether the target belongs to a series, and the fan-out fallback
        needs the sibling dates */
-    const pickedFrom = (eventPicker && eventPicker.events) || [];
+    const pickedFrom = (retry && retry.rows) || (eventPicker && eventPicker.events) || [];
     setEventPicker(null);
+    setSendReport(null);
     const feedRows = pickedFrom.length ? pickedFrom : ((queueFeed && queueFeed.events) || []);
     const target = feedRows.find(e=>e.id===eventId) || null;
+    const title = (target && (target.title_en || target.title_vi)) || doc.title || 'this event';
     const wantSeries = scope==='series' && !!(target && target.seriesId);
     /* The other upcoming dates of this series, soonest first. Only walked on the
        FALLBACK path: a hub that understands scope=series answers seriesForced,
@@ -179,6 +206,12 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
       ? feedRows.filter(e=>e.seriesId===target.seriesId && e.id!==eventId)
           .sort((a,b)=>String(a.startsAt||'').localeCompare(String(b.startsAt||'')))
       : [];
+    const slots = retry ? EVENT_SLOTS.filter(m=>retry.slots.indexOf(m.slot)>=0) : EVENT_SLOTS;
+    const results = retry ? retry.carried.slice() : [];
+    /* Every slot, in send order — what didn't get a result was never reached. */
+    const report = (fallbackWhy)=>({ eventId, scope, title, rows: feedRows,
+      results: EVENT_SLOTS.map(m=>results.find(r=>r.slot===m.slot)
+        || { slot:m.slot, label:AP_FMT[m.fmt].label, ok:false, why:fallbackWhy }) });
     const prev = doc.activeFormat;
     setSelectedIds([]); setExporting(true);
     const bg = doc.theme==='night' ? '#0a0703' : '#fffbf1';
@@ -188,30 +221,17 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
         style:{ transform:'none', left:'0px', top:'0px', margin:'0', position:'static' } };
       return window.htmlToImage.toBlob(node, opts);
     };
-    // The feed slice: capture only the chosen band of the 4:5 master — shift the
-    // canvas up by the band's top, capture the band's height. Photo-only via plateOnly,
-    // so the output is a small text-less strip (storage/bandwidth win).
-    const toBlobSlice = ()=>{
-      const node=canvasRef.current, f=AP_FMT['4x5'];
-      const sl=doc.feedSlice||{ yFrac:0.4, hFrac:0.2 };
-      const by=Math.round((sl.yFrac||0)*f.h), bh=Math.max(1, Math.round((sl.hFrac||0.2)*f.h));
-      const opts={ width:f.w, height:bh, pixelRatio:2, cacheBust:true, backgroundColor:bg,
-        style:{ transform:`translateY(${-by}px)`, left:'0px', top:'0px', margin:'0', position:'static' } };
-      return window.htmlToImage.toBlob(node, opts);
-    };
-    let ok = 0, failed = 0, wideHits = 0, forcedHits = 0, fanFailed = 0;
+    let ok = 0, wideHits = 0, forcedHits = 0, fanFailed = 0;
     const fanned = {};   // sibling ids that took at least one slot on the fallback path
     try{
-      for(const m of EVENT_SLOTS){
-        const label = m.plate ? 'image-only' : AP_FMT[m.fmt].label;
+      for(const m of slots){
+        const label = AP_FMT[m.fmt].label;
         setExportMsg('Rendering '+label+'…');
-        if(m.plate) setPlateOnly(true);
         setDocQuiet(d=>({ ...d, activeFormat:m.fmt }));   // a view flip, not an edit
-        await settleFormat(m.fmt, m.plate?440:380);   // sentinel + painted frame + riso-repaint floor
+        await settleFormat(m.fmt, 380);   // sentinel + painted frame + riso-repaint floor
         let blob = null;
-        try{ blob = await (m.plate ? toBlobSlice() : toBlob(AP_FMT[m.fmt])); }catch(e){ blob = null; }
-        if(m.plate) setPlateOnly(false);
-        if(!blob){ failed++; continue; }
+        try{ blob = await toBlob(AP_FMT[m.fmt]); }catch(e){ console.warn('[studio] render failed', m.fmt, e); blob = null; }
+        if(!blob){ results.push({ slot:m.slot, label, ok:false, why:whyFailed({ rendered:false }) }); continue; }
         /* Downscale the 2x render to its base px and re-encode for upload. WebP by
            default; story + square1x1 stay JPEG — story for Instagram's share intake,
            square1x1 because it's the event's OG/social share image and Facebook /
@@ -223,17 +243,23 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
         try{
           if(RCloud.optimizeImage){
             const f = AP_FMT[m.fmt];
-            const sl = doc.feedSlice || { yFrac:0.4, hFrac:0.2 };
-            const th = m.plate ? Math.max(1, Math.round((sl.hFrac||0.2)*f.h)) : f.h;
-            up = await RCloud.optimizeImage(blob, f.w, th,
+            up = await RCloud.optimizeImage(blob, f.w, f.h,
               (m.slot==='story' || m.slot==='square1x1') ? { prefer:'image/jpeg' } : undefined);
           }
         }catch(e){ /* keep the raw render */ }
-        setExportMsg('Uploading '+label+'…');
-        const res = await RCloud.putPoster(eventId, m.slot, up.blob, up.type,
-          wantSeries ? { scope:'series' } : undefined);
-        if(res && res.ok){ ok++; if(res.seriesWide) wideHits++; if(res.seriesForced) forcedHits++; }
-        else { failed++; continue; }
+        /* One automatic second go for a timeout / dropped connection — on a slow
+           uplink the same bytes usually get through on the next attempt. */
+        const kb = Math.max(1, Math.round(up.blob.size/1024));
+        let res = null;
+        for(let attempt=1; attempt<=2; attempt++){
+          setExportMsg((attempt>1 ? 'Retrying ' : 'Uploading ')+label+' ('+kb+' KB)…');
+          res = await RCloud.putPoster(eventId, m.slot, up.blob, up.type,
+            wantSeries ? { scope:'series' } : undefined);
+          if((res && res.ok) || !retryable(res)) break;
+        }
+        if(!(res && res.ok)){ results.push({ slot:m.slot, label, ok:false, why:whyFailed(res) }); continue; }
+        ok++; if(res.seriesWide) wideHits++; if(res.seriesForced) forcedHits++;
+        results.push({ slot:m.slot, label, ok:true });
         /* Fallback for a hub deployed before scope=series: it stamped at most the
            non-detached dates, so push the same bytes onto each sibling by hand.
            Costs one upload per date — it stops happening the moment the hub starts
@@ -247,12 +273,18 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
         }
       }
       setDocQuiet(d=>({ ...d, activeFormat:prev }));
-      if(ok){
-        /* the event now has a poster — take it (and its weekly series) off the queue */
-        const hit = ((queueFeed && queueFeed.events) || []).find(e=>e.id===eventId);
-        const k = hit ? queueKey(hit) : eventId;
-        setQueueSent(s=>Object.assign({}, s, { [k]:1 }));
+      const sentAll = EVENT_SLOTS.every(m=>results.some(r=>r.slot===m.slot && r.ok));
+      if(!sentAll){
+        /* Anything short of all three stays on screen until it's dealt with, and
+           the event stays in the queue — a half-sent event still needs a poster. */
+        setSendReport(report('not sent'));
+        setExporting(false); setExportMsg('');
+        return;
       }
+      /* the event now has its whole poster — take it (and its weekly series) off the queue */
+      const hit = ((queueFeed && queueFeed.events) || []).find(e=>e.id===eventId);
+      const k = hit ? queueKey(hit) : eventId;
+      setQueueSent(s=>Object.assign({}, s, { [k]:1 }));
       /* A send onto a series instance normally stamps the whole series (the hub
          answers seriesWide). It DOESN'T when that instance is hand-edited — a
          detached date keeps its own artwork, so the other dates quietly keep the
@@ -264,23 +296,30 @@ function useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQ
       const dates = forcedHits ? (siblings.length+1) : (Object.keys(fanned).length+1);
       const oneDateOnly = ok>0 && !wantSeries && isSeries && wideHits===0;
       const wentWide    = ok>0 && !wantSeries && isSeries && wideHits>0;
-      const lost = failed + fanFailed;
-      setExportMsg(!ok ? 'Export to event failed'
-        : seriesRun   ? ('Sent to '+dates+' date'+(dates===1?'':'s')+' in the series'+(lost?(' · '+lost+' failed'):''))
+      setExportMsg(seriesRun ? ('Sent to '+dates+' date'+(dates===1?'':'s')+' in the series'+(fanFailed?(' · '+fanFailed+' failed'):''))
         : oneDateOnly ? 'Sent to THIS DATE only — the rest of the series keeps its old poster'
         : wentWide    ? 'Sent to the event — this series shares one poster, so every date took it'
-        : ('Sent '+ok+' image'+(ok===1?'':'s')+' to the event'+(failed?(' · '+failed+' failed'):'')));
-      await new Promise(r=>setTimeout(r, ok?((oneDateOnly||wentWide||seriesRun)?3400:1600):1800));
+        : ('Sent all '+EVENT_SLOTS.length+' images to the event'));
+      await new Promise(r=>setTimeout(r, (oneDateOnly||wentWide||seriesRun)?3400:1600));
     }catch(err){
       console.error('export-to-event failed', err);
-      setPlateOnly(false);
       setDocQuiet(d=>({ ...d, activeFormat:prev }));
-      setExportMsg('Export to event failed'); await new Promise(r=>setTimeout(r,1600));
+      setSendReport(report('stopped — the send hit an error'));
     }
     setExporting(false); setExportMsg('');
   }
+  /* "Retry the missing ones" — only what didn't land, same event, same scope. */
+  function retrySend(){
+    const r = sendReport; if(!r) return;
+    exportToEvent(r.eventId, r.scope, {
+      slots: r.results.filter(x=>!x.ok).map(x=>x.slot),
+      rows: r.rows,
+      carried: r.results.filter(x=>x.ok),
+    });
+  }
 
-  return { exporting, exportingRef, exportMsg, plateOnly, doExport, eventPicker, setEventPicker, openEventPicker, exportToEvent };
+  return { exporting, exportingRef, exportMsg, doExport, eventPicker, setEventPicker, openEventPicker, exportToEvent,
+           sendReport, setSendReport, retrySend };
 }
 
 export { useExport };

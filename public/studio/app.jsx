@@ -32,11 +32,11 @@ import { Topbar } from './panels/topbar.jsx';
 import { QueueList } from './panels/queue.jsx';
 import { Library } from './panels/library.jsx';
 import { Inspector } from './panels/inspector/index.jsx';
-import { EventPickerModal } from './panels/event-picker.jsx';
+import { EventPickerModal, SendReportModal } from './panels/event-picker.jsx';
 
 /* ---------- app ---------- */
 function App({ initialDoc, bootClean }){
-  const { doc, setDoc, docRef, selectedIds, setSelectedIds, selectedId, select, sliceMode, setSliceMode, setFeedSlice,
+  const { doc, setDoc, docRef, selectedIds, setSelectedIds, selectedId, select,
     viewFormat, isOutput, activeLabel, hist, undo, redo, setDocQuiet, resolved, resolvedRef, sel, selRef, selIdsRef,
     overrideCount, updateEl, updateElRef, update, resetOverride, resetFormat, toggleHidden, del, dup, layer, clearAll } = useDoc(initialDoc);
   const stageRef = React.useRef(null);
@@ -50,7 +50,8 @@ function App({ initialDoc, bootClean }){
   const { cloudSignIn, cloudSignOut } = useCloud({ session, doc, docRef, setDoc, setSelectedIds, setUserTpls:lib.setUserTpls });
   const queue = useQueue({ docRef, setDoc, setSelectedIds, userTpls:lib.userTpls, userTplsRef:lib.userTplsRef, tplReady:lib.tplReady });
   const { queueFeed } = queue;
-  const { exporting, exportingRef, exportMsg, plateOnly, doExport, eventPicker, setEventPicker, openEventPicker, exportToEvent } =
+  const { exporting, exportingRef, exportMsg, doExport, eventPicker, setEventPicker, openEventPicker, exportToEvent,
+          sendReport, setSendReport, retrySend } =
     useExport({ doc, docRef, viewFormat, canvasRef, setSelectedIds, setDocQuiet, queueFeed, setQueueSent:queue.setQueueSent, cloudSignIn });
   const week = useWeekPosters({ doc, say });
 
@@ -118,8 +119,7 @@ function App({ initialDoc, bootClean }){
 
         <APCanvas elements={resolved} format={viewFormat} theme={doc.theme} accent={doc.accent} posterDay={posterDayOf(doc)}
           showGrid={doc.showGrid} snap={doc.snap} scale={scale} pan={pan} stageRef={stageRef} canvasRef={canvasRef}
-          selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} exporting={exporting} plateOnly={plateOnly}
-          sliceMode={sliceMode} feedSlice={doc.feedSlice} onSliceChange={setFeedSlice} />
+          selectedId={selectedId} selectedIds={selectedIds} onSelect={select} onChange={updateEl} onCommit={()=>{}} exporting={exporting} />
 
         <div className="rs-inspector">
           {/* The banner heads the document panel only. With an element selected,
@@ -137,8 +137,7 @@ function App({ initialDoc, bootClean }){
             clearAll={clearAll} setDoc={setDoc} isOutput={isOutput} activeLabel={activeLabel} overrideCount={overrideCount}
             resetOverride={resetOverride} toggleHidden={toggleHidden}
             selCount={selectedIds.length} align={alignSel} distribute={distributeSel} centre={centreSel}
-            formatLabel={activeLabel}
-            sliceMode={sliceMode} setSliceMode={setSliceMode} setFeedSlice={setFeedSlice} />
+            formatLabel={activeLabel} />
         </div>
       </div>
 
@@ -148,6 +147,8 @@ function App({ initialDoc, bootClean }){
 
       {eventPicker && eventPicker.open &&
         <EventPickerModal picker={eventPicker} onPick={exportToEvent} onClose={()=>setEventPicker(null)} onRetry={openEventPicker} />}
+      {sendReport && !exporting &&
+        <SendReportModal report={sendReport} onRetry={retrySend} onClose={()=>setSendReport(null)} />}
     </div>
   );
 }

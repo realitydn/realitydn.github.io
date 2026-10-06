@@ -37,9 +37,22 @@ function createCloud() {
   var SIGNIN_TIMEOUT_MS = 60000;
   // A hub request that hasn't finished in this long is abandoned (resolves
   // null like any network failure) so a hung connection can't leave a Save /
-  // Send button spinning forever. Generous on purpose: poster uploads are
-  // multi-MB and the hub is a long way from Đà Nẵng.
+  // Send button spinning forever. Plenty for a JSON read or write — but NOT for
+  // an upload: on the venue's uplink (~12 KB/s on 6.10.26) a 250 KB poster
+  // needs ~20s on its own, and Fun with Math lost its 4:5, story and 1:1 to
+  // this exact limit while the 82 KB feed slice squeaked through. Uploads take
+  // uploadBudgetMs(bytes) instead.
   var CALL_TIMEOUT_MS = 20000;
+  // An upload's budget: a fixed allowance for the round trip plus time for the
+  // bytes at a crawl (4 KB/s), capped so a dead connection still ends. 250 KB →
+  // ~107s, 900 KB → ~270s, anything bigger → 5 min.
+  var UPLOAD_BASE_MS = 45000;
+  var UPLOAD_FLOOR_BPS = 4000;
+  var UPLOAD_MAX_MS = 300000;
+  function uploadBudgetMs(bytes) {
+    var n = Math.max(0, Number(bytes) || 0);
+    return Math.min(UPLOAD_MAX_MS, Math.round(UPLOAD_BASE_MS + (n / UPLOAD_FLOOR_BPS) * 1000));
+  }
   var LOG = '[rcloud]';
 
   /* ---- hub origin (override via ?hub=, allowlisted) ----------------------- */
@@ -115,9 +128,12 @@ function createCloud() {
   // Returns { ok, status, json, text } or null on any thrown/network error.
   // 503 is treated as "dormant" — logged once, returned with ok:false so callers
   // no-op cleanly. A request (response headers AND body) still unfinished after
-  // CALL_TIMEOUT_MS is aborted and resolves null like any network failure.
+  // opts.timeoutMs (default CALL_TIMEOUT_MS) is aborted and resolves null like
+  // any network failure — or, with opts.detail, { ok:false, status:0, timedOut }
+  // so a caller can say WHY rather than just "failed".
   function call(method, path, opts) {
     opts = opts || {};
+    var limitMs = opts.timeoutMs || CALL_TIMEOUT_MS;
     var t = readToken();
     var headers = Object.assign({}, opts.headers || {});
     if (t && t.token && opts.auth !== false) headers['Authorization'] = 'Bearer ' + t.token;
@@ -126,7 +142,7 @@ function createCloud() {
     try {
       if (typeof AbortController === 'function') {
         ctrl = new AbortController();
-        timer = setTimeout(function () { ctrl.abort(); }, CALL_TIMEOUT_MS);
+        timer = setTimeout(function () { ctrl.abort(); }, limitMs);
       }
     } catch (e) { ctrl = null; }
     function done() { if (timer) { clearTimeout(timer); timer = null; } }
@@ -156,12 +172,13 @@ function createCloud() {
       });
     }).catch(function (err) {
       done();
-      if (err && err.name === 'AbortError') {
-        console.info(LOG, method, path, 'timed out after ' + (CALL_TIMEOUT_MS / 1000) + 's; staying local-only');
+      var timedOut = !!(err && err.name === 'AbortError');
+      if (timedOut) {
+        console.info(LOG, method, path, 'timed out after ' + Math.round(limitMs / 1000) + 's; staying local-only');
       } else {
         console.info(LOG, method, path, 'failed (offline/blocked):', err && err.message);
       }
-      return null;
+      return opts.detail ? { ok: false, status: 0, json: null, text: '', timedOut: timedOut } : null;
     });
   }
 
@@ -269,6 +286,7 @@ function createCloud() {
     return call('PUT', '/api/studio/documents', {
       headers: { 'Content-Type': 'application/json' },
       body: body,
+      timeoutMs: uploadBudgetMs(body.length),
     }).then(function (r) {
       if (!r || !r.ok) return null;
       return (r.json && (r.json.document || r.json)) || true;
@@ -288,15 +306,17 @@ function createCloud() {
 
   /* ---- poster write-back ------------------------------------------------- */
   // putPoster(eventId, slot, blob, contentType, opts)
-  //   → { ok, slot, url, seriesWide, seriesForced } | null.
+  //   → { ok:true, slot, url, seriesWide, seriesForced }
+  //   | { ok:false, status, timedOut?, signedOut?, error? } — never null, so the
+  //     Studio can say which image failed and why (status 0 = never answered).
   // slot ∈ { feed, poster4x5, square1x1, story }.
   // opts.scope === 'series' asks the hub to stamp the whole series — the series
   // default plus EVERY date, hand-edited ones included. The field is omitted
   // entirely for a normal send, and a hub that predates it simply ignores the
   // extra form part and answers seriesForced: undefined.
   function putPoster(eventId, slot, blob, contentType, opts) {
-    if (!isSignedIn()) { return Promise.resolve(null); }
-    if (!eventId || !slot || !blob) { return Promise.resolve(null); }
+    if (!isSignedIn()) { return Promise.resolve({ ok: false, status: 401, signedOut: true }); }
+    if (!eventId || !slot || !blob) { return Promise.resolve({ ok: false, status: 0, error: 'nothing to send' }); }
     var fd;
     try {
       fd = new FormData();
@@ -308,14 +328,22 @@ function createCloud() {
       if (opts && opts.scope) fd.append('scope', String(opts.scope));
     } catch (e) {
       console.info(LOG, 'putPoster: could not build form data; skipping');
-      return Promise.resolve(null);
+      return Promise.resolve({ ok: false, status: 0, error: 'could not build the upload' });
     }
     return call('POST', '/api/events/' + encodeURIComponent(eventId) + '/posters', {
       body: fd, // browser sets multipart Content-Type + boundary
+      timeoutMs: uploadBudgetMs(blob.size),
+      detail: true,
     }).then(function (r) {
       if (!r || !r.ok || !r.json) {
-        console.info(LOG, 'putPoster', eventId, slot, '→', r ? r.status : 'no-response');
-        return null;
+        console.info(LOG, 'putPoster', eventId, slot, '→', r ? (r.timedOut ? 'timed out' : r.status) : 'no-response');
+        return {
+          ok: false,
+          status: r ? r.status : 0,
+          timedOut: !!(r && r.timedOut),
+          signedOut: !!(r && r.status === 401),
+          error: (r && r.json && r.json.error) || null,
+        };
       }
       return r.json;
     });
@@ -399,6 +427,7 @@ function createCloud() {
     }
     return call('POST', '/api/studio/digest-story', {
       body: fd, // browser sets multipart Content-Type + boundary
+      timeoutMs: uploadBudgetMs(blob.size),
     }).then(function (r) {
       if (!r || !r.ok || !r.json) {
         console.info(LOG, 'putDigestStory', date, '→', r ? r.status : 'no-response');

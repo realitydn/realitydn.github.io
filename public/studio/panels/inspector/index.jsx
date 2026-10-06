@@ -47,14 +47,13 @@ function HeadIcon({ k }){
   return <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">{HEAD_ICONS[k]}</svg>;
 }
 
-function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, overrideCount, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, sliceMode, setSliceMode, setFeedSlice, feedEvents }){
+function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutput, activeLabel, overrideCount, resetOverride, toggleHidden, selCount, align, distribute, centre, formatLabel, feedEvents }){
   const caps = el ? (TYPE_CAPS[el.type] || {}) : {};
   /* hooks before the early return — the tab is remembered per family */
   const family = el ? familyOf(el, caps) : 'text';
   const tab = useTab(family);
   noteFamily(el ? family : null);
-  if(!el) return <DocumentPanel doc={doc} setDoc={setDoc} isOutput={isOutput} clearAll={clearAll}
-    sliceMode={sliceMode} setSliceMode={setSliceMode} setFeedSlice={setFeedSlice} />;
+  if(!el) return <DocumentPanel doc={doc} setDoc={setDoc} isOutput={isOutput} clearAll={clearAll} />;
 
   const isText = !!caps.text;
 

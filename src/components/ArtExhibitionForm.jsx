@@ -1,5 +1,5 @@
 import React from 'react';
-import { isEmail, isUrl } from '../hooks/useProposalForm';
+import { isEmail, isUrl, isPublicLink } from '../hooks/useProposalForm';
 import ProposalForm from './ProposalForm';
 
 // ArtExhibitionForm — the visual-art exhibition pitch. A config over
@@ -14,6 +14,10 @@ const INITIAL = {
   contact: '',
   artistBio: '',
   workLink: '',
+  // Optional PUBLIC links (7.10.26) — listed with the exhibition in the
+  // REALITY app once approved (the Control Room copies them onto the event's
+  // host links). workLink above is for the review and stays private.
+  publicLinks: [],
   showDescription: '',
   showAreas: [],
   spaceAmount: '',
@@ -43,6 +47,7 @@ function validate(step, d) {
     if (!d.artistBio.trim()) e.artistBio = 'required';
     if (!d.workLink.trim()) e.workLink = 'required';
     else if (!isUrl(d.workLink)) e.workLink = 'url';
+    if (d.publicLinks.some((v) => v.trim() && !isPublicLink(v))) e.publicLinks = 'publicLink';
   } else if (step === 2) {
     if (!d.showDescription.trim()) e.showDescription = 'required';
     if (!d.spaceAmount.trim()) e.spaceAmount = 'required';
@@ -74,6 +79,7 @@ const SPEC = {
       { name: 'contact', required: true },
       { name: 'artistBio', required: true, rows: '4' },
       { name: 'workLink', type: 'url', required: true, inputMode: 'url', autoComplete: 'url' },
+      { name: 'publicLinks', links: 3 },
     ],
     // 2: About the Show
     [
@@ -91,7 +97,7 @@ const SPEC = {
       { name: 'curatorInfo', rows: '3', when: groupShow },
     ],
   ],
-  review: ['email', 'name', 'basedWhere', 'workLink', 'flexibility', 'isGroupShow'],
+  review: ['email', 'name', 'basedWhere', 'workLink', 'publicLinks', 'flexibility', 'isGroupShow'],
 };
 
 export default function ArtExhibitionForm({ t, lang, onSuccess }) {

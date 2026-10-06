@@ -1,6 +1,6 @@
 import React from 'react';
 import { pathFor } from '../data/languages';
-import { isEmail } from '../hooks/useProposalForm';
+import { isEmail, isPublicLink } from '../hooks/useProposalForm';
 import ProposalForm from './ProposalForm';
 
 // EventProposalForm — the public AND private/paid event pitch (InfoHostSection
@@ -17,6 +17,10 @@ const INITIAL = {
   hostName: '',
   organization: '',
   contact: '',
+  // Optional public links for the host's group / socials (7.10.26). Shown
+  // with the event in the REALITY app once it's approved — the Control Room
+  // copies them onto the event's host links. `contact` above stays private.
+  publicLinks: [],
   eventTitle: '',
   eventDescription: '',
   recurrence: '',
@@ -44,6 +48,7 @@ function validate(step, d) {
     else if (!isEmail(d.email)) e.email = 'email';
     if (!d.hostName.trim()) e.hostName = 'required';
     if (!d.contact.trim()) e.contact = 'required';
+    if (d.publicLinks.some((v) => v.trim() && !isPublicLink(v))) e.publicLinks = 'publicLink';
   } else if (step === 2) {
     if (!d.eventTitle.trim()) e.eventTitle = 'required';
     if (!d.eventDescription.trim()) e.eventDescription = 'required';
@@ -57,6 +62,10 @@ function validate(step, d) {
   }
   return e;
 }
+
+// The public-links block, asked only on the PUBLIC event tab — a private hire
+// isn't listed, so there's nowhere for its links to show.
+const PUBLIC_LINKS = { name: 'publicLinks', links: 3 };
 
 const SPEC = {
   ns: 'eventForm',
@@ -89,14 +98,20 @@ const SPEC = {
       { name: 'anythingElse', rows: '3' },
     ],
   ],
-  review: ['email', 'hostName', 'eventTitle', 'recurrence', 'languages', 'preferredSpace'],
+  review: ['email', 'hostName', 'publicLinks', 'eventTitle', 'recurrence', 'languages', 'preferredSpace'],
 };
+
+const PUBLIC_SPEC = {
+  ...SPEC,
+  steps: [[...SPEC.steps[0], PUBLIC_LINKS], SPEC.steps[1], SPEC.steps[2]],
+};
+const PRIVATE_SPEC = { ...SPEC, review: SPEC.review.filter((n) => n !== 'publicLinks') };
 
 export default function EventProposalForm({ t, lang, type = 'public', onSuccess }) {
   const f = (k) => t.use(`eventForm.${k}`);
   return (
     <ProposalForm
-      spec={SPEC}
+      spec={type === 'private' ? PRIVATE_SPEC : PUBLIC_SPEC}
       type={`event-${type}`}
       extra={{ eventType: type }}
       t={t}

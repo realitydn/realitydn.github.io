@@ -51,6 +51,21 @@ export function isUrl(v) {
   }
 }
 
+// A PUBLIC link for the host's group or socials (shown with the event in the
+// REALITY app): a web link, never an email address hiding in one
+// ("me@x.com" parses as a URL with a username) or a phone number. The app
+// re-checks on approval (REALITYApp src/lib/host-links.ts).
+export function isPublicLink(v) {
+  const s = String(v).trim();
+  if (!isUrl(s)) return false;
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`);
+    return !u.username && !u.password;
+  } catch (e) {
+    return false;
+  }
+}
+
 // One id per form instance, shared by the hub + worker lanes, so a retry (or
 // the two lanes landing twice) can be de-duplicated downstream.
 function newSubmissionId() {
@@ -244,7 +259,15 @@ export default function useProposalForm({ type, initial, validate, kind, extra, 
     setLoading(true);
     setStatus(null);
 
-    const payload = { ...data, ...extra, submissionId, lang };
+    // List fields leave empty rows behind (an added-then-unused link input);
+    // only what was filled in is sent.
+    const cleaned = Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [
+        k,
+        Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim()) : v,
+      ])
+    );
+    const payload = { ...cleaned, ...extra, submissionId, lang };
 
     // Notion-era pipeline stays live as a backup while the hub inbox beds in —
     // fire-and-forget to the same-origin worker (Notion + Sheets + the Resend

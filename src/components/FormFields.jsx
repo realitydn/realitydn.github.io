@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { isPublicLink } from '../hooks/useProposalForm';
 
 // FormFields — the labelled controls ProposalForm (and so both proposal
 // forms) is built from.
@@ -97,6 +98,120 @@ export function ChoiceGroup({ form, name, legend, options, multiple = false, req
           </label>
         ))}
       </div>
+      {code && (
+        <p id={errId} className="field-hint-error">
+          {form.message(code)}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
+// An optional list of links behind a disclosure: collapsed, it's one line
+// ("Add a public link to your group or social media"); opened, it explains
+// where the links will show and offers up to `max` inputs, one more at a
+// time. Opens by itself when the data already holds a link (a restored
+// draft, Back from review). The group error (form.errors[name]) marks the
+// first bad link; every bad one gets aria-invalid.
+export function LinkList({ form, name, toggle, help, label, placeholder, addLabel, removeLabel, max = 3 }) {
+  const raw = form.data[name];
+  const links = Array.isArray(raw) ? raw.filter((v) => typeof v === 'string') : [];
+  const [open, setOpen] = useState(links.some((v) => v.trim()));
+  // Where focus goes next: the first input when the block opens (the toggle
+  // that had focus is gone), a new row when one is added.
+  const [focusIndex, setFocusIndex] = useState(null);
+  const inputs = useRef([]);
+  useEffect(() => {
+    if (focusIndex == null) return;
+    const el = inputs.current[focusIndex];
+    if (el) el.focus();
+    setFocusIndex(null);
+  }, [focusIndex]);
+  const id = `${form.idBase}-${name}`;
+  const code = form.errors[name];
+  const errId = `${id}-error`;
+  const rows = links.length ? links : [''];
+  const set = (next) => form.pick(name, next);
+  const firstBad = rows.findIndex((v) => v.trim() && !isPublicLink(v));
+
+  if (!open) {
+    return (
+      <div>
+        <button
+          type="button"
+          ref={form.register(name)}
+          onClick={() => {
+            setOpen(true);
+            if (!links.length) set(['']);
+            setFocusIndex(0);
+          }}
+          aria-expanded="false"
+          aria-controls={id}
+          className="font-title text-sm underline underline-offset-4 min-h-11 inline-flex items-center gap-2"
+        >
+          <span aria-hidden="true">+</span>
+          {toggle}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <fieldset id={id} aria-describedby={code ? `${id}-help ${errId}` : `${id}-help`}>
+      <legend className="field-label mb-1">{label}</legend>
+      <p id={`${id}-help`} className="font-body text-sm text-gray-600 mb-3">
+        {help}
+      </p>
+      <div className="space-y-2">
+        {rows.map((v, i) => {
+          const bad = Boolean(v.trim()) && !isPublicLink(v);
+          return (
+            <div key={i} className="flex gap-2 items-stretch">
+              <input
+                ref={(el) => {
+                  inputs.current[i] = el;
+                  if (el && i === (firstBad >= 0 ? firstBad : 0)) form.register(name)(el);
+                }}
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                value={v}
+                onChange={(e) => set(rows.map((x, j) => (j === i ? e.target.value : x)))}
+                placeholder={placeholder}
+                aria-label={`${label} ${i + 1}`}
+                aria-invalid={code && bad ? 'true' : undefined}
+                className={`field${code && bad ? ' field-error' : ''}`}
+              />
+              {rows.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    set(rows.filter((_, j) => j !== i));
+                    setFocusIndex(Math.max(0, i - 1));
+                  }}
+                  aria-label={`${removeLabel} (${i + 1})`}
+                  className="btn-secondary px-3 text-sm shrink-0"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {rows.length < max && (
+        <button
+          type="button"
+          onClick={() => {
+            set([...rows, '']);
+            setFocusIndex(rows.length);
+          }}
+          className="font-title text-sm underline underline-offset-4 min-h-11 inline-flex items-center gap-2 mt-1"
+        >
+          <span aria-hidden="true">+</span>
+          {addLabel}
+        </button>
+      )}
       {code && (
         <p id={errId} className="field-hint-error">
           {form.message(code)}

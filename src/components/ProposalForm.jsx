@@ -1,7 +1,7 @@
 import React from 'react';
 import { URLS } from '../data/translations';
 import useProposalForm, { LAST_STEP } from '../hooks/useProposalForm';
-import { Field, ChoiceGroup, ReviewList, StepProgress, SubmitAlert, StepNav, Honeypot } from './FormFields';
+import { Field, ChoiceGroup, LinkList, ReviewList, StepProgress, SubmitAlert, StepNav, Honeypot } from './FormFields';
 
 // ProposalForm — the one four-step proposal form. EventProposalForm and
 // ArtExhibitionForm are configs over it: their fields, steps, validation and
@@ -21,6 +21,9 @@ import { Field, ChoiceGroup, ReviewList, StepProgress, SubmitAlert, StepNav, Hon
 //   steps       three arrays of field specs, in reading order:
 //                 { name, required?, type?, rows?, autoComplete?, inputMode? }  → <Field>
 //                 { name, choice: [values], multiple?, required? }              → <ChoiceGroup>
+//                 { name, links: max }  → <LinkList>, an optional list of links behind a
+//                   disclosure; strings ns.<name>Toggle / Help / Label / Placeholder /
+//                   Add / Remove
 //               either may carry when: (data) => bool to show it conditionally.
 //               Step 1 always ends with the honeypot.
 //   review      field names for the step-4 summary; choices print their
@@ -54,8 +57,24 @@ export default function ProposalForm({ spec, type, extra = {}, reviewFooter = nu
     </h3>
   );
 
-  const control = ({ name, choice, when, ...props }) => {
+  const control = ({ name, choice, links, when, ...props }) => {
     if (when && !when(data)) return null;
+    if (links) {
+      return (
+        <LinkList
+          key={name}
+          form={form}
+          name={name}
+          max={links}
+          toggle={f(`${name}Toggle`)}
+          help={f(`${name}Help`)}
+          label={f(`${name}Label`)}
+          placeholder={f(`${name}Placeholder`)}
+          addLabel={f(`${name}Add`)}
+          removeLabel={f(`${name}Remove`)}
+        />
+      );
+    }
     if (choice) {
       return (
         <ChoiceGroup
@@ -78,6 +97,7 @@ export default function ProposalForm({ spec, type, extra = {}, reviewFooter = nu
   const reviewRow = (name) => {
     const s = fieldSpecs[name] || {};
     const v = data[name];
+    if (s.links) return { label: f(`${name}Label`), value: v.filter((x) => x && x.trim()).map((x) => x.trim()).join('\n') };
     if (!s.choice) return { label: f(name), value: v };
     return {
       label: f(`${name}Label`),

@@ -40,6 +40,7 @@ import {
   weeklyIds,
 } from '../src/data/cal-feed.js';
 import { eventCategory, categoryOf, isNeutralCategory, isDealEvent, normalizeCategory } from '../src/data/event-category.js';
+import { seriesNext, alsoComingUp } from '../src/data/overlay-related.js';
 
 let passed = 0;
 const failures = [];
@@ -295,6 +296,42 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
     const v = cfStr(code)[k];
     check(`cfStr ${code}.${k} is its own string`, typeof v === 'string' && v.trim() !== '' && v !== cfStr('EN')[k]);
   }
+}
+
+// ── event overlay: what it offers next (overlay-related.js, 7.10.26) ─────────
+{
+  const at = (d, h = 19) => `2026-10-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:30:00+07:00`;
+  const talk = (id, d, series = null, title = 'Talk night') => ({ id, seriesId: series, startsAt: at(d), title_en: title, category: 'language' });
+  const evs = [
+    talk('t7', 7, 'S-talk', 'Vietnam Talk'),
+    talk('t14', 14, 'S-talk', 'Vietnam Talk'),
+    talk('t21', 21, 'S-talk', 'Vietnam Talk'),
+    talk('t28', 28, 'S-talk', 'Vietnam Talk'),
+    talk('t31', 31, 'S-talk', 'Vietnam Talk'),
+    talk('c8', 8, 'S-coffee', 'Coffee + Conversation'),
+    talk('c15', 15, 'S-coffee', 'Coffee + Conversation'),
+    talk('x9', 9, null, 'A one-off talk'),
+    talk('l10', 10, 'S-lang', 'Language Exchange'),
+    talk('l17', 17, 'S-lang', 'Language Exchange'),
+    { id: 'q8', seriesId: 'S-quiz', startsAt: at(8), title_en: 'Pub Quiz', category: 'social' },
+  ];
+  const me = evs[0];
+  eq('seriesNext: the next three dates of the series, in order', seriesNext(evs, me).map((e) => e.id).join(','), 't14,t21,t28');
+  eq('seriesNext: never the event itself or an earlier date', seriesNext(evs, evs[2]).map((e) => e.id).join(','), 't28,t31');
+  eq('seriesNext: a one-off has none', seriesNext(evs, evs[7]).length, 0);
+  eq('alsoComingUp: same kind, one per series, soonest first, never its own series',
+    alsoComingUp(evs, me).map((e) => e.id).join(','), 'c8,x9,l10');
+  eq('alsoComingUp: never another kind', alsoComingUp(evs, me).some((e) => e.category === 'social'), false);
+  eq('alsoComingUp: no list for an uncategorised event', alsoComingUp(evs, { id: 'o', startsAt: at(7), title_en: 'Mystery', category: 'other' }).length, 0);
+  eq('alsoComingUp: empty feed', alsoComingUp([], me).length, 0);
+  for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
+    for (const k of ['readMore', 'readLess', 'nextDates', 'moreDates', 'alsoComingUp', 'appKicker', 'appFacts', 'openApp']) {
+      const v = cfStr(code)[k];
+      check(`cfStr ${code}.${k} is its own string`, typeof v === 'string' && v.trim() !== '' && v !== cfStr('EN')[k]);
+    }
+    check(`cfStr ${code}.appFacts carries {n}`, cfStr(code).appFacts.includes('{n}'));
+  }
+  check('cfStr EN.appFacts carries {n}', cfStr('EN').appFacts.includes('{n}'));
 }
 
 // ── locale parity: every catalogue mirrors locales/en.js ─────────────────────

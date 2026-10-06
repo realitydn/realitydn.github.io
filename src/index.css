@@ -907,29 +907,180 @@ html:not([data-theme="dark"]) .b-act.band-live.band-live .btn-secondary { backgr
 .plate-f { margin-top: auto; display: flex; gap: 12px; padding: 16px 18px; border-top: 3px solid var(--fg); }
 .plate-f > * { flex: 1; }
 .dlg { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 64px)); max-height: calc(100% - 64px); }
-/* The event overlay (EventOverlay.jsx). 90dvh so a phone's collapsing URL
-   bar never hides the footer; vh first as the fallback. On phones the
-   poster + text scroll together in ONE inner scroller and the app CTA is
-   pinned in .plate-f, so the primary action is never 1500px down a swipe.
-   From md the poster takes the left 2/5 and only the text pane scrolls.
-   overscroll-behavior: contain keeps a fling from chaining to the (locked)
-   page behind. */
-.ev-dlg { width: min(672px, calc(100% - 32px)); max-height: 90vh; max-height: 90dvh; }
-.ev-dlg-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; }
-.ev-dlg-poster {
-  flex: none; display: flex; justify-content: center; padding: 16px;
-  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
-  border-bottom: 2px solid var(--ticket-line);
+/* The event overlay (EventOverlay.jsx — redesigned 7.10.26). One cream
+   TICKET in the event's category colour: top bar → (RSVP notice) → poster
+   on the riso stripes at its OWN shape (never cropped — canon) beside, or on
+   a phone above, the details → the app door, pinned. Centred by a grid
+   LAYER (.ev-ov), not a transform, so the plate's transform is free for its
+   entrance: Stamp In by default — it slams down tilted, overshoots, and its
+   print snaps in on landing — and on a phone a bottom SHEET that rises with
+   an overshoot (Sheet Up). The exit plays on every close path (the overlay
+   keeps the event on screen for EXIT_MS). The global reduced-motion contract
+   collapses every one of these to its end state at frame one. */
+.ev-ov { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 32px; }
+.ev-ov .ev-scrim { position: absolute; inset: 0; z-index: 0; animation: evScrimIn .35s var(--ease-snap) both; }
+.ev-ov.is-leaving { pointer-events: none; }
+.ev-ov.is-leaving .ev-scrim { animation: evScrimOut .24s var(--ease-snap) both; }
+.plate.ev-dlg {
+  position: relative; z-index: 1;
+  width: min(880px, 100%);
+  max-height: min(88vh, 780px); max-height: min(88dvh, 780px);
+  animation: evStamp .5s var(--ease-stamp) both;
 }
-.ev-dlg-poster img { display: block; height: min(34vh, 340px); height: min(34dvh, 340px); width: auto; aspect-ratio: 4 / 5; object-fit: cover; border: 2px solid var(--fg); }
+.ev-ov.is-leaving .ev-dlg { animation: evLift .24s var(--ease-snap) both; }
+.ev-grip { display: none; }
+.ev-dlg-body {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  overflow: hidden;
+}
+.ev-dlg-poster {
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px;
+  background: repeating-linear-gradient(45deg, var(--ticket-inset) 0 14px, var(--ticket-inset-2) 14px 28px);
+  border-right: 2px solid var(--ticket-line);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+/* FIT, never fill: the poster keeps its own shape, capped to the plate. */
+.ev-dlg-poster img {
+  display: block; width: auto; height: auto; max-width: 100%;
+  max-height: calc(min(88vh, 780px) - 210px); max-height: calc(min(88dvh, 780px) - 210px);
+  border: 2px solid var(--ticket-line);
+  box-shadow: var(--print-md) var(--print-md) 0 var(--print, var(--print-neutral));
+  animation: evPrint .46s var(--ease-stamp) .18s both;
+}
 .ev-dlg-poster.is-plain { display: block; padding: 0; }
-.ev-dlg-body .plate-b { overflow: visible; }
-.ev-dlg .plate-f .btn-action { text-align: center; }
-@media (min-width: 768px) {
-  .ev-dlg-body { flex-direction: row; overflow: hidden; }
-  .ev-dlg-poster { width: 40%; padding: 0; border-bottom: 0; border-right: 2px solid var(--ticket-line); }
-  .ev-dlg-poster img { width: 100%; height: 100%; aspect-ratio: auto; border: 0; }
-  .ev-dlg-body .plate-b { overflow-y: auto; overscroll-behavior: contain; }
+.ev-dlg-main {
+  min-width: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 22px 22px 24px;
+}
+/* The details lay down in order after the plate lands (riseIn, 90ms). */
+.ev-dlg-main > * { animation: riseIn .46s var(--ease-stamp) both; animation-delay: .26s; }
+.ev-dlg-main > *:nth-child(2) { animation-delay: calc(.26s + var(--stagger)); }
+.ev-dlg-main > *:nth-child(3) { animation-delay: calc(.26s + var(--stagger) * 2); }
+.ev-dlg-main > *:nth-child(4) { animation-delay: calc(.26s + var(--stagger) * 3); }
+.ev-dlg-main > *:nth-child(n+5) { animation-delay: calc(.26s + var(--stagger) * 4); }
+/* The name in its OWN case (canon: names keep their case; a ticket is the
+   near register, sentence case). */
+.ev-dlg-name {
+  margin: 0; font-family: var(--mont); font-weight: 700;
+  font-size: clamp(22px, 2.6vw, 28px); line-height: 1.15; letter-spacing: .01em;
+  color: var(--ticket-fg); text-wrap: balance;
+}
+:lang(vi) .ev-dlg-name { line-height: 1.3; }
+/* Focus lands here after a swap (a heading, not a control — no plate). */
+.ev-dlg-name:focus { outline: none; }
+/* Row keys at the 12px floor here, like every other label on this ticket. */
+.ev-dlg-rows .tkt-row dt { font-size: 12px; }
+.ev-dlg-story { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.ev-dlg-desc {
+  margin: 0; font-family: var(--grotesk); font-size: 15px; line-height: 1.6; color: var(--ticket-fg);
+  white-space: pre-wrap;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden;
+}
+.ev-dlg-desc.is-open { display: block; -webkit-line-clamp: unset; line-clamp: none; overflow: visible; }
+.ev-dlg-more {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0;
+  font-family: var(--mont); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px;
+  background: none; border: 0; color: var(--ticket-fg); cursor: pointer;
+}
+.ev-dlg-sect { display: flex; flex-direction: column; gap: 10px; }
+/* Eyebrow — blue's job (canon: blue takes eyebrows + wayfinding). */
+.ev-dlg-k {
+  margin: 0; font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--blue-text);
+}
+.ev-dlg-dates { display: flex; flex-wrap: wrap; gap: 8px; }
+.ev-date {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px;
+  border: 2px solid var(--ticket-line); background: var(--ticket); color: var(--ticket-fg);
+  font-family: var(--mont); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--print-sm) var(--print-sm) 0 var(--print, var(--print-neutral));
+  transition: transform var(--dur-tap) var(--ease-stamp), box-shadow var(--dur-tap) var(--ease-stamp);
+}
+.ev-date:hover { transform: translateY(-2px); box-shadow: calc(var(--print-sm) + 2px) calc(var(--print-sm) + 2px) 0 var(--print, var(--print-neutral)); }
+.ev-date:active { transform: translateY(2px); box-shadow: 2px 2px 0 var(--print, var(--print-neutral)); }
+.ev-also { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ticket-line); }
+.ev-also li + li { border-top: 1.5px solid var(--ticket-hairline); }
+.ev-also a {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  min-height: 48px; padding: 8px 0; color: var(--ticket-fg);
+}
+.ev-also-d {
+  background: var(--cat, var(--ticket-fg)); color: var(--on-cat, var(--ticket));
+  border: 2px solid var(--ticket-line); padding: 3px 7px;
+  font-family: var(--mont); font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ev-also-n { font-family: var(--grotesk); font-weight: 500; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.ev-also-go { font-family: var(--mont); font-weight: 700; font-size: 16px; color: var(--ticket-dim); transition: transform var(--dur-tap) var(--ease-stamp); }
+.ev-also a:hover .ev-also-n { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.ev-also a:hover .ev-also-go { transform: translateX(3px); }
+/* The door — what the app is, then the one red ACTION. Unprinted stock
+   behind it (an inset of the ticket), the ink square at integer modules. */
+.plate-f.ev-door {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px;
+  padding: 16px 20px; background: var(--ticket-inset); border-top: 2px solid var(--ticket-line);
+}
+.ev-door-mark { display: block; width: 40px; height: 40px; flex: none; }
+.ev-door-t { min-width: 0; }
+.ev-door-k {
+  margin: 0; font-family: var(--mont); font-weight: 700; font-size: 12px; line-height: 1.3;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--blue-text);
+}
+.ev-door-l { margin: 4px 0 0; font-family: var(--grotesk); font-weight: 500; font-size: 14px; line-height: 1.45; color: var(--ticket-fg); }
+.ev-door-f { margin: 2px 0 0; font-family: var(--grotesk); font-size: 12px; line-height: 1.4; color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.ev-door-go { padding: 14px 20px; font-size: 13px; }
+@media (max-width: 767px) {
+  .ev-ov { padding: 0; align-items: end; justify-items: stretch; }
+  /* .ev-ov-scoped: the TICKET rule below re-sets border + print on .plate.ev-dlg. */
+  .ev-ov .plate.ev-dlg {
+    width: 100%; max-height: 92vh; max-height: 92dvh;
+    border-width: 2px 0 0; box-shadow: none;
+    animation-name: evSheetUp;
+  }
+  .ev-ov.is-leaving .ev-dlg { animation: evSheetDown .26s var(--ease-snap) both; }
+  .ev-grip { display: block; flex: none; width: 48px; height: 5px; margin: 10px auto 8px; background: var(--ticket-line); }
+  .ev-dlg .plate-h { border-top: 2px solid var(--ticket-line); }
+  .ev-dlg-body { display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .ev-dlg-poster { border-right: 0; border-bottom: 2px solid var(--ticket-line); padding: 18px; overflow: visible; }
+  .ev-dlg-poster img { max-height: 40vh; max-height: 40dvh; }
+  .ev-dlg-main { overflow: visible; padding: 20px 18px 24px; }
+  .plate-f.ev-door {
+    grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px;
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .ev-door-mark { width: 32px; height: 32px; }
+  .ev-door-k, .ev-door-f { display: none; }
+  .ev-door-l { margin: 0; font-size: 13px; }
+  .ev-door-go { grid-column: 1 / -1; white-space: normal; text-align: center; }
+}
+@keyframes evStamp {
+  0%   { opacity: 0; transform: translateY(-36px) rotate(-1.2deg) scale(1.04); box-shadow: 0 0 0 transparent; }
+  20%  { opacity: 1; }
+  60%  { transform: translateY(3px) rotate(0) scale(1); box-shadow: 0 0 0 transparent; }
+  61%  { box-shadow: var(--px) var(--px) 0 var(--print, var(--print-neutral)); }
+  100% { opacity: 1; transform: none; box-shadow: var(--px) var(--px) 0 var(--print, var(--print-neutral)); }
+}
+/* Reduced motion: the global contract shortens durations but keeps DELAYS,
+   and a delayed entrance with fill:both would sit at its first frame
+   (invisible) for the delay — so the overlay's pieces simply don't animate. */
+@media (prefers-reduced-motion: reduce) {
+  .ev-ov .ev-scrim, .ev-ov .plate.ev-dlg, .ev-dlg-poster img, .ev-dlg-main > * { animation: none !important; }
+}
+@keyframes evLift { to { opacity: 0; transform: translateY(-14px) scale(.98); box-shadow: 0 0 0 transparent; } }
+@keyframes evSheetUp { 0% { transform: translateY(100%); } 72% { transform: translateY(-1.5%); } 100% { transform: none; } }
+@keyframes evSheetDown { to { transform: translateY(100%); } }
+@keyframes evScrimIn { from { background-color: rgba(13, 9, 5, 0); } }
+@keyframes evScrimOut { to { background-color: rgba(13, 9, 5, 0); } }
+@keyframes evPrint {
+  0%   { transform: scale(1.05); box-shadow: 0 0 0 transparent; }
+  62%  { transform: scale(.99); box-shadow: 0 0 0 transparent; }
+  63%  { box-shadow: var(--print-md) var(--print-md) 0 var(--print, var(--print-neutral)); }
+  100% { transform: none; box-shadow: var(--print-md) var(--print-md) 0 var(--print, var(--print-neutral)); }
 }
 /* lightbox — ink plate, 32px inset; the photo is the subject (never a mark).
    The ONE plate that does not invert with the theme: ink in both, like its

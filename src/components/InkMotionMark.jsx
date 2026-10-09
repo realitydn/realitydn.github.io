@@ -13,7 +13,8 @@
    Never during prerender (navigator.webdriver), never under reduced motion:
    the shipped HTML and the reduced state are the finished mark. The masthead
    clips its wrapper, so only scores that stay within ½ module of the strip
-   are eligible (maxOverflow) — whole-module ones, at this size. */
+   are eligible (maxOverflow) — whole-module ones, at this size. `form`
+   strip-short-h (phones) draws from the scores written for any width. */
 
 import { useEffect, useRef, useState } from 'react';
 import InkMark from './InkMark';
@@ -27,7 +28,8 @@ const EVERY = [25000, 20000]; // then every 25–45s
 
 const later = ([base, spread]) => base + Math.random() * spread;
 
-export default function InkMotionMark({ module: modulePx = 8 }) {
+export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }) {
+  const width = form === 'strip-short-h' ? 7 : 9;
   const host = useRef(null);
   const [live, setLive] = useState(false);
 
@@ -52,10 +54,10 @@ export default function InkMotionMark({ module: modulePx = 8 }) {
       }
       try {
         const m = await import('../lib/ink-motion.js');
-        const v = m.pick('amb', { module: modulePx, lite: m.isLiteDevice(), last: m.lastSeen('amb'), maxOverflow: 0.5 });
+        const v = m.pick('amb', { module: modulePx, width, lite: m.isLiteDevice(), last: m.lastSeen('amb'), maxOverflow: 0.5 });
         if (!v || !alive) return;
         m.remember('amb', v.id);
-        player = new m.InkPlayer(el, v, { module: modulePx, palette: SITE_PALETTE });
+        player = new m.InkPlayer(el, v, { module: modulePx, width, palette: SITE_PALETTE });
         setLive(true);
         await player.once(m.segmentFor(v, 'amb'));
       } catch {
@@ -74,11 +76,11 @@ export default function InkMotionMark({ module: modulePx = 8 }) {
       io?.disconnect();
       player?.destroy();
     };
-  }, [modulePx]);
+  }, [modulePx, width]);
 
   return (
     <span ref={host} className="relative inline-flex" aria-hidden="true">
-      <InkMark form="strip-h" mode="full" module={modulePx} idle="off" className={live ? 'invisible' : ''} />
+      <InkMark form={form} mode="full" module={modulePx} idle="off" className={live ? 'invisible' : ''} />
     </span>
   );
 }

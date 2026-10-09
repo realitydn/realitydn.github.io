@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
-import InkMark from './InkMark';
 import InkMotionMark from './InkMotionMark';
 import ThemeToggle from './ThemeToggle';
 import LangMenu from './LangMenu';
@@ -124,14 +123,15 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               have full strip"), module 8 = its floor, 8px air, alive with the
               motion lab's ambient performances (InkMotionMark). Phones keep
               the short strip at 7: the full one is 72px and the row has 6px
-              of slack at 412 — it would always wrap away. Two prints, one
+              of slack at 412 — it would always wrap away — and it performs
+              too, from the scores written for any width. Two prints, one
               ever visible: InkMark pins --m inline, so a breakpoint can't
               retune a single instance. */}
           <span className="hidden sm:flex items-center flex-none ml-2" aria-hidden="true">
             <InkMotionMark module={8} />
           </span>
           <span className="flex sm:hidden items-center flex-none ml-[7px]" aria-hidden="true">
-            <InkMark form="strip-short-h" mode="full" module={7} idle="slow" />
+            <InkMotionMark form="strip-short-h" module={7} />
           </span>
         </div>
 

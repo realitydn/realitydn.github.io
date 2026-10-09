@@ -50,17 +50,22 @@ var CELLS = [
   ["U", 8, 0, 1, 1],
   ["A", 8, 1, 1, 1]
 ].map(([c, x, y, w, h]) => ({ c, r: Rr(x, y, w, h) }));
-var MODS = [];
-for (let x = 0; x < 9; x++) for (let y = 0; y < 2; y++) MODS.push({ c: colAt(x, y), r: Rr(x, y, 1, 1) });
-var COLS = Array.from({ length: 9 }, (_, x) => ({
-  x,
-  p: x < 6 ? [{ c: colAt(x, 0), r: Rr(x, 0, 1, 2) }] : [{ c: colAt(x, 0), r: Rr(x, 0, 1, 1) }, { c: colAt(x, 1), r: Rr(x, 1, 1, 1) }]
-}));
-var ROWS = [];
-for (const y of [0, 1]) {
-  for (const x of [0, 2, 4]) ROWS.push({ c: colAt(x, y), r: Rr(x, y, 2, 1), y });
-  for (const x of [6, 7, 8]) ROWS.push({ c: colAt(x, y), r: Rr(x, y, 1, 1), y });
-}
+var geo = (w) => {
+  const cells = CELLS.slice(0, 3 + 2 * (w - 6));
+  const mods = [];
+  for (let x = 0; x < w; x++) for (let y = 0; y < 2; y++) mods.push({ c: colAt(x, y), r: Rr(x, y, 1, 1) });
+  const cols = Array.from({ length: w }, (_, x) => ({
+    x,
+    p: x < 6 ? [{ c: colAt(x, 0), r: Rr(x, 0, 1, 2) }] : [{ c: colAt(x, 0), r: Rr(x, 0, 1, 1) }, { c: colAt(x, 1), r: Rr(x, 1, 1, 1) }]
+  }));
+  const rows = [];
+  for (const y of [0, 1]) {
+    for (const x of [0, 2, 4]) rows.push({ c: colAt(x, y), r: Rr(x, y, 2, 1), y });
+    for (let x = 6; x < w; x++) rows.push({ c: colAt(x, y), r: Rr(x, y, 1, 1), y });
+  }
+  return { cells, mods, cols, rows };
+};
+var { rows: ROWS } = geo(9);
 var HALF = [];
 for (let hx = 0; hx < 18; hx++) for (let hy = 0; hy < 4; hy++) HALF.push({ c: colAt(hx >> 1, hy >> 1), r: Rr(hx / 2, hy / 2, 0.5, 0.5), hx, hy });
 var HCOL = Array.from({ length: 18 }, (_, hx) => {
@@ -104,12 +109,13 @@ var VARIANTS = [
     name: "Handoff",
     dur: 3400,
     grid: "whole",
+    short: true,
     uses: { wait: "loop", trans: FULL, amb: FULL },
-    make: () => CELLS.map((o, j) => {
+    make: (w = 9) => geo(w).cells.map((o, j) => {
       if (j == 0) return ks(o, [[0.04], [0.16, Rr(0, 0, 4, 2)], [0.2, Rr(0, 0, 4, 2)], [0.32]]);
       if (j == 1) return ks(o, [[0.04], [0.16, Rr(4, 0, 0, 2)], [0.2, Rr(4, 0, 0, 2)], [0.32], [0.36], [0.48, Rr(2, 0, 4, 2)], [0.52, Rr(2, 0, 4, 2)], [0.64]]);
-      if (j == 2) return ks(o, [[0.36], [0.48, Rr(6, 0, 0, 2)], [0.52, Rr(6, 0, 0, 2)], [0.64], [0.68], [0.8, Rr(4, 0, 5, 2)], [0.84, Rr(4, 0, 5, 2)], [0.96]]);
-      const z = Rr(9, o.r.y, 0, 1);
+      if (j == 2) return ks(o, [[0.36], [0.48, Rr(6, 0, 0, 2)], [0.52, Rr(6, 0, 0, 2)], [0.64], [0.68], [0.8, Rr(4, 0, w - 4, 2)], [0.84, Rr(4, 0, w - 4, 2)], [0.96]]);
+      const z = Rr(w, o.r.y, 0, 1);
       return ks(o, [[0.68], [0.8, z], [0.84, z], [0.96]]);
     })
   },
@@ -138,16 +144,17 @@ var VARIANTS = [
     name: "Conveyor",
     dur: 5400,
     grid: "whole",
+    short: true,
     uses: { wait: "loop", amb: FULL },
-    make: () => {
-      const ring = [];
-      for (let x = 0; x < 9; x++) ring.push([x, 0]);
-      for (let x = 8; x >= 0; x--) ring.push([x, 1]);
-      return MODS.map((o) => {
+    make: (w = 9) => {
+      const ring = [], n = 2 * w;
+      for (let x = 0; x < w; x++) ring.push([x, 0]);
+      for (let x = w - 1; x >= 0; x--) ring.push([x, 1]);
+      return geo(w).mods.map((o) => {
         const i = ring.findIndex(([x, y]) => x == o.r.x && y == o.r.y), f = [];
-        for (let k = 0; k < 18; k++) {
-          const a = ring[(i + k) % 18], b = ring[(i + k + 1) % 18];
-          f.push(F(k / 18, Rr(a[0], a[1], 1, 1), E.snap), F(k / 18 + 0.6 / 18, Rr(b[0], b[1], 1, 1)));
+        for (let k = 0; k < n; k++) {
+          const a = ring[(i + k) % n], b = ring[(i + k + 1) % n];
+          f.push(F(k / n, Rr(a[0], a[1], 1, 1), E.snap), F(k / n + 0.6 / n, Rr(b[0], b[1], 1, 1)));
         }
         f.push(F(1, o.r));
         return P(o.c, f);
@@ -178,16 +185,17 @@ var VARIANTS = [
     dur: 4400,
     grid: "whole",
     clip: "strip",
+    short: true,
     uses: { wait: "loop", amb: FULL },
-    make: () => {
+    make: (w = 9) => {
       const sp = [], out = [];
       for (let i = 0; i < 4; i++) {
         const a = 3 * i, t = i / 4;
-        sp.push([t, a, a + 9, E.io], [t + 0.1, a + 3, a + 9, E.el], [t + 0.13, a + 3, a + 9, E.el], [t + 0.23, a + 3, a + 12, E.io]);
+        sp.push([t, a, a + w, E.io], [t + 0.1, a + 3, a + w, E.el], [t + 0.13, a + 3, a + w, E.el], [t + 0.23, a + 3, a + w + 3, E.io]);
       }
-      sp.push([1, 12, 21]);
-      [-12, 0].forEach((cp) => CELLS.forEach((o) => out.push(P(o.c, sp.map(([t, a, b, e]) => {
-        const k = (b - a) / 9;
+      sp.push([1, 12, 12 + w]);
+      [-12, 0].forEach((cp) => geo(w).cells.forEach((o) => out.push(P(o.c, sp.map(([t, a, b, e]) => {
+        const k = (b - a) / w;
         return F(t, Rr(cp + a + o.r.x * k, o.r.y, o.r.w * k, o.r.h), e);
       })))));
       return out;
@@ -303,11 +311,12 @@ var VARIANTS = [
     name: "Louvres",
     dur: 2600,
     grid: "whole",
+    short: true,
     uses: { trans: FULL, wait: "loop", amb: FULL },
-    make: () => {
+    make: (w = 9) => {
       const out = [];
-      COLS.forEach((col) => col.p.forEach((p) => {
-        const t0 = 0.08 + col.x * 0.03, t1 = 0.54 + (8 - col.x) * 0.03, z = Rr(p.r.x + 0.5, p.r.y, 0, p.r.h);
+      geo(w).cols.forEach((col) => col.p.forEach((p) => {
+        const t0 = 0.08 + col.x * 0.03, t1 = 0.54 + (w - 1 - col.x) * 0.03, z = Rr(p.r.x + 0.5, p.r.y, 0, p.r.h);
         out.push(P(p.c, [F(0, p.r), F(t0, p.r, E.in), F(t0 + 0.09, z, E.out), F(t0 + 0.18, p.r), F(t1, p.r, E.in), F(t1 + 0.09, z, E.out), F(t1 + 0.18, p.r), F(1, p.r)]));
       }));
       return out;
@@ -366,10 +375,11 @@ var VARIANTS = [
     dur: 3200,
     grid: "whole",
     clip: "strip",
+    short: true,
     uses: { gest: seg(0.22, 0.5), wait: "loop", amb: FULL },
-    make: () => {
+    make: (w = 9) => {
       const T = [[0, 0], [0.08, 0], [0.22, -3], [0.36, -3], [0.5, 0], [0.58, 0], [0.72, 3], [0.86, 3], [1, 0]], out = [];
-      ROWS.forEach((o) => [-9, 0, 9].forEach((cp) => {
+      geo(w).rows.forEach((o) => [-w, 0, w].forEach((cp) => {
         const sg = o.y ? -1 : 1;
         out.push(P(o.c, T.map(([t, v]) => F(t, mv(o.r, cp + sg * v, 0), E.io))));
       }));
@@ -568,10 +578,12 @@ var VARIANTS = [
     name: "Accordion",
     dur: 2800,
     grid: "whole",
+    short: true,
     uses: { amb: FULL, wait: "loop" },
-    make: () => {
-      const T = [Rr(0, 0, 1, 2), Rr(1, 0, 1, 2), Rr(2, 0, 1, 2), Rr(3, 0, 2, 1), Rr(3, 1, 2, 1), Rr(5, 0, 2, 1), Rr(5, 1, 2, 1), Rr(7, 0, 2, 1), Rr(7, 1, 2, 1)];
-      return CELLS.map((o, j) => P(o.c, [F(0, o.r), F(0.12, o.r, E.el), F(0.4, T[j]), F(0.6, T[j], E.el), F(0.88, o.r), F(1, o.r)]));
+    make: (w = 9) => {
+      const fw = (w - 3) / (w - 6), cells = geo(w).cells;
+      const T = cells.map((_, j) => j < 3 ? Rr(j, 0, 1, 2) : Rr(3 + (j - 3 >> 1) * fw, (j - 3) % 2, fw, 1));
+      return cells.map((o, j) => P(o.c, [F(0, o.r), F(0.12, o.r, E.el), F(0.4, T[j]), F(0.6, T[j], E.el), F(0.88, o.r), F(1, o.r)]));
     }
   },
   /* Ticker — the strip steps along a module at a time, wrapping. */
@@ -581,13 +593,14 @@ var VARIANTS = [
     dur: 4e3,
     grid: "whole",
     clip: "strip",
+    short: true,
     uses: { amb: FULL, wait: "loop" },
-    make: () => {
-      const out = [];
-      [0, 10].forEach((dx) => CELLS.forEach((o) => {
+    make: (w = 9) => {
+      const out = [], n = w + 1;
+      [0, n].forEach((dx) => geo(w).cells.forEach((o) => {
         const f = [];
-        for (let k = 0; k < 10; k++) f.push(F(k / 10, mv(o.r, dx - k, 0), E.snap), F(k / 10 + 0.045, mv(o.r, dx - k - 1, 0)));
-        f.push(F(1, mv(o.r, dx - 10, 0)));
+        for (let k = 0; k < n; k++) f.push(F(k / n, mv(o.r, dx - k, 0), E.snap), F(k / n + 0.45 / n, mv(o.r, dx - k - 1, 0)));
+        f.push(F(1, mv(o.r, dx - n, 0)));
         out.push(P(o.c, f));
       }));
       return out;
@@ -682,16 +695,16 @@ function colorAt(pieces, t, x, y) {
   });
   return hit;
 }
-function intactAt(pieces, t) {
-  for (let qx = 0; qx < 36; qx++) for (let qy = 0; qy < 8; qy++) {
+function intactAt(pieces, t, w = 9) {
+  for (let qx = 0; qx < 4 * w; qx++) for (let qy = 0; qy < 8; qy++) {
     if (colorAt(pieces, t, (qx + 0.5) / 4, (qy + 0.5) / 4) !== colAt(qx >> 2, qy >> 2)) return false;
   }
   return true;
 }
-function overflow(v) {
+function overflow(v, w = 9) {
   if (v.clip === "strip") return { left: 0, right: 0, top: 0, bottom: 0 };
-  let x0 = 0, x1 = 9, y0 = 0, y1 = 2;
-  for (const p of v.make()) for (const f of p.f) {
+  let x0 = 0, x1 = w, y0 = 0, y1 = 2;
+  for (const p of v.make(w)) for (const f of p.f) {
     if (f.r.w <= 0 || f.r.h <= 0) continue;
     x0 = Math.min(x0, f.r.x);
     x1 = Math.max(x1, f.r.x + f.r.w);
@@ -702,7 +715,7 @@ function overflow(v) {
     y0 = Math.max(y0, -1);
     y1 = Math.min(y1, 3);
   }
-  return { left: -x0, right: x1 - 9, top: -y0, bottom: y1 - 2 };
+  return { left: -x0, right: x1 - w, top: -y0, bottom: y1 - 2 };
 }
 var segEnd = (s) => {
   const e = s.start + s.span;
@@ -712,11 +725,14 @@ var segEnd = (s) => {
 // src/lib/ink-motion/pick.ts
 function poolFor(use, o) {
   return VARIANTS.filter((v) => {
+    var _a;
+    const w = (_a = o.width) != null ? _a : 9;
     if (!v.uses[use]) return false;
+    if (w !== 9 && !v.short) return false;
     if (o.module < MIN_MODULE[v.grid]) return false;
     if (o.lite && v.grid !== "whole") return false;
-    if (o.restStart && !intactAt(v.make(), startOf(v, use))) return false;
-    if (o.maxOverflow != null && Object.values(overflow(v)).some((d) => d > o.maxOverflow + 1e-9)) return false;
+    if (o.restStart && !intactAt(v.make(w), startOf(v, use), w)) return false;
+    if (o.maxOverflow != null && Object.values(overflow(v, w)).some((d) => d > o.maxOverflow + 1e-9)) return false;
     return true;
   });
 }
@@ -779,19 +795,20 @@ var InkPlayer = class {
     __publicField(this, "anims", []);
     __publicField(this, "dur");
     __publicField(this, "offResize");
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const m = o.module;
     const palette = (_a = o.palette) != null ? _a : APP_PALETTE;
     const remap = MODE_MAP[(_b = o.mode) != null ? _b : "full"];
+    const w = (_c = o.width) != null ? _c : 9;
     this.dur = variant.dur;
     const layer = document.createElement("span");
     layer.setAttribute("aria-hidden", "true");
     const clip = variant.clip === "strip" ? "overflow:hidden;" : variant.clip === "stage" ? `clip-path:inset(-${m}px 0 -${m}px 0);` : "";
-    layer.style.cssText = `position:absolute;left:0;top:0;width:${9 * m}px;height:${2 * m}px;pointer-events:none;${clip}`;
-    for (const p of variant.make()) {
+    layer.style.cssText = `position:absolute;left:0;top:0;width:${w * m}px;height:${2 * m}px;pointer-events:none;${clip}`;
+    for (const p of variant.make(w)) {
       const [bw, bh] = baseSize(p);
       const el = document.createElement("i");
-      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + 1}px;height:${bh * m + 1}px;background:${palette[(_c = remap[p.c]) != null ? _c : p.c]};` + (p.z ? `z-index:${p.z};` : "");
+      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + 1}px;height:${bh * m + 1}px;background:${palette[(_d = remap[p.c]) != null ? _d : p.c]};` + (p.z ? `z-index:${p.z};` : "");
       layer.appendChild(el);
       let prev = 0;
       const frames = p.f.map((fr) => {

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Icons } from './Icons';
 import Logo from './Logo';
 import InkMark from './InkMark';
+import InkMotionMark from './InkMotionMark';
 import ThemeToggle from './ThemeToggle';
 import LangMenu from './LangMenu';
 import { URLS } from '../data/translations';
@@ -119,12 +120,15 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
           <Link to={homeHref} onClick={onLogoClick} className="flex items-center flex-none" aria-label={t.use('a11y.home')}>
             <Logo className="h-6 md:h-7 w-auto" color="var(--fg)" />
           </Link>
-          {/* module 8 with 8px air; phones (below sm) drop to 7 — the short
-              strip's 6px floor is never crossed. Two prints, one ever
-              visible: InkMark pins --m inline, so a breakpoint can't retune
-              a single instance. */}
+          {/* sm and up: the FULL strip (Donald 10.10.26 — "the website should
+              have full strip"), module 8 = its floor, 8px air, alive with the
+              motion lab's ambient performances (InkMotionMark). Phones keep
+              the short strip at 7: the full one is 72px and the row has 6px
+              of slack at 412 — it would always wrap away. Two prints, one
+              ever visible: InkMark pins --m inline, so a breakpoint can't
+              retune a single instance. */}
           <span className="hidden sm:flex items-center flex-none ml-2" aria-hidden="true">
-            <InkMark form="strip-short-h" mode="full" module={8} idle="slow" />
+            <InkMotionMark module={8} />
           </span>
           <span className="flex sm:hidden items-center flex-none ml-[7px]" aria-hidden="true">
             <InkMark form="strip-short-h" mode="full" module={7} idle="slow" />

@@ -13,7 +13,7 @@
    Never during prerender (navigator.webdriver), never under reduced motion:
    the shipped HTML and the reduced state are the finished mark. The masthead
    clips its wrapper, so only scores that stay within ½ module of the strip
-   are eligible (maxOverflow) — whole-module ones, at this size. `form`
+   are eligible (maxOverflow), drawn at whole modules at this size. `form`
    strip-short-h (phones) draws from the scores written for any width. */
 
 import { useEffect, useRef } from 'react';
@@ -56,13 +56,18 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
       try {
         const m = await import('../lib/ink-motion.js');
         unsnap ??= m.snapToPixels(el);
-        const v = m.pick('amb', { module: modulePx, width, lite: m.isLiteDevice(), last: m.lastSeen('amb'), maxOverflow: 0.5 });
+        const lite = m.isLiteDevice();
+        const v = m.pick('amb', { module: modulePx, width, lite, last: m.lastSeen('amb'), maxOverflow: 0.5 });
         if (!v || !alive) return;
         m.remember('amb', v.id);
         // The player hides/shows the static mark itself, in the same task as
         // the layer goes up/down — no React state, so no blank frame between.
-        player = new m.InkPlayer(el, v, { module: modulePx, width, palette: SITE_PALETTE, cover: still.current });
-        await player.once(m.segmentFor(v, 'amb'));
+        // Half-cell scores draw at whole modules here (8px: halves would be
+        // under the canon floor) — grainFor picks the finest that fits.
+        const grain = m.grainFor(v, { module: modulePx, lite }) ?? undefined;
+        const seg = m.segmentFor(v, 'amb');
+        player = new m.InkPlayer(el, v, { module: modulePx, width, palette: SITE_PALETTE, grain, restAt: m.segEnd(seg), cover: still.current });
+        await player.once(seg);
       } catch {
         return; // chunk failed: the static mark stands, no retries
       } finally {

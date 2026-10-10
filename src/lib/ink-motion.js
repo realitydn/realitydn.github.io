@@ -34,7 +34,7 @@ var E = {
 var Rr = (x, y, w, h) => ({ x, y, w, h });
 var colAt = (x, y) => x < 2 ? "R" : x < 4 ? "B" : x < 6 ? "Y" : [["S", "K"], ["G", "P"], ["U", "A"]][x - 6][y];
 var sc = (r, s) => Rr(r.x + r.w * (1 - s) / 2, r.y + r.h * (1 - s) / 2, r.w * s, r.h * s);
-var ab = (r, s) => Rr(4.5 + (r.x - 4.5) * s, 1 + (r.y - 1) * s, r.w * s, r.h * s);
+var ab = (r, s, cx = 4.5) => Rr(cx + (r.x - cx) * s, 1 + (r.y - 1) * s, r.w * s, r.h * s);
 var mv = (r, dx, dy) => Rr(r.x + dx, r.y + dy, r.w, r.h);
 var hr = ([x, y]) => Rr(x / 2, y / 2, 0.5, 0.5);
 var F = (t, r, e) => ({ t, r, e });
@@ -65,13 +65,8 @@ var geo = (w) => {
   }
   return { cells, mods, cols, rows };
 };
-var { rows: ROWS } = geo(9);
 var HALF = [];
 for (let hx = 0; hx < 18; hx++) for (let hy = 0; hy < 4; hy++) HALF.push({ c: colAt(hx >> 1, hy >> 1), r: Rr(hx / 2, hy / 2, 0.5, 0.5), hx, hy });
-var HCOL = Array.from({ length: 18 }, (_, hx) => {
-  const x = hx / 2, mx = hx >> 1;
-  return { p: mx < 6 ? [{ c: colAt(mx, 0), r: Rr(x, 0, 0.5, 2) }] : [{ c: colAt(mx, 0), r: Rr(x, 0, 0.5, 1) }, { c: colAt(mx, 1), r: Rr(x, 1, 0.5, 1) }] };
-});
 var segs = (n) => {
   const out = [], h = 2 / n;
   for (let k = 0; k < n; k++) {
@@ -90,18 +85,38 @@ var rng = (seed) => {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 };
-var shuffleRows = (seed) => {
-  const rand = rng(seed), rows = [];
-  for (let hy = 0; hy < 4; hy++) {
-    const xs = [...Array(18).keys()];
-    for (let i = 17; i > 0; i--) {
+var shuffleRows = (seed, cols = 18, rows = 4) => {
+  const rand = rng(seed), out = [];
+  for (let hy = 0; hy < rows; hy++) {
+    const xs = [...Array(cols).keys()];
+    for (let i = cols - 1; i > 0; i--) {
       const k = Math.floor(rand() * (i + 1));
       [xs[i], xs[k]] = [xs[k], xs[i]];
     }
-    rows.push(xs);
+    out.push(xs);
   }
-  return rows;
+  return out;
 };
+var cellsOf = (w, g) => {
+  const o = [], C = Math.round(w / g), Rn = Math.round(2 / g);
+  for (let cx = 0; cx < C; cx++) for (let cy = 0; cy < Rn; cy++)
+    o.push({ c: colAt(Math.floor(cx * g + 1e-9), Math.floor(cy * g + 1e-9)), r: Rr(cx * g, cy * g, g, g), cx, cy });
+  return o;
+};
+var columnsOf = (w, g) => Array.from({ length: Math.round(w / g) }, (_, cx) => {
+  const x = cx * g, mx = Math.floor(x + 1e-9);
+  return { cx, p: mx < 6 ? [{ c: colAt(mx, 0), r: Rr(x, 0, g, 2) }] : [{ c: colAt(mx, 0), r: Rr(x, 0, g, 1) }, { c: colAt(mx, 1), r: Rr(x, 1, g, 1) }] };
+});
+var rowsOf = (w, n) => {
+  const out = [], h = 2 / n;
+  for (let k = 0; k < n; k++) {
+    const y = k * h, my = y < 1 ? 0 : 1;
+    for (const [x, ww] of [[0, 2], [2, 2], [4, 2]]) out.push({ c: colAt(x, my), r: Rr(x, y, ww, h), k });
+    for (let x = 6; x < w; x++) out.push({ c: colAt(x, my), r: Rr(x, y, 1, h), k });
+  }
+  return out;
+};
+var HW = ["half", "whole"];
 var VARIANTS = [
   /* Handoff — each band swells over its neighbour, then gives the space back. */
   {
@@ -125,11 +140,12 @@ var VARIANTS = [
     name: "Snake",
     dur: 3600,
     grid: "whole",
-    uses: { wait: "loop", prog: seg(0, 0.47), gest: seg(0, 0.47) },
-    make: () => {
+    short: true,
+    uses: { wait: "loop", prog: seg(0, 0.47), gest: seg(0, 0.47), amb: seg(0.47, 1.47) },
+    make: (w = 9) => {
       const path = [];
-      for (let c = 0; c < 9; c++) path.push(...c % 2 ? [[c, 1], [c, 0]] : [[c, 0], [c, 1]]);
-      const st = 0.4 / 18;
+      for (let c = 0; c < w; c++) path.push(...c % 2 ? [[c, 1], [c, 0]] : [[c, 0], [c, 1]]);
+      const st = 0.4 / (2 * w);
       return path.map(([x, y], i) => {
         const first = i % 2 == 0, full = Rr(x, y, 1, 1);
         const a = first ? Rr(x, y, 0, 1) : Rr(x, 1, 1, 0), b = first ? Rr(x, 1, 1, 0) : Rr(x + 1, y, 0, 1);
@@ -167,13 +183,15 @@ var VARIANTS = [
     name: "Weave",
     dur: 3600,
     grid: "half",
+    grains: HW,
+    short: true,
     clip: "strip",
     uses: { wait: "loop", amb: FULL },
-    make: () => {
+    make: (w = 9, g = 0.5) => {
       const S = [0, 1, 2, 3, 4, 3, 2, 1, 0, 0], out = [];
-      segs(4).forEach((o) => [-9, 0, 9].forEach((cp) => {
+      rowsOf(w, Math.round(2 / g)).forEach((o) => [-w, 0, w].forEach((cp) => {
         const d = o.k % 2 ? -1 : 1;
-        out.push(P(o.c, [...S.map((s, i) => F(i / 10, mv(o.r, cp + d * s * 0.5, 0), E.snap)), F(1, mv(o.r, cp, 0))]));
+        out.push(P(o.c, [...S.map((s, i) => F(i / 10, mv(o.r, cp + d * s * g, 0), E.snap)), F(1, mv(o.r, cp, 0))]));
       }));
       return out;
     }
@@ -252,10 +270,11 @@ var VARIANTS = [
     name: "Zip",
     dur: 3200,
     grid: "whole",
+    short: true,
     clip: "strip",
-    uses: { arrive: seg(0, 0.42), trans: seg(0.58, 1.42), gest: seg(0, 0.42), wait: "loop" },
-    make: () => ROWS.map((o) => {
-      const L = o.y ? 10 : -10, s = (o.y ? o.r.x : 8 - o.r.x) * 0.014, a = mv(o.r, L, 0), b = mv(o.r, -L, 0);
+    uses: { arrive: seg(0, 0.42), trans: seg(0.58, 1.42), gest: seg(0, 0.42), wait: "loop", amb: seg(0.58, 1.42) },
+    make: (w = 9) => geo(w).rows.map((o) => {
+      const L = o.y ? w + 1 : -(w + 1), s = (o.y ? o.r.x : w - 1 - o.r.x) * 0.014, a = mv(o.r, L, 0), b = mv(o.r, -L, 0);
       return P(o.c, [F(0, a), F(0.04 + s, a, "cubic-bezier(.15,.9,.25,1)"), F(0.3 + s, o.r), F(0.58 + s, o.r, "cubic-bezier(.6,0,.85,.3)"), F(0.8 + s, b, E.step), F(1, a)]);
     })
   },
@@ -297,10 +316,12 @@ var VARIANTS = [
     name: "Iris",
     dur: 3e3,
     grid: "half",
-    uses: { arrive: seg(0, 0.42), success: seg(0, 0.42), gest: seg(0, 0.42), wait: "loop" },
-    make: () => HALF.map((o) => {
-      const cx = o.hx / 2 + 0.25, cy = o.hy / 2 + 0.25;
-      const d = Math.min(1, (Math.abs(cx - 4.5) + Math.abs(cy - 1) * 0.5) / 4.6);
+    grains: HW,
+    short: true,
+    uses: { arrive: seg(0, 0.42), success: seg(0, 0.42), gest: seg(0, 0.42), wait: "loop", amb: seg(0.42, 1.42) },
+    make: (w = 9, g = 0.5) => cellsOf(w, g).map((o) => {
+      const cx = o.r.x + g / 2, cy = o.r.y + g / 2;
+      const d = Math.min(1, (Math.abs(cx - w / 2) + Math.abs(cy - 1) * 0.5) / (w / 2 + 0.1));
       const ti = 0.04 + d * 0.3, te = 0.6 + (1 - d) * 0.24, z = sc(o.r, 0);
       return P(o.c, [F(0, z), F(ti, z, E.stamp), F(ti + 0.08, o.r), F(te, o.r, E.in), F(te + 0.06, z), F(1, z)]);
     })
@@ -328,12 +349,17 @@ var VARIANTS = [
     name: "Blinds",
     dur: 2800,
     grid: "half",
+    grains: HW,
+    short: true,
     uses: { trans: FULL, amb: FULL, wait: "loop" },
-    make: () => segs(4).map((o) => {
-      const s = o.r.x / 9 * 0.08, z = Rr(o.r.x, o.r.y + o.r.h / 2, o.r.w, 0);
-      const a = 0.08 + o.k * 0.05 + s, b = 0.5 + (3 - o.k) * 0.05 + s;
-      return P(o.c, [F(0, o.r), F(a, o.r, E.in), F(a + 0.1, z), F(b, z, E.out), F(b + 0.14, o.r), F(1, o.r)]);
-    })
+    make: (w = 9, g = 0.5) => {
+      const n = Math.round(2 / g), step = 0.15 / (n - 1);
+      return rowsOf(w, n).map((o) => {
+        const s = o.r.x / w * 0.08, z = Rr(o.r.x, o.r.y + o.r.h / 2, o.r.w, 0);
+        const a = 0.08 + o.k * step + s, b = 0.5 + (n - 1 - o.k) * step + s;
+        return P(o.c, [F(0, o.r), F(a, o.r, E.in), F(a + 0.1, z), F(b, z, E.out), F(b + 0.14, o.r), F(1, o.r)]);
+      });
+    }
   },
   /* Cascade — half columns drop out and the same column drops back in. */
   {
@@ -341,12 +367,14 @@ var VARIANTS = [
     name: "Cascade",
     dur: 3e3,
     grid: "half",
+    grains: HW,
+    short: true,
     clip: "strip",
-    uses: { trans: seg(0, 0.72), prog: seg(0.06, 0.72), wait: "loop" },
-    make: () => {
-      const out = [];
-      HCOL.forEach((col, hx) => col.p.forEach((p) => {
-        const t = 0.08 + hx * 0.025, dn = mv(p.r, 0, 2.2), up = mv(p.r, 0, -2.2);
+    uses: { trans: seg(0, 0.72), prog: seg(0.06, 0.72), wait: "loop", amb: seg(0, 0.72) },
+    make: (w = 9, g = 0.5) => {
+      const out = [], cols = columnsOf(w, g), C = cols.length;
+      cols.forEach((col) => col.p.forEach((p) => {
+        const t = 0.08 + col.cx / (C - 1) * 0.425, dn = mv(p.r, 0, 2.2), up = mv(p.r, 0, -2.2);
         out.push(P(p.c, [F(0, p.r), F(t, p.r, E.in), F(t + 0.08, dn, E.step), F(t + 0.1, up, E.out), F(t + 0.2, p.r), F(1, p.r)]));
       }));
       return out;
@@ -358,12 +386,14 @@ var VARIANTS = [
     name: "Book",
     dur: 3200,
     grid: "half",
-    uses: { trans: seg(0, 0.9), wait: "loop" },
-    make: () => {
+    grains: HW,
+    short: true,
+    uses: { trans: seg(0, 0.9), wait: "loop", amb: seg(0, 0.9) },
+    make: (w = 9, g = 0.5) => {
       const out = [];
-      HCOL.forEach((col, hx) => col.p.forEach((p) => {
-        const z = Rr(4.5, p.r.y, 0, p.r.h);
-        out.push(P(p.c, hx >= 9 ? [F(0, p.r), F(0.08, p.r, E.in), F(0.22, z), F(0.74, z, E.el), F(0.88, p.r), F(1, p.r)] : [F(0, p.r), F(0.3, p.r, E.in), F(0.44, z), F(0.56, z, E.out), F(0.7, p.r), F(1, p.r)]));
+      columnsOf(w, g).forEach((col) => col.p.forEach((p) => {
+        const z = Rr(w / 2, p.r.y, 0, p.r.h);
+        out.push(P(p.c, p.r.x >= w / 2 - 1e-9 ? [F(0, p.r), F(0.08, p.r, E.in), F(0.22, z), F(0.74, z, E.el), F(0.88, p.r), F(1, p.r)] : [F(0, p.r), F(0.3, p.r, E.in), F(0.44, z), F(0.56, z, E.out), F(0.7, p.r), F(1, p.r)]));
       }));
       return out;
     }
@@ -392,12 +422,14 @@ var VARIANTS = [
     name: "Sift",
     dur: 4e3,
     grid: "half",
+    grains: HW,
+    short: true,
     clip: "strip",
-    uses: { trans: FULL, gest: seg(0.45, 0.86), wait: "loop" },
-    make: () => {
-      const rand = rng(8);
-      return HALF.map((o) => {
-        const b = (3 - o.hy) * 0.03, t = 0.04 + rand() * 0.24 + b, t2 = 0.52 + rand() * 0.24 + b;
+    uses: { trans: FULL, gest: seg(0.45, 0.86), wait: "loop", amb: FULL },
+    make: (w = 9, g = 0.5) => {
+      const rand = rng(8), Rn = Math.round(2 / g);
+      return cellsOf(w, g).map((o) => {
+        const b = (Rn - 1 - o.cy) * 0.03, t = 0.04 + rand() * 0.24 + b, t2 = 0.52 + rand() * 0.24 + b;
         const dn = mv(o.r, 0, 3), up = mv(o.r, 0, -3);
         return P(o.c, [F(0, o.r), F(t, o.r, E.in), F(t + 0.08, dn, E.step), F(t2 - 0.08, up, E.in), F(t2, o.r), F(1, o.r)]);
       });
@@ -410,29 +442,34 @@ var VARIANTS = [
     name: "Pull cycle",
     dur: 4800,
     grid: "half",
-    uses: { gest: seg(0, 0.45), wait: "loop" },
-    make: () => HALF.map((o) => {
-      const r = o.r, ta = 0.02 + o.hx * 0.022, z0 = Rr(r.x, r.y, 0, r.h), m = mv(r, o.hy % 2 ? -0.5 : 0.5, 0), q = Rr(r.x, 1, r.w, 0);
-      return P(o.c, [
-        F(0, z0),
-        F(ta, z0, E.snap),
-        F(ta + 0.02, r),
-        F(0.46, r, E.snap),
-        F(0.49, ab(r, 1.06), E.snap),
-        F(0.52, r),
-        F(0.56, r, E.snap),
-        F(0.6, m),
-        F(0.64, m, E.snap),
-        F(0.68, r),
-        F(0.72, r, E.snap),
-        F(0.76, m),
-        F(0.8, m, E.snap),
-        F(0.84, r),
-        F(0.88, r, E.in),
-        F(0.96, q),
-        F(1, q)
-      ]);
-    })
+    grains: HW,
+    short: true,
+    uses: { gest: seg(0, 0.45), wait: "loop", amb: seg(0.45, 1.45) },
+    make: (w = 9, g = 0.5) => {
+      const C = Math.round(w / g);
+      return cellsOf(w, g).map((o) => {
+        const r = o.r, ta = 0.02 + o.cx / (C - 1) * 0.374, z0 = Rr(r.x, r.y, 0, r.h), m = mv(r, o.cy % 2 ? -g : g, 0), q = Rr(r.x, 1, r.w, 0);
+        return P(o.c, [
+          F(0, z0),
+          F(ta, z0, E.snap),
+          F(ta + 0.02, r),
+          F(0.46, r, E.snap),
+          F(0.49, ab(r, 1.06, w / 2), E.snap),
+          F(0.52, r),
+          F(0.56, r, E.snap),
+          F(0.6, m),
+          F(0.64, m, E.snap),
+          F(0.68, r),
+          F(0.72, r, E.snap),
+          F(0.76, m),
+          F(0.8, m, E.snap),
+          F(0.84, r),
+          F(0.88, r, E.in),
+          F(0.96, q),
+          F(1, q)
+        ]);
+      });
+    }
   },
   /* Rubber band — the strip stretches past an edge and springs back. */
   {
@@ -468,15 +505,16 @@ var VARIANTS = [
     name: "Dither",
     dur: 3400,
     grid: "quarter",
-    uses: { prog: seg(0.52, 0.88), arrive: seg(0.52, 0.88), wait: "loop" },
-    make: () => {
-      const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]], out = [];
-      for (let qx = 0; qx < 36; qx++) for (let qy = 0; qy < 8; qy++) {
-        const r = Rr(qx / 4, qy / 4, 0.25, 0.25), b = B[qy % 4][qx % 4] / 16;
-        const to = 0.06 + b * 0.18 + qx / 35 * 0.16, ti = 0.52 + b * 0.18 + qx / 35 * 0.16, z = sc(r, 0);
-        out.push(P(colAt(qx >> 2, qy >> 2), [F(0, r), F(to, r, E.snap), F(to + 0.03, z), F(ti, z, E.snap), F(ti + 0.03, r), F(1, r)]));
-      }
-      return out;
+    grains: ["quarter", "half", "whole"],
+    short: true,
+    uses: { prog: seg(0.52, 0.88), arrive: seg(0.52, 0.88), wait: "loop", amb: seg(0, 0.88) },
+    make: (w = 9, g = 0.25) => {
+      const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]], C = Math.round(w / g);
+      return cellsOf(w, g).map((o) => {
+        const b = B[o.cy % 4][o.cx % 4] / 16, x = o.cx / (C - 1) * 0.16;
+        const to = 0.06 + b * 0.18 + x, ti = 0.52 + b * 0.18 + x, z = sc(o.r, 0);
+        return P(o.c, [F(0, o.r), F(to, o.r, E.snap), F(to + 0.03, z), F(ti, z, E.snap), F(ti + 0.03, o.r), F(1, o.r)]);
+      });
     }
   },
   /* Fill — half-cells drop in column by column and stack into the strip. */
@@ -485,13 +523,16 @@ var VARIANTS = [
     name: "Fill",
     dur: 4800,
     grid: "half",
+    grains: HW,
+    short: true,
     clip: "stage",
-    uses: { prog: seg(0, 0.66), gest: seg(0, 0.66), wait: "loop" },
-    make: () => {
-      const rand = rng(14);
-      return HALF.map((o) => {
-        const r = o.r, tl = 0.06 + (o.hx * 4 + 3 - o.hy) / 71 * 0.58, up = mv(r, 0, -2.5), dn = mv(r, 0, 2.5), td = 0.8 + rand() * 0.1;
-        return P(o.c, [F(0, up), F(tl - 0.05, up, E.in), F(tl, r), F(0.68, r, E.snap), F(0.71, ab(r, 1.05), E.snap), F(0.74, r), F(td, r, E.in), F(td + 0.06, dn, E.step), F(1, up)]);
+    clipTight: true,
+    uses: { prog: seg(0, 0.66), gest: seg(0, 0.66), wait: "loop", amb: seg(0.74, 1.66) },
+    make: (w = 9, g = 0.5) => {
+      const rand = rng(14), C = Math.round(w / g), Rn = Math.round(2 / g);
+      return cellsOf(w, g).map((o) => {
+        const r = o.r, tl = 0.06 + (o.cx * Rn + Rn - 1 - o.cy) / (C * Rn - 1) * 0.58, up = mv(r, 0, -2.5), dn = mv(r, 0, 2.5), td = 0.8 + rand() * 0.1;
+        return P(o.c, [F(0, up), F(tl - 0.05, up, E.in), F(tl, r), F(0.68, r, E.snap), F(0.71, ab(r, 1.05, w / 2), E.snap), F(0.74, r), F(td, r, E.in), F(td + 0.06, dn, E.step), F(1, up)]);
       });
     }
   },
@@ -501,28 +542,30 @@ var VARIANTS = [
     name: "Sort",
     dur: 5200,
     grid: "half",
-    uses: { prog: seg(0, 0.71), wait: "loop" },
-    make: () => {
-      const out = [];
-      shuffleRows(21).forEach((xs, hy) => {
+    grains: HW,
+    short: true,
+    uses: { prog: seg(0, 0.71), wait: "loop", amb: seg(0.8, 1.71) },
+    make: (w = 9, g = 0.5) => {
+      const out = [], C = Math.round(w / g), Rn = Math.round(2 / g);
+      shuffleRows(21, C, Rn).forEach((xs, hy) => {
+        const at = (x) => Rr(x * g, hy * g, g, g);
         const pos = xs.slice(), cur = [];
         pos.forEach((p, h) => cur[p] = h);
-        const f = xs.map((p) => [F(0, Rr(p / 2, hy / 2, 0.5, 0.5))]);
-        for (let i = 0; i < 18; i++) {
-          const ts = 0.04 + i * 0.037, p = pos[i];
+        const f = xs.map((p) => [F(0, at(p))]);
+        for (let i = 0; i < C; i++) {
+          const ts = 0.04 + i / (C - 1) * 0.629, p = pos[i];
           if (p === i) continue;
           const q = cur[i];
-          f[i].push(F(ts, Rr(p / 2, hy / 2, 0.5, 0.5), E.io), F(ts + 0.03, Rr(i / 2, hy / 2, 0.5, 0.5)));
-          f[q].push(F(ts, Rr(i / 2, hy / 2, 0.5, 0.5), E.io), F(ts + 0.03, Rr(p / 2, hy / 2, 0.5, 0.5)));
+          f[i].push(F(ts, at(p), E.io), F(ts + 0.03, at(i)));
+          f[q].push(F(ts, at(i), E.io), F(ts + 0.03, at(p)));
           pos[i] = i;
           pos[q] = p;
           cur[i] = i;
           cur[p] = q;
         }
-        for (let h = 0; h < 18; h++) {
-          const r = Rr(h / 2, hy / 2, 0.5, 0.5), s = Rr(xs[h] / 2, hy / 2, 0.5, 0.5);
-          f[h].push(F(0.8, r, E.io), F(0.94, s), F(1, s));
-          out.push(P(colAt(h >> 1, hy >> 1), f[h]));
+        for (let h = 0; h < C; h++) {
+          f[h].push(F(0.8, at(h), E.io), F(0.94, at(xs[h])), F(1, at(xs[h])));
+          out.push(P(colAt(Math.floor(h * g + 1e-9), Math.floor(hy * g + 1e-9)), f[h]));
         }
       });
       return out;
@@ -534,11 +577,13 @@ var VARIANTS = [
     name: "Drop",
     dur: 3e3,
     grid: "whole",
+    short: true,
     clip: "stage",
-    uses: { success: seg(0, 0.66), arrive: seg(0, 0.66), gest: seg(0, 0.66), wait: "loop" },
-    make: () => {
-      const ord = [0, 2, 1, 7, 3, 8, 5, 4, 6];
-      return CELLS.map((o, j) => {
+    clipTight: true,
+    uses: { success: seg(0, 0.66), arrive: seg(0, 0.66), gest: seg(0, 0.66), wait: "loop", amb: seg(0.66, 1.66) },
+    make: (w = 9) => {
+      const cells = geo(w).cells, ord = [0, 2, 1, 7, 3, 8, 5, 4, 6].filter((i) => i < cells.length);
+      return cells.map((o, j) => {
         const tl = 0.1 + ord.indexOf(j) * 0.06, up = mv(o.r, 0, -4), dn = mv(o.r, 0, 4);
         return P(o.c, [F(0, up), F(tl - 0.09, up, E.in), F(tl, o.r, E.out), F(tl + 0.025, mv(o.r, 0, -0.3), E.in), F(tl + 0.05, o.r), F(0.8, o.r, E.in), F(0.9, dn, E.step), F(1, up)]);
       });
@@ -612,11 +657,13 @@ var VARIANTS = [
     name: "Mosaic",
     dur: 4400,
     grid: "half",
+    grains: HW,
+    short: true,
     uses: { amb: FULL, success: seg(0, 0.92), wait: "loop" },
-    make: () => {
-      const rows = shuffleRows(21);
-      return HALF.map((o) => {
-        const t = Rr(rows[o.hy][o.hx] / 2, o.r.y, 0.5, 0.5), s = o.hx / 17 * 0.08;
+    make: (w = 9, g = 0.5) => {
+      const C = Math.round(w / g), rows = shuffleRows(21, C, Math.round(2 / g));
+      return cellsOf(w, g).map((o) => {
+        const t = Rr(rows[o.cy][o.cx] * g, o.r.y, g, g), s = o.cx / (C - 1) * 0.08;
         return P(o.c, [F(0, o.r), F(0.08 + s, o.r, E.io), F(0.3 + s, t), F(0.56 + s, t, E.el), F(0.8 + s, o.r), F(1, o.r)]);
       });
     }
@@ -627,23 +674,28 @@ var VARIANTS = [
     name: "Swap",
     dur: 9600,
     grid: "half",
+    grains: HW,
+    short: true,
     uses: { amb: FULL },
-    make: () => {
-      const rand = rng(41), at = {}, pos = HALF.map((o) => [o.hx, o.hy]);
-      const f = HALF.map((o) => [F(0, o.r)]), sw = [];
-      HALF.forEach((o, i) => at[o.hx + "," + o.hy] = i);
+    make: (w = 9, g = 0.5) => {
+      const C = Math.round(w / g), Rn = Math.round(2 / g), cells = cellsOf(w, g);
+      const rand = rng(41), at = {}, pos = cells.map((o) => [o.cx, o.cy]);
+      const sq = ([x, y]) => Rr(x * g, y * g, g, g);
+      const f = cells.map((o) => [F(0, o.r)]), sw = [];
+      cells.forEach((o, i) => at[o.cx + "," + o.cy] = i);
       for (let n = 0; n < 6; n++) {
         let a = -1, b = -1;
         for (let tr = 0; tr < 400 && a < 0; tr++) {
-          const hx = Math.floor(rand() * 18), hy = Math.floor(rand() * 4), hor = rand() < 0.6;
+          const hx = Math.floor(rand() * C), hy = Math.floor(rand() * Rn), hor = rand() < 0.6;
           const bx = hor ? hx + 1 : hx, by = hor ? hy : hy + 1;
-          if (bx > 17 || by > 3) continue;
+          if (bx > C - 1 || by > Rn - 1) continue;
           const A = at[hx + "," + hy], B = at[bx + "," + by];
-          if (HALF[A].c !== HALF[B].c) {
+          if (cells[A].c !== cells[B].c) {
             a = A;
             b = B;
           }
         }
+        if (a < 0) break;
         const pa = pos[a], pb = pos[b];
         sw.push([a, b, pa, pb]);
         pos[a] = pb;
@@ -653,15 +705,15 @@ var VARIANTS = [
       }
       sw.forEach(([a, b, pa, pb], n) => {
         const t = 0.05 + n * 0.07;
-        f[a].push(F(t, hr(pa), E.io), F(t + 0.05, hr(pb)));
-        f[b].push(F(t, hr(pb), E.io), F(t + 0.05, hr(pa)));
+        f[a].push(F(t, sq(pa), E.io), F(t + 0.05, sq(pb)));
+        f[b].push(F(t, sq(pb), E.io), F(t + 0.05, sq(pa)));
       });
       sw.slice().reverse().forEach(([a, b, pa, pb], n) => {
         const t = 0.55 + n * 0.07;
-        f[a].push(F(t, hr(pb), E.io), F(t + 0.05, hr(pa)));
-        f[b].push(F(t, hr(pa), E.io), F(t + 0.05, hr(pb)));
+        f[a].push(F(t, sq(pb), E.io), F(t + 0.05, sq(pa)));
+        f[b].push(F(t, sq(pa), E.io), F(t + 0.05, sq(pb)));
       });
-      return HALF.map((o, i) => {
+      return cells.map((o, i) => {
         f[i].push(F(1, o.r));
         return P(o.c, f[i]);
       });
@@ -669,6 +721,16 @@ var VARIANTS = [
   }
 ];
 var MIN_MODULE = { whole: 6, half: 16, quarter: 24 };
+var GRAIN_SIZE = { whole: 1, half: 0.5, quarter: 0.25 };
+function grainFor(v, o) {
+  var _a;
+  for (const g of (_a = v.grains) != null ? _a : [v.grid]) {
+    if (o.module < MIN_MODULE[g]) continue;
+    if (o.lite && g !== "whole") continue;
+    return g;
+  }
+  return null;
+}
 function rectAt(p, t) {
   var _a;
   const f = p.f;
@@ -701,10 +763,10 @@ function intactAt(pieces, t, w = 9) {
   }
   return true;
 }
-function overflow(v, w = 9) {
+function overflow(v, w = 9, g) {
   if (v.clip === "strip") return { left: 0, right: 0, top: 0, bottom: 0 };
   let x0 = 0, x1 = w, y0 = 0, y1 = 2;
-  for (const p of v.make(w)) for (const f of p.f) {
+  for (const p of v.make(w, g)) for (const f of p.f) {
     if (f.r.w <= 0 || f.r.h <= 0) continue;
     x0 = Math.min(x0, f.r.x);
     x1 = Math.max(x1, f.r.x + f.r.w);
@@ -729,10 +791,11 @@ function poolFor(use, o) {
     const w = (_a = o.width) != null ? _a : 9;
     if (!v.uses[use]) return false;
     if (w !== 9 && !v.short) return false;
-    if (o.module < MIN_MODULE[v.grid]) return false;
-    if (o.lite && v.grid !== "whole") return false;
-    if (o.restStart && !intactAt(v.make(w), startOf(v, use), w)) return false;
-    if (o.maxOverflow != null && Object.values(overflow(v, w)).some((d) => d > o.maxOverflow + 1e-9)) return false;
+    const gr = grainFor(v, o);
+    if (!gr) return false;
+    const g = GRAIN_SIZE[gr];
+    if (o.restStart && !intactAt(v.make(w, g), startOf(v, use), w)) return false;
+    if (o.maxOverflow != null && !v.clipTight && Object.values(overflow(v, w, g)).some((d) => d > o.maxOverflow + 1e-9)) return false;
     return true;
   });
 }
@@ -795,7 +858,7 @@ var InkPlayer = class {
     __publicField(this, "anims", []);
     __publicField(this, "dur");
     __publicField(this, "cover");
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g;
     const m = o.module;
     const palette = (_a = o.palette) != null ? _a : APP_PALETTE;
     const remap = MODE_MAP[(_b = o.mode) != null ? _b : "full"];
@@ -805,13 +868,13 @@ var InkPlayer = class {
     layer.setAttribute("aria-hidden", "true");
     const clip = variant.clip === "strip" ? "overflow:hidden;" : variant.clip === "stage" ? `clip-path:inset(-${m}px 0 -${m}px 0);` : "";
     layer.style.cssText = `position:absolute;left:0;top:0;width:${w * m}px;height:${2 * m}px;pointer-events:none;${clip}`;
-    for (const p of variant.make(w)) {
+    for (const p of variant.make(w, GRAIN_SIZE[(_d = o.grain) != null ? _d : variant.grid])) {
       const [bw, bh] = baseSize(p);
-      const rest = (_d = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _d.r;
+      const rest = o.restAt != null ? rectAt(p, o.restAt) : (_e = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _e.r;
       const br = rest && Math.abs(rest.x + rest.w - w) < 1e-6 ? 0 : 1;
       const bb = rest && Math.abs(rest.y + rest.h - 2) < 1e-6 ? 0 : 1;
       const el = document.createElement("i");
-      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_e = remap[p.c]) != null ? _e : p.c]};` + (p.z ? `z-index:${p.z};` : "");
+      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_f = remap[p.c]) != null ? _f : p.c]};` + (p.z ? `z-index:${p.z};` : "");
       layer.appendChild(el);
       let prev = 0;
       const frames = p.f.map((fr) => {
@@ -830,7 +893,7 @@ var InkPlayer = class {
     }
     host.appendChild(layer);
     this.layer = layer;
-    this.cover = (_f = o.cover) != null ? _f : null;
+    this.cover = (_g = o.cover) != null ? _g : null;
     if (this.cover) this.cover.style.visibility = "hidden";
   }
   time(iterationStart, iterations) {
@@ -931,11 +994,13 @@ function remember(use, id) {
 export {
   APP_PALETTE,
   CELL_COLOR,
+  GRAIN_SIZE,
   InkPlayer,
   MIN_MODULE,
   VARIANTS,
   colAt,
   colorAt,
+  grainFor,
   intactAt,
   isLiteDevice,
   lastSeen,

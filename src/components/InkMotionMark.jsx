@@ -16,7 +16,7 @@
    are eligible (maxOverflow) — whole-module ones, at this size. `form`
    strip-short-h (phones) draws from the scores written for any width. */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import InkMark from './InkMark';
 
 const SITE_PALETTE = {
@@ -31,7 +31,7 @@ const later = ([base, spread]) => base + Math.random() * spread;
 export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }) {
   const width = form === 'strip-short-h' ? 7 : 9;
   const host = useRef(null);
-  const [live, setLive] = useState(false);
+  const still = useRef(null);
 
   useEffect(() => {
     const el = host.current;
@@ -40,6 +40,7 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
     let inView = true;
     let timer = 0;
     let player = null;
+    let unsnap = null;
     const io = 'IntersectionObserver' in window
       ? new IntersectionObserver((es) => { inView = es.some((e) => e.isIntersecting); })
       : null;
@@ -54,18 +55,19 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
       }
       try {
         const m = await import('../lib/ink-motion.js');
+        unsnap ??= m.snapToPixels(el);
         const v = m.pick('amb', { module: modulePx, width, lite: m.isLiteDevice(), last: m.lastSeen('amb'), maxOverflow: 0.5 });
         if (!v || !alive) return;
         m.remember('amb', v.id);
-        player = new m.InkPlayer(el, v, { module: modulePx, width, palette: SITE_PALETTE });
-        setLive(true);
+        // The player hides/shows the static mark itself, in the same task as
+        // the layer goes up/down — no React state, so no blank frame between.
+        player = new m.InkPlayer(el, v, { module: modulePx, width, palette: SITE_PALETTE, cover: still.current });
         await player.once(m.segmentFor(v, 'amb'));
       } catch {
         return; // chunk failed: the static mark stands, no retries
       } finally {
         player?.destroy();
         player = null;
-        if (alive) setLive(false);
       }
       if (alive) timer = window.setTimeout(perform, later(EVERY));
     };
@@ -74,13 +76,16 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
       alive = false;
       window.clearTimeout(timer);
       io?.disconnect();
+      unsnap?.();
       player?.destroy();
     };
   }, [modulePx, width]);
 
   return (
     <span ref={host} className="relative inline-flex" aria-hidden="true">
-      <InkMark form={form} mode="full" module={modulePx} idle="off" className={live ? 'invisible' : ''} />
+      <span ref={still} className="inline-flex">
+        <InkMark form={form} mode="full" module={modulePx} idle="off" />
+      </span>
     </span>
   );
 }

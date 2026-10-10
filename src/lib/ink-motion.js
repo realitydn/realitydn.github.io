@@ -794,8 +794,8 @@ var InkPlayer = class {
     __publicField(this, "layer");
     __publicField(this, "anims", []);
     __publicField(this, "dur");
-    __publicField(this, "offResize");
-    var _a, _b, _c, _d;
+    __publicField(this, "cover");
+    var _a, _b, _c, _d, _e, _f;
     const m = o.module;
     const palette = (_a = o.palette) != null ? _a : APP_PALETTE;
     const remap = MODE_MAP[(_b = o.mode) != null ? _b : "full"];
@@ -807,8 +807,11 @@ var InkPlayer = class {
     layer.style.cssText = `position:absolute;left:0;top:0;width:${w * m}px;height:${2 * m}px;pointer-events:none;${clip}`;
     for (const p of variant.make(w)) {
       const [bw, bh] = baseSize(p);
+      const rest = (_d = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _d.r;
+      const br = rest && Math.abs(rest.x + rest.w - w) < 1e-6 ? 0 : 1;
+      const bb = rest && Math.abs(rest.y + rest.h - 2) < 1e-6 ? 0 : 1;
       const el = document.createElement("i");
-      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + 1}px;height:${bh * m + 1}px;background:${palette[(_d = remap[p.c]) != null ? _d : p.c]};` + (p.z ? `z-index:${p.z};` : "");
+      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_e = remap[p.c]) != null ? _e : p.c]};` + (p.z ? `z-index:${p.z};` : "");
       layer.appendChild(el);
       let prev = 0;
       const frames = p.f.map((fr) => {
@@ -827,14 +830,8 @@ var InkPlayer = class {
     }
     host.appendChild(layer);
     this.layer = layer;
-    const snap = () => {
-      layer.style.transform = "";
-      const r = layer.getBoundingClientRect(), d = window.devicePixelRatio || 1;
-      layer.style.transform = `translate(${round(Math.round(r.x * d) / d - r.x)}px,${round(Math.round(r.y * d) / d - r.y)}px)`;
-    };
-    snap();
-    window.addEventListener("resize", snap);
-    this.offResize = () => window.removeEventListener("resize", snap);
+    this.cover = (_f = o.cover) != null ? _f : null;
+    if (this.cover) this.cover.style.visibility = "hidden";
   }
   time(iterationStart, iterations) {
     var _a;
@@ -874,12 +871,26 @@ var InkPlayer = class {
     for (const a of this.anims) if (a.playState === "paused") a.play();
   }
   destroy() {
-    this.offResize();
+    if (this.cover) this.cover.style.visibility = "";
     for (const a of this.anims) a.cancel();
     this.anims = [];
     this.layer.remove();
   }
 };
+function snapToPixels(el) {
+  const snap = () => {
+    el.style.transform = "";
+    const r = el.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    const dx = round(Math.round(r.x * d) / d - r.x), dy = round(Math.round(r.y * d) / d - r.y);
+    el.style.transform = dx || dy ? `translate(${dx}px,${dy}px)` : "";
+  };
+  snap();
+  window.addEventListener("resize", snap);
+  return () => {
+    window.removeEventListener("resize", snap);
+    el.style.transform = "";
+  };
+}
 function segmentFor(v, use) {
   const u = v.uses[use];
   return !u || u === "loop" ? { start: 0, span: 1 } : u;
@@ -936,6 +947,7 @@ export {
   remember,
   segEnd,
   segmentFor,
+  snapToPixels,
   startOf,
   watchVisibility
 };

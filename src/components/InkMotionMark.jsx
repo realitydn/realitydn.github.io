@@ -1,6 +1,6 @@
 /* The full ink strip, alive — the masthead's mark (Donald 10.10.26: "the
    website should have full strip"). At rest it is the plain InkMark; every
-   25–45s while it's on screen it gives one AMBIENT performance — a score
+   ~5s while it's on screen it gives a new AMBIENT performance — a score
    drawn at random from the motion lab's library (never the one this visitor
    saw last), that leaves the finished mark and lands back on it.
 
@@ -23,8 +23,8 @@ const SITE_PALETTE = {
   R: 'var(--red)', B: 'var(--blue)', Y: 'var(--yellow)', G: 'var(--green)',
   P: 'var(--pink)', A: 'var(--amber)', U: 'var(--purple)', K: '#0d0905', S: 'var(--stock,#fffbf1)',
 };
-const FIRST = [7000, 5000]; // first performance: 7–12s after the page settles
-const EVERY = [25000, 20000]; // then every 25–45s
+const FIRST = [2500, 1500]; // first performance: 2.5–4s after the page settles
+const EVERY = [4000, 2000]; // then a new one every 4–6s (Donald: ~5s)
 
 const later = ([base, spread]) => base + Math.random() * spread;
 

@@ -18,7 +18,8 @@
    single exception, and the home page is exactly that pair).
 
    Colours ride the site's theme-aware vars (--purple lifts in Night for
-   free); stock stays substrate-pinned via --stock, never theme-aware. Ink
+   free); stock is EMPTY on screen (Donald 10.10.26, overriding the canon's
+   "never transparent") — it shows the ground, cream on Day, ink on Night. Ink
    cells are LITERAL ink — on a dark ground they drop out, and that open
    silhouette IS the Night form (G2). */
 
@@ -58,7 +59,9 @@ function cellNames(form, mode, voids) {
 
 function cellColor(name, day) {
   if (name === 'void') return 'transparent';
-  if (name === 'stock') return 'var(--stock,#fffbf1)';
+  // Empty on screen (Donald 10.10.26): cream on a cream ground, ink on an
+  // ink one. The studio/print renderers keep printing it cream.
+  if (name === 'stock') return 'transparent';
   if (name === 'day') return DAY_VAR[day] || '#0d0905';
   if (name === 'ink') return '#0d0905';
   return `var(--${name})`;

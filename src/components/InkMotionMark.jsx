@@ -14,14 +14,15 @@
    the shipped HTML and the reduced state are the finished mark. The masthead
    clips its wrapper, so only scores that stay within ½ module of the strip
    are eligible (maxOverflow), drawn at whole modules at this size. `form`
-   strip-short-h (phones) draws from the scores written for any width. */
+   strip-short-h (phones) draws from the scores written for any width;
+   `form="square"` (the footer, beside the QR) from the 14 square scores. */
 
 import { useEffect, useRef } from 'react';
 import InkMark from './InkMark';
 
 const SITE_PALETTE = {
   R: 'var(--red)', B: 'var(--blue)', Y: 'var(--yellow)', G: 'var(--green)',
-  P: 'var(--pink)', A: 'var(--amber)', U: 'var(--purple)', K: '#0d0905', S: 'var(--stock,#fffbf1)',
+  P: 'var(--pink)', A: 'var(--amber)', U: 'var(--purple)', K: '#0d0905', S: 'transparent', // stock is empty on screen
 };
 const FIRST = [2500, 1500]; // first performance: 2.5–4s after the page settles
 const EVERY = [4000, 2000]; // then a new one every 4–6s (Donald: ~5s)
@@ -30,6 +31,7 @@ const later = ([base, spread]) => base + Math.random() * spread;
 
 export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }) {
   const width = form === 'strip-short-h' ? 7 : 9;
+  const square = form === 'square';
   const host = useRef(null);
   const still = useRef(null);
 
@@ -57,9 +59,11 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
         const m = await import('../lib/ink-motion.js');
         unsnap ??= m.snapToPixels(el);
         const lite = m.isLiteDevice();
-        const v = m.pick('amb', { module: modulePx, width, lite, last: m.lastSeen('amb'), maxOverflow: 0.5 });
+        // The footer square sits flush against the QR: nothing may leave it
+        // (Drop only falls, so it may). The masthead strip allows half a module.
+        const v = m.pick('amb', { module: modulePx, width, square, lite, last: m.lastSeen(square ? 'amb-square' : 'amb'), maxOverflow: square ? 0 : 0.5 });
         if (!v || !alive) return;
-        m.remember('amb', v.id);
+        m.remember(square ? 'amb-square' : 'amb', v.id);
         // The player hides/shows the static mark itself, in the same task as
         // the layer goes up/down — no React state, so no blank frame between.
         // Half-cell scores draw at whole modules here (8px: halves would be
@@ -84,7 +88,7 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
       unsnap?.();
       player?.destroy();
     };
-  }, [modulePx, width]);
+  }, [modulePx, width, square]);
 
   return (
     <span ref={host} className="relative inline-flex" aria-hidden="true">

@@ -18,7 +18,7 @@ var CELL_COLOR = {
   A: "var(--color-amber)",
   U: "var(--color-purple)",
   K: "#0d0905",
-  S: "var(--stock,#fffbf1)"
+  S: "transparent"
 };
 var E = {
   snap: "cubic-bezier(.3,0,.2,1)",
@@ -757,15 +757,16 @@ function colorAt(pieces, t, x, y) {
   });
   return hit;
 }
-function intactAt(pieces, t, w = 9) {
-  for (let qx = 0; qx < 4 * w; qx++) for (let qy = 0; qy < 8; qy++) {
-    if (colorAt(pieces, t, (qx + 0.5) / 4, (qy + 0.5) / 4) !== colAt(qx >> 2, qy >> 2)) return false;
+function intactAt(pieces, t, w = 9, h = 2, cell = colAt) {
+  for (let qx = 0; qx < 4 * w; qx++) for (let qy = 0; qy < 4 * h; qy++) {
+    if (colorAt(pieces, t, (qx + 0.5) / 4, (qy + 0.5) / 4) !== cell(qx >> 2, qy >> 2)) return false;
   }
   return true;
 }
 function overflow(v, w = 9, g) {
   if (v.clip === "strip") return { left: 0, right: 0, top: 0, bottom: 0 };
-  let x0 = 0, x1 = w, y0 = 0, y1 = 2;
+  const W = v.square ? 4 : w, H = v.square ? 4 : 2;
+  let x0 = 0, x1 = W, y0 = 0, y1 = H;
   for (const p of v.make(w, g)) for (const f of p.f) {
     if (f.r.w <= 0 || f.r.h <= 0) continue;
     x0 = Math.min(x0, f.r.x);
@@ -775,26 +776,344 @@ function overflow(v, w = 9, g) {
   }
   if (v.clip === "stage") {
     y0 = Math.max(y0, -1);
-    y1 = Math.min(y1, 3);
+    y1 = Math.min(y1, H + 1);
   }
-  return { left: -x0, right: x1 - w, top: -y0, bottom: y1 - 2 };
+  return { left: -x0, right: x1 - W, top: -y0, bottom: y1 - H };
 }
 var segEnd = (s) => {
   const e = s.start + s.span;
   return e > 1 ? e - 1 : e;
 };
 
+// src/lib/ink-motion/square.ts
+var seg2 = (start, end) => ({ start, span: end - start });
+var FULL2 = seg2(0, 1);
+var E2 = {
+  snap: "cubic-bezier(.3,0,.2,1)",
+  stamp: "cubic-bezier(.2,1.4,.45,1)",
+  io: "cubic-bezier(.65,0,.35,1)",
+  out: "cubic-bezier(.2,.8,.2,1)",
+  in: "cubic-bezier(.6,0,.9,.4)",
+  el: "cubic-bezier(.3,1.3,.5,1)",
+  step: "steps(1,end)"
+};
+var Rr2 = (x, y, w, h) => ({ x, y, w, h });
+var sc2 = (r, s) => Rr2(r.x + r.w * (1 - s) / 2, r.y + r.h * (1 - s) / 2, r.w * s, r.h * s);
+var mv2 = (r, dx, dy) => Rr2(r.x + dx, r.y + dy, r.w, r.h);
+var F2 = (t, r, e) => ({ t, r, e });
+var P2 = (c, f) => ({ c, f });
+var rng2 = (seed) => {
+  let s = seed;
+  return () => {
+    s = s + 1831565813 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+};
+var colSq = (x, y) => x < 2 && y < 2 ? "R" : y < 2 ? "B" : x < 2 ? "Y" : [["S", "U"], ["P", "A"]][x - 2][y - 2];
+var QUADS = [{ c: "R", r: Rr2(0, 0, 2, 2) }, { c: "B", r: Rr2(2, 0, 2, 2) }, { c: "Y", r: Rr2(0, 2, 2, 2) }];
+var FIELD = [{ c: "S", r: Rr2(2, 2, 1, 1) }, { c: "P", r: Rr2(3, 2, 1, 1) }, { c: "U", r: Rr2(2, 3, 1, 1) }, { c: "A", r: Rr2(3, 3, 1, 1) }];
+var CELLS2 = [...QUADS, ...FIELD];
+var gridOf = (g) => {
+  const o = [];
+  for (let x = 0; x < 4 / g; x++) for (let y = 0; y < 4 / g; y++) o.push({ c: colSq(Math.floor(x * g + 1e-9), Math.floor(y * g + 1e-9)), r: Rr2(x * g, y * g, g, g), x, y });
+  return o;
+};
+var MOD = gridOf(1);
+var ROWS = [0, 1, 2, 3].map(
+  (y) => y < 2 ? [{ c: "R", r: Rr2(0, y, 2, 1) }, { c: "B", r: Rr2(2, y, 2, 1) }] : [{ c: "Y", r: Rr2(0, y, 2, 1) }, { c: colSq(2, y), r: Rr2(2, y, 1, 1) }, { c: colSq(3, y), r: Rr2(3, y, 1, 1) }]
+);
+var ks2 = (o, l) => P2(o.c, [F2(0, o.r, E2.io), ...l.map(([t, r]) => F2(t, r != null ? r : o.r, E2.io)), F2(1, o.r)]);
+var pathPieces = (path, t0, t1, e0, e1) => {
+  const n = path.length, st = (t1 - t0) / n, se = (e1 - e0) / n;
+  return path.map(([x, y], i) => {
+    var _a, _b;
+    const pv = (_a = path[i - 1]) != null ? _a : [x - 1, y], nx = (_b = path[i + 1]) != null ? _b : [x + (x - pv[0]), y + (y - pv[1])];
+    const din = [x - pv[0], y - pv[1]], dout = [nx[0] - x, nx[1] - y];
+    const grow = din[0] > 0 ? Rr2(x, y, 0, 1) : din[0] < 0 ? Rr2(x + 1, y, 0, 1) : din[1] > 0 ? Rr2(x, y, 1, 0) : Rr2(x, y + 1, 1, 0);
+    const shrink = dout[0] > 0 ? Rr2(x + 1, y, 0, 1) : dout[0] < 0 ? Rr2(x, y, 0, 1) : dout[1] > 0 ? Rr2(x, y + 1, 1, 0) : Rr2(x, y, 1, 0);
+    const full = Rr2(x, y, 1, 1), a = t0 + i * st, b = e0 + i * se;
+    return P2(colSq(x, y), [F2(0, grow), F2(a, grow, "linear"), F2(a + st, full), F2(b, full, "linear"), F2(b + se, shrink), F2(1, shrink)]);
+  });
+};
+var HQ = ["half", "whole"];
+var SQUARES = [
+  /* S02 Quarter turn — the whole square turns a quarter at a time, piece by piece. */
+  {
+    id: 102,
+    name: "Quarter turn",
+    dur: 4e3,
+    grid: "whole",
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: () => {
+      const rot = (r) => Rr2(4 - r.y - r.h, r.x, r.h, r.w);
+      return CELLS2.map((o) => {
+        let r = o.r;
+        const f = [F2(0, r)];
+        for (let k = 0; k < 4; k++) {
+          const t = 0.06 + k * 0.22, n = rot(r);
+          f.push(F2(t, r, E2.io), F2(t + 0.15, n));
+          r = n;
+        }
+        f.push(F2(1, o.r));
+        return P2(o.c, f);
+      });
+    }
+  },
+  /* S04 Crosshair — the cross between the quadrants wanders; they resize around it. */
+  {
+    id: 104,
+    name: "Crosshair",
+    dur: 4e3,
+    grid: "whole",
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: () => {
+      const path = [[2, 2], [1, 1], [3, 1], [3, 3], [1, 3], [2, 2]];
+      const at = ([cx, cy]) => {
+        const fw = 4 - cx, fh = 4 - cy;
+        return { R: Rr2(0, 0, cx, cy), B: Rr2(cx, 0, fw, cy), Y: Rr2(0, cy, cx, fh), S: Rr2(cx, cy, fw / 2, fh / 2), P: Rr2(cx + fw / 2, cy, fw / 2, fh / 2), U: Rr2(cx, cy + fh / 2, fw / 2, fh / 2), A: Rr2(cx + fw / 2, cy + fh / 2, fw / 2, fh / 2) };
+      };
+      return CELLS2.map((o) => P2(o.c, [...path.map((p, i) => F2(i / (path.length - 1) * 0.9 + (i > 0 ? 0.05 : 0), at(p)[o.c], E2.io)), F2(1, o.r)]));
+    }
+  },
+  /* S06 Rubik — rows and columns slip a module (wrapping), then slip back. */
+  {
+    id: 106,
+    name: "Rubik",
+    dur: 4400,
+    grid: "whole",
+    square: true,
+    clip: "strip",
+    uses: { amb: FULL2, wait: "loop" },
+    make: () => {
+      const moves = [["row", 1, 1], ["col", 2, 1], ["row", 3, -1], ["col", 0, -1]];
+      const seq = [...moves, ...moves.slice().reverse().map(([a, i, d]) => [a, i, -d])];
+      const ps = MOD.map((o) => ({ c: o.c, x: o.x, y: o.y, f: [F2(0, o.r)] }));
+      const sd = 0.86 / seq.length;
+      seq.forEach(([ax, idx, d], s) => {
+        const t = 0.06 + s * sd, dur = sd * 0.7;
+        for (const p of ps) {
+          if (ax == "row" && p.y !== idx || ax == "col" && p.x !== idx) continue;
+          const fx = p.x, fy = p.y, tx = ax == "row" ? (p.x + d + 4) % 4 : p.x, ty = ax == "col" ? (p.y + d + 4) % 4 : p.y;
+          const wrap = ax == "row" ? Math.abs(tx - fx) > 1 : Math.abs(ty - fy) > 1;
+          if (!wrap) p.f.push(F2(t, Rr2(fx, fy, 1, 1), E2.io), F2(t + dur, Rr2(tx, ty, 1, 1)));
+          else {
+            const ox = ax == "row" ? fx + d : fx, oy = ax == "col" ? fy + d : fy, ix = ax == "row" ? tx - d : tx, iy = ax == "col" ? ty - d : ty;
+            p.f.push(F2(t, Rr2(fx, fy, 1, 1), E2.in), F2(t + dur / 2, Rr2(ox, oy, 1, 1), E2.step), F2(t + dur / 2 + 5e-4, Rr2(ix, iy, 1, 1), E2.out), F2(t + dur, Rr2(tx, ty, 1, 1)));
+          }
+          p.x = tx;
+          p.y = ty;
+        }
+      });
+      return ps.map((p) => P2(p.c, [...p.f, F2(1, Rr2(p.x, p.y, 1, 1))]));
+    }
+  },
+  /* S07 Gears — the outer ring and the inner ring turn against each other. */
+  {
+    id: 107,
+    name: "Gears",
+    dur: 5400,
+    grid: "whole",
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: () => {
+      const outer = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3], [2, 3], [1, 3], [0, 3], [0, 2], [0, 1]], inner = [[1, 1], [2, 1], [2, 2], [1, 2]], N = 12;
+      return MOD.map((o) => {
+        let ring = outer, dir = 1, i = outer.findIndex(([x, y]) => x == o.x && y == o.y);
+        if (i < 0) {
+          ring = inner;
+          dir = -1;
+          i = inner.findIndex(([x, y]) => x == o.x && y == o.y);
+        }
+        const L = ring.length, at = (k) => ring[((i + dir * k) % L + L) % L], f = [];
+        for (let k = 0; k < N; k++) f.push(F2(k / N, Rr2(at(k)[0], at(k)[1], 1, 1), E2.snap), F2(k / N + 0.6 / N, Rr2(at(k + 1)[0], at(k + 1)[1], 1, 1)));
+        return P2(o.c, [...f, F2(1, o.r)]);
+      });
+    }
+  },
+  /* S09 Snake — one line runs the columns down and up; erases, redraws. */
+  {
+    id: 109,
+    name: "Snake",
+    dur: 3600,
+    grid: "whole",
+    square: true,
+    uses: { amb: seg2(0.47, 1.47), wait: "loop" },
+    make: () => {
+      const p = [];
+      for (let x = 0; x < 4; x++) for (let k = 0; k < 4; k++) p.push([x, x % 2 ? 3 - k : k]);
+      return pathPieces(p, 0.04, 0.44, 0.54, 0.94);
+    }
+  },
+  /* S10 Iris — cells open from the centre outward (closes, reopens). */
+  {
+    id: 110,
+    name: "Iris",
+    dur: 3e3,
+    grid: "half",
+    grains: HQ,
+    square: true,
+    uses: { amb: seg2(0.42, 1.42), wait: "loop" },
+    make: (_w, g = 0.5) => gridOf(g).map((o) => {
+      const cx = o.r.x + g / 2, cy = o.r.y + g / 2, d = Math.min(1, Math.max(Math.abs(cx - 2), Math.abs(cy - 2)) / (2 - g / 2));
+      const ti = 0.04 + d * 0.3, te = 0.6 + (1 - d) * 0.24, z = sc2(o.r, 0);
+      return P2(o.c, [F2(0, z), F2(ti, z, E2.stamp), F2(ti + 0.08, o.r), F2(te, o.r, E2.in), F2(te + 0.06, z), F2(1, z)]);
+    })
+  },
+  /* S12 Handoff — each quadrant swells over the next, clockwise. */
+  {
+    id: 112,
+    name: "Handoff",
+    dur: 4e3,
+    grid: "whole",
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: () => CELLS2.map((o) => {
+      if (o.c == "R") return ks2(o, [[0.03], [0.13, Rr2(0, 0, 4, 2)], [0.17, Rr2(0, 0, 4, 2)], [0.27], [0.78], [0.88, Rr2(0, 0, 2, 0)], [0.92, Rr2(0, 0, 2, 0)], [0.99]]);
+      if (o.c == "B") return ks2(o, [[0.03], [0.13, Rr2(4, 0, 0, 2)], [0.17, Rr2(4, 0, 0, 2)], [0.27], [0.28], [0.38, Rr2(2, 0, 2, 4)], [0.42, Rr2(2, 0, 2, 4)], [0.52]]);
+      if (o.c == "Y") return ks2(o, [[0.53], [0.63, Rr2(0, 2, 0, 2)], [0.67, Rr2(0, 2, 0, 2)], [0.77], [0.78], [0.88, Rr2(0, 0, 2, 4)], [0.92, Rr2(0, 0, 2, 4)], [0.99]]);
+      const sx = (o.r.x - 2) / 2;
+      return ks2(o, [[0.28], [0.38, Rr2(o.r.x, 4, 1, 0)], [0.42, Rr2(o.r.x, 4, 1, 0)], [0.52], [0.53], [0.63, Rr2(sx * 4, o.r.y, 2, 1)], [0.67, Rr2(sx * 4, o.r.y, 2, 1)], [0.77]]);
+    })
+  },
+  /* S14 Blinds — module rows close top-down and reopen bottom-up. */
+  {
+    id: 114,
+    name: "Blinds",
+    dur: 2800,
+    grid: "whole",
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: () => ROWS.flatMap((row, y) => row.map((p) => {
+      const s = p.r.x / 4 * 0.08, z = Rr2(p.r.x, p.r.y + 0.5, p.r.w, 0), a = 0.08 + y * 0.05 + s, b = 0.5 + (3 - y) * 0.05 + s;
+      return P2(p.c, [F2(0, p.r), F2(a, p.r, E2.in), F2(a + 0.1, z), F2(b, z, E2.out), F2(b + 0.14, p.r), F2(1, p.r)]);
+    }))
+  },
+  /* S15 Checker — a checkerboard of cells blinks out, then the other half. */
+  {
+    id: 115,
+    name: "Checker",
+    dur: 2800,
+    grid: "half",
+    grains: HQ,
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: (_w, g = 0.5) => {
+      const n = 4 / g;
+      return gridOf(g).map((o) => {
+        const z = sc2(o.r, 0), t = ((o.x + o.y) % 2 ? 0.52 : 0.08) + (o.x + o.y) / (2 * n - 2) * 0.1;
+        return P2(o.c, [F2(0, o.r), F2(t, o.r, E2.snap), F2(t + 0.12, z), F2(t + 0.22, z, E2.stamp), F2(t + 0.36, o.r), F2(1, o.r)]);
+      });
+    }
+  },
+  /* S16 Dither — an ordered-dither screen fades it out and back in. */
+  {
+    id: 116,
+    name: "Dither",
+    dur: 3400,
+    grid: "quarter",
+    grains: ["quarter", "half", "whole"],
+    square: true,
+    uses: { amb: seg2(0, 0.9), wait: "loop" },
+    make: (_w, g = 0.25) => {
+      const B = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]], n = 4 / g;
+      return gridOf(g).map((o) => {
+        const b = B[o.y % 4][o.x % 4] / 16, d = (o.x + o.y) / (2 * n - 2) * 0.16, to = 0.06 + b * 0.18 + d, ti = 0.52 + b * 0.18 + d, z = sc2(o.r, 0);
+        return P2(o.c, [F2(0, o.r), F2(to, o.r, E2.snap), F2(to + 0.03, z), F2(ti, z, E2.snap), F2(ti + 0.03, o.r), F2(1, o.r)]);
+      });
+    }
+  },
+  /* S18 Mosaic — cells shuffle along their rows, then sort themselves out. */
+  {
+    id: 118,
+    name: "Mosaic",
+    dur: 4400,
+    grid: "half",
+    grains: HQ,
+    square: true,
+    uses: { amb: FULL2, wait: "loop" },
+    make: (_w, g = 0.5) => {
+      const n = 4 / g, rand = rng2(21), out = [];
+      for (let y = 0; y < n; y++) {
+        const xs = [...Array(n).keys()];
+        for (let i = n - 1; i > 0; i--) {
+          const k = Math.floor(rand() * (i + 1));
+          [xs[i], xs[k]] = [xs[k], xs[i]];
+        }
+        for (const o of gridOf(g).filter((c) => c.y == y)) {
+          const t = Rr2(xs[o.x] * g, o.r.y, g, g), s = o.x / (n - 1) * 0.08;
+          out.push(P2(o.c, [F2(0, o.r), F2(0.08 + s, o.r, E2.io), F2(0.3 + s, t), F2(0.56 + s, t, E2.el), F2(0.8 + s, o.r), F2(1, o.r)]));
+        }
+      }
+      return out;
+    }
+  },
+  /* S19 Sift — cells drain out of the bottom and refill from the top. */
+  {
+    id: 119,
+    name: "Sift",
+    dur: 4e3,
+    grid: "half",
+    grains: HQ,
+    square: true,
+    clip: "strip",
+    uses: { amb: FULL2, wait: "loop" },
+    make: (_w, g = 0.5) => {
+      const n = 4 / g, rand = rng2(8);
+      return gridOf(g).map((o) => {
+        const b = (n - 1 - o.y) / (n - 1) * 0.105, t = 0.04 + rand() * 0.24 + b, t2 = 0.52 + rand() * 0.24 + b, dn = mv2(o.r, 0, 5), up = mv2(o.r, 0, -5);
+        return P2(o.c, [F2(0, o.r), F2(t, o.r, E2.in), F2(t + 0.08, dn, E2.step), F2(t2 - 0.08, up, E2.in), F2(t2, o.r), F2(1, o.r)]);
+      });
+    }
+  },
+  /* S20 Drop — cells fall in one by one and bounce home (fall out, fall in). */
+  {
+    id: 120,
+    name: "Drop",
+    dur: 3200,
+    grid: "whole",
+    square: true,
+    clip: "stage",
+    clipTight: true,
+    uses: { amb: seg2(0.6, 1.6), wait: "loop" },
+    make: () => {
+      const ord = ["R", "B", "Y", "A", "S", "P", "U"];
+      return CELLS2.map((o) => {
+        const tl = 0.1 + ord.indexOf(o.c) * 0.07, up = mv2(o.r, 0, -5), dn = mv2(o.r, 0, 5);
+        return P2(o.c, [F2(0, up), F2(tl - 0.09, up, E2.in), F2(tl, o.r, E2.out), F2(tl + 0.025, mv2(o.r, 0, -0.25), E2.in), F2(tl + 0.05, o.r), F2(0.8, o.r, E2.in), F2(0.9, dn, E2.step), F2(1, up)]);
+      });
+    }
+  },
+  /* S24 Zip — module rows zip in from alternate sides (out, then in). */
+  {
+    id: 124,
+    name: "Zip",
+    dur: 3200,
+    grid: "whole",
+    square: true,
+    clip: "strip",
+    uses: { amb: seg2(0.58, 1.42), wait: "loop" },
+    make: () => ROWS.flatMap((row, y) => row.map((p) => {
+      const L = y % 2 ? 5 : -5, s = (y % 2 ? p.r.x : 3 - p.r.x) * 0.03, a = mv2(p.r, L, 0), b = mv2(p.r, -L, 0);
+      return P2(p.c, [F2(0, a), F2(0.04 + s, a, "cubic-bezier(.15,.9,.25,1)"), F2(0.3 + s, p.r), F2(0.58 + s, p.r, "cubic-bezier(.6,0,.85,.3)"), F2(0.8 + s, b, E2.step), F2(1, a)]);
+    }))
+  }
+];
+
 // src/lib/ink-motion/pick.ts
 function poolFor(use, o) {
-  return VARIANTS.filter((v) => {
+  return (o.square ? SQUARES : VARIANTS).filter((v) => {
     var _a;
     const w = (_a = o.width) != null ? _a : 9;
     if (!v.uses[use]) return false;
-    if (w !== 9 && !v.short) return false;
+    if (!o.square && w !== 9 && !v.short) return false;
     const gr = grainFor(v, o);
     if (!gr) return false;
     const g = GRAIN_SIZE[gr];
-    if (o.restStart && !intactAt(v.make(w, g), startOf(v, use), w)) return false;
+    if (o.restStart && !(o.square ? intactAt(v.make(4, g), startOf(v, use), 4, 4, colSq) : intactAt(v.make(w, g), startOf(v, use), w))) return false;
     if (o.maxOverflow != null && !v.clipTight && Object.values(overflow(v, w, g)).some((d) => d > o.maxOverflow + 1e-9)) return false;
     return true;
   });
@@ -832,7 +1151,10 @@ var APP_PALETTE = {
   A: "var(--color-amber)",
   U: "var(--color-purple)",
   K: "#0d0905",
-  S: "var(--stock,#fffbf1)"
+  /* Stock is EMPTY on screen (Donald 10.10.26: "cream on a cream background
+     and ink on an ink background") — the cell shows the ground. Print
+     renderers keep it cream: on paper the ground is the stock. */
+  S: "transparent"
 };
 function baseSize(p) {
   var _a;
@@ -858,23 +1180,31 @@ var InkPlayer = class {
     __publicField(this, "anims", []);
     __publicField(this, "dur");
     __publicField(this, "cover");
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const m = o.module;
     const palette = (_a = o.palette) != null ? _a : APP_PALETTE;
     const remap = MODE_MAP[(_b = o.mode) != null ? _b : "full"];
-    const w = (_c = o.width) != null ? _c : 9;
+    const w = variant.square ? 4 : (_c = o.width) != null ? _c : 9;
+    const h = variant.square ? 4 : 2;
     this.dur = variant.dur;
     const layer = document.createElement("span");
     layer.setAttribute("aria-hidden", "true");
     const clip = variant.clip === "strip" ? "overflow:hidden;" : variant.clip === "stage" ? `clip-path:inset(-${m}px 0 -${m}px 0);` : "";
-    layer.style.cssText = `position:absolute;left:0;top:0;width:${w * m}px;height:${2 * m}px;pointer-events:none;${clip}`;
-    for (const p of variant.make(w, GRAIN_SIZE[(_d = o.grain) != null ? _d : variant.grid])) {
+    layer.style.cssText = `position:absolute;left:0;top:0;width:${w * m}px;height:${h * m}px;pointer-events:none;${clip}`;
+    const pieces = variant.make(w, GRAIN_SIZE[(_d = o.grain) != null ? _d : variant.grid]);
+    const empty = (c) => {
+      var _a2;
+      return c != null && palette[(_a2 = remap[c]) != null ? _a2 : c] === "transparent";
+    };
+    for (const p of pieces) {
+      if (empty(p.c)) continue;
       const [bw, bh] = baseSize(p);
-      const rest = o.restAt != null ? rectAt(p, o.restAt) : (_e = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _e.r;
-      const br = rest && Math.abs(rest.x + rest.w - w) < 1e-6 ? 0 : 1;
-      const bb = rest && Math.abs(rest.y + rest.h - 2) < 1e-6 ? 0 : 1;
+      const at = (_e = o.restAt) != null ? _e : 0;
+      const rest = o.restAt != null ? rectAt(p, o.restAt) : (_f = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _f.r;
+      const br = !rest || Math.abs(rest.x + rest.w - w) < 1e-6 || empty(colorAt(pieces, at, rest.x + rest.w + 0.01, rest.y + rest.h / 2)) ? 0 : 1;
+      const bb = !rest || Math.abs(rest.y + rest.h - h) < 1e-6 || empty(colorAt(pieces, at, rest.x + rest.w / 2, rest.y + rest.h + 0.01)) ? 0 : 1;
       const el = document.createElement("i");
-      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_f = remap[p.c]) != null ? _f : p.c]};` + (p.z ? `z-index:${p.z};` : "");
+      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_g = remap[p.c]) != null ? _g : p.c]};` + (p.z ? `z-index:${p.z};` : "");
       layer.appendChild(el);
       let prev = 0;
       const frames = p.f.map((fr) => {
@@ -893,7 +1223,7 @@ var InkPlayer = class {
     }
     host.appendChild(layer);
     this.layer = layer;
-    this.cover = (_g = o.cover) != null ? _g : null;
+    this.cover = (_h = o.cover) != null ? _h : null;
     if (this.cover) this.cover.style.visibility = "hidden";
   }
   time(iterationStart, iterations) {
@@ -997,8 +1327,10 @@ export {
   GRAIN_SIZE,
   InkPlayer,
   MIN_MODULE,
+  SQUARES,
   VARIANTS,
   colAt,
+  colSq,
   colorAt,
   grainFor,
   intactAt,

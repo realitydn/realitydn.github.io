@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icons } from './Icons';
 import Logo from './Logo';
-import InkMark from './InkMark';
+import InkMotionMark from './InkMotionMark';
 import { URLS, STR } from '../data/translations';
 
 export default function Footer({ lang }) {
@@ -108,7 +108,7 @@ export default function Footer({ lang }) {
                 </div>
               </div>
               <div className="flex items-center">
-                <InkMark form="square" mode="full" module={24} idle="slow" />
+                <InkMotionMark form="square" module={24} />
                 <div className="tkt qr-tkt w-24 h-24 flex items-center justify-center">
                   <img
                     src="/images/whatsapp-qr.png"

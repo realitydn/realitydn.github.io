@@ -1,6 +1,6 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — render · the WhatsApp card
-   1:1, two balanced columns (or the grid), the tightest channel.
+   4:5 (1:1 clipped dense weeks), two balanced columns (or the grid).
    ============================================================ */
 import { themeTokens, ThemeCtx, channelById, lookOf, GEOM, gridGapFor } from './render-config.jsx';
 import { resolveFit, bestSplit, useOverflowBump, useFitReport, applyBump } from './render-fit.jsx';
@@ -50,7 +50,7 @@ function WACard({ doc, onFitReport }){
               </div>}
         </div>
         {look!=='grid' &&
-          /* The 1:1 card is the tightest channel we have, so its code is the
+          /* The card is the tightest channel we have, so its code is the
              smallest one that still scans reliably at arm's length, and it
              drops off entirely at the compact density rather than squeezing
              the two columns above it. */

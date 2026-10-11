@@ -73,7 +73,7 @@ const PALETTES = [
 const CHANNELS = [
   { id:'feed',    label:'IG / FB',  sub:'4:5 FEED',  w:1080, h:1350, kind:'carousel', px:2 },
   { id:'stories', label:'Stories',  sub:'9:16',      w:1080, h:1920, kind:'carousel', px:2, safeTop:140, safeBottom:160, noArrows:true },
-  { id:'wa',      label:'WhatsApp', sub:'1:1 CARD',  w:1080, h:1080, kind:'single',   px:2 },
+  { id:'wa',      label:'WhatsApp', sub:'4:5 CARD',  w:1080, h:1350, kind:'single',   px:2 },
   { id:'print',   label:'Print',    sub:'A4 PDF',    w:1123, h:794,  kind:'print',    px:3, printish:true },
   { id:'daily',   label:'Daily',    sub:'PER DAY',   w:1080, h:1920, kind:'daily',    px:2 },
 ];

@@ -423,7 +423,13 @@ const DEFAULTS = {
              dragDir:'down', dragPos:0.6, dragSpeed:0.22, dragWobble:0.4, dragFade:0.35,
              echoMode:'trail', echoCount:4, echoStep:36, echoAngle:0, echoBlend:'lighten', echoFade:0.78, echoScale:0.76, echoBorder:5, echoX:0, echoY:0,
              mirrorMode:'book', mirrorFlip:false, mirrorX:0, mirrorY:0,
-             panelCount:3, panelDir:'across', panelZoom:1.8, panelGutter:6, panelX:0, panelY:0,
+             panelCount:3, panelDir:'across', panelZoom:1.8, panelGutter:6, panelX:0, panelY:0,
+             /* 13.10.26 — where and how much, and each move's own additions; all off */
+             composeMix:1, composeRegion:'none', cmpRegX:0, cmpRegY:0, cmpRegSize:0.6, cmpRegSoft:0.5, cmpRegAngle:0, cmpRegInvert:false,
+             sliceUneven:0, sliceSpread:0, sliceFrom:0, sliceTo:1, sliceWave:0, sliceWaveLen:120,
+             shardMissing:0, shardFall:0, shardZoom:0, shardCrackInk:null,
+             dragTilt:0, dragStutter:0, dragSlip:0, dragEnd:1,
+             echoGrow:0, echoTurn:0, echoSpin:0, echoShape:'rect',
              src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
   /* Partner logo — same engine as a photo but untreated by default and with a
      transparent ground (PNG-24 alpha is kept), contain-fit so the whole mark

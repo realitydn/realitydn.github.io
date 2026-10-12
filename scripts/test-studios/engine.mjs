@@ -58,6 +58,9 @@ export function buildCases(treatments, moves = []) {
   add('dial-offregister-sep', 'offregister', { ink: 'blue', paper: 'day', ...TP.offregister, sep: true });
   add('dial-blend-multiply', 'halftone', { ink: 'pink', paper: 'day', ...TP.halftone, treatBlend: 'multiply', treatStrength: 0.85 });
   add('dial-blur-typed', 'duotone', { ink: 'pink', paper: 'day', ...TP.duotone, blurUnder: 4, blurUnderType: 'motion', blurUnderAngle: 30, blurOver: 2 });
+  add('dial-region-centre', 'halftone', { ink: 'pink', paper: 'day', ...TP.halftone, treatRegion: 'radial', regionX: 0.1, regionY: -0.15, regionSize: 0.5 });
+  add('dial-region-band', 'duotone', { ink: 'blue', paper: 'day', ...TP.duotone, treatRegion: 'band', regionAngle: 30, regionSoft: 0.3, regionInvert: true });
+  add('dial-region-sweep', 'posterize', { ink: 'pink', paper: 'night', ...TP.posterize, treatRegion: 'linear', regionAngle: -60 });
 
   // Recompose: every move at its defaults under one treatment (seeded, so a
   // Shuffle that stops repeating fails here), then the variants each move
@@ -74,6 +77,32 @@ export function buildCases(treatments, moves = []) {
   add('compose-grid-tiles', 'duotone', cmp({ compose: 'tiles', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
   add('compose-grid-panels', 'duotone', cmp({ compose: 'panels', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
   add('compose-under-separation', 'separation', sep('night', 'pink', { compose: 'shards', composeSeed: 2 }));
+
+  // Recompose features, 13.10.26 — each one on its own, then a few together.
+  add('slice-uneven', 'duotone', cmp({ compose: 'slice', sliceUneven: 0.8 }));
+  add('slice-spread', 'duotone', cmp({ compose: 'slice', sliceAngle: 90, sliceCount: 8, sliceSpread: 10 }));
+  add('slice-spread-overlap', 'duotone', cmp({ compose: 'slice', sliceSpread: -6 }));
+  add('slice-band', 'duotone', cmp({ compose: 'slice', sliceFrom: 0.3, sliceTo: 0.65, sliceAngle: 15 }));
+  add('slice-wave', 'duotone', cmp({ compose: 'slice', sliceWave: 12, sliceWaveLen: 90, sliceGap: 2 }));
+  add('slice-uneven-snapped', 'duotone', cmp({ compose: 'slice', sliceUneven: 0.6, composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
+  add('shards-missing', 'duotone', cmp({ compose: 'shards', shardMissing: 0.3, composeGap: 'ink' }));
+  add('shards-fall', 'duotone', cmp({ compose: 'shards', shardFall: 30 }));
+  add('shards-zoom', 'duotone', cmp({ compose: 'shards', shardZoom: 0.3, shardCrack: 0 }));
+  add('shards-crack-ink', 'duotone', cmp({ compose: 'shards', shardCrackInk: 'yellow', shardCrack: 2.5 }));
+  add('drag-tilt', 'duotone', cmp({ compose: 'drag', dragTilt: 25, dragPos: 0.4 }));
+  add('drag-stutter', 'duotone', cmp({ compose: 'drag', dragStutter: 0.7 }));
+  add('drag-slip', 'duotone', cmp({ compose: 'drag', dragSlip: 0.8, dragSpeed: 0.5 }));
+  add('drag-band', 'duotone', cmp({ compose: 'drag', dragDir: 'right', dragPos: 0.3, dragEnd: 0.6 }));
+  add('echo-grow', 'duotone', cmp({ compose: 'echo', echoGrow: 0.12, echoStep: 20 }));
+  add('echo-turn', 'duotone', cmp({ compose: 'echo', echoTurn: 12, echoCount: 6 }));
+  add('echo-tunnel-spin', 'duotone', cmp({ compose: 'echo', echoMode: 'tunnel', echoSpin: 8 }));
+  add('echo-tunnel-arch', 'duotone', cmp({ compose: 'echo', echoMode: 'tunnel', echoShape: 'arch', echoCount: 5 }));
+  add('echo-tunnel-diamond', 'duotone', cmp({ compose: 'echo', echoMode: 'tunnel', echoShape: 'diamond', echoSpin: 4 }));
+  add('compose-region-centre', 'duotone', cmp({ compose: 'tiles', composeRegion: 'radial', cmpRegSize: 0.45 }));
+  add('compose-region-sweep', 'duotone', cmp({ compose: 'slice', composeRegion: 'linear', cmpRegAngle: 90, cmpRegInvert: true }));
+  add('compose-mix', 'duotone', cmp({ compose: 'mirror', composeMix: 0.45 }));
+  add('shards-crack-ink-separation', 'separation', sep('day', 'blue', { compose: 'shards', shardCrackInk: 'pink', shardCrack: 2, composeMix: 0.8 }));
+
   // Linework: the line plate over other prints — each detector, an ink, the
   // fade back to paper, a Recompose move the lines must follow, and a mis-fed
   // run the plate must miss register with.

@@ -1360,6 +1360,27 @@
      the treatment, before the finish stack — grain, blur and the press
      artifacts still print over the blended result.
      ============================================================ */
+  /* A REGION's weight per pixel (0..1): a disc about a point ('radial'), a
+     stripe through it ('band'), or a sweep across the frame ('linear'),
+     feathered by `soft`, flipped by `inv`. Coordinates are fractions of the
+     frame from its centre, so a region reads the same at every size. Shared
+     by How the ink sits (where the print shows) and Recompose (where the
+     move happens). */
+  function regionWeights(w,h,kind,rx,ry,rsize,rsoft,rangle,rinv){
+    const rw=new Float32Array(w*h);
+    const rcx=(w/2)*(1+(rx||0)), rcy=(h/2)*(1+(ry||0));
+    const halfDiag=Math.hypot(w,h)/2, soft=Math.max(0,Math.min(1,rsoft!=null?rsoft:0.5));
+    const size=rsize!=null?rsize:0.6, rad=((rangle||0)*Math.PI)/180;
+    const dirX=Math.cos(rad), dirY=Math.sin(rad), inv=!!rinv;
+    for(let y=0,p=0;y<h;y++){ for(let x=0;x<w;x++,p++){
+      const dx=x+0.5-rcx, dy=y+0.5-rcy; let wgt;
+      if(kind==='radial'){ const r=Math.max(1,size*halfDiag); wgt=1-smooth(r*(1-soft), r, Math.hypot(dx,dy)); }
+      else if(kind==='band'){ const half=Math.max(1,size*(Math.min(w,h)/2)); const dist=Math.abs(dx*-dirY+dy*dirX); wgt=1-smooth(half*(1-soft), half, dist); }
+      else { const sd=dx*dirX+dy*dirY; const fz=Math.max(1,soft*halfDiag); wgt=1-smooth(-fz, fz, sd); }
+      rw[p]= inv? 1-wgt : wgt;
+    } }
+    return rw;
+  }
   function blendThrough(cv,o){
     const s=o.treatStrength!=null?o.treatStrength:1, where=o.treatWhere||'all';
     const mode=o.treatBlend||'normal', comp=!!o.compOrig;
@@ -1377,21 +1398,9 @@
        is open the graded photograph shows. Coordinates are fractions of the
        frame from its centre so the same region reads the same at every size.
        Ported from the app's Darkroom (PhotoEdit.region). */
-    let rw=null;
-    if(regionKind!=='none'){
-      rw=new Float32Array(w*h);
-      const rcx=(w/2)*(1+(o.regionX||0)), rcy=(h/2)*(1+(o.regionY||0));
-      const halfDiag=Math.hypot(w,h)/2, soft=Math.max(0,Math.min(1,o.regionSoft!=null?o.regionSoft:0.5));
-      const size=o.regionSize!=null?o.regionSize:0.6, rad=((o.regionAngle||0)*Math.PI)/180;
-      const dirX=Math.cos(rad), dirY=Math.sin(rad), inv=!!o.regionInvert;
-      for(let y=0,p=0;y<h;y++){ for(let x=0;x<w;x++,p++){
-        const dx=x+0.5-rcx, dy=y+0.5-rcy; let wgt;
-        if(regionKind==='radial'){ const r=Math.max(1,size*halfDiag); wgt=1-smooth(r*(1-soft), r, Math.hypot(dx,dy)); }
-        else if(regionKind==='band'){ const half=Math.max(1,size*(Math.min(w,h)/2)); const dist=Math.abs(dx*-dirY+dy*dirX); wgt=1-smooth(half*(1-soft), half, dist); }
-        else { const sd=dx*dirX+dy*dirY; const fz=Math.max(1,soft*halfDiag); wgt=1-smooth(-fz, fz, sd); }
-        rw[p]= inv? 1-wgt : wgt;
-      } }
-    }
+    const rw = regionKind!=='none'
+      ? regionWeights(w,h,regionKind,o.regionX,o.regionY,o.regionSize,o.regionSoft,o.regionAngle,o.regionInvert)
+      : null;
     const base=document.createElement('canvas'); base.width=w; base.height=h;
     /* the photo showing THROUGH the print — same framing, second exposure and
        soft focus the press saw, on its own grade when comp is on */
@@ -1802,7 +1811,54 @@
     return mulberry32(0xC0FFEE+((o.composeSeed|0)*7919)+salt+(i+64)*374761)()*2-1;
   }
 
+  /* SLICE. The flat path below is the move as it shipped (28.09.26), byte for
+     byte; the features added 13.10.26 run in their own path and only when one
+     is on:
+       sliceUneven 0..1  — seeded strip widths, a hand-cut sheet (S1)
+       sliceSpread px    — strips part from the frame's centre across the cut,
+                           opening gaps (or overlapping, negative) (S2)
+       sliceFrom/To 0..1 — only the band between two lines moves (S3)
+       sliceWave px, sliceWaveLen px — curved cuts (S4) */
   function cmpSlice(src,o){
+    const uneven=Math.max(0,Math.min(1,o.sliceUneven||0)), spread=o.sliceSpread||0, wave=o.sliceWave||0;
+    const from=o.sliceFrom!=null?o.sliceFrom:0, to=o.sliceTo!=null?o.sliceTo:1;
+    if(!uneven && !spread && !wave && from<=0 && to>=1) return cmpSliceFlat(src,o);
+    const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
+    const n=Math.max(2,(o.sliceCount|0)||12), amt=(o.sliceShift!=null?o.sliceShift:40)*K, gap=(o.sliceGap||0)*K;
+    const deg=o.sliceAngle||0, a=deg*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a);
+    const ext=Math.abs(sa)*w+Math.abs(ca)*h, sw=snapLen(ext/n,G), cnt=Math.max(2,Math.round(ext/sw));
+    const along = G && Math.abs(deg)<0.5 ? 'y' : G && Math.abs(Math.abs(deg)-90)<0.5 ? 'x' : null;
+    const pat=o.slicePattern||'random', cx=w/2, cy=h/2;
+    const sp=spread*K, wv=wave*K, wl=Math.max(20,o.sliceWaveLen!=null?o.sliceWaveLen:120)*K, ph=cmpRnd(o,61)()*Math.PI*2;
+    /* strip edges along t (strip 0 starts at t=0, as in the flat path), wide
+       enough to cover the frame however far the spread and the wave reach */
+    const tLo = along==='y' ? -G.oy : along==='x' ? -G.ox : 0, tSpan = along==='y' ? h : along==='x' ? w : ext;
+    const reach = Math.abs(sp)*(cnt+4) + Math.abs(wv) + 2*sw;
+    const width = (i)=>{ let wi=sw*(1+uneven*0.85*cmpPattern('random',i,cnt,o,71)); if(G) wi=Math.max(1,Math.round(wi/G.step))*G.step; return Math.max(1,wi); };
+    const B=[], I=[];
+    let t=0, i=0; while(t>tLo-reach){ i--; t-=width(i); }
+    while(t<tLo+tSpan+reach){ B.push(t); I.push(i); t+=width(i); i++; }
+    B.push(t);
+    const m=I.length;
+    /* the spread fans the strips out from whichever one holds the frame's centre */
+    const tc=tLo+tSpan/2; let c=0; while(c<m-1 && B[c+1]<=tc) c++;
+    const S=new Float64Array(m); for(let k=0;k<m;k++) S[k]=B[k]+(k-c)*sp;
+    return cmpRemap(src,(x,y,xy)=>{
+      const dx=x-cx, dy=y-cy, u=ca*dx+sa*dy, v=-sa*dx+ca*dy;
+      const tb=(v+ext/2)/ext;
+      if(tb<from || tb>to){ xy[0]=x; xy[1]=y; return true; }
+      let tt = along==='y' ? (y-G.oy) : along==='x' ? (x-G.ox) : (v+ext/2);
+      if(wv) tt+=wv*Math.sin(u/wl*Math.PI*2+ph);
+      let lo=0, hi=m-1; if(tt<S[0]) return false;
+      while(lo<hi){ const mid=(lo+hi+1)>>1; if(S[mid]<=tt) lo=mid; else hi=mid-1; }
+      const k=lo, wk=B[k+1]-B[k], f=tt-S[k];
+      if(f>=wk) return false;                                   // between parted strips
+      if(gap>0 && (f<gap/2 || wk-f<gap/2)) return false;
+      const u2=u-cmpPattern(pat,I[k],cnt,o,11)*amt, v2=v-(k-c)*sp;
+      xy[0]=ca*u2-sa*v2+cx; xy[1]=sa*u2+ca*v2+cy; return true;
+    }, cmpGap(o));
+  }
+  function cmpSliceFlat(src,o){
     const w=src.width,h=src.height,K=w/520, G=cmpGrid(o,K);
     const n=Math.max(2,(o.sliceCount|0)||12), amt=(o.sliceShift!=null?o.sliceShift:40)*K, gap=(o.sliceGap||0)*K;
     const deg=o.sliceAngle||0, a=deg*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a);
@@ -1898,6 +1954,36 @@
       const t=(rnd()*2-1)*turn;
       S.push({ x:px, y:py, ox:dx/dd*p+(rnd()*2-1)*push*0.3, oy:dy/dd*p+(rnd()*2-1)*push*0.3, c:Math.cos(-t), s:Math.sin(-t) });
     }
+    /* 13.10.26 — off by default, and drawn from their OWN dice so the pieces
+       above land exactly where they always did:
+         shardMissing 0..1  — that share of pieces gone, the gap showing (H1)
+         shardFall px       — pieces slide down, further toward the bottom (H2)
+         shardZoom 0..0.4   — each piece magnifies, like thick glass (H4)
+         shardCrackInk key  — the cracks print as a line in that ink, laid
+                              over the print after the press (H3; the mask
+                              rides on the result as _inkMask, see composeInk) */
+    const missing=Math.max(0,Math.min(1,o.shardMissing||0)), fall=(o.shardFall||0)*K, zoom=Math.max(0,o.shardZoom||0);
+    const inkCracks = !!(o.shardCrackInk && PAL[o.shardCrackInk]) && crack>0;
+    if(missing || fall || zoom || inkCracks){
+      const r2=cmpRnd(o,59);
+      for(let k=0;k<n;k++){
+        const s=S[k], a1=r2(), a2=r2(), a3=r2();
+        s.gone = a1<missing;
+        s.oy += fall*(0.25+0.75*Math.max(0,Math.min(1,s.y/h)))*(0.6+0.4*a2);
+        s.z = 1+zoom*(0.5+0.5*a3);
+      }
+      const mask = inkCracks ? new Uint8Array(w*h) : null;
+      const out = cmpRemap(src,(x,y,xy)=>{
+        let b=0,d1=1e18,d2=1e18;
+        for(let k=0;k<n;k++){ const s=S[k], ex=x-s.x, ey=y-s.y, d=ex*ex+ey*ey; if(d<d1){ d2=d1; d1=d; b=k; } else if(d<d2) d2=d; }
+        if(crack>0 && Math.sqrt(d2)-Math.sqrt(d1)<crack){ if(mask) mask[(y|0)*w+(x|0)]=1; return false; }
+        const s=S[b]; if(s.gone) return false;
+        const rx=(x-s.x-s.ox)/s.z, ry=(y-s.y-s.oy)/s.z;
+        xy[0]=s.x+rx*s.c-ry*s.s; xy[1]=s.y+rx*s.s+ry*s.c; return true;
+      }, cmpGap(o));
+      if(mask){ const fm=new Float32Array(w*h); for(let p=0;p<fm.length;p++) fm[p]=mask[p]; out._inkMask=fm; }
+      return out;
+    }
     return cmpRemap(src,(x,y,xy)=>{
       let b=0,d1=1e18,d2=1e18;
       for(let k=0;k<n;k++){ const s=S[k], ex=x-s.x, ey=y-s.y, d=ex*ex+ey*ey; if(d<d1){ d2=d1; d1=d; b=k; } else if(d<d2) d2=d; }
@@ -1909,7 +1995,74 @@
   /* the scanner drag: from the drag line on, each row reads further back up
      the original (slow drag = streaks, fast = a stretched copy), the hand
      wobbles, and the exposure thins toward the end of the pull */
+  /* DRAG, 13.10.26 additions (the flat path below is the move as shipped):
+       dragTilt deg     — tilts the direction off its chip, so any angle (D1)
+       dragStutter 0..1 — the head stops and restarts: held rows, hard bands (D2)
+       dragSlip 0..1    — red, green and blue drag at different speeds (D3)
+       dragEnd 0..1     — the drag stops at a second line; beyond it the photo
+                          is untouched (D4)
+     Positions are fractions of the photo's extent ALONG the drag, so the
+     start and end lines sit where the canvas draws them at any tilt. */
   function cmpDrag(src,o){
+    const tilt=o.dragTilt||0, stutter=Math.max(0,Math.min(1,o.dragStutter||0)), slip=Math.max(0,Math.min(1,o.dragSlip||0));
+    const pos=o.dragPos!=null?o.dragPos:0.6, end=o.dragEnd!=null?o.dragEnd:1;
+    if(!tilt && !stutter && !slip && end>=1) return cmpDragFlat(src,o);
+    const w=src.width,h=src.height, dir=o.dragDir||'down';
+    const rot0 = dir==='down'?0 : dir==='up'?180 : dir==='right'?90 : -90;
+    const r=(rot0+tilt)*Math.PI/180, cr=Math.abs(Math.cos(r)), sr=Math.abs(Math.sin(r));
+    const W=Math.max(1,Math.round(cr*w+sr*h)), Hh=Math.max(1,Math.round(sr*w+cr*h)), K=((rot0%180===0)?w:h)/520;
+    /* the photo turned so the drag runs down the sheet. At a tilt the turned
+       photo leaves empty corners, so a blown-up copy sits under it — a row
+       dragged across a corner then carries picture, never a hole. */
+    const a=cmpMk(W,Hh), ax=a.getContext('2d');
+    ax.translate(W/2,Hh/2); ax.rotate(r);
+    if(tilt){ const g=(W+Hh)/Math.min(w,h); ax.drawImage(src,-w*g/2,-h*g/2,w*g,h*g); }
+    ax.drawImage(src,-w/2,-h/2);
+    ax.setTransform(1,0,0,1,0,0);
+    const y0=Math.round(Hh*Math.max(0,Math.min(1,pos))), y1=Math.max(y0+1,Math.round(Hh*Math.max(pos+0.02,Math.min(1,end))));
+    const speed=o.dragSpeed!=null?o.dragSpeed:0.22, wob=(o.dragWobble!=null?o.dragWobble:0.4)*7*K;
+    const seed=(o.composeSeed|0)*131;
+    const nz=valueNoise(40, Math.ceil(Hh/K)+40, 30, 0xD2A6+seed), nz2=valueNoise(40, Math.ceil(Hh/K)+40, 55, 0x7A11+seed);
+    /* the stutter: runs and holds of 6–40 design px; a hold stops the read
+       head, a restart jolts the sheet sideways */
+    const hold=new Uint8Array(Hh), jolt=new Float32Array(Hh);
+    if(stutter){
+      const rs=cmpRnd(o,67); let y=y0, j=0;
+      while(y<y1){
+        const len=Math.max(1,Math.round((6+rs()*34)*K)), held=rs()<stutter*0.7; j=(rs()*2-1)*wob*2.5*stutter;
+        for(let q=y;q<Math.min(y1,y+len);q++){ hold[q]=held?1:0; jolt[q]=j; }
+        y+=len;
+      }
+    }
+    const pass=(mul)=>{
+      const b=cmpMk(W,Hh), bx=b.getContext('2d'); bx.drawImage(a,0,0);
+      let sy=y0;
+      for(let y=y0;y<y1;y++){
+        const dy=y/K;
+        if(!hold[y]){ sy+=speed*mul*(0.15+1.1*nz2(3,dy)); if(sy>Hh-1) sy=Hh-1; }
+        bx.drawImage(a, 0, Math.floor(sy), W, 1, (nz(5,dy)-0.5)*2*wob+jolt[y], y, W, 1);
+      }
+      return b;
+    };
+    let b;
+    if(slip){
+      /* each channel its own pass at its own speed, rejoined */
+      const P=[pass(1-0.6*slip), pass(1), pass(1+0.6*slip)].map(c=>cmpCtx(c).getImageData(0,0,W,Hh).data);
+      b=cmpMk(W,Hh); const bx=cmpCtx(b), im=bx.createImageData(W,Hh), d=im.data;
+      for(let i=0;i<d.length;i+=4){ d[i]=P[0][i]; d[i+1]=P[1][i+1]; d[i+2]=P[2][i+2]; d[i+3]=Math.max(P[0][i+3],P[1][i+3],P[2][i+3]); }
+      bx.putImageData(im,0,0);
+    } else b=pass(1);
+    const bx=b.getContext('2d');
+    const fade=o.dragFade!=null?o.dragFade:0.35;
+    if(fade>0){
+      const g=bx.createLinearGradient(0,y0,0,y1); g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(1,'#ffffff');
+      bx.globalAlpha=Math.min(1,fade); bx.fillStyle=g; bx.fillRect(0,y0,W,y1-y0); bx.globalAlpha=1;
+    }
+    const dst=cmpMk(w,h), dx=dst.getContext('2d');
+    dx.translate(w/2,h/2); dx.rotate(-r); dx.drawImage(b,-W/2,-Hh/2);
+    return dst;
+  }
+  function cmpDragFlat(src,o){
     const w=src.width,h=src.height, dir=o.dragDir||'down';
     const rot = dir==='down'?0 : dir==='up'?180 : dir==='right'?90 : -90;
     const W=(rot%180===0)?w:h, Hh=(rot%180===0)?h:w, K=W/520;
@@ -1935,11 +2088,53 @@
     dx.translate(w/2,h/2); dx.rotate(-rot*Math.PI/180); dx.drawImage(b,-W/2,-Hh/2);
     return dst;
   }
+  /* a tunnel frame's outline, bw×bh about the origin: the photo's own
+     rectangle, an oval, an arch (a semicircle on a rectangle) or a diamond */
+  function echoShapePath(x,shape,bw,bh){
+    x.beginPath();
+    if(shape==='circle') x.ellipse(0,0,bw/2,bh/2,0,0,Math.PI*2);
+    else if(shape==='diamond'){ x.moveTo(0,-bh/2); x.lineTo(bw/2,0); x.lineTo(0,bh/2); x.lineTo(-bw/2,0); x.closePath(); }
+    else if(shape==='arch'){ const r=Math.min(bw/2,bh/2); x.moveTo(-bw/2,bh/2); x.lineTo(-bw/2,-bh/2+r); x.ellipse(0,-bh/2+r,bw/2,r,0,Math.PI,0); x.lineTo(bw/2,bh/2); x.closePath(); }
+    else x.rect(-bw/2,-bh/2,bw,bh);
+  }
   function cmpEcho(src,o){
     const w=src.width,h=src.height,K=w/520;
     const n=Math.max(2,(o.echoCount|0)||4), a=(o.echoAngle||0)*Math.PI/180, step=(o.echoStep!=null?o.echoStep:36)*K;
     const dst=cmpMk(w,h), x=dst.getContext('2d');
     x.drawImage(src,0,0);
+    /* 13.10.26 additions, each off by default (the original draws below stay
+       byte for byte): echoGrow — each trail copy scaled by (1+grow)^k (E1);
+       echoTurn — each trail copy turned k×turn degrees (E2); echoSpin — each
+       tunnel step turned k×spin degrees (E3); echoShape — the tunnel's
+       frames as an oval, an arch or a diamond instead of the photo's
+       rectangle (E4). */
+    const grow=o.echoGrow||0, turn=(o.echoTurn||0)*Math.PI/180, spin=(o.echoSpin||0)*Math.PI/180, shape=o.echoShape||'rect';
+    if(o.echoMode==='tunnel' && (spin || shape!=='rect')){
+      const sStep=o.echoScale!=null?o.echoScale:0.76, border=(o.echoBorder!=null?o.echoBorder:5)*K;
+      const cx=w*(0.5+(o.echoX||0)), cy=h*(0.5+(o.echoY||0)), g=cmpGap(o);
+      x.fillStyle='rgb('+g[0]+','+g[1]+','+g[2]+')';
+      for(let k=1;k<n;k++){
+        const s=Math.pow(sStep,k), bw=w*s, bh=h*s, mx=cx-cx*s+bw/2, my=cy-cy*s+bh/2;
+        x.save(); x.translate(mx,my); if(spin) x.rotate(spin*k);
+        echoShapePath(x,shape,bw+border*2,bh+border*2); x.fill();
+        echoShapePath(x,shape,bw,bh); x.clip();
+        x.drawImage(src,-bw/2,-bh/2,bw,bh);
+        x.restore();
+      }
+      return dst;
+    }
+    if(o.echoMode!=='tunnel' && (grow || turn)){
+      x.globalCompositeOperation = o.echoBlend==='darken' ? 'darken' : 'lighten';
+      const fade=o.echoFade!=null?o.echoFade:0.78;
+      for(let k=n-1;k>=1;k--){
+        x.globalAlpha=Math.pow(fade,k);
+        const s=Math.max(0.05,Math.pow(1+grow,k));
+        x.save(); x.translate(w/2-Math.cos(a)*step*k, h/2-Math.sin(a)*step*k); x.rotate(turn*k); x.scale(s,s);
+        x.drawImage(src,-w/2,-h/2); x.restore();
+      }
+      x.globalAlpha=1; x.globalCompositeOperation='source-over';
+      return dst;
+    }
     if(o.echoMode==='tunnel'){
       const sStep=o.echoScale!=null?o.echoScale:0.76, border=(o.echoBorder!=null?o.echoBorder:5)*K;
       const cx=w*(0.5+(o.echoX||0)), cy=h*(0.5+(o.echoY||0)), g=cmpGap(o);
@@ -2000,8 +2195,40 @@
       drawCoverRaw(base.getContext('2d'),w,h,fit);
       out=COMPOSE_MOVES[o.compose](base,o);
     }
+    /* where and how much (13.10.26): composeRegion keeps the move to a disc,
+       a band or a sweep of the frame (X1, the How-the-ink-sits region
+       grammar); composeMix lays the moved photo back over the original at
+       that strength (X2). Both off = the move as it was. */
+    const mix=o.composeMix!=null?Math.max(0,Math.min(1,o.composeMix)):1, reg=o.composeRegion||'none';
+    if(mix<1 || reg!=='none') out=cmpBlendBack(base,out,mix,
+      reg!=='none' ? regionWeights(w,h,reg,o.cmpRegX,o.cmpRegY,o.cmpRegSize,o.cmpRegSoft,o.cmpRegAngle,o.cmpRegInvert) : null);
     COMPOSE_CACHE.set(key,out);
     return out;
+  }
+  /* the moved photo laid back over the original, per pixel at mix × region */
+  function cmpBlendBack(base,moved,mix,rw){
+    const w=base.width,h=base.height;
+    const A=cmpCtx(base).getImageData(0,0,w,h).data, M=cmpCtx(moved).getImageData(0,0,w,h).data;
+    const dst=cmpMk(w,h), dx=cmpCtx(dst), out=dx.createImageData(w,h), d=out.data;
+    const im=moved._inkMask, fm=im ? new Float32Array(w*h) : null;
+    for(let p=0,i=0;p<w*h;p++,i+=4){
+      const t=mix*(rw?rw[p]:1), u=1-t;
+      d[i]=M[i]*t+A[i]*u; d[i+1]=M[i+1]*t+A[i+1]*u; d[i+2]=M[i+2]*t+A[i+2]*u; d[i+3]=M[i+3]*t+A[i+3]*u;
+      if(fm) fm[p]=im[p]*t;
+    }
+    dx.putImageData(out,0,0);
+    if(fm) dst._inkMask=fm;
+    return dst;
+  }
+  /* a move's own ink (Shards' crack ink): its mask, at this canvas's size,
+     printed over the finished print like the line plate */
+  function composeInk(cv,o){
+    const key=COMPOSE && COMPOSE.shardCrackInk; if(!key || !PAL[key] || COMPOSE.compose!=='shards' || !SRC) return;
+    const w=cv.width,h=cv.height, m=composedCover(w,h)._inkMask; if(!m) return;
+    const c=inkRGB(key), cx=cv.getContext('2d',{willReadFrequently:true}), im=cx.getImageData(0,0,w,h), d=im.data;
+    for(let p=0,i=0;p<m.length;p++,i+=4){ const a=m[p]; if(!a) continue;
+      d[i]+= (c[0]-d[i])*a; d[i+1]+= (c[1]-d[i+1])*a; d[i+2]+= (c[2]-d[i+2])*a; }
+    cx.putImageData(im,0,0);
   }
 
   const RENDER_DEFAULTS = {
@@ -2069,6 +2296,12 @@
     /* recompose — 'none' skips the stage entirely, so a photo without a move
        reads exactly as it always has */
     compose:'none', composeSeed:1, composeGap:'paper', composeGrid:null,
+    /* 13.10.26 — every one off by default (see each move) */
+    composeMix:1, composeRegion:'none', cmpRegX:0, cmpRegY:0, cmpRegSize:0.6, cmpRegSoft:0.5, cmpRegAngle:0, cmpRegInvert:false,
+    sliceUneven:0, sliceSpread:0, sliceFrom:0, sliceTo:1, sliceWave:0, sliceWaveLen:120,
+    shardMissing:0, shardFall:0, shardZoom:0, shardCrackInk:null,
+    dragTilt:0, dragStutter:0, dragSlip:0, dragEnd:1,
+    echoGrow:0, echoTurn:0, echoSpin:0, echoShape:'rect',
     sliceCount:12, sliceShift:40, sliceAngle:0, slicePattern:'random', sliceGap:0,
     weaveCount:12, weaveRatio:0.5, weaveAngle:90,
     radMode:'rings', ringWidth:32, radTurn:26, wedgeCount:14, wedgePush:28, radPattern:'random', radGap:0, radX:0, radY:0,
@@ -2103,6 +2336,7 @@
     if(name!=='none') blendThrough(cv,o);
     /* the line plate, over any print — after the blend so a faded or
        multiplied print still takes crisp, opaque lines */
+    if(COMPOSE && o.shardCrackInk) composeInk(cv,o);
     if(o.lines && o.lines!=='none') linework(cv,o);
     /* ---- finish stack: everything below prints over the finished image ---- */
     applyBlur(cv, { amount:o.blurOver||0, type:o.blurOverType, angle:o.blurOverAngle,

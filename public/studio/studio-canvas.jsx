@@ -8,7 +8,7 @@ import {
   safeRect as scSafe,
 } from './studio-data.jsx';
 import { StudioElement as SCElement, titleLineHeight } from './studio-element.jsx';
-import { composeHandle } from './compose-moves.js';
+import { composeHandles, lineHandleGeom, linePosAt } from './compose-moves.js';
 const SC_MONT = "'Montserrat',sans-serif";
 /* Selection + snap-guide colour. These used to be the accent pink — which is
    also THURSDAY's day colour, so on a Thursday poster the selection box, its
@@ -151,9 +151,9 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
      photo's own frame, so the pointer is taken into the box's rotated frame
      first. They're content, not layout, so on an output format the edit
      lands on the Master element like any other dial. */
-  function startCompose(e, el){
+  function startCompose(e, el, hi){
     e.stopPropagation();
-    dragRef.current = { mode:'compose', id:el.id, x:el.x, y:el.y, w:el.w, h:el.h, rot:el.rot||0 };
+    dragRef.current = { mode:'compose', id:el.id, hi:hi||0, x:el.x, y:el.y, w:el.w, h:el.h, rot:el.rot||0 };
     addListeners();
     onMove(e);
   }
@@ -208,12 +208,12 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
       onChange(d.id, { w:Math.round(nw), h:Math.round(nh) });
     }
     else if(d.mode==='compose'){
-      const el = elements.find(x=>x.id===d.id), hd = composeHandle(el); if(!hd) return;
+      const el = elements.find(x=>x.id===d.id), hd = composeHandles(el)[d.hi]; if(!hd) return;
       const a = -d.rot*Math.PI/180, dx = p.x-(d.x+d.w/2), dy = p.y-(d.y+d.h/2);
       const fx = (dx*Math.cos(a)-dy*Math.sin(a))/d.w, fy = (dx*Math.sin(a)+dy*Math.cos(a))/d.h;
       const r = (v,lo,hi)=>Math.round(Math.max(lo,Math.min(hi,v))*200)/200;
-      if(hd.kind==='point') onChange(d.id, { [hd.keys[0]]:r(fx,-0.5,0.5), [hd.keys[1]]:r(fy,-0.5,0.5) });
-      else onChange(d.id, { dragPos: r(hd.dir==='down'?fy+0.5 : hd.dir==='up'?0.5-fy : hd.dir==='right'?fx+0.5 : 0.5-fx, 0.05, 0.95) });
+      if(hd.kind==='point') onChange(d.id, { [hd.keys[0]]:r(fx,-0.5,0.5)*(hd.mul||1), [hd.keys[1]]:r(fy,-0.5,0.5)*(hd.mul||1) });
+      else onChange(d.id, { [hd.key]: r(linePosAt(hd, d.w, d.h, fx*d.w, fy*d.h), hd.lo, hd.hi) });
     }
   }
   function onUp(){
@@ -363,24 +363,25 @@ function StudioCanvas({ elements, format, theme, accent, posterDay, showGrid, sn
               <div style={{ width:hs*0.42, height:hs*0.42, borderRadius:'50%', borderWidth:`${1.5/scale}px`, borderStyle:'solid', borderColor:`${SC_SEL} ${SC_SEL} transparent ${SC_SEL}` }} />
             </div>
             <div style={{ position:'absolute', left:'50%', top:-(46/scale)+hs, width:bw, height:(46/scale)-hs, marginLeft:-bw/2, background:SC_SEL }} />
-            {(()=>{ const hd = composeHandle(sel); if(!hd) return null;
+            {composeHandles(sel).map((hd, hi)=>{
               const edge = `0 0 0 ${1/scale}px ${SC_SEL_EDGE}`;
-              if(hd.kind==='point') return <div title={'Drag to move the '+hd.name} onPointerDown={(e)=>startCompose(e, sel)}
+              if(hd.kind==='point') return <div key={'h'+hi} title={'Drag to move the '+hd.name} onPointerDown={(e)=>startCompose(e, sel, hi)}
                 style={{ position:'absolute', left:(0.5+hd.x)*sel.w, top:(0.5+hd.y)*sel.h, width:hs*0.9, height:hs*0.9,
                   marginLeft:-hs*0.45, marginTop:-hs*0.45, borderRadius:'50%', border:`${bw}px solid ${SC_SEL}`, boxShadow:edge,
                   background:'rgba(13,9,6,.35)', pointerEvents:'auto', cursor:'move', boxSizing:'border-box' }}>
                 <div style={{ position:'absolute', left:'50%', top:'50%', width:hs*0.22, height:hs*0.22, marginLeft:-hs*0.11, marginTop:-hs*0.11, borderRadius:'50%', background:SC_SEL }} />
               </div>;
-              const across = hd.dir==='down'||hd.dir==='up', f = (hd.dir==='down'||hd.dir==='right') ? hd.pos : 1-hd.pos;
-              return <div title="Drag to move where the scanner drag starts" onPointerDown={(e)=>startCompose(e, sel)}
-                style={ across
-                  ? { position:'absolute', left:0, width:sel.w, top:f*sel.h-hs*0.4, height:hs*0.8, pointerEvents:'auto', cursor:'ns-resize' }
-                  : { position:'absolute', top:0, height:sel.h, left:f*sel.w-hs*0.4, width:hs*0.8, pointerEvents:'auto', cursor:'ew-resize' } }>
-                <div style={ across
-                  ? { position:'absolute', left:0, right:0, top:'50%', borderTop:`${bw}px dashed ${SC_SEL}`, boxShadow:edge }
-                  : { position:'absolute', top:0, bottom:0, left:'50%', borderLeft:`${bw}px dashed ${SC_SEL}`, boxShadow:edge } } />
+              /* a line at any angle: a long dashed bar through the handle's point,
+                 turned square to the axis it is measured along, clipped to the photo */
+              const g = lineHandleGeom(hd, sel.w, sel.h), L = Math.hypot(sel.w, sel.h)*2;
+              return <div key={'h'+hi} style={{ position:'absolute', left:0, top:0, width:sel.w, height:sel.h, overflow:'hidden', pointerEvents:'none' }}>
+                <div title={'Drag to move the '+hd.name} onPointerDown={(e)=>startCompose(e, sel, hi)}
+                  style={{ position:'absolute', left:g.x-L/2, top:g.y-hs*0.4, width:L, height:hs*0.8, transform:`rotate(${-hd.r}deg)`,
+                    pointerEvents:'auto', cursor:'move' }}>
+                  <div style={{ position:'absolute', left:0, right:0, top:'50%', borderTop:`${bw}px dashed ${SC_SEL}`, boxShadow:edge }} />
+                </div>
               </div>;
-            })()}
+            })}
             <div onPointerDown={(e)=>startResize(e, sel)} style={{ position:'absolute', left:sel.w, top:sel.h,
               width:hs, height:hs, marginLeft:-hs/2, marginTop:-hs/2, background:'#0d0906', border:`${bw}px solid ${SC_SEL}`, boxShadow:`0 0 0 ${1/scale}px ${SC_SEL_EDGE}`,
               pointerEvents:'auto', cursor:'nwse-resize' }} />

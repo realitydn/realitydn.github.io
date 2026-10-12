@@ -13,7 +13,8 @@
    on the canvas while the photo is selected (studio-canvas.jsx).
    ============================================================ */
 import { risoSig, photoSources, drawPhotoPress } from '../../studio-element.jsx';
-import { COMPOSE_MOVES, COMPOSE_BY, composeHandle } from '../../compose-moves.js';
+import { COMPOSE_MOVES, COMPOSE_BY, composeHandles } from '../../compose-moves.js';
+import { InkRow } from '../../../studio-shared/press-panels.jsx';
 import { Chips, Slider, Fold, Hint } from '../controls.jsx';
 
 const THUMB_W = 104;
@@ -62,6 +63,8 @@ function MoveDials({ el, update }){
   const m = el.compose||'none';
   const S = (k,l,min,max,step,def,suffix)=>
     <Slider label={l} val={num(el[k],def)} min={min} max={max} step={step} suffix={suffix} onChange={v=>update({[k]:v})} />;
+  const sliceBand = (el.sliceFrom||0)>0 || num(el.sliceTo,1)<1;
+  const dragBand = num(el.dragEnd,1)<1;
   if(m==='slice') return <React.Fragment>
     <Chips label="Pattern" options={PATTERNS} value={el.slicePattern||'random'} onChange={v=>update({slicePattern:v})} />
     {S('sliceCount','Strips',2,30,1,12)}
@@ -69,6 +72,14 @@ function MoveDials({ el, update }){
     <Chips label="Cut" options={[{v:0,l:'Across'},{v:90,l:'Down'},{v:-12,l:'Tilted'}]} value={num(el.sliceAngle,0)} onChange={v=>update({sliceAngle:v})} />
     {S('sliceAngle','Angle',-90,90,1,0,'°')}
     {S('sliceGap','Gap',0,16,0.5,0,'px')}
+    {S('sliceUneven','Uneven',0,1,0.02,0)}
+    {S('sliceSpread','Spread',-12,40,0.5,0,'px')}
+    {S('sliceWave','Wave',0,40,0.5,0,'px')}
+    {num(el.sliceWave,0)>0 && S('sliceWaveLen','Wave length',30,300,5,120,'px')}
+    <Chips label="Slice" options={[{v:false,l:'Whole photo'},{v:true,l:'A band'}]} value={sliceBand}
+      onChange={v=>update(v ? { sliceFrom:0.3, sliceTo:0.7 } : { sliceFrom:0, sliceTo:1 })} />
+    {sliceBand && <Hint tight>Drag the two cyan lines on the photo to set the band; outside it the photo stays whole.</Hint>}
+    <Hint tight><b>Uneven</b> cuts strips by hand, wide and narrow. <b>Spread</b> parts them from the middle; below zero they overlap. <b>Wave</b> curves the cuts.</Hint>
   </React.Fragment>;
   if(m==='weave') return <React.Fragment>
     {S('weaveCount','Pairs',2,30,1,12)}
@@ -98,14 +109,24 @@ function MoveDials({ el, update }){
     {S('shardPush','Push',0,40,0.5,14,'px')}
     {S('shardTurn','Turn',0,12,0.5,3,'°')}
     {S('shardCrack','Crack',0,5,0.1,1.6,'px')}
+    {S('shardMissing','Missing',0,0.8,0.02,0)}
+    {S('shardFall','Fall',0,80,1,0,'px')}
+    {S('shardZoom','Thick glass',0,0.4,0.01,0)}
+    {num(el.shardCrack,1.6)>0 && <InkRow label="Crack ink" value={el.shardCrackInk||null} onChange={v=>update({shardCrackInk:v})} autoTitle="Off — the cracks show the gap" />}
+    <Hint tight><b>Missing</b> knocks pieces out to the gap. <b>Fall</b> slides them down, more toward the bottom. <b>Thick glass</b> magnifies each piece. A <b>crack ink</b> prints the cracks as a line over the finished print.</Hint>
   </React.Fragment>;
   if(m==='drag') return <React.Fragment>
     <Chips label="Direction" options={[{v:'down',l:'↓ Down'},{v:'up',l:'↑ Up'},{v:'right',l:'→ Right'},{v:'left',l:'← Left'}]} value={el.dragDir||'down'} onChange={v=>update({dragDir:v})} />
     {S('dragPos','Starts at',0.05,0.95,0.01,0.6)}
     {S('dragSpeed','Speed',0.02,1,0.01,0.22)}
     {S('dragWobble','Wobble',0,1,0.02,0.4)}
+    {S('dragTilt','Tilt',-45,45,1,0,'°')}
     {S('dragFade','Fade',0,1,0.02,0.35)}
-    <Hint tight>Slow is streaks, fast is a stretched copy. Try it under the <b>Copier</b>.</Hint>
+    {S('dragStutter','Stutter',0,1,0.02,0)}
+    {S('dragSlip','Colour slip',0,1,0.02,0)}
+    <Chips label="Stops" options={[{v:false,l:'At the edge'},{v:true,l:'At a line'}]} value={dragBand}
+      onChange={v=>update({ dragEnd: v ? Math.min(0.98, num(el.dragPos,0.6)+0.25) : 1 })} />
+    <Hint tight>Slow is streaks, fast is a stretched copy. Try it under the <b>Copier</b>. <b>Tilt</b> turns the drag off its direction; <b>Stutter</b> stops and restarts the head in hard bands; <b>Colour slip</b> drags red, green and blue at different speeds.</Hint>
   </React.Fragment>;
   if(m==='echo') return <React.Fragment>
     <Chips label="Kind" options={[{v:'trail',l:'Trail'},{v:'tunnel',l:'Tunnel'}]} value={el.echoMode||'trail'} onChange={v=>update({echoMode:v})} />
@@ -116,11 +137,16 @@ function MoveDials({ el, update }){
           {S('echoAngle','Angle',-180,180,1,0,'°')}
           <Chips label="Wins" options={[{v:'lighten',l:'Lightest'},{v:'darken',l:'Darkest'}]} value={el.echoBlend||'lighten'} onChange={v=>update({echoBlend:v})} />
           {S('echoFade','Fade',0.4,1,0.02,0.78)}
+          {S('echoGrow','Grow',-0.3,0.3,0.01,0)}
+          {S('echoTurn','Turn',-45,45,1,0,'°')}
           <Hint tight><b>Lightest</b> repeats the bright parts (a flash on a dark room); <b>Darkest</b> the dark ones (a figure on a light wall).</Hint>
         </React.Fragment>
       : <React.Fragment>
           {S('echoScale','Scale',0.5,0.92,0.01,0.76)}
           {S('echoBorder','Border',0,14,0.5,5,'px')}
+          {S('echoSpin','Spin',-30,30,0.5,0,'°')}
+          <Chips label="Frame" options={[{v:'rect',l:'Photo'},{v:'circle',l:'Oval'},{v:'arch',l:'Arch'},{v:'diamond',l:'Diamond'}]}
+            value={el.echoShape||'rect'} onChange={v=>update({echoShape:v})} />
         </React.Fragment>}
   </React.Fragment>;
   if(m==='mirror') return <React.Fragment>
@@ -140,18 +166,38 @@ function MoveDials({ el, update }){
 function RecomposeFold({ el, update, inkKey, theme }){
   const move = COMPOSE_BY[el.compose||'none'] || COMPOSE_BY.none;
   const active = move.v!=='none';
-  const h = composeHandle(el);
+  const hs = composeHandles(el);
+  const own = hs.find(x=>x.kind==='point' && x.mul===1);   // the move's own point (Centre it)
   const pick = v=>update({ compose:v });
+  /* where the move happens — the How-the-ink-sits region chips, onto
+     composeRegion + cmpRegInvert (Centre and Edges are one disc, flipped) */
+  const reg = el.composeRegion||'none';
+  const regChip = reg==='radial' ? (el.cmpRegInvert?'edges':'centre') : reg;
+  const pickReg = v=>update(v==='none' ? { composeRegion:'none' } : v==='centre' ? { composeRegion:'radial', cmpRegInvert:false }
+    : v==='edges' ? { composeRegion:'radial', cmpRegInvert:true } : { composeRegion:v, cmpRegInvert:false });
   return (
     <Fold id="ph-compose" title="Recompose" badge={active ? move.l : null}
       hint={<React.Fragment>Change <b>where</b> the picture is before the press prints it. Every treatment prints the recomposed photo as one picture.</React.Fragment>}>
       <MoveStrip el={el} inkKey={inkKey} theme={theme} onPick={pick} />
       {active && <Hint tight><b>{move.l}</b> · {move.tag}</Hint>}
       {active && <MoveDials el={el} update={update} />}
-      {active && h && <div className="rs-mini" style={{ margin:'2px 0 8px' }}>
-        Drag the cyan {h.kind==='line' ? 'line' : 'point'} on the photo to move the {h.kind==='line' ? 'drag line' : h.name}.{' '}
-        {h.kind==='point' && <button className="rs-linkbtn" onClick={()=>update({ [h.keys[0]]:0, [h.keys[1]]:0 })}>Centre it</button>}
+      {active && hs.length>0 && <div className="rs-mini" style={{ margin:'2px 0 8px' }}>
+        Drag the cyan {hs.length>1 ? 'handles' : hs[0].kind==='line' ? 'line' : 'point'} on the photo to move the {hs.map(x=>x.name).join(', ')}.{' '}
+        {own && <button className="rs-linkbtn" onClick={()=>update({ [own.keys[0]]:0, [own.keys[1]]:0 })}>Centre it</button>}
       </div>}
+      {active && <React.Fragment>
+        <div className="rs-sech">Where and how much</div>
+        <Chips label="Where" options={[{v:'none',l:'Everywhere'},{v:'centre',l:'Centre'},{v:'edges',l:'Edges'},{v:'band',l:'Band'},{v:'linear',l:'Sweep'}]}
+          value={regChip} onChange={pickReg} />
+        {reg!=='none' && <React.Fragment>
+          {reg!=='linear' && <Slider label={reg==='band'?'Width':'Radius'} val={num(el.cmpRegSize,0.6)} min={0.1} max={1.4} step={0.02} onChange={v=>update({cmpRegSize:v})} />}
+          {reg!=='radial' && <Slider label="Angle" val={el.cmpRegAngle||0} min={-180} max={180} step={5} onChange={v=>update({cmpRegAngle:v})} suffix="°" />}
+          <Slider label="Feather" val={num(el.cmpRegSoft,0.5)} min={0} max={1} step={0.02} onChange={v=>update({cmpRegSoft:v})} />
+          {reg!=='radial' && <Chips label="Flip" options={[{v:false,l:'As drawn'},{v:true,l:'Flipped'}]} value={!!el.cmpRegInvert} onChange={v=>update({cmpRegInvert:v})} />}
+        </React.Fragment>}
+        <Slider label="Mix" val={num(el.composeMix,1)} min={0} max={1} step={0.02} onChange={v=>update({composeMix:v})} />
+        <Hint tight><b>Where</b> keeps the move to part of the photo; the rest stays as framed. <b>Mix</b> lays the moved photo back over the original, so a move can be a ghost.</Hint>
+      </React.Fragment>}
       {active && move.cut && <Chips label="Gaps print" options={[{v:'paper',l:'Paper'},{v:'ink',l:'Ink'}]}
         value={el.composeGap||'paper'} onChange={v=>update({ composeGap:v })} />}
       {active && move.snap && <React.Fragment>

@@ -94,7 +94,13 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'tileSize','tileMove','tileTurn','tileShuffle','tileGrout','shardCount','shardPush','shardTurn','shardCrack','shardX','shardY',
   'dragDir','dragPos','dragSpeed','dragWobble','dragFade',
   'echoMode','echoCount','echoStep','echoAngle','echoBlend','echoFade','echoScale','echoBorder','echoX','echoY',
-  'mirrorMode','mirrorFlip','mirrorX','mirrorY','panelCount','panelDir','panelZoom','panelGutter','panelX','panelY'];
+  'mirrorMode','mirrorFlip','mirrorX','mirrorY','panelCount','panelDir','panelZoom','panelGutter','panelX','panelY',
+  /* recompose additions, 13.10.26 */
+  'composeMix','composeRegion','cmpRegX','cmpRegY','cmpRegSize','cmpRegSoft','cmpRegAngle','cmpRegInvert',
+  'sliceUneven','sliceSpread','sliceFrom','sliceTo','sliceWave','sliceWaveLen',
+  'shardMissing','shardFall','shardZoom','shardCrackInk',
+  'dragTilt','dragStutter','dragSlip','dragEnd',
+  'echoGrow','echoTurn','echoSpin','echoShape'];
 /* One cheap scalar fingerprint of every dial the press reads. Joining ~120
    primitives costs microseconds; re-running the press costs ~25ms, so this is
    what keeps a photo from re-developing on every unrelated re-render.

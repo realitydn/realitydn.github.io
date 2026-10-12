@@ -3,8 +3,9 @@
    Split by the Inspector's tabs, each in the order the engine works:
      Image  — the source, framing the shot, the Recompose move, and what
               the press reads (Before the press)
-     Press  — the treatment (strip, look, ink), its Tune dials, the press
-              itself, how the print sits on the photo, and the proof
+     Press  — the treatment (strip, look, ink), its Tune dials, the
+              Linework plate, the press itself, how the print sits on the
+              photo, and the proof
      Finish — what happens to the printed sheet, and the mask
    (Layout — size & border, shadow, transform — is the Inspector's.)
    PARED 13.10.26: Second exposure and Proof only appear on a photo that
@@ -20,7 +21,7 @@ import { PressFold, ProofFold } from '../../../studio-shared/press-panels.jsx';
 import { INK_CHOICES as AP_INKS, PALETTE as AP_PAL, DEFAULTS as AP_DEF } from '../../studio-data.jsx';
 import { SE_DAY_INK } from '../../studio-element.jsx';
 import { Chips, Slider, Fold, Hint, Swatches } from '../controls.jsx';
-import { TREATS, TREAT_PRESETS, TREAT_LOOKS } from './looks.js';
+import { TREATS, TREAT_PRESETS, TREAT_LOOKS, RETIRED_TREATS } from './looks.js';
 import { sepResolved, pressResolved } from './press.jsx';
 import { TreatmentStrip } from './strip.jsx';
 import { adoptResult } from '../../photos.js';
@@ -29,6 +30,7 @@ import { TuneFold } from './tune.jsx';
 import { AdjustFold, FinishFold } from './finish.jsx';
 import { FrameFold, PlaceFold, MaskFold } from './frame.jsx';
 import { RecomposeFold } from './recompose.jsx';
+import { LineworkFold } from './linework.jsx';
 
 /* How far each part of a photo sits off where it started — the fold badges,
    and summed per tab for the tab bar. Counted against the photo's defaults,
@@ -58,7 +60,7 @@ function photoDirt(el){
   };
   r.tabs = {
     image:  (el.src2?1:0) + (el.compose && el.compose!=='none' ? 1 : 0) + r.adjustDirty + r.shotDirty,
-    press:  r.pressDirty + r.blendDirty,
+    press:  r.pressDirty + r.blendDirty + (el.lines && el.lines!=='none' ? 1 : 0),
     finish: r.finishCount + (el.mask && el.mask!=='none' ? 1 : 0),
   };
   return r;
@@ -119,7 +121,7 @@ function PhotoControls({ el, update, theme, accent, day, tab }){
       <Fold id="ph-treat" title={'Treatment · '+pressLabel} open>
         {/* A logo with no file has nothing to develop, so it keeps the words. */}
         {(el.type==='logo' && !el.src)
-          ? <Chips options={TREATS} value={el.treatment} onChange={pickTreat} />
+          ? <Chips options={TREATS.filter(x=>!RETIRED_TREATS[x.v] || el.treatment===x.v)} value={el.treatment} onChange={pickTreat} />
           : <TreatmentStrip el={el} inkKey={inkKey} theme={theme} onPick={pickTreat} />}
         {tDef && tDef.tag && <Hint tight>
           <b>{tDef.tag}</b> · <b>Best for</b> {tDef.best} <b>Avoid when</b> {tDef.avoid}
@@ -180,6 +182,8 @@ function PhotoControls({ el, update, theme, accent, day, tab }){
           worth naming — this is where you go when none of them is quite it. */}
       {t!=='none' && <TuneFold el={el} update={update} theme={theme} t={t} inkKey={inkKey} pressR={pressR}
         pressLabel={pressLabel} pressDirty={D.pressDirty} />}
+      {/* lines as their own plate, over whatever the treatment made */}
+      {el.type==='photo' && <LineworkFold el={el} update={update} inkKey={inkKey} />}
       {/* the press is a dozen dials that describe a machine, not a look */}
       {pressR && <PressFold el={el} update={update} plates={pressR.inks} other={t!=='separation' ? pressLabel.toLowerCase() : null} dirtyBase={TREAT_PRESETS.separation} />}
       {/* where the print meets the photograph under it — after the press */}

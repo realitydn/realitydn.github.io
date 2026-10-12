@@ -2,7 +2,7 @@
    REALITY POSTER STUDIO — photo panel · treatment strip
    ============================================================ */
 import { risoSig, photoSources, drawPhotoPress } from '../../studio-element.jsx';
-import { TREATS, TREAT_PRESETS } from './looks.js';
+import { TREATS, TREAT_PRESETS, RETIRED_TREATS } from './looks.js';
 /* ============================================================
    TREATMENT STRIP — every press, live on YOUR photo.
    ============================================================
@@ -27,6 +27,7 @@ const THUMB_W = 128;
 const THUMB_DEBOUNCE_MS = 200;
 function TreatmentStrip({ el, inkKey, theme, onPick }){
   const refs = React.useRef({});
+  const shown = TREATS.filter(tr=>!RETIRED_TREATS[tr.v] || el.treatment===tr.v);
   /* Everything a thumbnail is a preview OF. risoSig covers every engine dial
      (the per-treatment ones are overridden by the patch, so they only ever
      redraw the same image — cheap, and it can never go stale); the rest is
@@ -48,8 +49,12 @@ function TreatmentStrip({ el, inkKey, theme, onPick }){
           /* the engine's globals are set inside drawPhotoPress and consumed
              synchronously by render(), so these fourteen calls cannot
              interleave with the poster's own press */
+          /* lines:'none' — the Linework plate traces on a fixed 900-wide
+             grid whatever the canvas size, so leaving it on would make each
+             thumbnail cost a full trace; the strip shows the print, the
+             poster shows the lines */
           drawPhotoPress(cv, el, inkKey, theme, s1, s2,
-            Object.assign({ treatment:key }, TREAT_PRESETS[key]||{}));
+            Object.assign({ treatment:key, lines:'none' }, TREAT_PRESETS[key]||{}));
         }
       });
     }, THUMB_DEBOUNCE_MS);
@@ -57,7 +62,7 @@ function TreatmentStrip({ el, inkKey, theme, onPick }){
   }, [sig]);
   return (
     <div className="rs-gfxgrid rs-treatgrid">
-      {TREATS.map(tr=>(
+      {shown.map(tr=>(
         <button key={tr.v} type="button" title={tr.l+' — '+tr.tag}
           className={'rs-gfxtile'+(el.treatment===tr.v?' on':'')} onClick={()=>onPick(tr.v)}>
           <canvas className="tp" ref={c=>{ refs.current[tr.v]=c; }} />

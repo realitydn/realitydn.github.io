@@ -409,6 +409,9 @@ const DEFAULTS = {
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
              grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
+             /* linework — Outline / Contour lines as their own plate over the print
+                (riso-engine linework); lineInk null = Auto, the second ink */
+             lines:'none', lineDetail:0.3, lineClean:20, lineBands:5, lineSmooth:null, lineWeight:2, lineInk:null, lineFade:0,
              /* recompose — a move on the photo before the press (riso-engine RECOMPOSE).
                 'none' skips the stage; composeSnap lines the cuts up with the poster grid */
              compose:'none', composeSeed:1, composeGap:'paper', composeSnap:false,

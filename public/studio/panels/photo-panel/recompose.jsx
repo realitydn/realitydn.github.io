@@ -36,7 +36,7 @@ function MoveStrip({ el, inkKey, theme, onPick }){
           cv.width=THUMB_W; cv.height=H;
           /* the thumbnail previews the CLICK: this move at the element's dials,
              the snap off (a 104px frame has no poster grid to meet) */
-          drawPhotoPress(cv, el, inkKey, theme, s1, s2, { compose:m.v, composeSnap:false });
+          drawPhotoPress(cv, el, inkKey, theme, s1, s2, { compose:m.v, composeSnap:false, lines:'none' });   // lines: see strip.jsx
         }
       });
     }, THUMB_DEBOUNCE_MS);

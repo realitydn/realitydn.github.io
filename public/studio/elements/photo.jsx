@@ -84,6 +84,8 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   /* the retrofit: separated plates for off-register / overprint, xerography for the copier,
      and how much of the shadows the night poster's black plate carries */
   'sep','copyEdge','copyHollow','copySatellites','copyDrum','copyDrumPeriod','nightPlate',
+  /* linework, 13.10.26 */
+  'lines','lineDetail','lineClean','lineBands','lineSmooth','lineWeight','lineInk','lineFade',
   /* recompose — the move before the press (composeSnap is the Studio's own
      switch; drawPhotoPress turns it into the engine's composeGrid) */
   'compose','composeSeed','composeGap','composeSnap',

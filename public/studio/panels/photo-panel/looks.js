@@ -230,4 +230,9 @@ const TREAT_LOOKS = {
   ],
 };
 
-export { TREATS, PRESS_BLENDS, FINISH_NEUTRAL, FINISH_LOOKS, TREAT_PRESETS, TREAT_LOOKS };
+/* Treatments the strip no longer offers for new work — Outline and Contour
+   became the Linework layer (13.10.26). They still render, and still show in
+   the strip on a photo that already uses one, so those posters stay editable. */
+const RETIRED_TREATS = { edges:1, contour:1 };
+
+export { TREATS, PRESS_BLENDS, FINISH_NEUTRAL, FINISH_LOOKS, TREAT_PRESETS, TREAT_LOOKS, RETIRED_TREATS };

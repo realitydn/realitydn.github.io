@@ -74,6 +74,14 @@ export function buildCases(treatments, moves = []) {
   add('compose-grid-tiles', 'duotone', cmp({ compose: 'tiles', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
   add('compose-grid-panels', 'duotone', cmp({ compose: 'panels', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
   add('compose-under-separation', 'separation', sep('night', 'pink', { compose: 'shards', composeSeed: 2 }));
+  // Linework: the line plate over other prints — each detector, an ink, the
+  // fade back to paper, a Recompose move the lines must follow, and a mis-fed
+  // run the plate must miss register with.
+  add('lines-outline-halftone', 'halftone', { ink: 'pink', paper: 'day', ...TP.halftone, lines: 'outline' });
+  add('lines-contour-none-fade', 'none', { ink: 'blue', paper: 'day', ...TP.none, lines: 'contour', lineFade: 1, lineInk: 'ink' });
+  add('lines-outline-cream-cutout', 'cutout', { ink: 'pink', paper: 'night', ...TP.cutout, invert: true, lines: 'outline', lineInk: 'cream', lineWeight: 3 });
+  add('lines-follow-compose', 'duotone', { ink: 'pink', paper: 'day', ...TP.duotone, compose: 'mirror', lines: 'outline' });
+  add('lines-misfed', 'separation', sep('day', 'pink', { drift: 8, skew: 9, stretch: 12, pull: 40, lines: 'contour', lineBands: 4 }));
   return cases;
 }
 

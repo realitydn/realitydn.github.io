@@ -28,7 +28,7 @@ function familyOf(el, caps){ return caps && caps.media ? 'media' : GRAPHIC[el.ty
 
 const FOLD_TABS = {
   media:   { 'ph-img':'image', 'ph-frame':'image', 'ph-mix':'image', 'ph-compose':'image', 'ph-adjust':'image',
-             'ph-treat':'press', 'ph-press':'press', 'ph-sep-press':'press', 'ph-blend':'press', 'ph-sep-proof':'press',
+             'ph-treat':'press', 'ph-press':'press', 'ph-sep-press':'press', 'ph-lines':'press', 'ph-blend':'press', 'ph-sep-proof':'press',
              'ph-finish':'finish', 'ph-mask':'finish',
              'ph-place':'layout', 'sh':'layout', 'f-transform':'layout', 'f-override':'layout' },
   text:    { 'f-content':'text', 'f-type':'text', 'f-sub':'text', 'f-kicker':'text', 'f-rows':'text',

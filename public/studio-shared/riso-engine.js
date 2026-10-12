@@ -876,6 +876,37 @@
     for(let p=0,i=0;p<mask.length;p++,i+=4){ if(mask[p]){ dd[i]=inkC[0];dd[i+1]=inkC[1];dd[i+2]=inkC[2];dd[i+3]=255; } }
     lx.putImageData(id,0,0); return lc;
   }
+  /* The two line detectors, on the fixed aw×ah grid, each returning the
+     dilated 1-bit mask. Shared by the Contour / Outline treatments and the
+     Linework layer, so a line drawn either way is the same line.
+     contourMask — the boundaries between `n` tonal bands of a pre-smoothed,
+       stretched luminance (contrast already includes Contour's ×1.1).
+     outlineMask — Sobel edges over a threshold set by `detail`, specks under
+       `clean` cells swept, then grown to `weight` design px. */
+  function contourMask(aw,ah,contrast,smoothPx,n,weight){
+    const La=stretch(lumBuffer(aw,ah,contrast, smoothPx));
+    const idx=new Uint8Array(aw*ah);
+    for(let p=0;p<La.length;p++) idx[p]=Math.min(n-1,(La[p]*n)|0);
+    let mask=new Uint8Array(aw*ah);
+    for(let y=0;y<ah-1;y++) for(let x=0;x<aw-1;x++){
+      const p=y*aw+x;
+      if(idx[p]!==idx[p+1] || idx[p]!==idx[p+aw]) mask[p]=1;
+    }
+    return dilateMask(mask,aw,ah,Math.max(1,Math.round(weight*(aw/520))));
+  }
+  function outlineMask(aw,ah,contrast,smoothPx,detail,clean,weight){
+    const L=stretch(lumBuffer(aw,ah,contrast, smoothPx));
+    const thr=0.9-detail*0.75, tt=thr*thr*0.16;
+    let mask=new Uint8Array(aw*ah);
+    for(let y=1;y<ah-1;y++) for(let x=1;x<aw-1;x++){
+      const p=y*aw+x;
+      const gx=L[p-aw+1]+2*L[p+1]+L[p+aw+1]-L[p-aw-1]-2*L[p-1]-L[p+aw-1];
+      const gy=L[p+aw-1]+2*L[p+aw]+L[p+aw+1]-L[p-aw-1]-2*L[p-aw]-L[p-aw+1];
+      if(gx*gx+gy*gy > tt) mask[p]=1;
+    }
+    if(clean>=2) mask=despeckleMask(mask,aw,ah,clean);
+    return dilateMask(mask,aw,ah,Math.max(1,Math.round(weight*(aw/520))));
+  }
 
   /* 12 · CONTOUR — the photo as a topographic map: tonal band boundaries
         traced as ink lines over paper, a faint accent tint, or the full ramp.
@@ -912,15 +943,7 @@
     cx.putImageData(out,0,0);
     /* boundary lines traced at the fixed detection resolution, scaled to fit */
     const aw=detW(w), ah=detH(w,h);
-    const La=stretch(lumBuffer(aw,ah,o.contrast*1.1, smoothPx));
-    const idx=new Uint8Array(aw*ah);
-    for(let p=0;p<La.length;p++) idx[p]=Math.min(n-1,(La[p]*n)|0);
-    let mask=new Uint8Array(aw*ah);
-    for(let y=0;y<ah-1;y++) for(let x=0;x<aw-1;x++){
-      const p=y*aw+x;
-      if(idx[p]!==idx[p+1] || idx[p]!==idx[p+aw]) mask[p]=1;
-    }
-    mask=dilateMask(mask,aw,ah,Math.max(1,Math.round((o.contourWeight||2)*(aw/520))));
+    const mask=contourMask(aw,ah,o.contrast*1.1,smoothPx,n,o.contourWeight||2);
     const lineMode=o.contourLine||'auto';
     const lineC = lineMode==='black' ? inkBaseRGB(o)
                 : lineMode==='ink'   ? inkRGB(o.contourInk||o.ink)
@@ -990,18 +1013,8 @@
        every export width trace the SAME lines (a per-pixel Sobel on the wider
        export reads weaker and drops most of them). */
     const aw=detW(w), ah=detH(w,h);
-    const L=stretch(lumBuffer(aw,ah,o.contrast, o.edgeSmooth!=null?o.edgeSmooth:1.6));
-    const detail=o.edgeDetail!=null?o.edgeDetail:0.3;
-    const thr=0.9-detail*0.75, tt=thr*thr*0.16;
-    let mask=new Uint8Array(aw*ah);
-    for(let y=1;y<ah-1;y++) for(let x=1;x<aw-1;x++){
-      const p=y*aw+x;
-      const gx=L[p-aw+1]+2*L[p+1]+L[p+aw+1]-L[p-aw-1]-2*L[p-1]-L[p+aw-1];
-      const gy=L[p+aw-1]+2*L[p+aw]+L[p+aw+1]-L[p-aw-1]-2*L[p-aw]-L[p-aw+1];
-      if(gx*gx+gy*gy > tt) mask[p]=1;
-    }
-    if((o.edgeClean|0)>=2) mask=despeckleMask(mask,aw,ah,o.edgeClean|0);
-    mask=dilateMask(mask,aw,ah,Math.max(1,Math.round((o.edgeThick||2)*(aw/520))));
+    const mask=outlineMask(aw,ah,o.contrast, o.edgeSmooth!=null?o.edgeSmooth:1.6,
+      o.edgeDetail!=null?o.edgeDetail:0.3, o.edgeClean|0, o.edgeThick||2);
     const inkC = backdrop==='ink' ? paperRGB(o)
                : (o.inkMode==='black')? inkBaseRGB(o) : inkRGB(o.edgeInk||o.ink);
     cx.imageSmoothingEnabled=true;
@@ -1015,6 +1028,67 @@
       cx.drawImage(maskCanvas(mask,aw,ah,echoC), sdx+Math.round(Math.cos(ea)*em), sdy+Math.round(Math.sin(ea)*em), w,h);
     }
     cx.drawImage(maskCanvas(mask,aw,ah,inkC), sdx, sdy, w,h);
+  }
+
+  /* LINEWORK — Outline or Contour lines as their OWN plate, printed opaque
+        over whatever the treatment made (the raw photo included), after the
+        press and How the ink sits, before the finish — so grain, paper and
+        ink bleed land on the lines like any other ink. Proposal 13.10.26:
+        it retires the Outline / Contour treatments for new work.
+        params: lines ('none' | 'outline' | 'contour')
+          lineDetail, lineClean   — Outline's threshold and de-speckle
+          lineBands               — Contour's band count
+          lineSmooth              — pre-blur; null = 1.6 Outline / 2.2 Contour
+          lineWeight              — design px
+          lineInk                 — any ink key; null = Auto, the second ink
+          lineFade                — 0..1, the print faded toward the stock
+                                    under the lines (1 = lines on bare paper)
+        Detection reads the framed, recomposed photo on the fixed ADET grid
+        at a fixed contrast, so the lines don't move when you switch the
+        treatment under them, and preview = export. The line plate misses
+        register with the press: it takes the drift / skew / stretch of one
+        more drum after the print's plates. */
+  const LINE_CONTRAST = 1.2;
+  function lineReg(o,w,h){
+    if(o.pressOff || !(o.drift || o.skew || o.stretch)) return null;
+    let n=2;
+    try{ n=Math.max(2, platesFor(o._name, o).length); }catch(e){}
+    const regs=RP.regSet(n+1, { drift:o.drift, driftSeed:o.driftSeed, skew:o.skew, stretch:o.stretch,
+      duo:o.duo, pull:o.pull, run:o.pressRun }, w, h, w/520);
+    return regs[n];
+  }
+  function linework(cv,o){
+    const kind=o.lines; if(kind!=='outline' && kind!=='contour') return;
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    const fade=Math.max(0,Math.min(1,o.lineFade||0));
+    if(fade>0){
+      cx.save(); cx.globalCompositeOperation='source-atop'; cx.globalAlpha=fade;
+      cx.fillStyle=o._stock; cx.fillRect(0,0,w,h); cx.restore();
+    }
+    const aw=detW(w), ah=detH(w,h), weight=o.lineWeight||2;
+    const mask = kind==='outline'
+      ? outlineMask(aw,ah,LINE_CONTRAST, o.lineSmooth!=null?o.lineSmooth:1.6,
+          o.lineDetail!=null?o.lineDetail:0.3, o.lineClean|0, weight)
+      : contourMask(aw,ah,LINE_CONTRAST*1.1, o.lineSmooth!=null?o.lineSmooth:2.2,
+          Math.max(2,(o.lineBands|0)||5), weight);
+    const inkC = o.lineInk && PAL[o.lineInk] ? inkRGB(o.lineInk) : partnerRGB(o);
+    const lc=maskCanvas(mask,aw,ah,inkC);
+    const rg=lineReg(o,w,h);
+    if(!rg){ cx.imageSmoothingEnabled=true; cx.drawImage(lc,0,0,w,h); return; }
+    /* off register: lay the plate at full size, then read it through the
+       same miss the press gives its own drums (riso-press regXY) */
+    const full=document.createElement('canvas'); full.width=w; full.height=h;
+    const fx=full.getContext('2d',{willReadFrequently:true}); fx.imageSmoothingEnabled=true; fx.drawImage(lc,0,0,w,h);
+    const sd=fx.getImageData(0,0,w,h).data, out=fx.createImageData(w,h), d=out.data, xy=[0,0];
+    for(let y=0,i=0;y<h;y++) for(let x=0;x<w;x++,i+=4){
+      RP.regXY(x,y,w,h,rg,xy);
+      const qx=xy[0]|0, qy=xy[1]|0;
+      if(qx<0||qy<0||qx>=w||qy>=h) continue;
+      const j=(qy*w+qx)*4;
+      d[i]=sd[j]; d[i+1]=sd[j+1]; d[i+2]=sd[j+2]; d[i+3]=sd[j+3];
+    }
+    fx.putImageData(out,0,0);
+    cx.drawImage(full,0,0);
   }
 
   /* 14 · MOSAIC — chunky tiles snapped to the paper→ink ramp, optional grout.
@@ -1990,6 +2064,8 @@
     pull:0, pressRun:true, pressOff:false,
     fountainTo:null, fountainPlate:1, fountainAngle:0, fountainSoft:1,
     screens:null, pitches:null, proofPlate:null, proofGrey:false,
+    /* linework — 'none' skips the plate, so every older photo reads as it did */
+    lines:'none', lineDetail:0.3, lineClean:20, lineBands:5, lineSmooth:null, lineWeight:2, lineInk:null, lineFade:0,
     /* recompose — 'none' skips the stage entirely, so a photo without a move
        reads exactly as it always has */
     compose:'none', composeSeed:1, composeGap:'paper', composeGrid:null,
@@ -2025,6 +2101,9 @@
     (TREATMENTS[name]||separation)(cv,o);
     if(name!=='none' && name!=='separation' && !o._pressed) pressThrough(cv,o);
     if(name!=='none') blendThrough(cv,o);
+    /* the line plate, over any print — after the blend so a faded or
+       multiplied print still takes crisp, opaque lines */
+    if(o.lines && o.lines!=='none') linework(cv,o);
     /* ---- finish stack: everything below prints over the finished image ---- */
     applyBlur(cv, { amount:o.blurOver||0, type:o.blurOverType, angle:o.blurOverAngle,
                     x:o.blurOverX, y:o.blurOverY, pos:o.blurOverPos, width:o.blurOverWidth });

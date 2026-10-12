@@ -73,7 +73,6 @@ export function buildCases(treatments, moves = []) {
   add('compose-grid-slice', 'duotone', cmp({ compose: 'slice', sliceAngle: 0, composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
   add('compose-grid-tiles', 'duotone', cmp({ compose: 'tiles', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
   add('compose-grid-panels', 'duotone', cmp({ compose: 'panels', composeGrid: { step: 30.6, ox: 12, oy: 20 } }));
-  add('compose-under-pop', 'pop', { ink: 'pink', paper: 'day', ...(TP.pop || {}), compose: 'slice', slicePattern: 'alternate', sliceAngle: 90, sliceCount: 7 });
   add('compose-under-separation', 'separation', sep('night', 'pink', { compose: 'shards', composeSeed: 2 }));
   return cases;
 }

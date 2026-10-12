@@ -99,7 +99,7 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
           <Slider label="Outline" val={el.cutEdge!=null?el.cutEdge:0} min={0} max={0.2} step={0.005} onChange={v=>update({cutEdge:v})} />
           {el.cutEdge>0 && <React.Fragment>
             <InkRow label="Outline ink" value={el.cutEdgeInk} onChange={v=>update({cutEdgeInk:v})} autoTitle="Auto — warm/cool partner" />
-            <Slider label="Outline slip" val={el.cutSlip!=null?el.cutSlip:0} min={0} max={20} step={0.5} onChange={v=>update({cutSlip:v})} suffix="px" />
+            {el.cutSlip>0 && <Slider label="Outline slip" val={el.cutSlip} min={0} max={20} step={0.5} onChange={v=>update({cutSlip:v})} suffix="px" />}
             {el.cutSlip>0 && <Slider label="Slip angle" val={el.cutSlipAngle!=null?el.cutSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({cutSlipAngle:v})} suffix="°" />}
           </React.Fragment>}
         </React.Fragment>}
@@ -216,14 +216,14 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
           </React.Fragment>}
           <Chips label="Lines" options={[{v:'auto',l:'Auto'},{v:'ink',l:'Ink colour'},{v:'black',l:'Mono'}]} value={el.contourLine||'auto'} onChange={v=>update({contourLine:v})} />
           {el.contourLine==='ink' && <InkRow label="Line ink" value={el.contourInk} onChange={v=>update({contourInk:v})} autoTitle="Main ink" />}
-          <Slider label="Line slip" val={el.contourSlip!=null?el.contourSlip:0} min={0} max={20} step={0.5} onChange={v=>update({contourSlip:v})} suffix="px" />
+          {el.contourSlip>0 && <Slider label="Line slip" val={el.contourSlip} min={0} max={20} step={0.5} onChange={v=>update({contourSlip:v})} suffix="px" />}
           {el.contourSlip>0 && <Slider label="Slip angle" val={el.contourSlipAngle!=null?el.contourSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({contourSlipAngle:v})} suffix="°" />}
-          <Slider label="Echo" val={el.contourEcho!=null?el.contourEcho:0} min={0} max={20} step={0.5} onChange={v=>update({contourEcho:v})} suffix="px" />
+          {el.contourEcho>0 && <Slider label="Echo" val={el.contourEcho} min={0} max={20} step={0.5} onChange={v=>update({contourEcho:v})} suffix="px" />}
           {el.contourEcho>0 && <React.Fragment>
             <InkRow label="Echo ink" value={el.contourEchoInk} onChange={v=>update({contourEchoInk:v})} autoTitle="Auto — warm/cool partner" />
             <Slider label="Echo angle" val={el.contourEchoAngle!=null?el.contourEchoAngle:45} min={0} max={360} step={5} onChange={v=>update({contourEchoAngle:v})} suffix="°" />
           </React.Fragment>}
-          <Hint tight>Smoothing melts detail into clean topographic loops — push it up for a weather-map read. Slip prints the linework off-register from the fills; echo re-strikes it in a second ink.</Hint>
+          <Hint tight>Smoothing melts detail into clean topographic loops — push it up for a weather-map read.</Hint>
         </React.Fragment>}
         {t==='edges' && <React.Fragment>
           <Chips label="Backdrop" options={[{v:'paper',l:'Paper'},{v:'ink',l:'Ink field'},{v:'duotone',l:'Pale duotone'},{v:'image',l:'Raw image'}]} value={el.edgeBackdrop||'paper'} onChange={v=>update({edgeBackdrop:v})} />
@@ -238,23 +238,14 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
             <Chips label="Inking" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
             {el.inkMode!=='black' && <InkRow label="Line ink" value={el.edgeInk} onChange={v=>update({edgeInk:v})} autoTitle="Main ink" />}
           </React.Fragment>}
-          <Slider label="Line slip" val={el.edgeSlip!=null?el.edgeSlip:0} min={0} max={20} step={0.5} onChange={v=>update({edgeSlip:v})} suffix="px" />
+          {el.edgeSlip>0 && <Slider label="Line slip" val={el.edgeSlip} min={0} max={20} step={0.5} onChange={v=>update({edgeSlip:v})} suffix="px" />}
           {el.edgeSlip>0 && <Slider label="Slip angle" val={el.edgeSlipAngle!=null?el.edgeSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({edgeSlipAngle:v})} suffix="°" />}
-          <Slider label="Echo" val={el.edgeEcho!=null?el.edgeEcho:0} min={0} max={20} step={0.5} onChange={v=>update({edgeEcho:v})} suffix="px" />
+          {el.edgeEcho>0 && <Slider label="Echo" val={el.edgeEcho} min={0} max={20} step={0.5} onChange={v=>update({edgeEcho:v})} suffix="px" />}
           {el.edgeEcho>0 && <React.Fragment>
             <InkRow label="Echo ink" value={el.edgeEchoInk} onChange={v=>update({edgeEchoInk:v})} autoTitle="Auto — warm/cool partner" />
             <Slider label="Echo angle" val={el.edgeEchoAngle!=null?el.edgeEchoAngle:45} min={0} max={360} step={5} onChange={v=>update({edgeEchoAngle:v})} suffix="°" />
           </React.Fragment>}
-          <Hint tight>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust. Echo re-strikes the linework off-register in a second ink.</Hint>
-        </React.Fragment>}
-        {t==='pop' && <React.Fragment>
-          <Chips label="Bands" options={[{v:3,l:'3 · black, dots'},{v:4,l:'4 · + solid'},{v:5,l:'5 · + stripes'}]} value={el.popBands!=null?el.popBands:5} onChange={v=>update({popBands:v})} />
-          <Slider label="Dot pitch" val={el.popPitch!=null?el.popPitch:7} min={4} max={14} step={0.5} onChange={v=>update({popPitch:v})} suffix="px" />
-          <Slider label="Screen angle" val={el.popAngle!=null?el.popAngle:45} min={0} max={90} step={1} onChange={v=>update({popAngle:v})} suffix="°" />
-          <Slider label="Keyline" val={el.popLine!=null?el.popLine:1.3} min={0} max={3} step={0.1} onChange={v=>update({popLine:v})} suffix="px" />
-          <Slider label="Smoothing" val={el.popSmooth!=null?el.popSmooth:2.4} min={0} max={6} step={0.2} onChange={v=>update({popSmooth:v})} />
-          <Chips label="Dots in" options={[{v:'accent',l:'Main ink'},{v:'partner',l:'Second ink'}]} value={el.popDotInk||'accent'} onChange={v=>update({popDotInk:v})} />
-          <Hint tight>Dark to light: black, the main ink solid, stripes in the second ink, Ben-Day dots, paper. <b>Smoothing</b> simplifies the bands; the keyline runs round each one.</Hint>
+          <Hint tight>Simplify melts texture so only confident lines survive; de-speckle sweeps the leftover dust.</Hint>
         </React.Fragment>}
         {t==='mosaic' && <React.Fragment>
           <Slider label="Tile size" val={el.cellSize!=null?el.cellSize:16} min={4} max={48} step={1} onChange={v=>update({cellSize:v})} suffix="px" />

@@ -54,7 +54,7 @@ function BlurControls({ el, update, prefix, label, max }){
    shows too. Poster's parameters: an Auto (cream) stock, every press dial
    grouped in a fold of its own, tight hints on the dark panel.
    ============================================================ */
-PressPanels.configure({ stockDefault:'day', hintTight:true });
+PressPanels.configure({ stockDefault:'day', hintTight:true, hideDials:['pressRun','linear','floodCap'] });
 /* What the press will actually run for this element — resolved the same way
    the engine resolves it, so the panel never describes a different job from
    the one on the poster. */
@@ -139,9 +139,10 @@ function SepControls({ el, update, theme, inkKey }){
       <Slider label="Chroma boost" val={el.sepBoost!=null?el.sepBoost:1.15} min={0.8} max={2} step={0.01} onChange={v=>update({sepBoost:v})} suffix="×" />
       <Slider label="Ink limit" val={r.tac} min={1} max={4} step={0.05} onChange={v=>update({tac:v})} />
       <Slider label="Saturation" val={el.saturation!=null?el.saturation:1} min={0} max={2} step={0.02} onChange={v=>update({saturation:v})} />
-      <Chips label="Source" options={[{v:false,l:'Positive'},{v:true,l:'Negative'}]} value={!!el.invertSource} onChange={v=>update({invertSource:v})} />
+      {/* Source (positive / negative) pared 13.10.26 — shown only to undo one already set */}
+      {!!el.invertSource && <Chips label="Source" options={[{v:false,l:'Positive'},{v:true,l:'Negative'}]} value={!!el.invertSource} onChange={v=>update({invertSource:v})} />}
       {(el.sepGCR!=null || el.tac!=null) && <button className="rs-addrow" onClick={()=>update({ sepGCR:null, tac:null })}>↺ Let the paper decide GCR &amp; ink limit</button>}
-      <Hint tight><b>GCR</b>: of two mixes that hit a colour, how strongly the press prefers the one laying down less ink. <b>Ink limit</b>: total coverage across the plates — night presses harder (2.8) than day (2.2). <b>Negative</b> prints the inverse: the studio's own advice for a dark poster on light stock.</Hint>
+      <Hint tight><b>GCR</b>: of two mixes that hit a colour, how strongly the press prefers the one laying down less ink. <b>Ink limit</b>: total coverage across the plates — night presses harder (2.8) than day (2.2).</Hint>
     </React.Fragment>
   );
 }

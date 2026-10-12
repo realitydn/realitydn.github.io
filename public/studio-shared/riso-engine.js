@@ -1060,63 +1060,6 @@
     }
   }
 
-  /* Tone read on a FIXED 520-wide grid and sampled bilinearly in device px, so
-     a band edge or a keyline is decided at design resolution — the preview
-     (≤900) and a 2× export draw the same geometry (the Outline's ADET rule,
-     applied to a smooth field). Stretched like posterize's, so bands read
-     whatever the photo's key. */
-  function toneGrid(w,h,contrast,blur){
-    const gw=520, gh=Math.max(2,Math.round(520*h/w)), L=stretch(lumBuffer(gw,gh,contrast,blur));
-    const sx=(gw-1)/Math.max(1,w-1), sy=(gh-1)/Math.max(1,h-1);
-    return function(x,y){
-      let fx=x*sx, fy=y*sy; if(fx<0)fx=0; if(fy<0)fy=0; if(fx>gw-1)fx=gw-1; if(fy>gh-1)fy=gh-1;
-      const ix=fx|0, iy=fy|0, tx=fx-ix, ty=fy-iy, ix1=ix<gw-1?ix+1:ix, iy1=iy<gh-1?iy+1:iy;
-      const a=L[iy*gw+ix], b=L[iy*gw+ix1], c=L[iy1*gw+ix], d=L[iy1*gw+ix1];
-      return a+(b-a)*tx+(c-a+(d-b-c+a)*tx)*ty;
-    };
-  }
-
-  /* 16 · POP — bands filled with the shop's own patterns instead of flat ink,
-        dark to light: black, solid accent, stripes in the partner ink, Ben-Day
-        dots, paper — with a keyline round every band for the comic-book read.
-        One ink can carry four tones this way, which is what a jobbing printer
-        did with a tint screen before there were halftones.
-        params: popBands (3–5), popPitch (dot/stripe pitch, design px),
-          popAngle, popLine (keyline weight, design px; 0 = none),
-          popSmooth (pre-blur, design px), popDotInk ('accent' | 'partner') */
-  function pop(cv,o){
-    const w=cv.width,h=cv.height,cx=cv.getContext('2d'),K=w/520;
-    const n=Math.max(3,Math.min(5,(o.popBands|0)||5));
-    const T=toneGrid(w,h,o.contrast,o.popSmooth!=null?o.popSmooth:2.4);
-    const pitch=Math.max(3,o.popPitch||7)*K, ang=((o.popAngle!=null?o.popAngle:45))*Math.PI/180;
-    const ca=Math.cos(ang), sa=Math.sin(ang);
-    const pap=paperRGB(o), acc=accentRGB(o), par=partnerRGB(o), blk=inkBaseRGB(o);
-    const plan = n===3 ? ['black','dots','paper']
-               : n===4 ? ['black','accent','dots','paper']
-               :         ['black','accent','lines','dots','paper'];
-    const dotInk = o.popDotInk==='partner' ? par : acc;
-    const bandAt=(x,y)=>Math.min(n-1,(T(x,y)*n)|0);
-    const line=o.popLine!=null?o.popLine:1.3, off=line*K;
-    const out=cx.createImageData(w,h), d=out.data;
-    for(let y=0,p=0;y<h;y++) for(let x=0;x<w;x++,p++){
-      const b=bandAt(x,y), kind=plan[b];
-      let c=pap;
-      if(kind==='black') c=blk;
-      else if(kind==='accent') c=acc;
-      else if(kind==='dots'||kind==='lines'){
-        const u=(ca*x+sa*y)/pitch, v=(-sa*x+ca*y)/pitch;
-        let a, ink;
-        if(kind==='dots'){ const fx=u-Math.floor(u)-0.5, fy=v-Math.floor(v)-0.5; a=pitch*0.36-Math.sqrt(fx*fx+fy*fy)*pitch+0.5; ink=dotInk; }
-        else { a=pitch*0.22-Math.abs(v-Math.floor(v)-0.5)*pitch+0.5; ink=par; }
-        a=a<0?0:a>1?1:a;
-        c=[pap[0]+(ink[0]-pap[0])*a, pap[1]+(ink[1]-pap[1])*a, pap[2]+(ink[2]-pap[2])*a];
-      }
-      if(line>0 && (bandAt(x+off,y)!==b || bandAt(x,y+off)!==b)) c=blk;
-      const i=p*4; d[i]=c[0]; d[i+1]=c[1]; d[i+2]=c[2]; d[i+3]=255;
-    }
-    cx.putImageData(out,0,0);
-  }
-
   /* 15 · SEPARATION — the press itself. A colour photograph becomes N
         greyscale plates (one per drum), each screened at its own angle and
         printed in its own translucent ink, in its own pass, with its own
@@ -1270,7 +1213,7 @@
   }
 
   const TREATMENTS = { separation, duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
-                       dither, hatch, photocopy, contour, edges, mosaic, pop };
+                       dither, hatch, photocopy, contour, edges, mosaic };
 
   /* ---- blend modes ----------------------------------------------------
      One channel of a separable blend: backdrop `a` (the photograph showing
@@ -2047,8 +1990,6 @@
     pull:0, pressRun:true, pressOff:false,
     fountainTo:null, fountainPlate:1, fountainAngle:0, fountainSoft:1,
     screens:null, pitches:null, proofPlate:null, proofGrey:false,
-    /* 16 · pop */
-    popBands:5, popPitch:7, popAngle:45, popLine:1.3, popSmooth:2.4, popDotInk:'accent',
     /* recompose — 'none' skips the stage entirely, so a photo without a move
        reads exactly as it always has */
     compose:'none', composeSeed:1, composeGap:'paper', composeGrid:null,

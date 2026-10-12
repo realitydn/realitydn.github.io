@@ -1,12 +1,15 @@
 /* ============================================================
    REALITY POSTER STUDIO — photo panel
    Split by the Inspector's tabs, each in the order the engine works:
-     Image  — the source, framing the shot, the second exposure, the
-              Recompose move, and what the press reads (Before the press)
+     Image  — the source, framing the shot, the Recompose move, and what
+              the press reads (Before the press)
      Press  — the treatment (strip, look, ink), its Tune dials, the press
               itself, how the print sits on the photo, and the proof
      Finish — what happens to the printed sheet, and the mask
    (Layout — size & border, shadow, transform — is the Inspector's.)
+   PARED 13.10.26: Second exposure and Proof only appear on a photo that
+   already uses them (2 of 182 posters had a second image, none a proof),
+   so those can still be tuned or taken off; nobody starts a new one.
    No fold holds another fold. The press / proof folds are
    ../../../studio-shared/press-panels.jsx; each other fold is a file here.
    ============================================================ */
@@ -93,8 +96,7 @@ function PhotoControls({ el, update, theme, accent, day, tab }){
               value={el.src?null:el.sample} onChange={v=>update({ sample:v, src:null })} />}
       </Fold>
       <FrameFold el={el} update={update} frameDirty={D.shotDirty} />
-      <Fold id="ph-mix" title="Second exposure" badge={el.src2?'on':null}>
-        {!el.src2 && <Hint tight>Blend a second image into the source — the press treats the two as one photo.</Hint>}
+      {el.src2 && <Fold id="ph-mix" title="Second exposure" badge="on">
         <PhotoUpload label={el.src2?'⬆ Replace second image…':'⬆ Add a second image…'} onImage={r=>adoptResult(r).then(({ data })=>update({ src2:data }))} />
         {el.src2 && <React.Fragment>
           <Slider label="Mix" val={el.mix2!=null?el.mix2:0.6} min={0} max={1} step={0.02} onChange={v=>update({mix2:v})} />
@@ -105,7 +107,7 @@ function PhotoControls({ el, update, theme, accent, day, tab }){
           <Slider label="Turn in frame" val={el.img2Rot!=null?el.img2Rot:0} min={-180} max={180} step={1} onChange={v=>update({img2Rot:v})} suffix="°" />
           <button className="rs-addrow" onClick={()=>update({ src2:null })}>✕ Remove second image</button>
         </React.Fragment>}
-      </Fold>
+      </Fold>}
       {/* the move happens to the original, before the press */}
       {el.type==='photo' && <RecomposeFold el={el} update={update} inkKey={inkKey} theme={theme} />}
       <AdjustFold el={el} update={update} t={t} adjustDirty={D.adjustDirty} />
@@ -183,7 +185,7 @@ function PhotoControls({ el, update, theme, accent, day, tab }){
       {/* where the print meets the photograph under it — after the press */}
       {t!=='none' && <BlendFold el={el} update={update} blendDirty={D.blendDirty} />}
       {/* the proof changes what the canvas shows, so it closes the tab */}
-      {pressR && <ProofFold el={el} update={update} plates={pressR.inks} />}
+      {pressR && (el.proofPlate!=null || el.proofGrey) && <ProofFold el={el} update={update} plates={pressR.inks} />}
     </React.Fragment>
   );
 

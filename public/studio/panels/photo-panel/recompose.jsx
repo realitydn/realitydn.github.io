@@ -76,7 +76,7 @@ function MoveDials({ el, update }){
     <Chips label="Strips run" options={[{v:90,l:'Down'},{v:0,l:'Across'},{v:45,l:'Diagonal'}]} value={num(el.weaveAngle,90)} onChange={v=>update({weaveAngle:v})} />
     <Hint tight>{el.src2
       ? <span>Strips alternate between the photo and the <b>Second exposure</b> (its blend is set aside while you weave).</span>
-      : <span>No second image yet, so the strips alternate with the photo's own mirror image. Add one under <b>Second exposure</b> to weave two photos.</span>}</Hint>
+      : <span>The strips alternate with the photo's own mirror image.</span>}</Hint>
   </React.Fragment>;
   if(m==='radial') return <React.Fragment>
     <Chips label="Cut" options={[{v:'rings',l:'Rings'},{v:'wedges',l:'Wedges'}]} value={el.radMode||'rings'} onChange={v=>update({radMode:v})} />

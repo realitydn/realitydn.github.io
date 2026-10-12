@@ -1,6 +1,6 @@
 /* ============================================================
    REALITY POSTER STUDIO — the library catalog
-   The parts list and the graphics picker's families (shapes, rules, bursts, icons).
+   The parts list and the graphics picker's families (shapes).
    ============================================================ */
 import { SHAPE_KINDS, RULE_PATTERNS } from '../studio-shared/shapes.js';
 /* ============================================================
@@ -19,19 +19,13 @@ const CATALOG = [
   { group:'Blocks', items:[
     { type:'block',   label:'Colour block', hint:'Flat ink field' },
     { type:'ticket',  label:'REALITY ticket', hint:'Banner / sizes in panel', wide:true },
-    { type:'lineup',  label:'Lineup',   hint:'Acts + set times' },
     { type:'sessions',label:'Sessions', hint:'Series — paste the list' },
-    { type:'agenda',  label:'Week',     hint:'Colour-coded days', wide:true },
     { type:'specials',label:'Specials', hint:'Drinks + prices' },
-    { type:'qr',      label:'QR block', hint:'Scan to site' },
     { type:'weekly',  label:'Weekly tag', hint:'Price · day · time', wide:true },
-    { type:'matchup', label:'Matchup',   hint:'Team vs team · time', wide:true },
   ]},
   { group:'Marks', items:[
     { type:'stamp',    label:'Stamp',    hint:'SOLD OUT / FREE' },
     { type:'badge',    label:'Badge',    hint:'Every Wed' },
-    { type:'wordmark', label:'REALITY wordmark', hint:'Canonical mark · resizable', wide:true },
-    { type:'inkmark',  label:'Ink mark', hint:'The strip / square · canon grid' },
   ]},
   { group:'Media', items:[
     { type:'photo',   label:'Photo',    hint:'Riso-treated image', wide:true },
@@ -67,20 +61,18 @@ const BURST_PRESETS = [
   { k:'wheel',  l:'Wheel',   p:{ rays:12, hub:0.6 } },
 ];
 /* The picker's own structure. `kind` families read their members from the
-   registries above; `icons` reads ICON_CATEGORIES (studio-shared/print-icons.js). */
+   registries above.
+
+   PARED 13.10.26: Rules, Bursts and Icons are off the picker, and Lineup,
+   Week (agenda), QR block, Matchup, the wordmark and the ink mark are off
+   the parts list. None had been placed on any of 182 saved posters. Their
+   renderers and Inspector panels stay, so a poster that already carries
+   one still opens and edits; only the way to ADD a new one is gone.
+   RULE_TERMS / BURST_PRESETS stay for those Inspector panels. */
 const GRAPHICS = [
   { id:'gfx-shapes', title:'Shapes',  type:'shape', prop:'kind',    open:true,
     items:SHAPE_KINDS.map(k=>({ k, l:SHAPE_LABELS[k]||k })),
     hint:'Fill, grain, keyline and shadow in the panel — same ink set as everything else.' },
-  { id:'gfx-rules',  title:'Lines + rules', type:'rule', prop:'pattern',
-    items:RULE_PATTERNS.map(p=>({ k:p.v, l:p.l })),
-    hint:'Weight, spacing and end-caps in the panel. Rotate for a vertical rule.' },
-  { id:'gfx-burst',  title:'Bursts', type:'burst', prop:null,
-    items:BURST_PRESETS.map(b=>({ k:b.k, l:b.l, preset:b.p })),
-    hint:'Rays + hub in the panel. Drop one behind a title.' },
-  { id:'gfx-icons',  title:'Icons',  type:'icon', prop:'kind', search:true,
-    groups:true,
-    hint:'The Year 2 glyph set — the same vectors the app and Print Studio use.' },
 ];
 
 export { CATALOG, SHAPE_LABELS, MASK_KINDS, RULE_TERMS, BURST_PRESETS, GRAPHICS };

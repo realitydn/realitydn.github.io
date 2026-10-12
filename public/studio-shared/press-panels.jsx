@@ -18,6 +18,11 @@
                     Auto — white IS the default).
      stockNote    — a closing line under the stock picker (Print's).
      hintTight    — Poster's inspector runs its hints tight.
+     hideDials    — dials the full press (no `dials`) leaves out unless an
+                    element already has one set off its default, so a pared
+                    dial never strands a value you can't see. Poster hides
+                    Run, RIP and Flood cap (none moved on 182 posters,
+                    pared 13.10.26); Print's subset is unaffected.
    (the outline an outlined swatch takes is RUI's swatchBorder — the
    --st-sw-border token in studio-base.css, which Print overrides).
    and per call:
@@ -32,7 +37,7 @@
 import { RUI } from './studio-ui.jsx';
 import { inkTitle, INK_CHOICES, PALETTE } from './brand.js';
 
-const CFG = { stockDefault:'day', stockNote:null, hintTight:true };
+const CFG = { stockDefault:'day', stockNote:null, hintTight:true, hideDials:[] };
 function configure(opts){ Object.assign(CFG, opts||{}); }
 
 const cls = (s)=> RUI.cls(s);
@@ -119,10 +124,17 @@ function InkRow({ label, value, onChange, autoTitle }){
     </React.Fragment>
   );
 }
+/* a hidden dial still shows on an element that has it set — see hideDials */
+function dialShown(k, el){
+  if((CFG.hideDials||[]).indexOf(k)<0) return true;
+  const d = PRESS_DIALS[k];
+  return d.chips ? d.get(el)!==d.chips[0].v : (el[k]!=null && el[k]!==d.def);
+}
 /* The press, in full (no `dials`) — Poster: grouped, with the split
    fountain — or a flat SUBSET (`dials: [...]`, `note`) — Print. */
 function PressFold({ el, update, plates, other, dials, note, fold=true, dirtyBase }){
-  const D = (k)=> <PressDial key={k} k={k} el={el} update={update} />;
+  const D = (k)=> dialShown(k, el) ? <PressDial key={k} k={k} el={el} update={update} /> : null;
+  const pared = !dialShown('linear', el) && !dialShown('floodCap', el);
   const n = Math.max(2, (plates||[]).length);
   const body = dials
     ? <React.Fragment>{dials.map(D)}{note && <H>{note}</H>}</React.Fragment>
@@ -146,7 +158,9 @@ function PressFold({ el, update, plates, other, dials, note, fold=true, dirtyBas
         </React.Fragment>}
         <Sech>Tone transfer</Sech>
         {['gain','linear','floor','ceiling','solidity','floodCap'].map(D)}
-        <H>Dot gain is what the press adds back (ISO 12647-3: a 50 % dot prints at 76 %); a compensated RIP pulls the plate down by as much. Straight to press is the darkened, closed-up print of an uncompensated file. The floor is where the master has no hole; the ceiling what a master can carry; solidity how completely ink covers where it lands. Flood cap is design advice about big floods — off by default.</H>
+        {pared
+          ? <H>Dot gain is what the press adds back (ISO 12647-3: a 50 % dot prints at 76 %). The floor is where the master has no hole; the ceiling what a master can carry; solidity how completely ink covers where it lands.</H>
+          : <H>Dot gain is what the press adds back (ISO 12647-3: a 50 % dot prints at 76 %); a compensated RIP pulls the plate down by as much. Straight to press is the darkened, closed-up print of an uncompensated file. The floor is where the master has no hole; the ceiling what a master can carry; solidity how completely ink covers where it lands. Flood cap is design advice about big floods — off by default.</H>}
       </React.Fragment>;
   if(!fold) return <React.Fragment><Sech>The press</Sech>{body}</React.Fragment>;
   return (

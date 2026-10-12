@@ -165,8 +165,9 @@ function Library({ lib, startSpawn }){
             </Sec>
           ))}
 
-          {/* GRAPHICS — four families that differ only by one prop, so they're
-              grids of silhouettes rather than 60 more library rows. Drag a tile
+          {/* GRAPHICS — families that differ only by one prop (Shapes since the
+              13.10.26 paring), so they're grids of silhouettes rather than
+              more library rows. Drag a tile
               out exactly like a part; it lands with that kind preset. */}
           <div className="rs-libtitle">Graphics<span className="hint">drag in, or click</span></div>
           {AP_GFX.map(g=>(

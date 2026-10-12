@@ -9,7 +9,8 @@
 //     lands on the control itself (or inside it), and the centre is on screen;
 //   · at 1440, a few key panels render:
 //       Poster   — select the photo → the treatment strip paints every tile,
-//                  "The press" and "Proof" folds open without error;
+//                  "The press" fold opens without error (Proof only shows on
+//                  a photo with a plate set since the 13.10.26 paring);
 //       Print    — ImageControls (the photo inspector) renders for every
 //                  treatment, with its press sections;
 //       Schedule — every output channel tab previews.
@@ -91,7 +92,7 @@ async function posterPanels(page) {
   info.push(`strip ${strip.n} tiles painted`);
   if (strip.n < 10) notes.push(`treatment strip shows ${strip.n} tiles`);
   if (strip.blank.length) notes.push(`blank strip tiles: ${strip.blank.join(', ')}`);
-  for (const id of ['ph-sep-press', 'ph-sep-proof']) {
+  for (const id of ['ph-sep-press']) {
     const opened = await page.evaluate((id) => {
       const f = document.querySelector(`[data-fold="${id}"]`);
       if (!f) return 'missing';

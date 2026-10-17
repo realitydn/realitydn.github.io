@@ -146,7 +146,10 @@ function eventSections(events, now) {
     .map((d) => {
       const items = byDay.get(d)
         .sort((a, b) => hm(new Date(a.startsAt)).localeCompare(hm(new Date(b.startsAt))))
-        .map((e) => `${hm(new Date(e.startsAt))} ${oneLine(e.title_en)} (${costText(e)}${rsvpNote(e) ? ', RSVP required' : ''})`);
+        // seriesUrl (app feed, additive since 18.10.26): the series' own evergreen
+        // page on the app — linked so an assistant lands on the stable URL, not
+        // this week's date.
+        .map((e) => `${hm(new Date(e.startsAt))} ${e.seriesUrl ? `[${oneLine(e.title_en)}](${e.seriesUrl})` : oneLine(e.title_en)} (${costText(e)}${rsvpNote(e) ? ', RSVP required' : ''})`);
       return `- ${d}: ${items.join('; ')}`;
     });
 
@@ -226,7 +229,7 @@ function buildLlms(ctx) {
     '',
   );
   if (lineup && lineup.length) {
-    L.push('## Weekly lineup (recurring nights)', '', 'Derived from the live calendar at build time; check the app for changes.', '', ...lineup, '');
+    L.push('## Weekly lineup (recurring nights)', '', 'Derived from the live calendar at build time; check the app for changes. Each linked night has its own page on the app (app.realitydn.com/series/...) with its schedule, price, host, next dates and how many times it has been held.', '', ...lineup, '');
   }
   L.push('## Drinks prices (VND, "k" = thousand)', '', ...ranges, '', '- Full priced menu: see /llms-full.txt or the [drinks menu PDF](https://realitydn.com/menu-drinks-en.pdf)', '');
   L.push('## House rules', '', ...ih.rules.map((r) => `- ${r}`), '');

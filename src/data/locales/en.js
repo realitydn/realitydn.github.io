@@ -159,6 +159,7 @@ export default {
   "cal": {
     "eyebrow": "What's on",
     "title": "Upcoming at REALITY",
+    "intro": "REALITY is a café by day, cocktail bar by night and community space at 86 Mai Thúc Lân in Mỹ An, in the An Thượng area of Đà Nẵng, near Mỹ Khê beach. Every week there's a pub quiz, language exchanges, an open mic, board game nights and film club, plus talks, workshops and art shows. Most events are free, and newcomers are always welcome.",
     "loading": "Loading what's on…",
     "empty": "No events scheduled right now — check our socials for what's on.",
     "errorTitle": "Couldn't load the calendar",
@@ -287,7 +288,7 @@ export default {
     "artistCollectiveName": "Artist or Collective Name (if different)",
     "artistCollectiveNamePlaceholder": "Artist/collective name",
     "basedWhere": "Where are you currently based?",
-    "basedWherePlaceholder": "Location (if not in Da Nang, when will you be here?)",
+    "basedWherePlaceholder": "Location (if not in Đà Nẵng, when will you be here?)",
     "contact": "Contact (WhatsApp, Instagram, Zalo)",
     "contactPlaceholder": "Your contact info",
     "artistBio": "Short artist bio (2-4 sentences)",

@@ -157,6 +157,7 @@ export default {
   "cal": {
     "eyebrow": "Sắp diễn ra",
     "title": "Sự kiện tại REALITY",
+    "intro": "REALITY là quán cà phê ban ngày, quầy cocktail về đêm và không gian cộng đồng tại 86 Mai Thúc Lân, Mỹ An, khu An Thượng, Đà Nẵng, gần biển Mỹ Khê. Tuần nào cũng có pub quiz, giao lưu ngôn ngữ, open mic, đêm board game và câu lạc bộ phim, cùng các buổi trò chuyện, workshop và triển lãm nghệ thuật. Phần lớn sự kiện đều miễn phí, và người mới luôn được chào đón.",
     "loading": "Đang tải lịch sự kiện…",
     "empty": "Hiện chưa có sự kiện nào — theo dõi mạng xã hội của chúng tôi để cập nhật.",
     "errorTitle": "Không tải được lịch",

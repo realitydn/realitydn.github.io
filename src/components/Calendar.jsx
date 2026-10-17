@@ -298,6 +298,15 @@ export default function Calendar({ lang }) {
             print of blue (--blue-text): bright blue on cream is 2.66:1. */}
         <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>{C.eyebrow}</div>
         <h2 className="h-section text-3xl md:text-5xl text-ink">{C.title}</h2>
+        {/* One static paragraph above the feed: what REALITY is, where, and
+            the week's anchors by name. The visible page said "language
+            exchange" and "open mic" zero times while the meta description
+            promised both, and the first text after the nav was an event card
+            (REALITYApp docs/LLM_VISIBILITY_PLAN.md §5 B3). Pre-rendered, so
+            crawlers that don't run JS read it too. */}
+        {C.intro && (
+          <p className="mt-4 max-w-3xl font-body text-lg leading-relaxed text-ink">{C.intro}</p>
+        )}
       </div>
 
       {/* ── Loading skeleton — card-shaped so nothing jumps on arrival: a

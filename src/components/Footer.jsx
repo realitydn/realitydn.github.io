@@ -18,7 +18,7 @@ export default function Footer({ lang }) {
           <p className="text-gray-700 font-body">{S.hours}</p>
           <p className="text-gray-700 font-body">realitydn.com</p>
           <p className="text-gray-700 font-body">
-            <a href="mailto:realitydn@gmail.com" className="underline underline-offset-4">realitydn@gmail.com</a>
+            <a href="mailto:reality.dn@gmail.com" className="underline underline-offset-4">reality.dn@gmail.com</a>
           </p>
         </div>
         <div className="col-span-12 md:col-span-6 md:text-right">

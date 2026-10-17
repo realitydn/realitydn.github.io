@@ -9,7 +9,7 @@ import { URLS, STR } from '../data/translations';
 // route button) rather than a bare coordinate.
 const MAPS_PLACE = 'https://maps.google.com/?cid=9022999249739857995';
 // From the same JSON-LD (never invent a phone number — there isn't one).
-const EMAIL = 'realitydn@gmail.com';
+const EMAIL = 'reality.dn@gmail.com';
 
 export default function VisitSection({ lang, t }) {
   const S = STR[lang];

@@ -39,7 +39,7 @@ export async function sendConfirmationEmail(env, email, formType, formData) {
 
         <p style="color: #666; font-size: 12px;">
           REALITY | Đà Nẵng<br/>
-          hello@realitydn.com
+          reality.dn@gmail.com
         </p>
       </div>
     `;
@@ -52,6 +52,10 @@ export async function sendConfirmationEmail(env, email, formType, formData) {
       },
       body: JSON.stringify({
         from: 'REALITY <hello@realitydn.com>',
+        // Inbound mail to hello@ is unverified (MX still points at Hover;
+        // REALITYApp docs/LLM_VISIBILITY_PLAN.md §8), so replies go to the
+        // inbox someone reads.
+        reply_to: 'reality.dn@gmail.com',
         to: email,
         subject: subject,
         html: htmlContent

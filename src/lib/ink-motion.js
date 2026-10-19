@@ -36,7 +36,6 @@ var colAt = (x, y) => x < 2 ? "R" : x < 4 ? "B" : x < 6 ? "Y" : [["S", "K"], ["G
 var sc = (r, s) => Rr(r.x + r.w * (1 - s) / 2, r.y + r.h * (1 - s) / 2, r.w * s, r.h * s);
 var ab = (r, s, cx = 4.5) => Rr(cx + (r.x - cx) * s, 1 + (r.y - 1) * s, r.w * s, r.h * s);
 var mv = (r, dx, dy) => Rr(r.x + dx, r.y + dy, r.w, r.h);
-var hr = ([x, y]) => Rr(x / 2, y / 2, 0.5, 0.5);
 var F = (t, r, e) => ({ t, r, e });
 var P = (c, f, z) => z == null ? { c, f } : { c, f, z };
 var CELLS = [
@@ -117,6 +116,35 @@ var rowsOf = (w, n) => {
   return out;
 };
 var HW = ["half", "whole"];
+var bottomFirst = (times, rows) => times.map((_, i) => {
+  const c0 = i - i % rows, col = times.slice(c0, c0 + rows).sort((a, b) => a - b);
+  return col[rows - 1 - i % rows];
+});
+function belt(ring, g, cell, dir, n, ease) {
+  const L = ring.length, at = (i) => ring[(i % L + L) % L];
+  const box = ([x, y]) => Rr(x * g, y * g, g, g);
+  const edge = ([x, y], [dx, dy]) => Rr((x + (dx > 0 ? 1 : 0)) * g, (y + (dy > 0 ? 1 : 0)) * g, dx ? 0 : g, dy ? 0 : g);
+  const Z = Rr(0, 0, 0, 0), eps = 5e-4, out = [], twins = [];
+  ring.forEach((home, i0) => {
+    const main = [F(0, box(home))], twin = [F(0, Z, E.step)];
+    for (let k = 0; k < n; k++) {
+      const p = at(i0 + dir * (k - 1)), a = at(i0 + dir * k), b = at(i0 + dir * (k + 1));
+      const push = [a[0] - p[0], a[1] - p[1]], go = [b[0] - a[0], b[1] - a[1]];
+      const t0 = k / n, t1 = t0 + 0.6 / n;
+      if (push[0] === go[0] && push[1] === go[1]) {
+        main.push(F(t0, box(a), ease), F(t1, box(b)));
+        continue;
+      }
+      main.push(F(t0, box(a), ease), F(t1, edge(a, push), E.step), F(t1 + eps, box(b)));
+      twin.push(F(t0, edge(b, [-go[0], -go[1]]), ease), F(t1, box(b), E.step), F(t1 + eps, Z, E.step));
+    }
+    main.push(F(1, box(home)));
+    twin.push(F(1, Z));
+    out.push(P(cell(home[0], home[1]), main));
+    twins.push(P(cell(home[0], home[1]), twin));
+  });
+  return [...out, ...twins];
+}
 var VARIANTS = [
   /* Handoff — each band swells over its neighbour, then gives the space back. */
   {
@@ -154,7 +182,8 @@ var VARIANTS = [
       });
     }
   },
-  /* Conveyor — every module rides the strip's perimeter one step at a time. */
+  /* Conveyor — every module rides the strip's perimeter one step at a time,
+     round the ends like a belt. */
   {
     id: 13,
     name: "Conveyor",
@@ -163,18 +192,10 @@ var VARIANTS = [
     short: true,
     uses: { wait: "loop", amb: FULL },
     make: (w = 9) => {
-      const ring = [], n = 2 * w;
+      const ring = [];
       for (let x = 0; x < w; x++) ring.push([x, 0]);
       for (let x = w - 1; x >= 0; x--) ring.push([x, 1]);
-      return geo(w).mods.map((o) => {
-        const i = ring.findIndex(([x, y]) => x == o.r.x && y == o.r.y), f = [];
-        for (let k = 0; k < n; k++) {
-          const a = ring[(i + k) % n], b = ring[(i + k + 1) % n];
-          f.push(F(k / n, Rr(a[0], a[1], 1, 1), E.snap), F(k / n + 0.6 / n, Rr(b[0], b[1], 1, 1)));
-        }
-        f.push(F(1, o.r));
-        return P(o.c, f);
-      });
+      return belt(ring, 1, colAt, 1, ring.length, E.snap);
     }
   },
   /* Weave — half-height rows slide against each other like knitting. */
@@ -227,7 +248,7 @@ var VARIANTS = [
     grid: "half",
     uses: { wait: "loop", amb: FULL },
     make: () => {
-      const T = [], B = [];
+      const T = [], B = [], half = (hx, hy) => colAt(hx >> 1, hy >> 1);
       for (let x = 0; x < 18; x++) {
         T.push([x, 0]);
         B.push([x, 2]);
@@ -236,14 +257,7 @@ var VARIANTS = [
         T.push([x, 1]);
         B.push([x, 3]);
       }
-      return HALF.map((o) => {
-        const ring = o.hy < 2 ? T : B, dir = o.hy < 2 ? 1 : -1;
-        const i = ring.findIndex(([x, y]) => x == o.hx && y == o.hy), f = [];
-        const at = (k) => ring[((i + dir * k) % 36 + 36) % 36];
-        for (let k = 0; k < 36; k++) f.push(F(k / 36, hr(at(k)), E.snap), F(k / 36 + 0.6 / 36, hr(at(k + 1))));
-        f.push(F(1, o.r));
-        return P(o.c, f);
-      });
+      return [...belt(T, 0.5, half, 1, 36, E.snap), ...belt(B, 0.5, half, -1, 36, E.snap)];
     }
   },
   /* Fold — strip folds into the ink square (the app icon) and back. Its
@@ -380,7 +394,10 @@ var VARIANTS = [
       return out;
     }
   },
-  /* Book — the right half closes on the spine, then the left; then it opens. */
+  /* Book — the right half closes on the spine, then the left; then it opens.
+     Whole modules on an odd strip put the spine inside the middle column, so
+     the right half closes on that column's far edge, not across it; and it
+     opens without an elastic overshoot, which threw it past the strip's end. */
   {
     id: 41,
     name: "Book",
@@ -390,10 +407,10 @@ var VARIANTS = [
     short: true,
     uses: { trans: seg(0, 0.9), wait: "loop", amb: seg(0, 0.9) },
     make: (w = 9, g = 0.5) => {
-      const out = [];
+      const out = [], spine = Math.ceil(w / 2 / g - 1e-9) * g;
       columnsOf(w, g).forEach((col) => col.p.forEach((p) => {
-        const z = Rr(w / 2, p.r.y, 0, p.r.h);
-        out.push(P(p.c, p.r.x >= w / 2 - 1e-9 ? [F(0, p.r), F(0.08, p.r, E.in), F(0.22, z), F(0.74, z, E.el), F(0.88, p.r), F(1, p.r)] : [F(0, p.r), F(0.3, p.r, E.in), F(0.44, z), F(0.56, z, E.out), F(0.7, p.r), F(1, p.r)]));
+        const right = p.r.x >= w / 2 - 1e-9, z = Rr(right ? spine : w / 2, p.r.y, 0, p.r.h);
+        out.push(P(p.c, right ? [F(0, p.r), F(0.08, p.r, E.in), F(0.22, z), F(0.74, z, E.out), F(0.88, p.r), F(1, p.r)] : [F(0, p.r), F(0.3, p.r, E.in), F(0.44, z), F(0.56, z, E.out), F(0.7, p.r), F(1, p.r)]));
       }));
       return out;
     }
@@ -416,7 +433,8 @@ var VARIANTS = [
       return out;
     }
   },
-  /* Sift — half-cells drain out of the bottom and refill from the top. */
+  /* Sift — half-cells drain out of the bottom and refill from the top, each
+     column bottom cell first. */
   {
     id: 24,
     name: "Sift",
@@ -427,10 +445,14 @@ var VARIANTS = [
     clip: "strip",
     uses: { trans: FULL, gest: seg(0.45, 0.86), wait: "loop", amb: FULL },
     make: (w = 9, g = 0.5) => {
-      const rand = rng(8), Rn = Math.round(2 / g);
-      return cellsOf(w, g).map((o) => {
-        const b = (Rn - 1 - o.cy) * 0.03, t = 0.04 + rand() * 0.24 + b, t2 = 0.52 + rand() * 0.24 + b;
-        const dn = mv(o.r, 0, 3), up = mv(o.r, 0, -3);
+      const rand = rng(8), Rn = Math.round(2 / g), cells = cellsOf(w, g);
+      const raw = cells.map((o) => {
+        const b = (Rn - 1 - o.cy) * 0.03;
+        return [0.04 + rand() * 0.24 + b, 0.52 + rand() * 0.24 + b];
+      });
+      const T1 = bottomFirst(raw.map((x) => x[0]), Rn), T2 = bottomFirst(raw.map((x) => x[1]), Rn);
+      return cells.map((o, i) => {
+        const t = T1[i], t2 = T2[i], dn = mv(o.r, 0, 3), up = mv(o.r, 0, -3);
         return P(o.c, [F(0, o.r), F(t, o.r, E.in), F(t + 0.08, dn, E.step), F(t2 - 0.08, up, E.in), F(t2, o.r), F(1, o.r)]);
       });
     }
@@ -517,7 +539,8 @@ var VARIANTS = [
       });
     }
   },
-  /* Fill — half-cells drop in column by column and stack into the strip. */
+  /* Fill — half-cells drop in column by column and stack into the strip,
+     then drain out of the bottom, each column bottom cell first. */
   {
     id: 44,
     name: "Fill",
@@ -529,9 +552,10 @@ var VARIANTS = [
     clipTight: true,
     uses: { prog: seg(0, 0.66), gest: seg(0, 0.66), wait: "loop", amb: seg(0.74, 1.66) },
     make: (w = 9, g = 0.5) => {
-      const rand = rng(14), C = Math.round(w / g), Rn = Math.round(2 / g);
-      return cellsOf(w, g).map((o) => {
-        const r = o.r, tl = 0.06 + (o.cx * Rn + Rn - 1 - o.cy) / (C * Rn - 1) * 0.58, up = mv(r, 0, -2.5), dn = mv(r, 0, 2.5), td = 0.8 + rand() * 0.1;
+      const rand = rng(14), C = Math.round(w / g), Rn = Math.round(2 / g), cells = cellsOf(w, g);
+      const TD = bottomFirst(cells.map(() => 0.8 + rand() * 0.1), Rn);
+      return cells.map((o, i) => {
+        const r = o.r, tl = 0.06 + (o.cx * Rn + Rn - 1 - o.cy) / (C * Rn - 1) * 0.58, up = mv(r, 0, -2.5), dn = mv(r, 0, 2.5), td = TD[i];
         return P(o.c, [F(0, up), F(tl - 0.05, up, E.in), F(tl, r), F(0.68, r, E.snap), F(0.71, ab(r, 1.05, w / 2), E.snap), F(0.74, r), F(td, r, E.in), F(td + 0.06, dn, E.step), F(1, up)]);
       });
     }
@@ -571,7 +595,9 @@ var VARIANTS = [
       return out;
     }
   },
-  /* Drop — cells fall in one by one and bounce into place. */
+  /* Drop — cells fall in one by one and bounce into place. Each field column
+     fills from the bottom (ink before stock, pink before green, amber before
+     purple): a bottom cell landing second fell straight through the top one. */
   {
     id: 9,
     name: "Drop",
@@ -582,7 +608,7 @@ var VARIANTS = [
     clipTight: true,
     uses: { success: seg(0, 0.66), arrive: seg(0, 0.66), gest: seg(0, 0.66), wait: "loop", amb: seg(0.66, 1.66) },
     make: (w = 9) => {
-      const cells = geo(w).cells, ord = [0, 2, 1, 7, 3, 8, 5, 4, 6].filter((i) => i < cells.length);
+      const cells = geo(w).cells, ord = [0, 2, 1, 8, 4, 7, 6, 3, 5].filter((i) => i < cells.length);
       return cells.map((o, j) => {
         const tl = 0.1 + ord.indexOf(j) * 0.06, up = mv(o.r, 0, -4), dn = mv(o.r, 0, 4);
         return P(o.c, [F(0, up), F(tl - 0.09, up, E.in), F(tl, o.r, E.out), F(tl + 0.025, mv(o.r, 0, -0.3), E.in), F(tl + 0.05, o.r), F(0.8, o.r, E.in), F(0.9, dn, E.step), F(1, up)]);
@@ -651,7 +677,9 @@ var VARIANTS = [
       return out;
     }
   },
-  /* Mosaic — half-cells shuffle along their rows, then sort themselves out. */
+  /* Mosaic — half-cells shuffle along their rows, then sort themselves out
+     (no elastic on the way home: each cell overshot by its own distance, so
+     neighbours collided and the end cells poked past the strip). */
   {
     id: 23,
     name: "Mosaic",
@@ -664,7 +692,7 @@ var VARIANTS = [
       const C = Math.round(w / g), rows = shuffleRows(21, C, Math.round(2 / g));
       return cellsOf(w, g).map((o) => {
         const t = Rr(rows[o.cy][o.cx] * g, o.r.y, g, g), s = o.cx / (C - 1) * 0.08;
-        return P(o.c, [F(0, o.r), F(0.08 + s, o.r, E.io), F(0.3 + s, t), F(0.56 + s, t, E.el), F(0.8 + s, o.r), F(1, o.r)]);
+        return P(o.c, [F(0, o.r), F(0.08 + s, o.r, E.io), F(0.3 + s, t), F(0.56 + s, t, E.io), F(0.8 + s, o.r), F(1, o.r)]);
       });
     }
   },
@@ -839,7 +867,13 @@ var pathPieces = (path, t0, t1, e0, e1) => {
 };
 var HQ = ["half", "whole"];
 var SQUARES = [
-  /* S02 Quarter turn — the whole square turns a quarter at a time, piece by piece. */
+  /* S02 Quarter turn — the whole square turns a quarter at a time, piece by
+     piece. Sliding straight across, the four quadrants would pinwheel over
+     each other in the middle; each quadrant instead breathes to half size
+     at the midpoint of its slide, so their corners only ever touch, and the
+     field's four cells pinwheel inside their own quadrant (an eighth turn at
+     the midpoint, a third of a module each). The midpoint splits io in two,
+     so the slide keeps io's exact pace. */
   {
     id: 102,
     name: "Quarter turn",
@@ -849,13 +883,21 @@ var SQUARES = [
     uses: { amb: FULL2, wait: "loop" },
     make: () => {
       const rot = (r) => Rr2(4 - r.y - r.h, r.x, r.h, r.w);
+      const ctr = (r) => [r.x + r.w / 2, r.y + r.h / 2];
+      const mid = (r, blk) => {
+        const [ax, ay] = ctr(blk), [bx, by] = ctr(rot(blk)), mx = (ax + bx) / 2, my = (ay + by) / 2;
+        if (r.w === blk.w) return Rr2(mx - r.w / 4, my - r.h / 4, r.w / 2, r.h / 2);
+        const [cx, cy] = ctr(r), dx = cx - ax, dy = cy - ay, s = 1 / 3, k = s / Math.hypot(dx, dy);
+        return Rr2(mx + (dx - dy) * Math.SQRT1_2 * k - s / 2, my + (dx + dy) * Math.SQRT1_2 * k - s / 2, s, s);
+      };
       return CELLS2.map((o) => {
-        let r = o.r;
+        let r = o.r, blk = o.r.w < 2 ? Rr2(2, 2, 2, 2) : o.r;
         const f = [F2(0, r)];
         for (let k = 0; k < 4; k++) {
           const t = 0.06 + k * 0.22, n = rot(r);
-          f.push(F2(t, r, E2.io), F2(t + 0.15, n));
+          f.push(F2(t, r, "cubic-bezier(.65,0,.825,.5)"), F2(t + 0.075, mid(r, blk), "cubic-bezier(.175,.5,.35,1)"), F2(t + 0.15, n));
           r = n;
+          blk = rot(blk);
         }
         f.push(F2(1, o.r));
         return P2(o.c, f);
@@ -892,23 +934,24 @@ var SQUARES = [
       const moves = [["row", 1, 1], ["col", 2, 1], ["row", 3, -1], ["col", 0, -1]];
       const seq = [...moves, ...moves.slice().reverse().map(([a, i, d]) => [a, i, -d])];
       const ps = MOD.map((o) => ({ c: o.c, x: o.x, y: o.y, f: [F2(0, o.r)] }));
-      const sd = 0.86 / seq.length;
+      const sd = 0.86 / seq.length, md = (n) => (n % 4 + 4) % 4;
       seq.forEach(([ax, idx, d], s) => {
         const t = 0.06 + s * sd, dur = sd * 0.7;
         for (const p of ps) {
-          if (ax == "row" && p.y !== idx || ax == "col" && p.x !== idx) continue;
-          const fx = p.x, fy = p.y, tx = ax == "row" ? (p.x + d + 4) % 4 : p.x, ty = ax == "col" ? (p.y + d + 4) % 4 : p.y;
-          const wrap = ax == "row" ? Math.abs(tx - fx) > 1 : Math.abs(ty - fy) > 1;
-          if (!wrap) p.f.push(F2(t, Rr2(fx, fy, 1, 1), E2.io), F2(t + dur, Rr2(tx, ty, 1, 1)));
-          else {
-            const ox = ax == "row" ? fx + d : fx, oy = ax == "col" ? fy + d : fy, ix = ax == "row" ? tx - d : tx, iy = ax == "col" ? ty - d : ty;
-            p.f.push(F2(t, Rr2(fx, fy, 1, 1), E2.in), F2(t + dur / 2, Rr2(ox, oy, 1, 1), E2.step), F2(t + dur / 2 + 5e-4, Rr2(ix, iy, 1, 1), E2.out), F2(t + dur, Rr2(tx, ty, 1, 1)));
-          }
+          if (ax == "row" && md(p.y) !== idx || ax == "col" && md(p.x) !== idx) continue;
+          const tx = ax == "row" ? p.x + d : p.x, ty = ax == "col" ? p.y + d : p.y;
+          p.f.push(F2(t, Rr2(p.x, p.y, 1, 1), E2.io), F2(t + dur, Rr2(tx, ty, 1, 1)));
           p.x = tx;
           p.y = ty;
         }
       });
-      return ps.map((p) => P2(p.c, [...p.f, F2(1, Rr2(p.x, p.y, 1, 1))]));
+      const out = [];
+      for (const p of ps) for (const ox of [-4, 0, 4]) for (const oy of [-4, 0, 4]) {
+        const f = [...p.f, F2(1, Rr2(p.x, p.y, 1, 1))].map((fr) => F2(fr.t, mv2(fr.r, ox, oy), fr.e));
+        const seen = (v) => v > -1 + 1e-9 && v < 4 - 1e-9;
+        if (f.some((fr) => seen(fr.r.x) && seen(fr.r.y))) out.push(P2(p.c, f));
+      }
+      return out;
     }
   },
   /* S07 Gears — the outer ring and the inner ring turn against each other. */
@@ -920,18 +963,8 @@ var SQUARES = [
     square: true,
     uses: { amb: FULL2, wait: "loop" },
     make: () => {
-      const outer = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3], [2, 3], [1, 3], [0, 3], [0, 2], [0, 1]], inner = [[1, 1], [2, 1], [2, 2], [1, 2]], N = 12;
-      return MOD.map((o) => {
-        let ring = outer, dir = 1, i = outer.findIndex(([x, y]) => x == o.x && y == o.y);
-        if (i < 0) {
-          ring = inner;
-          dir = -1;
-          i = inner.findIndex(([x, y]) => x == o.x && y == o.y);
-        }
-        const L = ring.length, at = (k) => ring[((i + dir * k) % L + L) % L], f = [];
-        for (let k = 0; k < N; k++) f.push(F2(k / N, Rr2(at(k)[0], at(k)[1], 1, 1), E2.snap), F2(k / N + 0.6 / N, Rr2(at(k + 1)[0], at(k + 1)[1], 1, 1)));
-        return P2(o.c, [...f, F2(1, o.r)]);
-      });
+      const outer = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3], [2, 3], [1, 3], [0, 3], [0, 2], [0, 1]], inner = [[1, 1], [2, 1], [2, 2], [1, 2]];
+      return [...belt(outer, 1, colSq, 1, 12, E2.snap), ...belt(inner, 1, colSq, -1, 12, E2.snap)];
     }
   },
   /* S09 Snake — one line runs the columns down and up; erases, redraws. */
@@ -1026,7 +1059,8 @@ var SQUARES = [
       });
     }
   },
-  /* S18 Mosaic — cells shuffle along their rows, then sort themselves out. */
+  /* S18 Mosaic — cells shuffle along their rows, then sort themselves out
+     (no elastic home — see the strip's Mosaic). */
   {
     id: 118,
     name: "Mosaic",
@@ -1045,13 +1079,14 @@ var SQUARES = [
         }
         for (const o of gridOf(g).filter((c) => c.y == y)) {
           const t = Rr2(xs[o.x] * g, o.r.y, g, g), s = o.x / (n - 1) * 0.08;
-          out.push(P2(o.c, [F2(0, o.r), F2(0.08 + s, o.r, E2.io), F2(0.3 + s, t), F2(0.56 + s, t, E2.el), F2(0.8 + s, o.r), F2(1, o.r)]));
+          out.push(P2(o.c, [F2(0, o.r), F2(0.08 + s, o.r, E2.io), F2(0.3 + s, t), F2(0.56 + s, t, E2.io), F2(0.8 + s, o.r), F2(1, o.r)]));
         }
       }
       return out;
     }
   },
-  /* S19 Sift — cells drain out of the bottom and refill from the top. */
+  /* S19 Sift — cells drain out of the bottom and refill from the top, each
+     column bottom cell first. */
   {
     id: 119,
     name: "Sift",
@@ -1062,14 +1097,21 @@ var SQUARES = [
     clip: "strip",
     uses: { amb: FULL2, wait: "loop" },
     make: (_w, g = 0.5) => {
-      const n = 4 / g, rand = rng2(8);
-      return gridOf(g).map((o) => {
-        const b = (n - 1 - o.y) / (n - 1) * 0.105, t = 0.04 + rand() * 0.24 + b, t2 = 0.52 + rand() * 0.24 + b, dn = mv2(o.r, 0, 5), up = mv2(o.r, 0, -5);
+      const n = 4 / g, rand = rng2(8), cells = gridOf(g);
+      const raw = cells.map((o) => {
+        const b = (n - 1 - o.y) / (n - 1) * 0.105;
+        return [0.04 + rand() * 0.24 + b, 0.52 + rand() * 0.24 + b];
+      });
+      const T1 = bottomFirst(raw.map((x) => x[0]), n), T2 = bottomFirst(raw.map((x) => x[1]), n);
+      return cells.map((o, i) => {
+        const t = T1[i], t2 = T2[i], dn = mv2(o.r, 0, 5), up = mv2(o.r, 0, -5);
         return P2(o.c, [F2(0, o.r), F2(t, o.r, E2.in), F2(t + 0.08, dn, E2.step), F2(t2 - 0.08, up, E2.in), F2(t2, o.r), F2(1, o.r)]);
       });
     }
   },
-  /* S20 Drop — cells fall in one by one and bounce home (fall out, fall in). */
+  /* S20 Drop — cells fall in one by one and bounce home (fall out, fall in),
+     bottom first in every column, so nothing falls through a cell that has
+     already landed (yellow before red; the field before blue). */
   {
     id: 120,
     name: "Drop",
@@ -1080,7 +1122,7 @@ var SQUARES = [
     clipTight: true,
     uses: { amb: seg2(0.6, 1.6), wait: "loop" },
     make: () => {
-      const ord = ["R", "B", "Y", "A", "S", "P", "U"];
+      const ord = ["Y", "A", "R", "U", "P", "S", "B"];
       return CELLS2.map((o) => {
         const tl = 0.1 + ord.indexOf(o.c) * 0.07, up = mv2(o.r, 0, -5), dn = mv2(o.r, 0, 5);
         return P2(o.c, [F2(0, up), F2(tl - 0.09, up, E2.in), F2(tl, o.r, E2.out), F2(tl + 0.025, mv2(o.r, 0, -0.25), E2.in), F2(tl + 0.05, o.r), F2(0.8, o.r, E2.in), F2(0.9, dn, E2.step), F2(1, up)]);
@@ -1180,7 +1222,7 @@ var InkPlayer = class {
     __publicField(this, "anims", []);
     __publicField(this, "dur");
     __publicField(this, "cover");
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
     const m = o.module;
     const palette = (_a = o.palette) != null ? _a : APP_PALETTE;
     const remap = MODE_MAP[(_b = o.mode) != null ? _b : "full"];
@@ -1192,29 +1234,34 @@ var InkPlayer = class {
     const clip = variant.clip === "strip" ? "overflow:hidden;" : variant.clip === "stage" ? `clip-path:inset(-${m}px 0 -${m}px 0);` : "";
     layer.style.cssText = `position:absolute;left:0;top:0;width:${w * m}px;height:${h * m}px;pointer-events:none;${clip}`;
     const pieces = variant.make(w, GRAIN_SIZE[(_d = o.grain) != null ? _d : variant.grid]);
-    const empty = (c) => {
+    const painted = (c) => {
       var _a2;
-      return c != null && palette[(_a2 = remap[c]) != null ? _a2 : c] === "transparent";
+      return c != null && palette[(_a2 = remap[c]) != null ? _a2 : c] !== "transparent";
+    };
+    const bleed = (r, t) => {
+      if (!r || r.w <= 0 || r.h <= 0) return [0, 0];
+      const bx = r.x + r.w < w - 1e-6 && painted(colorAt(pieces, t, r.x + r.w + 0.01, r.y + r.h / 2)) ? 1 : 0;
+      const by = r.y + r.h < h - 1e-6 && painted(colorAt(pieces, t, r.x + r.w / 2, r.y + r.h + 0.01)) ? 1 : 0;
+      return [bx, by];
     };
     for (const p of pieces) {
-      if (empty(p.c)) continue;
+      if (!painted(p.c)) continue;
       const [bw, bh] = baseSize(p);
-      const at = (_e = o.restAt) != null ? _e : 0;
-      const rest = o.restAt != null ? rectAt(p, o.restAt) : (_f = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _f.r;
-      const br = !rest || Math.abs(rest.x + rest.w - w) < 1e-6 || empty(colorAt(pieces, at, rest.x + rest.w + 0.01, rest.y + rest.h / 2)) ? 0 : 1;
-      const bb = !rest || Math.abs(rest.y + rest.h - h) < 1e-6 || empty(colorAt(pieces, at, rest.x + rest.w / 2, rest.y + rest.h + 0.01)) ? 0 : 1;
+      const rest = o.restAt != null ? rectAt(p, o.restAt) : (_e = p.f.find((fr) => fr.r.w > 0 && fr.r.h > 0)) == null ? void 0 : _e.r;
+      const [br, bb] = bleed(rest, (_h = (_g = o.restAt) != null ? _g : (_f = p.f.find((fr) => fr.r === rest)) == null ? void 0 : _f.t) != null ? _h : 0);
       const el = document.createElement("i");
-      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_g = remap[p.c]) != null ? _g : p.c]};` + (p.z ? `z-index:${p.z};` : "");
+      el.style.cssText = `position:absolute;left:0;top:0;display:block;transform-origin:0 0;width:${bw * m + br}px;height:${bh * m + bb}px;background:${palette[(_i = remap[p.c]) != null ? _i : p.c]};` + (p.z ? `z-index:${p.z};` : "");
       layer.appendChild(el);
       let prev = 0;
       const frames = p.f.map((fr) => {
         var _a2;
         const t = Math.min(1, Math.max(prev, fr.t));
         prev = t;
+        const [bx, by] = bleed(fr.r, fr.t);
         return {
           offset: t,
           easing: (_a2 = fr.e) != null ? _a2 : "linear",
-          transform: `translate(${round(fr.r.x * m)}px,${round(fr.r.y * m)}px) scale(${round(Math.max(fr.r.w, 0) / bw)},${round(Math.max(fr.r.h, 0) / bh)})`
+          transform: `translate(${round(fr.r.x * m)}px,${round(fr.r.y * m)}px) scale(${round((Math.max(fr.r.w, 0) * m + bx) / (bw * m + br))},${round((Math.max(fr.r.h, 0) * m + by) / (bh * m + bb))})`
         };
       });
       const a = el.animate(frames, { duration: variant.dur, fill: "both" });
@@ -1223,7 +1270,7 @@ var InkPlayer = class {
     }
     host.appendChild(layer);
     this.layer = layer;
-    this.cover = (_h = o.cover) != null ? _h : null;
+    this.cover = (_j = o.cover) != null ? _j : null;
     if (this.cover) this.cover.style.visibility = "hidden";
   }
   time(iterationStart, iterations) {
@@ -1329,6 +1376,8 @@ export {
   MIN_MODULE,
   SQUARES,
   VARIANTS,
+  belt,
+  bottomFirst,
   colAt,
   colSq,
   colorAt,

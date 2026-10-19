@@ -141,19 +141,26 @@ const FX_HINTS = {
   sep:      'Each word takes its own ink — red, blue, amber… — the last on yellow where yellow reads. Inks that don’t read on this box are skipped.',
   tape:     'Each line (each Enter) gets its own bar, and the bar text follows the APCA rule. The bars stand taller than bare type — give the box about a fifth more height.',
   halftone: 'A flat plate in the first ink, screened from each line’s foot in the box’s text colour. Pick a second ink to screen in that instead.',
+  run:      'The extrusion walks the palette from the first ink in ink-square order, skipping the box colour. Loud runs longer.',
+  sticker:  'The title die-cut as a cream ticket: ink type, the ticket edge, and a hard print in the first ink. Cream in both themes, like every ticket — it reads on any photo.',
+  slice:    'Strips alternate the box’s text colour and the first ink, slipping opposite ways. Amount adds strips and slip.',
+  tiles:    'Each letter on a palette tile, its letter by the APCA rule, the box colour skipped. Tiles stand taller than type — give the box about a third more height.',
+  candy:    'Stripes in the two inks, a key line and a hard print in the box’s text colour. Heavy weights only — thin letters lose the stripes.',
+  repeat:   'The title again, above and below, as key lines. Amount sets the rows (1 · 2 · 3 each way). Made for a bare title, where the rows fill the poster — a box crops them to its edges, so give it the height to show them.',
 };
 function TitleFxFold({ el, doc, update }){
   const fx = el.titleFx && el.titleFx!=='none' ? el.titleFx : 'none';
   const uses = FX_USES[fx] || {};
   const label = (TITLE_FX.find(x=>x.v===fx)||{}).l;
+  const pick = (v)=> update(v==='none' ? { titleFx:null, fxAmt:null, fxInk:null, fxInk2:null } : { titleFx:v });
   return (
     <Fold id="f-fx" title="Party effect" badge={fx==='none'?null:label} dirty={fx==='none'?0:1}>
-      <Chips label="Effect" options={TITLE_FX} value={fx}
-        onChange={v=>update(v==='none' ? { titleFx:null, fxAmt:null, fxInk:null, fxInk2:null } : { titleFx:v })} />
+      <Chips label="Print" options={TITLE_FX.filter(x=>!x.loud)} value={fx} onChange={pick} />
+      <Chips label="Loud" options={TITLE_FX.filter(x=>x.loud)} value={fx} onChange={pick} />
       {fx!=='none' && <React.Fragment>
         <Chips label="Amount" options={FX_AMOUNTS} value={el.fxAmt||'bold'} onChange={v=>update({ fxAmt:v })} />
         {uses.a && <Swatches label="First ink" value={el.fxInk||'fg'} onChange={v=>update({ fxInk:v==='fg'?null:v })}
-          autoTitle="Auto — the title’s fill (the poster accent); its partner on an Accent box" autoBg={AP_PAL[doc.accent]} />}
+          autoTitle={fx==='run'||fx==='tiles' ? 'Auto — start the palette from the poster accent' : 'Auto — the title’s fill (the poster accent); its partner on an Accent box'} autoBg={AP_PAL[doc.accent]} />}
         {uses.b && <Swatches label="Second ink" value={el.fxInk2||'fg'} onChange={v=>update({ fxInk2:v==='fg'?null:v })}
           autoTitle={fx==='halftone' ? 'Auto — the box’s text colour (the key)' : 'Auto — the first ink’s misregistration partner'} />}
         <Hint tight>{FX_HINTS[fx]} Inks are picked against the box: one that matches the fill moves to its partner.</Hint>

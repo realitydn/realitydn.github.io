@@ -269,13 +269,16 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const colAlign = el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start';
     /* party effect (elements/title-fx.jsx) — null unless one is set, and then
        the plain branch below is untouched */
-    const fx = titleFx(el, { ground:fxGround(el.surface, theme, accentHex), accentHex, textCol, lineHeight:titleLineHeight(el) });
+    const fx = titleFx(el, { ground:fxGround(el.surface, theme, accentHex), accentHex, textCol, theme, lineHeight:titleLineHeight(el) });
     const pad = sePad(el, bare?0:16);
     const container = Object.assign({
       width:'100%', height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box',
       alignItems: colAlign, justifyContent: split ? 'space-between' : 'center'
     }, bare ? {} : Object.assign({}, surf, { boxShadow:autoBox }),
-       (fx && !bare) ? { padding:fxPad(pad.padding, fx, el.fontSize) } : pad);
+       (fx && !bare) ? { padding:fxPad(pad.padding, fx, el.fontSize) } : pad,
+       /* the loud effects that throw copies far past the word (Tunnel, Repeat)
+          are cropped by a box — printed inside the panel; bare, they spill */
+       (fx && fx.clip && !bare) ? { overflow:'hidden' } : null);
     const face = {
       fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase',
       fontSize:el.fontSize+'px', lineHeight:titleLineHeight(el),   // .84, lifted under Vietnamese stacks

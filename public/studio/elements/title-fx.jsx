@@ -50,6 +50,14 @@ const TITLE_FX = [
   { v:'sep',      l:'Separation',  t:'Every word its own ink — Kinetic Headline, printed' },
   { v:'tape',     l:'Tape',        t:'Each line on its own ink bar, alternating the two inks' },
   { v:'halftone', l:'Halftone',    t:'Letters screened in two inks — a dot plate over a flat one' },
+  /* the LOUD row — the same moves pushed until they own the poster. For the
+     one-offs; each one is a whole look, not a garnish. */
+  { v:'run',      l:'Colour run',  loud:1, t:'A long solid extrusion banded through the whole palette' },
+  { v:'sticker',  l:'Sticker',     loud:1, t:'The title die-cut as a cream ticket — ink edge, hard print in the first ink' },
+  { v:'slice',    l:'Slice',       loud:1, t:'The title cut into strips that slip sideways, alternating the key and the first ink' },
+  { v:'tiles',    l:'Tiles',       loud:1, t:'Every letter on its own ink-square tile, knocked a little off true' },
+  { v:'candy',    l:'Candy',       loud:1, t:'Letters striped in two inks, a key line round them and a hard print under' },
+  { v:'repeat',   l:'Repeat',      loud:1, t:'The title printed again above and below as key lines — a wall of it' },
 ];
 const FX_AMOUNTS = [{ v:'subtle', l:'Subtle' }, { v:'bold', l:'Bold' }, { v:'loud', l:'Loud' }];
 const AMT = { subtle:0.6, bold:1, loud:1.6 };
@@ -58,7 +66,21 @@ const AMT = { subtle:0.6, bold:1, loud:1.6 };
 const FX_USES = {
   misreg:{ a:1, b:1 }, echo:{ a:1, b:1 }, slab:{ a:1, b:1 }, keyline:{ a:1 },
   sep:{}, tape:{ a:1, b:1 }, halftone:{ a:1, b:1 },
+  run:{ a:1 }, sticker:{ a:1 }, slice:{ a:1 }, tiles:{ a:1 }, candy:{ a:1, b:1 }, repeat:{ a:1, b:1 },
 };
+/* The palette as a run — the ink square's order (the red · blue · yellow
+   quadrants, then pink · purple · amber) with green closing it. Colour run and
+   Tiles walk it from the first ink, skipping whatever the box is. */
+const RUN_ORDER = ['red','blue','yellow','pink','purple','amber','green'];
+function paletteFrom(startHex, ground){
+  const k = keyOf(startHex);
+  const i = Math.max(0, RUN_ORDER.indexOf(k));
+  const seq = RUN_ORDER.slice(i).concat(RUN_ORDER.slice(0, i)).map(x=>FX_PAL[x]);
+  return seq.filter(h=>!same(h, ground));
+}
+/* a fixed knock per letter — the same every render and every export (never
+   Math.random), and it doesn't move when you add a letter further on */
+const KNOCK = [-4, 3, -1.5, 5, -3, 1.5, 4, -5, 2, -2.5, 3.5, -1];
 /* Kinetic Headline's order: red, blue, amber crash in; the last word lands on
    yellow. The rest of the palette follows so a long title has somewhere to go. */
 const SEP_ORDER = ['red','blue','amber','pink','green','purple'];
@@ -228,6 +250,106 @@ function titleFx(el, ctx){
       } }],
       over:{ l:0, t:0, r:0, b:0 } };
   }
+
+  /* ================= LOUD ================= */
+  if(fx==='run'){
+    /* bands of solid extrusion, each a few hard sub-steps deep so it reads as
+       a stripe, not a stack of offset copies */
+    const seq = paletteFrom(A, G), bands = Math.round(3.5 + 2*m), d = 0.06, sub = 6;
+    const sh = [];
+    for(let k=0;k<bands;k++) for(let j=1;j<=sub;j++){
+      const v = em(d*(k + j/sub));
+      sh.push(v+' '+v+' 0 '+seq[k % seq.length]);
+    }
+    const depth = d*bands;
+    return { layers:[], face:{ textShadow:sh.join(', ') }, over:{ l:0, t:0, r:depth, b:depth } };
+  }
+  if(fx==='sticker'){
+    /* The ticket, wrapped round the letterforms: the title die-cut out of
+       cream stock, ink type on it, a 2px-scale ink edge, and the hard print
+       offset in the first ink (the ticket's category colour). Cream in both
+       themes, like every ticket. */
+    const body = 0.12*(0.7+0.3*m), edge = 0.022, s = 0.07*m;
+    const CREAM = FX_PAL.cream, INK = FX_PAL.ink;
+    // the edge is what separates the stock from what it sits on — ink on any
+    // light ground (a cream box at Night too), cream on a dark one
+    const edgeCol = isLight(G) ? INK : CREAM;
+    return { layers:[
+        { dx:s, dy:s, ring:{ w:body+edge, col:A, solid:true } },      // the print
+        { dx:0, dy:0, ring:{ w:body+edge, col:edgeCol, solid:true } }, // the edge
+        { dx:0, dy:0, ring:{ w:body, col:CREAM, solid:true } },        // the stock
+      ], face:{ color:INK, WebkitTextFillColor:INK },
+      over:{ l:body+edge, t:body+edge, r:body+edge+s, b:body+edge+s } };
+  }
+  if(fx==='slice'){
+    /* strips across the whole block, cut with a hairline of paper between
+       them; odd strips are the first ink and slip one way, even strips the key
+       and slip the other. The face keeps the layout and isn't drawn. */
+    const n = Math.round(5 + 2*m), s = 0.05*m, gap = 0.6;
+    const layers = [];
+    for(let i=0;i<n;i++){
+      const top = i*100/n, bot = 100 - (i+1)*100/n;
+      layers.push({ dx: i%2 ? s : -s, dy:0, style:{
+        color: i%2 ? A : T,
+        clipPath:'inset('+r3(top + (i ? gap/2 : 0))+'% -20% '+r3(bot + (i<n-1 ? gap/2 : 0))+'% -20%)',
+      } });
+    }
+    return { layers, face:{ visibility:'hidden' }, over:{ l:s, t:0, r:s, b:0 } };
+  }
+  if(fx==='tiles'){
+    /* each letter on a cell of the ink square, walked from the first ink;
+       the letter takes the APCA side of its tile; each tile knocked off true
+       by a fixed amount and printed hard in the box's text colour. Words stay
+       whole (a tile row never breaks mid-word). */
+    const seq = paletteFrom(A, G);
+    const pr = 0.045, lift = Math.max(ctx.lineHeight || 0.84, 0.84);
+    const toks = words(el.text);
+    const render = ()=>{
+      let n = 0;
+      return toks.map((tok, ti)=>{
+        if(/^\s+$/.test(tok)) return tok;
+        return <span key={ti} style={{ whiteSpace:'nowrap' }}>{Array.from(tok).map((ch, ci)=>{
+          const bg = seq[n % seq.length], kn = KNOCK[n % KNOCK.length];
+          n++;
+          return <span key={ci} style={{
+            display:'inline-block', background:bg, color:fxOn(bg),
+            minWidth:'0.92em', textAlign:'center', lineHeight:lift,
+            padding:'0.08em 0.07em', margin:'0 0.035em',
+            transform:'rotate('+r3(kn*m*0.8)+'deg) translateY('+em(kn*m*0.006)+')',
+            boxShadow: em(pr)+' '+em(pr)+' 0 '+T,
+          }}>{ch}</span>;
+        })}</span>;
+      });
+    };
+    // the tiles stand taller than the line — open the line so rows don't collide
+    return { layers:[], face:{ lineHeight: r3(lift + 0.34), letterSpacing:0 }, render,
+      over:{ l:0.08, t:0.1, r:0.08+pr, b:0.1+pr } };
+  }
+  if(fx==='candy'){
+    /* two saturated inks in thin stripes vibrate into mud — the stripes are
+       the first ink and cream stock, wide; the second ink takes the print */
+    const s = 0.065*m, w = 0.026*(0.75+0.25*m), band = 0.085*(0.8+0.2*m);
+    const stripes = 'repeating-linear-gradient(135deg, '+A+' 0 '+em(band)+', '+FX_PAL.cream+' '+em(band)+' '+em(band*2)+')';
+    return { layers:[
+        { dx:s, dy:s, style:{ color:B } },                 // the hard print
+        { dx:0, dy:0, ring:{ w, col:T } },                 // the key line
+      ], face:{
+        color:'transparent', WebkitTextFillColor:'transparent',
+        backgroundImage:stripes, WebkitBackgroundClip:'text', backgroundClip:'text',
+      }, over:{ l:w, t:w, r:s+w, b:s+w } };
+  }
+  if(fx==='repeat'){
+    // whole copies of the block, one block-height apart — translate % is the
+    // layer's own height, so the rows butt exactly at any size or line count
+    const rows = m<0.8 ? 1 : m<1.2 ? 2 : 3, w = 0.022;
+    // a block apart, always: packed tighter, the outlines cross the solid
+    // letters and the title stops reading. On a box the panel crops the rows.
+    const step = 100;
+    const layers = [];
+    for(let k=rows;k>=1;k--) [-1, 1].forEach(sgn=>layers.push({ ring:{ w, col: k%2 ? A : B },
+      style:{ transform:'translateY('+(sgn*k*step)+'%)' } }));
+    return { layers, face:{}, clip:true, over:{ l:0, t:0, r:0, b:0 } };
+  }
   return null;
 }
 
@@ -240,11 +362,14 @@ function titleFx(el, ctx){
    cutting the letters back out traces the silhouette only, and the line sits
    OUTSIDE the letter, so a light weight doesn't get eaten. (The dilate kernel
    is square — hard corners on the outline, which is on brand.) */
-function RingFilter({ id, px, col }){
+/* solid: the dilated silhouette itself (Sticker's stock, edge and print),
+   not the ring cut out of it */
+function RingFilter({ id, px, col, solid }){
   return (
-    <filter id={id} x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+    <filter id={id} x="-25%" y="-25%" width="150%" height="150%" colorInterpolationFilters="sRGB">
       <feMorphology in="SourceAlpha" operator="dilate" radius={px} result="fat" />
-      <feComposite in="fat" in2="SourceAlpha" operator="out" result="ring" />
+      {solid ? <feComposite in="fat" in2="fat" operator="in" result="ring" />
+             : <feComposite in="fat" in2="SourceAlpha" operator="out" result="ring" />}
       <feFlood floodColor={col} />
       <feComposite in2="ring" operator="in" />
     </filter>
@@ -256,7 +381,7 @@ function FxTitle({ fx, base, text, pressCss, fontSize }){
   const content = fx.render ? fx.render() : text;
   const common = Object.assign({}, base, { textShadow:'none' });
   const rings = [];
-  const ringOf = (r)=>{ const id = fid+'r'+rings.length; rings.push({ id, px:Math.max(0.5, r.w*fontSize), col:r.col }); return 'url(#'+id+')'; };
+  const ringOf = (r)=>{ const id = fid+'r'+rings.length; rings.push({ id, px:Math.max(0.5, r.w*fontSize), col:r.col, solid:!!r.solid }); return 'url(#'+id+')'; };
   const copy = (l, i, over)=>(
     <div key={(over?'o':'l')+i} aria-hidden="true" style={Object.assign({}, common, {
         position:'absolute', left:0, top:0, width:'100%', height:'100%',

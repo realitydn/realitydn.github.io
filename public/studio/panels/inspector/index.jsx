@@ -24,7 +24,7 @@ import { Fold } from '../controls.jsx';
 import { PhotoControls, photoDirt } from '../photo-panel/index.jsx';
 import { familyOf, useTab, noteFamily, Tabs } from './tabs.jsx';
 import { TYPE_CAPS } from './caps.js';
-import { ShadowControls, SurfaceFold, fillMatters } from './appearance.jsx';
+import { ShadowControls, SurfaceFold, fillMatters, TitleFxFold } from './appearance.jsx';
 import { BlockControls, ShapeControls, IconControls, RuleControls, BurstControls } from './graphics.jsx';
 import { InkmarkControls } from './inkmark.jsx';
 import { ContentFields, TypeFold, SubtitleFold, KickerFold } from './text.jsx';
@@ -80,7 +80,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   const PD = family==='media' ? photoDirt(el) : null;
   const layoutN = dTransform + (el._overridden?1:0) + (PD ? PD.placeDirty : 0);
   const counts = family==='media' ? Object.assign({}, PD.tabs, { layout:layoutN })
-               : family==='text'  ? { text:dContent+dType+dSub+dKicker+dRows, box:dSurface, layout:layoutN }
+               : family==='text'  ? { text:dContent+dType+dSub+dKicker+dRows, box:dSurface+(el.titleFx&&el.titleFx!=='none'?1:0), layout:layoutN }
                :                    { shape:dContent, layout:layoutN };
   const photo = (t)=> <PhotoControls el={el} update={update} theme={doc.theme} accent={doc.accent} day={posterDayOf(doc)} tab={t} />;
 
@@ -144,6 +144,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
       {/* ===================== BOX: colour & surface, shadow ===================== */}
       {family==='text' && tab==='box' && <React.Fragment>
         <SurfaceFold el={el} doc={doc} update={update} caps={caps} dSurface={dSurface} />
+        {caps.fx && <TitleFxFold el={el} doc={doc} update={update} />}
         {caps.shadow && <ShadowControls el={el} update={update} theme={doc.theme} />}
       </React.Fragment>}
 

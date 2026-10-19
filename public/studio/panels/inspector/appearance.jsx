@@ -3,6 +3,7 @@
    ============================================================ */
 import { PALETTE as AP_PAL, ACCENTS as AP_ACC, ACCENT_BY_DAY, parseSessions, shadowModel } from '../../studio-data.jsx';
 import { Chips, Slider, Fold, Hint, Swatches, SURFACES } from '../controls.jsx';
+import { TITLE_FX, FX_AMOUNTS, FX_USES } from '../../elements/title-fx.jsx';
 /* One shadow control for every element. Defaults + slider ranges come from the
    shared window.shadowModel, so what you see matches what renders, and a brand
    new element's shadow Just Works. Applies as a text-shadow on bare text, a
@@ -128,4 +129,37 @@ function SurfaceFold({ el, doc, update, caps, dSurface }){
   );
 }
 
-export { ShadowControls, LIFTS, shadowLift, applyLift, SurfaceFold, fillMatters };
+/* ---- party effect — the title's Kinetic-register moves (elements/title-fx.jsx) ----
+   Lives on the Box tab because it's decided WITH the box: the inks are picked
+   against the surface it sits on, and a boxed title's padding grows to hold
+   the plates. Closed unless one is set — it's for the big nights. */
+const FX_HINTS = {
+  misreg:   'The 13 / 6 hero plates, behind the letters. They overprint where they cross — on a dark ground they add instead.',
+  echo:     'Two outline pulls step out behind the word. Heavier weights hold the outlines best.',
+  slab:     'The ticket print, run solid. Hard, no blur.',
+  keyline:  'Hollow letters in the box’s text colour, fill slipped underneath. Bold or heavier.',
+  sep:      'Each word takes its own ink — red, blue, amber… — the last on yellow where yellow reads. Inks that don’t read on this box are skipped.',
+  tape:     'Each line (each Enter) gets its own bar, and the bar text follows the APCA rule. The bars stand taller than bare type — give the box about a fifth more height.',
+  halftone: 'A flat plate in the first ink, screened from each line’s foot in the box’s text colour. Pick a second ink to screen in that instead.',
+};
+function TitleFxFold({ el, doc, update }){
+  const fx = el.titleFx && el.titleFx!=='none' ? el.titleFx : 'none';
+  const uses = FX_USES[fx] || {};
+  const label = (TITLE_FX.find(x=>x.v===fx)||{}).l;
+  return (
+    <Fold id="f-fx" title="Party effect" badge={fx==='none'?null:label} dirty={fx==='none'?0:1}>
+      <Chips label="Effect" options={TITLE_FX} value={fx}
+        onChange={v=>update(v==='none' ? { titleFx:null, fxAmt:null, fxInk:null, fxInk2:null } : { titleFx:v })} />
+      {fx!=='none' && <React.Fragment>
+        <Chips label="Amount" options={FX_AMOUNTS} value={el.fxAmt||'bold'} onChange={v=>update({ fxAmt:v })} />
+        {uses.a && <Swatches label="First ink" value={el.fxInk||'fg'} onChange={v=>update({ fxInk:v==='fg'?null:v })}
+          autoTitle="Auto — the title’s fill (the poster accent); its partner on an Accent box" autoBg={AP_PAL[doc.accent]} />}
+        {uses.b && <Swatches label="Second ink" value={el.fxInk2||'fg'} onChange={v=>update({ fxInk2:v==='fg'?null:v })}
+          autoTitle={fx==='halftone' ? 'Auto — the box’s text colour (the key)' : 'Auto — the first ink’s misregistration partner'} />}
+        <Hint tight>{FX_HINTS[fx]} Inks are picked against the box: one that matches the fill moves to its partner.</Hint>
+      </React.Fragment>}
+    </Fold>
+  );
+}
+
+export { ShadowControls, LIFTS, shadowLift, applyLift, SurfaceFold, fillMatters, TitleFxFold };

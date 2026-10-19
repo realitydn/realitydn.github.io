@@ -20,6 +20,7 @@ import {
   loadCachedImage, getSample, SE_DAY_INK, posterDayOf, risoSig, photoSources, drawPhotoPress, PhotoEl,
 } from './elements/photo.jsx';
 import { BlockEl, ShapeEl, IconEl, RuleEl, BurstEl, InkmarkEl, TicketInkMark } from './elements/graphics.jsx';
+import { titleFx, groundOf as fxGround, FxTitle, fxPad } from './elements/title-fx.jsx';
 
 /* ---- FACT type — the 5+6 merge, in one place -------------------------
    Canon (reality-ds.css .type-fact-far · decision M1 "family wins"):
@@ -266,21 +267,29 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const gapMap = { tight:0.04, snug:0.16, roomy:0.36 };
     const subGap = (hasSub && !split) ? Math.round(el.fontSize * (gapMap[el.subLayout]!=null?gapMap[el.subLayout]:0.16)) : 0;
     const colAlign = el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start';
+    /* party effect (elements/title-fx.jsx) — null unless one is set, and then
+       the plain branch below is untouched */
+    const fx = titleFx(el, { ground:fxGround(el.surface, theme, accentHex), accentHex, textCol, lineHeight:titleLineHeight(el) });
+    const pad = sePad(el, bare?0:16);
     const container = Object.assign({
       width:'100%', height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box',
       alignItems: colAlign, justifyContent: split ? 'space-between' : 'center'
-    }, bare ? {} : Object.assign({}, surf, { boxShadow:autoBox }), sePad(el, bare?0:16));
+    }, bare ? {} : Object.assign({}, surf, { boxShadow:autoBox }),
+       (fx && !bare) ? { padding:fxPad(pad.padding, fx, el.fontSize) } : pad);
+    const face = {
+      fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase',
+      fontSize:el.fontSize+'px', lineHeight:titleLineHeight(el),   // .84, lifted under Vietnamese stacks
+      letterSpacing: EM(el.letterSpacing!=null?el.letterSpacing:TRACK.display),
+      color:textCol, textAlign:el.align,
+      writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb',
+      textShadow: tShadow,
+      whiteSpace:'pre-wrap', textWrap:'balance'
+    };
     inner = (
       <div style={container}>
-        <div style={{
-          fontFamily:MONT, fontWeight:el.weight, textTransform:'uppercase',
-          fontSize:el.fontSize+'px', lineHeight:titleLineHeight(el),   // .84, lifted under Vietnamese stacks
-          letterSpacing: EM(el.letterSpacing!=null?el.letterSpacing:TRACK.display),
-          color:textCol, textAlign:el.align,
-          writingMode: el.orient==='v'?'vertical-rl':'horizontal-tb',
-          textShadow: tShadow,
-          whiteSpace:'pre-wrap', textWrap:'balance'
-        }}>{el.text}</div>
+        {fx
+          ? <FxTitle fx={fx} base={face} text={el.text} pressCss={bare && tShadow!=='none' ? tShadow : null} fontSize={el.fontSize} />
+          : <div style={face}>{el.text}</div>}
         {hasSub && <div style={{
           fontFamily:MONT, fontWeight:el.subWeight||600, textTransform:'uppercase',
           fontSize:((el.subSize!=null?el.subSize:30)*B)+'px', lineHeight:1.15, marginTop:subGap,

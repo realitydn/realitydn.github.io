@@ -32,7 +32,7 @@ const FOLD_TABS = {
              'ph-finish':'finish', 'ph-mask':'finish',
              'ph-place':'layout', 'sh':'layout', 'f-transform':'layout', 'f-override':'layout' },
   text:    { 'f-content':'text', 'f-type':'text', 'f-sub':'text', 'f-kicker':'text', 'f-rows':'text',
-             'f-surface':'box', 'sh':'box', 'f-transform':'layout', 'f-override':'layout' },
+             'f-surface':'box', 'f-fx':'box', 'sh':'box', 'f-transform':'layout', 'f-override':'layout' },
   graphic: { 'f-content':'shape', 'sh':'shape', 'f-transform':'layout', 'f-override':'layout' },
 };
 

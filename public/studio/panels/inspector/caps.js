@@ -23,9 +23,10 @@
      shadow     — every element now has a shadow control
      height     — expose a height dial + the shared tag-height presets
      widthPreset— weekly's grid width presets
+     fx         — the title's party effects (Box tab, elements/title-fx.jsx)
    ============================================================ */
 const TYPE_CAPS = {
-  title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, lineHeight:{ def:0.84, min:0.7, max:1.5 }, subtitle:true, surface:true, shadow:true },
+  title:    { text:true, font:'mont', size:true, weight:true, tracking:true, align:true, orient:true, lineHeight:{ def:0.84, min:0.7, max:1.5 }, subtitle:true, surface:true, shadow:true, fx:true },
   tagline:  { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, orient:true, surface:true, shadow:true },
   info:     { text:true, font:'grot', size:true, weight:true, tracking:true, align:true, lineHeight:{ def:1.4, min:1, max:2 }, surface:true, shadow:true },
   /* when + cost are FACT chips — Space Grotesk (canon M1), so their weight

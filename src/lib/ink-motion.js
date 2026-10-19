@@ -22,7 +22,9 @@ var CELL_COLOR = {
 };
 var E = {
   snap: "cubic-bezier(.3,0,.2,1)",
-  stamp: "cubic-bezier(.2,1.4,.45,1)",
+  /* a hard print, no bounce: a 5% overshoot spilled each landing cell over
+     the ones already down and past the mark (19.10.26) */
+  stamp: "cubic-bezier(.2,1,.3,1)",
   io: "cubic-bezier(.65,0,.35,1)",
   lin: "linear",
   out: "cubic-bezier(.2,.8,.2,1)",
@@ -120,30 +122,60 @@ var bottomFirst = (times, rows) => times.map((_, i) => {
   const c0 = i - i % rows, col = times.slice(c0, c0 + rows).sort((a, b) => a - b);
   return col[rows - 1 - i % rows];
 });
-function belt(ring, g, cell, dir, n, ease) {
+var lane = (r, side) => side === "top" ? Rr(r.x, r.y, r.w, r.h / 2) : side === "bottom" ? Rr(r.x, r.y + r.h / 2, r.w, r.h / 2) : side === "left" ? Rr(r.x, r.y, r.w / 2, r.h) : Rr(r.x + r.w / 2, r.y, r.w / 2, r.h);
+function riffle(n, rand) {
+  const m = Math.max(1, Math.min(n - 1, Math.round(n * (0.35 + rand() * 0.3))));
+  let a = m - 1, b = n - m - 1;
+  const seq = [2];
+  while (a + b > 0) {
+    const one = rand() < a / (a + b);
+    seq.push(one ? 1 : 2);
+    if (one) a--;
+    else b--;
+  }
+  seq.push(1);
+  const to = [];
+  let i1 = 0, i2 = m;
+  seq.forEach((s, pos) => {
+    if (s === 1) to[i1++] = pos;
+    else to[i2++] = pos;
+  });
+  return to;
+}
+var mosaicCell = (c, home, to, d) => {
+  const side = to.x > home.x ? "top" : "bottom";
+  return P(c, [
+    F(0, home),
+    F(0.08 + d, home, E.io),
+    F(0.12 + d, lane(home, side), E.io),
+    F(0.26 + d, lane(to, side), E.io),
+    F(0.3 + d, to),
+    F(0.56 + d, to, E.io),
+    F(0.6 + d, lane(to, side), E.io),
+    F(0.76 + d, lane(home, side), E.io),
+    F(0.8 + d, home),
+    F(1, home)
+  ]);
+};
+var SNAP_IN = "cubic-bezier(.48,0,.64,.5)";
+var SNAP_OUT = "cubic-bezier(.1636,.5,.4182,1)";
+var SNAP_MID = 0.3125;
+function belt(ring, g, cell, dir, n) {
   const L = ring.length, at = (i) => ring[(i % L + L) % L];
   const box = ([x, y]) => Rr(x * g, y * g, g, g);
-  const edge = ([x, y], [dx, dy]) => Rr((x + (dx > 0 ? 1 : 0)) * g, (y + (dy > 0 ? 1 : 0)) * g, dx ? 0 : g, dy ? 0 : g);
-  const Z = Rr(0, 0, 0, 0), eps = 5e-4, out = [], twins = [];
-  ring.forEach((home, i0) => {
-    const main = [F(0, box(home))], twin = [F(0, Z, E.step)];
+  const same = (u, v) => u[0] === v[0] && u[1] === v[1];
+  return ring.map((home, i0) => {
+    const f = [F(0, box(home))];
     for (let k = 0; k < n; k++) {
-      const p = at(i0 + dir * (k - 1)), a = at(i0 + dir * k), b = at(i0 + dir * (k + 1));
-      const push = [a[0] - p[0], a[1] - p[1]], go = [b[0] - a[0], b[1] - a[1]];
+      const p = at(i0 + dir * (k - 1)), a = at(i0 + dir * k), b = at(i0 + dir * (k + 1)), c = at(i0 + dir * (k + 2));
+      const push = [a[0] - p[0], a[1] - p[1]], go = [b[0] - a[0], b[1] - a[1]], lead = [c[0] - b[0], c[1] - b[1]];
       const t0 = k / n, t1 = t0 + 0.6 / n;
-      if (push[0] === go[0] && push[1] === go[1]) {
-        main.push(F(t0, box(a), ease), F(t1, box(b)));
-        continue;
-      }
-      main.push(F(t0, box(a), ease), F(t1, edge(a, push), E.step), F(t1 + eps, box(b)));
-      twin.push(F(t0, edge(b, [-go[0], -go[1]]), ease), F(t1, box(b), E.step), F(t1 + eps, Z, E.step));
+      if (same(push, go) && same(go, lead)) f.push(F(t0, box(a), E.snap), F(t1, box(b)));
+      else f.push(F(t0, box(a), SNAP_IN), F(t0 + (t1 - t0) * SNAP_MID, Rr(((a[0] + b[0]) / 2 + 0.25) * g, ((a[1] + b[1]) / 2 + 0.25) * g, g / 2, g / 2), SNAP_OUT), F(t1, box(b)));
     }
-    main.push(F(1, box(home)));
-    twin.push(F(1, Z));
-    out.push(P(cell(home[0], home[1]), main));
-    twins.push(P(cell(home[0], home[1]), twin));
+    f.push(F(1, box(home)));
+    return P(cell(home[0], home[1]), f);
   });
-  return [...out, ...twins];
 }
 var VARIANTS = [
   /* Handoff — each band swells over its neighbour, then gives the space back. */
@@ -195,7 +227,7 @@ var VARIANTS = [
       const ring = [];
       for (let x = 0; x < w; x++) ring.push([x, 0]);
       for (let x = w - 1; x >= 0; x--) ring.push([x, 1]);
-      return belt(ring, 1, colAt, 1, ring.length, E.snap);
+      return belt(ring, 1, colAt, 1, ring.length);
     }
   },
   /* Weave — half-height rows slide against each other like knitting. */
@@ -257,11 +289,14 @@ var VARIANTS = [
         T.push([x, 1]);
         B.push([x, 3]);
       }
-      return [...belt(T, 0.5, half, 1, 36, E.snap), ...belt(B, 0.5, half, -1, 36, E.snap)];
+      return [...belt(T, 0.5, half, 1, 36), ...belt(B, 0.5, half, -1, 36)];
     }
   },
   /* Fold — strip folds into the ink square (the app icon) and back. Its
-     arrival is the second half: icon → strip. */
+     arrival is the second half: icon → strip. Flown straight, blue and
+     yellow passed clean through each other (19.10.26); now the bands move
+     in two legs — red and blue lift a row, yellow drops one, then each lane
+     slides home — and the field re-prints in place instead of flying. */
   {
     id: 2,
     name: "Fold",
@@ -271,10 +306,15 @@ var VARIANTS = [
     make: () => {
       const T = { R: Rr(2.5, -1, 2, 2), B: Rr(4.5, -1, 2, 2), Y: Rr(2.5, 1, 2, 2), S: Rr(4.5, 1, 1, 1), P: Rr(5.5, 1, 1, 1), U: Rr(4.5, 2, 1, 1), A: Rr(5.5, 2, 1, 1) };
       return CELLS.map((o, j) => {
-        const t = T[o.c];
-        if (!t) return P(o.c, [F(0, o.r), F(0.08, o.r, E.snap), F(0.18, sc(o.r, 0)), F(0.8, sc(o.r, 0), E.stamp), F(0.92, o.r), F(1, o.r)]);
-        const s = j * 0.012, s2 = (8 - j) * 0.012;
-        return P(o.c, [F(0, o.r), F(0.1 + s, o.r, E.io), F(0.38 + s, t), F(0.6 + s2, t, E.io), F(0.86 + s2, o.r), F(1, o.r)]);
+        const t = T[o.c], z = sc(o.r, 0);
+        if (o.r.w === 2) {
+          const ln = Rr(o.r.x, t.y, 2, 2);
+          return P(o.c, [F(0, o.r), F(0.1, o.r, E.io), F(0.2, ln), F(0.22, ln, E.io), F(0.36, t), F(0.66, t, E.io), F(0.78, ln), F(0.78, ln, E.io), F(0.86, o.r), F(1, o.r)]);
+        }
+        const k = j - 3, out = 0.08 + k * 0.012, back = 0.82 + k * 0.014;
+        if (!t) return P(o.c, [F(0, o.r), F(out, o.r, E.in), F(out + 0.06, z), F(back, z, E.stamp), F(back + 0.05, o.r), F(1, o.r)]);
+        const q = [3, 6, 7, 8].indexOf(j), zt = sc(t, 0), inn = 0.38 + q * 0.02, leave = 0.6 + q * 6e-3;
+        return P(o.c, [F(0, o.r), F(out, o.r, E.in), F(out + 0.06, z, E.step), F(inn, zt, E.stamp), F(inn + 0.06, t), F(leave, t, E.in), F(leave + 0.04, zt, E.step), F(back, z, E.stamp), F(back + 0.05, o.r), F(1, o.r)]);
       });
     }
   },
@@ -292,7 +332,12 @@ var VARIANTS = [
       return P(o.c, [F(0, a), F(0.04 + s, a, "cubic-bezier(.15,.9,.25,1)"), F(0.3 + s, o.r), F(0.58 + s, o.r, "cubic-bezier(.6,0,.85,.3)"), F(0.8 + s, b, E.step), F(1, a)]);
     })
   },
-  /* Pour — the ink square streams half-cell by half-cell into the strip. */
+  /* Pour — the ink square streams half-column by half-column into the
+     strip. Flown straight, the half-cells crossed hundreds of times
+     (19.10.26); now the bands stream along two lanes — red and blue along
+     the top, leading half-column first, yellow along the bottom — then each
+     half-column drops or lifts into the strip, and the field re-prints in
+     place. The loop pours back the same way. */
   {
     id: 36,
     name: "Pour",
@@ -302,11 +347,21 @@ var VARIANTS = [
     make: () => {
       const SQ = { R: [2.5, -1], B: [4.5, -1], Y: [2.5, 1], S: [4.5, 1], P: [5.5, 1], U: [4.5, 2], A: [5.5, 2] };
       const cellOf = (o) => CELLS.find((c) => o.hx / 2 >= c.r.x && o.hx / 2 < c.r.x + c.r.w && o.hy / 2 >= c.r.y && o.hy / 2 < c.r.y + c.r.h);
+      let qi = 0;
       return HALF.map((o) => {
         const c = cellOf(o), q = SQ[c.c], z = sc(o.r, 0);
-        if (!q) return P(o.c, [F(0, z), F(0.5, z, E.stamp), F(0.56, o.r), F(0.7, o.r, E.snap), F(0.76, z), F(1, z)]);
-        const s = Rr(q[0] + o.hx / 2 - c.r.x, q[1] + o.hy / 2 - c.r.y, 0.5, 0.5), t = 0.08 + (o.hx * 4 + o.hy) * 5e-3;
-        return P(o.c, [F(0, s), F(t, s, E.io), F(t + 0.12, o.r), F(0.7, o.r, E.io), F(0.86, s), F(1, s)]);
+        const s = q ? Rr(q[0] + o.hx / 2 - c.r.x, q[1] + o.hy / 2 - c.r.y, 0.5, 0.5) : o.r;
+        if (c.r.w === 2) {
+          const ln = Rr(o.r.x, s.y, 0.5, 0.5), top = c.c !== "Y";
+          const tH = top ? 0.06 + o.hx * 0.02 : 0.13 + (11 - o.hx) * 0.02, tV = 0.34 + o.hx * 0.012;
+          const tB = top ? 0.78 + (7 - o.hx) * 8e-3 : 0.78 + (o.hx - 8) * 8e-3;
+          return P(o.c, [F(0, s), F(tH, s, E.io), F(tH + 0.12, ln), F(tV, ln, E.io), F(tV + 0.08, o.r), F(0.7, o.r, E.io), F(0.78, ln), F(tB, ln, E.io), F(tB + 0.1, s), F(1, s)]);
+        }
+        const i = (o.hx - 12) * 4 + o.hy, st = 0.38 + i * 5e-3, rs = 0.66 + i * 15e-4;
+        if (!q) return P(o.c, [F(0, z), F(st, z, E.stamp), F(st + 0.05, o.r), F(rs, o.r, E.in), F(rs + 0.03, z), F(1, z)]);
+        const zs = sc(s, 0), sh = 0.04 + qi * 3e-3, ss = 0.905 + qi * 2e-3;
+        qi++;
+        return P(o.c, [F(0, s), F(sh, s, E.in), F(sh + 0.04, zs, E.step), F(st, z, E.stamp), F(st + 0.05, o.r), F(rs, o.r, E.in), F(rs + 0.03, z, E.step), F(ss, zs, E.stamp), F(ss + 0.03, s), F(1, s)]);
       });
     }
   },
@@ -457,8 +512,11 @@ var VARIANTS = [
       });
     }
   },
-  /* Pull cycle — the whole pull-to-refresh: reveal, threshold stamp, a weave
-     while it works, then tuck away. `gest` scrubs the reveal. */
+  /* Pull cycle — the whole pull-to-refresh: reveal, threshold press, a weave
+     while it works, then tuck away. `gest` scrubs the reveal. The weave
+     wraps inside the strip — the cell a row pushes off one end comes back in
+     at the other — and the threshold presses the mark in rather than
+     swelling it (19.10.26: both stuck out past the strip's ends). */
   {
     id: 42,
     name: "Pull cycle",
@@ -466,31 +524,37 @@ var VARIANTS = [
     grid: "half",
     grains: HW,
     short: true,
+    clip: "strip",
     uses: { gest: seg(0, 0.45), wait: "loop", amb: seg(0.45, 1.45) },
     make: (w = 9, g = 0.5) => {
-      const C = Math.round(w / g);
-      return cellsOf(w, g).map((o) => {
-        const r = o.r, ta = 0.02 + o.cx / (C - 1) * 0.374, z0 = Rr(r.x, r.y, 0, r.h), m = mv(r, o.cy % 2 ? -g : g, 0), q = Rr(r.x, 1, r.w, 0);
-        return P(o.c, [
-          F(0, z0),
-          F(ta, z0, E.snap),
-          F(ta + 0.02, r),
-          F(0.46, r, E.snap),
-          F(0.49, ab(r, 1.06, w / 2), E.snap),
-          F(0.52, r),
-          F(0.56, r, E.snap),
-          F(0.6, m),
-          F(0.64, m, E.snap),
-          F(0.68, r),
-          F(0.72, r, E.snap),
-          F(0.76, m),
-          F(0.8, m, E.snap),
-          F(0.84, r),
-          F(0.88, r, E.in),
-          F(0.96, q),
-          F(1, q)
-        ]);
-      });
+      const C = Math.round(w / g), out = [];
+      for (const o of cellsOf(w, g)) {
+        const d = o.cy % 2 ? -g : g, r = o.r, ta = 0.02 + o.cx / (C - 1) * 0.374;
+        const copies = d > 0 && o.cx === C - 1 || d < 0 && o.cx === 0 ? [0, d > 0 ? -w : w] : [0];
+        for (const cp of copies) {
+          const at = (x) => mv(x, cp, 0), z0 = Rr(r.x, r.y, 0, r.h), m = mv(r, d, 0), q = Rr(r.x, 1, r.w, 0);
+          out.push(P(o.c, [
+            F(0, at(z0)),
+            F(ta, at(z0), E.snap),
+            F(ta + 0.02, at(r)),
+            F(0.46, at(r), E.snap),
+            F(0.49, at(ab(r, 0.94, w / 2)), E.snap),
+            F(0.52, at(r)),
+            F(0.56, at(r), E.snap),
+            F(0.6, at(m)),
+            F(0.64, at(m), E.snap),
+            F(0.68, at(r)),
+            F(0.72, at(r), E.snap),
+            F(0.76, at(m)),
+            F(0.8, at(m), E.snap),
+            F(0.84, at(r)),
+            F(0.88, at(r), E.in),
+            F(0.96, at(q)),
+            F(1, at(q))
+          ]));
+        }
+      }
+      return out;
     }
   },
   /* Rubber band — the strip stretches past an edge and springs back. */
@@ -540,7 +604,8 @@ var VARIANTS = [
     }
   },
   /* Fill — half-cells drop in column by column and stack into the strip,
-     then drain out of the bottom, each column bottom cell first. */
+     press in once (it used to swell past the strip, where a tight slot cut
+     it off), then drain out of the bottom, each column bottom cell first. */
   {
     id: 44,
     name: "Fill",
@@ -556,11 +621,15 @@ var VARIANTS = [
       const TD = bottomFirst(cells.map(() => 0.8 + rand() * 0.1), Rn);
       return cells.map((o, i) => {
         const r = o.r, tl = 0.06 + (o.cx * Rn + Rn - 1 - o.cy) / (C * Rn - 1) * 0.58, up = mv(r, 0, -2.5), dn = mv(r, 0, 2.5), td = TD[i];
-        return P(o.c, [F(0, up), F(tl - 0.05, up, E.in), F(tl, r), F(0.68, r, E.snap), F(0.71, ab(r, 1.05, w / 2), E.snap), F(0.74, r), F(td, r, E.in), F(td + 0.06, dn, E.step), F(1, up)]);
+        return P(o.c, [F(0, up), F(tl - 0.05, up, E.in), F(tl, r), F(0.68, r, E.snap), F(0.71, ab(r, 0.95, w / 2), E.snap), F(0.74, r), F(td, r, E.in), F(td + 0.06, dn, E.step), F(1, up)]);
       });
     }
   },
-  /* Sort — starts scrambled; order emerges one half-column at a time. */
+  /* Sort — starts scrambled; order emerges one half-column at a time. Each
+     step is an insertion: the cell that belongs here slides back along the
+     top lane of its row while the cells it passes shuffle up one along the
+     bottom lane (19.10.26: swapped cells used to slide straight over
+     everything between them). The re-scramble dissolves and re-prints. */
   {
     id: 45,
     name: "Sort",
@@ -573,22 +642,21 @@ var VARIANTS = [
       const out = [], C = Math.round(w / g), Rn = Math.round(2 / g);
       shuffleRows(21, C, Rn).forEach((xs, hy) => {
         const at = (x) => Rr(x * g, hy * g, g, g);
-        const pos = xs.slice(), cur = [];
-        pos.forEach((p, h) => cur[p] = h);
-        const f = xs.map((p) => [F(0, at(p))]);
+        const pos = xs.slice(), f = xs.map((p) => [F(0, at(p))]);
         for (let i = 0; i < C; i++) {
-          const ts = 0.04 + i / (C - 1) * 0.629, p = pos[i];
-          if (p === i) continue;
-          const q = cur[i];
-          f[i].push(F(ts, at(p), E.io), F(ts + 0.03, at(i)));
-          f[q].push(F(ts, at(i), E.io), F(ts + 0.03, at(p)));
+          const ts = 0.04 + i / (C - 1) * 0.629, q = pos[i];
+          if (q === i) continue;
+          const pass = (h, a, b, side) => f[h].push(F(ts, at(a), E.io), F(ts + 8e-3, lane(at(a), side), E.io), F(ts + 0.026, lane(at(b), side), E.io), F(ts + 0.034, at(b)));
+          for (let h = 0; h < C; h++) if (h !== i && pos[h] >= i && pos[h] < q) {
+            pass(h, pos[h], pos[h] + 1, "bottom");
+            pos[h]++;
+          }
+          pass(i, q, i, "top");
           pos[i] = i;
-          pos[q] = p;
-          cur[i] = i;
-          cur[p] = q;
         }
         for (let h = 0; h < C; h++) {
-          f[h].push(F(0.8, at(h), E.io), F(0.94, at(xs[h])), F(1, at(xs[h])));
+          const off = 0.8 + h / (C - 1) * 0.03, on = 0.87 + xs[h] / (C - 1) * 0.04;
+          f[h].push(F(off, at(h), E.in), F(off + 0.03, sc(at(h), 0), E.step), F(on, sc(at(xs[h]), 0), E.stamp), F(on + 0.03, at(xs[h])), F(1, at(xs[h])));
           out.push(P(colAt(Math.floor(h * g + 1e-9), Math.floor(hy * g + 1e-9)), f[h]));
         }
       });
@@ -627,7 +695,9 @@ var VARIANTS = [
       return P(o.c, [F(0, o.r), ...S.map((s, i) => F(0.06 + i * 0.05, mv(o.r, d * s, 0), E.out)), F(1, o.r)]);
     })
   },
-  /* Fountain — half-cells jet up from the centre and rain back into place. */
+  /* Fountain — half-columns jet up from the centre and rain back into place.
+     Each half-column flies as one, straight up (its cells used to spray
+     apart sideways and through each other); the heights still vary. */
   {
     id: 48,
     name: "Fountain",
@@ -635,10 +705,10 @@ var VARIANTS = [
     grid: "half",
     uses: { success: seg(0, 0.62), amb: seg(0, 0.62), wait: "loop" },
     make: () => {
-      const rand = rng(30);
+      const rand = rng(30), H = Array.from({ length: 18 }, () => 1 + rand() * 0.7);
       return HALF.map((o) => {
-        const r = o.r, cx = r.x + 0.25, s = Math.abs(cx - 4.5) / 4.5 * 0.12, h = 1 + rand() * 0.7, dx = (cx - 4.5) * 0.12 + (rand() - 0.5) * 0.4;
-        const t = 0.08 + s, ap = mv(r, dx, -h);
+        const r = o.r, cx = r.x + 0.25, s = Math.abs(cx - 4.5) / 4.5 * 0.12, h = H[o.hx];
+        const t = 0.08 + s, ap = mv(r, 0, -h);
         return P(o.c, [F(0, r), F(t, r, E.out), F(t + 0.16, ap, E.in), F(t + 0.34, r, E.out), F(t + 0.37, mv(r, 0, -0.12), E.in), F(t + 0.4, r), F(1, r)]);
       });
     }
@@ -677,9 +747,12 @@ var VARIANTS = [
       return out;
     }
   },
-  /* Mosaic — half-cells shuffle along their rows, then sort themselves out
-     (no elastic on the way home: each cell overshot by its own distance, so
-     neighbours collided and the end cells poked past the strip). */
+  /* Mosaic — half-cells shuffle along their rows, then sort themselves out.
+     Each row is a riffle: the cells bound right drop into the top lane, the
+     ones bound left into the bottom, each lane keeping its order, so the
+     whole shuffle slides past itself without a cell ever covering another
+     (19.10.26: a free shuffle crossed hundreds of times, and its elastic
+     return overshot each cell by its own distance). */
   {
     id: 23,
     name: "Mosaic",
@@ -689,14 +762,12 @@ var VARIANTS = [
     short: true,
     uses: { amb: FULL, success: seg(0, 0.92), wait: "loop" },
     make: (w = 9, g = 0.5) => {
-      const C = Math.round(w / g), rows = shuffleRows(21, C, Math.round(2 / g));
-      return cellsOf(w, g).map((o) => {
-        const t = Rr(rows[o.cy][o.cx] * g, o.r.y, g, g), s = o.cx / (C - 1) * 0.08;
-        return P(o.c, [F(0, o.r), F(0.08 + s, o.r, E.io), F(0.3 + s, t), F(0.56 + s, t, E.io), F(0.8 + s, o.r), F(1, o.r)]);
-      });
+      const C = Math.round(w / g), Rn = Math.round(2 / g), rand = rng(21), rows = Array.from({ length: Rn }, () => riffle(C, rand));
+      return cellsOf(w, g).map((o) => mosaicCell(o.c, o.r, Rr(rows[o.cy][o.cx] * g, o.r.y, g, g), o.cy / (Rn - 1) * 0.06));
     }
   },
-  /* Swap — now and then two neighbouring half-cells trade places. */
+  /* Swap — now and then two neighbouring half-cells trade places, passing
+     in lanes. */
   {
     id: 49,
     name: "Swap",
@@ -731,15 +802,17 @@ var VARIANTS = [
         at[pb[0] + "," + pb[1]] = a;
         at[pa[0] + "," + pa[1]] = b;
       }
+      const pass = (i, t, a, b, side) => f[i].push(F(t, sq(a), E.io), F(t + 0.012, lane(sq(a), side), E.io), F(t + 0.038, lane(sq(b), side), E.io), F(t + 0.05, sq(b)));
+      const sides = (pa, pb) => pa[1] === pb[1] ? ["top", "bottom"] : ["left", "right"];
       sw.forEach(([a, b, pa, pb], n) => {
-        const t = 0.05 + n * 0.07;
-        f[a].push(F(t, sq(pa), E.io), F(t + 0.05, sq(pb)));
-        f[b].push(F(t, sq(pb), E.io), F(t + 0.05, sq(pa)));
+        const t = 0.05 + n * 0.07, [sa, sb] = sides(pa, pb);
+        pass(a, t, pa, pb, sa);
+        pass(b, t, pb, pa, sb);
       });
       sw.slice().reverse().forEach(([a, b, pa, pb], n) => {
-        const t = 0.55 + n * 0.07;
-        f[a].push(F(t, sq(pb), E.io), F(t + 0.05, sq(pa)));
-        f[b].push(F(t, sq(pa), E.io), F(t + 0.05, sq(pb)));
+        const t = 0.55 + n * 0.07, [sa, sb] = sides(pa, pb);
+        pass(a, t, pb, pa, sa);
+        pass(b, t, pa, pb, sb);
       });
       return cells.map((o, i) => {
         f[i].push(F(1, o.r));
@@ -818,7 +891,9 @@ var seg2 = (start, end) => ({ start, span: end - start });
 var FULL2 = seg2(0, 1);
 var E2 = {
   snap: "cubic-bezier(.3,0,.2,1)",
-  stamp: "cubic-bezier(.2,1.4,.45,1)",
+  /* a hard print, no bounce: a 5% overshoot spilled each landing cell over
+     the ones already down and past the mark (19.10.26) */
+  stamp: "cubic-bezier(.2,1,.3,1)",
   io: "cubic-bezier(.65,0,.35,1)",
   out: "cubic-bezier(.2,.8,.2,1)",
   in: "cubic-bezier(.6,0,.9,.4)",
@@ -964,7 +1039,7 @@ var SQUARES = [
     uses: { amb: FULL2, wait: "loop" },
     make: () => {
       const outer = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3], [2, 3], [1, 3], [0, 3], [0, 2], [0, 1]], inner = [[1, 1], [2, 1], [2, 2], [1, 2]];
-      return [...belt(outer, 1, colSq, 1, 12, E2.snap), ...belt(inner, 1, colSq, -1, 12, E2.snap)];
+      return [...belt(outer, 1, colSq, 1, 12), ...belt(inner, 1, colSq, -1, 12)];
     }
   },
   /* S09 Snake — one line runs the columns down and up; erases, redraws. */
@@ -1059,8 +1134,8 @@ var SQUARES = [
       });
     }
   },
-  /* S18 Mosaic — cells shuffle along their rows, then sort themselves out
-     (no elastic home — see the strip's Mosaic). */
+  /* S18 Mosaic — cells shuffle along their rows, then sort themselves out:
+     a riffle per row in two lanes, as the strip's Mosaic. */
   {
     id: 118,
     name: "Mosaic",
@@ -1070,19 +1145,8 @@ var SQUARES = [
     square: true,
     uses: { amb: FULL2, wait: "loop" },
     make: (_w, g = 0.5) => {
-      const n = 4 / g, rand = rng2(21), out = [];
-      for (let y = 0; y < n; y++) {
-        const xs = [...Array(n).keys()];
-        for (let i = n - 1; i > 0; i--) {
-          const k = Math.floor(rand() * (i + 1));
-          [xs[i], xs[k]] = [xs[k], xs[i]];
-        }
-        for (const o of gridOf(g).filter((c) => c.y == y)) {
-          const t = Rr2(xs[o.x] * g, o.r.y, g, g), s = o.x / (n - 1) * 0.08;
-          out.push(P2(o.c, [F2(0, o.r), F2(0.08 + s, o.r, E2.io), F2(0.3 + s, t), F2(0.56 + s, t, E2.io), F2(0.8 + s, o.r), F2(1, o.r)]));
-        }
-      }
-      return out;
+      const n = 4 / g, rand = rng2(21), rows = Array.from({ length: n }, () => riffle(n, rand));
+      return gridOf(g).map((o) => mosaicCell(o.c, o.r, Rr2(rows[o.y][o.x] * g, o.r.y, g, g), o.y / (n - 1) * 0.06));
     }
   },
   /* S19 Sift — cells drain out of the bottom and refill from the top, each
@@ -1384,13 +1448,16 @@ export {
   grainFor,
   intactAt,
   isLiteDevice,
+  lane,
   lastSeen,
+  mosaicCell,
   overflow,
   pick,
   poolFor,
   prefersReducedMotion,
   rectAt,
   remember,
+  riffle,
   segEnd,
   segmentFor,
   snapToPixels,

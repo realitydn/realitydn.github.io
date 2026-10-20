@@ -1,11 +1,16 @@
 /* ============================================================
    REALITY PRINT STUDIO — the inspector
-   One canonical order for every element (Actions → Content → Type →
-   Colour & surface → Treatment → Border → Arrange); the per-type
+   Poster Studio's organisation (21.10.26): one header row (the type,
+   then icon buttons), then TABS split by job, each fold in one tab —
+       text & lists  Text · Box · Layout
+       graphics      Shape · Layout
+       image         Image · Layout
+   in one canonical order inside each (Content → Type | Colour &
+   surface → Party effect → Treatment → Border | Arrange). The per-type
    Content comes from the family panels (inspector-graphics, -lists,
    -marks, image-controls). Nothing selected → the sheet panel.
-   Also the plane-shadow dials and the multi-select align bar.
-   (Split out of print-app.jsx, Phase 3.)
+   The header row + tabs are shared with Poster
+   (studio-shared/inspector-tabs.jsx).
    ============================================================ */
 import { processImageFile } from '../studio-shared/image-intake.jsx';
 import { PALETTE as AP_PAL, ACCENTS as AP_ACC } from '../studio-shared/brand.js';
@@ -22,9 +27,28 @@ import { GRAPHIC_PANELS } from './inspector-graphics.jsx';
 import { LIST_PANELS } from './inspector-lists.jsx';
 import { MARK_PANELS } from './inspector-marks.jsx';
 import { SheetPanel } from './sheet-panel.jsx';
+import { HeadIcon, makeTabs } from '../studio-shared/inspector-tabs.jsx';
+import { TITLE_FX, FX_AMOUNTS, FX_USES, FX_HINTS } from '../studio-shared/title-fx.jsx';
 
 /* type → its Content panel (the bespoke part of the inspector) */
 const PANELS = Object.assign({}, GRAPHIC_PANELS, LIST_PANELS, MARK_PANELS);
+
+/* ---- tabs: the same three families as Poster ---- */
+const TEXT_TYPES = ['headline','numeral','bignum','kicker','body','arctext','pricelist','qr','coupon','punchgrid',
+                    'badge','seal','marquee','arrow','contact','footer','wordmark'];
+const TAB_SETS = {
+  text:    [{ v:'text',  l:'Text'  }, { v:'box',    l:'Box'    }, { v:'layout', l:'Layout' }],
+  graphic: [{ v:'shape', l:'Shape' }, { v:'layout', l:'Layout' }],
+  media:   [{ v:'image', l:'Image' }, { v:'layout', l:'Layout' }],
+};
+const DEFAULT_TAB = { text:'text', graphic:'shape', media:'image' };
+const FOLD_TABS = {
+  text:    { 'f-content':'text', 'f-type':'text', 'f-colour':'box', 'f-fx':'box', 'f-treat':'box', 'f-border':'box', 'f-arrange':'layout' },
+  graphic: { 'f-content':'shape', 'f-colour':'shape', 'f-treat':'shape', 'f-border':'shape', 'f-arrange':'layout' },
+  media:   { 'im-img':'image', 'im-treat':'image', 'im-finish':'image', 'f-treat':'layout', 'f-arrange':'layout' },
+};
+function familyOf(el){ return el.type==='image' ? 'media' : TEXT_TYPES.indexOf(el.type)>=0 ? 'text' : 'graphic'; }
+const { useTab, noteFamily, Tabs } = makeTabs({ prefix:'ps', key:'reality-print:tabs', sets:TAB_SETS, defaults:DEFAULT_TAB, foldTabs:FOLD_TABS });
 
 /* ---------- shadow — the Year 2 plane, preset or dialled ---------- */
 function ShadowControls({ el, update }){
@@ -51,6 +75,32 @@ function ShadowControls({ el, update }){
         <Hint tight>Hard accent shadow — distance up, full opacity. Very riso. Soft K prints as a grey tint on the black plate.</Hint>
       </React.Fragment>}
     </React.Fragment>
+  );
+}
+
+/* ---------- party effect — the display type's Kinetic-register moves ----------
+   studio-shared/title-fx.jsx: the same thirteen as Poster, drawn as vector in
+   the PDF (print-fx.js). Closed unless one is set — it's for the big nights. */
+const FX_TYPES = ['headline','numeral','bignum'];
+function PartyFxFold({ el, update }){
+  const fx = el.titleFx && el.titleFx!=='none' ? el.titleFx : 'none';
+  const uses = FX_USES[fx] || {};
+  const label = (TITLE_FX.find(x=>x.v===fx)||{}).l;
+  const pick = (v)=> update(v==='none' ? { titleFx:null, fxAmt:null, fxInk:null, fxInk2:null } : { titleFx:v });
+  return (
+    <Fold id="f-fx" title="Party effect" badge={fx==='none'?null:label} dirty={fx==='none'?0:1}>
+      <Chips label="Print" options={TITLE_FX.filter(x=>!x.loud)} value={fx} onChange={pick} />
+      <Chips label="Loud" options={TITLE_FX.filter(x=>x.loud)} value={fx} onChange={pick} />
+      {fx!=='none' && el.orient==='v' && <Hint tight>Effects are set by line — switch Orientation to Horizontal to see this one.</Hint>}
+      {fx!=='none' && <React.Fragment>
+        <Chips label="Amount" options={FX_AMOUNTS} value={el.fxAmt||'bold'} onChange={v=>update({ fxAmt:v })} />
+        {uses.a && <Swatches label="First ink" value={el.fxInk||'auto'} onChange={v=>update({ fxInk:v==='auto'?null:v })} auto white
+          autoTitle={fx==='run'||fx==='tiles' ? 'Auto — start the palette from the sheet accent' : 'Auto — the fill, else the sheet accent; its partner on an Accent box'} />}
+        {uses.b && <Swatches label="Second ink" value={el.fxInk2||'auto'} onChange={v=>update({ fxInk2:v==='auto'?null:v })} auto white
+          autoTitle={fx==='halftone' ? 'Auto — the box’s text colour (the key)' : 'Auto — the first ink’s misregistration partner'} />}
+        <Hint tight>{FX_HINTS[fx]} Inks are picked against the box: one that matches the fill moves to its partner. In the PDF every effect is vector, the letters K-only where they’re ink.</Hint>
+      </React.Fragment>}
+    </Fold>
   );
 }
 
@@ -84,6 +134,10 @@ function AlignBar({ count, align, distribute }){
    shows, so parity can't drift between element types.
    ============================================================ */
 function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, selCount, align, distribute }){
+  /* hooks before the early return — the tab is remembered per family */
+  const family = el ? familyOf(el) : 'text';
+  const tab = useTab(family);
+  noteFamily(el ? family : null);
   if(!el) return <SheetPanel doc={doc} setDoc={setDoc} dims={dims} clearAll={clearAll} />;
 
   const isText = ['headline','body','kicker','bignum','numeral'].indexOf(el.type)>=0;
@@ -116,23 +170,42 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
   const dColour = dirt(['ink','fill','surface']);
   const dTreat  = dirt(['lift','echo','echoAccent','echoDx','echoDy','blend']);
   const dBorder = dirt(['border','borderPattern','borderColor','radius']);
+  const dArrange = dirt(['rot']);
+  const showTreat = LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0;
+  const dFx = (el.titleFx && el.titleFx!=='none') ? 1 : 0;
+  const counts = family==='text'  ? { text:dType, box:dColour+dFx+dTreat+(showBorder?dBorder:0), layout:dArrange }
+               : family==='media' ? { layout:dTreat+dArrange }
+               :                    { shape:dColour+dTreat+(showBorder?dBorder:0), layout:dArrange };
+  const inTab = (foldId)=> (FOLD_TABS[family]||{})[foldId]===tab;
 
   return (
     <React.Fragment>
-      <div className="ps-sech ps-seltype">{el.type}</div>
-      <div className="ps-actions">
-        <button className="ps-iconbtn" onClick={()=>layer(1)} title="Bring forward">▲</button>
-        <button className="ps-iconbtn" onClick={()=>layer(-1)} title="Send back">▼</button>
-        <button className="ps-iconbtn" onClick={dup}>Duplicate</button>
-        <button className="ps-iconbtn ps-del" onClick={del}>Delete</button>
-      </div>
       {selCount>=2 && <AlignBar count={selCount} align={align} distribute={distribute} />}
 
-      {content && (el.type==='image'
-        ? content   /* the photo panel brings its own Folds */
-        : <Fold id={'c-'+el.type} title="Content" open>{content}</Fold>)}
+      {/* ---- the header: what it is, and what you can do to it — one row ---- */}
+      <div className="ps-elhead">
+        <div className="who">
+          <span className="ty">{el.type}</span>
+          {selCount>=2 && <small className="cnt" title={'The last of the '+selCount+' selected — the one these controls edit'}>last of {selCount}</small>}
+        </div>
+        <div className="ps-elbtns">
+          <button className="ps-hbtn" onClick={()=>layer('back')} title="Send to back"><HeadIcon k="back" /></button>
+          <button className="ps-hbtn" onClick={()=>layer(-1)} title="Send back one"><HeadIcon k="down" /></button>
+          <button className="ps-hbtn" onClick={()=>layer(1)} title="Bring forward one"><HeadIcon k="up" /></button>
+          <button className="ps-hbtn" onClick={()=>layer('front')} title="Bring to front"><HeadIcon k="front" /></button>
+          <span className="gap" />
+          <button className="ps-hbtn" onClick={dup} title="Duplicate (Ctrl-D)"><HeadIcon k="dup" /></button>
+          <button className="ps-hbtn ps-del" onClick={del} title="Delete"><HeadIcon k="del" /></button>
+        </div>
+      </div>
 
-      {isText && <Fold id="f-type" title="Type" open dirty={dType}>
+      <Tabs family={family} value={tab} counts={counts} />
+
+      {/* the photo panel brings its own Folds — all on the Image tab */}
+      {el.type==='image' && tab==='image' && content}
+      {el.type!=='image' && content && inTab('f-content') && <Fold id="f-content" title="Content" open>{content}</Fold>}
+
+      {isText && inTab('f-type') && <Fold id="f-type" title="Type" open dirty={dType}>
         <ScaleControl label="Size" val={el.fontSize} onChange={v=>update({fontSize:v})} />
         <Chips label="Typeface" options={FAMS} value={el.fam||'mont'} onChange={v=>update({fam:v})} />
         {el.fam==='grot'
@@ -146,7 +219,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
         {ORIENTABLE.indexOf(el.type)>=0 && <Chips label="Orientation" options={ORIENTS} value={el.orient||'h'} onChange={v=>update({orient:v})} />}
       </Fold>}
 
-      {showColour && <Fold id="f-colour" title="Colour & surface" open dirty={dColour}>
+      {showColour && inTab('f-colour') && <Fold id="f-colour" title="Colour & surface" open dirty={dColour}>
         {['headline','numeral','body','kicker','bignum','pricelist','qr','coupon','contact','arrow','wordmark','footer','badge','marquee','arctext','icon','punchgrid'].indexOf(el.type)>=0 &&
           <Swatches label={el.type==='arctext'?'Text':'Ink'} value={el.type==='arctext'?(el.fill!=null?el.fill:'ink'):(el.ink!=null?el.ink:'auto')} onChange={v=>update(el.type==='arctext'?{fill:v}:{ink:v})} auto white
             autoTitle={el.type==='kicker' ? 'Auto — the accent on paper, readable on a fill' : null} />}
@@ -158,7 +231,9 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
           <Swatches label="Surface accent" value={el.fill!=null?el.fill:'pink'} onChange={v=>update({fill:v})} />}
       </Fold>}
 
-      {(LIFTABLE.indexOf(el.type)>=0 || ECHOABLE.indexOf(el.type)>=0 || BLENDABLE.indexOf(el.type)>=0) &&
+      {FX_TYPES.indexOf(el.type)>=0 && inTab('f-fx') && <PartyFxFold el={el} update={update} />}
+
+      {showTreat && inTab('f-treat') &&
         <Fold id="f-treat" title="Treatment" dirty={dTreat}>
           {LIFTABLE.indexOf(el.type)>=0 && <ShadowControls el={el} update={update} />}
           {ECHOABLE.indexOf(el.type)>=0 && <React.Fragment>
@@ -174,7 +249,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
           {BLENDABLE.indexOf(el.type)>=0 && <Chips label="Blend · overprint" options={BLENDS} value={el.blend||'normal'} onChange={v=>update({blend:v})} />}
         </Fold>}
 
-      {showBorder && (()=>{
+      {showBorder && inTab('f-border') && (()=>{
         const bw = el.border!=null?el.border:(el.type==='block'?0:2);
         return <Fold id="f-border" title="Border" badge={bw>0?bw+'pt':null} dirty={dBorder}>
           <Slider label="Border width" val={bw} min={0} max={12} step={0.5} onChange={v=>update({border:v})} suffix="pt" />
@@ -186,13 +261,13 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
         </Fold>;
       })()}
 
-      <Fold id="f-arrange" title="Arrange" open>
+      {inTab('f-arrange') && <Fold id="f-arrange" title="Arrange" open dirty={dArrange}>
         <div className="ps-numgrid">
-          <NumField label="X" value={el.x} onChange={v=>update({x:Math.round(v)})} />
-          <NumField label="Y" value={el.y} onChange={v=>update({y:Math.round(v)})} />
-          <NumField label="W" value={el.w} min={8} onChange={v=>update({w:Math.round(v)})} />
-          <NumField label="H" value={el.h} min={6} onChange={v=>update({h:Math.round(v)})} />
-          <NumField label="Rot°" value={el.rot||0} onChange={v=>update({rot:Math.round(v)})} />
+          <NumField label="X" value={el.x} scrub onChange={v=>update({x:Math.round(v)})} />
+          <NumField label="Y" value={el.y} scrub onChange={v=>update({y:Math.round(v)})} />
+          <NumField label="W" value={el.w} min={8} scrub onChange={v=>update({w:Math.round(v)})} />
+          <NumField label="H" value={el.h} min={6} scrub onChange={v=>update({h:Math.round(v)})} />
+          <NumField label="Rot°" value={el.rot||0} scrub onChange={v=>update({rot:Math.round(v)})} />
         </div>
         <div className="ps-actions" style={{ marginTop:8 }}>
           <button className="ps-iconbtn" style={{ flex:1 }} title="Fit width to the safe margins"
@@ -204,7 +279,7 @@ function Inspector({ el, doc, dims, update, dup, del, layer, clearAll, setDoc, s
           <button className="ps-iconbtn" style={{ flex:1 }} title="Centre vertically"
             onClick={()=>update({ y:Math.round((dims.hpt-el.h)/2) })}>Centre V</button>
         </div>
-      </Fold>
+      </Fold>}
     </React.Fragment>
   );
 }

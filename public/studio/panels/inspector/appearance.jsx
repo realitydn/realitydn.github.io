@@ -3,7 +3,7 @@
    ============================================================ */
 import { PALETTE as AP_PAL, ACCENTS as AP_ACC, ACCENT_BY_DAY, parseSessions, shadowModel } from '../../studio-data.jsx';
 import { Chips, Slider, Fold, Hint, Swatches, SURFACES } from '../controls.jsx';
-import { TITLE_FX, FX_AMOUNTS, FX_USES } from '../../elements/title-fx.jsx';
+import { TITLE_FX, FX_AMOUNTS, FX_USES, FX_HINTS } from '../../elements/title-fx.jsx';
 /* One shadow control for every element. Defaults + slider ranges come from the
    shared window.shadowModel, so what you see matches what renders, and a brand
    new element's shadow Just Works. Applies as a text-shadow on bare text, a
@@ -133,21 +133,6 @@ function SurfaceFold({ el, doc, update, caps, dSurface }){
    Lives on the Box tab because it's decided WITH the box: the inks are picked
    against the surface it sits on, and a boxed title's padding grows to hold
    the plates. Closed unless one is set — it's for the big nights. */
-const FX_HINTS = {
-  misreg:   'The 13 / 6 hero plates, behind the letters. They overprint where they cross — on a dark ground they add instead.',
-  echo:     'Two outline pulls step out behind the word. Heavier weights hold the outlines best.',
-  slab:     'The ticket print, run solid. Hard, no blur.',
-  keyline:  'Hollow letters in the box’s text colour, fill slipped underneath. Bold or heavier.',
-  sep:      'Each word takes its own ink — red, blue, amber… — the last on yellow where yellow reads. Inks that don’t read on this box are skipped.',
-  tape:     'Each line (each Enter) gets its own bar, and the bar text follows the APCA rule. The bars stand taller than bare type — give the box about a fifth more height.',
-  halftone: 'A flat plate in the first ink, screened from each line’s foot in the box’s text colour. Pick a second ink to screen in that instead.',
-  run:      'The extrusion walks the palette from the first ink in ink-square order, skipping the box colour. Loud runs longer.',
-  sticker:  'The title die-cut as a cream ticket: ink type, the ticket edge, and a hard print in the first ink. Cream in both themes, like every ticket — it reads on any photo.',
-  slice:    'Strips alternate the box’s text colour and the first ink, slipping opposite ways. Amount adds strips and slip.',
-  tiles:    'Each letter on a palette tile, its letter by the APCA rule, the box colour skipped. Tiles stand taller than type — give the box about a third more height.',
-  candy:    'Stripes in the two inks, a key line and a hard print in the box’s text colour. Heavy weights only — thin letters lose the stripes.',
-  repeat:   'The title again, above and below, as key lines. Amount sets the rows (1 · 2 · 3 each way). Made for a bare title, where the rows fill the poster — a box crops them to its edges, so give it the height to show them.',
-};
 function TitleFxFold({ el, doc, update }){
   const fx = el.titleFx && el.titleFx!=='none' ? el.titleFx : 'none';
   const uses = FX_USES[fx] || {};

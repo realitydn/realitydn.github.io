@@ -90,8 +90,7 @@
 /* ---- BODY ---- */
 .ps-body{ display:grid; grid-template-columns:252px 1fr 302px; min-height:0; }
 .ps-lib{ padding:16px 12px 40px; }
-.ps-inspector{ padding:16px 14px 60px; }
-.ps-seltype{ color:var(--st-accent); font-size:var(--st-fs-small); }
+.ps-inspector{ padding:16px 16px 60px; }   /* 16 = the sticky tabs' bleed (studio-base.css) */
 .ps-area{ min-height:54px; }
 .ps-rowflex{ gap:10px; }
 /* the arrange row (▲ ▼ Duplicate Delete) stays one line in the 302px inspector */

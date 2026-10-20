@@ -15,7 +15,9 @@ import { TYPE_SCALE as AP_SCALE, snapToScale as apSnap, scaleStep as apStep, INK
    drift to different components again. The prefix is the only local part —
    every class the kit builds is `ps-…` from here. Swatches is the kit's row
    too, with print's fixed swatches (K-only ink, paper white) as its parameter. */
-RUI.configure({ prefix:'ps', storeKey:'reality-print' });
+/* compact: a dial is one 28px line (label · track · value) — Poster's rows, since
+   Print took Poster's organisation (21.10.26) */
+RUI.configure({ prefix:'ps', storeKey:'reality-print', compact:true });
 const { Field, Slider, Chips, NumField, Fold, Hint, HintsToggle } = RUI;
 const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap} step={apStep} suffix="pt" />;
 
@@ -23,7 +25,7 @@ const ScaleControl = (p)=><RUI.ScaleControl {...p} scale={AP_SCALE} snap={apSnap
    ahead of the accents; the row itself is RUI.Swatches. `autoTitle` says
    what Auto means where it differs (a kicker's Auto is its accent on paper). */
 const Swatches = ({ auto, autoTitle, white, ...p })=> <RUI.Swatches {...p} fixed={[].concat(
-  auto  ? [{ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', title:autoTitle||'Auto — readable on the surface' }] : [],
+  auto  ? [{ v:'auto',  bg:'linear-gradient(135deg,'+AP_INK.rgb+' 0 50%,#fff 50% 100%)', cls:'auto', title:autoTitle||'Auto — readable on the surface' }] : [],
   [{ v:'ink', bg:AP_INK.rgb, title:'Ink (K-only)' }],
   white ? [{ v:'white', bg:'#ffffff', title:'White (paper / reverse)' }] : []
 )} />;

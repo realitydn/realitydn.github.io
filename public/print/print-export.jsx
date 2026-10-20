@@ -29,6 +29,7 @@ import {
 } from '../studio-shared/brand.js';
 import { starPath, roundedRectPath, iconLayout, burstRays, shapePath, ruleLayout } from '../studio-shared/shapes.js';
 import { qrGeometry, buildQR } from '../studio-shared/qr.js';
+import { fxOn, drawTitleFx } from './print-fx.js';
 
 /* THE TRACKING LADDER, print — the exact twin of the TRACK block in
    print-element.jsx. The screen renderer is a proof of this output, so a rung
@@ -180,6 +181,8 @@ function renderElement(page, el, ctx){
     if(el.fit){ const lines=(el.text||'').split('\n').map(l=>isUpper?l.toUpperCase():l);
       size=fitTextSize(lines, el.fam, el.weight, (el.w-pad*2)*0.98, Math.min(Math.max(el.h*1.3, el.fontSize),320), el.tracking||0); }
     if(el.orient==='v'){ drawVerticalText({ str:el.text, fam:el.fam, weight:el.weight, size, upper:isUpper, color:textColor, pad }); }
+    /* a party effect (print-fx.js — vector, from the same spec as the canvas) */
+    else if(fxOn(el) && drawTitleFx({ page, place, localPath, bm, fontFor, ROT, rot:r, accentName, textHex, fillHex:keyHex(tk.fill), size }, el)){}
     else {
       const opts={ str:el.text, fam:el.fam, weight:el.weight, size, align:el.align||'left',
         tracking:el.tracking||0, leading:el.leading!=null?el.leading:(t==='body'?1.32:0.95),

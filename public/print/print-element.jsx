@@ -25,6 +25,7 @@ import {
 import { buildQR as peQR, qrGeometry as peGeom } from '../studio-shared/qr.js';
 import { WordmarkSVG } from '../studio-shared/wordmark.jsx';
 import { EM } from '../studio-shared/util.js';
+import { titleFx, FxTitle, fxPad } from '../studio-shared/title-fx.jsx';
 
 const FAM_CSS = { mont:MONT, grot:GROT, alt:ALT };
 function famCss(fam){ return FAM_CSS[fam] || FAM_CSS.mont; }
@@ -127,8 +128,20 @@ function ArrowGlyph({ color }){
 }
 const ARROW_ROT = { right:0, down:90, left:180, up:270 };
 
-/* shared text block (optional misregistration echo, auto-fit, vertical set) */
-function TextBlock({ el, textCol, justify, hidden }){
+/* Which parts take a party effect (studio-shared/title-fx.jsx) — the display
+   type. Horizontal only: the vertical set is stacked glyph by glyph, in both
+   renderers, and the effects are laid out by line. */
+const FX_TYPES = ['headline','numeral','bignum'];
+function fxActive(el){ return FX_TYPES.indexOf(el.type)>=0 && el.titleFx && el.titleFx!=='none' && el.orient!=='v'; }
+/* what the title sits on, in print: the box's fill, else the paper */
+function fxGround(el, accentHex){
+  const s = el.surface || 'none';
+  return s==='solid' ? PE_INK.rgb : s==='accent' ? accentHex : PE_WHITE.rgb;
+}
+
+/* shared text block (optional misregistration echo, auto-fit, vertical set,
+   a party effect on the display types) */
+function TextBlock({ el, textCol, justify, hidden, accentHex, plateHex }){
   const isUpper = el.upper!==false && el.type!=='body';
   let fs = el.fontSize;
   if(el.fit){
@@ -142,6 +155,15 @@ function TextBlock({ el, textCol, justify, hidden }){
     letterSpacing:(el.tracking!=null?el.tracking:0)+'em', textAlign:el.align, whiteSpace:'pre-wrap', width:'100%',
     writingMode: vertical?'vertical-rl':'horizontal-tb'
   };
+  if(fxActive(el)){
+    const fx = titleFx(el, { ground:fxGround(el, accentHex), accentHex:plateHex||accentHex, textCol, pair:NEUTRALS.print,
+      lineHeight: el.leading!=null?el.leading:0.95 });
+    if(fx) return (
+      <div style={{ position:'relative', width:'100%', visibility:hidden?'hidden':undefined }}>
+        <FxTitle fx={fx} base={Object.assign({}, style, { color:textCol })} text={el.text} fontSize={fs} />
+      </div>
+    );
+  }
   return (
     <div style={{ position:'relative', width:'100%', display:'flex', justifyContent:justify, visibility:hidden?'hidden':undefined }}>
       {el.echo && <div aria-hidden="true" style={Object.assign({}, style, { position:'absolute', left:(el.echoDx||4), top:(el.echoDy||4), color:echoHex(el, el._docAccent), width:'100%' })}>{el.text}</div>}
@@ -234,11 +256,17 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, editing
 
   if(t==='headline'||t==='kicker'||t==='body'||t==='bignum'||t==='numeral'){
     const justify = el.align==='center'?'center':el.align==='right'?'flex-end':'flex-start';
-    const pad = (el.surface && el.surface!=='none') ? '8px 12px' : '0';
+    const surfaced = el.surface && el.surface!=='none';
+    /* an effect's Auto ink is the element's own fill when it has one, else the sheet accent */
+    const fxPlate = el.fill!=null ? accentHex : docAccentHex;
+    let pad = surfaced ? '8px 12px' : '0';
+    /* a party effect on a box grows the padding by its overhang, so the
+       plates stay inside the border (the PDF does the same — print-fx.js) */
+    if(surfaced && fxActive(el)){ const f = titleFx(el, { ground:fxGround(el, accentHex), accentHex:fxPlate, textCol, pair:NEUTRALS.print }); if(f) pad = fxPad('8px 12px', f, el.fontSize); }
     /* `editing`: the in-place editor (print-canvas.jsx) is typing these words
        over the box, in this same colour — hide the set copy (layout kept) so
        the two aren't read doubled, a few px apart */
-    inner = <div style={box({ alignItems:justify, padding:pad })}><TextBlock el={el} textCol={textCol} justify={justify} hidden={editing} /></div>;
+    inner = <div style={box({ alignItems:justify, padding:pad })}><TextBlock el={el} textCol={textCol} justify={justify} hidden={editing} accentHex={accentHex} plateHex={fxPlate} /></div>;
   }
   else if(t==='pricelist'){
     const mode = el.listStyle || 'prices';

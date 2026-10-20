@@ -98,7 +98,10 @@ function useDoc(bootDoc){
   const update = (patch)=> sel && updateEl(sel.id, patch);
   const del = ()=>{ const ids=selectedIds; if(!ids.length) return; setDoc(d=>({...d, elements:d.elements.filter(e=>ids.indexOf(e.id)<0)})); setSelectedIds([]); };
   const dup = ()=>{ if(!sel) return; const c=Object.assign(JSON.parse(JSON.stringify(sel)),{id:apUid(), x:sel.x+12, y:sel.y+12}); setDoc(d=>({...d, elements:[...d.elements, c]})); setSelectedIds([c.id]); };
-  const layer = (dir)=>{ if(!sel) return; setDoc(d=>{ const arr=d.elements.slice(); const i=arr.findIndex(e=>e.id===sel.id); const j=i+dir; if(j<0||j>=arr.length) return d; const t=arr[i]; arr[i]=arr[j]; arr[j]=t; return {...d, elements:arr}; }); };
+  /* dir: +1 / -1 one step, or 'front' / 'back' all the way (the header row's four) */
+  const layer = (dir)=>{ if(!sel) return; setDoc(d=>{ const arr=d.elements.slice(); const i=arr.findIndex(e=>e.id===sel.id); if(i<0) return d;
+    if(dir==='front'||dir==='back'){ const [t]=arr.splice(i,1); if(dir==='front') arr.push(t); else arr.unshift(t); return {...d, elements:arr}; }
+    const j=i+dir; if(j<0||j>=arr.length) return d; const t=arr[i]; arr[i]=arr[j]; arr[j]=t; return {...d, elements:arr}; }); };
   const clearAll = ()=>{ if(confirm('Remove all parts from the sheet?')){ setDoc(d=>({...d, elements:[]})); setSelectedIds([]); } };
 
   /* align + distribute the multi-selection */

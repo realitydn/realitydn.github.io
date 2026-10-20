@@ -18,22 +18,32 @@ function useLibrary({ docRef, setDoc, setSelectedIds, userTpls, persistTpls, vie
   const { stageRef, canvasRef, scaleRef } = view;
   const [spawn, setSpawn] = React.useState(null);
 
-  /* spawn-drag from library */
+  /* spawn from the library: drag a part out and drop it where it lands, or
+     just click it (no real movement) and it lands in the middle of the sheet —
+     Poster's 'drag in, or click'. item.props presets a kind (a shape tile). */
   function startSpawn(e, item){
     e.preventDefault();
-    const type = item.type;
+    const type = item.type, x0=e.clientX, y0=e.clientY;
+    let moved = false;
     setSpawn({ type:item.label||type, x:e.clientX, y:e.clientY });
-    function mv(ev){ setSpawn(s=> s?{...s, x:ev.clientX, y:ev.clientY}:s); }
+    function mv(ev){ if(Math.abs(ev.clientX-x0)+Math.abs(ev.clientY-y0)>4) moved=true; setSpawn(s=> s?{...s, x:ev.clientX, y:ev.clientY}:s); }
+    function place(vx, vy){
+      if(docRef.current.snap){ vx=Math.round(vx/6)*6; vy=Math.round(vy/6)*6; }
+      const el=Object.assign(apMake(type, Math.round(vx), Math.round(vy)), item.props||{});
+      setDoc(x=>({ ...x, elements:[...x.elements, el] })); setSelectedIds([el.id]);
+    }
     function up(ev){
       window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); setSpawn(null);
+      const d=AP_DEF[type];
+      if(!moved){
+        const dd=apDims(docRef.current.size, docRef.current.orient);
+        place(dd.wpt/2 - d.w/2, dd.hpt/2 - d.h/2); return;
+      }
       const st=stageRef.current, cv=canvasRef.current; if(!st||!cv) return;
       const sr=st.getBoundingClientRect();
       if(ev.clientX<sr.left||ev.clientX>sr.right||ev.clientY<sr.top||ev.clientY>sr.bottom) return;
-      const cr=cv.getBoundingClientRect(), sc=scaleRef.current, d=AP_DEF[type];
-      let vx=(ev.clientX-cr.left)/sc - d.w/2, vy=(ev.clientY-cr.top)/sc - d.h/2;
-      if(docRef.current.snap){ vx=Math.round(vx/6)*6; vy=Math.round(vy/6)*6; }
-      const el=apMake(type, Math.round(vx), Math.round(vy));
-      setDoc(x=>({ ...x, elements:[...x.elements, el] })); setSelectedIds([el.id]);
+      const cr=cv.getBoundingClientRect(), sc=scaleRef.current;
+      place((ev.clientX-cr.left)/sc - d.w/2, (ev.clientY-cr.top)/sc - d.h/2);
     }
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
   }

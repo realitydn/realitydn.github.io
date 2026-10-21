@@ -215,6 +215,30 @@ function wrapTextW(text, fam, weight, size, tracking, maxW){
   return out;
 }
 
+/* ---- QR code + caption — ONE layout, read by the screen and by the PDF
+   exporter. The screen used to size the code min(w, h−28·cs) over a 12·cs
+   caption in a flex column while the exporter took min(w−2pad, h−2pad−18·cs)
+   under an 11·cs one, so the printed code came out up to ~8pt bigger than
+   the proof showed. The exporter's geometry is the one that has been printed
+   and scanned, so it stands and the screen draws it. capScale: the caption
+   follows a paper-size change (onResize) — 11pt in an 18pt band at 1. The
+   caption's capitals are centred in the band (Montserrat cap height 0.7em). ---- */
+const QR_CAP_SIZE = 11, QR_CAP_BAND = 18;
+function qrLayout(el){
+  const surfaced = el.surface && el.surface!=='none';
+  const pad = surfaced ? 10 : 0, cs = el.capScale||1;
+  const capH = el.caption ? QR_CAP_BAND*cs : 0;
+  const size = Math.max(0, Math.min(el.w-pad*2, el.h-pad*2-capH));
+  const top = (el.h-size-capH)/2, left = (el.w-size)/2;
+  let cap = null;
+  if(el.caption){
+    const capSize = QR_CAP_SIZE*cs, lb = lineBox('mont', 700, capSize, null);
+    const base = top+size+(capH+capSize*0.7)/2;
+    cap = { text:el.caption.toUpperCase(), size:capSize, base, lineH:lb.lineH, boxTop:base-lb.baseOff };
+  }
+  return { pad, size, top, left, cap };
+}
+
 /* ---- coupon stack — ONE layout, read by the screen and by the PDF exporter.
    It used to be computed twice: the screen leaned on flex `space-between`
    while the exporter hard-coded offsets (big at pad+18, terms at h-28). Those
@@ -307,6 +331,6 @@ function risoOpts(el, docAccent){
 
 export {
   dotFieldLayout, stripeLayout, borderDash, punchLayout, listSplit, LIST_ROW_SIZES, listRowFont,
-  measureTextW, fitTextSize, arcTextLayout, lineBox, wrapTextW, couponLayout,
+  measureTextW, fitTextSize, arcTextLayout, lineBox, wrapTextW, couponLayout, qrLayout,
   BLEND_MODES, blendCss, blendPdf, risoOpts,
 };

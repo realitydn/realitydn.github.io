@@ -22,7 +22,7 @@ import {
 import { INK, shadowSpec, textKeys, keyHex } from './print-paper.js';
 import {
   blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
-  stripeLayout, lineBox, dotFieldLayout, arcTextLayout,
+  stripeLayout, lineBox, qrLayout, dotFieldLayout, arcTextLayout,
 } from './print-layout.js';
 import {
   PALETTE, partnerOf, contrastInk, NEUTRALS, inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, WORDMARK_PATH, INK_MARK,
@@ -302,11 +302,8 @@ function renderElement(page, el, ctx){
   }
   else if(t==='qr'){
     drawSurface();
-    const pad=(el.surface&&el.surface!=='none')?10:0;
-    /* capScale: the caption's size follows a paper-size change (onResize) —
-       11pt/18pt band at 1, the size every code was drawn at before it existed. */
-    const cs=el.capScale||1, capH=el.caption?18*cs:0, qrSize=Math.min(el.w-pad*2,el.h-pad*2-capH), blockH=qrSize+capH;
-    const top=(el.h-blockH)/2, qx=(el.w-qrSize)/2;
+    /* code size, position and caption from the shared qrLayout the screen draws */
+    const ql=qrLayout(el), qrSize=ql.size, top=ql.top, qx=ql.left;
     /* shared geometry → the SAME shape descriptors the screen SVG draws, so the
        stylized code is WYSIWYG down to the module. */
     const g=qrGeometry(el.data, { ecl:el.ecl, quiet:el.quiet, moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo });
@@ -330,8 +327,8 @@ function renderElement(page, el, ctx){
         if(g.logoKind==='star') localPath(starPath(qx+g.logo.cx*ms, top+g.logo.cy*ms, g.logo.s*0.30*ms), lightCol, 0, 0);
       }
     } else { rect(qx, top, qrSize, qrSize, { color:lightCol }); }
-    if(el.caption){ const cf=fontFor('mont',700), csz=11*cs, a=cf.heightAtSize(csz,{descender:false}), cw=measure(el.caption.toUpperCase(),cf,csz,TRACK.label);
-      drawLineStr(el.caption.toUpperCase(), (el.w-cw)/2, top+qrSize+(capH+a)/2-2*cs, cf, csz, textColor, TRACK.label); }
+    if(ql.cap){ const cf=fontFor('mont',700), c=ql.cap, cw=measure(c.text,cf,c.size,TRACK.label);
+      drawLineStr(c.text, (el.w-cw)/2, c.base, cf, c.size, textColor, TRACK.label); }
   }
   else if(t==='coupon'){
     drawSurface();   // shared styled border (dashed by default) + lift

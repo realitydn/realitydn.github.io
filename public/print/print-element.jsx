@@ -12,7 +12,7 @@ import {
 } from './print-paper.js';
 import {
   dotFieldLayout as peDots, stripeLayout as peStripes, arcTextLayout as peArc, fitTextSize as peFit,
-  blendCss as peBlend, risoOpts as peRiso, borderDash, listRowFont, listSplit, punchLayout, couponLayout,
+  blendCss as peBlend, risoOpts as peRiso, borderDash, listRowFont, listSplit, punchLayout, couponLayout, qrLayout,
 } from './print-layout.js';
 import {
   PALETTE as PE_PAL, ACCENTS as PE_ACC, partnerOf as pePartner, contrastInk,
@@ -346,12 +346,13 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, editing
     const qrDark = textCol===PE_WHITE.rgb ? PE_INK.rgb : textCol;
     const eyeCol = peInk(el.eye||'auto', qrDark);
     const logoCol = peInk(el.logoColor||'auto', eyeCol);
-    const cs = el.capScale||1;   // caption follows a paper-size change (mirrors print-export)
-    const cap = el.caption, qrSize = cap ? Math.min(el.w, el.h-28*cs) : Math.min(el.w, el.h);
+    /* code size, position and caption from the shared qrLayout the PDF draws.
+       border:0 so it measures from the element's own corner (as the coupon). */
+    const ql = qrLayout(el), qrSize = ql.size, cap = ql.cap;
     const echoCol = el.echo ? echoHex(el, docAccent) : null;
     const qStyle = { moduleStyle:el.moduleStyle, eyeStyle:el.eyeStyle, logo:el.logo };
-    inner = <div style={box({ alignItems:'center', justifyContent:'center', gap:8*cs, padding:0 })}>
-      <div style={{ position:'relative', width:qrSize, height:qrSize }}>
+    inner = <div style={box({ padding:0, border:0, position:'relative', overflow:'visible' })}>
+      <div style={{ position:'absolute', left:ql.left, top:ql.top, width:qrSize, height:qrSize }}>
         {echoCol && <div style={{ position:'absolute', inset:0, transform:`translate(${el.echoDx||6}px, ${el.echoDy||6}px)` }}>
           <QRView data={el.data} ecl={el.ecl} dark={echoCol} light={light} quiet={el.quiet} {...qStyle} bg="transparent" ghost />
         </div>}
@@ -359,7 +360,11 @@ function PrintElement({ el, docAccentHex, docAccent, selected, dragging, editing
           <QRView data={el.data} ecl={el.ecl} dark={qrDark} light={light} quiet={el.quiet} {...qStyle} eye={eyeCol} logoColor={logoCol} />
         </div>
       </div>
-      {cap ? <div style={{ fontFamily:FAM_CSS.mont, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:(12*cs)+'px', color:textCol, textAlign:'center' }}>{cap}</div> : null}
+      {/* the left pad of one tracking step cancels CSS letter-spacing's trailing
+          space, so the caption centres on its letters as the PDF measures them */}
+      {cap ? <div style={{ position:'absolute', left:0, top:cap.boxTop, width:el.w, boxSizing:'border-box', paddingLeft:EM(TRACK.label),
+        fontFamily:FAM_CSS.mont, fontWeight:700, letterSpacing:EM(TRACK.label), fontSize:cap.size+'px', lineHeight:cap.lineH+'px',
+        color:textCol, textAlign:'center', whiteSpace:'pre' }}>{cap.text}</div> : null}
     </div>;
   }
   else if(t==='coupon'){

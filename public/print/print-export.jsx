@@ -22,7 +22,7 @@ import {
 import { INK, shadowSpec, textKeys, keyHex } from './print-paper.js';
 import {
   blendPdf, borderDash, fitTextSize, listRowFont, listSplit, punchLayout, couponLayout,
-  stripeLayout, dotFieldLayout, arcTextLayout,
+  stripeLayout, lineBox, dotFieldLayout, arcTextLayout,
 } from './print-layout.js';
 import {
   PALETTE, partnerOf, contrastInk, NEUTRALS, inkMarkLayout, inkMarkCells, INK_MARK_DAY_ACCENT, WORDMARK_PATH, INK_MARK,
@@ -152,16 +152,23 @@ function renderElement(page, el, ctx){
     strokeBox(bw, bcol, el.borderPattern, radius);
   }
 
+  /* where the canvas puts a baseline inside a line box: CSS centres the
+     face's content area in the line (half-leading), with Blink's whole-pixel
+     ascent and descent — asked of the browser (print-layout lineBox), as the
+     coupon does. An ascent straight down from the line top sat ~0.13em low
+     at leading 0.95 and high at 1.4. leading null = line-height normal. */
+  const baseIn=(fam, weight, size, leading)=> lineBox(fam, weight, size, leading).baseOff;
+
   /* multi-line text block; valign centre/top; optional offset (echo) */
   function textBlock({ str, fam, weight, size, align, tracking, leading, upper, valign, padX, padY, color, dx, dy }){
     const font=fontFor(fam,weight), t=upper?(str||'').toUpperCase():(str||'');
     const maxW=el.w-padX*2, lines=wrapText(t,font,size,tracking,maxW);
-    const asc=font.heightAtSize(size,{descender:false}), lineH=size*leading, blockH=lines.length*lineH;
+    const lineH=size*leading, base=baseIn(fam,weight,size,leading), blockH=lines.length*lineH;
     let top = valign==='top'?padY:(el.h-blockH)/2; if(valign!=='center'&&top<padY) top=padY;
     lines.forEach((ln,i)=>{
       const w=measure(ln,font,size,tracking);
       let lx=padX; if(align==='center') lx=padX+(maxW-w)/2; else if(align==='right') lx=padX+(maxW-w);
-      drawLineStr(ln, lx+(dx||0), top+i*lineH+asc+(dy||0), font, size, color, tracking);
+      drawLineStr(ln, lx+(dx||0), top+i*lineH+base+(dy||0), font, size, color, tracking);
     });
   }
   /* upright-stacked vertical text — one glyph per row, centred */
@@ -194,16 +201,28 @@ function renderElement(page, el, ctx){
   else if(t==='pricelist'){
     drawSurface();
     const mode=el.listStyle||'prices';
-    let yTop=(el.surface&&el.surface!=='none')?12:6;
-    const padX=(el.surface&&el.surface!=='none')?12:2;
+    /* the screen's box: padded 12×14 inside the (transparent) border when
+       surfaced, 4×2 when bare — and a bare box still keeps surfaceStyle's
+       1.6px transparent border, which Blink lays out as a whole 1px */
+    const surfaced=el.surface&&el.surface!=='none', bw=surfaced?(el.border!=null?el.border:2):1;
+    let yTop=bw+(surfaced?12:4);
+    const padX=bw+(surfaced?14:2);
     /* accent text on a fill takes the text colour (print-paper textKeys
        accentText — an accent on its own Accent surface would vanish) */
     const listAccent=accentTextColor;
     const headCol=(el.headingColor&&el.headingColor!=='auto')?colorForKey(el.headingColor):listAccent;
-    if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22), a=hf.heightAtSize(hs,{descender:false});
-      drawLineStr(el.upper===false?el.heading:el.heading.toUpperCase(), padX, yTop+a, hf, hs, headCol, TRACK.h2); yTop+=hs*1.1+8; }
+    /* heading: line-height 1, 8pt under it */
+    if(el.heading){ const hf=fontFor('mont',800), hs=Math.min(el.fontSize||20,22);
+      drawLineStr(el.upper===false?el.heading:el.heading.toUpperCase(), padX, yTop+baseIn('mont',800,hs,1), hf, hs, headCol, TRACK.h2); yTop+=hs+8; }
     const rs=listRowFont(el);
-    const rf=fontFor('mont',700), mf=fontFor('mont',800), pf=fontFor('grot',500), ra=rf.heightAtSize(rs,{descender:false}), rowH=rs*1.8;
+    const rf=fontFor('mont',700), mf=fontFor('mont',800), pf=fontFor('grot',500), ra=rf.heightAtSize(rs,{descender:false});
+    /* a screen row is a flex line of baseline-aligned spans, each its own
+       line box at line-height normal (= the face's content area): as tall as
+       the deepest ascent plus the deepest descent, padded rs*0.3 top and
+       bottom. The price is Grotesk, whose ascent differs from Montserrat's. */
+    const lbM=lineBox('mont',700,rs,null), lbP=lineBox('grot',500,rs,null), mH=lbM.lineH;
+    const rowAsc=mode==='prices'?Math.max(lbM.baseOff,lbP.baseOff):lbM.baseOff;
+    const rowDesc=mode==='prices'?Math.max(mH-lbM.baseOff,lbP.lineH-lbP.baseOff):mH-lbM.baseOff;
     const markerCol = (el.markerColor&&el.markerColor!=='auto') ? colorForKey(el.markerColor) : listAccent;
     const glyph = el.marker || '•';
     /* 1–2(–3) balanced columns, reading DOWN each column — same split as the screen */
@@ -215,7 +234,7 @@ function renderElement(page, el, ctx){
       let y=yTop;
       arr.forEach((it)=>{
         const i=idx++;
-        const baseTop=y+ra+rs*0.3, lbl=el.upper===false ? (it.l||'') : (it.l||'').toUpperCase();
+        const baseTop=y+rs*0.3+rowAsc, lbl=el.upper===false ? (it.l||'') : (it.l||'').toUpperCase();
         let lx=cx0;
         if(mode==='bulleted'){ drawLineStr(glyph, cx0, baseTop, mf, rs, markerCol, 0); lx=cx0+measure(glyph,mf,rs,0)+7; }
         else if(mode==='numbered'){ const num=(i+1)+'.'; drawLineStr(num, cx0, baseTop, mf, rs, markerCol, 0); lx=cx0+Math.max(measure(num,mf,rs,0), rs*0.9)+7; }
@@ -226,13 +245,13 @@ function renderElement(page, el, ctx){
           const prc=(it.p||''), pw=measure(prc,pf,rs,TRACK.fact);
           drawLineStr(lbl, lx, baseTop, rf, rs, textColor, TRACK.name);
           drawLineStr(prc, cx0+colW-pw, baseTop, pf, rs, textColor, TRACK.fact);
-          if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,TRACK.name), x0=lx+lw+6, x1=cx0+colW-pw-6, my=y+rs*0.3+ra*0.72;
+          if(el.dotLeader!==false){ const lw=measure(lbl,rf,rs,TRACK.name), x0=lx+lw+6, x1=cx0+colW-pw-6, my=baseTop-ra*0.28;
             if(x1>x0) line(x0,my,x1,my,0.75,textColor,[0.5,2]); }
-          y+=rowH;
+          y+=rs*0.6+rowAsc+rowDesc;
         } else {   // bulleted / numbered / plain → wrap long labels within the column
-          const availW=Math.max(20, cx0+colW-lx), lineH=rs*1.32, lines=wrapText(lbl, rf, rs, TRACK.name, availW);
-          lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*lineH, rf, rs, textColor, TRACK.name));
-          y += rowH + (lines.length-1)*lineH;
+          const availW=Math.max(20, cx0+colW-lx), lines=wrapText(lbl, rf, rs, TRACK.name, availW);
+          lines.forEach((ln,li)=> drawLineStr(ln, lx, baseTop+li*mH, rf, rs, textColor, TRACK.name));
+          y += rs*0.6 + lines.length*mH;
         }
       });
     });
@@ -562,13 +581,14 @@ function renderElement(page, el, ctx){
   else if(t==='badge'){
     drawSurface();
     const top=fontFor('mont',700), ts=Math.min(el.w*0.11,14), bigf=fontFor('mont',800), bs=Math.min(el.w*0.30,42), subf=fontFor('mont',700), ss=Math.min(el.w*0.085,11);
-    const ta=top.heightAtSize(ts,{descender:false}), ba=bigf.heightAtSize(bs,{descender:false}), sa=subf.heightAtSize(ss,{descender:false});
     const tCol=textColor;
-    const totalH=ts*1.1+bs+ss*1.2, t0=(el.h-totalH)/2;
-    const ctr=(str,font,size,topY,col,tr)=>{ const w=measure(str,font,size,tr); drawLineStr(str,(el.w-w)/2,topY,font,size,col,tr); };
-    if(el.top) ctr(el.top.toUpperCase(),top,ts,t0+ta,tCol,0.14);
-    if(el.big) ctr(el.big.toUpperCase(),bigf,bs,t0+ts*1.1+ba,tCol,0.01);
-    if(el.sub) ctr(el.sub.toUpperCase(),subf,ss,t0+ts*1.1+bs+sa,tCol,0.1);
+    /* the screen's centred column: top + sub at line-height normal (the
+       content area), big at 0.9, 2pt gaps — only the lines that are set */
+    const row=(str,font,weight,size,leading,tr)=>{ const lb=lineBox('mont',weight,size,leading); return { str, font, size, tr, lh:lb.lineH, base:lb.baseOff }; };
+    const rows=[ el.top&&row(el.top,top,700,ts,null,0.14), el.big&&row(el.big,bigf,800,bs,0.9,0.01), el.sub&&row(el.sub,subf,700,ss,null,0.1) ].filter(Boolean);
+    let y=(el.h-(rows.reduce((h,r)=>h+r.lh,0)+2*Math.max(0,rows.length-1)))/2;
+    rows.forEach(r=>{ const s=r.str.toUpperCase(), w=measure(s,r.font,r.size,r.tr);
+      drawLineStr(s,(el.w-w)/2,y+r.base,r.font,r.size,tCol,r.tr); y+=r.lh+2; });
   }
   else if(t==='seal'){
     const cxL=el.w/2, cyL=el.h/2, R=Math.min(el.w,el.h)/2-2, col=colorForKey(el.fill||'ink',inkColor());

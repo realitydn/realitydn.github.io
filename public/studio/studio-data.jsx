@@ -227,21 +227,34 @@ setIdPrefix('e');
      • title — the cell with the most letters (the headline / fixture)
      • num   — whatever's left (a label like "001" or "Trận 20")
    So "001 — Title — 3.6", "Tunisia vs Japan <", and a 5-column football
-   fixture all parse cleanly. Everything is optional per line. */
+   fixture all parse cleanly. Everything is optional per line.
+     • a TIME RANGE — 20:00 - 22:00 · 20:00–late · 20h-22h — is ONE time
+       cell, set with an en dash (20:00–22:00). It's joined before the split,
+       so its dash can't cut the row; two loose time cells merge the same way.
+     • a line that starts with "!" is HIGHLIGHTED (hl) — the row the
+       Highlight style dresses. `line` is the row's index in the raw text, so
+       the Inspector can toggle the "!" on the right line. */
 function parseSessions(raw){
   const DATE = /^\d{1,2}[./-]\d{1,2}([./-]\d{2,4})?$/;
-  const TIME = /^\d{1,2}[:h]\d{2}$/;                       // 11:00 · 23h59
+  const CLOCK = '\\d{1,2}(?:[:h]\\d{2}|h)';                  // 11:00 · 23h59 · 20h
+  const END = '(?:'+CLOCK+'|late|muộn|khuya)';
+  const TIME = new RegExp('^'+CLOCK+'(?:–'+END+')?$', 'i');
+  const RANGE = new RegExp('('+CLOCK+')\\s*(?:[-–—]|to|đến)\\s*('+END+')(?![\\d:h])', 'gi');
+  const JOIN = '\u0001';                                     // holds a range's dash through the split
   const MARK = /^(.*?)\s*([<>~^✦●◆▲★+])$/;                 // one trailing symbol = a category tag
   const letters = s => (String(s).match(/[A-Za-zÀ-ỹ]/g)||[]).length;
-  return (raw||'').split(/\r?\n/).map(line=>{
+  return (raw||'').split(/\r?\n/).map((line, li)=>{
     let s = line.trim();
     if(!s) return null;
+    let hl = false; if(s[0]==='!'){ hl = true; s = s.slice(1).trim(); if(!s) return null; }
     let marker=''; const mm = s.match(MARK); if(mm){ marker = mm[2]; s = mm[1].trim(); }
-    const parts = s.split(/\s*[—–|]\s*|\s+-\s+|\t+|\s{2,}/).map(p=>p.trim()).filter(Boolean);
+    s = s.replace(RANGE, (_, a, b)=> a+JOIN+b);
+    const parts = s.split(/\s*[—–|]\s*|\s+-\s+|\t+|\s{2,}/).map(p=>p.trim().split(JOIN).join('–')).filter(Boolean);
     let num='', date='', time=''; const rest=[];
     parts.forEach(p=>{
       if(!date && DATE.test(p)) date=p;
       else if(!time && TIME.test(p)) time=p;
+      else if(time && time.indexOf('–')<0 && TIME.test(p)) time += '–'+p;   // "20:00 <tab> 22:00"
       else rest.push(p);
     });
     let title='';
@@ -252,7 +265,7 @@ function parseSessions(raw){
     }
     // "12. Title" / "3) Title" — numbered without a separator (bare numbers stay)
     if(!num && title){ const m = title.match(/^(\d{1,4}[.)])\s+(\S.*)$/); if(m){ num=m[1]; title=m[2]; } }
-    return { num, date, time, title, marker };
+    return { num, date, time, title, marker, hl, line:li };
   }).filter(Boolean);
 }
 
@@ -423,7 +436,7 @@ const DEFAULTS = {
              dragDir:'down', dragPos:0.6, dragSpeed:0.22, dragWobble:0.4, dragFade:0.35,
              echoMode:'trail', echoCount:4, echoStep:36, echoAngle:0, echoBlend:'lighten', echoFade:0.78, echoScale:0.76, echoBorder:5, echoX:0, echoY:0,
              mirrorMode:'book', mirrorFlip:false, mirrorX:0, mirrorY:0,
-             panelCount:3, panelDir:'across', panelZoom:1.8, panelGutter:6, panelX:0, panelY:0,
+             panelCount:3, panelDir:'across', panelZoom:1.8, panelGutter:6, panelX:0, panelY:0,
              /* 13.10.26 — where and how much, and each move's own additions; all off */
              composeMix:1, composeRegion:'none', cmpRegX:0, cmpRegY:0, cmpRegSize:0.6, cmpRegSoft:0.5, cmpRegAngle:0, cmpRegInvert:false,
              sliceUneven:0, sliceSpread:0, sliceFrom:0, sliceTo:1, sliceWave:0, sliceWaveLen:120,

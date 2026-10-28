@@ -21,6 +21,7 @@ import {
 } from './elements/photo.jsx';
 import { BlockEl, ShapeEl, IconEl, RuleEl, BurstEl, InkmarkEl, TicketInkMark } from './elements/graphics.jsx';
 import { titleFx, groundOf as fxGround, FxTitle, fxPad } from './elements/title-fx.jsx';
+import { sessionHl, hlScale } from './elements/session-hl.jsx';
 
 /* ---- FACT type — the 5+6 merge, in one place -------------------------
    Canon (reality-ds.css .type-fact-far · decision M1 "family wins"):
@@ -581,6 +582,12 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const headH = el.heading ? headFs+13 : 0;
     const legendH = (rich && markers.length) ? 26 : 0;
     const avail = el.h/B - 32 - headH - legendH;
+    /* the highlight (elements/session-hl.jsx) — a "!" row, sized up by hlScale
+       and dressed by hlFx. Auto fit counts it at its own size. */
+    const hlK = hlScale(el);
+    const fitN = Math.max(1, items.reduce((n,r)=> n + (r.hl ? hlK : 1), 0));
+    const hlCtx = { ground:fxGround(el.surface, theme, accentHex), accentHex, textCol };
+    const hlOf = (it, size)=> it.hl ? sessionHl(el, hlCtx, size, it.title) : null;
     const heading = el.heading ? <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:headFs, color:accentText, marginBottom:10 }}>{el.heading}</div> : null;
     const legend = (rich && markers.length) ? <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 18px', marginTop:10 }}>
       {markers.map(m=>{ const ms=Math.max(8,Math.round((rich?20:18)*B*0.5));
@@ -589,49 +596,59 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     </div> : null;
 
     if(rich){
-      const auto = Math.max(14, Math.min(40, Math.round((avail/Math.max(1,items.length) - 2*rowGap)/1.55)));
+      const auto = Math.max(14, Math.min(40, Math.round((avail/fitN - 2*rowGap)/1.55)));
       const fs = (el.rowSize || auto) * B;
       const metaFs = Math.max(10, Math.round(fs*0.52));
       const dot = Math.max(8, Math.round(fs*0.34));
       inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
         {heading}
-        {items.map((it,i)=>(
-          <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:Math.round(dot*0.8),
-            borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}22` : 'none', padding:rowGap+'px 0' }}>
+        {items.map((it,i)=>{
+          const tfs = it.hl ? fs*hlK : fs, hl = hlOf(it, tfs);
+          const tStyle = { fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase', fontSize:tfs, lineHeight:1.0, letterSpacing:rowTr, color:(hl&&hl.color)||undefined };
+          return (
+          <div key={i} style={Object.assign({ display:'flex', alignItems:'flex-start', gap:Math.round(dot*0.8),
+            borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}22` : 'none', padding:rowGap+'px 0' }, hl&&hl.row)}>
             {markers.length ? <span aria-hidden="true" style={{ width:dot, height:dot, borderRadius:'50%', flex:'none',
               background: it.marker?catColor(it.marker):'transparent', border: it.marker?'none':`1.5px solid ${seSurf('outline',theme,accentHex).color}55`,
-              marginTop:Math.round(fs*0.26) }} /> : null}
+              marginTop:Math.round(tfs*0.26) }} /> : null}
+            {hl && hl.lead}
             <div style={{ flex:'1 1 auto', minWidth:0 }}>
-              <div style={{ fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase', fontSize:fs, lineHeight:1.0, letterSpacing:rowTr }}>{it.title}</div>
+              {hl && hl.title ? hl.title(tStyle) : <div style={tStyle}>{it.title}</div>}
               {/* the whole meta line is facts — number, date, time → Grotesk.
                   600 rather than the far-fact 700: it sits under a headline as
                   supporting detail, and the row above already carries weight. */}
               {(it.date||it.time||it.num) ? <div style={FACT(metaFs, { fontWeight:600, textTransform:'none', opacity:.66, marginTop:Math.round(fs*0.1) })}>
                 {[it.num, it.date, it.time].filter(Boolean).join('  ·  ')}</div> : null}
             </div>
-          </div>
-        ))}
+          </div>);
+        })}
         {legend}
         {!items.length && !exporting &&
           <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
       </div>;
     } else {
-      const auto = Math.max(13, Math.min(26, Math.floor(avail/Math.max(1,items.length)) - 15));
+      const auto = Math.max(13, Math.min(26, Math.floor(avail/fitN) - 15));
       const fs = (el.rowSize || auto) * B;
       const sub = Math.max(11, Math.round(fs*0.62));
       inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
         {heading}
-        {items.map((it,i)=>(
-          <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14,
+        {items.map((it,i)=>{
+          const tfs = it.hl ? fs*hlK : fs, hl = hlOf(it, tfs);
+          const tStyle = { flex:'1 1 auto', minWidth:0, fontSize:tfs, lineHeight:1.05, letterSpacing:rowTr, color:(hl&&hl.color)||undefined };
+          return (
+          <div key={i} style={Object.assign({ display:'flex', alignItems:'baseline', gap:14,
             borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:rowGap+'px 0',
-            fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }}>
+            fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }, hl&&hl.row)}>
+            {hl && hl.lead}
             {/* the row inherits Montserrat caps for the TITLE (a name); the
                 number and the date are facts and opt out into Grotesk. */}
             {it.num ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', color:accentText })}>{it.num}</span> : null}
-            <span style={{ flex:'1 1 auto', minWidth:0, fontSize:fs, lineHeight:1.05, letterSpacing:rowTr }}>{it.title}</span>
+            {hl && hl.title
+              ? <div style={{ flex:'1 1 auto', minWidth:0 }}>{hl.title(Object.assign({}, tStyle, { flex:null, fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }))}</div>
+              : <span style={tStyle}>{it.title}</span>}
             {it.date ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', opacity:.72 })}>{it.date}</span> : null}
-          </div>
-        ))}
+          </div>);
+        })}
         {!items.length && !exporting &&
           <div style={{ fontFamily:MONT, fontWeight:700, textTransform:'uppercase', letterSpacing:EM(TRACK.label), fontSize:14*B, opacity:.4 }}>Paste the list in the panel →</div>}
       </div>;

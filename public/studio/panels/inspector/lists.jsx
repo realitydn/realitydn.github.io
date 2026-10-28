@@ -6,6 +6,9 @@ import { inkTitle } from '../../../studio-shared/brand.js';
 import { INK_CHOICES as AP_INKS, PALETTE as AP_PAL, parseSessions } from '../../studio-data.jsx';
 import { Chips, Slider, Fold, Hint, Swatches, WEIGHTS_MONT } from '../controls.jsx';
 import { ROW_SIZES } from './caps.js';
+import { RUI } from '../../../studio-shared/studio-ui.jsx';
+import { FX_AMOUNTS, FX_HINTS } from '../../elements/title-fx.jsx';
+import { HL_ROW, HL_PARTY, HL_SCALES, HL_USES, HL_HINTS, hlKind, hlScale } from '../../elements/session-hl.jsx';
 function RowsFold({ el, update, dRows }){
   const setItems = (items)=>update({ items });
   return (
@@ -31,7 +34,7 @@ function RowsFold({ el, update, dRows }){
                 placeholder={'001 — Session title — 3.6.26'}
                 onChange={e=>update({ raw:e.target.value })} />
             </div>
-            <Hint tight>Paste columns split by <b>tabs, dashes or 2+ spaces</b> — date, time, a label and the fixture, in any order. End a line with a symbol (<b>&lt;</b> <b>~</b> …) to tag its category below.</Hint>
+            <Hint tight>Paste columns split by <b>tabs, dashes or 2+ spaces</b> — date, time, a label and the fixture, in any order. A time can be a range (<b>20:00 - 22:00</b>, <b>21:00–late</b>). End a line with a symbol (<b>&lt;</b> <b>~</b> …) to tag its category below; start one with <b>!</b> to highlight it.</Hint>
           </React.Fragment>}
           {el.type==='agenda' && <React.Fragment>
             <div className="rs-lab">Days — colour follows the weekday</div>
@@ -85,4 +88,49 @@ function RowsFold({ el, update, dRows }){
   );
 }
 
-export { RowsFold };
+/* ---- the Sessions highlight (elements/session-hl.jsx) ----
+   A "!" at the start of a line marks the row; the stars here just add or
+   remove that "!", so the textarea stays the one source of truth. Closed
+   unless a row is marked, like the title's party effect. */
+function SessionHlFold({ el, doc, update }){
+  const rows = parseSessions(el.raw);
+  const on = rows.filter(r=>r.hl).length;
+  const toggle = (li)=>{
+    RUI.setFold('f-hl', true);   // un-starring the last row mustn't fold the panel shut under the cursor
+    const lines = String(el.raw||'').split('\n');
+    const t = lines[li], lead = t.match(/^\s*/)[0], body = t.slice(lead.length);
+    lines[li] = lead + (body[0]==='!' ? body.slice(1).replace(/^\s+/, '') : '!'+body);
+    update({ raw:lines.join('\n') });
+  };
+  const kind = hlKind(el), uses = HL_USES[kind] || {};
+  const label = ([].concat(HL_ROW, HL_PARTY).find(x=>x.v===kind)||{}).l;
+  return (
+    <Fold id="f-hl" title="Highlight" badge={on ? label : null} dirty={on?1:0}>
+      <div className="rs-lab">Rows — star the ones to call out</div>
+      {rows.map(r=>(
+        <div className="rs-itemrow" key={r.line}>
+          <button onClick={()=>toggle(r.line)} title={r.hl ? 'Remove the highlight' : 'Highlight this row'}
+            style={r.hl ? { background:AP_PAL[doc.accent], borderColor:AP_PAL[doc.accent], color:'#fff' } : null}>{r.hl ? '★' : '☆'}</button>
+          <span style={{ flex:'1 1 auto', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', opacity:r.hl?1:.7 }}>
+            {r.title || r.num || r.date || r.time}{r.time ? <span style={{ opacity:.6 }}>{'  ·  '+r.time}</span> : null}</span>
+        </div>
+      ))}
+      {!rows.length && <Hint tight>Add rows under Rows first.</Hint>}
+      {on>0 && <React.Fragment>
+        <div style={{ height:6 }} />
+        <Chips label="Row" options={HL_ROW} value={kind} onChange={v=>update({ hlFx:v })} />
+        <Chips label="Party" options={HL_PARTY} value={kind} onChange={v=>update({ hlFx:v })} />
+        <Chips label="Size" options={HL_SCALES} value={hlScale(el)} onChange={v=>update({ hlScale:v })} />
+        <Chips label="Amount" options={FX_AMOUNTS} value={el.hlAmt||'bold'} onChange={v=>update({ hlAmt:v })} />
+        {uses.a && <Swatches label="First ink" value={el.hlInk||'fg'} onChange={v=>update({ hlInk:v==='fg'?null:v })}
+          autoTitle="Auto — the list’s fill (the poster accent); its partner on an Accent box" autoBg={AP_PAL[doc.accent]} />}
+        {uses.b && <Swatches label="Second ink" value={el.hlInk2||'fg'} onChange={v=>update({ hlInk2:v==='fg'?null:v })}
+          autoTitle="Auto — the first ink’s partner" />}
+        <Hint tight>{HL_HINTS[kind] || FX_HINTS[kind]} Inks are picked against the box, like the title’s party effects.</Hint>
+      </React.Fragment>}
+      {!on && rows.length>0 && <Hint tight>Or start a line with <b>!</b> in the Rows list.</Hint>}
+    </Fold>
+  );
+}
+
+export { RowsFold, SessionHlFold };

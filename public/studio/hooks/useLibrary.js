@@ -121,10 +121,11 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
       try{ const thumbs = await RStore.thumbGetAll(); if(live && thumbs) setTplThumbs(thumbs); }catch(e){}
       if(live) refreshBin();
       /* WP9: migrate this browser's library UP to the account, then pull any cloud
-         templates this browser is missing. IndexedDB stays the source of truth —
-         both calls never throw and no-op when signed-out / hub dormant. */
+         templates this browser is missing or has an older copy of (a card whose
+         template was replaced forgets its picture). IndexedDB stays the source
+         of truth — both calls never throw and no-op when signed-out / hub dormant. */
       try{ if(RStore.cloudPushAll) await RStore.cloudPushAll(); }catch(e){}
-      try{ if(RStore.cloudPull) await RStore.cloudPull(cloudProgress); }catch(e){}
+      try{ if(RStore.cloudPull) await RStore.cloudPull(cloudProgress, forgetTplThumb); }catch(e){}
       if(live) setCloudMsg(null);
       /* Re-READ rather than trust what the pull returned: its list was taken
          before the round-trip, so a template saved while it ran is on disk but
@@ -338,7 +339,7 @@ function useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg, cloudProgress
   }
 
   return { userTpls, setUserTpls, userTplsRef, tplReady, tplStoreErr, libClean, tplBin, restoreFromBin, restoring, restoreFromCloud,
-    tplThumbs, captureTplThumb, saveUserTpl, applyUserTpl, setTplArchived, delUserTpl, tplFileRef, exportUserTpls,
+    tplThumbs, captureTplThumb, forgetTplThumb, saveUserTpl, applyUserTpl, setTplArchived, delUserTpl, tplFileRef, exportUserTpls,
     importUserTpls, applyTemplate };
 }
 

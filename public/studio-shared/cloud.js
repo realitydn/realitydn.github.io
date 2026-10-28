@@ -53,6 +53,9 @@ function createCloud() {
     var n = Math.max(0, Number(bytes) || 0);
     return Math.min(UPLOAD_MAX_MS, Math.round(UPLOAD_BASE_MS + (n / UPLOAD_FLOOR_BPS) * 1000));
   }
+  // studio_documents' per-doc cap: MAX_JSON_BYTES in REALITYApp
+  // src/lib/studio-documents.ts, measured on the doc's json string. Keep in step.
+  var HUB_DOC_CAP = 5000000;
   var LOG = '[rcloud]';
 
   /* ---- hub origin (override via ?hub=, allowlisted) ----------------------- */
@@ -90,6 +93,48 @@ function createCloud() {
     return DEFAULT_HUB;
   }
 
+  /* ---- sign-in changes, said out loud ------------------------------------ */
+  // The token lasts 12h, and it used to run out in silence: readToken() dropped
+  // it, every push quietly no-opped, and the Studio's topbar went on showing the
+  // email it had read at sign-in. Now every way the token goes — it expired, the
+  // hub refused it (401), signed out here or in another tab — tells whoever
+  // subscribed through onAuth(fn). `lapsed` remembers an UNASKED loss (expired /
+  // rejected) and whose it was, so the Studio can say "signed out" and offer the
+  // same account back in one click; a deliberate sign-out clears it.
+  // Listeners run on a later tick, never inside the call that noticed: that call
+  // can be a React render (isSignedIn() in a useState initialiser), and a
+  // setState from inside someone else's render is an error.
+  var SOON_MS = 15 * 60000;   // authInfo().soon: the last 15 minutes of a token
+  var listeners = [];
+  var lapsed = null;          // { email, reason: 'expired' | 'rejected', at } | null
+  function emit(reason) {
+    setTimeout(function () {
+      listeners.slice().forEach(function (fn) { try { fn(reason); } catch (e) {} });
+    }, 0);
+  }
+  function onAuth(fn) {
+    if (typeof fn !== 'function') return function () {};
+    listeners.push(fn);
+    return function () { listeners = listeners.filter(function (f) { return f !== fn; }); };
+  }
+  function lapse(t, reason) {
+    lapsed = { email: (t && t.email) || (lapsed && lapsed.email) || null, reason: reason, at: Date.now() };
+    emit(reason);
+  }
+  // Another tab signing in or out changes the same localStorage key — follow it.
+  // A token that tab dropped because it had run out is this tab's lapse too
+  // (whichever tab read it first is the one that removed it).
+  try {
+    window.addEventListener('storage', function (ev) {
+      if (!ev || ev.key !== TOKEN_KEY) return;
+      if (ev.newValue) { lapsed = null; emit('storage'); return; }
+      var old = null;
+      try { old = ev.oldValue ? JSON.parse(ev.oldValue) : null; } catch (e) { old = null; }
+      if (old && old.expiresAt && Date.now() >= old.expiresAt) lapse(old, 'expired');
+      else emit('storage');
+    });
+  } catch (e) {}
+
   /* ---- token storage ----------------------------------------------------- */
   // Stored shape: { token, email, expiresAt }  (expiresAt = epoch ms).
   function readToken() {
@@ -99,8 +144,9 @@ function createCloud() {
       var t = JSON.parse(raw);
       if (!t || !t.token) return null;
       if (t.expiresAt && Date.now() >= t.expiresAt) {
-        // expired — drop it so isSignedIn() reads false
+        // expired — drop it so isSignedIn() reads false, and say so
         try { localStorage.removeItem(TOKEN_KEY); } catch (e2) {}
+        lapse(t, 'expired');
         return null;
       }
       return t;
@@ -123,6 +169,19 @@ function createCloud() {
 
   function isSignedIn() { return !!readToken(); }
   function currentEmail() { var t = readToken(); return t ? (t.email || null) : null; }
+  // authInfo() → { signedIn, email, expiresAt, soon, lapsed } — what a topbar
+  // needs in one read. `soon` = under SOON_MS left; `lapsed` as above.
+  function authInfo() {
+    var t = readToken();
+    var exp = t && t.expiresAt ? t.expiresAt : null;
+    return {
+      signedIn: !!t,
+      email: t ? (t.email || null) : null,
+      expiresAt: exp,
+      soon: !!(exp && exp - Date.now() < SOON_MS),
+      lapsed: t ? null : lapsed,
+    };
+  }
 
   /* ---- low-level fetch helper (never throws) ----------------------------- */
   // Returns { ok, status, json, text } or null on any thrown/network error.
@@ -159,10 +218,18 @@ function createCloud() {
       if (res.status === 503) {
         console.info(LOG, method, path, '→ 503 (hub dormant; staying local-only)');
       }
-      if (res.status === 401) {
-        // token rejected/expired/revoked — drop it so we fall back to local-only
-        console.info(LOG, method, path, '→ 401; clearing stored token');
-        clearToken();
+      if (res.status === 401 && t && t.token && opts.auth !== false) {
+        // token rejected/expired/revoked — drop it so we fall back to local-only.
+        // Only when it was OUR token that was refused, and only if it's still the
+        // stored one: a sign-in that landed while this request was in flight
+        // wrote a fresh token, and an old request's 401 mustn't wipe it.
+        var now = readToken();
+        if (now && now.token === t.token) {
+          console.info(LOG, method, path, '→ 401; clearing stored token');
+          clearToken(); lapse(t, 'rejected');
+        } else {
+          console.info(LOG, method, path, '→ 401 for an older token; keeping the newer sign-in');
+        }
       }
       return res.text().then(function (text) {
         var json = null;
@@ -202,6 +269,8 @@ function createCloud() {
           var d = ev.data;
           if (!d || d.type !== TOKEN_MSG || !d.token) return;
           writeToken({ token: d.token, email: d.email, expiresAt: d.expiresAt });
+          lapsed = null;
+          emit('signedIn');
           console.info(LOG, 'signed in as', d.email || '(unknown)');
           finish(readToken());
         } catch (e) { /* ignore malformed messages */ }
@@ -230,6 +299,8 @@ function createCloud() {
 
   function signOut() {
     clearToken();
+    lapsed = null;   // asked for — nothing to warn about
+    emit('signedOut');
     console.info(LOG, 'signed out (local-only)');
   }
 
@@ -261,17 +332,24 @@ function createCloud() {
     });
   }
 
-  // putDoc(studio, docId, title, json, updatedAt) → stored doc | null.
+  // putDoc(studio, docId, title, json, updatedAt, opts) → stored doc | null.
   // `json` may be a string (already-stringified doc) or an object — both ok.
   // `updatedAt` is epoch ms (defaults to now). Best-effort, last-write-wins.
-  function putDoc(studio, docId, title, json, updatedAt) {
-    if (!isSignedIn()) { return Promise.resolve(null); }
+  // With opts.detail a failure resolves { ok:false, status, tooBig?, timedOut?,
+  // signedOut?, bytes } instead of null — so the Studio can say "too big" rather
+  // than nothing. (Schedule reads a plain null; it passes no opts.)
+  function putDoc(studio, docId, title, json, updatedAt, opts) {
+    var detail = !!(opts && opts.detail);
+    function fail(status, extra) {
+      return detail ? Object.assign({ ok: false, status: status }, extra || {}) : null;
+    }
+    if (!isSignedIn()) { return Promise.resolve(fail(401, { signedOut: true })); }
     var jsonStr;
     try {
       jsonStr = typeof json === 'string' ? json : JSON.stringify(json);
     } catch (e) {
       console.info(LOG, 'putDoc: could not stringify doc; skipping');
-      return Promise.resolve(null);
+      return Promise.resolve(fail(0, { error: 'could not stringify' }));
     }
     var body;
     try {
@@ -282,13 +360,29 @@ function createCloud() {
         json: jsonStr,
         updatedAt: typeof updatedAt === 'number' ? updatedAt : Date.now(),
       });
-    } catch (e) { return Promise.resolve(null); }
+    } catch (e) { return Promise.resolve(fail(0, { error: 'could not stringify' })); }
+    // The hub refuses a doc over its cap with a 413 — but only after the whole
+    // body has come up, which for a doc that size is minutes of the venue's
+    // uplink. Same measure as the hub's (the json string's length), checked here.
+    if (jsonStr.length > HUB_DOC_CAP) {
+      console.info(LOG, 'putDoc', docId, 'is ' + jsonStr.length + ' chars, over the hub cap; not sent');
+      return Promise.resolve(fail(413, { tooBig: true, bytes: jsonStr.length }));
+    }
     return call('PUT', '/api/studio/documents', {
       headers: { 'Content-Type': 'application/json' },
       body: body,
       timeoutMs: uploadBudgetMs(body.length),
+      detail: detail,
     }).then(function (r) {
-      if (!r || !r.ok) return null;
+      if (!r || !r.ok) {
+        if (r && r.status === 413) console.info(LOG, 'putDoc', docId, '→ 413 (' + jsonStr.length + ' chars; over the hub cap)');
+        return fail(r ? r.status : 0, {
+          tooBig: !!(r && r.status === 413),
+          timedOut: !!(r && r.timedOut),
+          signedOut: !!(r && r.status === 401),
+          bytes: jsonStr.length,
+        });
+      }
       return (r.json && (r.json.document || r.json)) || true;
     });
   }
@@ -462,6 +556,8 @@ function createCloud() {
     hub: hub,
     isSignedIn: isSignedIn,
     currentEmail: currentEmail,
+    authInfo: authInfo,
+    onAuth: onAuth,
     signIn: signIn,
     signOut: signOut,
     getDoc: getDoc,

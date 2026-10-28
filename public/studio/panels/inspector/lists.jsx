@@ -4,11 +4,12 @@
    ============================================================ */
 import { inkTitle } from '../../../studio-shared/brand.js';
 import { INK_CHOICES as AP_INKS, PALETTE as AP_PAL, parseSessions } from '../../studio-data.jsx';
-import { Chips, Slider, Fold, Hint, Swatches, WEIGHTS_MONT } from '../controls.jsx';
+import { Chips, Slider, Fold, Hint, Swatches, WEIGHTS_MONT, WEIGHTS_GROT } from '../controls.jsx';
 import { ROW_SIZES } from './caps.js';
 import { RUI } from '../../../studio-shared/studio-ui.jsx';
 import { FX_AMOUNTS, FX_HINTS } from '../../elements/title-fx.jsx';
 import { HL_ROW, HL_PARTY, HL_SCALES, HL_USES, HL_HINTS, hlKind, hlScale } from '../../elements/session-hl.jsx';
+import { TIME_LAYOUTS, TIME_RANGES, timeLayout, timeRatio, timeWeight } from '../../elements/session-time.js';
 function RowsFold({ el, update, dRows }){
   const setItems = (items)=>update({ items });
   return (
@@ -133,4 +134,28 @@ function SessionHlFold({ el, doc, update }){
   );
 }
 
-export { RowsFold, SessionHlFold };
+/* ---- the Sessions time (elements/session-time.js) ----
+   Where the time sits and how loud it is. Only shown once a row has a
+   time. Picking a layout clears the size, so each one comes up at the size
+   it was drawn for; the slider then takes it from there. */
+const TIME_KEYS = ['timeLayout','timeRange','timeSize','timeWeight','timeColor'];
+function SessionTimeFold({ el, doc, update }){
+  const rows = parseSessions(el.raw);
+  if(!rows.some(r=>r.time)) return null;
+  const tl = timeLayout(el);
+  const set = TIME_KEYS.filter(k=>el[k]!=null && el[k]!=='').length;
+  return (
+    <Fold id="f-time" title="Time" badge={tl!=='meta' ? (TIME_LAYOUTS.find(x=>x.v===tl)||{}).l : null} dirty={set}>
+      <Chips label="Place" options={TIME_LAYOUTS} value={tl} onChange={v=>update({ timeLayout:v==='meta'?null:v, timeSize:null })} />
+      <Chips label="Range" options={TIME_RANGES} value={el.timeRange||'full'} onChange={v=>update({ timeRange:v==='full'?null:v })} />
+      <Slider label="Time size" val={timeRatio(el)} min={0.35} max={1.5} step={0.05} suffix="×" onChange={v=>update({ timeSize:v })} />
+      <Chips label="Time weight" options={WEIGHTS_GROT} value={timeWeight(el)} onChange={v=>update({ timeWeight:v })} />
+      <Swatches label="Time colour" value={el.timeColor||'fg'} onChange={v=>update({ timeColor:v==='fg'?null:v })}
+        autoTitle={tl==='meta' ? 'Auto — the muted line under the title' : 'Auto — the accent (the row’s text on a Band or Ticket highlight)'} autoBg={tl==='meta' ? null : AP_PAL[doc.accent]} />
+      <Hint tight>{(TIME_LAYOUTS.find(x=>x.v===tl)||{}).t}. Size is a multiple of the row’s title, so it follows Row size and the highlight.</Hint>
+      {set>0 && <button className="rs-addrow" onClick={()=>update({ timeLayout:null, timeRange:null, timeSize:null, timeWeight:null, timeColor:null })}>Reset time</button>}
+    </Fold>
+  );
+}
+
+export { RowsFold, SessionHlFold, SessionTimeFold };

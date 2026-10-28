@@ -21,7 +21,8 @@ import {
 } from './elements/photo.jsx';
 import { BlockEl, ShapeEl, IconEl, RuleEl, BurstEl, InkmarkEl, TicketInkMark } from './elements/graphics.jsx';
 import { titleFx, groundOf as fxGround, FxTitle, fxPad } from './elements/title-fx.jsx';
-import { sessionHl, hlScale } from './elements/session-hl.jsx';
+import { sessionHl, hlScale, hlExtra } from './elements/session-hl.jsx';
+import { timeLayout, timeRatio, timeWeight, timeStyled, fmtTime, timeCh } from './elements/session-time.js';
 
 /* ---- FACT type — the 5+6 merge, in one place -------------------------
    Canon (reality-ds.css .type-fact-far · decision M1 "family wins"):
@@ -596,30 +597,63 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     </div> : null;
 
     if(rich){
-      const auto = Math.max(14, Math.min(40, Math.round((avail/fitN - 2*rowGap)/1.55)));
+      /* where the time sits (elements/session-time.js) — unset, it's in the
+         meta line exactly as before; the other layouts lift it out */
+      const tl = timeLayout(el), tr = timeRatio(el), tWt = timeWeight(el);
+      const perRow = 1.55 + (tl==='kicker' ? tr*1.25 : Math.max(0, tr - (tl==='meta' ? 0.52 : 1)));
+      const hlN = items.filter(r=>r.hl).length;
+      const tTxt = (it)=> fmtTime(it.time, el.timeRange);
+      /* a time column beside the title takes its width — so Auto fit also
+         checks the longest title still fits on one line next to it (caps
+         ~.72em a letter, tabular figures ~.6em), not just the height */
+      const sideCh = (tl==='lead'||tl==='end') ? Math.max(0, ...items.map(r=>timeCh(tTxt(r)))) : 0;
+      const leadCh = tl==='lead' ? sideCh : 0;
+      const wAvail = el.w/B - 36 - (markers.length ? 14 : 0);
+      const wFit = sideCh ? Math.min(...items.map(r=> wAvail / (String(r.title).length*0.72*(r.hl?hlK:1) + sideCh*tr*0.62*(r.hl && tl==='end' ? hlK : 1) + 0.6))) : Infinity;
+      const auto = Math.max(14, Math.min(40, Math.round((avail - 2*rowGap*fitN)/(perRow*fitN + hlN*hlExtra(el))), Math.floor(wFit)));
       const fs = (el.rowSize || auto) * B;
       const metaFs = Math.max(10, Math.round(fs*0.52));
       const dot = Math.max(8, Math.round(fs*0.34));
+      const timeEl = (it, tfs, hl, extra)=>{
+        /* Auto: the accent where the time stands alone; the row's own text on a
+           dressed (Band / Ticket) highlight, where the accent IS the bar */
+        const onBar = hl && hl.row && hl.row.background && hl.row.background!=='transparent';
+        const own = el.timeColor && el.timeColor!=='fg' ? seResolve(el.timeColor, textCol) : null;
+        const col = own || (tl==='meta' || onBar ? undefined : accentText);
+        return <span style={FACT(Math.max(10, Math.round(tfs*tr)), Object.assign({ fontWeight:tWt, textTransform:'none', lineHeight:1, color:col }, extra))}>{tTxt(it)}</span>;
+      };
       inner = <div style={box(Object.assign({ justifyContent:'flex-start' }, sePad(el, 18)))}>
         {heading}
         {items.map((it,i)=>{
           const tfs = it.hl ? fs*hlK : fs, hl = hlOf(it, tfs);
           const tStyle = { fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase', fontSize:tfs, lineHeight:1.0, letterSpacing:rowTr, color:(hl&&hl.color)||undefined };
+          const metaBits = tl==='meta' ? [it.num, it.date, tTxt(it)] : [it.num, it.date];
           return (
-          <div key={i} style={Object.assign({ display:'flex', alignItems:'flex-start', gap:Math.round(dot*0.8),
+          <div key={i} style={Object.assign({ display:'flex', alignItems:(tl==='lead'||tl==='end') ? 'baseline' : 'flex-start', gap:Math.round(dot*0.8),
             borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}22` : 'none', padding:rowGap+'px 0' }, hl&&hl.row)}>
             {markers.length ? <span aria-hidden="true" style={{ width:dot, height:dot, borderRadius:'50%', flex:'none',
               background: it.marker?catColor(it.marker):'transparent', border: it.marker?'none':`1.5px solid ${seSurf('outline',theme,accentHex).color}55`,
               marginTop:Math.round(tfs*0.26) }} /> : null}
             {hl && hl.lead}
+            {/* the column holds its line: a highlighted row's time stays the
+                column's size while its title grows */}
+            {tl==='lead' && timeEl(it, fs, hl, { flex:'none', minWidth:leadCh+'ch' })}
             <div style={{ flex:'1 1 auto', minWidth:0 }}>
+              {tl==='kicker' && it.time ? <div style={{ marginBottom:Math.round(tfs*0.1) }}>{timeEl(it, tfs, hl)}</div> : null}
               {hl && hl.title ? hl.title(tStyle) : <div style={tStyle}>{it.title}</div>}
               {/* the whole meta line is facts — number, date, time → Grotesk.
                   600 rather than the far-fact 700: it sits under a headline as
                   supporting detail, and the row above already carries weight. */}
-              {(it.date||it.time||it.num) ? <div style={FACT(metaFs, { fontWeight:600, textTransform:'none', opacity:.66, marginTop:Math.round(fs*0.1) })}>
-                {[it.num, it.date, it.time].filter(Boolean).join('  ·  ')}</div> : null}
+              {tl==='meta' && it.time && timeStyled(el)
+                /* a styled time keeps its place in the line but takes its own
+                   size, weight and colour (an own colour drops the fade) */
+                ? <div style={FACT(metaFs, { fontWeight:600, textTransform:'none', marginTop:Math.round(fs*0.1) })}>
+                    {(it.num||it.date) ? <span style={{ opacity:.66 }}>{[it.num, it.date].filter(Boolean).join('  ·  ')+'  ·  '}</span> : null}
+                    {timeEl(it, tfs, hl, { opacity: el.timeColor && el.timeColor!=='fg' ? 1 : .66 })}</div>
+                : metaBits.some(Boolean) ? <div style={FACT(metaFs, { fontWeight:600, textTransform:'none', opacity:.66, marginTop:Math.round(fs*0.1) })}>
+                {metaBits.filter(Boolean).join('  ·  ')}</div> : null}
             </div>
+            {tl==='end' && it.time ? timeEl(it, tfs, hl, { flex:'none', textAlign:'right' }) : null}
           </div>);
         })}
         {legend}

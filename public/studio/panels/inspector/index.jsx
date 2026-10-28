@@ -29,7 +29,7 @@ import { ShadowControls, SurfaceFold, fillMatters, TitleFxFold } from './appeara
 import { BlockControls, ShapeControls, IconControls, RuleControls, BurstControls } from './graphics.jsx';
 import { InkmarkControls } from './inkmark.jsx';
 import { ContentFields, TypeFold, SubtitleFold, KickerFold } from './text.jsx';
-import { RowsFold, SessionHlFold } from './lists.jsx';
+import { RowsFold, SessionHlFold, SessionTimeFold } from './lists.jsx';
 import { ArrangeFold, TransformFold, OverrideFold } from './layout.jsx';
 import { DocumentPanel } from './document.jsx';
 /* The header's six buttons: studio-shared/inspector-tabs.jsx (HeadIcon). */
@@ -126,6 +126,8 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
           <KickerFold el={el} doc={doc} update={update} dKicker={dKicker} />}
         {caps.list &&
           <RowsFold el={el} update={update} dRows={dRows} />}
+        {el.type==='sessions' &&
+          <SessionTimeFold el={el} doc={doc} update={update} />}
         {el.type==='sessions' &&
           <SessionHlFold el={el} doc={doc} update={update} />}
       </React.Fragment>}

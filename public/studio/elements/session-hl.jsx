@@ -42,6 +42,9 @@ const HL_HINTS = {
 };
 
 const hlKind = (el)=> el.hlFx || HL_DEF;
+/* the height a dressed row adds over a plain one, in em of its title —
+   the bar's padding and print (row styles) or the plates' overhang */
+const hlExtra = (el)=> ({ band:0.45, ticket:0.45, outline:0.45, pointer:0 })[hlKind(el)] ?? 0.15;
 const hlScale = (el)=> el.hlScale!=null ? el.hlScale : HL_SCALE_DEF;
 
 /* one row's highlight → what the renderer applies.
@@ -90,4 +93,4 @@ function sessionHl(el, ctx, fs, text){
     </div>) };
 }
 
-export { HL_ROW, HL_PARTY, HL_SCALES, HL_USES, HL_HINTS, HL_DEF, HL_SCALE_DEF, hlKind, hlScale, sessionHl };
+export { HL_ROW, HL_PARTY, HL_SCALES, HL_USES, HL_HINTS, HL_DEF, HL_SCALE_DEF, hlKind, hlScale, hlExtra, sessionHl };

@@ -363,6 +363,180 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   }
 }
 
+// ── Poster Studio cloud sync: the decisions (public/studio/cloud-sync.js) ────
+// The audit of 28.10.26: a stale draft overwrote the cloud's, edits to a
+// template never came down, failed pushes were invisible. The rules that fix
+// them are plain functions, imported here exactly as they ship.
+{
+  const S = await import('../public/studio/cloud-sync.js');
+  const H = 3600000, MIN = 60000, T0 = Date.parse('2026-10-28T10:00:00+07:00');
+  const row = (id, at) => ({ doc_id: 'tpl:' + id, updated_at: at });
+
+  // planPull — the hub stamps updated_at with ITS clock, so a late push must not
+  // read as an edit, and an edit elsewhere must.
+  const local = [{ id: 'a', savedAt: T0 }, { id: 'b', savedAt: T0 }, { id: 'c', savedAt: T0 }, { id: 'd', savedAt: T0 }];
+  const docs = [
+    { doc_id: 'working', updated_at: T0 + 9 * H },   // the draft is not a template
+    row('a', T0 + 5 * H),                              // synced at +5h, unchanged since
+    row('b', T0 + 6 * H),                              // synced at +5h, the hub moved on: an edit elsewhere
+    row('c', T0 + 2 * MIN),                            // no record, landed 2 min after the save: its own push
+    row('d', T0 + 26 * H),                             // no record, landed a day later: look once
+    row('e', T0 + 1 * H),                              // not on this disk
+  ];
+  const plan = S.planPull(docs, local, { a: T0 + 5 * H, b: T0 + 5 * H });
+  eq('planPull fetches changed / check / missing, newest first', plan.fetch.map((w) => w.id + ':' + w.why).join(' '), 'd:check b:changed e:missing');
+  eq('planPull adopts an in-step template with no record', JSON.stringify(plan.adopt), JSON.stringify({ c: T0 + 2 * MIN }));
+  eq('planPull: nothing to do when the records match', S.planPull([row('a', T0 + 5 * H)], local, { a: T0 + 5 * H }).fetch.length, 0);
+  eq('planPull: a record that is not a number is no record (never a silent skip)', S.planPull([row('d', T0 + 26 * H)], local, { d: { at: T0 } }).fetch.map((w) => w.why).join(), 'check');
+
+  // isNewerCopy — the copy's own stamp decides, never the hub's clock
+  check('isNewerCopy: a later save replaces', S.isNewerCopy({ savedAt: T0 }, { savedAt: T0 + H }));
+  check('isNewerCopy: an older copy never replaces a newer local one', !S.isNewerCopy({ savedAt: T0 + H }, { savedAt: T0 }));
+  check('isNewerCopy: the same save is kept as it is', !S.isNewerCopy({ savedAt: T0 }, { savedAt: T0 }));
+  check('isNewerCopy: an archive elsewhere (changedAt) counts as a change', S.isNewerCopy({ savedAt: T0 }, { savedAt: T0, changedAt: T0 + MIN, archived: true }));
+  eq('tplStamp = the later of savedAt / changedAt', S.tplStamp({ savedAt: T0, changedAt: T0 + 5 }), T0 + 5);
+
+  // keepLocalPhotos — an edit elsewhere keeps this disk's full-size photos
+  const full = 'ref:sha256:' + 'a'.repeat(64), slim = 'data:image/jpeg;base64,SLIM860', fresh = 'data:image/jpeg;base64,NEWPHOTO';
+  const mine = { id: 'x', savedAt: T0, doc: { elements: [{ id: 'p1', src: full }, { id: 't1', text: 'Bartender wanted' }] } };
+  const theirs = { id: 'x', savedAt: T0 + H, doc: { elements: [{ id: 'p1', src: slim }, { id: 'p2', src: fresh }, { id: 't1', text: 'Bartenders wanted' }] } };
+  const k = await S.keepLocalPhotos(mine, theirs, async (r) => (r === full ? slim : r));
+  eq('keepLocalPhotos: the 860px cut goes back to the full-size reference', k.tpl.doc.elements[0].src, full);
+  eq('keepLocalPhotos: a photo replaced elsewhere comes in as sent', k.tpl.doc.elements[1].src, fresh);
+  eq('keepLocalPhotos: the edit itself comes through', k.tpl.doc.elements[2].text, 'Bartenders wanted');
+  eq('keepLocalPhotos: counts what it kept', k.kept, 1);
+  eq('keepLocalPhotos: a slimOf that throws changes nothing', (await S.keepLocalPhotos(mine, theirs, async () => { throw new Error('x'); })).tpl, theirs);
+
+  // classifyPush — why a push didn't land
+  eq('classifyPush: success', S.classifyPush({ ok: true, updatedAt: 1 }), null);
+  eq('classifyPush: success (bare true)', S.classifyPush(true), null);
+  eq('classifyPush: 413', S.classifyPush({ ok: false, status: 413, tooBig: true, bytes: 6e6 }).why, 'tooBig');
+  eq('classifyPush: 401', S.classifyPush({ ok: false, status: 401 }).why, 'signedOut');
+  eq('classifyPush: timeout', S.classifyPush({ ok: false, status: 0, timedOut: true }).why, 'timeout');
+  eq('classifyPush: never answered', S.classifyPush({ ok: false, status: 0 }).why, 'offline');
+  eq('classifyPush: 502', S.classifyPush({ ok: false, status: 502 }).why, 'server');
+
+  // draftIsNewer — savedAt vs savedAt, not "newer than this tab"
+  check('draftIsNewer: a draft saved elsewhere BEFORE this tab opened, after the local edit, is offered',
+    S.draftIsNewer({ savedAt: T0 + H }, T0 + H, T0));
+  check('draftIsNewer: an older cloud draft is not', !S.draftIsNewer({ savedAt: T0 }, T0 + 9 * H, T0 + H));
+  check('draftIsNewer: this tab\'s own draft coming back is not', !S.draftIsNewer({ savedAt: T0 }, T0 + 5, T0));
+  check('draftIsNewer: an old-build draft (no savedAt) falls back to updated_at', S.draftIsNewer({}, new Date(T0 + H).toISOString(), T0));
+
+  // makeDraftGate — the stale-push guard
+  {
+    const g = S.makeDraftGate(T0);
+    check('gate: the boot doc is not an edit', !g.changed(T0 + 1) && !g.dirty);
+    check('gate: nothing goes up before the check has finished', !g.take());
+    g.checked();
+    check('gate: nothing goes up without an edit (the stale laptop case)', !g.take());
+    g.changed(T0 + MIN);
+    eq('gate: an edit stamps the draft', g.at, T0 + MIN);
+    check('gate: an edit goes up once', g.take() && !g.take());
+    g.failed();
+    check('gate: a push that failed goes again', g.take());
+    g.changed(T0 + 2 * MIN); g.reset();
+    check('gate: signed out / in again → held until the next check', !g.take());
+    g.checked(); g.keepLocal();
+    check('gate: "Load it?" cancelled → the cloud draft is not overwritten', !g.take());
+    g.adopt(T0 + H);
+    check('gate: loading the cloud draft is not an edit', !g.changed(T0 + H + 1) && !g.take());
+    eq('gate: the loaded draft keeps its own stamp', g.at, T0 + H);
+    const g2 = S.makeDraftGate(T0 + H); g2.changed(T0 + H); g2.ahead(); g2.checked();
+    check('gate: a hub draft older than this one → this one goes up, no edit needed', g2.take());
+  }
+
+  // cloudState — the topbar's chip, the worst first
+  const signedIn = { signedIn: true, email: 'donald@x', soon: false, mins: 300, lapsed: null };
+  eq('cloudState: all well → no chip', S.cloudState(signedIn, { failed: [] }, null), null);
+  eq('cloudState: never signed in → no chip', S.cloudState({ signedIn: false, lapsed: null }, { failed: [] }, null), null);
+  const lapsedSt = S.cloudState({ signedIn: false, lapsed: { email: 'donald@x', reason: 'expired' } }, { failed: [{ id: 'a', why: 'timeout', name: 'A' }] }, null);
+  eq('cloudState: expired sign-in → "Signed out", one click back in', lapsedSt.label + ' / ' + lapsedSt.act, 'Signed out / signin');
+  const big = { id: 'b', why: 'tooBig', name: 'Bartender call', bytes: 6200000 };
+  eq('cloudState: a failed push beats too-big', S.cloudState(signedIn, { failed: [big, { id: 'a', why: 'server', status: 502, name: 'A' }] }, null).act, 'retry');
+  const bigSt = S.cloudState(signedIn, { failed: [big] }, null);
+  eq('cloudState: too big names the template', bigSt.label, 'Not in cloud: “Bartender call”');
+  check('cloudState: too big offers no retry (it would be refused again)', bigSt.act === null && /6\.2M/.test(bigSt.tip));
+  eq('cloudState: a failed draft push → retry', S.cloudState(signedIn, { failed: [] }, { why: 'timeout' }).act, 'retry');
+  eq('cloudState: the last 15 minutes', S.cloudState(Object.assign({}, signedIn, { soon: true, mins: 9 }), { failed: [] }, null).label, 'Sign-in ends in 9 min');
+}
+
+// ── the shared cloud client: sign-in that runs out (public/studio-shared/cloud.js)
+// A browser-less page: window, localStorage and fetch faked just enough. The
+// 12-hour token used to expire in silence; now every way it goes is announced.
+{
+  const store = new Map(), winListeners = {};
+  const prevWindow = globalThis.window, prevLS = globalThis.localStorage, prevFetch = globalThis.fetch;
+  globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
+  globalThis.window = {
+    location: { search: '', origin: 'https://realitydn.com', hostname: 'realitydn.com' },
+    addEventListener: (t, fn) => { (winListeners[t] = winListeners[t] || []).push(fn); },
+    removeEventListener: () => {},
+  };
+  let fetches = 0, respond = () => ({ status: 200, body: '{"doc":null}' });
+  globalThis.fetch = async (url, init) => {
+    fetches++;
+    const r = await respond(url, init);
+    return { status: r.status, ok: r.status >= 200 && r.status < 300, text: async () => r.body || '' };
+  };
+  const tick = () => new Promise((r) => setTimeout(r, 5));
+  const KEY = 'reality-hub-token-v1';
+  const setTok = (token, msLeft) => store.set(KEY, JSON.stringify({ token, email: 'donald@x', expiresAt: Date.now() + msLeft }));
+  try {
+    const { RCloud } = await import('../public/studio-shared/cloud.js');
+    const heard = [];
+    RCloud.onAuth((why) => heard.push(why));
+
+    setTok('t1', 2 * 3600000);
+    let a = RCloud.authInfo();
+    check('auth: a fresh token is signed in, not ending soon', a.signedIn && !a.soon && a.lapsed === null && a.email === 'donald@x');
+    setTok('t1', 10 * 60000);
+    check('auth: 10 minutes left → soon', RCloud.authInfo().soon);
+
+    setTok('t1', -1000);
+    a = RCloud.authInfo();
+    await tick();
+    check('auth: an expired token reads signed out', !a.signedIn && !store.has(KEY));
+    eq('auth: …and says whose sign-in ran out', a.lapsed && a.lapsed.reason + ':' + a.lapsed.email, 'expired:donald@x');
+    check('auth: …and tells the Studio (onAuth)', heard.includes('expired'));
+
+    setTok('t2', 3600000);
+    respond = () => ({ status: 401, body: '{"error":"unauthorized"}' });
+    await RCloud.getDoc('poster', 'working');
+    await tick();
+    check('auth: a 401 drops the token', !RCloud.isSignedIn());
+    eq('auth: …as "rejected"', RCloud.authInfo().lapsed && RCloud.authInfo().lapsed.reason, 'rejected');
+    check('auth: …and tells the Studio', heard.includes('rejected'));
+
+    setTok('t3', 3600000);
+    respond = () => { setTok('t4', 3600000); return { status: 401, body: '' }; };   // signed in again mid-request
+    await RCloud.getDoc('poster', 'working');
+    check('auth: an old request\'s 401 never wipes a newer sign-in', JSON.parse(store.get(KEY)).token === 't4');
+
+    RCloud.signOut();
+    eq('auth: a deliberate sign-out is not a lapse', RCloud.authInfo().lapsed, null);
+
+    // another tab read the expired token first and removed it
+    const old = JSON.stringify({ token: 't5', email: 'june@x', expiresAt: Date.now() - 1 });
+    (winListeners.storage || []).forEach((fn) => fn({ key: KEY, oldValue: old, newValue: null }));
+    eq('auth: another tab\'s expiry is this tab\'s too', RCloud.authInfo().lapsed && RCloud.authInfo().lapsed.email, 'june@x');
+
+    // putDoc's failure detail (Poster) vs plain null (Schedule)
+    setTok('t6', 3600000);
+    fetches = 0;
+    const huge = 'x'.repeat(5000001);
+    const r1 = await RCloud.putDoc('poster', 'tpl:big', 'Big', huge, 1, { detail: true });
+    check('putDoc: over the hub cap → tooBig, and nothing is uploaded', r1 && r1.tooBig && r1.status === 413 && fetches === 0);
+    respond = () => ({ status: 502, body: '' });
+    eq('putDoc: a failure without detail is still null (Schedule reads that)', await RCloud.putDoc('schedule', 'working', '', '{}', 1), null);
+    eq('putDoc: with detail, the status', (await RCloud.putDoc('poster', 'working', '', '{}', 1, { detail: true })).status, 502);
+    respond = () => ({ status: 200, body: '{"ok":true,"updatedAt":123}' });
+    eq('putDoc: success hands back the hub\'s updatedAt', (await RCloud.putDoc('poster', 'working', '', '{}', 1, { detail: true })).updatedAt, 123);
+  } finally {
+    globalThis.window = prevWindow; globalThis.localStorage = prevLS; globalThis.fetch = prevFetch;
+  }
+}
+
 // ── summary ──────────────────────────────────────────────────────────────────
 if (failures.length) {
   console.error(`\nselftest: ${failures.length} FAILED, ${passed} passed`);

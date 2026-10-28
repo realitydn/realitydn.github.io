@@ -47,7 +47,7 @@ function App({ initialDoc, bootClean }){
   const { cloudUser, cloudMsg } = session;
   const lib = useLibrary({ docRef, setDoc, setSelectedIds, setCloudMsg:session.setCloudMsg, cloudProgress:session.cloudProgress });
   const { saveUserTpl } = lib;
-  const { cloudSignIn, cloudSignOut } = useCloud({ session, doc, docRef, setDoc, setSelectedIds, setUserTpls:lib.setUserTpls });
+  const { cloudSignIn, cloudSignOut, cloudRetry } = useCloud({ session, doc, docRef, setDoc, setSelectedIds, setUserTpls:lib.setUserTpls, forgetTplThumb:lib.forgetTplThumb });
   const queue = useQueue({ docRef, setDoc, setSelectedIds, userTpls:lib.userTpls, userTplsRef:lib.userTplsRef, tplReady:lib.tplReady });
   const { queueFeed } = queue;
   const { exporting, exportingRef, exportMsg, doExport, eventPicker, setEventPicker, openEventPicker, exportToEvent,
@@ -107,6 +107,7 @@ function App({ initialDoc, bootClean }){
         onExport={doExport} exporting={exporting} exportMsg={exportMsg}
         onExportWeek={week.exportWeek} weekBusy={week.weekBusy} weekMsg={week.weekMsg}
         cloudUser={cloudUser} cloudMsg={cloudMsg} onCloudSignIn={cloudSignIn} onCloudSignOut={cloudSignOut} onExportToEvent={openEventPicker}
+        cloudAuth={session.auth} cloudIssues={session.tplIssues} draftIssue={session.draftIssue} onCloudRetry={cloudRetry}
         onSaveTpl={saveUserTpl}
         canUndo={hist.canUndo} canRedo={hist.canRedo} onUndo={undo} onRedo={redo}
         zoomPct={zoomPct} onZoomStep={zoomStep} onZoomFit={zoomFit}

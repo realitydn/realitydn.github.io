@@ -9,6 +9,7 @@ import {
 } from '../studio-data.jsx';
 import { storyStem } from '../doc.js';
 import { HintsToggle } from './controls.jsx';
+import { cloudState } from '../cloud-sync.js';
 /* ---------- save state ----------
    The working doc's autosave, said out loud. It used to fail in silence (see
    bootDoc); now a failed write is a red NOT SAVED you can't miss, with the
@@ -31,9 +32,10 @@ function SaveState({ state, msg }){
 
 /* ---------- topbar ---------- */
 function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, exportMsg, onExportWeek, weekBusy, weekMsg, cloudUser, cloudMsg, onCloudSignIn, onCloudSignOut, onExportToEvent,
-                  onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit, saveState, saveMsg }){
+                  cloudAuth, cloudIssues, draftIssue, onCloudRetry, onSaveTpl, canUndo, canRedo, onUndo, onRedo, zoomPct, onZoomStep, onZoomFit, saveState, saveMsg }){
   const isOutput = doc.activeFormat!=='master';
   const hasCloud = typeof window!=='undefined' && !!RCloud;
+  let cs = null; try{ cs = hasCloud ? cloudState(cloudAuth, cloudIssues, draftIssue) : null; }catch(e){ cs = null; }
   /* Poster name is held locally while typing and committed on blur/Enter/Save —
      committing per keystroke would re-render the riso canvases on every key. */
   const [name, setName] = React.useState(doc.title||'');
@@ -176,8 +178,18 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
           {/* The group label names the ACCOUNT once signed in. Templates are stored
               per account, so signing in with the other Google account looks exactly
               like an empty library — this is where you notice. */}
-          <span className="gl" title={cloudUser ? 'Signed in as '+cloudUser : undefined}>
-            {cloudMsg || (cloudUser ? String(cloudUser).split('@')[0] : 'Cloud')}</span>
+          {/* A chip takes the account name's place (the row has no room for both;
+              Sign out's tooltip still names the account). */}
+          {(cloudMsg || !cs) && <span className="gl" title={cloudUser ? 'Signed in as '+cloudUser : undefined}>
+            {cloudMsg || (cloudUser ? String(cloudUser).split('@')[0] : 'Cloud')}</span>}
+          {/* Signed in, the chip IS the fix (Retry / Renew) — one control, because
+              this row has no room for a chip and a button beside it. Signed out,
+              it only says so; the Sign in button below reads "Sign in again". */}
+          {cs && (cloudUser && cs.act
+            ? <button className={'rs-savestate rs-cloudstate '+cs.cls} title={cs.tip} aria-live="polite"
+                onClick={cs.act==='retry' ? onCloudRetry : onCloudSignIn}>
+                <span>{cs.label}</span><b>{cs.act==='retry' ? '· Retry' : '· Renew'}</b></button>
+            : <span className={'rs-savestate rs-cloudstate '+cs.cls} title={cs.tip} role="status" aria-live="polite"><span>{cs.label}</span></span>)}
           {cloudUser
             ? <React.Fragment>
                 <button className="rs-iconbtn on" disabled={exporting} onClick={onExportToEvent}
@@ -186,7 +198,8 @@ function Topbar({ doc, setDoc, overrideCount, resetFormat, onExport, exporting, 
                   title={'Signed in as '+cloudUser+' — click to sign out (stays local-only)'}>Sign out</button>
               </React.Fragment>
             : <button className="rs-iconbtn" onClick={onCloudSignIn}
-                title="Sign in to the REALITY hub to sync drafts/templates and export to events">Sign in</button>}
+                title={cs && cs.act==='signin' ? cs.tip : 'Sign in to the REALITY hub to sync drafts/templates and export to events'}>
+                {cs && cs.act==='signin' ? 'Sign in again' : 'Sign in'}</button>}
         </div>}
       </div>
     </div>

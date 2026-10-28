@@ -112,18 +112,23 @@ function loadLegacyDoc(){ try{ const r=localStorage.getItem(LS_KEY); if(r) retur
    refused a write and the fallback kept it) the newer one wins. */
 /* `bootState.clean` — the IndexedDB read went through without an error. The
    photo sweep (hooks/usePhotoSweep.js) only runs when it did: a working doc
-   that couldn't be read may still hold references it must not lose. */
-const bootState = { clean:false };
+   that couldn't be read may still hold references it must not lose.
+   `bootState.at` — when the doc it returned was last written here (0 = a
+   starter, nothing kept). The cloud draft check (hooks/useCloud.js) compares
+   the hub's draft with THIS, not with the time the tab opened. */
+const bootState = { clean:false, at:0 };
 async function bootDoc(){
   let rec = null;
-  bootState.clean = false;
+  bootState.clean = false; bootState.at = 0;
   try{ if(RStore && RStore.docGet){ rec = await RStore.docGet('working'); bootState.clean = true; } }catch(e){ rec = null; }
   if(rec && rec.from==='v1') console.info('[studio] took the working doc from the older build’s store (it was saved there more recently).');
   const legacy = loadLegacyDoc();
   const legacyAt = (legacy && legacy._savedAt) || 0;    // only the fallback writer stamps this
   if(rec && (!legacy || rec.at >= legacyAt)){
     if(legacy){ try{ localStorage.removeItem(LS_KEY); }catch(e){} }
-    return normalizeDoc(rec.doc) || starterDoc();
+    const d = normalizeDoc(rec.doc);
+    if(d) bootState.at = +rec.at || 0;
+    return d || starterDoc();
   }
   /* the localStorage copy is an old build's (inline photos) or this one's
      fallback (references) — either way it comes in referenced */
@@ -131,6 +136,7 @@ async function bootDoc(){
   try{ legacyIn = await internDoc(legacy); }catch(e){}
   const d = normalizeDoc(legacyIn);
   if(d){
+    bootState.at = legacyAt;
     /* Move it across; only drop the localStorage copy once IndexedDB holds it. */
     try{ await RStore.docPut('working', d); localStorage.removeItem(LS_KEY); }catch(e){}
     return d;

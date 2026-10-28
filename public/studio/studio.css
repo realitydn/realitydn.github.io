@@ -29,6 +29,13 @@
 .rs-savestate.saving::before{ background:var(--st-amber); }
 .rs-savestate.fallback::before{ background:var(--st-k); }
 .rs-savestate.error::before{ background:#fff; }
+/* the cloud's chip beside it (CloudState) — a long template name truncates;
+   the whole story is on hover */
+.rs-cloudstate{ max-width:170px; }
+.rs-cloudstate > span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+button.rs-cloudstate{ cursor:pointer; }
+button.rs-cloudstate > b{ font-weight:inherit; flex:none; margin-left:-2px; }
+button.rs-cloudstate:hover > b{ text-decoration:underline; }
 
 /* Master (the source every format inherits from) is amber, not pink */
 .rs-seg button.master.on{ background:var(--st-amber); color:var(--st-on-amber); }

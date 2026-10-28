@@ -49,6 +49,7 @@
    ============================================================ */
 import { openDB } from '../studio-shared/store.js';
 import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
+import { tplStamp, listedAt, planPull, isNewerCopy, keepLocalPhotos, classifyPush } from './cloud-sync.js';
 
 (function(){
   const T_STORE = 'templates';     // keyPath 'id' — one record per saved template
@@ -73,7 +74,9 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
      dormant, these silently no-op. The hub's docs still carry every photo
      inline (re-cut to 860px, below) — locally they are references since Phase 5,
      but the hub stores JSON and old builds read it. A template still over the
-     hub's ~5MB doc cap (413) simply stays local. Follow-up: upload the blobs
+     hub's ~5MB doc cap (413) stays local — and since 28.10.26 says so in the
+     topbar, as does any other push that didn't land (cfail, below). The caller
+     still never waits on the hub. Follow-up: upload the blobs
      to R2 through the app and send references (docs/REFACTOR-PLAN.md, Phase 5).
      ------------------------------------------------------------------------ */
   function _rc(){ return (typeof window!=='undefined' && window.RCloud) ? window.RCloud : null; }
@@ -148,17 +151,85 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
     }catch(e){ return doc; }
   }
 
+  /* ---- what reached the hub, and what didn't -------------------------------
+     Template pushes were fire-and-forget: a 413 (over the hub's 5M-character
+     cap), a 401, a timeout or a 5xx was one console line, and the template
+     looked as safe as any other. Now each push's outcome is kept, per template,
+     in the meta store (no schema change, local only):
+       'csync:<id>'  { at }  the hub's updated_at this browser last pushed or
+                             pulled — what cloudPull compares against;
+       'cfail:<id>'  { why, status, bytes, stamp, name, at }  the last push
+                             didn't land. cloudPushAll retries it on the next
+                             load whatever the timestamps say — except a 413 on
+                             an unchanged template, which would only be refused
+                             again (and is ~5 MB of a slow uplink each time).
+     The failures are also held here for the topbar: cloudIssues() reads them,
+     onCloudIssues(fn) is told when they change, cloudRetry() sends them again. */
+  const SYNC_PREFIX = 'csync:', FAIL_PREFIX = 'cfail:';
+  function prefixRange(p){ return IDBKeyRange.bound(p, p + '￿'); }
+  async function prefixMap(p){
+    const out = {};
+    try{ (await db.getAll(M_STORE, prefixRange(p))).forEach(r=>{ if(r && r.k && r.v) out[r.k.slice(p.length)] = r.v; }); }catch(e){}
+    return out;
+  }
+  const issues = new Map();          // id → the cfail record
+  const pushing = new Set();         // ids with a push in flight
+  const issueSubs = new Set();
+  let issuesLoaded = null;
+  function noteIssues(){
+    const snap = cloudIssues();
+    issueSubs.forEach(fn=>{ try{ fn(snap); }catch(e){} });
+  }
+  function cloudIssues(){
+    return { failed: Array.from(issues.entries()).map(([id, f])=>Object.assign({ id }, f)), pushing: pushing.size };
+  }
+  function loadIssues(){
+    if(!issuesLoaded) issuesLoaded = prefixMap(FAIL_PREFIX).then(m=>{
+      Object.keys(m).forEach(id=>{ if(!issues.has(id)) issues.set(id, m[id]); });
+      noteIssues();
+    }, ()=>{});
+    return issuesLoaded;
+  }
+  function onCloudIssues(fn){
+    if(typeof fn!=='function') return ()=>{};
+    issueSubs.add(fn); loadIssues();
+    try{ fn(cloudIssues()); }catch(e){}
+    return ()=>{ issueSubs.delete(fn); };
+  }
+  async function pushLanded(id, r){
+    const at = (r && typeof r.updatedAt==='number') ? r.updatedAt : Date.now();
+    issues.delete(id);
+    try{ await metaPut(SYNC_PREFIX + id, { at }); }catch(e){}
+    try{ await db.delete(M_STORE, FAIL_PREFIX + id); }catch(e){}
+  }
+  async function pushFailed(t, f, stamp){
+    const rec = Object.assign({ stamp, name: t.name || '', at: Date.now() }, f);
+    issues.set(t.id, rec);
+    console.info('[studio] template “'+(t.name||t.id)+'” is not in the cloud:', f.why, f.status||'', f.bytes ? '('+f.bytes+' chars)' : '');
+    try{ await metaPut(FAIL_PREFIX + t.id, rec); }catch(e){}
+  }
+
+  /* Resolves when the push has finished, whichever way it went; never rejects.
+     Not signed in → nothing is sent and nothing is recorded: cloudPushAll's
+     timestamp check sends a template saved while signed out next time. */
   function cloudPutTpl(t){
     try{
       const rc = _rc();
-      if(!rc || !rc.isSignedIn() || !t || !t.id) return;
-      Promise.resolve(slimDocForCloud(t.doc))
-        .then(d=>rc.putDoc('poster', 'tpl:'+t.id, t.name||'', d===t.doc ? t : Object.assign({}, t, { doc:d }), t.savedAt||Date.now()))
-        .catch(()=>{});
-    }catch(e){}
+      if(!rc || !rc.isSignedIn() || !t || !t.id) return Promise.resolve();
+      const stamp = tplStamp(t);
+      pushing.add(t.id); noteIssues();
+      return Promise.resolve(slimDocForCloud(t.doc))
+        .then(d=>rc.putDoc('poster', 'tpl:'+t.id, t.name||'', d===t.doc ? t : Object.assign({}, t, { doc:d }), stamp||Date.now(), { detail:true }))
+        .then(r=>{ const f = classifyPush(r); return f ? pushFailed(t, f, stamp) : pushLanded(t.id, r); },
+              ()=>pushFailed(t, { why:'offline', status:0 }, stamp))
+        .catch(()=>{})
+        .then(()=>{ pushing.delete(t.id); noteIssues(); });
+    }catch(e){ return Promise.resolve(); }
   }
   function cloudDelTpl(id){
     try{
+      if(id && issues.delete(id)) noteIssues();
+      Promise.resolve(db.tx(M_STORE, 'readwrite', s=>{ s.delete(SYNC_PREFIX + id); s.delete(FAIL_PREFIX + id); })).catch(()=>{});
       const rc = _rc();
       if(!rc || !rc.isSignedIn() || !id) return;
       if(typeof rc.delDoc==='function') Promise.resolve(rc.delDoc('poster','tpl:'+id)).catch(()=>{});
@@ -166,20 +237,45 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
   }
   function cloudPutMany(arr){ (arr||[]).forEach(cloudPutTpl); }
 
-  /* Pull cloud templates and upsert any the local store is missing (by id).
-     Returns the merged, locally-stored list (or the local list unchanged on any
-     failure). Best-effort: never throws, returns local-only when RCloud is
-     absent / signed-out / dormant.
+  /* The Retry in the topbar: every failed template again, now. A 413 is left
+     alone — the same template would be refused the same way. */
+  async function cloudRetry(){
+    try{
+      await loadIssues();
+      const ids = Array.from(issues.entries()).filter(([, f])=>f.why!=='tooBig').map(([id])=>id);
+      await Promise.all(ids.map(async id=>{
+        const t = await db.get(T_STORE, id);
+        if(t) return cloudPutTpl(t);
+        issues.delete(id);
+        try{ await db.delete(M_STORE, FAIL_PREFIX + id); }catch(e){}
+      }));
+      noteIssues();
+    }catch(e){}
+  }
+
+  /* Pull cloud templates: any the local store is missing, and newer copies of
+     ones it has. Returns the merged, locally-stored list (or the local list
+     unchanged on any failure). Best-effort: never throws, returns local-only
+     when RCloud is absent / signed-out / dormant.
 
      TWO STEPS, deliberately. The hub's list is metadata only — a template embeds
      its photos as data URLs (~2.5 MB each), so asking for a whole library's
      bodies in one response killed the query on the hub side and this returned
      local-only forever: sign in on a second computer, see an empty library. So:
-     list (cheap), then fetch ONLY the ids this browser is missing, one at a time,
-     newest first, writing each one down as it lands. A failure part-way through
-     keeps everything already fetched, and the next pull picks up the rest.
-     `onProgress(done, total)` is optional. */
-  async function cloudPull(onProgress){
+     list (cheap), then fetch only what planPull picks (cloud-sync.js: missing
+     here, changed on the hub since this browser last synced it, or — once, for
+     a library from before those records — worth a look), one at a time, newest
+     first, writing each one down as it lands. A failure part-way through keeps
+     everything already fetched, and the next pull picks up the rest.
+
+     It used to fetch ONLY the missing ones, so an edit made on one machine
+     never reached another that already had the template. A newer copy now
+     replaces the local one — after the local one goes into Recently deleted,
+     and keeping every full-size photo here the hub copy only holds the 860px
+     cut of (keepLocalPhotos). A copy that isn't newer than the one on this disk
+     (tplStamp) never replaces it, whatever the hub's clock says.
+     `onProgress(done, total)` and `onReplaced(id)` are optional. */
+  async function cloudPull(onProgress, onReplaced){
     let local = [];
     try{ local = await tplGetAll(); }catch(e){ local = []; }
     try{
@@ -187,31 +283,44 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
       if(!rc || !rc.isSignedIn() || typeof rc.listDocs!=='function') return local;
       const docs = await rc.listDocs('poster');
       if(!Array.isArray(docs) || !docs.length) return local;
-      const haveIds = {}; local.forEach(t=>{ if(t&&t.id) haveIds[t.id]=1; });
-      const wanted = [];
-      docs.forEach(d=>{
-        try{
-          const docId = d && (d.doc_id || d.docId);
-          if(!docId || docId.indexOf('tpl:')!==0) return;
-          const id = docId.slice(4);
-          if(haveIds[id]) return;
-          wanted.push({ id: id, docId: docId, meta: d });
-        }catch(e3){}
-      });
+      const synced = {};
+      const recs = await prefixMap(SYNC_PREFIX);
+      Object.keys(recs).forEach(id=>{ if(typeof recs[id].at==='number') synced[id] = recs[id].at; });
+      const plan = planPull(docs, local, synced);
+      const adopt = Object.keys(plan.adopt);
+      if(adopt.length){
+        try{ await db.tx(M_STORE, 'readwrite', s=>{ adopt.forEach(id=>s.put({ k: SYNC_PREFIX + id, v: { at: plan.adopt[id] } })); }); }catch(e){}
+      }
+      const wanted = plan.fetch;
       if(!wanted.length) return local;
-      let done = 0, fetched = 0;
+      let done = 0, changed = 0;
       for(let i=0;i<wanted.length;i++){
         const w = wanted[i];
         try{
           // The list carries no body — one doc per request is the only way up.
           const full = await rc.getDoc('poster', w.docId);
-          const tpl = _tplFromDoc(full || w.meta, w.id);
-          if(tpl){ await tplBulkPut([tpl]); fetched++; }
+          const tpl = full ? _tplFromDoc(full, w.id) : null;
+          if(tpl){
+            /* read the local copy NOW, not from the list above: a save made
+               while this ran must not be rolled back */
+            let mine = null; try{ mine = await db.get(T_STORE, w.id); }catch(e){}
+            if(!mine){ await tplBulkPut([tpl]); changed++; }
+            else if(isNewerCopy(mine, tpl)){
+              const k = await keepLocalPhotos(mine, tpl, slimSrc);
+              try{ await binPut(mine, 'replaced by a newer copy from the cloud'); }catch(e){}
+              await tplBulkPut([k.tpl]);
+              try{ await thumbDelete(w.id); }catch(e){}
+              changed++;
+              console.info('[studio] took the cloud’s newer copy of “'+(tpl.name||w.id)+'”'+(k.kept? ' (kept '+k.kept+' full-size photo'+(k.kept===1?'':'s')+' from this disk)':'')+'; the copy it replaced is in Recently deleted.');
+              if(typeof onReplaced==='function'){ try{ onReplaced(w.id); }catch(e){} }
+            }
+            try{ await metaPut(SYNC_PREFIX + w.id, { at: listedAt(full) || w.at }); }catch(e){}
+          }
         }catch(e4){ /* skip this one; the rest still come down */ }
         done++;
         if(typeof onProgress==='function'){ try{ onProgress(done, wanted.length); }catch(e5){} }
       }
-      if(fetched) return await tplGetAll();
+      if(changed) return await tplGetAll();
     }catch(e){ /* any failure → local-only */ }
     return local;
   }
@@ -242,12 +351,26 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
      all of it every time cost real bandwidth on a Vietnamese connection and wrote
      the same rows over and over. The cheap metadata list makes the comparison
      free. If that list can't be had, fall back to pushing everything — that's the
-     old behaviour, and it's better than a template that never reaches the cloud. */
+     old behaviour, and it's better than a template that never reaches the cloud.
+
+     A push that FAILED last time goes again whatever the timestamps say: the
+     hub may hold a copy stamped later than this one's save (an archive used to
+     leave savedAt alone), and the timestamps alone would call that up to date.
+     The exception is a 413 on a template unchanged since — see cfail above. */
   async function cloudPushAll(){
     try{
       const rc = _rc();
       if(!rc || !rc.isSignedIn()) return;
       let local = []; try{ local = await tplGetAll(); }catch(e){ local = []; }
+      await loadIssues();
+      const failed = await prefixMap(FAIL_PREFIX);
+      /* a failure for a template that has since left the library is moot */
+      const ids = {}; local.forEach(t=>{ if(t && t.id) ids[t.id] = 1; });
+      const gone = Object.keys(failed).filter(id=>!ids[id]);
+      if(gone.length){
+        gone.forEach(id=>issues.delete(id)); noteIssues();
+        try{ await db.tx(M_STORE, 'readwrite', s=>{ gone.forEach(id=>s.delete(FAIL_PREFIX + id)); }); }catch(e){}
+      }
       if(!local.length) return;
       let remoteAt = null;
       try{
@@ -266,11 +389,16 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
       }catch(e){ remoteAt = null; }
       local.forEach(t=>{
         if(!t || !t.id) return;
+        const f = failed[t.id];
+        if(f){
+          if(f.why==='tooBig' && f.stamp===tplStamp(t)) return;
+          cloudPutTpl(t); return;
+        }
         if(remoteAt){
           const have = remoteAt[t.id];
           // putDoc stamps max(client, now) server-side, so a doc that round-tripped
           // reads back NEWER than its savedAt — only push when we're clearly ahead.
-          if(have != null && have >= (t.savedAt||0)) return;
+          if(have != null && have >= tplStamp(t)) return;
         }
         cloudPutTpl(t);
       });
@@ -281,8 +409,11 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
 
   /* Every write interns first: whatever reaches the v2 store carries its
      photos as references (a photo the blob store refuses stays inline — still
-     drawn, just not deduplicated). */
-  async function tplPut(t){ const it = await internTpl(t); await db.put(T_STORE, it); cloudPutTpl(it); return it; }
+     drawn, just not deduplicated). Every write through here is a change made on
+     this machine — save, archive, restore — so it stamps changedAt (tplStamp). */
+  async function tplPut(t){
+    const it = await internTpl(Object.assign({}, t, { changedAt: Date.now() }));
+    await db.put(T_STORE, it); cloudPutTpl(it); return it; }
 
   async function tplDelete(id){ await db.delete(T_STORE, id);
     try{ await thumbDelete(id); }catch(e){}   // the card's cached picture goes with the record
@@ -307,7 +438,8 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
      bin first, so a bad import stays recoverable from two places rather than
      none. */
   async function tplApply(incoming, dropIds){
-    incoming = await Promise.all((incoming||[]).map(internTpl));
+    const now = Date.now();   // an import is a change made here, like tplPut
+    incoming = await Promise.all((incoming||[]).map(t=>internTpl(t && t.id ? Object.assign({}, t, { changedAt: now }) : t)));
     await db.tx(T_STORE, 'readwrite', s=>{
       (dropIds||[]).forEach(id=>{ if(id) s.delete(id); });
       (incoming||[]).forEach(t=>{ if(t && t.id) s.put(t); });
@@ -373,7 +505,8 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
       try{
         const full = await rc.getDoc('poster', w.docId);
         const tpl = _tplFromDoc(full || w.meta, w.id);
-        if(tpl){ await tplBulkPut([tpl]); report.restored++; }
+        if(tpl){ await tplBulkPut([tpl]); report.restored++;
+          try{ await metaPut(SYNC_PREFIX + w.id, { at: listedAt(full || w.meta) }); }catch(e){} }
         else report.failed++;
       }catch(e){ report.failed++; }
       if(typeof onProgress==='function'){ try{ onProgress(i+1, wanted.length); }catch(e){} }
@@ -544,6 +677,7 @@ import { Photos, isRef, internDoc, internTpl, inlineDoc } from './photos.js';
                     binPut, binGetAll, binDelete,
                     thumbGetAll, thumbPut, thumbDelete, thumbPrune,
                     metaGet, metaPut, migrate, cloudPull, cloudPushAll, cloudRestore, LS_TPL_KEY,
+                    cloudIssues, onCloudIssues, cloudRetry,
                     docGet, docPut, slimDocForCloud, tplInline,
                     /* the blob store the photos live in (stats / gc, for the console) */
                     photos: Photos };

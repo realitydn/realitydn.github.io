@@ -10,6 +10,7 @@ import { RUI } from '../../../studio-shared/studio-ui.jsx';
 import { FX_AMOUNTS, FX_HINTS } from '../../elements/title-fx.jsx';
 import { HL_ROW, HL_PARTY, HL_SCALES, HL_USES, HL_HINTS, hlKind, hlScale } from '../../elements/session-hl.jsx';
 import { TIME_LAYOUTS, TIME_RANGES, timeLayout, timeRatio, timeWeight } from '../../elements/session-time.js';
+const ROW_CASES = [{ v:'upper', l:'CAPS' }, { v:'as', l:'As typed' }];
 function RowsFold({ el, update, dRows }){
   const setItems = (items)=>update({ items });
   return (
@@ -59,6 +60,7 @@ function RowsFold({ el, update, dRows }){
             <div style={{ height:6 }} />
           </React.Fragment>}
           <Chips label="Row size" options={ROW_SIZES} value={el.rowSize||0} onChange={v=>update({rowSize:v})} />
+          {el.type==='sessions' && <Chips label="Row case" options={ROW_CASES} value={el.rowCase||'upper'} onChange={v=>update({rowCase:v})} />}
           <Chips label="Row weight" options={WEIGHTS_MONT} value={el.rowWeight||700} onChange={v=>update({rowWeight:v})} />
           <Slider label="Row tracking" val={el.rowTracking!=null?el.rowTracking:(el.type==='specials'?0.03:0.01)} min={-0.05} max={0.4} step={0.005} suffix="em" onChange={v=>update({rowTracking:v})} />
           <Slider label="Line spacing" val={el.rowGap!=null?el.rowGap:(el.type==='specials'?5:7)} min={0} max={24} step={1} suffix="px" onChange={v=>update({rowGap:v})} />

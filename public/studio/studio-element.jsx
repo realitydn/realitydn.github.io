@@ -570,6 +570,8 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
     const rowGap = el.rowGap!=null?el.rowGap:7;
     const rowWt  = el.rowWeight||700;
     const rowTr  = EM(el.rowTracking!=null?el.rowTracking:TRACK.name);
+    /* titles are Montserrat caps unless the row case says "as typed" */
+    const rowTx  = el.rowCase==='as' ? 'none' : 'uppercase';
     const headFs = (el.headingSize!=null?el.headingSize:15)*B;
     const items  = parseSessions(el.raw);
     const markers = items.reduce((a,r)=>{ if(r.marker && a.indexOf(r.marker)<0) a.push(r.marker); return a; }, []);
@@ -609,7 +611,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
       const sideCh = (tl==='lead'||tl==='end') ? Math.max(0, ...items.map(r=>timeCh(tTxt(r)))) : 0;
       const leadCh = tl==='lead' ? sideCh : 0;
       const wAvail = el.w/B - 36 - (markers.length ? 14 : 0);
-      const wFit = sideCh ? Math.min(...items.map(r=> wAvail / (String(r.title).length*0.72*(r.hl?hlK:1) + sideCh*tr*0.62*(r.hl && tl==='end' ? hlK : 1) + 0.6))) : Infinity;
+      const wFit = sideCh ? Math.min(...items.map(r=> wAvail / (String(r.title).length*(rowTx==='none' ? 0.6 : 0.72)*(r.hl?hlK:1) + sideCh*tr*0.62*(r.hl && tl==='end' ? hlK : 1) + 0.6))) : Infinity;
       const auto = Math.max(14, Math.min(40, Math.round((avail - 2*rowGap*fitN)/(perRow*fitN + hlN*hlExtra(el))), Math.floor(wFit)));
       const fs = (el.rowSize || auto) * B;
       const metaFs = Math.max(10, Math.round(fs*0.52));
@@ -626,7 +628,7 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
         {heading}
         {items.map((it,i)=>{
           const tfs = it.hl ? fs*hlK : fs, hl = hlOf(it, tfs);
-          const tStyle = { fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase', fontSize:tfs, lineHeight:1.0, letterSpacing:rowTr, color:(hl&&hl.color)||undefined };
+          const tStyle = { fontFamily:MONT, fontWeight:rowWt, textTransform:rowTx, fontSize:tfs, lineHeight:1.0, letterSpacing:rowTr, color:(hl&&hl.color)||undefined };
           const metaBits = tl==='meta' ? [it.num, it.date, tTxt(it)] : [it.num, it.date];
           return (
           <div key={i} style={Object.assign({ display:'flex', alignItems:(tl==='lead'||tl==='end') ? 'baseline' : 'flex-start', gap:Math.round(dot*0.8),
@@ -672,13 +674,13 @@ function StudioElement({ el, theme, posterAccentHex, posterAccent, posterDay, se
           return (
           <div key={i} style={Object.assign({ display:'flex', alignItems:'baseline', gap:14,
             borderTop:i? `1.5px solid ${seSurf('outline',theme,accentHex).color}33` : 'none', padding:rowGap+'px 0',
-            fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }, hl&&hl.row)}>
+            fontFamily:MONT, fontWeight:rowWt, textTransform:rowTx }, hl&&hl.row)}>
             {hl && hl.lead}
             {/* the row inherits Montserrat caps for the TITLE (a name); the
                 number and the date are facts and opt out into Grotesk. */}
             {it.num ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', color:accentText })}>{it.num}</span> : null}
             {hl && hl.title
-              ? <div style={{ flex:'1 1 auto', minWidth:0 }}>{hl.title(Object.assign({}, tStyle, { flex:null, fontFamily:MONT, fontWeight:rowWt, textTransform:'uppercase' }))}</div>
+              ? <div style={{ flex:'1 1 auto', minWidth:0 }}>{hl.title(Object.assign({}, tStyle, { flex:null, fontFamily:MONT, fontWeight:rowWt, textTransform:rowTx }))}</div>
               : <span style={tStyle}>{it.title}</span>}
             {it.date ? <span style={FACT(sub, { flex:'none', fontWeight:600, textTransform:'none', opacity:.72 })}>{it.date}</span> : null}
           </div>);

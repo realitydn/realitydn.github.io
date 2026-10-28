@@ -58,7 +58,7 @@ function Inspector({ el, doc, update, dup, del, layer, clearAll, setDoc, isOutpu
   const dSurface   = dirt(fillMatters(el) ? ['surface','fill'] : ['surface']);
   const dSub       = dirt(['subtitle','subSize','subWeight','subTracking','subColor','subLayout']);
   const dKicker    = dirt(['kicker','kickerColor']);
-  const dRows      = dirt(['rowSize','rowWeight','rowTracking','rowGap','markerKey']);
+  const dRows      = dirt(['rowSize','rowCase','rowWeight','rowTracking','rowGap','markerKey']);
   const dTransform = dirt(['rot','anchor']);   // NOT w/h/x/y — placing a box sets those, so counting them badges everything
 
   const hasContent = ['title','tagline','info','when','cost','stamp','host','ticket','qr','badge','wordmark','weekly','matchup'].indexOf(el.type)>=0 || !!caps.list;

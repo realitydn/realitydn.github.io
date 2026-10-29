@@ -494,7 +494,7 @@ function createCloud() {
     });
   }
 
-  /* ---- daily digest card ------------------------------------------------- */
+  /* ---- daily digest card + FB cover ------------------------------------- */
   // putDigestStory(date, blob, contentType) → { ok, date, url } | null
   //
   // Files one day's 9:16 schedule card against that date's row in the app's daily
@@ -505,6 +505,19 @@ function createCloud() {
   // rejected token all resolve null rather than throwing. Nothing about a Studio
   // EXPORT is allowed to fail because Backstage was unreachable.
   function putDigestStory(date, blob, contentType) {
+    return postDigestImage('putDigestStory', '/api/studio/digest-story', 'story', date, blob, contentType);
+  }
+
+  // putDigestCover(date, blob, contentType) → { ok, date, url } | null
+  //
+  // The same day's Facebook Page cover, filed beside its story card, so the 8:00
+  // routine that swaps the Page cover has a picture to fetch instead of a zip.
+  // Same best-effort contract as putDigestStory.
+  function putDigestCover(date, blob, contentType) {
+    return postDigestImage('putDigestCover', '/api/studio/digest-cover', 'cover', date, blob, contentType);
+  }
+
+  function postDigestImage(label, path, stem, date, blob, contentType) {
     if (!isSignedIn()) { return Promise.resolve(null); }
     if (!date || !blob) { return Promise.resolve(null); }
     var fd;
@@ -514,17 +527,17 @@ function createCloud() {
       var ct = contentType || (blob && blob.type) || 'image/png';
       var ext = ct.indexOf('webp') >= 0 ? 'webp'
         : (ct.indexOf('jpeg') >= 0 || ct.indexOf('jpg') >= 0 ? 'jpg' : 'png');
-      fd.append('file', blob, 'story-' + date + '.' + ext);
+      fd.append('file', blob, stem + '-' + date + '.' + ext);
     } catch (e) {
-      console.info(LOG, 'putDigestStory: could not build form data; skipping');
+      console.info(LOG, label + ': could not build form data; skipping');
       return Promise.resolve(null);
     }
-    return call('POST', '/api/studio/digest-story', {
+    return call('POST', path, {
       body: fd, // browser sets multipart Content-Type + boundary
       timeoutMs: uploadBudgetMs(blob.size),
     }).then(function (r) {
       if (!r || !r.ok || !r.json) {
-        console.info(LOG, 'putDigestStory', date, '→', r ? r.status : 'no-response');
+        console.info(LOG, label, date, '→', r ? r.status : 'no-response');
         return null;
       }
       return r.json;
@@ -566,6 +579,7 @@ function createCloud() {
     delDoc: delDoc,
     putPoster: putPoster,
     putDigestStory: putDigestStory,
+    putDigestCover: putDigestCover,
     optimizeImage: optimizeImage,
     fetchFeed: fetchFeed,
   };

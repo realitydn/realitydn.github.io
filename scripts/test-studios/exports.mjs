@@ -261,6 +261,27 @@ async function print(browser, { update, filter, loose }) {
 
 // ---------------------------------------------------------------- schedule
 
+// Wednesday of the ?seed=stress week (8.6.26–14.6.26): Mon + Tue are past.
+const HUB_TODAY = '2026-06-10';
+
+/** Every open day still to come sent once as a story card and once as an FB
+ *  cover — the cover at its full capture size (851×315 at the suite's 1×). */
+function checkBackstage(names, hub) {
+  const due = names.map((n) => (/^reality-daily-(\d{4}-\d\d-\d\d)-cover\.png$/.exec(n) || [])[1])
+    .filter((d) => d && d >= HUB_TODAY).sort();
+  const dates = (kind) => hub.sent.filter((s) => s.kind === kind).map((s) => s.date).sort().join(' ');
+  const want = due.length + ' day card' + (due.length === 1 ? '' : 's') + ' + ' + due.length + ' cover' + (due.length === 1 ? '' : 's');
+  const bad = [];
+  if (!due.length) bad.push('no open day on or after ' + HUB_TODAY + ' in the zip');
+  if (dates('story') !== due.join(' ')) bad.push('story dates: ' + (dates('story') || 'none') + ' (want ' + due.join(' ') + ')');
+  if (dates('cover') !== due.join(' ')) bad.push('cover dates: ' + (dates('cover') || 'none') + ' (want ' + due.join(' ') + ')');
+  for (const s of hub.sent.filter((x) => x.kind === 'cover')) {
+    if (s.type !== 'image/png' || s.w !== 851 || s.h !== 315) bad.push('cover ' + s.date + ' sent as ' + s.type + ' ' + s.w + '×' + s.h);
+  }
+  if (hub.msg !== 'Backstage: ' + want + ' sent') bad.push('hub message "' + hub.msg + '" (want "Backstage: ' + want + ' sent")');
+  return { name: 'schedule: backstage', status: bad.length ? 'fail' : 'pass', pass: !bad.length, note: bad.join('\n') || undefined };
+}
+
 async function schedule(browser, { update, filter, loose }) {
   const results = [];
   const plan = await tolerancePlan(browser, 'schedule', TOL, loose);
@@ -270,9 +291,32 @@ async function schedule(browser, { update, filter, loose }) {
     const { page, log } = await exportPage(browser, srv.url + '?seed=stress');
     await page.waitForSelector('.ss-top');
     await sleep(500);
+    // Backstage: a stub hub that is signed in, and "today" pinned to the Wednesday
+    // of the stress week, so the export's propagation errand has days still due.
+    // Patched after load — the cloud-sync state is read once at mount, and no
+    // render reads the clock, so the goldens are untouched.
+    await page.evaluate((now) => {
+      const R = window.RCloud, sent = (window.__hubSent = []);
+      const realNow = Date.now.bind(Date), t0 = realNow();
+      Date.now = () => now + (realNow() - t0);
+      R.isSignedIn = () => true;
+      const stub = (kind) => async (date, blob, type) => {
+        let w = 0, h = 0;
+        try { const b = await createImageBitmap(blob); w = b.width; h = b.height; b.close(); } catch (e) {}
+        sent.push({ kind, date, type, w, h });
+        return { ok: true, date, url: 'stub:' + kind + '/' + date };
+      };
+      R.putDigestStory = stub('story');
+      R.putDigestCover = stub('cover');
+    }, Date.parse(HUB_TODAY + 'T03:00:00Z'));
     const before = await downloadCount(page);
     await clickButton(page, '.ss-top', 'Everything');
     const dl = await nextDownload(page, before, 180000);
+    // the push runs after the download; its report lands beside the Export button
+    const hub = await page.waitForFunction(() => {
+      const m = [...document.querySelectorAll('.ss-top .ss-mini')].find((s) => s.textContent.startsWith('Backstage:'));
+      return m && { msg: m.textContent, sent: window.__hubSent };
+    }, { timeout: 60000, polling: 100 }).then((h) => h.jsonValue());
     // unzip in the page — the studio ships JSZip
     const files = await page.evaluate(async (b64) => {
       const zip = await window.JSZip.loadAsync(b64, { base64: true });
@@ -288,6 +332,7 @@ async function schedule(browser, { update, filter, loose }) {
     const expectKinds = ['-feed', '-stories', '-wa', '-print.pdf', '-story.png', '-cover.png', '.csv'];
     const missing = expectKinds.filter((k) => !names.some((n) => n.includes(k)));
     if (missing.length) results.push({ name: 'schedule: channels', status: 'fail', pass: false, note: 'zip has no ' + missing.join(', ') + '\n  got: ' + names.join(' ') });
+    results.push(checkBackstage(names, hub));
 
     const stem = (n) => 'schedule-' + slug(n.replace(/^reality-(schedule-)?/, '').replace(/\.(png|pdf|csv|json)$/, ''));
     const pdfJobs = [];

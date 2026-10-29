@@ -1,7 +1,7 @@
 /* ============================================================
    REALITY SCHEDULE STUDIO — app · useExport: PNG / PDF / zip, and Backstage
    Renders each part offscreen, captures it (html-to-image), zips or
-   saves it, and files the 9:16 day cards in the app's daily digest.
+   saves it, and files the 9:16 day cards and FB covers in the app's daily digest.
    ============================================================ */
 import { RCloud } from '../studio-shared/cloud.js';
 import { rangeDates as a_dates, dayInfo as a_dayInfo, serializeCSV as a_serCSV, todayIso as a_today } from './schedule-data.jsx';
@@ -37,6 +37,26 @@ async function toStoryBlob(dataUrl){
     const out = await new Promise(res => c.toBlob(res, 'image/png'));
     return out || src;
   }catch(err){ console.info('[Studio] story downsample failed; sending the capture', err); return src; }
+}
+
+/* The FB cover goes up at the resolution it was captured at (851x315 at 2x is
+   1702x630 — Facebook's own retina size, and a few hundred KB). Halved only if a
+   capture ever outgrows the app's upload ceiling, MAX_IMAGE_BYTES in REALITYApp. */
+const COVER_MAX_BYTES = 10000000;
+async function toCoverBlob(dataUrl){
+  const src = dataUrlToBlob(dataUrl);
+  if(src.size <= COVER_MAX_BYTES || typeof createImageBitmap !== 'function') return src;
+  try{
+    const bmp = await createImageBitmap(src);
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width/2); c.height = Math.round(bmp.height/2);
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    try{ bmp.close(); }catch(e){}
+    const out = await new Promise(res => c.toBlob(res, 'image/png'));
+    return out || src;
+  }catch(err){ console.info('[Studio] cover downsample failed; sending the capture', err); return src; }
 }
 
 function useExport({ doc, channelId, dailyVariant, setSelId }){
@@ -85,37 +105,45 @@ function useExport({ doc, channelId, dailyVariant, setSelId }){
   /* ---- Backstage propagation ----
      Every export that renders daily cards also files them against their dates in
      the app's daily digest (/staff/digest), so the morning WhatsApp post has its
-     picture waiting beside its prose instead of living in someone's Downloads.
+     picture waiting beside its prose instead of living in someone's Downloads —
+     and the day's FB cover beside it, for the 8:00 routine that sets the Page cover.
      Runs AFTER the download, and can only ever report on itself: the export is the
      job, this is the errand on the way back, and a dormant hub must never cost you
      the zip you actually asked for. */
-  async function pushDigestCards(cards){
+  async function pushDigestCards(cards, covers){
     if(!RCloud || !RCloud.isSignedIn()) return 'Backstage: sign in to Cloud to send day cards';
     /* A card for a day that has already happened has no digest left to sit under,
        and would only push a dead date to the top of Backstage's Recent list. */
     const today = a_today();
-    const due = cards.filter(c => c.date >= today);
+    const due = cards.filter(c => c.date >= today).map(c => ({ ...c, kind:'story' }))
+      .concat(covers.filter(c => c.date >= today).map(c => ({ ...c, kind:'cover' })));
     if(!due.length) return 'Backstage: nothing to send — this week has already been';
-    let sent = 0, failed = 0;
+    const sent = { story:0, cover:0 }; let failed = 0;
     for(let i=0;i<due.length;i++){
+      const c = due[i];
       setExportMsg('Backstage ' + (i+1) + '/' + due.length + '…');
       try{
-        const blob = await toStoryBlob(due[i].dataUrl);
-        const r = await RCloud.putDigestStory(due[i].date, blob, blob.type);
-        if(r && r.ok) sent++; else failed++;
-      }catch(err){ console.error('[Studio] digest card push failed', due[i].date, err); failed++; }
+        const r = c.kind==='cover'
+          ? await toCoverBlob(c.dataUrl).then(b => RCloud.putDigestCover(c.date, b, b.type))
+          : await toStoryBlob(c.dataUrl).then(b => RCloud.putDigestStory(c.date, b, b.type));
+        if(r && r.ok) sent[c.kind]++; else failed++;
+      }catch(err){ console.error('[Studio] digest ' + c.kind + ' push failed', c.date, err); failed++; }
     }
-    if(!sent) return 'Backstage: could not send day cards (' + failed + ' failed)';
-    return 'Backstage: ' + sent + ' day card' + (sent===1?'':'s') + ' sent'
-      + (failed ? ' · ' + failed + ' failed' : '');
+    const plural = (n, word) => n + ' ' + word + (n===1?'':'s');
+    const parts = [];
+    if(sent.story) parts.push(plural(sent.story, 'day card'));
+    if(sent.cover) parts.push(plural(sent.cover, 'cover'));
+    if(!parts.length) return 'Backstage: could not send day cards (' + failed + ' failed)';
+    return 'Backstage: ' + parts.join(' + ') + ' sent' + (failed ? ' · ' + failed + ' failed' : '');
   }
 
   async function doExport(scope){
     if(exporting || !window.htmlToImage) return;
     setSelId(null); setExporting(true); setExportMsg('Rendering…'); setHubMsg('');
     const base = 'reality-schedule-' + doc.range.start;
-    /* 9:16 day cards picked up on the way past, sent to Backstage below. */
-    const cards = [];
+    /* 9:16 day cards and FB covers picked up on the way past, sent to Backstage below. */
+    const cards = [], covers = [];
+    const today = a_today();
     try{
       if(scope==='channel'){
         const ch = a_ch(channelId);
@@ -131,6 +159,7 @@ function useExport({ doc, channelId, dailyVariant, setSelId }){
             const url = await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant }, ch);
             zip.file(pngName('daily',0,1,dailyVariant,open[i]), url.split(',')[1], { base64:true });
             if(dailyVariant==='story') cards.push({ date:open[i], dataUrl:url });
+            if(dailyVariant==='cover' && open[i] >= today) covers.push({ date:open[i], dataUrl:url });
           }
           /* Exporting the feed or cover variant still propagates — Backstage wants
              the 9:16 whatever you happened to be looking at. Quietly sending
@@ -140,6 +169,16 @@ function useExport({ doc, channelId, dailyVariant, setSelId }){
               setExportMsg('Story card ' + (i+1) + '/' + open.length + '…');
               cards.push({ date:open[i],
                 dataUrl:await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant:'story' }, ch) });
+            }
+          }
+          /* …and the FB cover, for the routine that sets the Page cover each morning.
+             Days still to come only: nothing ever fetches a past day's cover. */
+          if(dailyVariant!=='cover'){
+            const due = open.filter(d => d >= today);
+            for(let i=0;i<due.length;i++){
+              setExportMsg('FB cover ' + (i+1) + '/' + due.length + '…');
+              covers.push({ date:due[i],
+                dataUrl:await capturePart({ channelId:'daily', dailyDate:due[i], dailyVariant:'cover' }, ch) });
             }
           }
           setExportMsg('Zipping…');
@@ -188,16 +227,17 @@ function useExport({ doc, channelId, dailyVariant, setSelId }){
           setExportMsg('FB cover ' + (i+1) + '/' + open.length + '…');
           const url = await capturePart({ channelId:'daily', dailyDate:open[i], dailyVariant:'cover' }, a_ch('daily'));
           zip.file(pngName('daily',0,1,'cover',open[i]), url.split(',')[1], { base64:true });
+          if(open[i] >= today) covers.push({ date:open[i], dataUrl:url });
         }
         zip.file(base + '.json', JSON.stringify(doc, null, 2));
         zip.file(base + '.csv', a_serCSV(doc));
         setExportMsg('Zipping…');
         dlBlob(await zip.generateAsync({ type:'blob' }), base + '.zip');
       }
-      if(cards.length){
+      if(cards.length || covers.length){
         /* Its own try: the zip is already on disk by now, so a Backstage hiccup
            must not come back to the user as "Export failed". */
-        try{ setHubMsg(await pushDigestCards(cards)); }
+        try{ setHubMsg(await pushDigestCards(cards, covers)); }
         catch(err){ console.error('[Studio] Backstage push failed', err); setHubMsg('Backstage: send failed'); }
       }
     }catch(err){ console.error('export failed', err); setExportMsg('Export failed'); await new Promise(r=>setTimeout(r,1500)); }

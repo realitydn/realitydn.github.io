@@ -80,7 +80,11 @@ the `<a download>` click:
   `qrData`). A QR that stops scanning fails even if the pixels are "close".
 - **Schedule** — the `?seed=stress` week, *Export → Everything*: every feed,
   story, WhatsApp, daily story and FB cover PNG, the print PDF (rasterised),
-  and the CSV (compared as text).
+  and the CSV (compared as text). The same export also runs the Backstage
+  push against a stubbed, signed-in hub with "today" pinned to the Wednesday
+  of that week (`schedule: backstage`): every open day still to come must go
+  up once as a story card and once as a full-size FB cover, and the hub
+  message must count both.
 
 Poster and Schedule PNGs are compared at half size (2×2 box average) to keep
 the goldens small; the engine suite already pins the press pixel for pixel.

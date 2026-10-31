@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useMenu } from '../data/menu-i18n';
-import { URLS, STR } from '../data/translations';
+import { URLS, STR, MENU_PDF } from '../data/translations';
 import Reveal from './Reveal';
 import EventOverlay from './EventOverlay';
 import useFeed from '../hooks/useFeed';
@@ -54,17 +54,16 @@ function DealTicket({ ev, lang, onOpen }) {
   );
 }
 
-// Accent color per top-level menu category — Year 2 category-coding with
-// the majors on the big three (cocktails / beer & wine / coffee) and the
-// minors seasoning the rest per their registers (amber = warm/late,
-// green = community/day, purple = after-dark).
+// Accent color per top-level menu category — the printed menu's chapter
+// colours (print v2, Donald 27.10.26): Cocktails red, Spirits amber, Beer +
+// Wine green, For the Table ink, Zero Proof pink, Café purple.
 const CATEGORY_ACCENTS = {
   cocktails: 'var(--red)',
   spirits:   'var(--amber)',
-  beerwine:  'var(--yellow)',
-  coffee:    'var(--blue)',
-  tea:       'var(--green)',
-  other:     'var(--purple)',
+  beerwine:  'var(--green)',
+  table:     'var(--ink)',
+  zeroproof: 'var(--pink)',
+  cafe:      'var(--purple)',
 };
 
 // Cycling palette for section subheaders within each category — majors
@@ -162,7 +161,7 @@ export default function MenuSection({ lang, t }) {
             {t.use('menus')}
           </h2>
           <a
-            href={URLS.PDF}
+            href={MENU_PDF[lang] || URLS.PDF}
             target="_blank"
             rel="noreferrer"
             className="font-title font-bold text-sm underline underline-offset-4 flex items-center gap-2 hover:opacity-70 transition-opacity"

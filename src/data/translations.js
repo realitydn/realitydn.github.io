@@ -75,3 +75,12 @@ export const URLS = {
   MAP: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1766.9182173001361!2d108.24125224818768!3d16.05241110360417!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217004e52b329%3A0x7d382203015c404b!2sREALITY!5e1!3m2!1sen!2s!4v1756275333082!5m2!1sen!2s",
   PDF: "https://realitydn.com/menu-drinks-en.pdf"
 };
+
+// The printed menu (print v2, 30.10.26) as a PDF, one per printed edition;
+// KO and JA read the English one.
+export const MENU_PDF = {
+  EN: URLS.PDF,
+  VN: "https://realitydn.com/menu-drinks-vi.pdf",
+  RU: "https://realitydn.com/menu-drinks-ru.pdf",
+  UK: "https://realitydn.com/menu-drinks-uk.pdf",
+};

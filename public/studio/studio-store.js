@@ -209,25 +209,68 @@ import { tplStamp, listedAt, planPull, isNewerCopy, keepLocalPhotos, classifyPus
     try{ await metaPut(FAIL_PREFIX + t.id, rec); }catch(e){}
   }
 
-  /* Resolves when the push has finished, whichever way it went; never rejects.
-     Not signed in → nothing is sent and nothing is recorded: cloudPushAll's
-     timestamp check sends a template saved while signed out next time. */
+  /* One template up at a time. They used to go all at once — a load's
+     cloudPushAll, or Retry, sent the whole backlog together — while each
+     upload's time limit (cloud.js uploadBudgetMs) assumes it has the uplink to
+     itself. Twenty-odd ~0.5M-character templates sharing the venue's line all
+     ran out together at ~160s, were marked failed, and went up together again
+     on the next load: it never caught up. Queued, each limit starts when its own
+     upload does. A template already waiting just takes the newer copy; one
+     already going up with the same stamp isn't sent twice (a sign-in's
+     cloudPushAll used to overlap the load's); a newer copy goes once it lands. */
+  const pushQueue = [];             // ids waiting, oldest first
+  const pushWaiting = new Map();    // id → { t, done, resolve }
+  let pushActive = null;            // { id, stamp, done } — the one going up
+
+  /* Resolves when the push carrying this copy has finished, whichever way it
+     went; never rejects. Not signed in → nothing is sent and nothing is
+     recorded: cloudPushAll's timestamp check sends a template saved while
+     signed out next time. */
   function cloudPutTpl(t){
     try{
       const rc = _rc();
       if(!rc || !rc.isSignedIn() || !t || !t.id) return Promise.resolve();
-      const stamp = tplStamp(t);
+      if(pushActive && pushActive.id===t.id && pushActive.stamp===tplStamp(t)) return pushActive.done;
+      const w = pushWaiting.get(t.id);
+      if(w){ w.t = t; return w.done; }
+      let resolve; const done = new Promise(r=>{ resolve = r; });
+      pushWaiting.set(t.id, { t, done, resolve });
+      pushQueue.push(t.id);
       pushing.add(t.id); noteIssues();
+      pumpPushes();
+      return done;
+    }catch(e){ return Promise.resolve(); }
+  }
+  function pumpPushes(){
+    while(!pushActive && pushQueue.length){
+      const id = pushQueue.shift(), w = pushWaiting.get(id);
+      if(!w) continue;                // deleted while it waited
+      pushWaiting.delete(id);
+      const stamp = tplStamp(w.t);
+      pushActive = { id, stamp, done: w.done };
+      sendTpl(w.t, stamp).then(()=>{
+        pushActive = null;
+        if(!pushWaiting.has(id)) pushing.delete(id);
+        noteIssues(); w.resolve(); pumpPushes();
+      });
+    }
+  }
+  /* Never rejects. Signed out while it waited → dropped, as above. */
+  function sendTpl(t, stamp){
+    try{
+      const rc = _rc();
+      if(!rc || !rc.isSignedIn()) return Promise.resolve();
       return Promise.resolve(slimDocForCloud(t.doc))
         .then(d=>rc.putDoc('poster', 'tpl:'+t.id, t.name||'', d===t.doc ? t : Object.assign({}, t, { doc:d }), stamp||Date.now(), { detail:true }))
         .then(r=>{ const f = classifyPush(r); return f ? pushFailed(t, f, stamp) : pushLanded(t.id, r); },
               ()=>pushFailed(t, { why:'offline', status:0 }, stamp))
-        .catch(()=>{})
-        .then(()=>{ pushing.delete(t.id); noteIssues(); });
+        .catch(()=>{});
     }catch(e){ return Promise.resolve(); }
   }
   function cloudDelTpl(id){
     try{
+      const w = id && pushWaiting.get(id);
+      if(w){ pushWaiting.delete(id); w.resolve(); if(!(pushActive && pushActive.id===id)) pushing.delete(id); noteIssues(); }
       if(id && issues.delete(id)) noteIssues();
       Promise.resolve(db.tx(M_STORE, 'readwrite', s=>{ s.delete(SYNC_PREFIX + id); s.delete(FAIL_PREFIX + id); })).catch(()=>{});
       const rc = _rc();

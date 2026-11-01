@@ -19,6 +19,7 @@ function codesText(ev){
   let t = (ev.locations||[]).join('/');
   if(ev.flags.prereg) t += (t?' ':'') + '*';
   if(ev.flags.fee) t += (t?' ':'') + '$';
+  if(ev.flags.donation) t += (t?' ':'') + '+';
   return t;
 }
 function timeColW(font){ return Math.ceil(5 * font * 0.68) + Math.round(font*0.5); }

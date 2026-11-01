@@ -49,7 +49,7 @@ const FNS = [
   // date helpers the range-clamp / weekly projection depend on
   'dToDate', 'dToISO', 'dAdd', 'dWeekday', 'rangeDates', 'todayIso', 'thisMonday', 'nextMonday',
   'timeKey', 'eventsOn',
-  'ictHHMM', 'ictDate', 'feedWindow', 'buildDocFromFeed', 'feedPrefKey', 'mergeFeedIntoDoc', 'applyFeedToDoc',
+  'isDonationCost', 'ictHHMM', 'ictDate', 'feedWindow', 'buildDocFromFeed', 'feedPrefKey', 'mergeFeedIntoDoc', 'applyFeedToDoc',
   'deleteEventFromDoc', 'restoreFeedEvent', 'clearRangeOccurrences', 'cloneToNextPeriod', 'storeDoc',
   'pickNewerDoc', 'writeBothDocs',
   // the house date labels (d.m / d.m.yy, no leading zeros) and the paste parser
@@ -69,7 +69,7 @@ const ctx = {};
 vm.createContext(ctx);
 vm.runInContext(code, ctx);
 const X = ctx.__exports;
-const { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc } = X;
+const { ictHHMM, ictDate, buildDocFromFeed, mergeFeedIntoDoc, isDonationCost } = X;
 
 let passed = 0;
 const failures = [];
@@ -132,7 +132,7 @@ eq('repeat weekly from tag/seriesId', quiz.repeat, 'weekly');
 eq('feed id stamped into notionId', quiz.notionId, 'evt_quiz');
 eq('id from makeId stub', quiz.id, 'evX1');
 // blankEvent-shaped: required keys present with the right defaults
-eq('flags default', JSON.stringify(quiz.flags), JSON.stringify({ prereg: false, fee: false }));
+eq('flags default', JSON.stringify(quiz.flags), JSON.stringify({ prereg: false, fee: false, donation: false }));
 eq('emphasis default', quiz.emphasis, 'none');
 eq('exceptions default', JSON.stringify(quiz.exceptions), JSON.stringify([]));
 
@@ -173,7 +173,7 @@ const tagged = buildDocFromFeed({ events: [
 eq('fee tag → flags.fee', tagged[0].flags.fee, true);
 eq('prereg tag → flags.prereg', tagged[0].flags.prereg, true);
 eq('featured tag → emphasis banner', tagged[1].emphasis, 'banner');
-eq('no tags/cost → flags both false', JSON.stringify(tagged[2].flags), JSON.stringify({ prereg: false, fee: false }));
+eq('no tags/cost → flags both false', JSON.stringify(tagged[2].flags), JSON.stringify({ prereg: false, fee: false, donation: false }));
 eq('no featured → emphasis none', tagged[2].emphasis, 'none');
 eq('non-blank cost → flags.fee (no tag needed)', tagged[3].flags.fee, true);
 eq('non-blank cost does not set prereg', tagged[3].flags.prereg, false);
@@ -192,7 +192,24 @@ eq('rsvpCapacity 10 → flags.prereg', capped[0].flags.prereg, true);
 eq('rsvpCapacity does not set fee', capped[0].flags.fee, false);
 eq('rsvpCapacity null → no prereg', capped[1].flags.prereg, false);
 eq('rsvpCapacity missing → no prereg', capped[2].flags.prereg, false);
-eq('rsvpCapacity 0 (non-null) → prereg, cost still → fee', JSON.stringify(capped[3].flags), JSON.stringify({ prereg: true, fee: true }));
+eq('rsvpCapacity 0 (non-null) → prereg, cost still → fee', JSON.stringify(capped[3].flags), JSON.stringify({ prereg: true, fee: true, donation: false }));
+
+// + (donation) auto-sets from a cost that SAYS donation, and is never also $ —
+// "Donation-based" (Creative Writing, The Naked Truth) used to print as a fee.
+const giving = buildDocFromFeed({ events: [
+  { id: 'd1', title_en: 'Creative Writing Workshop', startsAt: '2026-07-04T19:00:00+07:00', endsAt: null, location: { code: '2L' }, tags: [], cost: 'Donation-based' },
+  { id: 'd2', title_en: 'Talk', startsAt: '2026-07-05T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: ['fee'], cost: 'Pay what you like' },
+  { id: 'd3', title_en: 'Tagged', startsAt: '2026-07-06T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: ['donation'] },
+  { id: 'd4', title_en: 'VI', startsAt: '2026-07-07T19:00:00+07:00', endsAt: null, location: { code: '2E' }, tags: [], cost: 'Tuỳ tâm' },
+] }, { locations: LOCATIONS, makeId: () => 'dn' }).events;
+eq('donation cost → + not $', JSON.stringify(giving[0].flags), JSON.stringify({ prereg: false, fee: false, donation: true }));
+eq('donation cost beats a fee tag', JSON.stringify(giving[1].flags), JSON.stringify({ prereg: false, fee: false, donation: true }));
+eq('donation tag → +', giving[2].flags.donation, true);
+eq('VI "tuỳ tâm" → +', giving[3].flags.donation, true);
+eq('isDonationCost: "tùy tâm"', isDonationCost('tùy tâm'), true);
+eq('isDonationCost: priced', isDonationCost('100k'), false);
+eq('isDonationCost: null', isDonationCost(null), false);
+eq('paste tail: + → donation', X.takeTail('Creative Writing 2L +').flags.donation, true);
 
 // ── mergeFeedIntoDoc: idempotent App→Schedule sync (the auto-pull-on-open) ────
 const existing = [

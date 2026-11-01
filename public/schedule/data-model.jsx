@@ -18,6 +18,8 @@ const LOCATIONS = [
 const FLAGS = [
   { key:'prereg', glyph:'*', label:'Requires Pre-Registration' },
   { key:'fee',    glyph:'$', label:'Has Fee Beyond Purchase' },
+  // Pay what you like: never alongside $ (a row is fee OR donation, not both).
+  { key:'donation', glyph:'+', label:'Donation-Based' },
 ];
 
 /* Daily-card layout ids. Duplicated from DAILY_CARDS in render-daily-kit.jsx:
@@ -58,7 +60,7 @@ function suid(){ return 'ev' + (_sid++) + '_' + Math.random().toString(36).slice
 /* ---- document ---- */
 function blankEvent(date){
   return { id:suid(), date, start:'19:00', end:null, title:'New event', titleShort:null,
-           locations:[], flags:{ prereg:false, fee:false }, emphasis:'none', hide:[],
+           locations:[], flags:{ prereg:false, fee:false, donation:false }, emphasis:'none', hide:[],
            repeat:null, repeatUntil:null, exceptions:[], notionId:null, seriesId:null };
 }
 /* startIso defaults to THIS week's Monday: the tool opens on the week that is
@@ -102,7 +104,7 @@ function starterDoc(){
   doc.days = { '2026-06-14':{ status:'closed', note:'CLOSED FOR STAFF TRIP' } };
   const E = (date, start, end, title, locs, fl, emph, tShort)=>({
     id:suid(), date, start, end:end||null, title, titleShort:tShort||null,
-    locations:locs||[], flags:{ prereg:!!(fl&&fl.indexOf('*')>=0), fee:!!(fl&&fl.indexOf('$')>=0) },
+    locations:locs||[], flags:{ prereg:!!(fl&&fl.indexOf('*')>=0), fee:!!(fl&&fl.indexOf('$')>=0), donation:!!(fl&&fl.indexOf('+')>=0) },
     emphasis:emph||'none', hide:[], repeat:null, repeatUntil:null, exceptions:[], notionId:null });
   doc.events = [
     E('2026-06-08','17:00',null,  'How to DJ',['2E'],'$'),
@@ -162,7 +164,7 @@ function normalizeDoc(d){
   doc.daily = Object.assign({ story:0, feed:0, card:'classic' }, (d && d.daily) || {});
   if(DAILY_CARD_IDS.indexOf(doc.daily.card) < 0) doc.daily.card = 'classic';
   doc.events = ((d && d.events) || []).map(ev=>Object.assign(blankEvent(ev.date||doc.range.start), ev,
-    { flags:Object.assign({prereg:false,fee:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[],
+    { flags:Object.assign({prereg:false,fee:false,donation:false}, ev.flags), locations:ev.locations||[], hide:ev.hide||[],
       repeat:ev.repeat==='weekly'?'weekly':null, exceptions:(ev.exceptions||[]).slice() }));
   doc.feedPrefs = (d && d.feedPrefs && typeof d.feedPrefs==='object') ? d.feedPrefs : {};
   doc.feedDeleted = (d && Array.isArray(d.feedDeleted)) ? d.feedDeleted : [];
@@ -215,6 +217,7 @@ function usedLegend(doc, dates, channel){
     (ev.locations||[]).forEach(c=>locs[c]=1);
     if(ev.flags.prereg) fl.prereg=1;
     if(ev.flags.fee) fl.fee=1;
+    if(ev.flags.donation) fl.donation=1;
   }));
   return {
     locations: LOCATIONS.filter(l=>locs[l.code]),

@@ -65,13 +65,14 @@ function DailyClassic({ doc, date, variant }){
                       ? <span style={{ fontFamily:R_GROT, fontWeight:500, fontSize:font*0.82,
                           color:banner?bannerFg:T.dim, whiteSpace:'nowrap', opacity:banner?0.8:1 }}>{codesText(ev)}</span> : null}
                   </div>
-                  {showChips && (ev.locations.length || ev.flags.prereg || ev.flags.fee) ?
+                  {showChips && (ev.locations.length || ev.flags.prereg || ev.flags.fee || ev.flags.donation) ?
                     <div style={{ display:'flex', gap:12, marginTop:12, marginLeft:font*0.9*0.6*6.2, flexWrap:'wrap' }}>
                       {ev.locations.map(c=>(
                         <span key={c} style={{ border:'2px solid '+T.fg, padding:'4px 14px',
                           fontFamily:R_GROT, fontWeight:500, fontSize:font*0.56, color:T.fg }}>{locLabel(c)}</span>))}
                       {ev.flags.prereg && <span style={{ fontFamily:R_GROT, fontWeight:600, fontSize:font*0.6, color:T.fg }}>* pre-register</span>}
                       {ev.flags.fee && <span style={{ fontFamily:R_GROT, fontWeight:600, fontSize:font*0.6, color:T.fg }}>$ fee</span>}
+                      {ev.flags.donation && <span style={{ fontFamily:R_GROT, fontWeight:600, fontSize:font*0.6, color:T.fg }}>+ donation</span>}
                     </div> : null}
                 </div>
               );

@@ -189,6 +189,7 @@ function dailyRooms(ev, n){
   let t = (ev.locations||[]).map(label).join(' + ');
   if(ev.flags.prereg) t += (t?'  ·  ':'') + '* pre-register';
   if(ev.flags.fee)    t += (t?'  ·  ':'') + '$ fee';
+  if(ev.flags.donation) t += (t?'  ·  ':'') + '+ donation';
   return t;
 }
 /* Whatever slack the fit engine leaves goes into the row gaps, never to the

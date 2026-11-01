@@ -64,9 +64,12 @@ function EventEditor({ doc, setDoc, sel, setSelId }){
       <Chips label="Locations" multi options={A_LOCS.map(l=>({v:l.code,l:l.code}))}
         value={sel.locations} onChange={v=>update({ locations:v })} />
       <Chips label="Flags" multi
-        options={[{v:'prereg',l:'* Pre-reg'},{v:'fee',l:'$ Fee'}]}
-        value={[sel.flags.prereg?'prereg':null, sel.flags.fee?'fee':null].filter(Boolean)}
-        onChange={v=>update({ flags:{ prereg:v.indexOf('prereg')>=0, fee:v.indexOf('fee')>=0 } })} />
+        options={[{v:'prereg',l:'* Pre-reg'},{v:'fee',l:'$ Fee'},{v:'donation',l:'+ Donation'}]}
+        value={[sel.flags.prereg?'prereg':null, sel.flags.fee?'fee':null, sel.flags.donation?'donation':null].filter(Boolean)}
+        onChange={v=>{
+          // $ and + are one choice: ticking one clears the other
+          const fee = v.indexOf('fee')>=0 && !(v.indexOf('donation')>=0 && !sel.flags.donation);
+          update({ flags:{ prereg:v.indexOf('prereg')>=0, fee, donation:v.indexOf('donation')>=0 && !fee } }); }} />
       <Chips label="Emphasis" options={[{v:'none',l:'None'},{v:'bold',l:'Bold'},{v:'banner',l:'Banner'}]}
         value={sel.emphasis} onChange={v=>update({ emphasis:v })} />
       <Hint>Banner is the anniversary-party treatment — one per week reads loud.</Hint>

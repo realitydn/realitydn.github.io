@@ -10,10 +10,10 @@ import { LOCATIONS, dWeekday, dShort, rangeDates, suid, blankEvent, eventsOn } f
    ============================================================ */
 const CODESET = ()=>LOCATIONS.map(l=>l.code.toUpperCase());
 
-/* tail tokens: location codes (slash-combos ok), * $ prereg fee */
+/* tail tokens: location codes (slash-combos ok), * $ + prereg fee donation */
 function takeTail(text){
   const codes = CODESET();
-  const out = { locations:[], flags:{prereg:false,fee:false} };
+  const out = { locations:[], flags:{prereg:false,fee:false,donation:false} };
   let words = text.trim().split(/\s+/);
   for(;;){
     if(!words.length) break;
@@ -21,6 +21,7 @@ function takeTail(text){
     const W = w.toUpperCase().replace(/[.,;]$/,'');
     if(W==='*' || W==='PREREG'){ out.flags.prereg=true; words.pop(); continue; }
     if(W==='$' || W==='FEE'){ out.flags.fee=true; words.pop(); continue; }
+    if(W==='+' || W==='DONATION'){ out.flags.donation=true; words.pop(); continue; }
     const segs = W.split('/');
     if(segs.length && segs.every(s=>codes.indexOf(s)>=0)){
       out.locations = segs.map(s=>codes[codes.indexOf(s)]).concat(out.locations);
@@ -126,7 +127,7 @@ function csvEscape(s){ s = String(s==null?'':s); return /[",\n]/.test(s) ? '"'+s
 function serializeCSV(doc){
   const lines = ['date,start,end,title,title_short,locations,flags,emphasis,repeat'];
   rangeDates(doc.range).forEach(date=>eventsOn(doc, date).forEach(ev=>{
-    const flags = [ev.flags.prereg?'prereg':null, ev.flags.fee?'fee':null].filter(Boolean).join(' ');
+    const flags = [ev.flags.prereg?'prereg':null, ev.flags.fee?'fee':null, ev.flags.donation?'donation':null].filter(Boolean).join(' ');
     lines.push([ev.date, ev.start, ev.end||'', csvEscape(ev.title), csvEscape(ev.titleShort||''),
       (ev.locations||[]).join('/'), flags, ev.emphasis==='none'?'':ev.emphasis,
       ev.repeat==='weekly'?'weekly':''].join(','));

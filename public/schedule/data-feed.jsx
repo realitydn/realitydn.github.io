@@ -42,6 +42,11 @@ import { LOCATIONS, dAdd, dWeekday, rangeDates, suid } from './data-model.jsx';
      makeId    : () => id  (defaults to suid(); pass a stub in tests)
    Returns { events:[...], errors:[...] }.
    ------------------------------------------------------------ */
+/* The app's `cost` is free text. These read as "give what you like", not a price. */
+function isDonationCost(cost){
+  return cost!=null && /donat|pay[\s-]*what|t(?:ùy|uỳ)\s*tâm|ủng\s*hộ/i.test(String(cost).normalize('NFC'));
+}
+
 /* The window to fetch for a range: the range itself plus the two weeks after
    it (the weekly inference needs to see next week), plus a day for a Sunday
    night that runs past midnight. */
@@ -118,6 +123,11 @@ function buildDocFromFeed(feedOrEvents, opts){
       // tag. `cost` is the app's source of truth for "costs money beyond a purchase"
       // (null/blank = free), so a priced event flags without a tag added by hand.
       const hasCost = ev.cost!=null && String(ev.cost).trim()!=='';
+      // + (donation) flag: a cost that SAYS donation ("Donation-based", "pay what
+      // you like", "tùy tâm") is not a fee — it takes + instead of $. OR an
+      // explicit `donation` tag. Donation wins over an explicit `fee` tag: a row
+      // is one or the other, never both.
+      const donation = isDonationCost(ev.cost) || tags.indexOf('donation')>=0;
       // * (prereg) flag, the same way: a non-null `rsvpCapacity` (feed additive
       // field, number|null — a missing field reads as null) is a LIMITED-SPOT
       // event that needs an RSVP with a free REALITY account in the app — the
@@ -127,8 +137,9 @@ function buildDocFromFeed(feedOrEvents, opts){
       events.push({
         id: mk(), date, start, end, title: TITLE(ev),
         titleShort: null, locations: mapped,
-        // map the feed onto the schedule's flags/emphasis ($ = fee, * = prereg)
-        flags:{ prereg: hasRsvpCap || tags.indexOf('prereg')>=0, fee: hasCost || tags.indexOf('fee')>=0 },
+        // map the feed onto the schedule's flags/emphasis ($ = fee, + = donation, * = prereg)
+        flags:{ prereg: hasRsvpCap || tags.indexOf('prereg')>=0,
+                fee: !donation && (hasCost || tags.indexOf('fee')>=0), donation },
         emphasis: tags.indexOf('featured')>=0 ? 'banner' : 'none', hide:[],
         repeat: weekly ? 'weekly' : null, repeatUntil:null, exceptions:[],
         notionId: ev.id || null,                                 // feed OCCURRENCE id (changes weekly)
@@ -204,7 +215,7 @@ function mergeFeedIntoDoc(existing, fresh, opts){
   // sig includes flags + emphasis so a tag-only change (e.g. a newly-correct $/*)
   // is detected as an update and actually applied by the auto-pull.
   const sig = e=>[e.date,e.start,e.end,e.title,e.titleShort||'',(e.locations||[]).join(','),e.repeat||'',(e.exceptions||[]).join(','),
-    (e.flags&&e.flags.fee?'$':'')+(e.flags&&e.flags.prereg?'*':''), e.emphasis||'none', (e.hide||[]).join(','), e.repeatUntil||''].join('|');
+    (e.flags&&e.flags.fee?'$':'')+(e.flags&&e.flags.donation?'+':'')+(e.flags&&e.flags.prereg?'*':''), e.emphasis||'none', (e.hide||[]).join(','), e.repeatUntil||''].join('|');
   let added = 0, updated = 0;
   const merged = rows.map(e=>{
     const pr = prefs[feedPrefKey(e)];
@@ -254,4 +265,4 @@ function applyFeedToDoc(doc, rows){
   return { doc: Object.assign({}, doc, { events:res.events, feedPrefs:res.prefs }), res };
 }
 
-export { feedWindow, ictHHMM, ictDate, buildDocFromFeed, feedPrefKey, mergeFeedIntoDoc, applyFeedToDoc };
+export { isDonationCost, feedWindow, ictHHMM, ictDate, buildDocFromFeed, feedPrefKey, mergeFeedIntoDoc, applyFeedToDoc };

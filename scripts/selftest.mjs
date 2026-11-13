@@ -30,6 +30,7 @@ import {
   splitFeedSite,
   cfStr,
   costLabel,
+  priceKind,
   dmParts,
   whenKey,
   catLabel,
@@ -170,6 +171,23 @@ eq('costLabel priced', costLabel({ cost: '100k' }, 'EN'), '100k');
 eq('costLabel free EN', costLabel({ cost: null }, 'EN'), 'Free');
 eq('costLabel free VN', costLabel({ cost: null }, 'VN'), 'Miễn phí');
 eq('cfStr unknown lang falls back to EN', cfStr('DE').upNext, 'Up next');
+// The app's Fee / Donation-based boxes (13.11.26): an empty cost is "Free" only
+// when neither price tag is on. Cost text always wins; donation beats fee.
+eq('priceKind cost wins over tags', priceKind({ cost: '50k', tags: ['donation'] }), 'cost');
+eq('priceKind donation', priceKind({ cost: null, tags: ['music', 'donation'] }), 'donation');
+eq('priceKind fee', priceKind({ cost: '', tags: ['fee'] }), 'fee');
+eq('priceKind both → donation', priceKind({ cost: null, tags: ['fee', 'donation'] }), 'donation');
+eq('priceKind nothing → free', priceKind({ cost: null, tags: ['prereg'] }), 'free');
+eq('priceKind no tags field (old feed) → free', priceKind({ cost: null }), 'free');
+eq('costLabel cost text wins over fee', costLabel({ cost: '100k', tags: ['fee'] }, 'EN'), '100k');
+eq('costLabel donation EN', costLabel({ cost: null, tags: ['donation'] }, 'EN'), 'By donation');
+eq('costLabel donation VN', costLabel({ cost: null, tags: ['donation'] }, 'VN'), 'Ủng hộ tùy tâm');
+eq('costLabel fee EN (never Free)', costLabel({ cost: null, tags: ['fee'] }, 'EN'), 'Entry fee');
+eq('costLabel fee VN', costLabel({ cost: null, tags: ['fee'] }, 'VN'), 'Có phí tham gia');
+for (const L of ['EN', 'VN', 'RU', 'UK', 'KO', 'JA']) {
+  check(`cfStr ${L} has byDonation + entryFee`, !!cfStr(L).byDonation && !!cfStr(L).entryFee);
+  if (L !== 'EN') check(`cfStr ${L} byDonation is translated`, cfStr(L).byDonation !== cfStr('EN').byDonation);
+}
 
 // ── Night v2 "Cream Tickets": event category — six groups (6.10.26) ────────
 // Derived from the EN title (src/data/event-category.js — a port of the hub's
@@ -534,6 +552,25 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
     eq('putDoc: success hands back the hub\'s updatedAt', (await RCloud.putDoc('poster', 'working', '', '{}', 1, { detail: true })).updatedAt, 123);
   } finally {
     globalThis.window = prevWindow; globalThis.localStorage = prevLS; globalThis.fetch = prevFetch;
+  }
+}
+
+// ── Poster Studio price chip (public/studio/feed.js feedPriceText, 13.11.26) ──
+// Word for word the app's event page: Cost text, else By donation / Entry fee
+// from the app's price boxes, else Free.
+{
+  const prevWindow = globalThis.window;
+  globalThis.window = globalThis.window || { location: { search: '', origin: 'https://realitydn.com', hostname: 'realitydn.com' }, addEventListener() {}, removeEventListener() {} };
+  try {
+    const { feedPriceText } = await import('../public/studio/feed.js');
+    eq('chip: cost text wins', feedPriceText({ cost: ' 50k ', tags: ['fee'] }), '50k');
+    eq('chip: donation, no cost', feedPriceText({ cost: null, tags: ['donation'] }), 'By donation');
+    eq('chip: fee, no cost → Entry fee, not Free', feedPriceText({ cost: '', tags: ['fee'] }), 'Entry fee');
+    eq('chip: both → By donation', feedPriceText({ cost: null, tags: ['fee', 'donation'] }), 'By donation');
+    eq('chip: nothing → Free', feedPriceText({ cost: null, tags: [] }), 'Free');
+    eq('chip: old feed without tags → Free', feedPriceText({ cost: null }), 'Free');
+  } finally {
+    globalThis.window = prevWindow;
   }
 }
 

@@ -9,7 +9,7 @@ import { TEMPLATES as AP_TPL, buildTemplate as apBuildTpl } from '../templates.j
 import { sortTpls, applyTextRule } from '../doc.js';
 import {
   feedDate, feedTime, feedDayIdx, feedDayLabel, searchNorm, seriesWidePoster, queueKey, loadQueueDismissed,
-  storeQueueDismissed, queueTitleSize, fetchFeedRetry,
+  storeQueueDismissed, queueTitleSize, fetchFeedRetry, feedPriceText,
 } from '../feed.js';
 /* ---- In queue — app-calendar events that still need a poster ----
    Anonymous public feed read (no sign-in). An event queues while it has no
@@ -127,15 +127,16 @@ function useQueue({ docRef, setDoc, setSelectedIds, userTpls, userTplsRef, tplRe
     const when = queueWhen(ev, di);
     /* Fill every box the feed can populate: the day·time chip, the host credit,
        and the price chip. Host keeps the template placeholder when the event has
-       none; cost reads "Free" when the event carries no price (the feed's null
-       cost means free — matching the app's own event page). The Vietnamese name
+       none; the price chip follows feedPriceText — the Cost text, else "By
+       donation" / "Entry fee" from the app's price boxes, else "Free" —
+       matching the app's own event page word for word. The Vietnamese name
        is NOT placed: it rides doc.eventRef.titleVi, and the Title's Subtitle
        fold offers it as a one-click "Import Vietnamese". */
     built.elements.forEach(el=>{
       if(el.type==='title'){ el.text = title; el.fontSize = queueTitleSize(title); }
       if(el.type==='when'){ el.text = when; el.w = 450; }
       if(el.type==='host' && ev.host){ el.name = ev.host; }
-      if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
+      if(el.type==='cost'){ el.text = feedPriceText(ev); }
     });
     setDoc(d=>({ ...d, masterFormat:'4x5', activeFormat:'master', overrides:built.overrides||{},
       elements:built.elements, theme:built.theme, accent, title,
@@ -176,7 +177,7 @@ function useQueue({ docRef, setDoc, setSelectedIds, userTpls, userTplsRef, tplRe
       }
       if(el.type==='when'){ el.text = when; }
       if(el.type==='host' && ev.host){ el.name = ev.host; }
-      if(el.type==='cost'){ el.text = ev.cost ? ev.cost : 'Free'; }
+      if(el.type==='cost'){ el.text = feedPriceText(ev); }
     });
     setDoc(d=>({ ...d, masterFormat:snap.masterFormat||'4x5', activeFormat:'master', overrides,
       elements:snap.elements, theme:snap.theme||d.theme,

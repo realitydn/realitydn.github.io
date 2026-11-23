@@ -1,0 +1,29 @@
+/* 1 · OVERPRINT (see overprint.js). DEV ONLY. */
+
+/* The card being left: held with its end at the bottom of the screen. A card
+   shorter than the screen is held where it landed, under the strip. */
+html[data-handoff="overprint"] .dk-sec.ho-live {
+  position: sticky;
+  top: min(calc(var(--ho-strip) - var(--ho-pad)), calc(var(--ho-vh) - var(--ho-h)));
+}
+
+/* The card rising over it: PRINTED, not laid on top. multiply = two inks on
+   one sheet. Its paper goes to pure white while it is wet, because white is
+   what multiply treats as "no ink": the old card's paper shows through
+   unchanged and only the ink (type, rules, the header's colour) adds. */
+html[data-handoff="overprint"] .dk-sec.ho-wet { position: relative; }
+html[data-handoff="overprint"] .dk-sec.ho-wet .dk-open {
+  mix-blend-mode: multiply;
+  background: #fff;
+  --bg: #fff; --surface: #fff;
+}
+/* Paper for the part of the rising card that is NOT over the old card (the
+   old card was short, or it is Night and the page is dark): without it,
+   multiply would print the card onto the page itself. It sits under
+   everything, so wherever the old card is, the old card covers it. */
+html[data-handoff="overprint"] .dk-sec.ho-wet::before {
+  content: ''; position: absolute; z-index: -1;
+  top: var(--ho-pad); bottom: var(--ho-padb); left: var(--ho-gut); right: var(--ho-gut);
+  max-width: 1304px; margin: 0 auto;
+  background: #fffbf1;
+}

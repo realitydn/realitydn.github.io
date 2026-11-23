@@ -89,6 +89,13 @@ down the page.
   visit, gallery) are the same components, rendered inside a card with their
   `embedded` / `only` prop. The old `Hero.jsx` and `DarkCTA.jsx` are no longer
   rendered.
+- **Scroll hand-offs under trial (dev server only):** five ways for one
+  opened card to give way to the next live in
+  `src/components/deck/handoff/`, one `.js` + one `.css` each. A small
+  control in the bottom-right corner of the home page switches between them,
+  or open `/?handoff=overprint` (`drift`, `handmedown`, `spines`, `seam`).
+  None of it is in a production build: `handoff/mode.js` explains the gate,
+  `handoff/index.js` how to drop a loser or keep a winner.
 
 ## Forms
 

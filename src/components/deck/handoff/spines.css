@@ -1,0 +1,87 @@
+/* 4 · SPINES (see spines.js). DEV ONLY. */
+
+/* --ho-b: how tall a closed card's bar is. */
+html[data-handoff="spines"] { --ho-b: 14px; }
+@media (max-width: 760.98px) { html[data-handoff="spines"] { --ho-b: 10px; } }
+
+/* The bars replace the strip. */
+html[data-handoff="spines"] .dk-hand { display: none; }
+
+/* THE OPEN CARD's header is held under the bars of the cards before it:
+   card i (--ho-i, counted from 0) sits i bars down. When its card runs out
+   the header is carried up under that stack. */
+html[data-handoff="spines"] .dk-open { isolation: isolate; }
+html[data-handoff="spines"] .dk-oh { position: sticky; top: calc(var(--ho-i, 0) * var(--ho-b)); z-index: 5; }
+/* landings: a card lands with its header in its slot; anything inside a card
+   lands clear of the stack and the header */
+html[data-handoff="spines"] section.dk-sec,
+html[data-handoff="spines"] .dk-sec > .dk-anchor { scroll-margin-top: calc(var(--ho-i, 0) * var(--ho-b) - var(--ho-pad)); }
+html[data-handoff="spines"] .dk-ob [id] { scroll-margin-top: calc((var(--ho-i, 0) + 1) * var(--ho-b) + var(--ho-hh) + 16px) !important; }
+
+/* THE TWO STACKS. Fixed to the top and bottom of the screen. They come on
+   with the first card and leave with the last (.is-on), stamped, not faded. */
+.ho-sp-stack {
+  position: fixed; left: 0; right: 0; z-index: 30;
+  display: flex; flex-direction: column;
+  transition: transform var(--dur-settle) var(--ease-stamp);
+}
+.ho-sp-top { top: 0; }
+.ho-sp-bot { bottom: 0; }
+.ho-sp:not(.is-on) .ho-sp-top { transform: translateY(-100%); }
+.ho-sp:not(.is-on) .ho-sp-bot { transform: translateY(100%); }
+
+.ho-sp-bar {
+  display: flex; align-items: center; gap: 12px; flex: none;
+  height: var(--ho-b); padding: 0 16px; overflow: hidden;
+  background: var(--kc); color: var(--kon);
+  box-shadow: inset 0 -1.5px 0 #0d0905;
+  font: 700 12px/1 var(--mont); letter-spacing: .1em; text-transform: uppercase;
+  text-decoration: none; white-space: nowrap;
+  transition: height var(--dur-tap) var(--ease-stamp);
+}
+.ho-sp-bar[hidden] { display: none; }
+.ho-sp-bar.k-ink { box-shadow: inset 0 -1.5px 0 #fffbf1; }
+.ho-sp-bar span { font: 700 12px/1 var(--grotesk); font-variant-numeric: tabular-nums; }
+/* thin: colour only. The name shows when the bar is pointed at or focused. */
+.ho-sp-bar > * { visibility: hidden; }
+@media (hover: hover) and (pointer: fine) {
+  .ho-sp-bar:hover { height: 34px; }
+  .ho-sp-bar:hover > * { visibility: visible; }
+}
+.ho-sp-bar:focus-visible {
+  height: 34px; transform: none; outline: 2px solid var(--fg); outline-offset: -4px;
+  background-color: var(--kc); box-shadow: inset 0 -1.5px 0 #0d0905;
+}
+.ho-sp-bar:focus-visible > * { visibility: visible; }
+
+/* TOUCH: a stack is one target, never less than 48px tall, however few bars
+   it holds. (The part of the target beyond the bars is invisible.) */
+@media (hover: none), (pointer: coarse) {
+  .ho-sp-stack:has(.ho-sp-bar:not([hidden]))::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 48px;
+  }
+  .ho-sp-top::after { top: 0; }
+  .ho-sp-bot::after { bottom: 0; }
+}
+
+/* THE FAN: every card as a full row. Opened by tapping a stack. */
+.ho-sp-fan {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 31;
+  display: flex; flex-direction: column;
+  border-bottom: 3px solid var(--fg);
+  transform-origin: 50% 0; animation: ho-sp-fan 200ms var(--ease-stamp) both;
+}
+.ho-sp-fan[hidden] { display: none; }
+@keyframes ho-sp-fan { from { transform: scaleY(.55); } to { transform: none; } }
+.ho-sp-row {
+  display: flex; align-items: center; gap: 14px; min-height: 48px; padding: 0 18px;
+  background: var(--kc); color: var(--kon);
+  box-shadow: inset 0 -1.5px 0 #0d0905;
+  font: 700 13px/1.2 var(--mont); letter-spacing: .1em; text-transform: uppercase;
+  text-decoration: none;
+}
+.ho-sp-row.k-ink { box-shadow: inset 0 -1.5px 0 #fffbf1; }
+.ho-sp-row span { font: 700 14px/1 var(--grotesk); font-variant-numeric: tabular-nums; }
+/* the card being read: a solid block of its text colour at the row's edge */
+.ho-sp-row[aria-current="true"] { box-shadow: inset 10px 0 0 var(--kon), inset 0 -1.5px 0 #0d0905; }
+.ho-sp-row:focus-visible { transform: none; outline: 2px solid var(--kon); outline-offset: -5px; background-color: var(--kc); }

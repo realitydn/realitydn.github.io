@@ -1,0 +1,47 @@
+/* 3 · HAND-ME-DOWN (see handmedown.js). DEV ONLY. */
+
+/* AT REST: a card's print is the colour of the card before it. (--kp is the
+   print an opened card casts: deck.css block 1.) Ink is the first card's
+   colour; at Night an ink print on the ink page would vanish, so there it is
+   the page's own neutral print. */
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="ink"]    { --kp: #0d0905; }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"])[data-theme="dark"] .dk-sec[data-ho-prev="ink"] { --kp: var(--print-neutral); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="green"]  { --kp: var(--green); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="amber"]  { --kp: var(--amber); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="blue"]   { --kp: var(--blue); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="yellow"] { --kp: var(--yellow); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="purple"] { --kp: var(--purple); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="red"]    { --kp: var(--red); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="pink"]   { --kp: var(--pink); }
+:is(html[data-handoff="handmedown"], html[data-handoff-still="handmedown"]) .dk-sec[data-ho-prev="stock"]  { --kp: #f4ecd7; }
+
+/* IN MOTION: the field a card leaves behind.
+
+   It is the last thing in its card's section, and in the page's flow it sits
+   exactly where the NEXT card's print is: one print-offset down and to the
+   right of where the next card starts. (The section is stretched by the
+   field's height and pulled back by the same amount, so nothing else moves:
+   every card is where it was.)
+
+   position: sticky then holds it up on the screen, at the place the next
+   card will land, for as long as its own card is on the way out. It is
+   under everything (z-index -1, inside .dk-secs), so its own card covers it
+   until that card's end rises past, and the next card covers it again as it
+   arrives. Once the next card is in place the field is simply back where the
+   flow put it, behind that card, and travels with it as its print. */
+html[data-handoff="handmedown"] .dk-secs { isolation: isolate; }
+html[data-handoff="handmedown"] .dk-sec[data-ho-field] {
+  /* the gap between two cards: this card's bottom padding + the next card's top padding */
+  --ho-gap: calc(var(--ho-padb) + var(--ho-pad));
+  margin-bottom: calc(-1 * (var(--ho-fh, 0px) + var(--ho-gap) + var(--dk-px)));
+}
+html[data-handoff="handmedown"] .dk-sec[data-ho-field]::after {
+  content: ''; display: block; position: sticky; z-index: -1;
+  bottom: calc(var(--ho-vh) - var(--ho-land) - var(--dk-px) - var(--ho-fh, 0px));
+  height: var(--ho-fh, 0px);
+  max-width: 1304px; margin: calc(var(--ho-gap) + var(--dk-px)) auto 0;
+  transform: translateX(var(--dk-px));
+  background: var(--kc);
+}
+/* the first card is ink: at Night its field is the neutral print, as above */
+html[data-handoff="handmedown"][data-theme="dark"] .dk-sec.k-ink[data-ho-field]::after { background: var(--print-neutral); }

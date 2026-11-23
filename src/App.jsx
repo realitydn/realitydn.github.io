@@ -18,6 +18,7 @@ import { loadMenu } from "./data/menu-i18n";
 import { buildFaq } from "./data/faq";
 import useFeed from "./hooks/useFeed";
 import useHashLanding from "./hooks/useHashLanding";
+import useHandoff from "./components/deck/handoff/useHandoff";
 
 // Builds the `t` helper from a language code. Callers use `t.use('path.to.key')`.
 // The catalogue must be loaded — every route renders under <Localized>, which
@@ -54,6 +55,8 @@ function HomePage({ lang }) {
   // same shared load Calendar/EventsSchema use — no extra fetch.
   const { loading: feedLoading } = useFeed();
   useHashLanding({ settled: !feedLoading });
+  // The scroll hand-offs under trial — dev server only (deck/handoff/mode.js).
+  useHandoff(lang);
 
   return (
     <div className="min-h-screen">

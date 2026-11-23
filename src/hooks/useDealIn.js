@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from './motion';
+import { HANDOFF } from '../components/deck/handoff/mode';
 
 // useDealIn — a card is DEALT onto the page the first time it scrolls into
 // view: it arrives small and tilted, straightens, lands with overshoot, and
@@ -29,6 +30,8 @@ export default function useDealIn() {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return undefined;
     if (window.__PRERENDER__ || prefersReducedMotion()) return undefined;
+    // A hand-off under trial (dev server only) replaces the deal.
+    if (HANDOFF) return undefined;
 
     // Already on screen (or above it — a deep link landed lower down): the
     // end state is what's there, leave it.

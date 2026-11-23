@@ -220,7 +220,7 @@ function buildLlms(ctx) {
     '- Languages: website in six languages — English, Tiếng Việt, Русский, Українська, 한국어, 日本語; the venue itself is bilingual EN/VI',
     '- Contact: reality.dn@gmail.com',
     '',
-    '## The REALITY app — the live front door',
+    '## The REALITY app',
     '',
     '- [app.realitydn.com](https://app.realitydn.com/): the live event calendar. Every event has its own page with date, time, description and RSVP; reminders and calendar subscription',
     '- [Menu](https://app.realitydn.com/menu): the drinks + snacks menu with prices in VND, in all six languages',

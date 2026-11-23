@@ -42,6 +42,12 @@ const seoOf = (lang) => STR[lang].seo || STR.EN.seo;
 
 const SITE = 'https://realitydn.com';
 
+// DEV ONLY — the card-motion lab at /deck-lab (components/deck/lab/). In a
+// production build `import.meta.env.DEV` is the literal `false`, so this
+// import and its route are dropped: nothing of the lab is built, prerendered
+// or linked.
+const DeckLab = import.meta.env.DEV ? React.lazy(() => import('./components/deck/lab/DeckLab')) : null;
+
 function HomePage({ lang }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = makeT(lang);
@@ -124,6 +130,8 @@ export default function App() {
             <Route path={routeFor(code, '/host-guide')} element={<Localized lang={code}><HostGuideRoute lang={code} /></Localized>} />
           </React.Fragment>
         ))}
+
+        {DeckLab ? <Route path="/deck-lab" element={<Localized lang="EN" menu><DeckLab /></Localized>} /> : null}
 
         {/* Any unknown path → a real 404 page (prerendered to dist/404.html,
             which Cloudflare Pages serves with a 404 status). Redirecting to

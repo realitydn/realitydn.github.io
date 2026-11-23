@@ -93,10 +93,6 @@
 .dk-hero-status { margin: 10px 0 0; font-size: 14px; color: var(--fg-dim); }
 .dk-hero-lede { margin: 6px 0 0; font: 600 18px/1.4 var(--mont); max-width: 30ch; }
 .dk-hero-acts { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 0; }
-.dk-hero-hint {
-  margin: 22px 0 0; color: var(--blue-text);
-  font: 700 12px/1.4 var(--mont); letter-spacing: .14em; text-transform: uppercase;
-}
 .dk-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 48px; padding: 12px 22px; font-size: 13px; line-height: 1.2; text-align: center;
@@ -105,25 +101,41 @@
 
 /* The table: every card, face up. Three across at every width — on a phone
    that is a compact 3×3 that fits the first screen. */
-.dk-table { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.dk-table { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 10px; }
 
 .dk-card {
   position: relative; display: flex; flex-direction: column; min-width: 0;
   aspect-ratio: 1 / 1.12;
   background: var(--kc); color: var(--kon);
   border: 2px solid var(--tkt-edge);
-  box-shadow: 4px 4px 0 var(--print-neutral);
+  /* the print (cpx), the hover lift and its print (up), the press (sink) */
+  --dk-cpx: 4px; --dk-lift: -5px; --dk-up: 8px; --dk-sink: 3px;
+  box-shadow: var(--dk-cpx) var(--dk-cpx) 0 var(--print-neutral);
   text-decoration: none; overflow: hidden;
-  transform: rotate(var(--r, 0deg));
-  transition: transform 160ms var(--ease-stamp), box-shadow 160ms var(--ease-stamp);
+  transition: transform var(--dur-tap) var(--ease-stamp), box-shadow var(--dur-tap) var(--ease-stamp);
 }
-/* Dealt by hand: no two sit quite square. */
-.dk-card:nth-child(3n+1) { --r: -.9deg; }
-.dk-card:nth-child(3n+2) { --r: .6deg; }
-.dk-card:nth-child(3n)   { --r: -.4deg; }
-.dk-card:nth-child(5)    { --r: 1deg; }
-.dk-card:hover { transform: translateY(-5px) rotate(0deg); box-shadow: 8px 8px 0 var(--print-neutral); }
-.dk-card:active { transform: translateY(2px) rotate(0deg); box-shadow: 3px 3px 0 var(--print-neutral); }
+/* AT REST the nine sit square: no rotation, one print, one gap. Nothing may
+   set a per-card transform or shadow at rest: the grid is the look.
+   HOVER: a quick wiggle as the card lifts off its print, then it settles
+   square, still lifted. PRESS: it sinks into the print. FOCUS: the
+   misregister plate. Under reduced motion only the focus plate moves. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .dk-card:hover { transform: translateY(var(--dk-lift)); box-shadow: var(--dk-up) var(--dk-up) 0 var(--print-neutral); }
+  .dk-card:hover:not(:focus-visible):not(:active) { animation: dk-jiggle 340ms var(--ease-stamp) both; }
+}
+@keyframes dk-jiggle {
+  0%   { transform: none; }
+  30%  { transform: translateY(var(--dk-lift)) rotate(-1.4deg); }
+  58%  { transform: translateY(var(--dk-lift)) rotate(.9deg); }
+  80%  { transform: translateY(var(--dk-lift)) rotate(-.3deg); }
+  100% { transform: translateY(var(--dk-lift)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dk-card:active {
+    transform: translate(var(--dk-sink), var(--dk-sink));
+    box-shadow: calc(var(--dk-cpx) - var(--dk-sink)) calc(var(--dk-cpx) - var(--dk-sink)) 0 var(--print-neutral);
+  }
+}
 /* focus: the misregister plate — the face slips up-left off a solid plate */
 .dk-card:focus-visible {
   transform: translate(-4px, -4px); background-color: var(--kc);
@@ -229,13 +241,8 @@
     aspect-ratio: auto;
     /* three rows fit one screen where the screen allows it */
     min-height: clamp(196px, calc((100svh - 150px) / 3 - 20px), 292px);
-    box-shadow: 5px 5px 0 var(--print-neutral);
+    --dk-cpx: 5px; --dk-lift: -6px; --dk-up: 9px;
   }
-  .dk-card:nth-child(3n+1) { --r: -1.2deg; }
-  .dk-card:nth-child(3n+2) { --r: .7deg; }
-  .dk-card:nth-child(3n)   { --r: -.5deg; }
-  .dk-card:nth-child(5)    { --r: 1.4deg; }
-  .dk-card:hover { transform: translateY(-6px) rotate(0deg); box-shadow: 9px 9px 0 var(--print-neutral); }
 
   .dk-ch { padding: 9px 12px; border-bottom: 2px solid currentColor; }
   .dk-ch-title, .dk-ch-meta { display: inline; }
@@ -279,7 +286,6 @@
   .dk-hero-top { align-self: end; }
   .dk-hero-more { align-self: start; margin-top: 22px; }
   .dk-hero-h1 { font-size: clamp(38px, 4.3vw, 62px); }
-  .dk-hero-hint { margin-top: 36px; }
 }
 
 /* ── 5. The hand: every card, always within reach. Navigation, so it sits

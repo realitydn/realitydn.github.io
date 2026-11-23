@@ -487,8 +487,7 @@ export default {
   // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
   // key for key. Vietnamese written by Claude (not a literal rendering of the English placeholders).
   "deck": {
-    "nav": "Các lá bài",
-    "hint": "{n} lá bài. Chọn một lá, hoặc cứ cuộn xuống, bài sẽ tự chia.",
+    "nav": "Trên trang này",
     "tonightCta": "Tối nay có gì",
     "status": {
       "open": "Đang mở cửa",
@@ -589,7 +588,7 @@ export default {
       "trendAlt": "Số sự kiện trong mỗi 30 ngày gần nhất, tăng từ {first} lên {last} tính đến {date}",
       "peak": "Cao nhất: {n}, vào {date}",
       "weekdays": "Theo ngày trong tuần",
-      "source": "Đếm từ lịch sự kiện. Đây là số liệu chốt tại một thời điểm, không cập nhật trực tiếp.",
+      "source": "Đếm từ lịch sự kiện.",
       "link": "Xem toàn bộ báo cáo sự kiện"
     },
     "giving": {
@@ -606,7 +605,7 @@ export default {
     },
     "inside": {
       "photos": "{n} ảnh",
-      "lede": "Dạo một vòng quanh quán.",
+      "lede": "Ba tầng, trên cùng là sân thượng.",
       "walls": "Trên tường",
       "gapWalls": "Đang trưng bày gì"
     },
@@ -617,7 +616,7 @@ export default {
       "live": "Miễn phí cho sự kiện cộng đồng công khai · thuê phòng từ {price} mỗi giờ"
     },
     "connect": {
-      "ways": "{n} cách kết nối",
+      "ways": "{n} liên kết",
       "app": "App",
       "social": "Instagram + Facebook"
     },

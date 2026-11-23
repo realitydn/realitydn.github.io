@@ -70,7 +70,6 @@ export default function DeckHero({ t, lang }) {
             </a>
           ) : null}
         </div>
-        <p className="dk-hero-hint">{fill(S('hint'), { n: DECK.length })}</p>
       </div>
     </section>
   );

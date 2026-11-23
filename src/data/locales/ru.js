@@ -487,8 +487,7 @@ export default {
   // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
   // key for key. Drafted by Claude 23.11.26; not yet read by a native speaker.
   "deck": {
-    "nav": "Карты",
-    "hint": "Карт: {n}. Выберите любую — или листайте вниз, они разложатся сами.",
+    "nav": "На этой странице",
     "tonightCta": "Что сегодня вечером",
     "status": {
       "open": "Сейчас открыто",
@@ -589,7 +588,7 @@ export default {
       "trendAlt": "События за каждые последние 30 дней: рост с {first} до {last} к {date}",
       "peak": "Максимум: {n}, {date}",
       "weekdays": "По дням недели",
-      "source": "Посчитано по календарю. Это срез на дату, а не живой счётчик.",
+      "source": "Посчитано по календарю.",
       "link": "Полный отчёт о событиях"
     },
     "giving": {
@@ -606,7 +605,7 @@ export default {
     },
     "inside": {
       "photos": "Фото: {n}",
-      "lede": "Загляните внутрь.",
+      "lede": "Три этажа, наверху — терраса на крыше.",
       "walls": "На стенах",
       "gapWalls": "Что висит сейчас"
     },
@@ -617,7 +616,7 @@ export default {
       "live": "Открытые события для сообщества — бесплатно · аренда зала от {price} в час"
     },
     "connect": {
-      "ways": "Способов: {n}",
+      "ways": "Ссылок: {n}",
       "app": "Приложение",
       "social": "Instagram + Facebook"
     },

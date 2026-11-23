@@ -487,8 +487,7 @@ export default {
   // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
   // key for key. Drafted by Claude 23.11.26; not yet read by a native speaker.
   "deck": {
-    "nav": "カード",
-    "hint": "カードは{n}枚。1枚選ぶか、スクロールすると順に配られます。",
+    "nav": "このページ",
     "tonightCta": "今夜のイベント",
     "status": {
       "open": "ただいま営業中",
@@ -589,7 +588,7 @@ export default {
       "trendAlt": "直近30日ごとのイベント数：{date}時点で{first}件から{last}件に増加",
       "peak": "最多：{n}件（{date}）",
       "weekdays": "曜日別",
-      "source": "カレンダーをもとに集計。リアルタイムではなく、ある時点の記録です。",
+      "source": "カレンダーをもとに集計。",
       "link": "イベントレポート全文"
     },
     "giving": {
@@ -606,7 +605,7 @@ export default {
     },
     "inside": {
       "photos": "写真{n}枚",
-      "lede": "店内をのぞいてみてください。",
+      "lede": "3フロア、最上階は屋上テラス。",
       "walls": "壁の展示",
       "gapWalls": "現在の展示"
     },
@@ -617,7 +616,7 @@ export default {
       "live": "公開コミュニティイベントは無料 · 貸切は1時間{price}から"
     },
     "connect": {
-      "ways": "{n}つの方法",
+      "ways": "リンク{n}件",
       "app": "アプリ",
       "social": "Instagram + Facebook"
     },

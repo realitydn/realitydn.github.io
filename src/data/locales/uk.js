@@ -487,8 +487,7 @@ export default {
   // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
   // key for key. Drafted by Claude 23.11.26; not yet read by a native speaker.
   "deck": {
-    "nav": "Карти",
-    "hint": "Карт: {n}. Оберіть будь-яку — або гортайте вниз, вони розкладуться самі.",
+    "nav": "На цій сторінці",
     "tonightCta": "Що сьогодні ввечері",
     "status": {
       "open": "Зараз відчинено",
@@ -589,7 +588,7 @@ export default {
       "trendAlt": "Події за кожні останні 30 днів: зростання з {first} до {last} станом на {date}",
       "peak": "Максимум: {n}, {date}",
       "weekdays": "За днями тижня",
-      "source": "Пораховано за календарем. Це зріз на дату, а не живий лічильник.",
+      "source": "Пораховано за календарем.",
       "link": "Повний звіт про події"
     },
     "giving": {
@@ -606,7 +605,7 @@ export default {
     },
     "inside": {
       "photos": "Фото: {n}",
-      "lede": "Зазирніть усередину.",
+      "lede": "Три поверхи, нагорі — тераса на даху.",
       "walls": "На стінах",
       "gapWalls": "Що висить зараз"
     },
@@ -617,7 +616,7 @@ export default {
       "live": "Відкриті події для спільноти — безкоштовно · оренда залу від {price} за годину"
     },
     "connect": {
-      "ways": "Способів: {n}",
+      "ways": "Посилань: {n}",
       "app": "Застосунок",
       "social": "Instagram + Facebook"
     },

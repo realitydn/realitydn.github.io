@@ -163,7 +163,7 @@ export default {
     "loading": "Loading what's on…",
     "empty": "No events scheduled right now — check our socials for what's on.",
     "errorTitle": "Couldn't load the calendar",
-    "errorBody": "Our live calendar is taking a moment. Join the WhatsApp community below for what's on, or add our calendar to yours.",
+    "errorBody": "The calendar didn't load. Join the WhatsApp community below for what's on, or add our calendar to yours.",
     "addToCalendar": "Add our calendar to yours",
     "details": "Details",
     "today": "Today",
@@ -181,7 +181,7 @@ export default {
   },
   "getApp": {
     "title": "Get the REALITY app",
-    "blurb": "The full calendar in your pocket — RSVP, reminders, and what's on tonight.",
+    "blurb": "The full calendar, with RSVPs and reminders.",
     "cta": "Open the app",
     "button": "Get the app"
   },
@@ -416,7 +416,7 @@ export default {
   },
   "hostGuide": {
     "title": "Host Guide",
-    "message": "This page is coming soon. Check back for a complete guide to hosting at REALITY.",
+    "message": "A guide to hosting at REALITY. Coming soon.",
     "backButton": "Go back to REALITY"
   },
   "skipLink": "Skip to content",
@@ -474,14 +474,14 @@ export default {
   "heroPrefix": "REALITY Đà Nẵng —",
   "faq": {
     "whatQ": "What events are on at REALITY?",
-    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The live, always-current calendar is in the REALITY app:",
+    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The current calendar is in the REALITY app:",
     "freeQ": "Are events at REALITY free?",
     "freeA": "Most events are free to attend — please buy a drink to support the space. Some events have an entry fee or ask for pre-registration; that's marked on the weekly schedule, on the event posters and on each event in the REALITY app.",
     "hoursQ": "What are REALITY's opening hours?",
     "hoursA": "REALITY is open every day, 11:00 – 2:00 (11 AM to 2 AM), weekends included. The third-floor rooftop patio closes at midnight.",
     "whereQ": "Where is REALITY in Đà Nẵng?",
     "whereA": "86 Mai Thúc Lân, Đà Nẵng, Việt Nam — in the Mỹ An area near Mỹ Khê beach. Three floors: a ground-floor café and lounge, a second-floor event space and lounge, and a third-floor rooftop patio.",
-    "hostA": "Send us your idea through the Event Proposal Form on the homepage (Info → Host an event). For public community events we help reserve and set up the space and equipment and help promote the event; we just ask that guests buy a drink. A public event with an entry fee either rents the space or splits entry 50/50 with REALITY. Private or for-profit events that reserve a whole room pay an hourly rental fee. Please read the Event Guidelines first:",
+    "hostA": "Send us your idea through the Event Proposal Form under Host an event on the home page. For public community events we help reserve and set up the space and equipment and help promote the event; we just ask that guests buy a drink. A public event with an entry fee either rents the space or splits entry 50/50 with REALITY. Private or for-profit events that reserve a whole room pay an hourly rental fee. Please read the Event Guidelines first:",
     "rentQ": "Can I rent a room at REALITY for a private event?",
     "rentA": "Yes. Reserving a whole room, or presenting a commercial product or service, carries an hourly rental fee based on the room and time of day. Rates per hour, in thousands of VND (₫):",
     "petsQ": "Can I bring my dog or pet to REALITY?"
@@ -642,7 +642,7 @@ export default {
   },
   "notFound": {
     "title": "Page not found",
-    "body": "This page doesn't exist — or it moved. The rest of REALITY is right where you left it.",
+    "body": "This page doesn't exist, or it moved.",
     "langs": "Other languages"
   },
   "seo": {

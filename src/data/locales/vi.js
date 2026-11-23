@@ -161,7 +161,7 @@ export default {
     "loading": "Đang tải lịch sự kiện…",
     "empty": "Hiện chưa có sự kiện nào — theo dõi mạng xã hội của chúng tôi để cập nhật.",
     "errorTitle": "Không tải được lịch",
-    "errorBody": "Lịch trực tiếp đang cần một chút thời gian. Tham gia nhóm WhatsApp bên dưới để cập nhật, hoặc thêm lịch của chúng tôi vào lịch của bạn.",
+    "errorBody": "Không tải được lịch. Tham gia nhóm WhatsApp bên dưới để cập nhật, hoặc thêm lịch của chúng tôi vào lịch của bạn.",
     "addToCalendar": "Thêm lịch của chúng tôi vào lịch của bạn",
     "details": "Chi tiết",
     "today": "Hôm nay",
@@ -179,7 +179,7 @@ export default {
   },
   "getApp": {
     "title": "Tải app REALITY",
-    "blurb": "Lịch sự kiện trong túi bạn — RSVP, nhắc lịch và tối nay có gì.",
+    "blurb": "Toàn bộ lịch sự kiện, kèm RSVP và nhắc lịch.",
     "cta": "Mở app",
     "button": "Tải app"
   },
@@ -414,7 +414,7 @@ export default {
   },
   "hostGuide": {
     "title": "Hướng dẫn tổ chức",
-    "message": "Trang này sẽ sớm ra mắt. Quay lại sau để xem hướng dẫn đầy đủ về việc tổ chức sự kiện tại REALITY.",
+    "message": "Hướng dẫn tổ chức sự kiện tại REALITY. Sắp ra mắt.",
     "backButton": "Quay lại REALITY"
   },
   "skipLink": "Bỏ qua đến nội dung",
@@ -472,14 +472,14 @@ export default {
   "heroPrefix": "REALITY Đà Nẵng —",
   "faq": {
     "whatQ": "REALITY có những sự kiện gì?",
-    "whatA": "Gần như ngày nào cũng có: nhạc sống, open mic và acoustic jam trên sân thượng, pub quiz, đêm board game, đêm cờ vua, câu lạc bộ phim và chiếu phim ngắn, karaoke, giao lưu ngôn ngữ và câu lạc bộ văn hoá (giao lưu người Việt – người nước ngoài, câu lạc bộ tiếng Pháp, tiếng Trung), lớp nhảy, buổi nói chuyện, workshop và triển lãm nghệ thuật. Lịch sự kiện luôn cập nhật nằm trong app REALITY:",
+    "whatA": "Gần như ngày nào cũng có: nhạc sống, open mic và acoustic jam trên sân thượng, pub quiz, đêm board game, đêm cờ vua, câu lạc bộ phim và chiếu phim ngắn, karaoke, giao lưu ngôn ngữ và câu lạc bộ văn hoá (giao lưu người Việt – người nước ngoài, câu lạc bộ tiếng Pháp, tiếng Trung), lớp nhảy, buổi nói chuyện, workshop và triển lãm nghệ thuật. Lịch sự kiện mới nhất có trong app REALITY:",
     "freeQ": "Sự kiện ở REALITY có miễn phí không?",
     "freeA": "Phần lớn sự kiện đều miễn phí — bạn chỉ cần mua đồ uống để ủng hộ quán. Một số sự kiện có phí vào cửa hoặc cần đăng ký trước; điều này được ghi rõ trên lịch hàng tuần, trên poster và trên trang của từng sự kiện trong app REALITY.",
     "hoursQ": "REALITY mở cửa lúc mấy giờ?",
     "hoursA": "REALITY mở cửa mỗi ngày từ 11:00 đến 2:00 sáng, kể cả cuối tuần. Sân thượng tầng 3 đóng cửa lúc nửa đêm.",
     "whereQ": "REALITY ở đâu tại Đà Nẵng?",
     "whereA": "86 Mai Thúc Lân, Đà Nẵng, Việt Nam — khu Mỹ An, gần biển Mỹ Khê. Quán có ba tầng: quán cà phê và sảnh ở tầng 1, không gian sự kiện và sảnh ở tầng 2, và sân thượng ở tầng 3.",
-    "hostA": "Gửi ý tưởng của bạn qua Form đề xuất sự kiện trên trang chủ (Thông tin → Tổ chức sự kiện). Với sự kiện cộng đồng công khai, chúng tôi giúp giữ chỗ, sắp xếp không gian và thiết bị, và hỗ trợ quảng bá; chỉ mong khách mua đồ uống. Sự kiện công khai có thu phí vào cửa thì thuê không gian hoặc chia đôi tiền vé 50/50 với REALITY. Sự kiện riêng tư hoặc thương mại cần giữ nguyên một phòng sẽ trả phí thuê theo giờ. Vui lòng đọc Hướng dẫn Sự kiện trước:",
+    "hostA": "Gửi ý tưởng của bạn qua Form đề xuất sự kiện ở mục Tổ chức sự kiện trên trang chủ. Với sự kiện cộng đồng công khai, chúng tôi giúp giữ chỗ, sắp xếp không gian và thiết bị, và hỗ trợ quảng bá; chỉ mong khách mua đồ uống. Sự kiện công khai có thu phí vào cửa thì thuê không gian hoặc chia đôi tiền vé 50/50 với REALITY. Sự kiện riêng tư hoặc thương mại cần giữ nguyên một phòng sẽ trả phí thuê theo giờ. Vui lòng đọc Hướng dẫn Sự kiện trước:",
     "rentQ": "Có thể thuê phòng ở REALITY cho sự kiện riêng không?",
     "rentA": "Có. Giữ nguyên một phòng, hoặc giới thiệu sản phẩm hay dịch vụ thương mại, sẽ tính phí thuê theo giờ tuỳ theo phòng và khung giờ. Giá mỗi giờ, đơn vị nghìn đồng (₫):",
     "petsQ": "Có được mang chó hoặc thú cưng đến REALITY không?"
@@ -627,7 +627,7 @@ export default {
   },
   "notFound": {
     "title": "Không tìm thấy trang",
-    "body": "Trang này không tồn tại — hoặc đã được chuyển đi. Phần còn lại của REALITY vẫn ở nguyên chỗ cũ.",
+    "body": "Trang này không tồn tại, hoặc đã được chuyển đi.",
     "langs": "Ngôn ngữ khác"
   },
   "seo": {

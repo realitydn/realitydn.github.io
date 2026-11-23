@@ -205,19 +205,29 @@ export function createStage(mode = {}) {
       window.removeEventListener('hashchange', onHash);
     });
 
-    // Keyboard focus moving into a card that is held out of sight: bring its
-    // natural position on screen (the browser thinks it already is).
+    // Keyboard focus landing on something in a HELD card. A held card is only
+    // really showing between its natural top and its natural end: past its
+    // end the next card is over it, before its top the card before still is.
+    // The browser cannot know that (it sees the held rectangle, on screen), so
+    // when focus lands outside that stretch the page is scrolled just far
+    // enough to bring the stretch over the focused thing.
     let byKey = false;
     const onKey = (e) => { if (e.key === 'Tab') byKey = true; };
     const onPointer = () => { byKey = false; };
     const onFocus = (e) => {
       if (!byKey || !secsEl.contains(e.target)) return;
-      const y = st.naturalY(e.target);
       const sec = e.target.closest('.dk-sec');
-      const lid = st.strip + (mode.head && sec ? st.headH[secs.indexOf(sec)] : 0);
-      if (y < lid + 8 || y > st.vh - 72) {
-        window.scrollTo({ top: window.scrollY + y - (lid + 32), behavior: 'instant' });
-      }
+      const i = sec ? secs.indexOf(sec) : -1;
+      if (i < 0) return;
+      st.read();
+      const r = e.target.getBoundingClientRect();
+      const top = st.top[i] + st.padTop;                 // where its card naturally starts
+      const end = st.top[i] + st.H[i] - st.padBottom;    // …and ends
+      const room = 40;
+      let dy = 0;
+      if (r.bottom > end - room) dy = -(r.bottom - (end - room)); // the next card is over it: scroll back
+      else if (r.top < top + room) dy = top + room - r.top;       // the card before is still over it: scroll on
+      if (dy) window.scrollBy({ top: dy, behavior: 'instant' });
     };
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('pointerdown', onPointer, true);

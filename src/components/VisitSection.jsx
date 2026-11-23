@@ -11,8 +11,12 @@ const MAPS_PLACE = 'https://maps.google.com/?cid=9022999249739857995';
 // From the same JSON-LD (never invent a phone number — there isn't one).
 const EMAIL = 'reality.dn@gmail.com';
 
-export default function VisitSection({ lang, t }) {
+// `embedded` (the deck home page, 23.11.26): the facts ticket and the map sit
+// inside the opened "Find us" card, which supplies the frame, the heading and
+// the #visit anchor — so the blue band and its field are left out.
+export default function VisitSection({ lang, t, embedded = false }) {
   const S = STR[lang];
+  const Wrap = embedded ? 'div' : 'section';
   return (
     // The visit band — wayfinding is blue's whole job (hero, visit,
     // subscribe are the blue bands). Same contract as the hero: .b-wayfind
@@ -20,9 +24,9 @@ export default function VisitSection({ lang, t }) {
     // 5.10.26), and the buttons fall out of the band tokens (primary = cream
     // fill, secondary = cream outline) with no local patches. The facts sit on
     // a ticket, which brings its own ink-on-cream.
-    <section id="visit" className="band b-wayfind section">
-      <BandField lead="blue" />
-      <div className="max-w-7xl mx-auto px-4 py-16">
+    <Wrap id={embedded ? undefined : 'visit'} className={embedded ? 'visit-embed' : 'band b-wayfind section'}>
+      {!embedded && <BandField lead="blue" />}
+      <div className={embedded ? undefined : 'max-w-7xl mx-auto px-4 py-16'}>
         <Reveal stagger className="grid grid-cols-12 gap-6 items-start">
           {/* Night v2 (both themes since round 2): the facts + buttons are a
               cream ticket (reading), the map a ticket frame. At night the band
@@ -30,9 +34,11 @@ export default function VisitSection({ lang, t }) {
               they sit on the blue field, so the print falls to the neutral
               ink one (blue on blue would vanish). */}
           <div className="visit-card tkt col-span-12 md:col-span-5">
-            <h2 className="h-section text-3xl md:text-4xl text-ink">
-              {t.use('findUs')}
-            </h2>
+            {!embedded && (
+              <h2 className="h-section text-3xl md:text-4xl text-ink">
+                {t.use('findUs')}
+              </h2>
+            )}
             {/* The address IS the way there — it opens the Maps listing. */}
             <p className="mt-4 font-body text-ink">
               <a
@@ -121,6 +127,6 @@ export default function VisitSection({ lang, t }) {
           </div>
         </Reveal>
       </div>
-    </section>
+    </Wrap>
   );
 }

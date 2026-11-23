@@ -484,6 +484,148 @@ export default {
     "rentA": "Có. Giữ nguyên một phòng, hoặc giới thiệu sản phẩm hay dịch vụ thương mại, sẽ tính phí thuê theo giờ tuỳ theo phòng và khung giờ. Giá mỗi giờ, đơn vị nghìn đồng (₫):",
     "petsQ": "Có được mang chó hoặc thú cưng đến REALITY không?"
   },
+  // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
+  // key for key. Vietnamese written by Claude (not a literal rendering of the English placeholders).
+  "deck": {
+    "nav": "Các lá bài",
+    "hint": "{n} lá bài. Chọn một lá, hoặc cứ cuộn xuống, bài sẽ tự chia.",
+    "tonightCta": "Tối nay có gì",
+    "status": {
+      "open": "Đang mở cửa",
+      "closed": "Hiện đang đóng cửa",
+      "till": "đến {time}",
+      "opens": "mở lúc {time}"
+    },
+    "cards": {
+      "building": {
+        "title": "Đang diễn ra",
+        "short": "Đang diễn ra"
+      },
+      "first": {
+        "title": "Lần đầu đến đây?",
+        "short": "Lần đầu"
+      },
+      "menu": {
+        "title": "Thực đơn",
+        "short": "Thực đơn"
+      },
+      "held": {
+        "title": "Sự kiện đã tổ chức",
+        "short": "Đã tổ chức"
+      },
+      "giving": {
+        "title": "Gây quỹ từ thiện",
+        "short": "Từ thiện"
+      },
+      "inside": {
+        "title": "Bên trong",
+        "short": "Bên trong"
+      },
+      "host": {
+        "title": "Tổ chức sự kiện",
+        "short": "Tổ chức"
+      },
+      "connect": {
+        "title": "Kết nối",
+        "short": "Kết nối"
+      },
+      "visit": {
+        "title": "Địa chỉ",
+        "short": "Địa chỉ"
+      }
+    },
+    "building": {
+      "label": "Toà nhà lúc này",
+      "roomsOn": "{n} phòng đang có sự kiện",
+      "roomOn": "1 phòng đang có sự kiện",
+      "nothingOn": "Hiện chưa có sự kiện nào",
+      "nextAt": "Tiếp theo: {title} lúc {time}",
+      "next": "Tiếp theo",
+      "noEvent": "Hiện không có sự kiện",
+      "bar": "Quầy bar",
+      "sky": "Khoảng trời",
+      "floor": "Tầng {n}",
+      "street": "mặt đường",
+      "nothingToday": "Hôm nay không còn sự kiện nào nữa.",
+      "nothingTomorrow": "Ngày mai chưa có sự kiện nào trên lịch."
+    },
+    "first": {
+      "count": "{n} bước",
+      "steps": [
+        {
+          "t": "Bước vào",
+          "b": "Quán mở cửa mỗi ngày, từ 11:00 đến 02:00."
+        },
+        {
+          "t": "Gọi đồ uống",
+          "b": "Ai dùng không gian cũng gọi một món. Tiền là thứ có thật, và nhờ nó mà quán còn sáng đèn."
+        },
+        {
+          "t": "Chọn một phòng",
+          "b": "Hầu như tối nào cũng có sự kiện, và phần lớn là miễn phí. Sự kiện nào thu phí thì poster ghi rõ."
+        },
+        {
+          "t": "Cứ tham gia",
+          "b": "Ngồi xuống, nhập bàn, cầm mic. Các host luôn sẵn sàng kéo bạn vào cuộc."
+        }
+      ]
+    },
+    "menu": {
+      "now": "Trong thực đơn",
+      "sections": "{n} mục"
+    },
+    "held": {
+      "asOf": "Tính đến {date}",
+      "perWeek": "{n} sự kiện mỗi tuần",
+      "since": "từ {date}",
+      "events": "sự kiện",
+      "weeks": "{n} tuần",
+      "rowWeek": "Trung bình mỗi tuần",
+      "rowSeries": "Số chuỗi sự kiện",
+      "rowRunning": "Chuỗi vẫn đang diễn ra",
+      "rowOnce": "Chỉ diễn ra một lần",
+      "mostRun": "Tổ chức nhiều nhất",
+      "trend": "Số sự kiện trong mỗi 30 ngày gần nhất",
+      "trendAlt": "Số sự kiện trong mỗi 30 ngày gần nhất, tăng từ {first} lên {last} tính đến {date}",
+      "peak": "Cao nhất: {n}, vào {date}",
+      "weekdays": "Theo ngày trong tuần",
+      "source": "Đếm từ lịch sự kiện. Đây là số liệu chốt tại một thời điểm, không cập nhật trực tiếp.",
+      "link": "Xem toàn bộ báo cáo sự kiện"
+    },
+    "giving": {
+      "count": "{n} lần gây quỹ",
+      "raised": "Đã gây quỹ {total} tại đây",
+      "lede": "Những lần gây quỹ tại REALITY, và số tiền đã đi đâu.",
+      "fundraiser": "Gây quỹ",
+      "last": "Gần nhất: {title} · {date}",
+      "givenTo": "Trao cho",
+      "standIn": "Tạm thời là số làm tròn. Con số chính xác sẽ được cập nhật sau.",
+      "all": "Tất cả các lần gây quỹ trong app",
+      "gapDate": "Ngày",
+      "gapRecipient": "Nơi nhận"
+    },
+    "inside": {
+      "photos": "{n} ảnh",
+      "lede": "Dạo một vòng quanh quán.",
+      "walls": "Trên tường",
+      "gapWalls": "Đang trưng bày gì"
+    },
+    "host": {
+      "rooms": "{n} phòng",
+      "free": "để tổ chức sự kiện cộng đồng công khai.",
+      "from": "Thuê phòng riêng từ {price} mỗi giờ.",
+      "live": "Miễn phí cho sự kiện cộng đồng công khai · thuê phòng từ {price} mỗi giờ"
+    },
+    "connect": {
+      "ways": "{n} cách kết nối",
+      "app": "App",
+      "social": "Instagram + Facebook"
+    },
+    "visit": {
+      "area": "Mỹ An, gần biển Mỹ Khê",
+      "qrAlt": "Mã QR dẫn đến realitydn.com"
+    }
+  },
   "notFound": {
     "title": "Không tìm thấy trang",
     "body": "Trang này không tồn tại — hoặc đã được chuyển đi. Phần còn lại của REALITY vẫn ở nguyên chỗ cũ.",

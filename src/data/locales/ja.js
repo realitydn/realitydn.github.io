@@ -484,6 +484,148 @@ export default {
     "rentA": "はい。部屋を丸ごと貸し切る場合や、商品・サービスを紹介する場合は、部屋と時間帯に応じた時間単位の利用料がかかります。1時間あたりの料金(単位:千ドン、₫):",
     "petsQ": "REALITYに犬やペットを連れて行ってもいいですか?"
   },
+  // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
+  // key for key. Drafted by Claude 23.11.26; not yet read by a native speaker.
+  "deck": {
+    "nav": "カード",
+    "hint": "カードは{n}枚。1枚選ぶか、スクロールすると順に配られます。",
+    "tonightCta": "今夜のイベント",
+    "status": {
+      "open": "ただいま営業中",
+      "closed": "ただいま営業時間外",
+      "till": "{time}まで",
+      "opens": "{time}に開店"
+    },
+    "cards": {
+      "building": {
+        "title": "いま開催中",
+        "short": "開催中"
+      },
+      "first": {
+        "title": "はじめての方へ",
+        "short": "はじめて"
+      },
+      "menu": {
+        "title": "メニュー",
+        "short": "メニュー"
+      },
+      "held": {
+        "title": "これまでのイベント",
+        "short": "実績"
+      },
+      "giving": {
+        "title": "チャリティ",
+        "short": "チャリティ"
+      },
+      "inside": {
+        "title": "店内",
+        "short": "店内"
+      },
+      "host": {
+        "title": "イベントを開く",
+        "short": "主催"
+      },
+      "connect": {
+        "title": "つながる",
+        "short": "つながる"
+      },
+      "visit": {
+        "title": "場所はこちら",
+        "short": "場所"
+      }
+    },
+    "building": {
+      "label": "いまの建物の様子",
+      "roomsOn": "{n}部屋で開催中",
+      "roomOn": "1部屋で開催中",
+      "nothingOn": "いま開催中のイベントはありません",
+      "nextAt": "次は{time}から「{title}」",
+      "next": "次",
+      "noEvent": "いまはイベントなし",
+      "bar": "バー",
+      "sky": "空",
+      "floor": "{n}階",
+      "street": "地上階",
+      "nothingToday": "本日のイベントは以上です。",
+      "nothingTomorrow": "明日の予定はまだありません。"
+    },
+    "first": {
+      "count": "{n}ステップ",
+      "steps": [
+        {
+          "t": "入ってみる",
+          "b": "バーは毎日11:00から02:00まで営業しています。"
+        },
+        {
+          "t": "ドリンクを頼む",
+          "b": "スペースを利用する方は、みなさん何か1品ご注文ください。お金は実在します。そのおかげで明かりが灯っています。"
+        },
+        {
+          "t": "部屋を選ぶ",
+          "b": "ほぼ毎晩何かが開かれていて、その多くは無料です。有料の場合はポスターに書いてあります。"
+        },
+        {
+          "t": "まずは参加",
+          "b": "座って聞く、テーブルに加わる、マイクを握る。ホストが輪に入れてくれます。"
+        }
+      ]
+    },
+    "menu": {
+      "now": "メニューより",
+      "sections": "{n}セクション"
+    },
+    "held": {
+      "asOf": "{date}時点",
+      "perWeek": "週{n}件",
+      "since": "{date}から",
+      "events": "イベント",
+      "weeks": "{n}週間",
+      "rowWeek": "週あたりの平均",
+      "rowSeries": "シリーズの種類",
+      "rowRunning": "継続中のシリーズ",
+      "rowOnce": "1回のみ開催",
+      "mostRun": "開催回数トップ",
+      "trend": "直近30日ごとのイベント数",
+      "trendAlt": "直近30日ごとのイベント数：{date}時点で{first}件から{last}件に増加",
+      "peak": "最多：{n}件（{date}）",
+      "weekdays": "曜日別",
+      "source": "カレンダーをもとに集計。リアルタイムではなく、ある時点の記録です。",
+      "link": "イベントレポート全文"
+    },
+    "giving": {
+      "count": "募金イベント{n}回",
+      "raised": "ここで集まった金額 {total}",
+      "lede": "REALITYで開かれた募金イベントと、その寄付先。",
+      "fundraiser": "募金イベント",
+      "last": "直近：{title} · {date}",
+      "givenTo": "寄付先",
+      "standIn": "現在は概算です。正確な金額は後日掲載します。",
+      "all": "アプリですべての募金イベントを見る",
+      "gapDate": "日付",
+      "gapRecipient": "寄付先"
+    },
+    "inside": {
+      "photos": "写真{n}枚",
+      "lede": "店内をのぞいてみてください。",
+      "walls": "壁の展示",
+      "gapWalls": "現在の展示"
+    },
+    "host": {
+      "rooms": "{n}部屋",
+      "free": "で公開コミュニティイベントを開催できます。",
+      "from": "貸切は1時間{price}から。",
+      "live": "公開コミュニティイベントは無料 · 貸切は1時間{price}から"
+    },
+    "connect": {
+      "ways": "{n}つの方法",
+      "app": "アプリ",
+      "social": "Instagram + Facebook"
+    },
+    "visit": {
+      "area": "ミーアン地区、ミーケービーチ近く",
+      "qrAlt": "realitydn.comのQRコード"
+    }
+  },
   "notFound": {
     "title": "ページが見つかりません",
     "body": "このページは存在しないか、移動しました。REALITYのほかの場所はそのままです。",

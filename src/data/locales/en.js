@@ -486,6 +486,161 @@ export default {
     "rentA": "Yes. Reserving a whole room, or presenting a commercial product or service, carries an hourly rental fee based on the room and time of day. Rates per hour, in thousands of VND (₫):",
     "petsQ": "Can I bring my dog or pet to REALITY?"
   },
+  // ───────────────────────────────────────────────────────────────────────
+  // THE DECK — the home page (23.11.26). EVERY NEW ENGLISH STRING written for
+  // it is in this one block, and every one is a PLACEHOLDER: Donald writes
+  // the English brand copy, so rewrite freely. The keys are what the code
+  // reads; the words are yours.
+  //   {n} {time} {title} {date} {price} {total} {first} {last} are filled in
+  //   by the page — keep them, move them anywhere in the sentence.
+  // Copy the deck REUSES from elsewhere in this file is not repeated here:
+  // the three words, the mission line, the hours, the welcome panel, the
+  // rules, the host panels, the app strip, the WhatsApp call, "Come find out."
+  //   cards.<name>.title  on the card and on its opened section
+  //   cards.<name>.short  the strip, and the card on a phone (keep it SHORT:
+  //                       it has about 11 letters a line)
+  //   first.steps         add or drop a step here and the page follows
+  // ───────────────────────────────────────────────────────────────────────
+  "deck": {
+    "nav": "The cards",
+    "hint": "{n} cards. Pick one, or scroll and they deal themselves.",
+    "tonightCta": "What's on tonight",
+    "status": {
+      "open": "Open now",
+      "closed": "Closed right now",
+      "till": "till {time}",
+      "opens": "opens {time}"
+    },
+    "cards": {
+      "building": {
+        "title": "What's happening",
+        "short": "What's on"
+      },
+      "first": {
+        "title": "First time here?",
+        "short": "First time"
+      },
+      "menu": {
+        "title": "Our menu",
+        "short": "Menu"
+      },
+      "held": {
+        "title": "Events we've held",
+        "short": "Events held"
+      },
+      "giving": {
+        "title": "Charitable giving",
+        "short": "Giving"
+      },
+      "inside": {
+        "title": "Inside",
+        "short": "Inside"
+      },
+      "host": {
+        "title": "Host an event",
+        "short": "Host"
+      },
+      "connect": {
+        "title": "Get connected",
+        "short": "Connect"
+      },
+      "visit": {
+        "title": "Find us",
+        "short": "Find us"
+      }
+    },
+    "building": {
+      "label": "The building right now",
+      "roomsOn": "{n} rooms on",
+      "roomOn": "1 room on",
+      "nothingOn": "Nothing on right now",
+      "nextAt": "Next: {title} at {time}",
+      "next": "Next",
+      "noEvent": "No event right now",
+      "bar": "Bar",
+      "sky": "Open sky",
+      "floor": "Floor {n}",
+      "street": "street level",
+      "nothingToday": "Nothing else on today.",
+      "nothingTomorrow": "Nothing listed for tomorrow yet."
+    },
+    "first": {
+      "count": "{n} steps",
+      "steps": [
+        {
+          "t": "Walk in",
+          "b": "The bar's open every day from 11:00 to 02:00."
+        },
+        {
+          "t": "Get a drink",
+          "b": "Everyone using the space buys something. Money exists, and it keeps the lights on."
+        },
+        {
+          "t": "Pick a room",
+          "b": "Most nights something's on, and most of it is free. The poster says when it isn't."
+        },
+        {
+          "t": "Say yes",
+          "b": "Sit in, join a table, take the mic. The hosts are there to pull you in."
+        }
+      ]
+    },
+    "menu": {
+      "now": "On the menu",
+      "sections": "{n} sections"
+    },
+    "held": {
+      "asOf": "As of {date}",
+      "perWeek": "{n} a week",
+      "since": "since {date}",
+      "events": "events",
+      "weeks": "{n} weeks",
+      "rowWeek": "A week, on average",
+      "rowSeries": "Different series",
+      "rowRunning": "Series still running",
+      "rowOnce": "Ran only once",
+      "mostRun": "Most run",
+      "trend": "Events in each trailing 30 days",
+      "trendAlt": "Events in each trailing 30 days, rising from {first} to {last} by {date}",
+      "peak": "Peak: {n}, on {date}",
+      "weekdays": "By day of the week",
+      "source": "Counted from the calendar. A snapshot, not a live count.",
+      "link": "The full Event Audit"
+    },
+    "giving": {
+      "count": "{n} fundraisers",
+      "raised": "{total} raised here",
+      "lede": "Fundraisers held at REALITY, and where the money went.",
+      "fundraiser": "Fundraiser",
+      "last": "Last: {title} · {date}",
+      "givenTo": "Given to",
+      "standIn": "Rounded figures for now. The exact amounts will follow.",
+      "all": "All fundraisers in the app",
+      "gapDate": "Date",
+      "gapRecipient": "Who it went to"
+    },
+    "inside": {
+      "photos": "{n} photos",
+      "lede": "A look around the space.",
+      "walls": "On the walls",
+      "gapWalls": "What's hanging now"
+    },
+    "host": {
+      "rooms": "{n} rooms",
+      "free": "to host a public community event.",
+      "from": "Private rooms from {price} an hour.",
+      "live": "Free for public community events · rooms from {price} an hour"
+    },
+    "connect": {
+      "ways": "{n} ways in",
+      "app": "The app",
+      "social": "Instagram + Facebook"
+    },
+    "visit": {
+      "area": "Mỹ An, near Mỹ Khê beach",
+      "qrAlt": "QR code for realitydn.com"
+    }
+  },
   "notFound": {
     "title": "Page not found",
     "body": "This page doesn't exist — or it moved. The rest of REALITY is right where you left it.",

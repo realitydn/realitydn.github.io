@@ -1,13 +1,9 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
-import Hero from "./components/Hero";
-import Calendar from "./components/Calendar";
-import InfoHostSection from "./components/InfoHostSection";
-import DarkCTA from "./components/DarkCTA";
-import MenuSection from "./components/MenuSection";
-import VisitSection from "./components/VisitSection";
-import GallerySection from "./components/GallerySection";
+import DeckHero from "./components/deck/DeckHero";
+import DeckHand from "./components/deck/DeckHand";
+import { DECK, cardNo } from "./components/deck/deck";
 import Footer from "./components/Footer";
 import SEO from "./components/SEO";
 import FAQSchema from "./components/FAQSchema";
@@ -70,23 +66,30 @@ function HomePage({ lang }) {
       <a href="#main-content" className="skip-link">
         {t.use('skipLink')}
       </a>
-      {/* Ink pass (22.08.26): the parallax collage is gone — the page is a
-          stack of full-width bands on flat paper (body carries var(--bg)),
-          so nothing needs a z-lift over background plates any more. */}
+      {/* THE DECK (23.11.26). The home page is one list of cards —
+          components/deck/deck.js — drawn three times: face up on the table
+          in the hero, as the sticky strip, and opened, one section each, down
+          the page. Everything the old stack of bands held (calendar + event
+          overlay, info, rules, host + both forms, menus, visit, gallery, the
+          app strip, the "Come find out." call) now lives inside a card; the
+          old Hero and DarkCTA components are no longer rendered.
+          The masthead scrolls away here (`deck`): the strip is the page's
+          sticky navigation, and two stuck bars would eat a phone's screen. */}
       <Header
         lang={lang}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
         t={t}
+        deck={DECK}
       />
-      <main id="main-content" tabIndex={-1}>
-        <Hero t={t} />
-        <Calendar lang={lang} />
-        <InfoHostSection t={t} lang={lang} />
-        <DarkCTA lang={lang} />
-        <MenuSection lang={lang} t={t} />
-        <VisitSection lang={lang} t={t} />
-        <GallerySection t={t} />
+      <main id="main-content" tabIndex={-1} className="dk">
+        <DeckHero t={t} lang={lang} />
+        <DeckHand t={t} />
+        <div className="dk-secs">
+          {DECK.map((card, i) => (
+            <card.Section key={card.key} card={card} no={cardNo(i)} t={t} lang={lang} />
+          ))}
+        </div>
       </main>
       <Footer lang={lang} />
     </div>

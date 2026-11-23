@@ -41,11 +41,16 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 │   ├── llms.txt, llms-full.txt, sitemap.xml  # GENERATED at prebuild by scripts/build-seo-files.mjs (gitignored) — edit the sources, not these
 │   └── _headers         # Cloudflare Pages cache policy
 ├── src/
-│   ├── components/      # Header, Hero, Calendar (feed), EventOverlay, EventsSchema (JSON-LD),
+│   ├── components/      # Header, Calendar (feed), EventOverlay, EventsSchema (JSON-LD),
 │   │                    # MenuSection, VisitSection, GallerySection, InfoHostSection,
 │   │                    # EventProposalForm, ArtExhibitionForm, GetAppStrip, LangMenu,
-│   │                    # ThemeToggle, DarkCTA, Footer, SEO, …
+│   │                    # ThemeToggle, Footer, SEO, …
+│   │   └── deck/        # THE HOME PAGE — see "The home page: the deck" below
+│   ├── deck.css         # the home page's styles (after index.css)
 │   ├── data/
+│   │   ├── deck/        # the home page's own data: event-audit.js (snapshot figures),
+│   │   │                # fundraisers.js (stand-ins until the app's feed has rows),
+│   │   │                # building.js (rooms in use, from the feed), open-hours.js
 │   │   ├── locales/     # six locale files (must keep key parity with en.js)
 │   │   ├── languages.js # LANGS registry + pathFor/stripLangPrefix
 │   │   ├── menu.js      # GENERATED from the app's src/lib/menu-data.ts — DO NOT EDIT HERE
@@ -58,6 +63,33 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 └── .github/workflows/deploy.yml  # push to main / nightly / manual = selftest + build + deploy (Cloudflare Pages)
 ```
 
+## The home page: the deck
+
+The home page is a deck of cards (since 23.11.26). One list —
+`src/components/deck/deck.js` — is drawn three times: face up on the table in
+the hero, as the strip that sticks to the top, and opened, one section each,
+down the page.
+
+- **Reorder, drop or recolour a card:** edit the list in `deck.js`. The
+  numbers, the strip and the page follow.
+- **Change what a card shows:** each card is two small files —
+  `deck/faces/<Name>Face.jsx` (the card on the table) and
+  `deck/sections/<Name>Section.jsx` (the opened card).
+- **Change the words:** every string written for the deck is in the `deck`
+  block of `src/data/locales/en.js` (and mirrored in the other five).
+- **What is live:** rooms in use, tonight/tomorrow, the calendar and the
+  drinks deal come from the app's events feed; "open now" is worked out in
+  Đà Nẵng time; the drink on the menu card is the menu itself.
+- **What is not live (yet):** the event count (`data/deck/event-audit.js`, a
+  snapshot of `public/event-report/`, printed with its "as of" date) and the
+  fundraisers (`data/deck/fundraisers.js`, marked stand-ins that give way to
+  the app's fundraisers feed the moment it has rows). A fact we don't have is
+  a `<Gap>` — a dashed tag on the page — never a guess.
+- The sections the site already had (calendar, menu, info + host + forms,
+  visit, gallery) are the same components, rendered inside a card with their
+  `embedded` / `only` prop. The old `Hero.jsx` and `DarkCTA.jsx` are no longer
+  rendered.
+
 ## Forms
 
 Proposal forms POST to the REALITY app hub (`app.realitydn.com/api/proposals`) — the Control Room inbox is the review surface. The same-origin Worker (`/api/event-proposal`, `/api/art-exhibition`) remains a fire-and-forget backup writing Notion/Sheets/Resend. See the app repo's `docs/WEBSITE_APP_INTEGRATION.md` for the sunset plan.
@@ -69,24 +101,27 @@ The homepage honours these hashes on every language route (`/#proposal`,
 posters, QR codes and the guidelines page can use the rest. Query strings
 before the hash (UTMs) are fine.
 
-| Hash | Lands on |
+| Hash | Lands on (card) |
 |------|----------|
-| `#events` (`#calendar`, `#schedule`, `#whatson`) | the schedule |
-| `#info` | Info & Host, welcome panel |
-| `#rules` | Info & Host, house rules panel |
-| `#host` (`#hosting`) | Info & Host, host panel |
-| `#proposal` (`#propose`) | host panel with the proposal form open |
-| `#menus` (`#menu`, `#food`, `#drinks`) | menus |
-| `#visit` (`#location`, `#find`) | visit / find us |
-| `#gallery` (`#photos`) | gallery |
+| `#events` (`#calendar`, `#schedule`, `#whatson`) | What's happening: the building, tonight, the calendar |
+| `#info` (`#first`) | First time here?: the steps and the welcome panel |
+| `#rules` | the house rules, inside Find us |
+| `#host` (`#hosting`) | Host an event |
+| `#proposal` (`#propose`) | Host an event, with the proposal form open |
+| `#menus` (`#menu`, `#food`, `#drinks`) | Our menu |
+| `#visit` (`#location`, `#find`) | Find us |
+| `#gallery` (`#photos`) | Inside: the gallery |
+| `#held` · `#giving` · `#connect` | Events we've held · Charitable giving · Get connected |
 
-On touch (and under 768px) the schedule flows with the page: five poster
-cards, six rows, then **See all N events in the app** — the rest of the
-calendar lives in the app, so that button is the app door, not an expander.
-On mouse at 768px+ the feed keeps its self-scrolling pane and shows every row.
+A card's own anchor is its `id` in `src/components/deck/deck.js`; `#rules` and
+`#proposal` are set inside their sections.
+
+The schedule flows with the page: five poster cards, four rows, then **See
+all N events in the app** — the rest of the calendar lives in the app, so
+that button is the app door, not an expander.
 
 `src/hooks/useHashLanding.js` does the landing: it waits for the target to
-exist (the form only renders after the panel switches), then re-anchors once
+exist (the form only renders once it is opened), then re-anchors once
 the calendar feed arrives and once fonts settle — unless the visitor has
 already started scrolling. Add an alias there, not in the components.
 

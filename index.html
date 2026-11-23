@@ -46,8 +46,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=ink-square" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-    <!-- Hero image preload — LCP candidate on homepage. -->
-    <link rel="preload" as="image" href="/images/hero.jpg" fetchpriority="high" />
+    <!-- No image preload: since the deck home page (23.11.26) the first
+         screen is type and colour; the photo of the front sits further down
+         ("First time here?") and loads lazily. -->
 
     <!-- Theme bootstrap — runs before first paint so a saved Night theme
          doesn't flash cream. Day is the default; prerender always captures

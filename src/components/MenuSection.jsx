@@ -78,7 +78,12 @@ const SECTION_PALETTE = [
   'var(--pink)',
 ];
 
-export default function MenuSection({ lang, t }) {
+// `embedded` (the deck home page, 23.11.26): the menu sits inside the opened
+// "Our menu" card, which supplies the frame, the heading and the #menus
+// anchor. The PDF link, the price note, the deal ticket, the tabs and the
+// panels are unchanged.
+export default function MenuSection({ lang, t, embedded = false }) {
+  const Wrap = embedded ? 'div' : 'section';
   // This language only, fields resolved with the EN fallback (menu-i18n.js).
   const MENU = useMenu(lang);
   const [index, setIndex] = useState(0);
@@ -151,15 +156,19 @@ export default function MenuSection({ lang, t }) {
     // guaranteed to be — with the content constrained by the inner max-w
     // wrappers. The 3px separation from DarkCTA above is THIS band's top rule
     // (the .band stack idiom; DarkCTA's own bottom border was removed).
-    <section id="menus" className="band b-paper section text-ink">
-      <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
-        <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
-          {t.use('drinkEyebrow')}
-        </div>
+    <Wrap id={embedded ? undefined : 'menus'} className={embedded ? 'menu-embed text-ink' : 'band b-paper section text-ink'}>
+      <Reveal stagger className={embedded ? undefined : 'max-w-7xl mx-auto px-4 pt-12'}>
+        {!embedded && (
+          <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
+            {t.use('drinkEyebrow')}
+          </div>
+        )}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <h2 className="h-section text-3xl md:text-5xl">
-            {t.use('menus')}
-          </h2>
+          {!embedded && (
+            <h2 className="h-section text-3xl md:text-5xl">
+              {t.use('menus')}
+            </h2>
+          )}
           <a
             href={MENU_PDF[lang] || URLS.PDF}
             target="_blank"
@@ -173,7 +182,7 @@ export default function MenuSection({ lang, t }) {
         <p className="mt-3 font-body text-sm text-gray-600">{t.use('menuPriceNote')}</p>
       </Reveal>
 
-      <div className="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6">
+      <div className={embedded ? 'mt-6 grid grid-cols-12 gap-6' : 'max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6'}>
         {/* Desktop sidebar navigation */}
         <aside className="hidden md:block md:col-span-3 sticky top-24 self-start">
           <nav
@@ -324,8 +333,8 @@ export default function MenuSection({ lang, t }) {
           </div>
         </div>
       </div>
-      <div className="h-6"/>
+      {!embedded && <div className="h-6"/>}
       <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
-    </section>
+    </Wrap>
   );
 }

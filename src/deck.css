@@ -1,0 +1,573 @@
+/* ============================================================
+   THE DECK — the home page (23.11.26).
+
+   Nine cards, face up on a table (the hero); the same nine as a
+   strip that sticks to the top (the hand); and the same nine
+   opened, one section each, down the page.
+
+   Imported after index.css (main.jsx). Everything here is the
+   base system — tokens, tickets, buttons, focus plate — applied
+   to the deck; no new colours, no radius, no blur.
+
+     1  colour keys          .k-*
+     2  masthead on the deck .dk-mast
+     3  the hero + the table .dk-hero  .dk-table  .dk-card
+     4  what sits on a face  .dk-num .dk-mb .dk-roll .dk-spark …
+     5  the hand             .dk-hand
+     6  an opened card       .dk-sec  .dk-open  + the deal-in
+     7  inside the sections  building, steps, audit, giving …
+     8  the old sections, embedded
+   ============================================================ */
+
+/* ── 1. Colour keys. A card's colour (deck.js `color`) → its fill, the text
+   that goes on it (the APCA rule: ink on yellow, amber and stock; cream on
+   every other hue, Day and Night), the print its opened card casts, and the
+   focus plate's colour — never the same family as the card. ── */
+.k-ink    { --kc: #0d0905;       --kon: #fffbf1; --kp: var(--print-neutral); }
+.k-green  { --kc: var(--green);  --kon: #fffbf1; --kp: var(--green); }
+.k-amber  { --kc: var(--amber);  --kon: #0d0905; --kp: var(--amber); }
+.k-blue   { --kc: var(--blue);   --kon: #fffbf1; --kp: var(--blue);   --accent: var(--pink); }
+.k-yellow { --kc: var(--yellow); --kon: #0d0905; --kp: var(--yellow); --accent: var(--red); }
+.k-purple { --kc: var(--purple); --kon: #fffbf1; --kp: var(--purple); }
+.k-red    { --kc: var(--red);    --kon: #fffbf1; --kp: var(--red);    --accent: var(--yellow); }
+.k-pink   { --kc: var(--pink);   --kon: #fffbf1; --kp: var(--pink); }
+.k-stock  { --kc: #f4ecd7;       --kon: #0d0905; --kp: var(--print-neutral); }
+
+/* ── Small shared type ── */
+.dk-fact { font: 500 13px/1.4 var(--grotesk); font-variant-numeric: tabular-nums; }
+.dk-t { font: 600 20px/1.15 var(--mont); }
+.dk-num {
+  font: 700 clamp(40px, 4.2vw, 62px)/.92 var(--grotesk);
+  letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin: 0;
+}
+.dk-clamp2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.dk-block { display: block; }
+.dk-only-compact { display: none; }
+
+/* Live Pulse — the one loop. A small square that beats ahead of anything
+   true right now. Scale only. */
+.dk-pulse {
+  display: inline-block; width: 9px; height: 9px; margin-right: 8px;
+  background: var(--red); animation: dk-pulse 1.6s var(--ease-snap) infinite;
+}
+.k-red .dk-pulse, .k-pink .dk-pulse { background: #fffbf1; }
+.dk-pulse-off { background: transparent; box-shadow: inset 0 0 0 2px currentColor; animation: none; }
+@keyframes dk-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.6); } }
+
+/* A marked gap — a fact we don't have yet (parts.jsx <Gap>). */
+.dk-gap {
+  display: inline-block; border: 1.5px dashed currentColor; padding: 1px 6px;
+  font: 700 11px/1.5 var(--mont); letter-spacing: .1em; text-transform: uppercase;
+}
+
+/* A marker square ahead of an ink word (coloured words on cream: the colour
+   rides the marker). Here: yellow, the deal's job. */
+.dk-mark { display: inline-block; width: .62em; height: .62em; margin-right: 6px; background: var(--yellow); box-shadow: inset 0 0 0 1.5px currentColor; }
+
+/* ── 2. The masthead on the deck page: not a bar — the top of the hero. It
+   scrolls away; the wordmark sits in its box. ── */
+.dk-mast { border-bottom: 0; }
+/* same measure as the hero under it, so the wordmark box sits over the words */
+.dk-mast-in { max-width: 1368px; margin: 0 auto; padding: 12px 16px; }
+@media (min-width: 761px) { .dk-mast-in { padding: 14px 32px; } }
+.dk-wmb { background: var(--fg); padding: 7px 0; line-height: 0; }
+/* the vector has air built into its viewBox; trim it so the box pads evenly */
+.dk-wmb svg { margin: 0 -3px 0 -6px; }
+.dk-wmb:focus-visible { background-color: var(--fg); }
+
+/* ── 3. The hero ── */
+.dk-hero {
+  max-width: 1368px; margin: 0 auto; padding: 6px 16px 36px;
+  display: grid; gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "top" "table" "more";
+}
+.dk-hero-top { grid-area: top; }
+.dk-table { grid-area: table; }
+.dk-hero-more { grid-area: more; }
+
+.dk-hero-h1 { font-size: clamp(22px, 7.3vw, 34px); margin: 0; }
+.dk-hero-h1 > span:not(.sr-only) { line-height: 1.02; }
+.dk-hero-h1 > .font-display-bold { display: block; }
+:lang(vi) .dk-hero-h1 > span:not(.sr-only) { line-height: 1.3; }
+.dk-hero-status { margin: 10px 0 0; font-size: 14px; color: var(--fg-dim); }
+.dk-hero-lede { margin: 6px 0 0; font: 600 18px/1.4 var(--mont); max-width: 30ch; }
+.dk-hero-acts { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 0; }
+.dk-hero-hint {
+  margin: 22px 0 0; color: var(--blue-text);
+  font: 700 12px/1.4 var(--mont); letter-spacing: .14em; text-transform: uppercase;
+}
+.dk-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 12px 22px; font-size: 13px; line-height: 1.2; text-align: center;
+  text-decoration: none;
+}
+
+/* The table: every card, face up. Three across at every width — on a phone
+   that is a compact 3×3 that fits the first screen. */
+.dk-table { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+.dk-card {
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  aspect-ratio: 1 / 1.12;
+  background: var(--kc); color: var(--kon);
+  border: 2px solid var(--tkt-edge);
+  box-shadow: 4px 4px 0 var(--print-neutral);
+  text-decoration: none; overflow: hidden;
+  transform: rotate(var(--r, 0deg));
+  transition: transform 160ms var(--ease-stamp), box-shadow 160ms var(--ease-stamp);
+}
+/* Dealt by hand: no two sit quite square. */
+.dk-card:nth-child(3n+1) { --r: -.9deg; }
+.dk-card:nth-child(3n+2) { --r: .6deg; }
+.dk-card:nth-child(3n)   { --r: -.4deg; }
+.dk-card:nth-child(5)    { --r: 1deg; }
+.dk-card:hover { transform: translateY(-5px) rotate(0deg); box-shadow: 8px 8px 0 var(--print-neutral); }
+.dk-card:active { transform: translateY(2px) rotate(0deg); box-shadow: 3px 3px 0 var(--print-neutral); }
+/* focus: the misregister plate — the face slips up-left off a solid plate */
+.dk-card:focus-visible {
+  transform: translate(-4px, -4px); background-color: var(--kc);
+  box-shadow: 4px 4px 0 0 var(--accent);
+}
+
+/* card head: number · title / meta. Compact (phone): the number alone. */
+.dk-ch {
+  /* like a ticket's top bar: it WRAPS, never truncates — when the title and
+     the meta don't fit one line, the meta drops to its own, flush right */
+  display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 10px; row-gap: 2px;
+  padding: 6px 8px 0;
+  font: 700 11px/1.3 var(--mont); letter-spacing: .12em; text-transform: uppercase;
+}
+.dk-ch > span:first-child { min-width: 0; overflow-wrap: break-word; }
+.dk-ch-title, .dk-ch-meta { display: none; }
+.dk-ch-meta { min-width: 0; margin-left: auto; overflow-wrap: break-word; text-align: right; }
+.dk-cb {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center;
+  gap: 6px; padding: 4px 8px;
+  /* a size container: what's on the face scales with the CARD's width, not
+     the window's, so a narrow card never clips its figure */
+  container-type: inline-size;
+}
+/* card foot: the short title — compact only */
+.dk-cf {
+  display: block; padding: 0 8px 8px;
+  font: 700 12px/1.2 var(--mont); letter-spacing: .04em; text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+:lang(vi) .dk-cf { line-height: 1.3; }
+/* .dk-x = "extra": dropped on the compact card (see the media query at the
+   end of block 4); .dk-only-compact is its opposite. */
+
+/* ── 4. What sits on a face (compact first) ── */
+.dk-card .dk-num { font-size: clamp(21px, 7.2vw, 34px); font-size: clamp(20px, 24cqw, 62px); }
+.dk-card .dk-t { font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
+.dk-card .dk-fact { font-size: 12px; line-height: 1.3; }
+
+/* 01 the building, small */
+.dk-mb { display: grid; gap: 3px; }
+.dk-mb-row { display: grid; gap: 3px; }
+.dk-mb i {
+  display: block; min-height: 16px; border: 2px solid currentColor;
+  font: 700 10px/1.25 var(--mont); font-style: normal; letter-spacing: .04em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 0; /* compact: blocks only */
+}
+.dk-mb i.sky { border-color: transparent; }
+.dk-mb i.on { background: var(--red); border-color: var(--red); color: #fffbf1; }
+.dk-mb i.deal { background: var(--yellow); border-color: var(--yellow); color: #0d0905; }
+
+/* 02 the steps */
+.dk-steps { display: grid; gap: 6px; }
+.dk-steps > span { display: flex; align-items: center; gap: 9px; font: 600 15px/1.2 var(--mont); }
+.dk-steps b {
+  flex: none; display: grid; place-items: center; width: 22px; height: 22px;
+  background: var(--kon); color: var(--kc); font: 700 12px/1 var(--grotesk);
+}
+
+/* 03 the drink that changes */
+.dk-roll { display: block; overflow: hidden; }
+.dk-roll-i { display: flex; flex-direction: column; gap: 4px; }
+.dk-roll-in { animation: dk-roll 420ms var(--ease-stamp) both; }
+@keyframes dk-roll { from { transform: translateY(18px); } to { transform: none; } }
+.dk-price { font-weight: 700; }
+
+/* 04 the count's small chart */
+.dk-spark { display: flex; align-items: flex-end; gap: 1px; height: 20px; }
+.dk-spark i { flex: 1; background: currentColor; }
+
+/* 06 photos, printed in the card's colour (a duotone: the photo in grey,
+   screened over the colour) */
+.dk-shots { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.dk-shot {
+  position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden;
+  background: var(--kc); border: 2px solid currentColor;
+}
+.dk-shot img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  filter: grayscale(1) contrast(1.2); mix-blend-mode: screen;
+}
+
+/* 08 the ways in */
+.dk-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.dk-chips > span {
+  display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0;
+  padding: 5px; border: 2px solid currentColor;
+  font: 700 11px/1.2 var(--mont); letter-spacing: .06em; text-transform: uppercase;
+}
+.dk-chips svg { width: 16px; height: 16px; flex: none; }
+
+/* ── The full faces: tablet and up ── */
+@media (min-width: 761px) {
+  .dk-hero { padding: 16px 32px 56px; gap: 28px; }
+  .dk-hero-h1 { font-size: clamp(40px, 6vw, 60px); }
+  .dk-hero-h1 > span:not(.sr-only) { display: block; }
+  .dk-hero-status { font-size: 15px; margin-top: 18px; }
+  .dk-hero-lede { font-size: 20px; margin-top: 0; }
+  .dk-table { gap: 20px; }
+
+  .dk-card {
+    aspect-ratio: auto;
+    /* three rows fit one screen where the screen allows it */
+    min-height: clamp(196px, calc((100svh - 150px) / 3 - 20px), 292px);
+    box-shadow: 5px 5px 0 var(--print-neutral);
+  }
+  .dk-card:nth-child(3n+1) { --r: -1.2deg; }
+  .dk-card:nth-child(3n+2) { --r: .7deg; }
+  .dk-card:nth-child(3n)   { --r: -.5deg; }
+  .dk-card:nth-child(5)    { --r: 1.4deg; }
+  .dk-card:hover { transform: translateY(-6px) rotate(0deg); box-shadow: 9px 9px 0 var(--print-neutral); }
+
+  .dk-ch { padding: 9px 12px; border-bottom: 2px solid currentColor; }
+  .dk-ch-title, .dk-ch-meta { display: inline; }
+  .dk-cb { justify-content: space-between; gap: 8px; padding: 12px; }
+  .dk-cf { display: none; }
+
+  .dk-card .dk-num { font-size: clamp(34px, 4.2vw, 62px); font-size: clamp(30px, 23cqw, 62px); }
+  .dk-card .dk-t { font-size: 20px; line-height: 1.15; }
+  .dk-card .dk-fact { font-size: 13px; line-height: 1.4; }
+
+  .dk-mb, .dk-mb-row { gap: 4px; }
+  .dk-mb i { min-height: 30px; padding: 3px 6px; font-size: 10px; }
+  .dk-roll-i { gap: 6px; }
+  .dk-spark { height: 44px; gap: 2px; }
+  .dk-shots { grid-template-columns: 1fr 1fr; }
+  .dk-shot { aspect-ratio: 1 / 1; max-height: 112px; }
+  .dk-chips { gap: 6px; }
+  .dk-chips > span { justify-content: flex-start; padding: 7px 8px; overflow: hidden; }
+  /* a narrow card: tighter chips, a smaller title line */
+  @container (max-width: 205px) {
+    .dk-chips > span { gap: 4px; padding: 6px 5px; font-size: 10px; letter-spacing: .01em; }
+    .dk-chips svg { width: 13px; height: 13px; }
+    .dk-card .dk-t { font-size: 17px; }
+    .dk-steps > span { font-size: 14px; }
+  }
+}
+/* The compact card. !important because an "extra" keeps whatever display its
+   own rule gives it (grid, flex, -webkit-box) at every other width. */
+@media (max-width: 760.98px) {
+  .dk-x { display: none !important; }
+  .dk-only-compact { display: block; }
+}
+
+/* Desktop: the words on the left, the table on the right. */
+@media (min-width: 1000px) {
+  .dk-hero {
+    grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+    grid-template-areas: "top table" "more table";
+    column-gap: 56px; row-gap: 0; padding: 12px 32px 64px;
+  }
+  .dk-hero-top { align-self: end; }
+  .dk-hero-more { align-self: start; margin-top: 22px; }
+  .dk-hero-h1 { font-size: clamp(38px, 4.3vw, 62px); }
+  .dk-hero-hint { margin-top: 36px; }
+}
+
+/* ── 5. The hand: every card, always within reach. Navigation, so it sits
+   on the page (ink at night), under 3px chrome rules. ── */
+.dk-hand {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; overflow-x: auto; scrollbar-width: none;
+  background: var(--bg); color: var(--fg);
+  border-top: 3px solid var(--fg); border-bottom: 3px solid var(--fg);
+}
+.dk-hand::-webkit-scrollbar { display: none; }
+.dk-hand-a {
+  flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 8px 14px;
+  border-right: 1.5px solid var(--hairline);
+  font: 700 12px/1.2 var(--mont); letter-spacing: .1em; text-transform: uppercase;
+  white-space: nowrap; text-decoration: none;
+}
+.dk-hand-a:last-child { border-right: 0; }
+.dk-hand-a i { width: 12px; height: 16px; flex: none; background: var(--kc); border: 1.5px solid var(--fg); }
+.dk-hand-a:hover { background: var(--surface-2); }
+/* the card being read: blue's job (selected / active nav) */
+.dk-hand-a[aria-current="true"] { box-shadow: inset 0 -5px 0 var(--lead); }
+/* a plate would be clipped by the scrolling strip: the ink outline instead */
+.dk-hand-a:focus-visible {
+  outline: 2px solid var(--fg); outline-offset: -5px;
+  transform: none; box-shadow: none; background-color: var(--bg);
+}
+
+/* ── 6. An opened card ── */
+.dk-secs { overflow-x: clip; padding-bottom: 24px; }
+.dk-sec {
+  padding: 30px 12px 6px;
+  /* the page's own ticket edge and print, read here — the card below
+     re-declares the tokens for what is inside it */
+  --dk-edge: var(--tkt-edge);
+  --dk-px: 6px;
+}
+section.dk-sec { scroll-margin-top: 50px; }
+.dk-anchor { display: block; height: 0; scroll-margin-top: 80px; }
+
+/* The card is a DAY SCOPE in both themes: a ticket is cream at night too.
+   Re-declaring the Day tokens here (the .tkt trick) makes every nested
+   component — the calendar, the menu, the forms — resolve ink-on-cream with
+   no patches, and gives the tickets inside it their Day edge and print. */
+.dk-open {
+  --bg: #fffbf1; --surface: #fffbf1; --surface-2: #f4ecd7; --paper-shade: #ece2c9;
+  --fg: #0d0905; --fg-dim: rgba(13, 9, 5, .72); --fg-faint: rgba(13, 9, 5, .56);
+  --hairline: rgba(13, 9, 5, .16); --on-ink: #fffbf1;
+  --fg-rgb: 13 9 5; --bg-rgb: 255 251 241;
+  --blue-text: #0a6fa0; --red-text: #c8161a; --purple: #6e3179;
+  --tkt-edge: #0d0905; --print-neutral: rgba(13, 9, 5, .20);
+  --sh-light: 0 4px 1px rgba(13, 9, 5, .10);
+  --sh-default: 0 8px 2px rgba(13, 9, 5, .16);
+  --sh-heavy: 0 13px 3px rgba(13, 9, 5, .23);
+  --accent: var(--blue); --accent-2: var(--red);
+  color-scheme: light;
+
+  max-width: 1304px; margin: 0 auto;
+  background: #fffbf1; color: #0d0905;
+  border: 2px solid var(--dk-edge);
+  box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp);
+  transform-origin: 50% 0;
+}
+.dk-oh {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px;
+  padding: 14px 16px; background: var(--kc); color: var(--kon);
+  border-bottom: 2px solid #0d0905;
+}
+.dk-oh-no { font: 700 17px/1 var(--grotesk); font-variant-numeric: tabular-nums; }
+.dk-oh h2 { margin: 0; font: 700 clamp(26px, 3.6vw, 44px)/1.08 var(--mont); letter-spacing: .02em; }
+:lang(vi) .dk-oh h2 { line-height: 1.25; }
+.dk-oh-live {
+  flex-basis: 100%; margin: 4px 0 0;
+  font: 600 14px/1.35 var(--grotesk); font-variant-numeric: tabular-nums;
+}
+.dk-oh .dk-pulse { background: currentColor; }
+.k-ink .dk-oh .dk-pulse, .k-stock .dk-oh .dk-pulse { background: var(--red); }
+.dk-ob { padding: 20px 16px 26px; }
+@media (min-width: 761px) {
+  .dk-sec { padding: 56px 32px 8px; --dk-px: 10px; }
+  .dk-oh { gap: 8px 22px; padding: 20px 30px; }
+  .dk-oh-no { font-size: 20px; }
+  .dk-oh-live { flex-basis: auto; margin: 0 0 0 auto; font-size: 16px; text-align: right; }
+  .dk-ob { padding: 32px 30px 38px; }
+}
+
+/* THE DEAL. The card arrives small and tilted, straightens, lands a touch
+   past square and settles; its print snaps in on landing. Transform and
+   shadow only — it printed or it didn't, nothing fades. Only ever added by
+   useDealIn as the card scrolls on, so the markup always holds the end
+   state; the global reduced-motion rule (index.css) collapses it to nothing. */
+.dk-deal { animation: dk-deal 720ms var(--ease-snap) both; }
+@keyframes dk-deal {
+  0%   { transform: translateY(120px) rotate(-6deg) scale(.5); box-shadow: 0 0 0 var(--kp); }
+  58%  { transform: translateY(-6px) rotate(1.1deg) scale(1.014); box-shadow: 0 0 0 var(--kp); }
+  78%  { transform: translateY(0) rotate(-.3deg) scale(.997); box-shadow: 0 0 0 var(--kp); }
+  79%  { box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp); }
+  100% { transform: none; box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp); }
+}
+
+/* ── 7. Inside the sections ── */
+.dk-label {
+  margin: 0; color: var(--blue-text);
+  font: 700 12px/1.3 var(--mont); letter-spacing: .16em; text-transform: uppercase;
+}
+.dk-name { margin: 0; font: 600 16px/1.25 var(--mont); }
+.dk-name a { text-decoration: underline; text-underline-offset: 4px; }
+.dk-small { margin: 0; font-size: 15px; line-height: 1.55; }
+.dk-dim { color: var(--fg-dim); }
+.dk-lede { margin: 0 0 24px; max-width: 62ch; font-size: 18px; line-height: 1.55; color: var(--fg-dim); }
+.dk-sub { margin: 0; font: 700 22px/1.15 var(--mont); letter-spacing: .03em; }
+.dk-gap-top { margin-top: 16px; }
+.dk-pad { padding: 16px; }
+.dk-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.dk-lk {
+  display: inline-flex; align-items: center; min-height: 48px;
+  font: 700 12px/1.4 var(--mont); letter-spacing: .1em; text-transform: uppercase;
+  text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px;
+}
+.dk-g2, .dk-g3, .dk-g4 { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 620px) {
+  .dk-g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+  .dk-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+  .dk-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .dk-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+}
+
+/* 01 the building, at full size — a picture of the night: an ink block,
+   cream lines, the rooms in use lit red. */
+.dk-bldg { background: #0d0905; color: #fffbf1; padding: 6px 12px 12px; border: 2px solid #0d0905; }
+.dk-fl {
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px;
+  padding: 8px 0; border-bottom: 3px solid #fffbf1;
+}
+.dk-fn { align-self: center; text-align: center; font: 700 16px/1 var(--grotesk); color: rgba(255, 251, 241, .62); }
+.dk-rooms { display: grid; gap: 8px; }
+.dk-rm {
+  min-width: 0; min-height: 92px; padding: 9px 10px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+  border: 2px solid #fffbf1; color: #fffbf1; text-decoration: none;
+}
+.dk-rm > b { font: 700 12px/1.3 var(--mont); letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
+.dk-rm-t { font: 600 15px/1.2 var(--mont); overflow-wrap: anywhere; }
+.dk-rm-t small { display: block; margin-top: 4px; font: 500 12px/1.3 var(--grotesk); font-variant-numeric: tabular-nums; }
+.dk-rm-t small.nx { border-top: 1.5px dashed currentColor; padding-top: 5px; margin-top: 6px; }
+.dk-rm.on { background: var(--red); border-color: var(--red); --accent: var(--yellow); }
+a.dk-rm { transition: transform var(--dur-tap) var(--ease-stamp); }
+a.dk-rm:hover { transform: translateY(-3px); }
+a.dk-rm:focus-visible { background-color: var(--red); }
+.dk-rm-bar { border-width: 3px; }
+.dk-rm-deal {
+  display: block; margin-top: 8px; padding: 6px 8px;
+  background: var(--yellow); color: #0d0905; --accent: var(--red);
+  font: 600 12px/1.3 var(--grotesk); font-variant-numeric: tabular-nums; text-decoration: none;
+}
+.dk-rm-deal:focus-visible { background-color: var(--yellow); }
+.dk-sky {
+  align-self: end; padding: 0 0 8px 6px; color: rgba(255, 251, 241, .48);
+  font: 700 11px/1.3 var(--mont); letter-spacing: .14em; text-transform: uppercase;
+}
+.dk-street {
+  margin: 8px 0 0 26px; color: rgba(255, 251, 241, .62);
+  font: 700 11px/1.3 var(--mont); letter-spacing: .14em; text-transform: uppercase;
+}
+.dk-now-line { margin: 14px 0 0; font-size: 15px; }
+/* On a phone the two rooms of a floor share the width evenly (the 3:2
+   cutaway leaves the smaller room too narrow to hold an event's name). */
+@media (max-width: 620px) {
+  .dk-bldg { padding: 4px 8px 10px; }
+  .dk-fl { grid-template-columns: 14px minmax(0, 1fr); gap: 6px; }
+  .dk-rooms { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 6px; }
+  .dk-rm { padding: 8px; min-height: 84px; }
+  .dk-rm > b { font-size: 11px; letter-spacing: .06em; }
+  .dk-rm-t { font-size: 13px; overflow-wrap: break-word; hyphens: auto; }
+  .dk-street { margin-left: 20px; }
+}
+
+/* today's + tomorrow's events: small tickets, the category colour as print */
+.dk-evs { display: grid; gap: 12px; align-content: start; }
+.dk-evs .dk-label { margin-top: 6px; }
+.dk-evs .dk-label:first-child { margin-top: 0; }
+.dk-ev {
+  --px: var(--print-sm);
+  display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: baseline;
+  padding: 11px 14px; text-decoration: none;
+}
+.dk-ev > b { font: 700 17px/1.2 var(--grotesk); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dk-ev .dk-pulse { width: 8px; height: 8px; margin-right: 5px; }
+.dk-ev .dk-fact { display: block; margin-top: 2px; color: var(--fg-dim); }
+
+/* 02 the steps + the photo of the front */
+.dk-first { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); margin-bottom: 12px; }
+.dk-stepgrid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); list-style: none; margin: 0; padding: 0; }
+.dk-step { --px: var(--print-sm); padding: 16px; }
+.dk-step > b {
+  display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 10px;
+  background: #0d0905; color: #fffbf1; font: 700 16px/1 var(--grotesk);
+}
+.dk-step .dk-small { margin-top: 6px; }
+/* the photo is printed: grey, screened over blue (a duotone) */
+.dk-photo {
+  position: relative; margin: 0; min-height: 300px; overflow: hidden;
+  background: var(--blue); border: 2px solid #0d0905;
+}
+.dk-photo img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 62%;
+  filter: grayscale(1) contrast(1.25); mix-blend-mode: screen;
+}
+@media (min-width: 520px) { .dk-stepgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
+@media (min-width: 900px) { .dk-first { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 32px; } }
+
+/* 04 the audit: a receipt, then the charts */
+.dk-held { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .dk-held { grid-template-columns: minmax(0, 350px) minmax(0, 1fr); gap: 48px; } }
+.dk-rc { font: 500 14px/1.45 var(--grotesk); font-variant-numeric: tabular-nums; }
+.dk-rc .dk-num { font-size: clamp(56px, 9vw, 76px); }
+.dk-rc .dk-fact { margin: 8px 0 0; font-size: 14px; }
+.dk-rc hr { border: 0; border-top: 2px dashed #0d0905; margin: 12px 0; }
+.dk-rc .dk-label { margin: 0 0 6px; }
+.dk-rl { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
+.dk-rl u { flex: 1; min-width: 12px; border-bottom: 2px dotted rgba(13, 9, 5, .4); transform: translateY(-4px); text-decoration: none; }
+.dk-rl b { font-weight: 700; }
+
+.dk-trend { position: relative; margin: 12px 0 0; padding-left: 30px; }
+.dk-trend-plot {
+  position: relative; display: flex; align-items: flex-end; gap: 2px; height: 168px;
+  border-bottom: 2px solid #0d0905;
+}
+.dk-trend-plot i { flex: 1; min-width: 0; background: var(--blue); }
+.dk-trend-plot i.last { background: var(--red); }
+/* gridlines + their numbers: positioned by the component (bottom: n%) */
+.dk-trend-gl { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px solid var(--hairline); pointer-events: none; }
+.dk-trend-gl span {
+  position: absolute; right: 100%; margin-right: 6px; transform: translateY(-50%);
+  font: 500 12px/1 var(--grotesk); color: var(--fg-dim); font-variant-numeric: tabular-nums;
+}
+.dk-trend-x {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font: 500 12px/1.2 var(--grotesk); color: var(--fg-dim); font-variant-numeric: tabular-nums;
+}
+@media (min-width: 761px) { .dk-trend-plot { gap: 4px; height: 190px; } }
+
+/* by weekday — the day-code colours (.d-mon … .d-sun set --day) */
+.dk-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; align-items: end; margin-top: 12px; }
+.dk-days > div { display: flex; flex-direction: column; align-items: stretch; gap: 4px; text-align: center; }
+.dk-days b { font: 600 13px/1 var(--grotesk); font-variant-numeric: tabular-nums; }
+.dk-days i { display: block; background: var(--day); border: 2px solid #0d0905; }
+.dk-days span { font: 700 11px/1.2 var(--mont); letter-spacing: .06em; text-transform: uppercase; }
+@media (min-width: 761px) { .dk-days { gap: 12px; max-width: 560px; } }
+
+/* 05 the fundraisers: yellow tickets (yellow's job: notices, progress) */
+.dk-fund { --cat: var(--yellow); --on-cat: #0d0905; --print: var(--yellow); }
+.dk-amt { margin: 10px 0 6px; font: 700 40px/1 var(--grotesk); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+/* 06 what's on the walls */
+.dk-walls { margin-top: 28px; padding-top: 20px; border-top: 2px solid #0d0905; display: grid; gap: 8px; justify-items: start; }
+
+/* 08 the ways in */
+.dk-shout { margin: 0 0 8px; font: 800 clamp(30px, 5.4vw, 58px)/1.02 var(--mont); letter-spacing: .015em; text-transform: uppercase; }
+:lang(vi) .dk-shout { line-height: 1.3; }
+.dk-way { --px: var(--print-sm); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; height: 100%; }
+.dk-way .dk-small { flex: 1; }
+.dk-way .dk-small a { text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.dk-way .dk-btn svg { width: 18px; height: 18px; flex: none; }
+
+/* 09 the address, the QR, the rules */
+.dk-addr { margin: 0 0 22px; font: 100 clamp(30px, 5.4vw, 66px)/1.04 var(--mont); letter-spacing: .015em; }
+:lang(vi) .dk-addr { font-weight: 200; line-height: 1.25; }
+.dk-visit-more { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); margin-top: 34px; }
+@media (min-width: 900px) { .dk-visit-more { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 44px; } }
+.dk-qr { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.dk-qr img { flex: none; width: 132px; height: 132px; background: #fffbf1; border: 2px solid #0d0905; }
+.dk-qr > div { flex: 1; min-width: 200px; display: grid; gap: 8px; }
+.dk-rules { scroll-margin-top: 70px; }
+
+/* ── 8. The old sections, embedded in a card. Their own frames (band, rule,
+   heading, outer padding) are left out by each component's `embedded` /
+   `only` prop; these only close the gaps that leaves. ── */
+.cal-embed { margin-top: 40px; padding-top: 28px; border-top: 2px solid #0d0905; }
+.cal-embed > div > .mb-8 > p { margin-top: 12px; font-size: 16px; color: var(--fg-dim); }
+.ih-embed .ih-panels-embed > div { padding-bottom: 0; }
+.dk-rules .ih-panels-embed > div { padding-top: 0; }
+.ih-embed-tabs { margin-bottom: 4px; }
+.ih-embed-tabs > div { margin-top: 0; padding-left: 0; }
+.gallery-embed > div > div.py-14 { padding-top: 4px; padding-bottom: 20px; }

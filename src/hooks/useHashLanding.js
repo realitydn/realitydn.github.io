@@ -19,13 +19,16 @@ import { useEffect, useRef } from 'react';
 // Aliases keep the outward-facing contract forgiving (the app links
 // #proposal; a poster might say #events; a human might type #menu).
 
+// On the deck home page (23.11.26) the Info & Host panels each have a card of
+// their own, so #info, #rules and #host are real ids now, not one section:
+//   #info  → "First time here?"  (the welcome panel; an alias anchor on it)
+//   #rules → the rules, inside "Find us"
+//   #host  → "Host an event"
 const ALIASES = {
   calendar: 'events',
   schedule: 'events',
   whatson: 'events',
-  host: 'info',
-  hosting: 'info',
-  rules: 'info',
+  hosting: 'host',
   propose: 'proposal',
   menu: 'menus',
   food: 'menus',

@@ -537,6 +537,75 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   }
 }
 
+// ── the deck home page (23.11.26): rooms in use, open now, the stand-ins ─────
+// The pure helpers behind three cards. "Now" is always passed in, so these
+// never depend on when the test runs.
+{
+  const { buildingNow, roomsOf, eventEndMs, ROOM_CODES } = await import('../src/data/deck/building.js');
+  const { openNow, ictClock } = await import('../src/data/deck/open-hours.js');
+  const { fundraisersView, vnd, vndShort, amountLabel, FUNDRAISER_STANDINS } = await import('../src/data/deck/fundraisers.js');
+  const { AUDIT, dmy } = await import('../src/data/deck/event-audit.js');
+
+  const at = (hhmm, day = 26) => `2026-11-${day}T${hhmm}:00+07:00`;
+  const loc = (...codes) => codes.map((code) => ({ code }));
+  const evs = [
+    { id: 'botc', title_en: 'Blood on the Clocktower', startsAt: at('18:30'), endsAt: at('22:00'), locations: loc('3P') },
+    { id: 'geo', title_en: 'GeoGuessr', startsAt: at('19:00'), endsAt: at('21:00'), locations: loc('2E') },
+    { id: 'kar', title_en: 'Karaoke!', startsAt: at('21:00'), endsAt: null, locations: loc('2E') },
+    { id: 'hh', title_en: 'Happy Hour: Buy 1 Get 1 Cocktails', startsAt: at('17:00'), endsAt: at('21:00'), locations: [] },
+    { id: 'done', title_en: 'Coffee + Conversation', startsAt: at('11:00'), endsAt: at('12:30'), locations: loc('1L') },
+    { id: 'tmrw', title_en: 'Film Club', startsAt: at('18:30', 27), endsAt: at('21:00', 27), locations: loc('2E') },
+  ];
+  const isDeal = (ev) => /happy hour/i.test(ev.title_en);
+  const now = Date.parse(at('20:40'));
+  const b = buildingNow(evs, { now, isDeal });
+  eq('building: two rooms on at 20:40', b.onCount, 2);
+  eq('building: 3P holds the event that is running', b.rooms['3P'].now && b.rooms['3P'].now.id, 'botc');
+  eq('building: 2E now', b.rooms['2E'].now && b.rooms['2E'].now.id, 'geo');
+  eq('building: 2E next (tonight, not tomorrow)', b.rooms['2E'].next && b.rooms['2E'].next.id, 'kar');
+  eq('building: an ended event leaves its room free', b.rooms['1L'].now, null);
+  eq('building: a drinks deal is the bar\'s, never a room', b.deal && b.deal.id, 'hh');
+  check('building: the deal is not in the programme', !b.nowEvents.some((e) => e.id === 'hh'));
+  eq('building: next to start anywhere', b.next && b.next.id, 'kar');
+  eq('building: no end time → two hours', eventEndMs(evs[2]) - Date.parse(evs[2].startsAt), 2 * 3600e3);
+  eq('building: an event with no end is on inside its two hours', buildingNow(evs, { now: Date.parse(at('22:30')), isDeal }).rooms['2E'].now.id, 'kar');
+  eq('building: nothing on at 09:00', buildingNow(evs, { now: Date.parse(at('09:00')), isDeal }).onCount, 0);
+  eq('building: "Entire Space" lights every room', roomsOf({ locations: loc('Entire Space') }).length, ROOM_CODES.length);
+  eq('building: several rooms at once', roomsOf({ locations: loc('1L', '2L', '2E', '3P') }).join(), '1L,2L,2E,3P');
+  eq('building: an unknown room is no room', roomsOf({ locations: loc('Da Nang') }).length, 0);
+  eq('building: falls back to the single location', roomsOf({ location: { code: '2L' } }).join(), '2L');
+  eq('building: empty feed', buildingNow([], { now }).onCount, 0);
+
+  // Open daily 11:00–02:00, in Đà Nẵng time whatever the machine's zone.
+  const ict = (hhmm, day = 26) => Date.parse(at(hhmm, day));
+  check('open: 10:59 is closed, opens 11:00', !openNow(ict('10:59')).open && openNow(ict('10:59')).until === '11:00');
+  check('open: 11:00 is open till 02:00', openNow(ict('11:00')).open && openNow(ict('11:00')).until === '02:00');
+  check('open: 01:59 is still open', openNow(ict('01:59')).open);
+  check('open: 02:00 is closed', !openNow(ict('02:00')).open);
+  eq('open: the clock is ICT (04:30Z = 11:30)', ictClock(Date.parse('2026-11-26T04:30:00Z')).hhmm, '11:30');
+
+  // Fundraisers: stand-ins until the feed has rows, then the feed.
+  const none = fundraisersView({ totalVnd: 0, count: 0, fundraisers: [] });
+  check('fundraisers: an empty feed shows the stand-ins, marked not live', !none.live && none.rows === FUNDRAISER_STANDINS && none.totalApprox);
+  eq('fundraisers: no feed at all is the same', fundraisersView(null).live, false);
+  eq('fundraisers: the stand-in total is the sum of its rows', none.totalVnd, 72000000);
+  const some = fundraisersView({ totalVnd: 10250000, count: 1, page: 'https://app.realitydn.com/fundraisers', fundraisers: [{ title: 'Charaoke', heldOn: '2026-09-17', recipient: 'X', amountVnd: 10250000 }] });
+  check('fundraisers: one row in the feed switches to the feed', some.live && some.rows.length === 1 && some.totalVnd === 10250000 && !some.totalApprox);
+  check('fundraisers: an unknown fact is null, never a guess', FUNDRAISER_STANDINS[0].heldOn === null && FUNDRAISER_STANDINS[0].recipient === null);
+  eq('money: house style', vnd(150000), '150.000₫');
+  eq('money: millions round DOWN', vndShort(72900000), '72M₫');
+  eq('money: under a million prints in full', vndShort(450000), '450.000₫');
+  eq('money: a rounded stand-in', amountLabel(FUNDRAISER_STANDINS[0]), '≈52M₫');
+  eq('money: an at-least stand-in', amountLabel(FUNDRAISER_STANDINS[1]), '10M₫+');
+
+  // The audit snapshot must agree with itself.
+  eq('audit: the weekdays add up to the total', AUDIT.byWeekday.reduce((a, n) => a + n, 0), AUDIT.total);
+  check('audit: most-run is in order', AUDIT.mostRun.every((m, i, a) => i === 0 || a[i - 1].runs >= m.runs));
+  check('audit: no point of the trend is above its stated peak', Math.max(...AUDIT.trend30) <= AUDIT.trendPeak.value);
+  eq('audit: d.m.yy, no leading zeros', dmy('2026-10-03'), '3.10.26');
+  eq('audit: d.m.yy two-digit', dmy('2025-05-26'), '26.5.25');
+}
+
 // ── summary ──────────────────────────────────────────────────────────────────
 if (failures.length) {
   console.error(`\nselftest: ${failures.length} FAILED, ${passed} passed`);

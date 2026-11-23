@@ -484,6 +484,148 @@ export default {
     "rentA": "네. 방 전체를 예약하거나 상업적인 상품·서비스를 소개하는 경우, 방과 시간대에 따라 시간당 대관료가 있어요. 시간당 요금(단위: 천 동, ₫):",
     "petsQ": "REALITY에 강아지나 반려동물을 데려가도 되나요?"
   },
+  // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
+  // key for key. Drafted by Claude 23.11.26; not yet read by a native speaker.
+  "deck": {
+    "nav": "카드",
+    "hint": "카드 {n}장. 하나를 고르거나, 스크롤하면 차례로 펼쳐져요.",
+    "tonightCta": "오늘 밤 일정",
+    "status": {
+      "open": "지금 영업 중",
+      "closed": "지금은 영업 종료",
+      "till": "{time}까지",
+      "opens": "{time}에 열어요"
+    },
+    "cards": {
+      "building": {
+        "title": "지금 열리는 이벤트",
+        "short": "지금"
+      },
+      "first": {
+        "title": "처음 오셨나요?",
+        "short": "처음"
+      },
+      "menu": {
+        "title": "메뉴",
+        "short": "메뉴"
+      },
+      "held": {
+        "title": "지금까지 연 이벤트",
+        "short": "이벤트 기록"
+      },
+      "giving": {
+        "title": "기부",
+        "short": "기부"
+      },
+      "inside": {
+        "title": "공간 둘러보기",
+        "short": "공간"
+      },
+      "host": {
+        "title": "이벤트 열기",
+        "short": "호스팅"
+      },
+      "connect": {
+        "title": "연결하기",
+        "short": "연결"
+      },
+      "visit": {
+        "title": "오시는 길",
+        "short": "오시는 길"
+      }
+    },
+    "building": {
+      "label": "지금 이 건물",
+      "roomsOn": "{n}개 공간에서 진행 중",
+      "roomOn": "1개 공간에서 진행 중",
+      "nothingOn": "지금은 진행 중인 이벤트가 없어요",
+      "nextAt": "다음: {title}, {time}",
+      "next": "다음",
+      "noEvent": "지금은 이벤트 없음",
+      "bar": "바",
+      "sky": "하늘",
+      "floor": "{n}층",
+      "street": "지상층",
+      "nothingToday": "오늘은 더 이상 이벤트가 없어요.",
+      "nothingTomorrow": "내일 일정은 아직 없어요."
+    },
+    "first": {
+      "count": "{n}단계",
+      "steps": [
+        {
+          "t": "들어오세요",
+          "b": "바는 매일 11:00부터 02:00까지 열어요."
+        },
+        {
+          "t": "음료를 주문하세요",
+          "b": "공간을 이용하는 분은 모두 무언가를 주문해요. 돈은 실제로 존재하고, 그 덕분에 불이 켜져 있어요."
+        },
+        {
+          "t": "공간을 고르세요",
+          "b": "거의 매일 밤 무언가가 열리고, 대부분 무료예요. 유료일 때는 포스터에 적혀 있어요."
+        },
+        {
+          "t": "일단 참여하세요",
+          "b": "앉아서 듣고, 테이블에 합류하고, 마이크를 잡으세요. 호스트가 자연스럽게 이끌어 줘요."
+        }
+      ]
+    },
+    "menu": {
+      "now": "메뉴에서",
+      "sections": "{n}개 섹션"
+    },
+    "held": {
+      "asOf": "{date} 기준",
+      "perWeek": "주 {n}회",
+      "since": "{date}부터",
+      "events": "이벤트",
+      "weeks": "{n}주",
+      "rowWeek": "주 평균",
+      "rowSeries": "서로 다른 시리즈",
+      "rowRunning": "진행 중인 시리즈",
+      "rowOnce": "한 번만 열린 이벤트",
+      "mostRun": "가장 많이 열린 시리즈",
+      "trend": "최근 30일 단위 이벤트 수",
+      "trendAlt": "최근 30일 단위 이벤트 수: {date} 기준 {first}에서 {last}까지 증가",
+      "peak": "최고: {n}, {date}",
+      "weekdays": "요일별",
+      "source": "캘린더 기준으로 집계했어요. 실시간 수치가 아니라 특정 시점의 기록이에요.",
+      "link": "이벤트 리포트 전체 보기"
+    },
+    "giving": {
+      "count": "모금 {n}회",
+      "raised": "이곳에서 모금한 금액 {total}",
+      "lede": "REALITY에서 열린 모금 행사와 기부금이 전달된 곳.",
+      "fundraiser": "모금 행사",
+      "last": "최근: {title} · {date}",
+      "givenTo": "전달처",
+      "standIn": "지금은 어림한 금액이에요. 정확한 금액은 추후 업데이트할게요.",
+      "all": "앱에서 모든 모금 행사 보기",
+      "gapDate": "날짜",
+      "gapRecipient": "전달처"
+    },
+    "inside": {
+      "photos": "사진 {n}장",
+      "lede": "공간을 둘러보세요.",
+      "walls": "벽에 걸린 작품",
+      "gapWalls": "현재 전시 중인 작품"
+    },
+    "host": {
+      "rooms": "공간 {n}개",
+      "free": "공개 커뮤니티 이벤트를 여는 비용이에요.",
+      "from": "프라이빗 대관은 시간당 {price}부터.",
+      "live": "공개 커뮤니티 이벤트는 무료 · 대관은 시간당 {price}부터"
+    },
+    "connect": {
+      "ways": "연결 방법 {n}가지",
+      "app": "앱",
+      "social": "Instagram + Facebook"
+    },
+    "visit": {
+      "area": "미안(Mỹ An), 미케 해변 근처",
+      "qrAlt": "realitydn.com QR 코드"
+    }
+  },
   "notFound": {
     "title": "페이지를 찾을 수 없어요",
     "body": "이 페이지는 없거나 다른 곳으로 옮겨졌어요. 나머지 REALITY는 그대로 있어요.",

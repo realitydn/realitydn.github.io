@@ -502,8 +502,7 @@ export default {
   //   first.steps         add or drop a step here and the page follows
   // ───────────────────────────────────────────────────────────────────────
   "deck": {
-    "nav": "The cards",
-    "hint": "{n} cards. Pick one, or scroll and they deal themselves.",
+    "nav": "On this page",
     "tonightCta": "What's on tonight",
     "status": {
       "open": "Open now",
@@ -604,7 +603,7 @@ export default {
       "trendAlt": "Events in each trailing 30 days, rising from {first} to {last} by {date}",
       "peak": "Peak: {n}, on {date}",
       "weekdays": "By day of the week",
-      "source": "Counted from the calendar. A snapshot, not a live count.",
+      "source": "Counted from the calendar.",
       "link": "The full Event Audit"
     },
     "giving": {
@@ -621,7 +620,7 @@ export default {
     },
     "inside": {
       "photos": "{n} photos",
-      "lede": "A look around the space.",
+      "lede": "Three floors, up to a rooftop patio.",
       "walls": "On the walls",
       "gapWalls": "What's hanging now"
     },
@@ -632,7 +631,7 @@ export default {
       "live": "Free for public community events · rooms from {price} an hour"
     },
     "connect": {
-      "ways": "{n} ways in",
+      "ways": "{n} links",
       "app": "The app",
       "social": "Instagram + Facebook"
     },

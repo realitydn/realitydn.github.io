@@ -487,8 +487,7 @@ export default {
   // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
   // key for key. Drafted by Claude 23.11.26; not yet read by a native speaker.
   "deck": {
-    "nav": "카드",
-    "hint": "카드 {n}장. 하나를 고르거나, 스크롤하면 차례로 펼쳐져요.",
+    "nav": "이 페이지",
     "tonightCta": "오늘 밤 일정",
     "status": {
       "open": "지금 영업 중",
@@ -589,7 +588,7 @@ export default {
       "trendAlt": "최근 30일 단위 이벤트 수: {date} 기준 {first}에서 {last}까지 증가",
       "peak": "최고: {n}, {date}",
       "weekdays": "요일별",
-      "source": "캘린더 기준으로 집계했어요. 실시간 수치가 아니라 특정 시점의 기록이에요.",
+      "source": "캘린더 기준으로 집계했어요.",
       "link": "이벤트 리포트 전체 보기"
     },
     "giving": {
@@ -606,7 +605,7 @@ export default {
     },
     "inside": {
       "photos": "사진 {n}장",
-      "lede": "공간을 둘러보세요.",
+      "lede": "3개 층, 맨 위는 옥상 테라스.",
       "walls": "벽에 걸린 작품",
       "gapWalls": "현재 전시 중인 작품"
     },
@@ -617,7 +616,7 @@ export default {
       "live": "공개 커뮤니티 이벤트는 무료 · 대관은 시간당 {price}부터"
     },
     "connect": {
-      "ways": "연결 방법 {n}가지",
+      "ways": "링크 {n}개",
       "app": "앱",
       "social": "Instagram + Facebook"
     },

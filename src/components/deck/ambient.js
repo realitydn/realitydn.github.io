@@ -1,22 +1,34 @@
 // ambient.js — the motion INSIDE the deck's card faces, kept in time.
 //
-// A face performs once, rests, and performs again (the ink mark's model),
-// and every performance starts on a beat of the page's one clock
-// (lib/beat.js: a beat is 0.8 s). A face says how often it goes:
+// A face performs once, rests, and performs again (the ink mark's model).
+// Every performance starts on the second (lib/beat.js: the page's one clock),
+// and each face keeps one of THREE PACES — every 3, 6 or 8 seconds. Which
+// face keeps which is the FACES table in lib/beat.js; the numbers are there
+// too. Nothing about the rhythm is set in this file or in the faces.
 //
-//   every: 4   once every 4 beats (3.2 s)   — small, quick things
-//   every: 8   once every 8 beats (6.4 s)   — anything that takes a second or more
-//   once: true one performance when the card first comes on screen, then never
+// What this file does is give each face its own second of its pace, so they
+// don't all go at once: the quick faces are placed first, then each one takes
+// the second where the least is already starting, weighted by how heavy the
+// moves are. With the faces that move on the home page (24.11.26) that is:
 //
-// and the table gives each face its own beat of the bar, so they start one
-// after another and never all together. With the six faces that move on the
-// home page (23.11.26) a bar of eight beats reads:
+//   every 3 s   menu from 0 · open hour from 1
+//   every 6 s   photo from 2
+//   every 8 s   giving from 1 · host from 5
 //
-//   beat   0      1       2      3       4      5       6      7
-//          menu   photo   hours  giving  menu   photo   hours  host
+//   second  0     1       2      3     4      5     6     7      8      9     10     11
+//           menu  hours   photo  menu  hours  host  menu  hours  photo  menu  hours  ·
+//                 +giving                                               +giving
+//   second  12    13      14     15    16     17      18    19     20     21    22     23
+//           menu  hours   photo  menu  hours  giving  menu  hours  photo  menu  hours  ·
+//                 +host                                                   +host
 //
-// (04's chart prints once when the page opens and is not on the bar.)
-// Change a face's `every` in its own file and the bar re-arranges itself.
+// 3 and 6 make the steady figure (menu, hours, photo / menu, hours, rest);
+// the two 8s drift across it and only come round to the same place every
+// 24 s. The menu and the photo — the two big moves — never start together.
+// An 8 and a 3 must meet once in 24 s (no arrangement on a 1 s grid avoids
+// it), so four times in the 24 s two faces start on the same second.
+// (04's chart prints once when the card comes on screen and is not on this.)
+// When a face stops (09 has no "now" while we are closed) the rest re-arrange.
 //
 // A face gets a `beat` number: 0, then 1, 2, 3 … Beat 0 is the still — the
 // markup as it ships, which is what the static HTML and a reduced-motion
@@ -24,10 +36,10 @@
 // its animated element on it, so the CSS animation plays once and lands back
 // on the still.
 //
-// A face sits a beat out while its card is off screen or under the pointer
+// A face sits its turn out while its card is off screen or under the pointer
 // (hover and press belong to the card), and nothing runs in a hidden tab.
 import { createContext, createElement, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { onBeat } from '../../lib/beat';
+import { FACES, beatsOf, onBeat, pacesVersion } from '../../lib/beat';
 import { prefersReducedMotion } from '../../hooks/motion';
 import { isStill } from './parts';
 
@@ -46,6 +58,8 @@ export const playEverything = () => tables.forEach((t) => t.playAll());
 
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
 const lcm = (a, b) => (a * b) / gcd(a, b);
+const BAR_MAX = 720; // beats: longer than any set of paces worth trying
+const HEAVY = 3; // a weight (lib/beat.js FACES) that counts as a big move
 
 // The Live Pulse squares are CSS loops two beats long. Put each one in phase
 // with the clock, so every square on the page swells together and on the beat.
@@ -63,29 +77,49 @@ function alignPulses() {
 }
 
 export function createTable() {
-  const voices = new Map(); // id → { el, order, every, once, auto, fire, born, inView, offset, done }
+  const voices = new Map(); // id → { el, order, pace, weight, once, auto, fire, born, inView, every, offset, done }
   let stop = null;
   let nextId = 1;
+  let arranged = -1;
 
-  // Give each repeating face its own beat: the quick ones first, each on the
-  // beat with the least already on it.
+  // Give each repeating face its own second of its pace. Quick faces first,
+  // heavy before light; each takes the second where the least weight already
+  // starts over the whole bar, and of equal seconds the one furthest from
+  // the faces already on the same pace (so two 8s sit 4 s apart, not side
+  // by side). No randomness: the same faces always get the same seconds.
   const arrange = () => {
-    const list = [...voices.values()].filter((v) => v.auto && !v.once).sort((a, b) => a.every - b.every || a.order - b.order);
-    const bar = list.reduce((n, v) => lcm(n, v.every), 1);
+    arranged = pacesVersion();
+    voices.forEach((v) => {
+      v.every = Math.max(1, beatsOf(v.pace));
+    });
+    const list = [...voices.values()]
+      .filter((v) => v.auto && !v.once)
+      .sort((a, b) => a.every - b.every || b.weight - a.weight || a.order - b.order);
+    const bar = Math.min(BAR_MAX, list.reduce((n, v) => lcm(n, v.every), 1));
     const load = new Array(bar).fill(0);
+    const placed = [];
     list.forEach((v) => {
       let best = 0;
       let least = Infinity;
+      let room = -1;
       for (let o = 0; o < v.every; o++) {
-        let sum = 0;
-        for (let b = o; b < bar; b += v.every) sum += load[b];
-        if (sum < least) {
-          least = sum;
+        let cost = 0;
+        for (let b = o; b < bar; b += v.every) cost += load[b] * v.weight;
+        let gap = v.every;
+        placed.forEach((p) => {
+          if (p.every !== v.every) return;
+          const d = Math.abs(p.offset - o);
+          gap = Math.min(gap, d, v.every - d);
+        });
+        if (cost < least || (cost === least && gap > room)) {
+          least = cost;
           best = o;
+          room = gap;
         }
       }
       v.offset = best;
-      for (let b = best; b < bar; b += v.every) load[b] += 1;
+      for (let b = best; b < bar; b += v.every) load[b] += v.weight;
+      placed.push(v);
     });
   };
 
@@ -97,23 +131,28 @@ export function createTable() {
 
   const beat = (index) => {
     if (ambientStill()) return;
+    if (arranged !== pacesVersion()) arrange();
     if (index % 2 === 0) alignPulses();
     const t = performance.now();
+    const ready = (v) => v.auto && !v.done && t - v.born >= SETTLE_MS && free(v);
+    const due = [...voices.values()].filter((v) => !v.once && ready(v) && index % v.every === v.offset);
+    const heavy = due.some((v) => v.weight >= HEAVY);
+    due.forEach((v) => v.fire());
+    // A once-only face (the chart that prints in when the page opens) takes
+    // the first second that no big move starts on, so the page does not open
+    // with two things at once. It never waits more than three.
     voices.forEach((v) => {
-      if (!v.auto || v.done || t - v.born < SETTLE_MS || !free(v)) return;
-      if (v.once) {
-        v.done = true;
-        v.fire();
-      } else if (index % v.every === v.offset) {
-        v.fire();
-      }
+      if (!v.once || !ready(v)) return;
+      if (heavy && (v.waited = (v.waited || 0) + 1) <= 3) return;
+      v.done = true;
+      v.fire();
     });
   };
 
   const table = {
     add(entry) {
       const id = nextId++;
-      voices.set(id, { ...entry, born: performance.now(), inView: true, offset: 0 });
+      voices.set(id, { ...entry, born: performance.now(), inView: true, every: 1, offset: 0 });
       arrange();
       tables.add(table);
       if (!stop) stop = onBeat(beat);
@@ -136,6 +175,11 @@ export function createTable() {
       if (ambientStill()) return;
       voices.forEach((v) => v.fire());
     },
+    // For checking: who goes when — [{ order, every, offset }]
+    bar() {
+      if (arranged !== pacesVersion()) arrange();
+      return [...voices.values()].filter((v) => v.auto && !v.once).map((v) => ({ order: v.order, every: v.every, offset: v.offset }));
+    },
   };
   return table;
 }
@@ -144,6 +188,8 @@ export function createTable() {
 // page's nine cards.
 let shared = null;
 const TableCtx = createContext(null);
+// For checking from the console: the home page's bar.
+export const sharedBar = () => (shared ? shared.bar() : []);
 
 // <AmbientTable> — a separate table (the lab shows several at once).
 // `handle` (a ref) receives it, for a "Play" button.
@@ -158,20 +204,25 @@ export function AmbientTable({ children, handle }) {
   return createElement(TableCtx.Provider, { value: table }, children);
 }
 
-// useBeat({ on, every, once, order, auto }) → { beat, ref, bump }
+// useBeat({ face, on, once, order, auto }) → { beat, ref, bump }
+//   face   the card's key ('menu', 'inside' …): its pace and weight are
+//          looked up in FACES (lib/beat.js). A face that is not in that
+//          table (the lab's unpicked options) passes `pace` and `weight`.
 //   on     false = this face does not move (the beat stays 0)
-//   every  how many beats between its performances (4 or 8)
 //   once   one performance when the card first comes on screen, then never
-//   order  the card's place in the deck (its number): which face gets the
-//          earlier beat when two ask for the same pace
+//   order  the card's place in the deck (its number): which face is placed
+//          first when two ask for the same pace and weight
 //   auto   false = the table never fires it; the face calls bump() itself
 //          when its own data changes
 //   ref    put it on any element inside the card: it is how the table knows
 //          the card is on screen and not under the pointer
-export function useBeat({ on = true, every = 4, once = false, order = 0, auto = true } = {}) {
+export function useBeat({ face, on = true, pace, weight, once = false, order = 0, auto = true } = {}) {
   const ctx = useContext(TableCtx);
   const [beat, setBeat] = useState(0);
   const ref = useRef(null);
+  const known = (face && FACES[face]) || null;
+  const itsPace = pace || (known && known.pace) || 'mid';
+  const itsWeight = weight || (known && known.weight) || 2;
 
   useEffect(() => {
     if (!on || isStill()) {
@@ -182,7 +233,7 @@ export function useBeat({ on = true, every = 4, once = false, order = 0, auto = 
     // Watch the CARD, not the element: on the compact card the element the
     // ref sits on may be one of the "extras" that are not displayed.
     const el = (ref.current && ref.current.closest('.dk-card')) || ref.current;
-    const id = table.add({ el, every, once, order, auto, fire: () => setBeat((n) => n + 1) });
+    const id = table.add({ el, pace: itsPace, weight: itsWeight, once, order, auto, fire: () => setBeat((n) => n + 1) });
     let io = null;
     if (el && 'IntersectionObserver' in window) {
       io = new IntersectionObserver((es) => table.set(id, { inView: es.some((e) => e.isIntersecting) }));
@@ -192,7 +243,7 @@ export function useBeat({ on = true, every = 4, once = false, order = 0, auto = 
       io?.disconnect();
       table.remove(id);
     };
-  }, [ctx, on, every, once, order, auto]);
+  }, [ctx, on, itsPace, itsWeight, once, order, auto]);
 
   // For a face that performs on its own data (auto: false).
   const bump = () => {

@@ -88,19 +88,25 @@ down the page.
 - **What moves inside the cards (24.11.26):** six faces move on their own —
   the menu's drink rolls over, the event chart prints in once when the page
   opens, the giving total throws an echo, the photos re-register, 0₫ gets a
-  highlighter pass, and the current open hour is stamped again. Everything
-  starts on one clock:
-  - **The pace of the whole page** is `BEAT_MS` in `src/lib/beat.js` (0.8 s).
-    The open-now squares and the masthead's ink strip keep the same beat.
-  - **How often one card goes** is `EVERY` at the top of its face file, in
-    beats (4 = every 3.2 s). `deck/ambient.js` gives each card its own beat of
-    the bar, so they start one after another, never together.
+  highlighter pass, and the current open hour is stamped again. Each one
+  starts on the second and keeps one of three paces, so the page has a rhythm
+  that only repeats every 24 s:
+  - **All the numbers are in `src/lib/beat.js`.** `PACES` is the three paces
+    (3, 6 and 8 seconds). `FACES` says which card keeps which: the menu and
+    the open hour every 3 s, the photo every 6 s, the giving total and 0₫
+    every 8 s. Change either and nothing else needs touching:
+    `deck/ambient.js` works out which second each card takes, so as few as
+    possible start together (at 3, 6 and 8 the menu and the photo never do).
+  - The open-now squares (one swell every 2 s) and the masthead's ink strip
+    start on the same seconds.
   - **To stop a card moving,** remove its `useBeat(...)` call (or pass
     `on: false`); its face then stays on the still.
-  - Under reduced motion, and in the static HTML, nothing moves.
+  - A card under the pointer sits its turn out. Under reduced motion, and in
+    the static HTML, nothing moves.
   - `npm run dev` → `/deck-lab` is a dev-only bench for this: every option
-    that was built, the first screen at both widths, and a tempo switch. It
-    is not in the production build.
+    that was built, the first screen at both widths, a switch that tries
+    other sets of paces, and a line that reads back who goes when. It is not
+    in the production build.
 - The sections the site already had (calendar, menu, info + host + forms,
   visit, gallery) are the same components, rendered inside a card with their
   `embedded` / `only` prop. The old `Hero.jsx` and `DarkCTA.jsx` are no longer

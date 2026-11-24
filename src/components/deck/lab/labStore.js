@@ -2,7 +2,8 @@
 //
 //   sel    { building: 'a', menu: 'cur', … }  a card that isn't listed is off
 //   night  Day / Night
-//   beat   the length of a beat in ms (lib/beat.js; 800 is what ships)
+//   paces  how often the faces go, in seconds: '3-6-8' (quick-mid-slow) is
+//          what ships (PACES in lib/beat.js)
 //   still  behave as under prefers-reduced-motion
 //   demo   show the building at the busiest hour in the feed, not right now
 //
@@ -12,12 +13,18 @@
 // lab carries its selection, and a selection in the address wins on load.
 import { useSyncExternalStore } from 'react';
 import { DECK, cardNo } from '../deck';
-import { BEAT_MS } from '../../../lib/beat';
+import { PACES } from '../../../lib/beat';
 import { PICKS, VARIANTS } from './variants';
 
 const KEY = 'reality-deck-lab';
 // A first visit opens on what the home page runs.
-const DEFAULTS = { sel: PICKS, night: false, beat: BEAT_MS, still: false, demo: false };
+export const SHIPPED_PACES = [PACES.quick, PACES.mid, PACES.slow].join('-');
+// '3-6-8' → { quick: 3, mid: 6, slow: 8 } (null if it is not three numbers)
+export function parsePaces(str) {
+  const n = String(str || '').split('-').map(Number);
+  return n.length === 3 && n.every((x) => x >= 1 && x <= 60) ? { quick: n[0], mid: n[1], slow: n[2] } : null;
+}
+const DEFAULTS = { sel: PICKS, night: false, paces: SHIPPED_PACES, still: false, demo: false };
 
 // { building: 'a', held: 'b' } ↔ '01a.04b'
 export function encodeSel(sel) {
@@ -40,7 +47,7 @@ function read() {
   } catch {
     saved = {};
   }
-  return { ...DEFAULTS, ...saved, sel: { ...(saved.sel || DEFAULTS.sel) }, beat: Number(saved.beat) || BEAT_MS };
+  return { ...DEFAULTS, ...saved, sel: { ...(saved.sel || DEFAULTS.sel) }, paces: parsePaces(saved.paces) ? saved.paces : SHIPPED_PACES };
 }
 
 let state = DEFAULTS;

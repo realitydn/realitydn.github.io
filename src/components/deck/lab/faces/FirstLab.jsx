@@ -12,7 +12,7 @@ export default function FirstLab({ card, no, t, v }) {
   const steps = t.use('deck.first.steps');
   const list = Array.isArray(steps) ? steps : [];
   const count = list.length;
-  const { beat, ref } = useBeat({ on: v !== 'off', every: v === 'a' ? 8 : 4, order: Number(no) });
+  const { beat, ref } = useBeat({ on: v !== 'off', pace: v === 'a' ? 'slow' : 'mid', order: Number(no) });
 
   // a (phone): 1, 2, 3 … up to the count, one every 220 ms
   const counting = useSteps(v === 'a' ? beat : 0, count, 220);

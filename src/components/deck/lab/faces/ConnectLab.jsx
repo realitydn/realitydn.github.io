@@ -11,7 +11,7 @@ import { useBeat } from '../../ambient';
 //   c  a small yellow square lands on one channel's icon, like a badge, stays a
 //      moment, and goes
 export default function ConnectLab({ card, no, t, v }) {
-  const { beat, ref } = useBeat({ on: v !== 'off', every: 8, order: Number(no) });
+  const { beat, ref } = useBeat({ on: v !== 'off', pace: 'slow', order: Number(no) });
   const turn = beat > 0 ? (beat - 1) % WAYS_IN.length : -1;
   return (
     <DeckCard card={card} no={no} t={t} meta={fill(t.use('deck.connect.ways'), { n: WAYS_IN.length })}>

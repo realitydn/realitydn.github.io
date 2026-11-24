@@ -17,11 +17,10 @@ import { vnd } from '../../../data/deck/fundraisers';
 // between cocktails, zero proof and the café. Change ROLL_FROM to change the mix.
 //
 // THE MOTION ("Rolled"): the drink rolls up and out and the next rolls in
-// under it, like a line on a scoreboard — every EVERY beats of the page's
-// clock (../ambient.js; a beat is 0.8 s, so 4 = a new drink every 3.2 s).
+// under it, like a line on a scoreboard. How often is not set here: this face
+// keeps the pace FACES.menu names in src/lib/beat.js (a new drink every 3 s).
 const ROLL_FROM = ['cocktails', 'zeroproof', 'cafe'];
 const ROLL_MAX = 15;
-const EVERY = 4;
 
 function pickDrinks(menu) {
   const lanes = ROLL_FROM.map((key) => {
@@ -51,7 +50,7 @@ export default function MenuFace({ card, no, t, lang }) {
   const drinks = useMemo(() => pickDrinks(menu), [menu]);
   // The beat counts the drinks: 0 is the first one — the still, which the
   // static HTML and a reduced-motion visitor keep.
-  const { beat, ref } = useBeat({ on: drinks.length > 1, every: EVERY, order: Number(no) });
+  const { beat, ref } = useBeat({ face: 'menu', on: drinks.length > 1, order: Number(no) });
 
   // Today's drinks deal, when the feed has one today (the same rule as the
   // menu's own deal ticket): its name and hours come from the feed.

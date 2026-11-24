@@ -25,9 +25,9 @@ export const VARIANTS = {
     { id: 'c', name: 'Ticked off', what: 'Each turn ticks off one more step and leaves it ticked; after the fourth, the card clears and starts again. Phone: the ticks add up in place of the 4.' },
   ],
   menu: [
-    { id: 'cur', name: 'As it was', what: 'What the card did before the picks: a new drink rises in every 4.2 seconds, on its own clock and off the beat.' },
+    { id: 'cur', name: 'As it was', what: 'What the card did before the picks: a new drink rises in every 4.2 seconds, on its own clock.' },
     { id: 'a', name: 'Re-stamped', what: 'A new drink is stamped down: the name lands turned and oversized, the price pops in after it.' },
-    { id: 'b', name: 'Rolled', what: 'The drink rolls up and out, the next rolls in under it, like a line on a scoreboard. Every 4 beats.' },
+    { id: 'b', name: 'Rolled', what: 'The drink rolls up and out, the next rolls in under it, like a line on a scoreboard. Every 3 seconds.' },
     { id: 'c', name: 'Colour separation', what: 'The next drink’s name arrives as two colour plates out of register that slide together, then the ink lands on top.' },
   ],
   held: [
@@ -38,17 +38,17 @@ export const VARIANTS = {
   giving: [
     { id: 'a', name: 'Heart daub', what: 'A small red heart sits by the total and is daubed again each turn, like a marker hitting paper.' },
     { id: 'b', name: 'Tally', what: 'The total adds up fundraiser by fundraiser (52M, 62M, 72M₫+), each amount stamped in turn.' },
-    { id: 'c', name: 'Echo', what: 'Two colour plates shoot out from behind the total, hold as a misregistered print, and snap back: two beats long, every 8 beats.' },
+    { id: 'c', name: 'Echo', what: 'Two colour plates shoot out from behind the total, hold as a misregistered print, and snap back: 1.6 seconds long, every 8 seconds.' },
   ],
   inside: [
-    { id: 'a', name: 'Registration', what: 'A photo is replaced by the next of ten: printed in out of register, then slid into place. No two passes alike: the side it prints from, the slip, the plate colour and a second plate all change. Every 4 beats, the two frames in turn.' },
+    { id: 'a', name: 'Registration', what: 'A photo is replaced by the next of ten: printed in out of register, then slid into place. No two passes alike: the side it prints from, the slip, the plate colour and a second plate all change. Every 6 seconds, the two frames in turn.' },
     { id: 'b', name: 'New ink', what: 'The same photos, printed again in another ink: purple, pink, blue, amber.' },
     { id: 'c', name: 'Dealt', what: 'The next gallery photo is dealt onto the old one from the right and lands square.' },
   ],
   host: [
     { id: 'a', name: 'Reel to zero', what: 'The figure rolls down 3, 2, 1 and lands on 0₫ with a pop.' },
     { id: 'b', name: 'Rubber stamp', what: '0₫ is lifted and stamped back down; a yellow print snaps in under it on landing, then goes.' },
-    { id: 'c', name: 'Highlighter', what: 'A yellow plate is pulled across behind 0₫, holds, and is pulled off: three beats long, every 8 beats.' },
+    { id: 'c', name: 'Highlighter', what: 'A yellow plate is pulled across behind 0₫, holds, and is pulled off: 2.4 seconds long, every 8 seconds.' },
   ],
   connect: [
     { id: 'a', name: 'Chip pop', what: 'The four channels are stamped in turn, each kicking a blue print out behind it.' },
@@ -58,7 +58,7 @@ export const VARIANTS = {
   visit: [
     { id: 'a', name: 'Radar ring', what: 'While we are open, two square rings go out from the open-now marker each turn. Closed: nothing moves.' },
     { id: 'b', name: 'Pin drop', what: 'A map pin sits by the address and drops onto it again each turn.' },
-    { id: 'c', name: 'Hours strip', what: 'A strip of the fifteen open hours, 11:00 to 02:00, filled up to now; the current hour is stamped again every 4 beats.' },
+    { id: 'c', name: 'Hours strip', what: 'A strip of the fifteen open hours, 11:00 to 02:00, filled up to now; the current hour is stamped again every 3 seconds.' },
   ],
 };
 

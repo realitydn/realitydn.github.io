@@ -95,3 +95,7 @@
   .dkl-solo { grid-template-columns: minmax(0, 1fr); }
   .dkl-solo-card { max-width: 140px; }
 }
+
+/* who goes when, read back from the first screen's table */
+.dkl-bar-read { font-size: 14px; }
+.dkl-bar-read b { color: var(--fg); font-weight: 600; }

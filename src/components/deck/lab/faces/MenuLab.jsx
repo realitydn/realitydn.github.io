@@ -45,7 +45,7 @@ function Drink({ drink, cls = '' }) {
 export default function MenuLab({ card, no, t, lang, v }) {
   const menu = useMenu(lang);
   const drinks = useMemo(() => pickDrinks(menu), [menu]);
-  const { beat, ref } = useBeat({ on: v === 'a' || v === 'b' || v === 'c', every: 4, order: Number(no) });
+  const { beat, ref } = useBeat({ on: v === 'a' || v === 'b' || v === 'c', pace: 'quick', weight: 3, order: Number(no) });
 
   // cur: the card's own clock, exactly as the live face runs it.
   const [tick, setTick] = useState(0);

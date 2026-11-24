@@ -12,9 +12,8 @@ import { dmy } from '../../../data/deck/event-audit';
 // because every figure in it is rounded or a floor.
 //
 // THE MOTION ("Echo"): two colour plates shoot out from behind the total,
-// hold as a misregistered print, and snap back — every EVERY beats of the
-// page's clock (../ambient.js; 8 beats = 6.4 s).
-const EVERY = 8;
+// hold as a misregistered print, and snap back. How often is not set here:
+// this face keeps the pace FACES.giving names in src/lib/beat.js (every 8 s).
 
 export default function GivingFace({ card, no, t, lang }) {
   const { rows, totalVnd, totalApprox } = useFundraisers();
@@ -23,7 +22,7 @@ export default function GivingFace({ card, no, t, lang }) {
     .filter((r) => r.heldOn)
     .sort((a, b) => String(b.heldOn).localeCompare(String(a.heldOn)))[0];
   const title = (r) => (lang === 'VN' && r.title_vi) || r.title;
-  const { beat, ref } = useBeat({ every: EVERY, order: Number(no) });
+  const { beat, ref } = useBeat({ face: 'giving', order: Number(no) });
   const total = `${vndShort(totalVnd)}${totalApprox ? '+' : ''}`;
   return (
     <DeckCard card={card} no={no} t={t} meta={fill(S('count'), { n: rows.length })}>

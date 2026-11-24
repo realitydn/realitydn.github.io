@@ -13,11 +13,11 @@ import { OPENS, CLOSES, ictClock, openNow } from '../../../data/deck/open-hours'
 // outlines. Closed (and in the static HTML, which never bakes in a "now"):
 // fifteen outlines.
 //
-// THE MOTION: while we are open, the current hour's cell is stamped again
-// every EVERY beats of the page's clock (../ambient.js; 4 beats = 3.2 s).
+// THE MOTION: while we are open, the current hour's cell is stamped again.
+// How often is not set here: this face keeps the pace FACES.visit names in
+// src/lib/beat.js (every 3 s).
 const HOURS = [];
 for (let h = OPENS; h !== CLOSES; h = (h + 1) % 24) HOURS.push(h);
-const EVERY = 4;
 
 export default function VisitFace({ card, no, t }) {
   const now = useNow();
@@ -25,7 +25,7 @@ export default function VisitFace({ card, no, t }) {
   const S = (k) => t.use(`deck.status.${k}`);
   const still = isStill();
   const nowAt = open && !still ? HOURS.indexOf(ictClock(now).h) : -1;
-  const { beat, ref } = useBeat({ on: nowAt >= 0, every: EVERY, order: Number(no) });
+  const { beat, ref } = useBeat({ face: 'visit', on: nowAt >= 0, order: Number(no) });
   return (
     <DeckCard card={card} no={no} t={t} meta="11:00 – 02:00">
       <span className="dk-t dk-x">86 Mai Thúc Lân, Đà Nẵng</span>

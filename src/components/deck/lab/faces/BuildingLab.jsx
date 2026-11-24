@@ -25,7 +25,7 @@ export default function BuildingLab({ card, no, t, lang, v }) {
   const S = (k) => t.use(`deck.building.${k}`);
   const name = (ev) => pickTitle(ev, lang) || t.use('cal.fallbackTitle');
 
-  const { beat, ref, bump } = useBeat({ on: v !== 'off', auto: v !== 'c', every: v === 'b' ? 8 : 4, order: Number(no) });
+  const { beat, ref, bump } = useBeat({ on: v !== 'off', auto: v !== 'c', pace: v === 'b' ? 'slow' : 'mid', order: Number(no) });
 
   // c: the performance IS the minute turning.
   const lastMinute = useRef(clock.hhmm);

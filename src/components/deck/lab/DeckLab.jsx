@@ -10,10 +10,10 @@ import { ictClock, openNow } from '../../../data/deck/open-hours';
 import { isDealEvent } from '../../../data/event-category';
 import { dmy } from '../../../data/deck/event-audit';
 import { AmbientTable, playEverything, setLabAmbient } from '../ambient';
-import { BEAT_MS, setBeatLength } from '../../../lib/beat';
+import { setPaces } from '../../../lib/beat';
 import { LabCtx } from './kit';
 import { PICKS, VARIANTS, variantOf } from './variants';
-import { encodeSel, pick, setLab, useLab } from './labStore';
+import { SHIPPED_PACES, encodeSel, parsePaces, pick, setLab, useLab } from './labStore';
 import BuildingLab from './faces/BuildingLab';
 import FirstLab from './faces/FirstLab';
 import MenuLab from './faces/MenuLab';
@@ -91,7 +91,8 @@ const stay = (e) => {
 // ── The first screen, as the home page draws it (DeckHero.jsx), with the
 // lab's faces on the table. The masthead is the real one: its ink strip is
 // already moving up there, and that is part of what the cards sit next to.
-function FirstScreen({ sel, now }) {
+// `handle` receives the table, so the page can print who goes when.
+function FirstScreen({ sel, now, handle }) {
   const { open, until } = openNow(now);
   const S = (k) => t.use(`deck.${k}`);
   const words = String(t.use('heroTitle')).split(' / ');
@@ -116,7 +117,7 @@ function FirstScreen({ sel, now }) {
               <span className="dk-hero-addr"> · 86 Mai Thúc Lân, Đà Nẵng</span>
             </p>
           </div>
-          <AmbientTable>
+          <AmbientTable handle={handle}>
             <div className="dk-table">
               {DECK.map((card, i) => <Face key={card.key} card={card} index={i} sel={sel} />)}
             </div>
@@ -191,6 +192,35 @@ function Seg({ label, value, options, onChange }) {
   );
 }
 
+// Who goes when on the first screen, read back from its table (so it is what
+// actually runs, not a description of it).
+const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+function Bar({ table, sel, paces, still }) {
+  const [rows, setRows] = useState([]);
+  useEffect(() => {
+    // after the faces have taken the new picks and joined the table
+    const id = window.setTimeout(() => setRows(table.current ? table.current.bar() : []), 250);
+    return () => window.clearTimeout(id);
+  }, [table, sel, paces, still]);
+  if (still) return <p className="dkl-p dkl-bar-read">Reduced motion: nothing is on the clock.</p>;
+  if (!rows.length) return <p className="dkl-p dkl-bar-read">No card on this screen repeats.</p>;
+  const every = [...new Set(rows.map((r) => r.every))].sort((a, b) => a - b);
+  const loop = every.reduce((n, e) => (n * e) / gcd(n, e), 1);
+  return (
+    <p className="dkl-p dkl-bar-read">
+      {every.map((e) => (
+        <span key={e}>
+          <b>Every {e} s:</b>{' '}
+          {rows.filter((r) => r.every === e).sort((a, b) => a.offset - b.offset)
+            .map((r) => `${String(r.order).padStart(2, '0')} ${titleOf(DECK[r.order - 1])} (from second ${r.offset})`).join(', ')}
+          .{' '}
+        </span>
+      ))}
+      The pattern repeats every {loop} s.
+    </p>
+  );
+}
+
 function summaryOf(sel) {
   const parts = DECK.map((card, i) => {
     const v = variantOf(card.key, sel[card.key]);
@@ -201,7 +231,8 @@ function summaryOf(sel) {
 
 export default function DeckLab() {
   const lab = useLab();
-  const { sel, night, beat, still, demo } = lab;
+  const { sel, night, paces, still, demo } = lab;
+  const firstScreen = useRef(null);
   const view = new URLSearchParams(window.location.search).get('view');
   const { events } = useFeed();
   const realNow = useNow();
@@ -226,11 +257,11 @@ export default function DeckLab() {
   useEffect(() => {
     setLabAmbient({ still });
   }, [still]);
-  // The tempo switch: the whole page's beat, put back on the way out.
+  // The paces switch: how often the faces go, put back on the way out.
   useEffect(() => {
-    setBeatLength(beat);
-    return () => setBeatLength(BEAT_MS);
-  }, [beat]);
+    setPaces(parsePaces(paces));
+    return () => setPaces();
+  }, [paces]);
 
   // A handle for checking the lab from the console or a script:
   //   __deckLab.setLab({ sel: { held: 'a' }, night: true }); __deckLab.play()
@@ -264,7 +295,7 @@ export default function DeckLab() {
   }
 
   const moving = Object.keys(sel).length;
-  const summary = `${summaryOf(sel)}${beat !== BEAT_MS ? ` · beat ${beat} ms` : ''}`;
+  const summary = `${summaryOf(sel)}${paces !== SHIPPED_PACES ? ` · every ${paces.split('-').join(' / ')} s` : ''}`;
   const code = encodeSel(sel).toUpperCase().replace(/CUR/g, 'cur').split('.').join(' ');
   const copy = () => {
     const text = moving ? `Deck motion picks (${code}): ${summary}` : 'Deck motion picks: none.';
@@ -283,10 +314,10 @@ export default function DeckLab() {
             <strong className="dkl-title">Deck lab · card motion</strong>
             <Seg label="Theme" value={night} options={[[false, 'Day'], [true, 'Night']]} onChange={(v) => setLab({ night: v })} />
             <Seg
-              label="Beat"
-              value={beat}
-              options={[[500, '0.5 s'], [650, '0.65 s'], [800, '0.8 s'], [1000, '1 s'], [1300, '1.3 s']]}
-              onChange={(v) => setLab({ beat: v })}
+              label="Every"
+              value={paces}
+              options={[['2-4-5', '2 · 4 · 5 s'], ['3-6-8', '3 · 6 · 8 s'], ['3-6-10', '3 · 6 · 10 s'], ['4-8-10', '4 · 8 · 10 s']]}
+              onChange={(v) => setLab({ paces: v })}
             />
             <Seg label="Motion" value={still} options={[[false, 'On'], [true, 'Reduced (still)']]} onChange={(v) => setLab({ still: v })} />
             <Seg
@@ -322,8 +353,8 @@ export default function DeckLab() {
         <section className="dkl-sec">
           <h2 className="dkl-h">1 · Each card, on its own</h2>
           <p className="dkl-p">
-            Real desktop size. A card performs every 4 or 8 beats (3.2 or 6.4 seconds at the 0.8 s beat); “Play it now” skips the wait.
-            Hold the pointer over a card and it sits its beat out.
+            Real desktop size. A card performs every 3, 6 or 8 seconds, whichever pace it keeps; “Play it now” skips the wait.
+            Hold the pointer over a card and it sits its turn out.
           </p>
           <div className="dkl-solos">
             {DECK.map((card, i) => <Solo key={card.key} card={card} index={i} sel={sel} />)}
@@ -333,12 +364,13 @@ export default function DeckLab() {
         <section className="dkl-sec dkl-sec-wide">
           <h2 className="dkl-h">2 · Together: the first screen</h2>
           <p className="dkl-p">
-            As the home page draws it, masthead included. Everything starts on a beat of one clock: each moving card has its own beat of the
-            bar, the open-now squares swell every two beats, and the ink strip starts its performances on a beat too. The Beat switch above
-            changes the whole page's tempo; 0.8 s is what ships.
+            As the home page draws it, masthead included. Everything starts on the second: each moving card keeps one of three paces and
+            has its own second of it, the open-now squares swell every two seconds, and the ink strip starts its performances on the second
+            too. The Every switch above tries other sets of paces (quick · mid · slow); 3 · 6 · 8 s is what ships.
           </p>
+          <Bar table={firstScreen} sel={sel} paces={paces} still={still} />
           <div className="dkl-stage">
-            <FirstScreen sel={sel} now={demoNow || realNow} />
+            <FirstScreen sel={sel} now={demoNow || realNow} handle={firstScreen} />
           </div>
         </section>
 

@@ -24,7 +24,7 @@ export default function VisitLab({ card, no, t, v }) {
   const now = demoNow || realNow;
   const { open, until } = openNow(now);
   const S = (k) => t.use(`deck.status.${k}`);
-  const { beat, ref } = useBeat({ on: v !== 'off', every: 4, order: Number(no) });
+  const { beat, ref } = useBeat({ on: v !== 'off', pace: 'quick', weight: 1, order: Number(no) });
   const go = beat > 0;
   const nowAt = open ? HOURS.indexOf(ictClock(now).h) : -1;
 

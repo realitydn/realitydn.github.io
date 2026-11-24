@@ -20,7 +20,7 @@ export default function GivingLab({ card, no, t, lang, v }) {
     .filter((r) => r.heldOn)
     .sort((a, b) => String(b.heldOn).localeCompare(String(a.heldOn)))[0];
   const title = (r) => (lang === 'VN' && r.title_vi) || r.title;
-  const { beat, ref } = useBeat({ on: v !== 'off', every: v === 'a' ? 4 : 8, order: Number(no) });
+  const { beat, ref } = useBeat({ on: v !== 'off', pace: v === 'a' ? 'mid' : 'slow', order: Number(no) });
 
   // b: running totals, oldest first (a fundraiser with no date yet goes
   // first), ending on the card's own total. Long lists show the last few.

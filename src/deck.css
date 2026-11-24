@@ -46,12 +46,12 @@
 .dk-only-compact { display: none; }
 
 /* Live Pulse — the one loop. A small square that beats ahead of anything
-   true right now. Scale only. One swell is TWO BEATS of the page's clock
-   (lib/beat.js; --beat is only set when the dev lab changes the tempo), and
-   deck/ambient.js keeps every square in phase with that clock. */
+   true right now. Scale only. One swell is 2 s: two beats of the page's
+   clock (lib/beat.js; keep it a whole number of beats if BEAT_MS changes),
+   and deck/ambient.js keeps every square in phase with that clock. */
 .dk-pulse {
   display: inline-block; width: 9px; height: 9px; margin-right: 8px;
-  background: var(--red); animation: dk-pulse calc(var(--beat, 800ms) * 2) var(--ease-snap) infinite;
+  background: var(--red); animation: dk-pulse 2s var(--ease-snap) infinite;
 }
 .k-red .dk-pulse, .k-pink .dk-pulse { background: #fffbf1; }
 .dk-pulse-off { background: transparent; box-shadow: inset 0 0 0 2px currentColor; animation: none; }
@@ -203,8 +203,9 @@
    its face gets a beat (deck/ambient.js) and lands back on the face as it
    stands at rest; nothing here loops. Transform, scale and clip only, with
    the house curves; a colour that changes CUTS (steps), it never crossfades,
-   and nothing animates opacity or the card itself. The longer ones are
-   measured in beats, so they end on the clock too. Under reduced motion the
+   and nothing animates opacity or the card itself. WHEN each one starts,
+   and how often, is not here: lib/beat.js (every 3, 6 or 8 s, on the
+   second). These are only how long one performance takes. Under reduced motion the
    faces never get a beat, and index.css collapses any animation to its last
    frame — which is the still. ── */
 
@@ -231,15 +232,15 @@
 
 /* 05 the total — POSTER ECHO: two plates (copies of the figure, from its
    data-t) shoot out behind it, hold as a misregistered print, snap back.
-   Two beats long. */
+   1.6 s. */
 .dk-echo { position: relative; isolation: isolate; }
 .dk-echo::before, .dk-echo::after {
   content: attr(data-t); position: absolute; left: 0; top: 0; z-index: -1; visibility: hidden;
 }
 .dk-echo::before { color: var(--blue); }
 .dk-echo::after { color: var(--red); }
-.dk-echo-go::before { animation: dk-echo-far calc(var(--beat, 800ms) * 2) both; }
-.dk-echo-go::after { animation: dk-echo-near calc(var(--beat, 800ms) * 2) both; }
+.dk-echo-go::before { animation: dk-echo-far 1600ms both; }
+.dk-echo-go::after { animation: dk-echo-near 1600ms both; }
 @keyframes dk-echo-far {
   0% { visibility: visible; transform: none; animation-timing-function: var(--ease-stamp); }
   24% { transform: translate(8px, 8px); }
@@ -269,15 +270,15 @@
 .dk-ply { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--kc); }
 /* REGISTRATION — the next photo is printed in from one side, a few pixels
    out of register, with a colour plate showing at its edge; then it slides
-   into place. One beat long. InsideFace sets, per pass: --reg-from (the side
+   into place. 0.8 s. InsideFace sets, per pass: --reg-from (the side
    the pass comes from), --reg-x / --reg-y (the slip) and the plate's colour.
    --reg-k scales the slip to the frame (smaller on the phone card). */
 .dk-shot { --reg-k: .65; }
-.dk-plate { position: absolute; inset: 0; animation: dk-plate calc(var(--beat, 800ms) * .42) var(--ease-snap) both; }
+.dk-plate { position: absolute; inset: 0; animation: dk-plate 336ms var(--ease-snap) both; }
 .dk-plate-2 {
-  animation-name: dk-plate-2; animation-duration: var(--beat, 800ms); animation-timing-function: linear;
+  animation-name: dk-plate-2; animation-duration: 800ms; animation-timing-function: linear;
 }
-.dk-ply-in { animation: dk-register var(--beat, 800ms) both; }
+.dk-ply-in { animation: dk-register 800ms both; }
 @keyframes dk-plate { from { clip-path: var(--reg-from); } to { clip-path: inset(0 0 0 0); } }
 @keyframes dk-plate-2 {
   0% { clip-path: var(--reg-from); transform: translate(calc(var(--reg-x) * var(--reg-k) * .5), calc(var(--reg-y) * var(--reg-k) * .5)); animation-timing-function: var(--ease-snap); }
@@ -292,14 +293,14 @@
 
 /* 07 the figure — HIGHLIGHTER: a yellow plate pulled across behind it, then
    off. Ink on yellow (the APCA rule), so the figure cuts to ink while the
-   plate is down. Three beats long. */
+   plate is down. 2.4 s. */
 .dk-hl { position: relative; display: inline-block; isolation: isolate; }
 .dk-hl::before {
   content: ''; position: absolute; inset: 2% -5% 0 -4%; z-index: -1;
   background: var(--yellow); transform: scaleX(0); transform-origin: 0 50%;
 }
-.dk-hl-go { animation: dk-hl-ink calc(var(--beat, 800ms) * 3) steps(1, end) both; }
-.dk-hl-go::before { animation: dk-hl calc(var(--beat, 800ms) * 3) both; }
+.dk-hl-go { animation: dk-hl-ink 2400ms steps(1, end) both; }
+.dk-hl-go::before { animation: dk-hl 2400ms both; }
 @keyframes dk-hl-ink { 6% { color: #0d0905; } 92% { color: inherit; } }
 @keyframes dk-hl {
   0% { transform: scaleX(0); transform-origin: 0 50%; animation-timing-function: var(--ease-snap); }

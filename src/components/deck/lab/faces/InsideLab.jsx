@@ -34,7 +34,7 @@ function Ply({ src, ink, cls = '' }) {
 
 export default function InsideLab({ card, no, t, v }) {
   const compact = useCompact();
-  const { beat, ref } = useBeat({ on: v !== 'off', every: 4, order: Number(no) });
+  const { beat, ref } = useBeat({ on: v !== 'off', pace: 'mid', weight: 3, order: Number(no) });
 
   // How many times each of the two photos has changed by this beat, and
   // which one changed on it.

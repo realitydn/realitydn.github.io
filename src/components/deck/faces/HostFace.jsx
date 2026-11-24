@@ -16,13 +16,12 @@ export function lowestRoomRate() {
 // and where private room rental starts: the lowest figure on the rate card.
 //
 // THE MOTION ("Highlighter"): a yellow plate is pulled across behind 0₫,
-// holds, and is pulled off — every EVERY beats of the page's clock
-// (../ambient.js; 8 beats = 6.4 s, of which the plate is down for about 2).
-const EVERY = 8;
+// holds for about 2 s, and is pulled off. How often is not set here: this
+// face keeps the pace FACES.host names in src/lib/beat.js (every 8 s).
 
 export default function HostFace({ card, no, t }) {
   const S = (k) => t.use(`deck.host.${k}`);
-  const { beat, ref } = useBeat({ every: EVERY, order: Number(no) });
+  const { beat, ref } = useBeat({ face: 'host', order: Number(no) });
   return (
     <DeckCard card={card} no={no} t={t} meta={fill(S('rooms'), { n: ROOM_RATES.length })}>
       <span ref={ref} className="dk-num">

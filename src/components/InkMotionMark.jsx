@@ -28,8 +28,9 @@ const SITE_PALETTE = {
 const FIRST = [2500, 1500]; // first performance: 2.5–4s after the page settles
 const EVERY = [4000, 2000]; // then a new one every 4–6s (Donald: ~5s)
 // Each wait is then rounded up to the next BEAT of the page's one clock
-// (lib/beat.js, 0.8 s), so the strip starts in time with the other ambient
-// motion — the deck's card faces and the Live Pulse squares (24.11.26).
+// (lib/beat.js: the next whole second), so the strip starts in time with the
+// other ambient motion — the deck's card faces and the Live Pulse squares
+// (24.11.26).
 
 const later = ([base, spread]) => base + Math.random() * spread;
 

@@ -15,18 +15,17 @@ import { GALLERY } from '../../../data/events';
 // frames then never show the same photo. The opened card has the full gallery.
 const PHOTOS = ['b', 'h', 'a', 'k', 'd', 'm', 'e', 'l', 'g', 'i'].map((k) => `/images/deck/inside-${k}.jpg`);
 
-// THE MOTION ("Registration"): every EVERY beats of the page's clock
-// (../ambient.js; 4 beats = 3.2 s) one photo is replaced by the next — printed
+// THE MOTION ("Registration"): one photo is replaced by the next — printed
 // in a few pixels out of register, a colour plate showing at its edge, then
 // slid into place. The two frames take it in turns (the phone card has one
-// frame, so there it is always that one).
+// frame, so there it is always that one). How often is not set here: this
+// face keeps the pace FACES.inside names in src/lib/beat.js (every 6 s).
 //
 // No two passes are alike: each draws its own mix of
 //   WIPES    the side the print pass comes from
 //   SLIPS    which way, and how far, it lands out of register (px)
 //   PLATES   the colour that shows at the edge until it registers
 // and one pass in three lays a second plate between the two.
-const EVERY = 4;
 const WIPES = ['inset(0 100% 0 0)', 'inset(100% 0 0 0)', 'inset(0 0 0 100%)', 'inset(0 0 100% 0)'];
 const SLIPS = [[-9, 6], [8, 5], [-6, -7], [9, -5], [0, 8], [-10, 0]];
 const PLATES = ['var(--pink)', 'var(--blue)', 'var(--amber)', 'var(--yellow)'];
@@ -64,7 +63,7 @@ function Ply({ src, cls = '' }) {
 
 export default function InsideFace({ card, no, t }) {
   const compact = useCompact();
-  const { beat, ref } = useBeat({ every: EVERY, order: Number(no) });
+  const { beat, ref } = useBeat({ face: 'inside', order: Number(no) });
   const changed = beat === 0 ? -1 : compact ? 0 : (beat - 1) % 2;
   const pass = passOf(beat);
 

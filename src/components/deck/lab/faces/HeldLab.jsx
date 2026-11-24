@@ -12,7 +12,7 @@ import { Odo, countCols } from '../kit';
 export default function HeldLab({ card, no, t, lang, v }) {
   const S = (k) => t.use(`deck.held.${k}`);
   const max = Math.max(...AUDIT.trend30);
-  const { beat, ref } = useBeat({ on: v !== 'off', every: v === 'a' ? 8 : 4, once: v === 'b', order: Number(no) });
+  const { beat, ref } = useBeat({ on: v !== 'off', pace: v === 'a' ? 'slow' : 'mid', once: v === 'b', order: Number(no) });
   const total = String(AUDIT.total);
   // One average week of events: the same figure the card prints ("32.2 a week").
   const weekAgo = String(AUDIT.total - Math.round(AUDIT.perWeek90));

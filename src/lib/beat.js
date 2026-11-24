@@ -1,36 +1,69 @@
-// beat.js — ONE CLOCK for everything ambient on a page.
+// beat.js — ONE CLOCK, AND THE PACES, for everything ambient on a page.
 //
-// Ambient motion that starts whenever it likes reads as noise. Everything
-// that moves on its own here starts ON A BEAT of the same clock, so the card
-// faces, the Live Pulse squares and the masthead's ink strip land together
-// or a whole number of beats apart:
+// Ambient motion that starts whenever it likes reads as noise; motion that
+// all keeps one pace reads as a machine. So (Donald, 24.11.26: "2 or 3 beats
+// for the card animations — say, 3, 6, 8 seconds? Something to give a little
+// rhythm and unpredictability"):
 //
-//   a beat            BEAT_MS (0.8 s)
-//   a card face       performs every 4 or 8 beats, each on its own beat of
-//                     the bar (components/deck/ambient.js)
-//   the Live Pulse    one swell every 2 beats (deck.css: calc(var(--beat) * 2))
-//   the ink strip     a new performance every 4–6 s, started on a beat
+//   the grid          everything starts ON THE SECOND (BEAT_MS)
+//   three paces       a card face performs every 3, 6 or 8 seconds (PACES)
+//   who keeps which   FACES, below
+//
+// 3 and 6 make a steady figure; the 8s drift across it, landing on a
+// different part of it each time. The whole pattern only repeats every 24 s
+// (the smallest number 3, 6 and 8 all divide), so the first screen has a
+// rhythm without an obvious loop.
+//
+// The other ambient motion keeps the same grid:
+//   the Live Pulse    one swell every 2 s (deck.css; deck/ambient.js keeps
+//                     every square in phase with this clock)
+//   the ink strip     a new performance every 4–6 s, started on the second
 //                     (components/InkMotionMark.jsx)
 //
-// To make the whole page quicker or slower, change BEAT_MS: everything above
-// follows. The clock is the page's own timeline (performance.now()), so beat
-// number n is at n × BEAT_MS for every script and every CSS animation alike.
-export const BEAT_MS = 800;
+// TO CHANGE THE RHYTHM, change the numbers here and nowhere else. Which
+// second of its pace each face takes is worked out for you (deck/ambient.js)
+// so that as few as possible start together, the heavy ones never.
+// The clock is the page's own timeline (performance.now()), so second n is
+// at n × BEAT_MS for every script and every CSS animation alike.
+export const BEAT_MS = 1000;
 
-let beatMs = BEAT_MS;
+// The three paces, in beats (= seconds while BEAT_MS is 1000).
+export const PACES = { quick: 3, mid: 6, slow: 8 };
+
+// The faces that move on their own: the pace each keeps and how heavy its
+// move is (3 = it changes what the card says, 2 = an accent on a figure,
+// 1 = a tick). Two heavy faces are never given the same second.
+//   quick  the two that count: the drink list and the clock
+//   mid    the photo, the biggest move on the table
+//   slow   the two accents on a figure — rare, so they stay accents
+// (04's chart is not here: it prints once when the card comes on screen.)
+export const FACES = {
+  menu: { pace: 'quick', weight: 3 }, //   03 the drink rolls over
+  visit: { pace: 'quick', weight: 1 }, //  09 the open hour is stamped again
+  inside: { pace: 'mid', weight: 3 }, //   06 a photo re-registers
+  giving: { pace: 'slow', weight: 2 }, //  05 the total throws an echo
+  host: { pace: 'slow', weight: 2 }, //    07 0₫ gets a highlighter pass
+};
+
+let paces = PACES;
+let pacesStamp = 0;
 const subs = new Set();
 let timer = 0;
 let watching = false;
 
 const now = () => performance.now();
 
-export const beatLength = () => beatMs;
+// How many beats between performances at a pace ('quick' | 'mid' | 'slow').
+export const beatsOf = (pace) => paces[pace] || paces.mid;
+// Changes whenever the paces do (the dev lab's switch), so a table knows to
+// re-arrange itself.
+export const pacesVersion = () => pacesStamp;
 
 // untilBeat(min, every) → milliseconds from now to the next beat that is at
 // least `min` ms away (and, with `every`, a multiple of that many beats).
 // For anything that schedules itself: setTimeout(start, untilBeat(5000)).
 export function untilBeat(min = 0, every = 1) {
-  const step = beatMs * every;
+  const step = BEAT_MS * every;
   const t = now();
   return Math.ceil((t + min) / step) * step - t;
 }
@@ -44,7 +77,7 @@ function schedule() {
 }
 
 function tick() {
-  const index = Math.round(now() / beatMs);
+  const index = Math.round(now() / BEAT_MS);
   subs.forEach((fn) => fn(index));
   schedule();
 }
@@ -67,13 +100,10 @@ export function onBeat(fn) {
   };
 }
 
-// The lab's tempo switch (dev only). Also publishes the beat to CSS, where
-// the Live Pulse and the longer card animations are measured in beats.
-export function setBeatLength(ms) {
-  beatMs = ms > 0 ? ms : BEAT_MS;
-  if (typeof document !== 'undefined') {
-    if (beatMs === BEAT_MS) document.documentElement.style.removeProperty('--beat');
-    else document.documentElement.style.setProperty('--beat', `${beatMs}ms`);
-  }
-  schedule();
+// The dev lab's switch: try another set of paces on the live page.
+// setPaces() with nothing puts PACES back.
+export function setPaces(next) {
+  const p = next && next.quick > 0 && next.mid > 0 && next.slow > 0 ? next : PACES;
+  paces = { quick: Math.round(p.quick), mid: Math.round(p.mid), slow: Math.round(p.slow) };
+  pacesStamp += 1;
 }

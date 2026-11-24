@@ -4,7 +4,7 @@ import { fill, Pulse } from '../../parts';
 import { Icons } from '../../../Icons';
 import useNow from '../../../../hooks/useNow';
 import { OPENS, CLOSES, ictClock, openNow } from '../../../../data/deck/open-hours';
-import { useBeat } from '../ambient';
+import { useBeat } from '../../ambient';
 import { LabCtx } from '../kit';
 
 // 09 · Find us — the face of faces/VisitFace.jsx, plus:
@@ -24,7 +24,7 @@ export default function VisitLab({ card, no, t, v }) {
   const now = demoNow || realNow;
   const { open, until } = openNow(now);
   const S = (k) => t.use(`deck.status.${k}`);
-  const { beat, ref } = useBeat({ on: v !== 'off' });
+  const { beat, ref } = useBeat({ on: v !== 'off', every: 4, order: Number(no) });
   const go = beat > 0;
   const nowAt = open ? HOURS.indexOf(ictClock(now).h) : -1;
 

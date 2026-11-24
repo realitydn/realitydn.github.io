@@ -2,7 +2,7 @@
 //
 //   sel    { building: 'a', menu: 'cur', … }  a card that isn't listed is off
 //   night  Day / Night
-//   quick  "quick look": every wait divided by three
+//   beat   the length of a beat in ms (lib/beat.js; 800 is what ships)
 //   still  behave as under prefers-reduced-motion
 //   demo   show the building at the busiest hour in the feed, not right now
 //
@@ -12,10 +12,12 @@
 // lab carries its selection, and a selection in the address wins on load.
 import { useSyncExternalStore } from 'react';
 import { DECK, cardNo } from '../deck';
-import { VARIANTS } from './variants';
+import { BEAT_MS } from '../../../lib/beat';
+import { PICKS, VARIANTS } from './variants';
 
 const KEY = 'reality-deck-lab';
-const DEFAULTS = { sel: {}, night: false, quick: false, still: false, demo: false };
+// A first visit opens on what the home page runs.
+const DEFAULTS = { sel: PICKS, night: false, beat: BEAT_MS, still: false, demo: false };
 
 // { building: 'a', held: 'b' } ↔ '01a.04b'
 export function encodeSel(sel) {
@@ -38,7 +40,7 @@ function read() {
   } catch {
     saved = {};
   }
-  return { ...DEFAULTS, ...saved, sel: { ...(saved.sel || {}) } };
+  return { ...DEFAULTS, ...saved, sel: { ...(saved.sel || DEFAULTS.sel) }, beat: Number(saved.beat) || BEAT_MS };
 }
 
 let state = DEFAULTS;

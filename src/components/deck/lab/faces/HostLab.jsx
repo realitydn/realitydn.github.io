@@ -4,7 +4,7 @@ import { fill } from '../../parts';
 import { ROOM_RATES } from '../../../../data/room-rates';
 import { vnd } from '../../../../data/deck/fundraisers';
 import { lowestRoomRate } from '../../faces/HostFace';
-import { useBeat } from '../ambient';
+import { useBeat } from '../../ambient';
 import { Odo } from '../kit';
 
 // 07 · Host an event — the face of faces/HostFace.jsx, plus:
@@ -16,7 +16,7 @@ const REEL = [['3', '2', '1', '0'], '₫'];
 
 export default function HostLab({ card, no, t, v }) {
   const S = (k) => t.use(`deck.host.${k}`);
-  const { beat, ref } = useBeat({ on: v !== 'off' });
+  const { beat, ref } = useBeat({ on: v !== 'off', every: 8, order: Number(no) });
   const go = beat > 0;
 
   let num;

@@ -3,7 +3,7 @@ import DeckCard from '../../DeckCard';
 import { fill } from '../../parts';
 import { Icons } from '../../../Icons';
 import { WAYS_IN } from '../../faces/ConnectFace';
-import { useBeat } from '../ambient';
+import { useBeat } from '../../ambient';
 
 // 08 · Get connected — the face of faces/ConnectFace.jsx, plus:
 //   a  the four channels are stamped in turn, each kicking a print out behind it
@@ -11,7 +11,7 @@ import { useBeat } from '../ambient';
 //   c  a small yellow square lands on one channel's icon, like a badge, stays a
 //      moment, and goes
 export default function ConnectLab({ card, no, t, v }) {
-  const { beat, ref } = useBeat({ on: v !== 'off' });
+  const { beat, ref } = useBeat({ on: v !== 'off', every: 8, order: Number(no) });
   const turn = beat > 0 ? (beat - 1) % WAYS_IN.length : -1;
   return (
     <DeckCard card={card} no={no} t={t} meta={fill(t.use('deck.connect.ways'), { n: WAYS_IN.length })}>

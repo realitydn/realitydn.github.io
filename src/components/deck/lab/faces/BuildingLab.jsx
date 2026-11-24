@@ -7,7 +7,7 @@ import { FLOORS, buildingNow } from '../../../../data/deck/building';
 import { ictClock, openNow } from '../../../../data/deck/open-hours';
 import { isDealEvent } from '../../../../data/event-category';
 import { fmtTime, pickTitle } from '../../../../data/feed-helpers';
-import { useBeat } from '../ambient';
+import { useBeat } from '../../ambient';
 import { LabCtx, Odo } from '../kit';
 
 // 01 · What's happening — the face of faces/BuildingFace.jsx, plus:
@@ -25,7 +25,7 @@ export default function BuildingLab({ card, no, t, lang, v }) {
   const S = (k) => t.use(`deck.building.${k}`);
   const name = (ev) => pickTitle(ev, lang) || t.use('cal.fallbackTitle');
 
-  const { beat, ref, bump } = useBeat({ on: v !== 'off', auto: v !== 'c' });
+  const { beat, ref, bump } = useBeat({ on: v !== 'off', auto: v !== 'c', every: v === 'b' ? 8 : 4, order: Number(no) });
 
   // c: the performance IS the minute turning.
   const lastMinute = useRef(clock.hhmm);

@@ -78,6 +78,7 @@
   font: 500 12.5px/1.25 var(--grotesk); text-align: left; cursor: pointer;
 }
 .dkl-opt b { font-weight: 700; margin-right: 3px; }
+.dkl-live { display: block; font: 700 10px/1.4 var(--mont); font-style: normal; letter-spacing: .1em; text-transform: uppercase; }
 .dkl-opt[aria-checked="true"] { border-color: var(--fg); background: var(--fg); color: var(--bg); }
 .dkl-what { margin: 0; color: var(--fg-dim); font: 400 13px/1.45 var(--grotesk); }
 

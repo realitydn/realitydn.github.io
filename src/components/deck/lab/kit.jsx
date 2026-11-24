@@ -8,20 +8,6 @@ import React, { createContext, useEffect, useState } from 'react';
 //            judged at any time of day
 export const LabCtx = createContext({ demoNow: null });
 
-// True on the compact (phone) card — the same breakpoint as deck.css.
-const COMPACT = '(max-width: 760.98px)';
-export function useCompact() {
-  const [compact, setCompact] = useState(() => typeof window !== 'undefined' && window.matchMedia(COMPACT).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(COMPACT);
-    const on = () => setCompact(mq.matches);
-    on();
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return compact;
-}
-
 // useSteps(beat, n, ms) — after each beat, walk 0 → n-1, one step every `ms`.
 // At rest (and before the first beat) it is n-1: the finished state.
 export function useSteps(beat, n, ms = 240) {

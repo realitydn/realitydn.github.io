@@ -2,7 +2,7 @@ import React from 'react';
 import DeckCard from '../../DeckCard';
 import { fill, decimal } from '../../parts';
 import { AUDIT, dmy } from '../../../../data/deck/event-audit';
-import { useBeat } from '../ambient';
+import { useBeat } from '../../ambient';
 import { Odo, countCols } from '../kit';
 
 // 04 · Events we've held — the face of faces/HeldFace.jsx, plus:
@@ -12,7 +12,7 @@ import { Odo, countCols } from '../kit';
 export default function HeldLab({ card, no, t, lang, v }) {
   const S = (k) => t.use(`deck.held.${k}`);
   const max = Math.max(...AUDIT.trend30);
-  const { beat, ref } = useBeat({ on: v !== 'off' });
+  const { beat, ref } = useBeat({ on: v !== 'off', every: v === 'a' ? 8 : 4, once: v === 'b', order: Number(no) });
   const total = String(AUDIT.total);
   // One average week of events: the same figure the card prints ("22.6 a week").
   const weekAgo = String(AUDIT.total - Math.round(AUDIT.perWeek));

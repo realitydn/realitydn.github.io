@@ -9,9 +9,10 @@ import { buildingNow } from '../../../data/deck/building';
 import { ictClock, openNow } from '../../../data/deck/open-hours';
 import { isDealEvent } from '../../../data/event-category';
 import { dmy } from '../../../data/deck/event-audit';
-import { AmbientTable, playEverything, setLabAmbient } from './ambient';
+import { AmbientTable, playEverything, setLabAmbient } from '../ambient';
+import { BEAT_MS, setBeatLength } from '../../../lib/beat';
 import { LabCtx } from './kit';
-import { VARIANTS, variantOf } from './variants';
+import { PICKS, VARIANTS, variantOf } from './variants';
 import { encodeSel, pick, setLab, useLab } from './labStore';
 import BuildingLab from './faces/BuildingLab';
 import FirstLab from './faces/FirstLab';
@@ -36,8 +37,9 @@ import './lab.css';
 //   3  the same first screen at phone width (an iframe of this page, so the
 //      phone layout's own media queries apply)
 //
-// The options are in ./variants.js, the faces in ./faces/, the keyframes in
-// ./motion.css, and the turn-taking in ./ambient.js.
+// The options are in ./variants.js, the lab's faces in ./faces/ and their
+// keyframes in ./motion.css. The six picked options are the REAL faces
+// (../faces/, deck.css); the timing is ../ambient.js on the clock in lib/beat.js.
 const FACES = {
   building: BuildingLab, first: FirstLab, menu: MenuLab, held: HeldLab, giving: GivingLab,
   inside: InsideLab, host: HostLab, connect: ConnectLab, visit: VisitLab,
@@ -73,9 +75,12 @@ const WEEKDAY = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh',
 const YMD = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 const whenLabel = (ms) => `${WEEKDAY.format(ms).toUpperCase()} ${dmy(YMD.format(ms)).replace(/\.\d+$/, '')} · ${ictClock(ms).hhmm}`;
 
+// A picked option is drawn by the real face; anything else by the lab's copy.
 function Face({ card, index, sel }) {
+  const v = sel[card.key] || 'off';
+  if (v === PICKS[card.key]) return <card.Face card={card} no={cardNo(index)} t={t} lang="EN" />;
   const Comp = FACES[card.key];
-  return <Comp card={card} no={cardNo(index)} t={t} lang="EN" v={sel[card.key] || 'off'} />;
+  return <Comp card={card} no={cardNo(index)} t={t} lang="EN" v={v} />;
 }
 
 // A card is a link to its section on the home page; here it goes nowhere.
@@ -161,7 +166,8 @@ function Solo({ card, index, sel }) {
               className="dkl-opt"
               onClick={() => choose(v.id)}
             >
-              <b>{v.id === 'cur' ? 'Now' : v.id.toUpperCase()}</b> {v.name}
+              <b>{v.id === 'cur' ? 'Was' : v.id.toUpperCase()}</b> {v.name}
+              {PICKS[card.key] === v.id ? <i className="dkl-live">on the home page</i> : null}
             </button>
           ))}
         </div>
@@ -188,14 +194,14 @@ function Seg({ label, value, options, onChange }) {
 function summaryOf(sel) {
   const parts = DECK.map((card, i) => {
     const v = variantOf(card.key, sel[card.key]);
-    return v ? `${cardNo(i)}${v.id === 'cur' ? ' as now' : v.id.toUpperCase()} ${titleOf(card)}: ${v.name}` : null;
+    return v ? `${cardNo(i)}${v.id === 'cur' ? ' as it was' : v.id.toUpperCase()} ${titleOf(card)}: ${v.name}` : null;
   }).filter(Boolean);
   return parts.length ? parts.join(' · ') : 'Nothing picked: every card is still.';
 }
 
 export default function DeckLab() {
   const lab = useLab();
-  const { sel, night, quick, still, demo } = lab;
+  const { sel, night, beat, still, demo } = lab;
   const view = new URLSearchParams(window.location.search).get('view');
   const { events } = useFeed();
   const realNow = useNow();
@@ -218,8 +224,13 @@ export default function DeckLab() {
   }, [night]);
 
   useEffect(() => {
-    setLabAmbient({ tempo: quick ? 3 : 1, still });
-  }, [quick, still]);
+    setLabAmbient({ still });
+  }, [still]);
+  // The tempo switch: the whole page's beat, put back on the way out.
+  useEffect(() => {
+    setBeatLength(beat);
+    return () => setBeatLength(BEAT_MS);
+  }, [beat]);
 
   // A handle for checking the lab from the console or a script:
   //   __deckLab.setLab({ sel: { held: 'a' }, night: true }); __deckLab.play()
@@ -253,7 +264,7 @@ export default function DeckLab() {
   }
 
   const moving = Object.keys(sel).length;
-  const summary = summaryOf(sel);
+  const summary = `${summaryOf(sel)}${beat !== BEAT_MS ? ` · beat ${beat} ms` : ''}`;
   const code = encodeSel(sel).toUpperCase().replace(/CUR/g, 'cur').split('.').join(' ');
   const copy = () => {
     const text = moving ? `Deck motion picks (${code}): ${summary}` : 'Deck motion picks: none.';
@@ -271,7 +282,12 @@ export default function DeckLab() {
           <div className="dkl-bar-row">
             <strong className="dkl-title">Deck lab · card motion</strong>
             <Seg label="Theme" value={night} options={[[false, 'Day'], [true, 'Night']]} onChange={(v) => setLab({ night: v })} />
-            <Seg label="Timing" value={quick} options={[[false, 'Real'], [true, 'Quick look ×3']]} onChange={(v) => setLab({ quick: v })} />
+            <Seg
+              label="Beat"
+              value={beat}
+              options={[[500, '0.5 s'], [650, '0.65 s'], [800, '0.8 s'], [1000, '1 s'], [1300, '1.3 s']]}
+              onChange={(v) => setLab({ beat: v })}
+            />
             <Seg label="Motion" value={still} options={[[false, 'On'], [true, 'Reduced (still)']]} onChange={(v) => setLab({ still: v })} />
             <Seg
               label="Building"
@@ -288,7 +304,7 @@ export default function DeckLab() {
                 <select value={sel[card.key] || 'off'} onChange={(e) => pick(card.key, e.target.value)} aria-label={`${cardNo(i)} ${titleOf(card)}`}>
                   <option value="off">Off</option>
                   {VARIANTS[card.key].map((v) => (
-                    <option key={v.id} value={v.id}>{v.id === 'cur' ? 'Now' : v.id.toUpperCase()} · {v.name}</option>
+                    <option key={v.id} value={v.id}>{v.id === 'cur' ? 'Was' : v.id.toUpperCase()} · {v.name}</option>
                   ))}
                 </select>
               </label>
@@ -298,6 +314,7 @@ export default function DeckLab() {
             <span className="dkl-count">{moving} of {DECK.length} moving</span>
             <span className="dkl-sum-t">{summary}</span>
             <button type="button" className="dkl-btn" onClick={copy}>{copied ? 'Copied' : 'Copy picks'}</button>
+            <button type="button" className="dkl-btn dkl-btn-alt" onClick={() => setLab({ sel: PICKS })}>The six picks</button>
             <button type="button" className="dkl-btn dkl-btn-alt" onClick={() => setLab({ sel: {} })}>All off</button>
           </div>
         </div>
@@ -305,8 +322,8 @@ export default function DeckLab() {
         <section className="dkl-sec">
           <h2 className="dkl-h">1 · Each card, on its own</h2>
           <p className="dkl-p">
-            Real desktop size. On its own a card takes a turn about every ten seconds (every three on Quick look); “Play it now” skips the wait.
-            Hold the pointer over a card and it waits.
+            Real desktop size. A card performs every 4 or 8 beats (3.2 or 6.4 seconds at the 0.8 s beat); “Play it now” skips the wait.
+            Hold the pointer over a card and it sits its beat out.
           </p>
           <div className="dkl-solos">
             {DECK.map((card, i) => <Solo key={card.key} card={card} index={i} sel={sel} />)}
@@ -316,8 +333,9 @@ export default function DeckLab() {
         <section className="dkl-sec dkl-sec-wide">
           <h2 className="dkl-h">2 · Together: the first screen</h2>
           <p className="dkl-p">
-            As the home page draws it, masthead included (its ink strip already performs every five seconds or so). The cards take turns: one
-            every three to five seconds, never two at once, so the more cards are moving the longer each one rests.
+            As the home page draws it, masthead included. Everything starts on a beat of one clock: each moving card has its own beat of the
+            bar, the open-now squares swell every two beats, and the ink strip starts its performances on a beat too. The Beat switch above
+            changes the whole page's tempo; 0.8 s is what ships.
           </p>
           <div className="dkl-stage">
             <FirstScreen sel={sel} now={demoNow || realNow} />

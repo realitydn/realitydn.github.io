@@ -2,8 +2,7 @@ import React, { useEffect } from 'react';
 import DeckCard from '../../DeckCard';
 import { fill } from '../../parts';
 import { GALLERY } from '../../../../data/events';
-import { useBeat } from '../ambient';
-import { useCompact } from '../kit';
+import { useBeat, useCompact } from '../../ambient';
 
 // 06 · Inside — the face of faces/InsideFace.jsx, plus:
 //   a  a photo is replaced by another from the gallery: printed in out of
@@ -35,7 +34,7 @@ function Ply({ src, ink, cls = '' }) {
 
 export default function InsideLab({ card, no, t, v }) {
   const compact = useCompact();
-  const { beat, ref } = useBeat({ on: v !== 'off' });
+  const { beat, ref } = useBeat({ on: v !== 'off', every: 4, order: Number(no) });
 
   // How many times each of the two photos has changed by this beat, and
   // which one changed on it.

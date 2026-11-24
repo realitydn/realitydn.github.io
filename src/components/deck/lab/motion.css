@@ -2,9 +2,13 @@
    CARD MOTION — the ambient options for the inside of the deck's
    nine card faces (the lab: /deck-lab, dev only).
 
+   The six options that run on the home page have their rules in
+   deck.css (block 4, "MOTION INSIDE THE FACES"); what is left
+   here is every option that was built, for the lab's own copies.
+
    The rules every one of these keeps:
      · it prints, rests, prints again — nothing here loops. Each class
-       below plays ONCE when its face gets a turn (lab/ambient.js) and
+       below plays ONCE when its face gets a beat (../ambient.js) and
        lands back on the face as it stands at rest.
      · stamp, don't fade: transform, scale and clip only, with the
        house curves. Where a colour changes it cuts (steps), it never

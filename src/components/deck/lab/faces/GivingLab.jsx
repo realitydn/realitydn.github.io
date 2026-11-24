@@ -4,7 +4,7 @@ import { fill } from '../../parts';
 import useFundraisers from '../../../../hooks/useFundraisers';
 import { vndShort } from '../../../../data/deck/fundraisers';
 import { dmy } from '../../../../data/deck/event-audit';
-import { useBeat } from '../ambient';
+import { useBeat } from '../../ambient';
 import { PixelHeart, useSteps } from '../kit';
 
 // 05 · Charitable giving — the face of faces/GivingFace.jsx, plus:
@@ -20,7 +20,7 @@ export default function GivingLab({ card, no, t, lang, v }) {
     .filter((r) => r.heldOn)
     .sort((a, b) => String(b.heldOn).localeCompare(String(a.heldOn)))[0];
   const title = (r) => (lang === 'VN' && r.title_vi) || r.title;
-  const { beat, ref } = useBeat({ on: v !== 'off' });
+  const { beat, ref } = useBeat({ on: v !== 'off', every: v === 'a' ? 4 : 8, order: Number(no) });
 
   // b: running totals, oldest first (a fundraiser with no date yet goes
   // first), ending on the card's own total. Long lists show the last few.

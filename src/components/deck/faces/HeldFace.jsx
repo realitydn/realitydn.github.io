@@ -18,7 +18,7 @@ export default function HeldFace({ card, no, t, lang }) {
         ))}
       </span>
       <span className="dk-fact dk-x">
-        {fill(S('perWeek'), { n: decimal(AUDIT.perWeek, lang) })} · {fill(S('since'), { date: dmy(AUDIT.from) })}
+        {fill(S('perWeek90'), { n: decimal(AUDIT.perWeek90, lang) })}
       </span>
     </DeckCard>
   );

@@ -89,6 +89,16 @@ down the page.
   visit, gallery) are the same components, rendered inside a card with their
   `embedded` / `only` prop. The old `Hero.jsx` and `DarkCTA.jsx` are no longer
   rendered.
+- **Short cards, long versions in folds (24.11.26):** the page is meant to be
+  scrolled comfortably, so a card shows its short version and keeps the long
+  one behind a bar: *All events* (today, tomorrow and the calendar), *Full
+  menu* and inside it one fold per chapter, *More figures*, the welcome text
+  and the rules (each under its own question). The fold is
+  `deck/Expand.jsx`, a real `<details>`: everything in it stays in the DOM
+  and in the prerendered HTML. Its one motion is in `deck/fold.js` (the lower
+  edge of the panel is an ink line that travels down and uncovers the
+  content; no fade, no bounce; instant under reduced motion), its styles in
+  block 9 of `deck.css`. To fold something else, wrap it in `<Expand id label>`.
 - **Scroll hand-offs under trial (dev server only):** five ways for one
   opened card to give way to the next live in
   `src/components/deck/handoff/`, one `.js` + one `.css` each. A small
@@ -110,12 +120,14 @@ before the hash (UTMs) are fine.
 
 | Hash | Lands on (card) |
 |------|----------|
-| `#events` (`#calendar`, `#schedule`, `#whatson`) | What's happening: the building, tonight, the calendar |
-| `#info` (`#first`) | First time here?: the steps and the welcome panel |
-| `#rules` | the house rules, inside Find us |
+| `#events` (`#calendar`, `#schedule`, `#whatson`) | What's happening: the building and the next events, with *All events* open |
+| `#first` | First time here?: the steps |
+| `#info` | the same card, with the welcome text open |
+| `#rules` | the house rules, inside Find us, open |
 | `#host` (`#hosting`) | Host an event |
 | `#proposal` (`#propose`) | Host an event, with the proposal form open |
-| `#menus` (`#menu`, `#food`, `#drinks`) | Our menu |
+| `#menus` (`#menu`, `#food`, `#drinks`) | Our menu, with *Full menu* open (its chapters shut) |
+| `#menu-panel-cocktails` (`-spirits`, `-beerwine`, `-table`, `-zeroproof`, `-cafe`) | that chapter of the menu, open |
 | `#visit` (`#location`, `#find`) | Find us |
 | `#gallery` (`#photos`) | Inside: the gallery |
 | `#held` · `#giving` · `#connect` | Events we've held · Charitable giving · Get connected |
@@ -123,7 +135,13 @@ before the hash (UTMs) are fine.
 A card's own anchor is its `id` in `src/components/deck/deck.js`; `#rules` and
 `#proposal` are set inside their sections.
 
-The schedule flows with the page: five poster cards, four rows, then **See
+Folds and links (`src/hooks/useHashLanding.js`): a link whose target is a
+fold, or is inside one, opens it first, wherever the link is. A page *loaded*
+on `#events`, `#menus` or `#info` also opens that card's fold (the list is
+`OPENS_ON_LOAD`). A link on the page itself to a card (the strip, the cards on
+the table) only goes to the card: the short version is the point of it.
+
+Inside *All events* the schedule flows with the page: five poster cards, four rows, then **See
 all N events in the app** — the rest of the calendar lives in the app, so
 that button is the app door, not an expander.
 

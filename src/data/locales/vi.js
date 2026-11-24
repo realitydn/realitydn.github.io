@@ -546,7 +546,8 @@ export default {
       "floor": "Tầng {n}",
       "street": "mặt đường",
       "nothingToday": "Hôm nay không còn sự kiện nào nữa.",
-      "nothingTomorrow": "Ngày mai chưa có sự kiện nào trên lịch."
+      "nothingTomorrow": "Ngày mai chưa có sự kiện nào trên lịch.",
+      "all": "Tất cả sự kiện"
     },
     "first": {
       "count": "{n} bước",
@@ -571,15 +572,19 @@ export default {
     },
     "menu": {
       "now": "Trong thực đơn",
-      "sections": "{n} mục"
+      "sections": "{n} mục",
+      "full": "Toàn bộ thực đơn"
     },
     "held": {
       "asOf": "Tính đến {date}",
-      "perWeek": "{n} sự kiện mỗi tuần",
+      "perWeek90": "{n} sự kiện mỗi tuần, 3 tháng gần đây",
       "since": "từ {date}",
       "events": "sự kiện",
-      "weeks": "{n} tuần",
-      "rowWeek": "Trung bình mỗi tuần",
+      "rowWeek90": "Mỗi tuần, trong 3 tháng gần đây",
+      "rowNew": "Chuỗi mới trong 30 ngày qua",
+      "more": "Thêm số liệu",
+      "rowSpan": "Giai đoạn thống kê",
+      "rowWeeks": "Số tuần",
       "rowSeries": "Số chuỗi sự kiện",
       "rowRunning": "Chuỗi vẫn đang diễn ra",
       "rowOnce": "Chỉ diễn ra một lần",
@@ -587,7 +592,6 @@ export default {
       "trend": "Số sự kiện trong mỗi 30 ngày gần nhất",
       "trendAlt": "Số sự kiện trong mỗi 30 ngày gần nhất, tăng từ {first} lên {last} tính đến {date}",
       "peak": "Cao nhất: {n}, vào {date}",
-      "weekdays": "Theo ngày trong tuần",
       "source": "Đếm từ lịch sự kiện.",
       "link": "Xem toàn bộ báo cáo sự kiện"
     },

@@ -1,12 +1,14 @@
 import React from 'react';
 import DeckSection from '../DeckSection';
 import { fill } from '../parts';
+import Expand from '../Expand';
 import InfoHostSection from '../../InfoHostSection';
 import { HERO_PHOTOS } from '../../../data/hero-photos';
 
-// 02 · First time here?, opened — the steps, the photo of the front (so you
-// know the door when you see it), then the site's own answer to "do I need to
-// know anyone?": the welcome panel of InfoHostSection, unchanged.
+// 02 · First time here?, opened — the steps and the photo of the front (so you
+// know the door when you see it). The site's own answer to "do I need to know
+// anyone?" (the welcome panel of InfoHostSection, unchanged) is a fold, under
+// its own question. A page loaded on /#info arrives with it open.
 //
 // The steps are copy: deck.first.steps in src/data/locales/*.js. Add or drop
 // one there and the card and this section follow.
@@ -43,7 +45,9 @@ export default function FirstSection({ card, no, t, lang }) {
           </figure>
         ) : null}
       </div>
-      <InfoHostSection t={t} lang={lang} only="welcome" />
+      <Expand id="first-more" label={t.use('infoHost.welcomeTitle')}>
+        <InfoHostSection t={t} lang={lang} only="welcome" titled={false} />
+      </Expand>
     </DeckSection>
   );
 }

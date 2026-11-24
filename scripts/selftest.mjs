@@ -599,7 +599,9 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   eq('money: an at-least stand-in', amountLabel(FUNDRAISER_STANDINS[1]), '10M₫+');
 
   // The audit snapshot must agree with itself.
-  eq('audit: the weekdays add up to the total', AUDIT.byWeekday.reduce((a, n) => a + n, 0), AUDIT.total);
+  eq('audit: the three-month average is its three months ÷ the weeks in 90 days',
+    Math.round((AUDIT.last90.reduce((a, n) => a + n, 0) / (90 / 7)) * 10) / 10, AUDIT.perWeek90);
+  eq('audit: the newest month of the three is the last point of the trend', AUDIT.last90[0], AUDIT.trend30[AUDIT.trend30.length - 1]);
   check('audit: most-run is in order', AUDIT.mostRun.every((m, i, a) => i === 0 || a[i - 1].runs >= m.runs));
   check('audit: no point of the trend is above its stated peak', Math.max(...AUDIT.trend30) <= AUDIT.trendPeak.value);
   eq('audit: d.m.yy, no leading zeros', dmy('2026-10-03'), '3.10.26');

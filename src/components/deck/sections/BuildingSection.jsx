@@ -2,23 +2,31 @@ import React, { useMemo, useState } from 'react';
 import DeckSection from '../DeckSection';
 import useBuilding from '../useBuilding';
 import { fill, Pulse, isPlainClick } from '../parts';
+import Expand from '../Expand';
 import Calendar from '../../Calendar';
 import EventOverlay from '../../EventOverlay';
 import { FLOORS, roomsOf } from '../../../data/deck/building';
-import { fmtTime, pickTitle, pickLocName, dateKey } from '../../../data/feed-helpers';
-import { fmtDayDate, costLabel } from '../../../data/cal-feed';
-import { categoryOf } from '../../../data/event-category';
+import { fmtTime, pickTitle, pickLocName, pickPoster, dateKey } from '../../../data/feed-helpers';
+import { fmtDayDate, fmtDM, costLabel, cfStr } from '../../../data/cal-feed';
+import { categoryOf, isDealEvent } from '../../../data/event-category';
 import { URLS } from '../../../data/translations';
 
-// 01 · What's happening, opened — the whole building with what is in each
-// room right now, today's and tomorrow's events as tickets, then the calendar
-// the site has always had (posters, rows, the event overlay, the app door).
+// 01 · What's happening, opened.
+//
+// SHORT (what you scroll past): the building with the rooms in use lit, and
+// the next few events, large: when, the name, the room, the poster. It is
+// there to attract, not to brief.
+// LONG (the "All events" fold): today's and tomorrow's events as tickets with
+// host and price, then the calendar the site has always had (posters with
+// their stories, rows, the app door).
 //
 // Everything is the events feed. A room is ON while an event is running in it
 // (data/deck/building.js); the bar is on while we're open; a drinks deal
 // belongs to the bar. Tapping a lit room or a ticket opens that event.
 
-// How many of tomorrow's events to list before the calendar takes over.
+// How many events to show large before the fold.
+const PICKS = 3;
+// How many of tomorrow's events to list in the fold before the calendar takes over.
 const TOMORROW_MAX = 5;
 
 const eventHref = (ev) => ev.sourceUrl || `${URLS.APP}/events/${ev.id}`;
@@ -33,6 +41,7 @@ export default function BuildingSection({ card, no, t, lang }) {
   const [overlayEvent, setOverlayEvent] = useState(null);
   const S = (k) => t.use(`deck.building.${k}`);
   const C = (k) => t.use(`cal.${k}`);
+  const CF = cfStr(lang);
   const name = (ev) => pickTitle(ev, lang) || C('fallbackTitle');
   const span = (ev) => `${fmtTime(ev.startsAt)}${ev.endsAt ? ` – ${fmtTime(ev.endsAt)}` : ''}`;
 
@@ -43,8 +52,10 @@ export default function BuildingSection({ card, no, t, lang }) {
   };
 
   // Today (anything running now, plus what is still to start today) and
-  // tomorrow, soonest first. Days are Đà Nẵng days.
-  const { today, tomorrow } = useMemo(() => {
+  // tomorrow, soonest first. Days are Đà Nẵng days. `picks` are the next few
+  // events of any day, what is running now first; a drinks deal is not one
+  // (it has the bar, and its own ticket on the menu).
+  const { today, tomorrow, picks, todayKey, tomorrowKey } = useMemo(() => {
     const todayKey = dateKey(new Date(now).toISOString());
     const tomorrowKey = dateKey(new Date(now + 86400000).toISOString());
     const sorted = (events || [])
@@ -56,6 +67,11 @@ export default function BuildingSection({ card, no, t, lang }) {
       today: sorted.filter((ev) => running.has(ev.id)
         || (dateKey(ev.startsAt) === todayKey && Date.parse(ev.endsAt || ev.startsAt) >= now)),
       tomorrow: sorted.filter((ev) => dateKey(ev.startsAt) === tomorrowKey),
+      picks: sorted
+        .filter((ev) => !isDealEvent(ev) && (running.has(ev.id) || Date.parse(ev.startsAt) >= now))
+        .slice(0, PICKS),
+      todayKey,
+      tomorrowKey,
     };
   }, [events, state.nowEvents, now]);
 
@@ -93,6 +109,45 @@ export default function BuildingSection({ card, no, t, lang }) {
     );
   };
 
+  // One of the next few events, large: when, the name, the room, the poster.
+  const pick = (ev) => {
+    const on = state.nowEvents.some((x) => x.id === ev.id);
+    const key = dateKey(ev.startsAt);
+    const hour = parseInt(fmtTime(ev.startsAt).slice(0, 2), 10);
+    const day = key === todayKey ? (hour >= 17 ? C('tonight') : C('today'))
+      : key === tomorrowKey ? C('tomorrow')
+        : fmtDayDate(ev.startsAt, lang);
+    const img = pickPoster(ev.posters);
+    const title = name(ev);
+    return (
+      <a
+        key={ev.id}
+        href={eventHref(ev)}
+        className="tkt dk-pick"
+        data-cat={categoryOf(ev)}
+        onClick={(e) => open(e, ev)}
+      >
+        <span className="dk-pick-b">
+          <span className="dk-pick-w">
+            {on ? <Pulse /> : null}
+            {day} · {on ? span(ev) : fmtTime(ev.startsAt)}
+          </span>
+          <span className="dk-pick-n">{title}</span>
+          <span className="dk-pick-r">{roomName(ev, lang)}</span>
+        </span>
+        <span className="dk-pick-p">
+          {img ? (
+            <img src={img} alt={C('posterAlt').replace('{title}', title)} loading="lazy" decoding="async" />
+          ) : (
+            <span className="dk-pick-np" aria-hidden="true">{fmtDM(ev.startsAt)}</span>
+          )}
+        </span>
+      </a>
+    );
+  };
+
+  // A room of the building. On the card it says one thing: its name, and
+  // what is on in it while something is.
   const room = (code) => {
     const r = state.rooms[code];
     const ev = r.now;
@@ -102,20 +157,14 @@ export default function BuildingSection({ card, no, t, lang }) {
         {/* No claim about a room until the feed has answered, and none at all
             in the static HTML. */}
         {live && !loading ? (
-          <span className="dk-rm-t">
-            {ev ? name(ev) : S('noEvent')}
-            {ev ? (
-              <small>
-                {span(ev)}
-                {ev.host ? ` · ${ev.host}` : ''}
-              </small>
-            ) : null}
-            {r.next ? (
-              <small className="nx">
-                {S('next')} {fmtTime(r.next.startsAt)} · {name(r.next)}
-              </small>
-            ) : null}
-          </span>
+          ev ? (
+            <span className="dk-rm-t">
+              {name(ev)}
+              <small>{span(ev)}</small>
+            </span>
+          ) : (
+            <span className="sr-only">{S('noEvent')}</span>
+          )
         ) : null}
       </>
     );
@@ -192,20 +241,34 @@ export default function BuildingSection({ card, no, t, lang }) {
           ) : null}
         </div>
 
-        <div className="dk-evs">
-          <h3 className="dk-label">{clock.h >= 17 ? C('tonight') : C('today')}</h3>
-          {today.length ? today.map(ticket) : (
-            <p className="dk-small">{loading ? C('loading') : S('nothingToday')}</p>
-          )}
-          <h3 className="dk-label">{C('tomorrow')}</h3>
-          {tomorrow.length ? tomorrow.slice(0, TOMORROW_MAX).map(ticket) : (
-            <p className="dk-small">{loading ? C('loading') : S('nothingTomorrow')}</p>
+        <div className="dk-picks">
+          <h3 className="dk-label">{CF.upNext}</h3>
+          {picks.length ? picks.map(pick) : (
+            <p className="dk-small">{loading ? C('loading') : C('empty')}</p>
           )}
         </div>
       </div>
 
-      {/* The calendar as the site has always had it. */}
-      <Calendar lang={lang} embedded />
+      {/* The long version. Shut, it is one bar; a page loaded on /#events
+          arrives with it open (hooks/useHashLanding.js). */}
+      <Expand id="events-all" label={S('all')} close={t.use('eventOverlay.close')}>
+        <div className="dk-g2 dk-evs-2">
+          <div className="dk-evs">
+            <h3 className="dk-label">{clock.h >= 17 ? C('tonight') : C('today')}</h3>
+            {today.length ? today.map(ticket) : (
+              <p className="dk-small">{loading ? C('loading') : S('nothingToday')}</p>
+            )}
+          </div>
+          <div className="dk-evs">
+            <h3 className="dk-label">{C('tomorrow')}</h3>
+            {tomorrow.length ? tomorrow.slice(0, TOMORROW_MAX).map(ticket) : (
+              <p className="dk-small">{loading ? C('loading') : S('nothingTomorrow')}</p>
+            )}
+          </div>
+        </div>
+        {/* The calendar as the site has always had it. */}
+        <Calendar lang={lang} embedded />
+      </Expand>
 
       <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </DeckSection>

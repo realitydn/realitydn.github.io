@@ -561,7 +561,8 @@ export default {
       "floor": "Floor {n}",
       "street": "street level",
       "nothingToday": "Nothing else on today.",
-      "nothingTomorrow": "Nothing listed for tomorrow yet."
+      "nothingTomorrow": "Nothing listed for tomorrow yet.",
+      "all": "All events"
     },
     "first": {
       "count": "{n} steps",
@@ -586,15 +587,19 @@ export default {
     },
     "menu": {
       "now": "On the menu",
-      "sections": "{n} sections"
+      "sections": "{n} sections",
+      "full": "Full menu"
     },
     "held": {
       "asOf": "As of {date}",
-      "perWeek": "{n} a week",
+      "perWeek90": "{n} a week, last 3 months",
       "since": "since {date}",
       "events": "events",
-      "weeks": "{n} weeks",
-      "rowWeek": "A week, on average",
+      "rowWeek90": "A week, over the last 3 months",
+      "rowNew": "New series in the last 30 days",
+      "more": "More figures",
+      "rowSpan": "Period counted",
+      "rowWeeks": "Weeks",
       "rowSeries": "Different series",
       "rowRunning": "Series still running",
       "rowOnce": "Ran only once",
@@ -602,7 +607,6 @@ export default {
       "trend": "Events in each trailing 30 days",
       "trendAlt": "Events in each trailing 30 days, rising from {first} to {last} by {date}",
       "peak": "Peak: {n}, on {date}",
-      "weekdays": "By day of the week",
       "source": "Counted from the calendar.",
       "link": "The full Event Audit"
     },

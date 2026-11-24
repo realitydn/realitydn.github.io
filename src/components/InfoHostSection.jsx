@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { landingTarget } from '../hooks/useHashLanding';
+import { reveal } from './deck/fold';
 import { Link } from 'react-router-dom';
 import { URLS } from '../data/translations';
 import { pathFor } from '../data/languages';
@@ -83,7 +84,10 @@ const CHROMATIC = [
 // host panel can't switch tabs there, so it scrolls to the rules instead.
 const ONLY_ANCHOR = { welcome: 'info', rules: 'rules', host: 'host' };
 
-export default function InfoHostSection({ t, lang, only = null }) {
+// `titled={false}` (with `only`): leave the panel's own heading out. On the
+// deck page the welcome text and the rules each sit in a fold whose bar already
+// carries that heading.
+export default function InfoHostSection({ t, lang, only = null, titled = true }) {
   const ih = (k) => t.use(`infoHost.${k}`);
 
   // Public-events copy references the branding + promotion sections, which live
@@ -115,7 +119,11 @@ export default function InfoHostSection({ t, lang, only = null }) {
   const goTo = (panel, eventType) => {
     if (only && panel !== only) {
       const el = document.getElementById(ONLY_ANCHOR[panel]);
-      if (el) el.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+      // The target may be a fold (the rules are, on the deck page): open it.
+      if (el) {
+        reveal(el);
+        el.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+      }
       return;
     }
     setActiveMain(panel);
@@ -376,7 +384,7 @@ export default function InfoHostSection({ t, lang, only = null }) {
           >
             {show('welcome') && (
             <Panel id={panelId('welcome')} labelledBy="info-desktop-tab-welcome" active={activeMain === 'welcome'} plain={!!only}>
-              <PanelTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</PanelTitle>
+              {titled && <PanelTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</PanelTitle>}
               <p className="mb-4">{ih('welcomeBody')}</p>
               <ColorList items={ih('welcomeMissions')} />
               <p>
@@ -399,7 +407,7 @@ export default function InfoHostSection({ t, lang, only = null }) {
 
             {show('rules') && (
             <Panel id={panelId('rules')} labelledBy="info-desktop-tab-rules" active={activeMain === 'rules'} plain={!!only}>
-              <PanelTitle accent={NAV_ACCENTS.rules}>{ih('rulesTitle')}</PanelTitle>
+              {titled && <PanelTitle accent={NAV_ACCENTS.rules}>{ih('rulesTitle')}</PanelTitle>}
               <ColorList items={ih('rules')} />
             </Panel>
             )}

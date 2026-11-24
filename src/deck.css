@@ -577,3 +577,169 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 .ih-embed-tabs { margin-bottom: 4px; }
 .ih-embed-tabs > div { margin-top: 0; padding-left: 0; }
 .gallery-embed > div > div.py-14 { padding-top: 4px; padding-bottom: 20px; }
+
+/* ── 9. THE FOLD (24.11.26) — components/deck/Expand.jsx, fold.js.
+   The long version of a card sits behind a bar. ONE motion for every fold on
+   the page: the lower edge of the panel is a hard ink line; it travels down
+   and uncovers the content, which does not move, and rests at the end of the
+   panel. Height only: no fade, no overshoot. Under reduced motion the script
+   never animates (fold.js), so a panel is simply open or shut.
+
+   The bar is paper with an ink edge; open, it is ink. Its sign is a plus
+   that loses its upright (scale, not a fade). Focus is the misregister plate
+   (the rule for summary in index.css); the face of the bar is opaque so the
+   plate reads. ── */
+.dk-ex { margin-top: 22px; }
+.dk-ex > summary {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 52px; padding: 10px 14px 10px 16px;
+  background: #fffbf1; color: #0d0905; border: 2px solid #0d0905;
+  box-shadow: 4px 4px 0 var(--kp, var(--print-neutral));
+  font: 700 13px/1.25 var(--mont); letter-spacing: .11em; text-transform: uppercase;
+  cursor: pointer; list-style: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.dk-ex > summary::-webkit-details-marker { display: none; }
+.dk-ex > summary::marker { content: ''; }
+.dk-ex-l { flex: 1; min-width: 0; margin: 0; font: inherit; letter-spacing: inherit; overflow-wrap: break-word; }
+:lang(vi) .dk-ex-l { line-height: 1.35; }
+.dk-ex-m { flex: none; font: 500 13px/1.2 var(--grotesk); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.dk-ex-mark { flex: none; width: 14px; height: 14px; border: 2px solid currentColor; }
+/* the sign: two bars; the upright goes when the fold is open */
+.dk-ex-pm { position: relative; flex: none; width: 14px; height: 14px; }
+.dk-ex-pm::before, .dk-ex-pm::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2.5px; margin-top: -1.25px;
+  background: currentColor;
+}
+.dk-ex-pm::after { transform: rotate(90deg); transition: transform var(--dur-quick) var(--ease-snap); }
+.dk-ex[open]:not(.is-closing) > summary .dk-ex-pm::after,
+.dk-ex-x .dk-ex-pm::after { transform: rotate(90deg) scaleX(0); }
+@media (hover: hover) { .dk-ex > summary:hover { background: #f4ecd7; } }
+.dk-ex[open]:not(.is-closing) > summary { background: #0d0905; color: #fffbf1; }
+.dk-ex > summary:focus-visible { background-color: #fffbf1; }
+.dk-ex[open]:not(.is-closing) > summary:focus-visible { background-color: #0d0905; }
+
+/* the panel: its lower edge is the line that travels */
+.dk-ex-b { box-sizing: border-box; border-bottom: 2px solid #0d0905; }
+.dk-ex.is-moving > .dk-ex-b { overflow-y: clip; }
+.dk-ex-in { padding: 24px 0 26px; }
+.dk-ex-end { margin: 26px 0 0; display: flex; justify-content: flex-end; }
+.dk-ex-x {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px;
+  background: #fffbf1; color: #0d0905; border: 2px solid #0d0905; cursor: pointer;
+  font: 700 12px/1.2 var(--mont); letter-spacing: .11em; text-transform: uppercase;
+}
+.dk-ex-x:focus-visible { background-color: #fffbf1; }
+
+/* a fold inside a fold (the chapters of the menu): the bars stack flush, like
+   ruled rows; no print, the label is a heading */
+.dk-ex-sub { margin-top: -2px; }
+.dk-ex-sub > summary { box-shadow: none; min-height: 56px; font-size: 15px; letter-spacing: .06em; }
+.dk-ex-sub > .dk-ex-b { border-bottom: 0; border-left: 2px solid #0d0905; border-right: 2px solid #0d0905; }
+.dk-ex-sub[open] > .dk-ex-b { border-bottom: 2px solid #0d0905; }
+.dk-ex-sub > .dk-ex-b > .dk-ex-in { padding: 20px 14px 26px; }
+.dk-ex-sub > summary:focus-visible { position: relative; z-index: 1; }
+@media (min-width: 761px) {
+  .dk-ex > summary { padding: 12px 20px 12px 22px; font-size: 14px; }
+  .dk-ex-sub > summary { font-size: 17px; }
+  .dk-ex-sub > .dk-ex-b > .dk-ex-in { padding: 26px 22px 32px; }
+}
+
+/* ── 10. The short cards (24.11.26) ── */
+
+/* 01 the next few events, large: when · the name · the room, and the poster */
+.dk-picks { display: grid; gap: 14px; align-content: start; }
+.dk-pick {
+  --px: var(--print-md);
+  display: grid; grid-template-columns: minmax(0, 1fr) 88px; align-items: stretch;
+  text-decoration: none;
+}
+.dk-pick-b { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; padding: 14px 14px 14px 16px; }
+.dk-pick-w {
+  font: 700 15px/1.2 var(--grotesk); letter-spacing: .04em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.dk-pick-w .dk-pulse { width: 9px; height: 9px; margin-right: 7px; }
+.dk-pick-n { font: 700 20px/1.14 var(--mont); letter-spacing: .01em; overflow-wrap: break-word; }
+:lang(vi) .dk-pick-n { line-height: 1.28; }
+.dk-pick-r { font: 500 15px/1.3 var(--grotesk); color: var(--fg-dim); }
+/* the poster is never cropped: it sits whole (4:5) in a column of its
+   category colour, which shows above and below it when the words run long */
+.dk-pick-p {
+  position: relative; display: flex; align-items: center; min-height: 110px;
+  background: var(--cat, #0d0905); border-left: 2px solid #0d0905; overflow: hidden;
+}
+.dk-pick-p img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.dk-pick-np {
+  position: absolute; inset: 0; display: grid; place-items: center; color: var(--on-cat, #fffbf1);
+  font: 700 22px/1 var(--grotesk); font-variant-numeric: tabular-nums;
+}
+@media (min-width: 761px) {
+  .dk-pick { grid-template-columns: minmax(0, 1fr) 104px; }
+  .dk-pick-b { padding: 16px 18px 16px 20px; }
+  .dk-pick-n { font-size: 23px; }
+  .dk-pick-w { font-size: 16px; }
+}
+/* the rooms say one thing each now: shorter boxes */
+.dk-rm { min-height: 64px; }
+@media (max-width: 620px) { .dk-rm { min-height: 56px; } }
+/* the long version: today and tomorrow side by side where there is room */
+.dk-evs-2 { margin-bottom: 4px; }
+.dk-ex .cal-embed { margin-top: 32px; }
+
+/* 02 a step is a row on a phone: its number beside its words */
+@media (max-width: 519.98px) {
+  .dk-stepgrid { gap: 12px; }
+  .dk-step { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 12px; padding: 12px 14px; }
+  .dk-step > b { grid-row: 1 / span 2; margin: 2px 0 0; }
+  .dk-step .dk-small { margin-top: 2px; }
+  .dk-photo { min-height: 210px; }
+}
+
+/* 03 a taste of the menu, then the menu in a fold */
+.dk-taste ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
+.dk-taste li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline;
+  padding: 12px 0; border-top: 1.5px solid var(--hairline);
+}
+.dk-taste li:first-child { border-top: 2px solid #0d0905; }
+.dk-taste-n { font: 700 18px/1.2 var(--mont); letter-spacing: .03em; text-transform: uppercase; }
+.dk-taste-p { font: 700 18px/1.2 var(--grotesk); font-variant-numeric: tabular-nums; }
+.dk-taste-t { grid-column: 1 / -1; margin-top: 4px; font: italic 400 15px/1.45 var(--grotesk); color: var(--fg-dim); }
+@media (min-width: 761px) {
+  .dk-taste ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dk-taste li:nth-child(2) { border-top: 2px solid #0d0905; }
+  .dk-taste-n, .dk-taste-p { font-size: 20px; }
+}
+.menu-embed .deal-tkt { margin-bottom: 24px; }
+.dk-menu-note { margin: 0 0 20px; }
+.dk-menu-note a { text-decoration: underline; text-underline-offset: 4px; font-weight: 600; color: #0d0905; }
+/* a chapter in its fold: the old rows, without the old panel frame */
+.dk-chapter.menu-panels { border: 0; box-shadow: none; padding: 0; background: none; }
+
+/* 04 the figures chosen for this page; the rest in the fold. Two large:
+   how many, and how many a week lately. */
+.dk-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; align-items: start; }
+.dk-nums .dk-num { font-size: clamp(46px, 13vw, 76px); }
+.dk-nums .dk-fact { margin: 8px 0 0; font-size: 15px; line-height: 1.35; }
+.dk-held .dk-rc { font-size: 16px; }
+.dk-held .dk-rl { padding: 5px 0; }
+@media (min-width: 900px) { .dk-held:not(.dk-held-more) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.dk-rc-asof { margin-top: 12px; }
+.dk-held-more { align-items: start; }
+@media (min-width: 900px) { .dk-held-more { grid-template-columns: minmax(0, 1fr) minmax(0, 350px); } }
+
+/* 09 the rules are a fold now; the QR block stands alone */
+.dk-visit-more { grid-template-columns: minmax(0, 1fr) !important; }
+
+/* 08 + 09 on a phone: the buttons sit two to a row */
+@media (max-width: 620px) {
+  .dk-way .dk-row { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .dk-way .dk-row .dk-btn { padding: 12px 8px; }
+  .dk-open .visit-card .mt-6.flex { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dk-open .visit-card .mt-6.flex > a { justify-content: center; min-height: 48px; padding: 12px 8px; font-size: 12px; }
+  .dk-open .visit-card .mt-6.flex > a:first-child { grid-column: 1 / -1; }
+  .dk-open .visit-map iframe { height: 300px; }
+}
+
+/* the welcome text and the rules inside their folds: the fold supplies the gap */
+.dk-ex .ih-embed .ih-panels-embed > div { padding-top: 0; padding-bottom: 0; }

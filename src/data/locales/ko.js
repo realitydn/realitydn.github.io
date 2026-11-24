@@ -546,7 +546,8 @@ export default {
       "floor": "{n}층",
       "street": "지상층",
       "nothingToday": "오늘은 더 이상 이벤트가 없어요.",
-      "nothingTomorrow": "내일 일정은 아직 없어요."
+      "nothingTomorrow": "내일 일정은 아직 없어요.",
+      "all": "모든 이벤트"
     },
     "first": {
       "count": "{n}단계",
@@ -571,15 +572,19 @@ export default {
     },
     "menu": {
       "now": "메뉴에서",
-      "sections": "{n}개 섹션"
+      "sections": "{n}개 섹션",
+      "full": "전체 메뉴"
     },
     "held": {
       "asOf": "{date} 기준",
-      "perWeek": "주 {n}회",
+      "perWeek90": "최근 3개월 주 {n}회",
       "since": "{date}부터",
       "events": "이벤트",
-      "weeks": "{n}주",
-      "rowWeek": "주 평균",
+      "rowWeek90": "최근 3개월 주 평균",
+      "rowNew": "최근 30일 새 시리즈",
+      "more": "수치 더 보기",
+      "rowSpan": "집계 기간",
+      "rowWeeks": "주 수",
       "rowSeries": "서로 다른 시리즈",
       "rowRunning": "진행 중인 시리즈",
       "rowOnce": "한 번만 열린 이벤트",
@@ -587,7 +592,6 @@ export default {
       "trend": "최근 30일 단위 이벤트 수",
       "trendAlt": "최근 30일 단위 이벤트 수: {date} 기준 {first}에서 {last}까지 증가",
       "peak": "최고: {n}, {date}",
-      "weekdays": "요일별",
       "source": "캘린더 기준으로 집계했어요.",
       "link": "이벤트 리포트 전체 보기"
     },

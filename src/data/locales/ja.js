@@ -546,7 +546,8 @@ export default {
       "floor": "{n}階",
       "street": "地上階",
       "nothingToday": "本日のイベントは以上です。",
-      "nothingTomorrow": "明日の予定はまだありません。"
+      "nothingTomorrow": "明日の予定はまだありません。",
+      "all": "すべてのイベント"
     },
     "first": {
       "count": "{n}ステップ",
@@ -571,15 +572,19 @@ export default {
     },
     "menu": {
       "now": "メニューより",
-      "sections": "{n}セクション"
+      "sections": "{n}セクション",
+      "full": "メニュー全体"
     },
     "held": {
       "asOf": "{date}時点",
-      "perWeek": "週{n}件",
+      "perWeek90": "直近3か月は週{n}件",
       "since": "{date}から",
       "events": "イベント",
-      "weeks": "{n}週間",
-      "rowWeek": "週あたりの平均",
+      "rowWeek90": "直近3か月の週あたり",
+      "rowNew": "直近30日の新シリーズ",
+      "more": "その他の数字",
+      "rowSpan": "集計期間",
+      "rowWeeks": "週数",
       "rowSeries": "シリーズの種類",
       "rowRunning": "継続中のシリーズ",
       "rowOnce": "1回のみ開催",
@@ -587,7 +592,6 @@ export default {
       "trend": "直近30日ごとのイベント数",
       "trendAlt": "直近30日ごとのイベント数：{date}時点で{first}件から{last}件に増加",
       "peak": "最多：{n}件（{date}）",
-      "weekdays": "曜日別",
       "source": "カレンダーをもとに集計。",
       "link": "イベントレポート全文"
     },

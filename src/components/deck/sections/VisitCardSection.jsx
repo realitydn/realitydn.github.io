@@ -1,6 +1,7 @@
 import React from 'react';
 import DeckSection from '../DeckSection';
 import { fill, Pulse, isStill } from '../parts';
+import Expand from '../Expand';
 import VisitSection from '../../VisitSection';
 import InfoHostSection from '../../InfoHostSection';
 import useNow from '../../../hooks/useNow';
@@ -10,8 +11,10 @@ import { openNow } from '../../../data/deck/open-hours';
 // section the site has always had (the facts ticket, directions, the map),
 // the QR for realitydn.com, and the rules of the space.
 //
-// #rules lands on the rules, here. They are the rules panel of
-// InfoHostSection, unchanged: all of them, not a selection.
+// The rules are a fold, under their own question. They are the rules panel of
+// InfoHostSection, unchanged: all of them, not a selection. #rules IS the
+// fold, so a link to it (the host panel's "general rules", an old /#rules)
+// opens it and lands on it.
 export default function VisitCardSection({ card, no, t, lang }) {
   const now = useNow();
   const { open, until } = openNow(now);
@@ -48,10 +51,10 @@ export default function VisitCardSection({ card, no, t, lang }) {
             <p className="dk-small dk-dim">{t.use('faq.hoursA')}</p>
           </div>
         </div>
-        <div id="rules" className="dk-rules">
-          <InfoHostSection t={t} lang={lang} only="rules" />
-        </div>
       </div>
+      <Expand id="rules" className="dk-rules" label={t.use('infoHost.rulesTitle')}>
+        <InfoHostSection t={t} lang={lang} only="rules" titled={false} />
+      </Expand>
     </DeckSection>
   );
 }

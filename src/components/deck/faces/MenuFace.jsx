@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DeckCard from '../DeckCard';
 import { isStill } from '../parts';
+import { pickDrinks } from '../menu-picks';
 import { useMenu } from '../../../data/menu-i18n';
 import useFeed from '../../../hooks/useFeed';
 import { prefersReducedMotion } from '../../../hooks/motion';
@@ -11,26 +12,9 @@ import { vnd } from '../../../data/deck/fundraisers';
 
 // 03 · Our menu — one drink at a time, changing every few seconds. The
 // drinks, their one-liners and prices are the menu itself (src/data/menu.js,
-// generated from the app): nothing here is written for the card.
-//
-// WHICH DRINKS: every item in these menu chapters that has a one-liner (its
-// `tag`) and a price, taken a chapter at a time in turn so the card moves
-// between cocktails, zero proof and the café. Change ROLL_FROM to change the mix.
-const ROLL_FROM = ['cocktails', 'zeroproof', 'cafe'];
-const ROLL_MAX = 15;
+// generated from the app): nothing here is written for the card. Which
+// drinks: ../menu-picks.js.
 const HOLD_MS = 4200;
-
-function pickDrinks(menu) {
-  const lanes = ROLL_FROM.map((key) => {
-    const cat = menu.find((c) => c.key === key);
-    return cat ? cat.sections.flatMap((s) => s.items).filter((it) => it.tag && it.price) : [];
-  });
-  const out = [];
-  for (let i = 0; out.length < ROLL_MAX && lanes.some((l) => i < l.length); i++) {
-    for (const lane of lanes) if (lane[i] && out.length < ROLL_MAX) out.push(lane[i]);
-  }
-  return out;
-}
 
 export default function MenuFace({ card, no, t, lang }) {
   const menu = useMenu(lang);

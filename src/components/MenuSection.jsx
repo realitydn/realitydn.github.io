@@ -8,6 +8,8 @@ import { fmtTime, pickTitle, pickQualifier, needsRsvp } from '../data/feed-helpe
 import { whenKey, fmtDayDate, catLabel, nextDealToday } from '../data/cal-feed';
 import { isDealEvent } from '../data/event-category';
 import { RsvpStub, openRsvpDoor } from './RsvpNote';
+import Expand from './deck/Expand';
+import { pickDrinks } from './deck/menu-picks';
 
 // NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the menu is
 // ONE neutral cream ticket with ruled rows. The category tabs, their accent
@@ -150,6 +152,103 @@ export default function MenuSection({ lang, t, embedded = false }) {
   const tabStyle = (key, active) =>
     active ? { boxShadow: `5px 6px 0 ${CATEGORY_ACCENTS[key] || 'var(--fg)'}` } : undefined;
 
+  // One chapter's sections and items. The same rows in both layouts.
+  const chapter = (cat) => cat.sections.map((section, sIdx) => (
+    <div key={sIdx}>
+      <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
+        <span
+          className="inline-block w-3 h-3 shrink-0"
+          style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
+          aria-hidden="true"
+        />
+        {section.label}
+      </h4>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+        {section.items.map((item, idx) => (
+          <li key={idx} className="menu-item border-b border-ink/10 pb-2">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="menu-item-n font-body font-semibold text-[15px] md:text-base">
+                {item.name}
+              </span>
+              {item.price && (
+                <span className="menu-item-p font-body text-ink tabular-nums font-medium shrink-0">
+                  {item.price}k
+                </span>
+              )}
+            </div>
+            {item.tag && (
+              <div className="menu-item-note text-ink/70 text-sm italic mt-1 font-body">
+                {item.tag}
+              </div>
+            )}
+            {item.desc && (
+              <div className="menu-item-note text-gray-600 text-sm mt-1 font-body">
+                {item.desc}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ));
+
+  // THE DECK (24.11.26): the menu is not laid out in full on the way down the
+  // page. The card shows the PDF link, today's deal when there is one, and a
+  // short taste (a few drinks, straight from the menu). "Full menu" is a fold;
+  // inside it each chapter is a fold of its own, so nobody opens more than
+  // they came for. Every chapter is still in the DOM and in the prerendered
+  // HTML. The chapters keep their old ids (#menu-panel-cocktails …): a link to
+  // one opens the menu and that chapter (hooks/useHashLanding.js).
+  if (embedded) {
+    const taste = pickDrinks(MENU, 4);
+    return (
+      <div className="menu-embed text-ink">
+        {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
+        {taste.length > 0 && (
+          <div className="dk-taste">
+            <h3 className="dk-label">{t.use('deck.menu.now')}</h3>
+            <ul>
+              {taste.map((item, i) => (
+                <li key={i}>
+                  <span className="dk-taste-n">{item.name}</span>
+                  <span className="dk-taste-p">{item.price}k</span>
+                  <span className="dk-taste-t">{item.tag}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <Expand
+          id="menu-full"
+          label={t.use('deck.menu.full')}
+          meta={t.use('deck.menu.sections').replace('{n}', String(MENU.length))}
+          close={t.use('eventOverlay.close')}
+        >
+          {/* Prices print as "150k" (house style); said once, here. */}
+          <p className="dk-small dk-dim dk-menu-note">
+            {t.use('menuPriceNote')}{' '}
+            <a href={MENU_PDF[lang] || URLS.PDF} target="_blank" rel="noreferrer">{t.use('downloadPdf')}</a>
+          </p>
+          <div className="dk-chapters">
+            {MENU.map((cat) => (
+              <Expand
+                key={cat.key}
+                id={panelId(cat.key)}
+                sub
+                as="h3"
+                label={cat.label}
+                mark={CATEGORY_ACCENTS[cat.key] || 'var(--fg)'}
+              >
+                <div className="menu-panels dk-chapter space-y-8">{chapter(cat)}</div>
+              </Expand>
+            ))}
+          </div>
+        </Expand>
+        <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
+      </div>
+    );
+  }
+
   return (
     // A paper band in the canon stack (ink pass 22.08.26): full-bleed field
     // on var(--bg) — theme-aware where the old hardcoded cream ground wasn't
@@ -290,44 +389,7 @@ export default function MenuSection({ lang, t, embedded = false }) {
 
                 {/* Section groups are direct children so the cascade hits
                     each one in turn */}
-                {cat.sections.map((section, sIdx) => (
-                  <div key={sIdx}>
-                    <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
-                      <span
-                        className="inline-block w-3 h-3 shrink-0"
-                        style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
-                        aria-hidden="true"
-                      />
-                      {section.label}
-                    </h4>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-                      {section.items.map((item, idx) => (
-                        <li key={idx} className="menu-item border-b border-ink/10 pb-2">
-                          <div className="flex items-baseline justify-between gap-4">
-                            <span className="menu-item-n font-body font-semibold text-[15px] md:text-base">
-                              {item.name}
-                            </span>
-                            {item.price && (
-                              <span className="menu-item-p font-body text-ink tabular-nums font-medium shrink-0">
-                                {item.price}k
-                              </span>
-                            )}
-                          </div>
-                          {item.tag && (
-                            <div className="menu-item-note text-ink/70 text-sm italic mt-1 font-body">
-                              {item.tag}
-                            </div>
-                          )}
-                          {item.desc && (
-                            <div className="menu-item-note text-gray-600 text-sm mt-1 font-body">
-                              {item.desc}
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                {chapter(cat)}
               </section>
             ))}
           </div>

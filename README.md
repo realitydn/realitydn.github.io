@@ -115,13 +115,25 @@ down the page.
   edge of the panel is an ink line that travels down and uncovers the
   content; no fade, no bounce; instant under reduced motion), its styles in
   block 9 of `deck.css`. To fold something else, wrap it in `<Expand id label>`.
-- **Scroll hand-offs under trial (dev server only):** five ways for one
-  opened card to give way to the next live in
-  `src/components/deck/handoff/`, one `.js` + one `.css` each. A small
-  control in the bottom-right corner of the home page switches between them,
-  or open `/?handoff=overprint` (`drift`, `handmedown`, `spines`, `seam`).
-  None of it is in a production build: `handoff/mode.js` explains the gate,
-  `handoff/index.js` how to drop a loser or keep a winner.
+- **How the page scrolls: the seam (24.11.26).** The opened card's frame
+  stays put on the screen and a hard line travels up through it: above the
+  line the card leaving, below it the card arriving. The arriving card's
+  banner (number, title, live figure) rides just under the line, then locks
+  under the strip while its card is read. It lives in
+  `src/components/deck/seam/` (`seam.js` what it does, `stage.js` the
+  measuring and the landings, `seam.css` the look, `index.js` when it runs).
+  - It is added by script once the page runs. With no JavaScript, in the
+    prerendered HTML and under reduced motion the page is a plain scroll
+    with every card in its end state.
+  - A card taller than the screen leaves blank paper under a fold bar near
+    its end (`TAIL` in `seam.js`), so the bar is not covered by the next card
+    as soon as it appears.
+  - Links and deep links land with the card at rest: its banner under the
+    strip, the target clear of it.
+  - To turn it off, remove the `useSeam()` call in `App.jsx`.
+  - The four other hand-offs that were tried (Overprint, Drift,
+    Hand-me-down, Spines) and the old dealt-in card are in git history on
+    the branch `claude/deck-handoffs`.
 
 ## Forms
 

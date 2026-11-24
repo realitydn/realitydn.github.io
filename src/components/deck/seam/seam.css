@@ -1,0 +1,88 @@
+/* ============================================================
+   THE SEAM (see seam.js). Every rule here is scoped to
+   html[data-seam], which seam/index.js sets once the page runs.
+   With no JavaScript, in the prerendered HTML and under reduced
+   motion the attribute is never set: the page is a plain scroll
+   with every card in its end state.
+   ============================================================ */
+
+/* --seam-m: the strip of page left under the frame (its bottom rule + print). */
+html[data-seam] { --seam-m: 12px; }
+@media (min-width: 761px) { html[data-seam] { --seam-m: 16px; } }
+
+/* One frame, so the cards butt up against each other: no gap between them,
+   and each casts its print to the side only. The frame's bottom print is
+   drawn once, at the foot of the screen (.seam-floor). */
+html[data-seam] .dk-sec { padding-top: 0; padding-bottom: 0; }
+html[data-seam] .dk-open {
+  isolation: isolate;
+  box-shadow: var(--dk-px) 0 0 var(--kp);
+  /* every card fills the frame, so the frame never changes size. A card
+     shorter than the screen (some are, on a wide screen) gets blank paper at
+     its end. svh, not the measured height: a phone's address bar must not
+     resize the cards as it hides. */
+  min-height: calc(100svh - var(--seam-strip) - var(--seam-m));
+  /* room under a fold bar near the card's end (seam.js, "ROOM UNDER A FOLD BAR") */
+  padding-bottom: var(--seam-tail, 0px);
+}
+html[data-seam] .dk-sec:last-child .dk-open { box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp); }
+
+/* A card near the screen is HELD between two limits:
+     top     its end never rises above the frame's bottom (the card leaving),
+             and a card shorter than the frame sits at the frame's top
+     bottom  its top never drops below the frame's top (the card arriving)
+   and shown only where seam.js says it would naturally be (--seam-clip).
+   Until that has been worked out it is hidden. */
+html[data-seam] .dk-sec.seam-live {
+  position: sticky;
+  top: min(var(--seam-strip), calc(var(--seam-vh) - var(--seam-m) - var(--seam-h)));
+  bottom: calc(var(--seam-vh) - var(--seam-strip) - var(--seam-h));
+  clip-path: var(--seam-clip, inset(100% 0 0 0));
+}
+
+/* THE BANNER. While its card is read it is locked under the strip (the cards
+   are several screens tall, and the banner says which one you are in). While
+   its card arrives, seam.js moves it down to ride the line (a transform set
+   on the element). It is the top of its own card, so it leaves with the
+   card's end. Cost: on a phone the strip plus a banner take about 135px. */
+html[data-seam] .dk-oh { position: sticky; top: var(--seam-strip); z-index: 5; }
+
+/* Landings: a card lands with its banner under the strip; anything inside a
+   card lands clear of the strip and the banner. */
+html[data-seam] section.dk-sec,
+html[data-seam] .dk-sec > .dk-anchor { scroll-margin-top: var(--seam-strip); }
+html[data-seam] .dk-ob [id] { scroll-margin-top: calc(var(--seam-strip) + var(--seam-hh) + 16px) !important; }
+
+/* The strip's own "you are here" marker reads rectangles, which are wrong
+   while cards are held; the stage marks the tab instead. */
+html[data-seam] .dk-hand-a[aria-current="true"] { box-shadow: none; }
+html[data-seam] .dk-hand-a[data-seam-cur] { box-shadow: inset 0 -5px 0 var(--lead); }
+
+/* What seam.js draws over the page: the lines, and the frame's foot. */
+.seam-ui { position: fixed; inset: 0; z-index: 25; pointer-events: none; --dk-px: 6px; }
+@media (min-width: 761px) { .seam-ui { --dk-px: 10px; } }
+
+/* THE LINE: ink, hard, as wide as the frame. */
+.seam-ln {
+  position: absolute; top: 0; left: var(--seam-fl); width: var(--seam-fw); height: 4px;
+  background: #0d0905;
+}
+.seam-ln[hidden] { display: none; }
+
+/* THE FOOT of the frame: a strip of page that the cards disappear behind,
+   carrying the frame's bottom rule and its print. */
+.seam-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--seam-m);
+  background: var(--bg);
+}
+.seam-floor[hidden] { display: none; }
+.seam-floor::after { /* the print, in the colour of the card at the foot (.k-*) */
+  content: ''; position: absolute; top: 0;
+  left: calc(var(--seam-fl) + var(--dk-px)); width: var(--seam-fw); height: calc(var(--dk-px) + 2px);
+  background: var(--kp, var(--print-neutral));
+}
+.seam-floor::before { /* the rule */
+  content: ''; position: absolute; top: 0; z-index: 1;
+  left: var(--seam-fl); width: var(--seam-fw); height: 2px;
+  background: var(--tkt-edge);
+}

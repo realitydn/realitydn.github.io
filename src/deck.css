@@ -14,7 +14,8 @@
      3  the hero + the table .dk-hero  .dk-table  .dk-card
      4  what sits on a face  .dk-num .dk-mb .dk-roll .dk-spark …
      5  the hand             .dk-hand
-     6  an opened card       .dk-sec  .dk-open  + the deal-in
+     6  an opened card       .dk-sec  .dk-open  (the scroll between
+                             them: components/deck/seam/seam.css)
      7  inside the sections  building, steps, audit, giving …
      8  the old sections, embedded
    ============================================================ */
@@ -444,7 +445,6 @@ section.dk-sec { scroll-margin-top: 50px; }
   background: #fffbf1; color: #0d0905;
   border: 2px solid var(--dk-edge);
   box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp);
-  transform-origin: 50% 0;
 }
 .dk-oh {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px;
@@ -467,20 +467,6 @@ section.dk-sec { scroll-margin-top: 50px; }
   .dk-oh-no { font-size: 20px; }
   .dk-oh-live { flex-basis: auto; margin: 0 0 0 auto; font-size: 16px; text-align: right; }
   .dk-ob { padding: 32px 30px 38px; }
-}
-
-/* THE DEAL. The card arrives small and tilted, straightens, lands a touch
-   past square and settles; its print snaps in on landing. Transform and
-   shadow only — it printed or it didn't, nothing fades. Only ever added by
-   useDealIn as the card scrolls on, so the markup always holds the end
-   state; the global reduced-motion rule (index.css) collapses it to nothing. */
-.dk-deal { animation: dk-deal 720ms var(--ease-snap) both; }
-@keyframes dk-deal {
-  0%   { transform: translateY(120px) rotate(-6deg) scale(.5); box-shadow: 0 0 0 var(--kp); }
-  58%  { transform: translateY(-6px) rotate(1.1deg) scale(1.014); box-shadow: 0 0 0 var(--kp); }
-  78%  { transform: translateY(0) rotate(-.3deg) scale(.997); box-shadow: 0 0 0 var(--kp); }
-  79%  { box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp); }
-  100% { transform: none; box-shadow: var(--dk-px) var(--dk-px) 0 var(--kp); }
 }
 
 /* ── 7. Inside the sections ── */

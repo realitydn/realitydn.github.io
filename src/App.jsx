@@ -18,7 +18,7 @@ import { loadMenu } from "./data/menu-i18n";
 import { buildFaq } from "./data/faq";
 import useFeed from "./hooks/useFeed";
 import useHashLanding from "./hooks/useHashLanding";
-import useHandoff from "./components/deck/handoff/useHandoff";
+import useSeam from "./components/deck/seam";
 
 // Builds the `t` helper from a language code. Callers use `t.use('path.to.key')`.
 // The catalogue must be loaded — every route renders under <Localized>, which
@@ -61,8 +61,9 @@ function HomePage({ lang }) {
   // same shared load Calendar/EventsSchema use — no extra fetch.
   const { loading: feedLoading } = useFeed();
   useHashLanding({ settled: !feedLoading });
-  // The scroll hand-offs under trial — dev server only (deck/handoff/mode.js).
-  useHandoff(lang);
+  // The page's scroll: one card gives way to the next along a travelling
+  // line (components/deck/seam/). Plain scroll with no JS or reduced motion.
+  useSeam(lang);
 
   return (
     <div className="min-h-screen">

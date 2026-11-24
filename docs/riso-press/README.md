@@ -8,6 +8,26 @@ path below; nothing depends on chat history.
 
 ---
 
+## Rev 3 — grain, 24.11.26
+
+- **The press's FM grain is read between its cells.** `riso-press.js`
+  `blueSmooth()` bilinearly interpolates the blue-noise tile, so on a 2–4×
+  export each grain is a rounded, antialiased ink blob instead of a square
+  cell. Interpolation squeezes the field's histogram, so the value goes back
+  through the interpolated field's CDF at that sub-cell position (an 8×8 grid
+  of measured tables) — tone in = tone out at every scale. At the golden size
+  (260 px, cells land on grid points) the output is byte-identical to rev 2.
+- **The Finish grain is a particle field** (`riso-engine.js` `grainField()`):
+  round grains on jittered lattices in design px, splatted with a one-pixel
+  antialiased edge, plus a clumping lattice (`grainClump`). Four characters
+  on `grainBlend`: `soft` (Film), `colour`, `dirty` (Toner), `stipple`.
+  `soft`/`dirty` keep their stored names, so saved posters pick the same one.
+- **Threshold** (16th treatment, `threshold`): Photoshop's Threshold + Grain.
+  The grain field is added before a hard cut, so the edge breaks into specks
+  of each ink. It lays its own one or two plates (`thresholdInks()`) rather
+  than going through `pressThrough`, whose 24³ separation table pulls a pure
+  yellow ground toward orange when red is on the drum set.
+
 ## Rev 2 — built, 22.09.26. What changed from the plan, and where things are
 
 Executed in one pass across Poster Studio, Print Studio and the app's

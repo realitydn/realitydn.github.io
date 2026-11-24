@@ -28,6 +28,9 @@ const TREATS = [
   {v:'cutout',l:'Cutout',tag:'max punch',
    best:'One clear subject on a dark background; loud headlines.',
    avoid:"The background is busy — the subject won't separate."},
+  {v:'threshold',l:'Threshold',tag:'two inks · grain at the cut',
+   best:'Bold subjects with soft light — a gradient becomes a spray of specks, the edges dissolve into dust.',
+   avoid:'Faces that must stay readable in low light — the cut throws whole features to one ink.'},
   {v:'overprint',l:'Overprint',tag:'wet overlap',
    best:'Texture / abstract shots, covers, two-colour richness.',
    avoid:'Literal clarity matters — it abstracts the image.'},
@@ -92,7 +95,7 @@ const PRESS_BLENDS = [
 const FINISH_NEUTRAL = {
   finBright:0, finContrast:1, finSat:1,
   blurOver:0, blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
-  grain:0, grainSize:2, grainInk:null, grainBlend:'soft',
+  grain:0, grainSize:2, grainInk:null, grainBlend:'soft', grainClump:0.35,
   vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35
 };
 const FINISH_LOOKS = [
@@ -103,8 +106,19 @@ const FINISH_LOOKS = [
     note:'Stock, plus wet ink and an edge falloff — a print still in the room.' },
   { v:'handled', l:'Handled',  p:{ paperTex:0.55, grain:0.35, grainSize:2.5, inkBleed:0.25, vignette:0.4, dust:0.4, misprint:5 },
     note:'Dust, scratches and a mis-registered pull. A print that has been somewhere.' },
+  { v:'stipple', l:'Stippled', p:{ grain:0.45, grainSize:1, grainBlend:'stipple', grainClump:0.2, paperTex:0.25 },
+    note:'Hard specks of ink in the lights and paper in the darks — a print that has been dusted.' },
   { v:'copier',  l:'Copied',   p:{ finContrast:1.45, finSat:0.35, grain:0.6, grainSize:1.5, grainBlend:'dirty', dust:0.3, paperTex:0.3 },
     note:'Blown contrast, dirty toner grain, no subtlety left.' }
+];
+/* the grain's four characters (riso-engine grain()). `soft` and `dirty` keep
+   their stored names — they are Film and Toner now — so every saved poster
+   still picks the same one. */
+const GRAIN_CHARACTERS = [
+  {v:'soft',    l:'Film',     t:'Silver grain, light and dark, strongest in the midtones — the shadows and the paper stay cleaner.'},
+  {v:'colour',  l:'Colour',   t:'Colour-film grain: each channel its own, so the flecks carry colour. Best on None or a soft duotone.'},
+  {v:'dirty',   l:'Toner',    t:'Only ever darkens, in clumps — press and copier muck, ink where none was asked for.'},
+  {v:'stipple', l:'Stippled', t:'Hard specks: grain ink in the lights, paper in the darks. The two-tone, dusted look.'}
 ];
 /* recommended defaults applied when a treatment is chosen — each looks good out of the box.
    cutout, posterize, spot, mosaic and photocopy render byte-identically on day and night:
@@ -123,6 +137,7 @@ const TREAT_PRESETS = {
   halftone:   { contrast:1.2,  dot:9,        angle:15,        shape:'circle', inkMode:'single', gradMode:'tone', gradAngle:90, gradA:null, gradB:null, screenOffset:30, field:'paper', fieldInk:null, fieldStrength:0.12, dotGain:1, jitter:0, invert:false },
   posterize:  { contrast:1.25, bands:4, bandJitter:0, toneSmooth:0, splitTone:false },
   cutout:     { contrast:1.3,  threshold:0.52, softness:0.12, invert:false, cutEdge:0, cutSlip:0, toneSmooth:0 },
+  threshold:  { contrast:1.2,  gtLevel:0.5, gtGrain:0.5, gtSize:1, gtClump:0.3, toneSmooth:0, invert:false, inkMode:'single', field:'paper', fieldInk:null },
   overprint:  { contrast:1.2,  offset:8,     angle:45,        split:0.16, ink3:null, fieldTexture:0, toneSmooth:0, sep:false },
   spot:       { contrast:1.2,  spotLo:0.35,  spotHi:0.65,     spotSoft:0.08, spotInvert:false, spotBase:'duotone', balance:0.5, shadowTint:0.18, spotMode:'tone', spot2:false, toneSmooth:0 },
   dither:     { contrast:1.25, ditherMode:'bayer', ditherScale:3, ditherAngle:0, invert:false, inkMode:'single', gradMode:'tone', gradA:null, gradB:null, gradAngle:90, field:'paper', fieldInk:null, fieldStrength:0.12 },
@@ -188,6 +203,13 @@ const TREAT_LOOKS = {
     { v:'outline', l:'Outlined',    p:{ threshold:0.52, softness:0.08, cutEdge:0.06, cutSlip:0, invert:false } },
     { v:'ground',  l:'Background',  p:{ threshold:0.52, softness:0.12, cutEdge:0,    invert:true } },
   ],
+  threshold: [
+    { v:'paper',   l:'On paper',    p:{ field:'paper', fieldInk:null, gtGrain:0.5, gtSize:1, gtClump:0.3 } },
+    { v:'twoink',  l:'Two inks',    p:{ field:'ink', fieldInk:'yellow', gtGrain:0.6, gtSize:1, gtClump:0.2 } },
+    { v:'clean',   l:'Clean cut',   p:{ gtGrain:0, toneSmooth:1.2 } },
+    { v:'dust',    l:'Dust',        p:{ gtGrain:1.1, gtSize:0.75, gtClump:0.1 } },
+    { v:'coarse',  l:'Coarse',      p:{ gtGrain:0.7, gtSize:2.2, gtClump:0.55 } },
+  ],
   overprint: [
     { v:'classic', l:'Classic',     p:{ offset:8,  angle:45, split:0.16, fieldTexture:0 } },
     { v:'wide',    l:'Wide split',  p:{ offset:14, angle:30, split:0.34, fieldTexture:0 } },
@@ -235,4 +257,4 @@ const TREAT_LOOKS = {
    the strip on a photo that already uses one, so those posters stay editable. */
 const RETIRED_TREATS = { edges:1, contour:1 };
 
-export { TREATS, PRESS_BLENDS, FINISH_NEUTRAL, FINISH_LOOKS, TREAT_PRESETS, TREAT_LOOKS, RETIRED_TREATS };
+export { TREATS, PRESS_BLENDS, FINISH_NEUTRAL, FINISH_LOOKS, GRAIN_CHARACTERS, TREAT_PRESETS, TREAT_LOOKS, RETIRED_TREATS };

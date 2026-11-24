@@ -103,6 +103,20 @@ function TuneFold({ el, update, theme, t, inkKey, pressR, pressLabel, pressDirty
             {el.cutSlip>0 && <Slider label="Slip angle" val={el.cutSlipAngle!=null?el.cutSlipAngle:45} min={0} max={360} step={5} onChange={v=>update({cutSlipAngle:v})} suffix="°" />}
           </React.Fragment>}
         </React.Fragment>}
+        {t==='threshold' && <React.Fragment>
+          <Slider label="Cut" val={el.gtLevel!=null?el.gtLevel:0.5} min={0.1} max={0.9} step={0.01} onChange={v=>update({gtLevel:v})} />
+          <Slider label="Grain" val={el.gtGrain!=null?el.gtGrain:0.5} min={0} max={1.5} step={0.02} onChange={v=>update({gtGrain:v})} />
+          {(el.gtGrain==null||el.gtGrain>0) && <React.Fragment>
+            <Slider label="Grain size" val={el.gtSize!=null?el.gtSize:1} min={0.5} max={4} step={0.05} onChange={v=>update({gtSize:v})} suffix="px" />
+            <Slider label="Clumping" val={el.gtClump!=null?el.gtClump:0.3} min={0} max={1} step={0.02} onChange={v=>update({gtClump:v})} />
+          </React.Fragment>}
+          <Slider label="Smoothing" val={el.toneSmooth!=null?el.toneSmooth:0} min={0} max={10} step={0.2} onChange={v=>update({toneSmooth:v})} />
+          <Chips label="Ink" options={[{v:'single',l:'Ink'},{v:'black',l:'Mono'}]} value={el.inkMode==='black'?'black':'single'} onChange={v=>update({inkMode:v})} />
+          <Chips label="Ground" options={[{v:'paper',l:'Paper'},{v:'ink',l:'Second ink'}]} value={el.field==='ink'?'ink':'paper'} onChange={v=>update({field:v})} />
+          {el.field==='ink' && <InkRow label="Ground ink" value={el.fieldInk} onChange={v=>update({fieldInk:v})} autoTitle="Auto — warm/cool partner" />}
+          <Chips label="Print" options={[{v:false,l:'Shadows'},{v:true,l:'Highlights'}]} value={!!el.invert} onChange={v=>update({invert:v})} />
+          <Hint tight>The grain goes in <b>before</b> the cut, so the edge never runs as a line — it breaks into specks of each ink scattered into the other, thickest where the tone sits nearest the cut. <b>Grain</b> 0 is a clean threshold; past 1 the whole picture turns to spray. <b>Smoothing</b> calms the photo first, so the cut follows big shapes, not texture. With a <b>second ink</b> the ground is its own drum — a misfeed opens real gaps between the two.</Hint>
+        </React.Fragment>}
         {t==='overprint' && <React.Fragment>
           <Slider label="Offset" val={el.offset} min={0} max={30} step={1} onChange={v=>update({offset:v})} suffix="px" />
           <Slider label="Angle" val={el.angle} min={0} max={360} step={1} onChange={v=>update({angle:v})} suffix="°" />

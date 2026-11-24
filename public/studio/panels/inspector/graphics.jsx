@@ -7,6 +7,7 @@ import {
 } from '../../studio-data.jsx';
 import { Chips, Slider, Hint, Swatches } from '../controls.jsx';
 import { GfxGrid, IconPicker } from '../gfx-grid.jsx';
+import { GRAIN_CHARACTERS } from '../photo-panel/looks.js';
 function BlockControls({ el, doc, update }){
   return (
     <React.Fragment>
@@ -19,7 +20,7 @@ function BlockControls({ el, doc, update }){
       {el.grain>0 && <React.Fragment>
         <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />
         <InkRow label="Grain ink" value={el.grainInk} onChange={v=>update({grainInk:v})} autoTitle="Auto — neutral tooth" />
-        <Chips label="Character" options={[{v:'soft',l:'Soft'},{v:'dirty',l:'Dirty'}]} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
+        <Chips label="Character" options={GRAIN_CHARACTERS} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
       </React.Fragment>}
       <Hint tight>A pinch of grain makes a flat field feel printed, not digital.</Hint>
       <div className="rs-sech">Edge</div>
@@ -66,7 +67,7 @@ function ShapeControls({ el, doc, update }){
         {el.grain>0 && <React.Fragment>
           <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />
           <InkRow label="Grain ink" value={el.grainInk} onChange={v=>update({grainInk:v})} autoTitle="Auto — neutral tooth" />
-          <Chips label="Character" options={[{v:'soft',l:'Soft'},{v:'dirty',l:'Dirty'}]} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
+          <Chips label="Character" options={GRAIN_CHARACTERS} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
         </React.Fragment>}
         <Hint tight>Grain is clipped to the silhouette, so a grained hexagon stays a hexagon.</Hint>
       </React.Fragment>}

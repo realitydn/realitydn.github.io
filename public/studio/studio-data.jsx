@@ -418,9 +418,10 @@ const DEFAULTS = {
              edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
              edgeSlip:0, edgeSlipAngle:45,
              cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
+             gtLevel:0.5, gtGrain:0.5, gtSize:1, gtClump:0.3,
              blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
-             grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
+             grainInk:null, grainBlend:'soft', grainClump:0.35, finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
              /* linework — Outline / Contour lines as their own plate over the print
                 (riso-engine linework); lineInk null = Auto, the second ink */
@@ -474,9 +475,10 @@ const DEFAULTS = {
              edgeDetail:0.3, edgeThick:2, edgeBackdrop:'paper', edgeSmooth:1.6, edgeClean:0, edgeInk:null, edgeWash:null, edgeEcho:0, edgeEchoAngle:45, edgeEchoInk:null,
              edgeSlip:0, edgeSlipAngle:45,
              cellSize:16, mosaicDepth:4, mosaicGap:0.08, mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
+             gtLevel:0.5, gtGrain:0.5, gtSize:1, gtClump:0.3,
              blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
              blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
-             grainInk:null, grainBlend:'soft', finBright:0, finContrast:1, finSat:1,
+             grainInk:null, grainBlend:'soft', grainClump:0.35, finBright:0, finContrast:1, finSat:1,
              vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
              src2:null, mix2:0.6, mix2Mode:'screen', img2Scale:1, img2X:0, img2Y:0, img2Rot:0 } },
 };

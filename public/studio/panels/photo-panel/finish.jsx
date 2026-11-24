@@ -4,7 +4,7 @@
 import { InkRow } from '../../../studio-shared/press-panels.jsx';
 import { Chips, Slider, Fold, Hint } from '../controls.jsx';
 import { BlurControls } from './press.jsx';
-import { FINISH_NEUTRAL, FINISH_LOOKS } from './looks.js';
+import { FINISH_NEUTRAL, FINISH_LOOKS, GRAIN_CHARACTERS } from './looks.js';
 function AdjustFold({ el, update, t, adjustDirty }){
   return (
       <Fold id="ph-adjust" title="Before the press" dirty={adjustDirty}
@@ -44,11 +44,13 @@ function FinishFold({ el, update }){
         <Hint tight>Grades the <b>printed</b> ink — <b>Before the press</b> (Image tab) changes what the press sees instead. Unlike that pass, saturation here works under every treatment: pull it to 0 to grey off a duotone, push it up to make one ink shout.</Hint>
         <div className="rs-sech">Press artifacts</div>
         <BlurControls el={el} update={update} prefix="blurOver" label="Blur" max={30} />
-        <Slider label="Film grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
+        <Slider label="Grain" val={el.grain!=null?el.grain:0} min={0} max={1} step={0.02} onChange={v=>update({grain:v})} />
         {el.grain>0 && <React.Fragment>
           <Slider label="Grain size" val={el.grainSize!=null?el.grainSize:2} min={0.5} max={5} step={0.25} onChange={v=>update({grainSize:v})} suffix="px" />
           <InkRow label="Grain ink" value={el.grainInk} onChange={v=>update({grainInk:v})} autoTitle="Auto — neutral tooth" />
-          <Chips label="Character" options={[{v:'soft',l:'Soft'},{v:'dirty',l:'Dirty'}]} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
+          <Chips label="Character" options={GRAIN_CHARACTERS} value={el.grainBlend||'soft'} onChange={v=>update({grainBlend:v})} />
+          <Slider label="Clumping" val={el.grainClump!=null?el.grainClump:0.35} min={0} max={1} step={0.02} onChange={v=>update({grainClump:v})} />
+          <Hint tight>{(GRAIN_CHARACTERS.find(g=>g.v===(el.grainBlend||'soft'))||GRAIN_CHARACTERS[0]).t} <b>Clumping</b> gathers the grains into larger, irregular blotches — 0 is an even sand.</Hint>
         </React.Fragment>}
         <Slider label="Vignette" val={el.vignette!=null?el.vignette:0} min={0} max={1} step={0.02} onChange={v=>update({vignette:v})} />
         {el.vignette>0 && <Slider label="Vignette softness" val={el.vignetteSoft!=null?el.vignetteSoft:0.6} min={0.2} max={1} step={0.02} onChange={v=>update({vignetteSoft:v})} />}

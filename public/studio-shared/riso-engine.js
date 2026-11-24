@@ -1134,6 +1134,64 @@
     }
   }
 
+  /* 16 · THRESHOLD — two inks, one cut, and the grain living on the cut.
+        Photoshop's Threshold + Grain: the photo is split at one tone into
+        a dark ink and a light ground, but the film grain is added BEFORE
+        the cut, so the boundary does not run as a line — it dissolves into
+        specks of each ink scattered into the other, densest where the tone
+        sits nearest the cut. Flat areas far from it stay solid; a soft
+        gradient becomes a spray. It is a stochastic screen whose only
+        mid-tones are at the edges.
+        The grain is the same particle field as the Finish grain (round,
+        clumping, design px), so it is crisp on the export.
+        params: gtLevel (the cut), gtGrain (how far the grain reaches across
+          it — 0 is a clean threshold), gtSize (particle size, design px),
+          gtClump, toneSmooth, invert,
+          inkMode ('single' accent | 'black' mono drum),
+          field: paper | ink (+ fieldInk; Auto = the warm/cool partner) */
+  /* The two drums the cut prints on, in drum order — shared with platesFor
+     so a host's Proof picker lists exactly these. The light ground goes
+     down first on translucent stock (the subject's ink lands on top and
+     keeps its colour where a misfeed overlaps them), last on an opaque one. */
+  function thresholdInks(o){
+    const darkKey = o.inkMode==='black' ? (o._dark ? 'cream' : 'ink') : (o.ink||'pink');
+    const lightKey = o.field==='ink' ? (o.fieldInk || o.ink2 || PARTNER[o.ink] || 'blue') : null;
+    if(!lightKey || lightKey===darkKey) return [darkKey];
+    const opaque = o.opaque!=null ? !!o.opaque : o._dark;
+    return opaque ? [darkKey, lightKey] : [lightKey, darkKey];
+  }
+  function grainThreshold(cv,o){
+    const w=cv.width,h=cv.height,cx=cv.getContext('2d');
+    const L=stretch(lumBuffer(w,h,o.contrast,(o.toneSmooth||0)));
+    const K=w/520;
+    const amp=Math.max(0,o.gtGrain!=null?o.gtGrain:0.5)*0.24;     // the grain's σ, in tone
+    const F= amp>0 ? grainField(w,h,Math.max(0.25,o.gtSize||1)*K, o.gtClump!=null?o.gtClump:0.3, 0x7E5+(o.pull|0)) : null;
+    const lvl=o.gtLevel!=null?o.gtLevel:0.5;
+    const dens=o.inkDensity!=null?Math.max(0.2,Math.min(1,o.inkDensity)):1;
+    const e=0.012;                                                  // the cut's own antialiasing
+    /* two stencils, not a picture: the dark drum where the grained tone falls
+       below the cut, the light drum everywhere else. Pressed straight from
+       here rather than re-separated from flat colour (pressThrough), so a
+       yellow ground prints as yellow ink — the separation's table pulls a
+       pure accent towards its neighbours — and a misfeed opens real gaps
+       and overlaps between the two. */
+    const inks=thresholdInks(o), two=inks.length>1;
+    const darkI=inks.indexOf(o.inkMode==='black' ? (o._dark?'cream':'ink') : (o.ink||'pink'));
+    const plDark=new Float32Array(w*h), plLight= two? new Float32Array(w*h) : null;
+    for(let p=0;p<L.length;p++){
+      const v=L[p]+(F?F[p]*amp:0);
+      let a=(lvl-v)/e+0.5; a=a<0?0:a>1?1:a;                        // 1 = below the cut = dark ink
+      if(o.invert) a=1-a;
+      plDark[p]=a*dens;
+      if(two) plLight[p]=(1-a)*dens;
+    }
+    const P = two ? (darkI===0 ? [plDark,plLight] : [plLight,plDark]) : [plDark];
+    o._pressed=true;
+    const out=cx.createImageData(w,h);
+    RP.stackPlates(P, inks.map(k=>PAL[k]||PAL.pink), o._stock, w, h, Object.assign(sepOpts(o), { opaque:o.opaque }), out.data);
+    cx.putImageData(out,0,0);
+  }
+
   /* 15 · SEPARATION — the press itself. A colour photograph becomes N
         greyscale plates (one per drum), each screened at its own angle and
         printed in its own translucent ink, in its own pass, with its own
@@ -1277,6 +1335,8 @@
       L=[]; if(o.ink3) L.push(o.ink3);
       if(stockOpaque) L.push(keyB,keyA); else L.push(keyA,keyB);
       if(nightK) L.unshift('ink');
+    } else if(name==='threshold'){
+      L=thresholdInks(o);
     } else if(name==='halftone' && HT_CORE_SHAPES[o.shape||'circle'] && !(o.jitter>0) && (o.inkMode||'single')!=='gradient'){
       const mode=o.inkMode||'single';
       L = mode==='two' ? [keyA,keyB] : [mode==='black' ? mono : keyA];
@@ -1287,7 +1347,7 @@
   }
 
   const TREATMENTS = { separation, duotone, offregister:offRegister, halftone, posterize, cutout, overprint, none:untreated, spot,
-                       dither, hatch, photocopy, contour, edges, mosaic };
+                       dither, hatch, photocopy, contour, edges, mosaic, threshold:grainThreshold };
 
   /* ---- blend modes ----------------------------------------------------
      One channel of a separable blend: backdrop `a` (the photograph showing
@@ -1597,41 +1657,146 @@
     }
     x.putImageData(id,0,0); _noise[key]=c; return c;
   }
-  /* amount 0..1, size = clump size in design px. Soft-light carries the tooth
-     in the mids; the faint normal pass keeps deep shadows + highlights grainy.
-     inkKey tints the noise (ink-coloured grain); blend 'dirty' presses the
-     noise in with multiply — press muck rather than film tooth. */
-  function grain(cv, amount, size, inkKey, blend, pull){
+  /* ---- the grain field ------------------------------------------------
+     Rebuilt 24.11.26. The old grain was a noise tile 520/size cells wide,
+     stretched over the canvas with smoothing on: fine on a 900px preview,
+     but on a 2–4× export every cell became a soft 8–15px smudge, so the
+     "grain" read as mottled blur rather than tooth.
+
+     This is the Boolean model of real film grain: round particles, one
+     per cell of a jittered lattice laid in DESIGN px (so the preview and
+     the export hold the same particles, the export just draws them
+     sharper), each with its own radius and its own density, light or
+     dark. Two interleaved lattices at the grain size let particles
+     overlap and crowd the way silver does, a finer one fills between
+     them so the shapes are irregular, not polka dots; a coarser one is the
+     clumping — how grains gather into the larger, irregular blotches that
+     make film look like film and not like a noise filter. Every particle
+     is splatted with a one-pixel antialiased edge (sub-pixel ones deposit
+     their area), so it is crisp at any size and never shimmers.
+
+     The field is zero-mean, normalised to σ = 1, and cached: dragging an
+     amount or a character slider re-tones it without re-growing it. */
+  function gHash(i,j,s){
+    let h=(Math.imul(i|0,0x27d4eb2d) ^ Math.imul(j|0,0x165667b1) ^ Math.imul(s|0,0x2c1b3c6d))|0;
+    h^=h>>>15; h=Math.imul(h,0x85ebca6b); h^=h>>>13; h=Math.imul(h,0xc2b2ae35); h^=h>>>16;
+    return h>>>0;
+  }
+  function splatGrain(F,w,h,cellPx,seed,weight,off){
+    const i0=Math.floor(-off)-1, i1=Math.ceil(w/cellPx-off)+1;
+    const j0=Math.floor(-off)-1, j1=Math.ceil(h/cellPx-off)+1;
+    for(let j=j0;j<=j1;j++){
+      for(let i=i0;i<=i1;i++){
+        const hs=gHash(i,j,seed);
+        const jx=(hs&255)/256, jy=((hs>>>8)&255)/256, ur=((hs>>>16)&127)/128, uv=((hs>>>23)&127)/128;
+        const cxp=(i+off+jx)*cellPx, cyp=(j+off+jy)*cellPx;
+        const R=(0.3+0.38*ur)*cellPx;
+        /* bimodal density — a grain is there or it is not, light or dark;
+           a zero-mean triangle would spend half its particles on grey */
+        const v=(hs>>>30 & 1 ? 1 : -1)*(0.5+0.5*uv)*weight;
+        if(R<0.7){                                        // under a pixel: deposit its area, bilinear
+          const a=Math.PI*R*R*v, fx=cxp-0.5, fy=cyp-0.5, ix=Math.floor(fx), iy=Math.floor(fy), tx=fx-ix, ty=fy-iy;
+          if(ix>=0&&ix<w&&iy>=0&&iy<h)       F[iy*w+ix]      +=a*(1-tx)*(1-ty);
+          if(ix+1>=0&&ix+1<w&&iy>=0&&iy<h)   F[iy*w+ix+1]    +=a*tx*(1-ty);
+          if(ix>=0&&ix<w&&iy+1>=0&&iy+1<h)   F[(iy+1)*w+ix]  +=a*(1-tx)*ty;
+          if(ix+1>=0&&ix+1<w&&iy+1>=0&&iy+1<h) F[(iy+1)*w+ix+1]+=a*tx*ty;
+          continue;
+        }
+        const xa=Math.max(0,Math.floor(cxp-R-1)), xb=Math.min(w-1,Math.ceil(cxp+R+1));
+        const ya=Math.max(0,Math.floor(cyp-R-1)), yb=Math.min(h-1,Math.ceil(cyp+R+1));
+        for(let y=ya;y<=yb;y++){
+          const dy=y+0.5-cyp, row=y*w;
+          for(let x=xa;x<=xb;x++){
+            const dx=x+0.5-cxp, c=R-Math.sqrt(dx*dx+dy*dy)+0.5;
+            if(c<=0) continue;
+            F[row+x]+= c>=1 ? v : c*v;
+          }
+        }
+      }
+    }
+  }
+  const _gField=[];
+  function grainField(w,h,cellPx,clump,seed){
+    cellPx=Math.max(0.35,cellPx); clump=Math.max(0,Math.min(1,clump||0));
+    const key=w+'x'+h+':'+cellPx.toFixed(4)+':'+clump.toFixed(3)+':'+(seed|0);
+    for(const e of _gField) if(e.key===key) return e.F;
+    const F=new Float32Array(w*h);
+    splatGrain(F,w,h,cellPx,seed*4+1,1,0);
+    splatGrain(F,w,h,cellPx,seed*4+2,0.85,0.5);
+    splatGrain(F,w,h,cellPx*0.55,seed*4+3,0.55,0.21);            // the fine silver between them
+    if(clump>0) splatGrain(F,w,h,cellPx*2.7,seed*4+4,1.6*clump,0.25);
+    /* σ = 1, measured on a sparse sample so it costs nothing */
+    let s2=0,n=0; for(let p=0;p<F.length;p+=7){ s2+=F[p]*F[p]; n++; }
+    const k=1/Math.max(1e-6,Math.sqrt(s2/Math.max(1,n)));
+    for(let p=0;p<F.length;p++) F[p]*=k;
+    _gField.unshift({ key, F }); if(_gField.length>2) _gField.length=2;
+    return F;
+  }
+
+  /* amount 0..1, size = grain size in design px, inkKey colours the grain.
+     Four characters, each a real way a print picks up grain:
+       soft    — Film. Silver grain, light and dark, strongest in the
+                 midtones the way an emulsion's is; shadows and paper
+                 stay cleaner. Ink-coloured if an ink is picked.
+       colour  — Colour film. The same grain, each channel its own, so
+                 the flecks carry colour — a C-41 scan, not a riso.
+       dirty   — Toner. Only ever darkens, in clumps: press and copier
+                 muck, ink where no ink was asked for.
+       stipple — Stippled. Hard specks in two colours — ink in the light
+                 areas, paper in the dark — the threshold-and-grain look:
+                 a two-tone print whose edges dissolve into dust.
+     o (optional) is the render's options, for the stock and the mono drum
+     the stipple specks print in, and the clumping dial. */
+  function grain(cv, amount, size, inkKey, blend, pull, o){
     if(!amount || amount<=0.001) return;
-    const w=cv.width, h=cv.height, cx=cv.getContext('2d');
-    const s=Math.max(0.5, size||2);
-    const nw=Math.max(2,Math.ceil(520/s)), nh=Math.max(2,Math.ceil(nw*h/w));
-    let nc=noiseTile(nw,nh,pull);
-    if(inkKey && PAL[inkKey]){
-      const t=document.createElement('canvas'); t.width=nw; t.height=nh;
-      const tx=t.getContext('2d');
-      tx.fillStyle=PAL[inkKey]; tx.fillRect(0,0,nw,nh);
-      tx.globalCompositeOperation='luminosity'; tx.drawImage(nc,0,0);   // ink hue, noise tooth
-      nc=t;
-    }
-    cx.save();
-    cx.imageSmoothingEnabled=true;
-    if(blend==='dirty'){
-      cx.globalCompositeOperation='multiply';
-      cx.globalAlpha=Math.min(1,amount)*0.6;
-      cx.drawImage(nc,0,0,w,h);
-      cx.globalCompositeOperation='source-over';
-      cx.globalAlpha=Math.min(1,amount)*0.22;
-      cx.drawImage(nc,0,0,w,h);
+    const w=cv.width, h=cv.height, cx=cv.getContext('2d',{willReadFrequently:true});
+    const K=w/520, s=Math.max(0.25, size||2);
+    const clump=o && o.grainClump!=null ? o.grainClump : 0.35;
+    const F=grainField(w,h,s*K,clump,0x6A1+(pull|0));
+    const id=cx.getImageData(0,0,w,h), d=id.data;
+    const a=Math.min(1.5,amount), mode=blend||'soft';
+    const ink=inkKey && PAL[inkKey] ? hex2rgb(PAL[inkKey]) : null;
+    const N=w*h;
+    if(mode==='stipple'){
+      const darkC = ink || hex2rgb((o && o._ink) || PAL.ink);
+      const lightC = hex2rgb((o && o._stock) || PAL.cream);
+      const thr=2.5-1.9*Math.min(1,a);                  // σ above which a particle prints as a speck
+      for(let p=0,i=0;p<N;p++,i+=4){
+        const f=F[p]; if(f<thr && f>-thr) continue;
+        const Y=(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])/255;
+        let m, C;
+        if(f>=thr){ m=Math.min(1,(f-thr)*3)*smooth(0.12,0.5,Y); C=darkC; }
+        else { m=Math.min(1,(-f-thr)*3)*(1-smooth(0.5,0.88,Y)); C=lightC; }
+        if(m<=0.003) continue;
+        d[i]+=(C[0]-d[i])*m; d[i+1]+=(C[1]-d[i+1])*m; d[i+2]+=(C[2]-d[i+2])*m;
+      }
+    } else if(mode==='dirty'){
+      const tone = ink ? [ink[0]/255, ink[1]/255, ink[2]/255] : [0.09,0.08,0.07];
+      const k=a*0.62;
+      for(let p=0,i=0;p<N;p++,i+=4){
+        let t=(F[p]-0.35)*k; if(t<=0) continue; if(t>1) t=1;
+        d[i]*=1-t*(1-tone[0]); d[i+1]*=1-t*(1-tone[1]); d[i+2]*=1-t*(1-tone[2]);
+      }
     } else {
-      cx.globalCompositeOperation='soft-light';
-      cx.globalAlpha=Math.min(1,amount);
-      cx.drawImage(nc,0,0,w,h);
-      cx.globalCompositeOperation='source-over';
-      cx.globalAlpha=Math.min(1,amount)*0.15;
-      cx.drawImage(nc,0,0,w,h);
+      const A=a*0.2*255, colour=mode==='colour';
+      /* colour: each channel reads the same field at its own offset, fixed
+         in design px so the preview and the export agree */
+      const cp=s*K, oG=(Math.round(41.3*cp)%w)+Math.round(23.7*cp)*w, oB=(Math.round(17.9*cp)%w)+Math.round(57.1*cp)*w;
+      for(let p=0,i=0;p<N;p++,i+=4){
+        const Y=(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])/255;
+        const wY=0.28+2.88*Y*(1-Y);                       // the emulsion: 1 in the mids, ~0.3 at the ends
+        const n=F[p]*A*wY;
+        if(colour){
+          const g=F[(p+oG)%N]*A*wY, b=F[(p+oB)%N]*A*wY;
+          d[i]+=n; d[i+1]+=0.45*n+0.55*g; d[i+2]+=0.45*n+0.55*b;
+        } else if(ink){
+          /* dark grains are flecks of the ink; light grains open to paper */
+          if(n<0){ const t=Math.min(1,-n/255*1.8); d[i]+=(ink[0]-d[i])*t; d[i+1]+=(ink[1]-d[i+1])*t; d[i+2]+=(ink[2]-d[i+2])*t; }
+          else { const t=n*0.6; d[i]+=t; d[i+1]+=t; d[i+2]+=t; }
+        } else { d[i]+=n; d[i+1]+=n; d[i+2]+=n; }
+      }
     }
-    cx.restore();
+    cx.putImageData(id,0,0);
   }
 
   /* ---- the rest of the finish stack ---- */
@@ -2270,11 +2435,13 @@
     edgeSlip:0, edgeSlipAngle:45,
     cellSize:16, mosaicDepth:4, mosaicGap:0.08,
     mosaicShape:'square', mosaicBond:'grid', mosaicJitter:0, mosaicGrout:'paper',
+    /* threshold (16, 24.11.26) */
+    gtLevel:0.5, gtGrain:0.5, gtSize:1, gtClump:0.3,
     /* typed blur, both stages */
     blurUnderType:'gauss', blurUnderAngle:0, blurUnderX:0, blurUnderY:0, blurUnderPos:0.5, blurUnderWidth:0.3,
     blurOverType:'gauss', blurOverAngle:0, blurOverX:0, blurOverY:0, blurOverPos:0.5, blurOverWidth:0.3,
     /* finish stack */
-    grainInk:null, grainBlend:'soft',
+    grainInk:null, grainBlend:'soft', grainClump:0.35,
     finBright:0, finContrast:1, finSat:1,
     vignette:0, vignetteSoft:0.6, paperTex:0, inkBleed:0, dust:0, misprint:0, misprintAngle:-35,
     /* second exposure */
@@ -2344,7 +2511,7 @@
     const guard = o.transparent? alphaMaskGuard(cv) : null;
     finishTone(cv,o);
     if(o.inkBleed>0) inkBleed(cv,o);
-    if(o.grain>0) grain(cv, o.grain, o.grainSize!=null?o.grainSize:2, o.grainInk, o.grainBlend, o.pull);
+    if(o.grain>0) grain(cv, o.grain, o.grainSize!=null?o.grainSize:2, o.grainInk, o.grainBlend, o.pull, o);
     if(o.paperTex>0) paperTexture(cv, o.paperTex);
     if(o.vignette>0) vignette(cv, o.vignette, o.vignetteSoft);
     if(o.dust>0) dust(cv, o.dust, o);

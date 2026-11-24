@@ -1242,7 +1242,11 @@
     const src=cx.getImageData(0,0,w,h);
     const inks=plateSetFor(o);
     const so=Object.assign(sepOpts(o), { inks:inks, stock:o._stock, opaque:o.opaque, contrast:1, brightness:0, saturation:1,
-      invertSource:false, sepBoost:1, sepGCR:0.05, tac:5, flat:true });
+      invertSource:false, sepBoost:1, sepGCR:0.05, tac:5, flat:true,
+      /* the picture was drawn in these inks: a flat ink, a tint of one or a
+         two-ink edge goes back on its own plate(s) wherever that prints
+         nearer than the solve — which turns a yellow field olive or orange */
+      snap:2.5 });
     const sep=RP.separate(src.data,w,h,so);
     const K=nightKPlate(w,h,o), ki=inks.indexOf('ink');
     if(K && ki>=0){ const pl=sep.plates[ki]; for(let p=0;p<pl.length;p++) if(K[p]>pl[p]) pl[p]=K[p]; }

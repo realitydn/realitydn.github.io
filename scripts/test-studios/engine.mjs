@@ -61,6 +61,10 @@ export function buildCases(treatments, moves = []) {
   add('dial-region-centre', 'halftone', { ink: 'pink', paper: 'day', ...TP.halftone, treatRegion: 'radial', regionX: 0.1, regionY: -0.15, regionSize: 0.5 });
   add('dial-region-band', 'duotone', { ink: 'blue', paper: 'day', ...TP.duotone, treatRegion: 'band', regionAngle: 30, regionSoft: 0.3, regionInvert: true });
   add('dial-region-sweep', 'posterize', { ink: 'pink', paper: 'night', ...TP.posterize, treatRegion: 'linear', regionAngle: -60 });
+  // A yellow / amber field through the press: the separation solve chased
+  // these to olive / orange until flat inks snapped to their own plate.
+  add('dial-cutout-yellow', 'cutout', { ink: 'yellow', paper: 'day', ...TP.cutout });
+  add('dial-duotone-amber', 'duotone', { ink: 'amber', paper: 'night', ...TP.duotone });
 
   // Recompose: every move at its defaults under one treatment (seeded, so a
   // Shuffle that stops repeating fails here), then the variants each move

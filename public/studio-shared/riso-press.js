@@ -77,8 +77,8 @@
   /* Bumped whenever the press's OUTPUT changes. Stamped on documents by the
      hosts (Poster Studio's doc.engineRev) so a future reprint can tell which
      press made a poster. 1 = the tinting engine that shipped before the
-     separation. */
-  const REV = 2;
+     separation. 3 = flat inks re-separated onto their own plates (`snap`). */
+  const REV = 3;
 
   /* ---- the locked palette (mirror of public/tokens/day-colours.json) ----
      Seven accents + the two neutrals. Both neutrals are pickable PLATES:
@@ -574,6 +574,7 @@
        by the ink limit and the shadows reach the Night surface. */
     sepGCR: null, sepBoost: 1.15, tac: null,
     contrast: 1, brightness: 0, saturation: 1, invertSource: false,
+    snap: 0,             // > 0 = a drawn, flat-ink source: snap inks/tints/knockouts to their plates (see separate)
     /* screen */
     screen: 'fm', shape: 'chain', pitch: 9, grainPitch: 0.5, levels: 0,
     angles: null, screens: null, pitches: null,
@@ -614,7 +615,77 @@
      ALREADY composited over the stock (a transparent pixel is paper).
      Returns { plates: Float32Array[N] (coverage 0..1 per pixel), inkHexes,
      paperHex, opaque, o }. Contrast/brightness/saturation are applied here,
-     in RGB, before the cube — the same numbers the prototype used. */
+     in RGB, before the cube — the same numbers the prototype used.
+
+     `snap` (0..255, off by default) is for re-separating a picture that was
+     DRAWN in these inks rather than photographed — what the engine's
+     pressThrough hands in. The solve goes wrong at the edge of the gamut: no
+     ink here prints a channel as dark as its own hex (solidity, the EPS
+     floor), the log-space residual on that channel dominates, and the solver
+     recruits other plates to chase it — a flat #fddf00 came back as yellow +
+     0.24 black (olive) or + 0.39 red (orange). That is the solver's answer
+     exactly, not the LUT's; a finer table does not help.
+     So a pixel within `snap` of the line from the stock to an ink (the solid
+     or a tint of it), or of the line between two inks (a cutout's soft cut),
+     also gets the direct answer — that one plate at the line's fraction, or
+     those two plates fitted to it — and it replaces the solve where it
+     PRINTS clearly nearer the drawn colour (by more than SNAP_MARGIN).
+     Yellow and amber take their own plate; a black, which the solve
+     enriches with the other drums and so prints darker and nearer its hex,
+     keeps the solve. */
+  const SNAP_MARGIN = 4 / 255;
+  function snapper(inkHexes, paperHex, opaque, o) {
+    const P = hex2rgb(paperHex).map(v => v / 255);
+    const C = inkHexes.map(hx => hex2rgb(hx).map(v => v / 255));
+    const T = inkHexes.map(inkTrans), N = C.length;
+    const segs = [];
+    const add = (i, j, A, B) => {
+      const D = [B[0] - A[0], B[1] - A[1], B[2] - A[2]], DD = D[0] * D[0] + D[1] * D[1] + D[2] * D[2];
+      if (DD > 1e-6) segs.push({ i: i, j: j, A: A, D: D, iDD: 1 / DD });
+    };
+    for (let j = 0; j < N; j++) add(-1, j, P, C[j]);                     // stock → ink: a tint, ending in the solid
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) add(i, j, C[i], C[j]);   // ink ↔ ink
+    /* what these coverages print — pressPlates' flat path with the press
+       curve and wet-on-wet, without the misregistration and the run */
+    const tp = pressOpts(o), wet = o.wet, rgb = [0, 0, 0];
+    function err(cov, R, G, B) {
+      rgb[0] = P[0]; rgb[1] = P[1]; rgb[2] = P[2];
+      let wetAcc = 0;
+      for (let k = 0; k < N; k++) {
+        let ink = press(cov[k], tp);
+        if (ink <= 0.002) continue;
+        if (wet && wetAcc > 0) ink *= 1 - wet * Math.min(1, wetAcc);
+        if (ink <= 0.002) continue;
+        wetAcc += ink;
+        lay(rgb, ink, T[k], C[k], opaque);
+      }
+      const d0 = rgb[0] - R, d1 = rgb[1] - G, d2 = rgb[2] - B;
+      return d0 * d0 + d1 * d1 + d2 * d2;
+    }
+    /* the two plates of an ink ↔ ink line, fitted to the drawn colour: a
+       coarse grid over both coverages, then a fine one around the best — an
+       edge between two inks is an overprint (yellow stays solid while the
+       black comes in), not the knockout the line suggests. */
+    const cov = new Float64Array(N);
+    function fit2(i, j, R, G, B, out) {
+      for (let k = 0; k < N; k++) cov[k] = 0;
+      let bi = 0, bj = 0, be = Infinity;
+      const scan = (ci, cj, half, step) => {
+        for (let x = ci - half; x <= ci + half + 1e-9; x += step) for (let y = cj - half; y <= cj + half + 1e-9; y += step) {
+          const a = x < 0 ? 0 : x > 1 ? 1 : x, b = y < 0 ? 0 : y > 1 ? 1 : y;
+          cov[i] = a; cov[j] = b;
+          const e = err(cov, R, G, B);
+          if (e < be) { be = e; bi = a; bj = b; }
+        }
+      };
+      scan(0.5, 0.5, 0.5, 1 / 16);
+      scan(bi, bj, 1 / 16, 1 / 64);
+      for (let k = 0; k < N; k++) out[k] = 0;
+      out[i] = bi; out[j] = bj;
+      return out;
+    }
+    return { segs: segs, err: err, fit2: fit2 };
+  }
   function separate(src, w, h, opts) {
     const o = Object.assign({}, DEFAULTS, opts || {});
     const night = o.paper === 'night';
@@ -632,6 +703,12 @@
     const S = LUT_N - 1, ct = o.contrast != null ? o.contrast : 1, br = o.brightness || 0, sat = o.saturation != null ? o.saturation : 1;
     const dR = LUT_N * LUT_N * N, dG = LUT_N * N, dB = N;
     const inv = !!o.invertSource, grade = (ct !== 1 || br !== 0 || sat !== 1);
+    const snap = o.snap > 0 ? snapper(inkHexes, paperHex, opaque, o) : null;
+    const snap2 = snap ? (o.snap / 255) * (o.snap / 255) : 0;
+    const solved = new Float64Array(N), snapped = new Float64Array(N);
+    /* a drawn picture has few colours and the snap is dear: its answers are
+       kept per 8-bit colour (only where the bytes ARE the colour) */
+    const memo = snap ? new Map() : null;
     for (let p = 0, i = 0; p < w * h; p++, i += 4) {
       let R = src[i] / 255, G = src[i + 1] / 255, B = src[i + 2] / 255;
       const A = src[i + 3];
@@ -644,6 +721,12 @@
         if (sat !== 1) { const y = 0.299 * R + 0.587 * G + 0.114 * B; R = y + (R - y) * sat; G = y + (G - y) * sat; B = y + (B - y) * sat; }
         R = (R - 0.5) * ct + 0.5 + br; G = (G - 0.5) * ct + 0.5 + br; B = (B - 0.5) * ct + 0.5 + br;
         R = R < 0 ? 0 : R > 1 ? 1 : R; G = G < 0 ? 0 : G > 1 ? 1 : G; B = B < 0 ? 0 : B > 1 ? 1 : B;
+      }
+      let key = -1;
+      if (memo && A === 255 && !inv && !grade) {
+        key = (src[i] << 16) | (src[i + 1] << 8) | src[i + 2];
+        const hit = memo.get(key);
+        if (hit) { for (let k = 0; k < N; k++) plates[k][p] = hit[k]; continue; }
       }
       const fr = R * S, fg = G * S, fb = B * S;
       const ir = Math.min(S - 1, fr | 0), ig = Math.min(S - 1, fg | 0), ib = Math.min(S - 1, fb | 0);
@@ -658,6 +741,32 @@
         const c10 = c100 + (c101 - c100) * tb, c11 = c110 + (c111 - c110) * tb;
         const c0 = c00 + (c01 - c00) * tg, c1 = c10 + (c11 - c10) * tg;
         plates[k][p] = c0 + (c1 - c0) * tr;
+      }
+      if (snap) {                                       // a flat ink, a tint of one, or a two-ink edge
+        let best = -1, bt = 0, bd = snap2;
+        for (let s = 0; s < snap.segs.length; s++) {
+          const g = snap.segs[s], e0 = R - g.A[0], e1 = G - g.A[1], e2 = B - g.A[2];
+          let t = (e0 * g.D[0] + e1 * g.D[1] + e2 * g.D[2]) * g.iDD;
+          t = t < 0 ? 0 : t > 1 ? 1 : t;
+          const r0 = e0 - t * g.D[0], r1 = e1 - t * g.D[1], r2 = e2 - t * g.D[2];
+          const d = r0 * r0 + r1 * r1 + r2 * r2;
+          if (d <= bd) { bd = d; best = s; bt = t; }
+        }
+        if (best >= 0) {
+          const g = snap.segs[best];
+          for (let k = 0; k < N; k++) { solved[k] = plates[k][p]; snapped[k] = 0; }
+          if (g.i < 0) snapped[g.j] = bt;                // a tint: the plate at the line's fraction
+          else snap.fit2(g.i, g.j, R, G, B, snapped);
+          /* take it only where it prints clearly nearer the drawn colour —
+             where the solve is a few levels off it stays, so a ramp it
+             already gets right keeps its plates */
+          if (Math.sqrt(snap.err(solved, R, G, B)) - Math.sqrt(snap.err(snapped, R, G, B)) > SNAP_MARGIN) for (let k = 0; k < N; k++) plates[k][p] = snapped[k];
+        }
+        if (key >= 0) {
+          if (memo.size >= 1 << 18) memo.clear();
+          const keep = new Float32Array(N); for (let k = 0; k < N; k++) keep[k] = plates[k][p];
+          memo.set(key, keep);
+        }
       }
     }
     return { plates: plates, inkKeys: inkKeys, inkHexes: inkHexes, paperHex: paperHex, opaque: opaque, o: o };

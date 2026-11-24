@@ -85,6 +85,22 @@ down the page.
   fundraisers (`data/deck/fundraisers.js`, marked stand-ins that give way to
   the app's fundraisers feed the moment it has rows). A fact we don't have is
   a `<Gap>` — a dashed tag on the page — never a guess.
+- **What moves inside the cards (24.11.26):** six faces move on their own —
+  the menu's drink rolls over, the event chart prints in once when the page
+  opens, the giving total throws an echo, the photos re-register, 0₫ gets a
+  highlighter pass, and the current open hour is stamped again. Everything
+  starts on one clock:
+  - **The pace of the whole page** is `BEAT_MS` in `src/lib/beat.js` (0.8 s).
+    The open-now squares and the masthead's ink strip keep the same beat.
+  - **How often one card goes** is `EVERY` at the top of its face file, in
+    beats (4 = every 3.2 s). `deck/ambient.js` gives each card its own beat of
+    the bar, so they start one after another, never together.
+  - **To stop a card moving,** remove its `useBeat(...)` call (or pass
+    `on: false`); its face then stays on the still.
+  - Under reduced motion, and in the static HTML, nothing moves.
+  - `npm run dev` → `/deck-lab` is a dev-only bench for this: every option
+    that was built, the first screen at both widths, and a tempo switch. It
+    is not in the production build.
 - The sections the site already had (calendar, menu, info + host + forms,
   visit, gallery) are the same components, rendered inside a card with their
   `embedded` / `only` prop. The old `Hero.jsx` and `DarkCTA.jsx` are no longer

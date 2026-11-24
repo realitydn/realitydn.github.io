@@ -1,0 +1,278 @@
+/* ============================================================
+   CARD MOTION — the ambient options for the inside of the deck's
+   nine card faces (the lab: /deck-lab, dev only).
+
+   The six options that run on the home page have their rules in
+   deck.css (block 4, "MOTION INSIDE THE FACES"); what is left
+   here is every option that was built, for the lab's own copies.
+
+   The rules every one of these keeps:
+     · it prints, rests, prints again — nothing here loops. Each class
+       below plays ONCE when its face gets a beat (../ambient.js) and
+       lands back on the face as it stands at rest.
+     · stamp, don't fade: transform, scale and clip only, with the
+       house curves. Where a colour changes it cuts (steps), it never
+       crossfades. Nothing animates opacity.
+     · nothing animates the card itself — its position, tilt, hover
+       and press belong to .dk-card (deck.css).
+     · reduced motion: the faces never get a turn, and index.css
+       collapses any animation to its last frame — which is the still.
+
+   Sections follow the cards: shared, then 01 … 09.
+   ============================================================ */
+
+/* ── Shared ── */
+/* a figure scales from its left edge, where it is set */
+.dk-card .dk-num { transform-origin: 0 58%; }
+
+/* RE-PRINT — stamped again in its own ink (how the ink mark idles) */
+.dkm-reprint { animation: dkm-reprint 460ms var(--ease-stamp); }
+@keyframes dkm-reprint { from { transform: scale(.5); } to { transform: none; } }
+
+/* POP — lands a little large and settles */
+.dkm-pop { animation: dkm-pop 380ms var(--ease-stamp); }
+.dkm-pop-late { animation: dkm-pop 380ms var(--ease-stamp) 340ms; }
+@keyframes dkm-pop { from { transform: scale(1.16); } to { transform: none; } }
+
+/* DAUB — oversized and turned, like a marker hitting paper (Bingo Daub) */
+.dkm-daub { animation: dkm-daub 420ms var(--ease-stamp); }
+@keyframes dkm-daub { from { transform: scale(1.9) rotate(-16deg); } to { transform: none; } }
+
+/* PRESS — goes past rest, then settles back (Lift & Press) */
+.dkm-press { animation: dkm-press 460ms var(--ease-stamp); }
+@keyframes dkm-press {
+  0% { transform: none; }
+  34% { transform: translateY(5px) scale(.93); }
+  100% { transform: none; }
+}
+
+/* SCORE COUNT — columns roll like an odometer (kit.jsx <Odo>) */
+.dkm-odo { display: inline-flex; transform-origin: 0 58%; animation: dkm-pop 300ms var(--ease-stamp); }
+.dkm-odo-c { display: inline-block; height: 1.3em; height: 1lh; overflow: hidden; vertical-align: top; }
+.dkm-odo-c > span, .dkm-odo-s > span { display: block; height: 1.3em; height: 1lh; }
+.dkm-odo-s { display: flex !important; flex-direction: column; animation: dkm-odo 760ms var(--ease-snap) both; }
+@keyframes dkm-odo {
+  from { transform: none; }
+  to { transform: translateY(calc(var(--n) * -1.3em)); transform: translateY(calc(var(--n) * -1lh)); }
+}
+
+/* ── 01 What's happening ── */
+.dkm-mb i { position: relative; }
+/* b: the lit room is covered in the card's own ink, and the cover is pulled
+   off left to right — the room prints back in */
+.dkm-cover {
+  position: absolute; inset: 0; background: var(--kc);
+  transform: scaleX(0); transform-origin: 100% 50%;
+  animation: dkm-uncover 440ms var(--ease-snap) both;
+}
+@keyframes dkm-uncover { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.dkm-tick { animation: dkm-tick 380ms var(--ease-stamp); }
+@keyframes dkm-tick { from { transform: scale(.86); } to { transform: none; } }
+
+/* ── 02 First time here? ── */
+.dkm-step-go { animation: dkm-step 560ms var(--ease-stamp); }
+@keyframes dkm-step {
+  0% { transform: none; }
+  38% { transform: translateX(13px); }
+  100% { transform: none; }
+}
+.dk-steps b.dkm-daub, .dk-steps b.dkm-pop { transform-origin: 50% 50%; }
+/* c, on the phone card: the ticks themselves, one more each turn */
+.dkm-ticks { display: flex; gap: .08em; font-size: .62em; }
+.dkm-ticks i { display: block; font-style: normal; }
+
+/* ── 03 Our menu ── */
+.dkm-roll { position: relative; }
+.dkm-name, .dkm-price { transform-origin: 0 50%; }
+/* a: re-stamped */
+.dkm-drink-a .dkm-name { animation: dkm-stampdown 460ms var(--ease-stamp); }
+@keyframes dkm-stampdown { from { transform: scale(1.32) rotate(-4deg); } to { transform: none; } }
+.dkm-drink-a .dkm-tag { animation: dkm-rise 420ms var(--ease-stamp) 90ms backwards; }
+@keyframes dkm-rise { from { transform: translateY(13px); } to { transform: none; } }
+.dkm-drink-a .dkm-price { animation: dkm-popin 380ms var(--ease-stamp) 230ms backwards; }
+@keyframes dkm-popin { 0% { transform: scale(0); } 1% { transform: scale(1.5); } 100% { transform: none; } }
+/* b: rolled — the old line up and out, the new one in under it */
+.dkm-drink-b { animation: dkm-rollin 560ms var(--ease-stamp) both; }
+@keyframes dkm-rollin { from { transform: translateY(108%); } to { transform: none; } }
+.dkm-drink-out { position: absolute; inset: 0 0 auto 0; animation: dkm-rollout 560ms var(--ease-stamp) both; }
+@keyframes dkm-rollout { from { transform: none; } to { transform: translateY(-108%); } }
+/* c: colour separation — a red and a cream plate out of register slide
+   together; the ink name lands on top */
+.dkm-drink-c .dkm-name {
+  position: relative; isolation: isolate;
+  animation: dkm-unprinted 430ms steps(1, end) both, dkm-pop 320ms var(--ease-stamp) 430ms;
+}
+@keyframes dkm-unprinted { from { color: transparent; } }
+.dkm-drink-c .dkm-name::before, .dkm-drink-c .dkm-name::after {
+  content: attr(data-t); position: absolute; inset: 0; z-index: -1; visibility: hidden;
+}
+.dkm-drink-c .dkm-name::before { color: var(--red); animation: dkm-plate-a 430ms var(--ease-out) both; }
+.dkm-drink-c .dkm-name::after { color: #fffbf1; animation: dkm-plate-b 430ms var(--ease-out) both; }
+@keyframes dkm-plate-a { from { visibility: visible; transform: translate(-.8em, .35em); } to { visibility: hidden; transform: none; } }
+@keyframes dkm-plate-b { from { visibility: visible; transform: translate(.65em, -.3em); } to { visibility: hidden; transform: none; } }
+.dkm-drink-c .dkm-tag { animation: dkm-rise 420ms var(--ease-stamp) 400ms backwards; }
+.dkm-drink-c .dkm-price { animation: dkm-popin 380ms var(--ease-stamp) 540ms backwards; }
+
+/* ── 04 Events we've held ── */
+.dkm-spark i { transform-origin: 50% 100%; }
+.dkm-bar { animation: dkm-bar 420ms var(--ease-stamp) backwards; }
+@keyframes dkm-bar { from { transform: scaleY(0); } to { transform: none; } }
+
+/* ── 05 Charitable giving ── */
+.dkm-heart {
+  display: inline-block; width: .3em; margin-left: .12em; vertical-align: .36em;
+  color: var(--red); line-height: 0;
+}
+.dkm-heart svg { display: block; width: 100%; height: auto; }
+/* c: POSTER ECHO — two plates shoot out behind the total, hold, snap back */
+.dkm-echo { position: relative; isolation: isolate; }
+.dkm-echo::before, .dkm-echo::after {
+  content: attr(data-t); position: absolute; left: 0; top: 0; z-index: -1; visibility: hidden;
+}
+.dkm-echo::before { color: var(--blue); }
+.dkm-echo::after { color: var(--red); }
+.dkm-echo-go::before { animation: dkm-echo-far 1500ms both; }
+.dkm-echo-go::after { animation: dkm-echo-near 1500ms both; }
+@keyframes dkm-echo-far {
+  0% { visibility: visible; transform: none; animation-timing-function: var(--ease-stamp); }
+  24% { transform: translate(8px, 8px); }
+  80% { transform: translate(8px, 8px); animation-timing-function: var(--ease-snap); }
+  100% { visibility: hidden; transform: none; }
+}
+@keyframes dkm-echo-near {
+  0%, 6% { visibility: visible; transform: none; animation-timing-function: var(--ease-stamp); }
+  30% { transform: translate(4px, 4px); }
+  80% { transform: translate(4px, 4px); animation-timing-function: var(--ease-snap); }
+  100% { visibility: hidden; transform: none; }
+}
+
+/* ── 06 Inside ── */
+/* a photo and the ink it is printed in (deck.css: .dk-shot img screens the
+   grey photo over the colour behind it) */
+.dkm-ply { position: absolute; inset: 0; overflow: hidden; isolation: isolate; }
+/* a: REGISTRATION — printed in a few pixels off, a pink fringe showing at
+   its edge, then slid into register */
+.dkm-fringe { position: absolute; inset: 0; background: var(--pink); animation: dkm-wipe-x 400ms var(--ease-snap) both; }
+@keyframes dkm-wipe-x { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.dkm-ply-a { animation: dkm-register 980ms both; }
+@keyframes dkm-register {
+  0% { clip-path: inset(0 100% 0 0); transform: translate(-9px, 6px); animation-timing-function: var(--ease-snap); }
+  41% { clip-path: inset(0 0 0 0); transform: translate(-9px, 6px); }
+  58% { clip-path: inset(0 0 0 0); transform: translate(-9px, 6px); animation-timing-function: var(--ease-stamp); }
+  100% { clip-path: inset(0 0 0 0); transform: none; }
+}
+/* b: NEW INK — the next ink is pulled down over the last */
+.dkm-ply-b { animation: dkm-wipe-y 520ms var(--ease-snap) both; }
+@keyframes dkm-wipe-y { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+/* c: DEALT — onto the pile from the right */
+.dkm-ply-c { animation: dkm-dealt 560ms var(--ease-stamp) both; }
+@keyframes dkm-dealt { from { transform: translate(108%, -10%) rotate(10deg); } to { transform: none; } }
+
+/* ── 07 Host an event ── */
+/* b: RUBBER STAMP — lifted, stamped back; the print snaps in on landing */
+.dkm-stamp { position: relative; isolation: isolate; transform-origin: 18% 60%; }
+.dkm-stamp::after {
+  content: attr(data-t); position: absolute; left: 0; top: 0; z-index: -1;
+  color: var(--yellow); visibility: hidden;
+}
+.dkm-stamp-go { animation: dkm-stamp 480ms var(--ease-stamp); }
+@keyframes dkm-stamp { from { transform: scale(1.5) rotate(-8deg); } to { transform: none; } }
+.dkm-stamp-go::after { animation: dkm-print 1500ms steps(1, end) both; }
+@keyframes dkm-print {
+  0% { visibility: hidden; transform: translate(5px, 5px); }
+  22% { visibility: visible; transform: translate(5px, 5px); }
+  100% { visibility: hidden; transform: none; }
+}
+/* c: HIGHLIGHTER — a yellow plate pulled across behind the figure, then off.
+   Ink on yellow (the APCA rule), so the figure cuts to ink while it is there. */
+.dkm-hl { position: relative; display: inline-block; isolation: isolate; }
+.dkm-hl::before {
+  content: ''; position: absolute; inset: 2% -5% 0 -4%; z-index: -1;
+  background: var(--yellow); transform: scaleX(0); transform-origin: 0 50%;
+}
+.dkm-hl-go { animation: dkm-hl-ink 2400ms steps(1, end) both; }
+.dkm-hl-go::before { animation: dkm-hl 2400ms both; }
+@keyframes dkm-hl-ink { 6% { color: #0d0905; } 92% { color: inherit; } }
+@keyframes dkm-hl {
+  0% { transform: scaleX(0); transform-origin: 0 50%; animation-timing-function: var(--ease-snap); }
+  12% { transform: scaleX(1); transform-origin: 0 50%; }
+  13%, 88% { transform: scaleX(1); transform-origin: 100% 50%; animation-timing-function: var(--ease-snap); }
+  97%, 100% { transform: scaleX(0); transform-origin: 100% 50%; }
+}
+
+/* ── 08 Get connected ── */
+.dkm-chips > span { position: relative; }
+/* a: CHIP POP — stamped in turn, each kicking a print out behind it. Blue is
+   pink's partner (day-colours.json). */
+.dkm-chip-pop { animation: dkm-chip-pop 640ms var(--ease-stamp); }
+@keyframes dkm-chip-pop {
+  0% { transform: scale(1.22); box-shadow: 0 0 0 var(--blue); }
+  44% { transform: none; box-shadow: 5px 5px 0 var(--blue); }
+  80% { transform: none; box-shadow: 5px 5px 0 var(--blue); animation-timing-function: var(--ease-snap); }
+  100% { transform: none; box-shadow: 0 0 0 var(--blue); }
+}
+/* b: ONE AT A TIME — pressed, prints solid (the fill cuts, it doesn't fade),
+   and is let go */
+.dkm-chip-press { animation: dkm-chip-press 1500ms both; }
+@keyframes dkm-chip-press {
+  0% { transform: none; background-color: transparent; color: inherit; animation-timing-function: var(--ease-snap); }
+  6% { transform: translateY(3px); background-color: transparent; color: inherit; animation-timing-function: steps(1, end); }
+  7% { transform: translateY(3px); background-color: var(--kon); color: var(--kc); animation-timing-function: var(--ease-stamp); }
+  26% { transform: none; background-color: var(--kon); color: var(--kc); }
+  88% { transform: none; background-color: var(--kon); color: var(--kc); animation-timing-function: var(--ease-snap); }
+  93% { transform: translateY(3px); background-color: var(--kon); color: var(--kc); animation-timing-function: steps(1, end); }
+  94% { transform: translateY(3px); background-color: transparent; color: inherit; animation-timing-function: var(--ease-stamp); }
+  100% { transform: none; background-color: transparent; color: inherit; }
+}
+/* c: PING — yellow is the notice colour; an ink edge so it holds on pink */
+.dkm-ico { position: relative; display: inline-flex; flex: none; }
+.dkm-ping {
+  position: absolute; top: -4px; right: -5px; width: 9px; height: 9px;
+  background: var(--yellow); box-shadow: inset 0 0 0 2px #0d0905;
+  transform: scale(0); animation: dkm-ping 2600ms both;
+}
+@keyframes dkm-ping {
+  0% { transform: scale(2.6) rotate(-24deg); animation-timing-function: var(--ease-stamp); }
+  16% { transform: none; }
+  88% { transform: none; animation-timing-function: var(--ease-snap); }
+  100% { transform: scale(0); }
+}
+
+/* ── 09 Find us ── */
+/* a: RADAR RING — Live Pulse's ring, one pair per turn. The wrapper has no
+   line height, so it is exactly the marker's box. */
+.dkm-live { position: relative; display: inline-block; line-height: 0; }
+.dkm-ring {
+  position: absolute; left: 0; top: 0; width: 9px; height: 9px; pointer-events: none;
+  /* an outline, so the ring keeps one thin line as it grows (a scaled box
+     would thicken); the offset is paint only, no layout */
+  outline: 1.5px solid var(--red); outline-offset: 0; visibility: hidden;
+  animation: dkm-ring 900ms var(--ease-out) both;
+}
+.dkm-ring-2 { animation-delay: 280ms; }
+@keyframes dkm-ring {
+  from { visibility: visible; outline-offset: 0; }
+  to { visibility: hidden; outline-offset: var(--dkm-ring-out, 6px); }
+}
+/* b: PIN DROP */
+.dkm-pin { display: inline-block; width: 1em; height: 1em; margin-right: .28em; vertical-align: -.12em; transform-origin: 50% 100%; }
+.dkm-pin svg { display: block; width: 100%; height: 100%; }
+.dkm-pin.dk-only-compact { display: none; width: 20px; height: 20px; margin: 0 0 2px; }
+.dkm-pin-go { animation: dkm-pin 540ms var(--ease-stamp); }
+@keyframes dkm-pin { from { transform: translateY(-22px); } to { transform: none; } }
+/* c: HOURS STRIP — one cell per open hour. Past: ink. Now: red. To come: an outline. */
+.dkm-hours { display: flex; gap: 1px; }
+.dkm-hours i { flex: 1; height: 7px; box-shadow: inset 0 0 0 1px currentColor; }
+.dkm-hours i.past { background: currentColor; }
+.dkm-hours i.now { background: var(--red); box-shadow: none; }
+
+@media (min-width: 761px) {
+  .dkm-hours { gap: 2px; }
+  .dkm-hours i { height: 11px; box-shadow: inset 0 0 0 1.5px currentColor; }
+  .dkm-ring { --dkm-ring-out: 11px; outline-width: 2px; }
+}
+@media (max-width: 760.98px) {
+  .dkm-pin.dk-only-compact { display: block; }
+  .dkm-ping { top: -4px; right: -5px; width: 8px; height: 8px; box-shadow: inset 0 0 0 1.5px #0d0905; }
+  .dkm-heart { vertical-align: .3em; }
+}

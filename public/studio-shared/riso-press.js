@@ -77,8 +77,8 @@
   /* Bumped whenever the press's OUTPUT changes. Stamped on documents by the
      hosts (Poster Studio's doc.engineRev) so a future reprint can tell which
      press made a poster. 1 = the tinting engine that shipped before the
-     separation. */
-  const REV = 2;
+     separation. 3 = the FM grain read between its cells (rounded dots). */
+  const REV = 3;
 
   /* ---- the locked palette (mirror of public/tokens/day-colours.json) ----
      Seven accents + the two neutrals. Both neutrals are pickable PLATES:
@@ -409,6 +409,55 @@
     return out;
   })();
   function blue(x, y) { return BLUE[((y & 63) << 6) | (x & 63)]; }
+  /* The grain, read BETWEEN its cells (rev 3, 24.11.26). Sampled
+     nearest-cell, every grain cell was a hard square — invisible at a
+     900px preview, where a cell is under a pixel, but on a 2–4× export
+     the screen printed as a grid of jaggy squares, a bitmap rather than
+     ink. Interpolated, the threshold field is continuous, so each dot is
+     a rounded blob with an edge that can be antialiased, and the dots
+     touch and part the way ink on a stencil does.
+     Interpolating squeezes the field's histogram toward the middle —
+     hardest at a cell's centre, not at all on its corners — which would
+     steepen the tone curve (a threshold screen prints tone exactly when
+     its field is uniform). So the value goes back through the CDF of the
+     interpolated field AT THAT SUB-CELL POSITION, measured once for an
+     8×8 grid of positions over the whole tile: tone in = tone out at any
+     scale, including the preview and thumbnails, where a cell is a
+     fraction of a pixel and the samples land on fixed positions. */
+  const EQ_Q = 8, EQ_B = 256;
+  const BLUE_EQ = (function () {
+    const eq = new Float32Array(EQ_Q * EQ_Q * (EQ_B + 1)), hist = new Float64Array(EQ_B);
+    for (let sy = 0; sy < EQ_Q; sy++) for (let sx = 0; sx < EQ_Q; sx++) {
+      const tx = sx / EQ_Q, ty = sy / EQ_Q;
+      hist.fill(0);
+      for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+        const a = BLUE[(y << 6) | x], b = BLUE[(y << 6) | ((x + 1) & 63)];
+        const c = BLUE[(((y + 1) & 63) << 6) | x], d = BLUE[(((y + 1) & 63) << 6) | ((x + 1) & 63)];
+        const v = a + (b - a) * tx + (c - a + (d - b - c + a) * tx) * ty;
+        hist[Math.min(EQ_B - 1, (v * EQ_B) | 0)]++;
+      }
+      const o = (sy * EQ_Q + sx) * (EQ_B + 1);
+      let acc = 0;
+      /* the CDF at each bin's lower edge, plus half the bin — so a value
+         that alone fills its bin (the corners: the tile's own 256 ranks)
+         maps back to exactly where it was */
+      for (let i = 0; i < EQ_B; i++) { eq[o + i] = (acc + hist[i] * 0.5) / 4096; acc += hist[i]; }
+      eq[o + EQ_B] = 1;
+    }
+    return eq;
+  })();
+  function blueSmooth(gx, gy) {
+    const ix = Math.floor(gx), iy = Math.floor(gy), tx = gx - ix, ty = gy - iy;
+    const x0 = ix & 63, x1 = (ix + 1) & 63, y0 = (iy & 63) << 6, y1 = ((iy + 1) & 63) << 6;
+    const a = BLUE[y0 | x0], b = BLUE[y0 | x1], c = BLUE[y1 | x0], d = BLUE[y1 | x1];
+    const v = a + (b - a) * tx + (c - a + (d - b - c + a) * tx) * ty;
+    const qx = Math.round(tx * EQ_Q) % EQ_Q, qy = Math.round(ty * EQ_Q) % EQ_Q;   // 1 ≡ 0: a corner either way
+    const f = v * EQ_B - 0.5, i = Math.max(0, Math.min(EQ_B - 2, Math.floor(f))), t = f - i;
+    const o = (qy * EQ_Q + qx) * (EQ_B + 1);
+    const r = eqAt(o + i, t);
+    return r < 0 ? 0 : r > 1 ? 1 : r;
+  }
+  function eqAt(k, t) { return BLUE_EQ[k] + (BLUE_EQ[k + 1] - BLUE_EQ[k]) * t; }
 
   /* ---------- tone transfer ----------------------------------
      ISO 12647-3's newsprint curve, sampled every tenth, mixed in by `gain`
@@ -739,6 +788,12 @@
     /* the grain grid: `grainPitch` design px per grain cell, so the export
        carries the same grain as the preview (a device-pixel hash would not) */
     const gK = 1 / Math.max(0.05, o.grainPitch * K);
+    /* one device pixel of antialiasing on the grain's edge: the field moves
+       about half its range per cell, so the edge is ~0.5 per cell in
+       threshold units. Under a pixel a cell (the preview) keeps the old
+       0.25 — the dot is the pixel there; on an export the edge sharpens
+       to the pixel and the dot reads as ink, not as a soft grey square. */
+    const gE = Math.min(0.25, Math.max(0.05, 0.5 * gK));
     const rgb = [0, 0, 0], xy = [0, 0];
 
     for (let y = 0, p = 0; y < h; y++) {
@@ -769,7 +824,7 @@
             const kfm = pr.fm != null ? pr.fm : fm;
             const kcell = pr.cell != null ? pr.cell : cell;
             let t, e;
-            if (kfm) { t = blue(((px * gK) | 0) + k * 17, ((py * gK) | 0) + k * 29); e = 0.25; }
+            if (kfm) { t = blueSmooth(px * gK + k * 17, py * gK + k * 29); e = gE; }
             else {
               const u = (px * pr.cos - py * pr.sin) / kcell, v = (px * pr.sin + py * pr.cos) / kcell;
               t = spot(shape, u, v);

@@ -50,7 +50,7 @@ const STOCK_LABEL = { day:'Cream', white:'White', news:'Newsprint', straw:'Straw
                       grey:'Grey board', flint:'Flint', steel:'Steel', night:'Night' };
 /* the separation's screens: the machine's own grain, or a dot screen.
    "FM grain", not "Grain" — the photo panel also has a separation LOOK called
-   Machine grain and a Finish slider called Film grain, three different things */
+   Machine grain and a Finish slider called Grain, three different things */
 const SEP_SCREENS = [{v:'grain',l:'FM grain'},{v:'s43',l:'43'},{v:'s71',l:'71'},{v:'s106',l:'106'}];
 
 /* ---- STOCK ------------------------------------------------------------

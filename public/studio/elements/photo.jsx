@@ -64,6 +64,8 @@ const OPT_KEYS=['contrast','brightness','dot','bands','threshold','angle','softn
   'edgeDetail','edgeThick','edgeBackdrop','edgeSmooth','edgeClean','edgeInk','edgeWash',
   'edgeEcho','edgeEchoAngle','edgeEchoInk','cellSize','mosaicDepth','mosaicGap',
   'ditherAngle','mosaicShape','mosaicBond','mosaicJitter','mosaicGrout',
+  /* threshold + the grain's clumping, 24.11.26 */
+  'gtLevel','gtGrain','gtSize','gtClump','grainClump',
   'toneSmooth','contourEcho','contourEchoAngle','contourEchoInk','edgeSlip','edgeSlipAngle',
   'blurUnderType','blurUnderAngle','blurUnderX','blurUnderY','blurUnderPos','blurUnderWidth',
   'blurOverType','blurOverAngle','blurOverX','blurOverY','blurOverPos','blurOverWidth',

@@ -13,8 +13,9 @@ import { GALLERY } from '../../../data/events';
 // there is a source (an exhibitions list in the app, or a data file here),
 // replace the <Gap> with it.
 //
-// MUSIC: deliberately absent. The app has no public now-playing endpoint, and
-// there is no playlist link anywhere in this repo to point at. If the house
+// MUSIC: deliberately absent here. The song playing right now is on the
+// "What's happening" card (../NowPlaying.jsx); there is no playlist link
+// anywhere in this repo to point at. If the house
 // playlists get a real public link, it earns one quiet row here — not a card.
 export default function InsideSection({ card, no, t }) {
   const S = (k) => t.use(`deck.inside.${k}`);

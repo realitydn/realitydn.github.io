@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import DeckSection from '../DeckSection';
 import useBuilding from '../useBuilding';
-import NowPlaying from '../NowPlaying';
+import NowPlaying, { useNowPlaying } from '../NowPlaying';
 import { fill, Pulse, isPlainClick } from '../parts';
 import { Icons } from '../../Icons';
 import EventOverlay from '../../EventOverlay';
@@ -16,8 +16,11 @@ import { URLS } from '../../../data/translations';
 //   THE BUILDING     the rooms in use lit, and one line saying the same thing.
 //                    A free room says what is in it (the pool table, the
 //                    board games): the lines are in data/deck/building.js
-//   NOW PLAYING      the track playing in the bar: on the page only when the
-//                    now-playing feed says so (../NowPlaying.jsx; no feed yet)
+//   NOW PLAYING      the song playing in the bar: title and artists, on the
+//                    page only while the app's now-playing feed says a song
+//                    is playing (../NowPlaying.jsx). In the bar's cell of the
+//                    building on a tablet or desktop; a strip under the
+//                    building on a phone
 //   COMING UP        the next few events, large: when, the name, the room, the
 //                    poster. Three on a phone, four or five on a larger screen
 //                    (deck.css block 11 hides the rest)
@@ -50,6 +53,7 @@ const roomName = (ev, lang) =>
 export default function BuildingSection({ card, no, t, lang }) {
   const { state, events, loading, now, live, clock, hours } = useBuilding();
   const [overlayEvent, setOverlayEvent] = useState(null);
+  const song = useNowPlaying();
   const S = (k) => t.use(`deck.building.${k}`);
   const C = (k) => t.use(`cal.${k}`);
   const CF = cfStr(lang);
@@ -177,6 +181,8 @@ export default function BuildingSection({ card, no, t, lang }) {
           </a>
         ) : null}
       </span>
+      {/* the song, on the ground floor by the bar (tablet and desktop) */}
+      <NowPlaying track={song.track} t={t} place="bar" />
     </div>
   );
 
@@ -192,7 +198,7 @@ export default function BuildingSection({ card, no, t, lang }) {
         </>
       ) : t.use('hours')}
     >
-      <div className="dk-now">
+      <div className="dk-now" ref={song.ref}>
         <div className="dk-now-b">
           {/* The building is a picture of the night: an ink block, lit rooms
               in red. The sentence under it says the same thing in words. */}
@@ -215,7 +221,8 @@ export default function BuildingSection({ card, no, t, lang }) {
             ))}
             <p className="dk-street">86 Mai Thúc Lân · {S('street')}</p>
           </div>
-          <NowPlaying t={t} />
+          {/* the same song, as a strip: phones only (deck.css) */}
+          <NowPlaying track={song.track} t={t} />
           {live && !loading ? (
             <p className="dk-fact dk-now-line">
               <Pulse off={n === 0} />

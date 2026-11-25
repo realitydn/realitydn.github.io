@@ -546,7 +546,6 @@ export default {
       "floor": "{n}階",
       "street": "地上階",
       "playing": "再生中",
-      "playingLink": "Spotifyで開く",
       "appTitle": "REALITYウェブアプリ",
       "appBody": "これからのイベントはすべてREALITYウェブアプリに。フルカレンダーとイベントの詳細がそろっています。",
       "appCta": "ウェブアプリを開く"

@@ -659,11 +659,17 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   const t0 = Date.parse('2026-11-25T13:05:30Z');
   const playing = {
     version: 1, generatedAt: '2026-11-25T13:05:12Z', playing: true,
-    track: { title: ' Harvest Moon ', artists: ['Neil Young', ''], url: 'https://open.spotify.com/track/abc' },
+    track: { title: ' Harvest Moon ', artists: ['Neil Young', ''], url: 'https://example.com/track/abc' },
   };
-  eq('now playing: no source yet, so no request is made', NOW_PLAYING_URL, null);
+  eq('now playing: the app\'s feed', NOW_PLAYING_URL, 'https://app.realitydn.com/api/feed/v1/now-playing.json');
   const np = nowPlayingView(playing, t0);
-  check('now playing: a fresh playing track shows, trimmed', !!np && np.title === 'Harvest Moon' && np.artist === 'Neil Young' && np.url === playing.track.url);
+  check('now playing: a fresh playing track shows, trimmed', !!np && np.title === 'Harvest Moon' && np.artist === 'Neil Young');
+  eq('now playing: title and artists only, never a link', Object.keys(np).sort().join(), 'artist,title');
+  // the feed's own shape: an offset, not Z (00:03:26+07:00 is 17:03:26Z the day before)
+  const live = { version: 1, generatedAt: '2026-11-26T00:03:26+07:00', playing: true, track: { title: 'A New Kind Of Love - Demo', artists: ['Frou Frou', 'Imogen Heap', 'Guy Sigsworth'] } };
+  eq('now playing: generatedAt with an offset is read as a full ISO time', (nowPlayingView(live, Date.parse('2026-11-25T17:04:00Z')) || {}).artist, 'Frou Frou, Imogen Heap, Guy Sigsworth');
+  eq('now playing: … and is stale three minutes on', nowPlayingView(live, Date.parse('2026-11-25T17:06:27Z')), null);
+  eq('now playing: the feed\'s "nothing" answer shows nothing', nowPlayingView({ version: 1, generatedAt: live.generatedAt, playing: false, track: null }, Date.parse('2026-11-25T17:04:00Z')), null);
   eq('now playing: paused shows nothing', nowPlayingView({ ...playing, playing: false }, t0), null);
   eq('now playing: "playing" must be exactly true', nowPlayingView({ ...playing, playing: 'true' }, t0), null);
   eq('now playing: no track shows nothing', nowPlayingView({ ...playing, track: null }, t0), null);
@@ -671,7 +677,6 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   eq('now playing: a stale document shows nothing', nowPlayingView(playing, t0 + FRESH_MS + 60000), null);
   eq('now playing: no timestamp shows nothing', nowPlayingView({ ...playing, generatedAt: undefined }, t0), null);
   eq('now playing: no document shows nothing', nowPlayingView(null, t0), null);
-  eq('now playing: only a Spotify link is ever followed', nowPlayingView({ ...playing, track: { ...playing.track, url: 'https://example.com/x' } }, t0).url, null);
 
   // The deck's order and copy (25.11.26).
   const en = (await import('../src/data/locales/en.js')).default;

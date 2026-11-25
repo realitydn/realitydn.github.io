@@ -545,8 +545,7 @@ export default {
       "bar": "Quầy bar",
       "floor": "Tầng {n}",
       "street": "mặt đường",
-      "playing": "Đang phát",
-      "playingLink": "Mở trên Spotify",
+      "playing": "Đang phát trên loa",
       "appTitle": "Webapp REALITY",
       "appBody": "Mọi sự kiện sắp tới đều có trên webapp REALITY: lịch đầy đủ và mọi thông tin chi tiết.",
       "appCta": "Mở webapp"

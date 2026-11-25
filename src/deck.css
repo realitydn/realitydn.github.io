@@ -968,19 +968,40 @@ a.dk-rm:focus-visible { background-color: var(--red); }
   .dk-app .dk-btn { flex: none; }
 }
 
-/* now playing: a strip at the foot of the building. On the page only while
-   the now-playing feed says a track is playing (NowPlaying.jsx). */
+/* NOW PLAYING: the song in the bar, title and artists. On the page only
+   while the now-playing feed says a song is playing (NowPlaying.jsx).
+     .dk-np-strip  a strip at the foot of the building: phones
+     .dk-np-bar    in the bar's cell, on the ground floor: tablet and desktop
+   One or the other, never both. A long title or a long list of artists takes
+   two lines each at most, then an ellipsis. */
 .dk-np {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 14px;
   margin: 6px 0 0; padding: 10px 12px;
   background: #0d0905; color: #fffbf1; border: 2px solid #0d0905;
-  text-decoration: none; --accent: var(--yellow);
 }
-a.dk-np:focus-visible { background-color: #0d0905; }
 .dk-np-l { font: 700 11px/1.4 var(--mont); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
 .dk-np-l .dk-pulse { width: 8px; height: 8px; margin-right: 7px; }
-.dk-np-t { font: 600 15px/1.3 var(--mont); overflow-wrap: anywhere; }
-.dk-np-a { font: 500 13px/1.3 var(--grotesk); color: rgba(255, 251, 241, .72); overflow-wrap: anywhere; }
+/* the song: wiped in from the left behind a hard edge when it changes
+   (and when the line first appears). No fade. */
+.dk-np-s {
+  flex: 1 1 190px; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 1px 12px;
+  animation: dk-np-print 380ms var(--ease-snap) both;
+}
+@keyframes dk-np-print { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { .dk-np-s { animation: none; } }
+.dk-np-t, .dk-np-a {
+  min-width: 0; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.dk-np-t { font: 600 15px/1.3 var(--mont); }
+.dk-np-a { font: 500 13px/1.3 var(--grotesk); color: rgba(255, 251, 241, .72); }
+/* in the bar's cell: no box of its own, ruled off from the bar's hours */
+.dk-np-bar { display: none; margin: 2px 0 0; padding: 8px 0 0; background: none; border: 0; border-top: 1.5px dashed currentColor; }
+.dk-np-bar .dk-np-s { flex-basis: 100%; }
+@media (min-width: 761px) {
+  .dk-np-strip { display: none; }
+  .dk-np-bar { display: flex; }
+}
 
 /* 03 the menu on a desktop: the chapters down the left, the one picked beside
    them, like a menu board (MenuSection.jsx; from L up).

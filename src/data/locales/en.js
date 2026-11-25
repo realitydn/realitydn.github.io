@@ -560,8 +560,7 @@ export default {
       "bar": "Bar",
       "floor": "Floor {n}",
       "street": "street level",
-      "playing": "Now playing",
-      "playingLink": "Open in Spotify",
+      "playing": "On the speakers",
       "appTitle": "The REALITY webapp",
       "appBody": "Everything coming up is in the REALITY webapp: the full calendar and all the event details.",
       "appCta": "Open the webapp"

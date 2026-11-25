@@ -546,7 +546,6 @@ export default {
       "floor": "{n}층",
       "street": "지상층",
       "playing": "지금 재생 중",
-      "playingLink": "Spotify에서 열기",
       "appTitle": "REALITY 웹앱",
       "appBody": "앞으로 열리는 모든 이벤트는 REALITY 웹앱에 있어요. 전체 캘린더와 모든 이벤트 상세 정보까지.",
       "appCta": "웹앱 열기"

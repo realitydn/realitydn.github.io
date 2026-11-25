@@ -176,13 +176,17 @@ down the page.
   (up to 340px), where the cards on the first screen are drawn smaller. The
   static HTML, and a visitor with no JavaScript, get the S version at every
   width.
-- **Now playing (25.11.26): built, not switched on.** *What's happening* has
-  a slot for the track playing in the bar. Nothing serves that yet, so
-  `NOW_PLAYING_URL` in `src/data/deck/now-playing.js` is `null`: no request
-  is made and the slot is not on the page. That file has the JSON the app is
-  asked to serve, the rules for when a track shows (only when the feed has
-  just said one is playing; never a stale one), and the one line to change.
-  In development, `?nowplaying=<url>` points it at a test document.
+- **Now playing (on since 26.11.26).** *What's happening* shows the song
+  playing in the bar, title and artists only: no link, and no word about
+  where the music comes from. It reads the app's
+  `/api/feed/v1/now-playing.json` (`src/data/deck/now-playing.js` has the
+  address and the rules). The line is on the page only while the feed says a
+  song is playing and its answer is under 3 minutes old; a failed request, a
+  pause or a stale answer removes it. It asks every 30 s while the card is on
+  screen and the tab is visible, and not otherwise. It sits in the bar's cell
+  of the building on a tablet or desktop, and as a strip under the building
+  on a phone. Never in the static HTML. In development,
+  `?nowplaying=<url>` points it at a test document.
 - **How the page scrolls: the seam (24.11.26).** The opened card's frame
   stays put on the screen and a hard line travels up through it: above the
   line the card leaving, below it the card arriving. The arriving card's

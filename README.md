@@ -48,7 +48,9 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 │   │   └── deck/        # THE HOME PAGE — see "The home page: the deck" below
 │   ├── deck.css         # the home page's styles (after index.css)
 │   ├── data/
-│   │   ├── deck/        # the home page's own data: event-audit.js (snapshot figures),
+│   │   ├── deck/        # the home page's own data: event-audit.js (the event figures, read
+│   │   │                # from public/event-report/stats.json when the site is built;
+│   │   │                # event-stats.js has the fallback snapshot and the mapping),
 │   │   │                # fundraisers.js (stand-ins until the app's feed has rows),
 │   │   │                # building.js (rooms in use, from the feed; ROOM_HAS: what a
 │   │   │                # free room says is in it), open-hours.js
@@ -81,10 +83,17 @@ down the page.
 - **What is live:** rooms in use, tonight/tomorrow, the calendar and the
   drinks deal come from the app's events feed; "open now" is worked out in
   Đà Nẵng time; the drink on the menu card is the menu itself.
-- **What is not live (yet):** the event count (`data/deck/event-audit.js`, a
-  snapshot of `public/event-report/`, printed with its "as of" date) and the
-  fundraisers (`data/deck/fundraisers.js`, marked stand-ins that give way to
-  the app's fundraisers feed the moment it has rows). A fact we don't have is
+- **The event figures are weekly, not live.** "Events we've held" reads
+  `public/event-report/stats.json`, which `scripts/event-report/` rebuilds
+  each week and pushes to `main`. The file is read when the site is built
+  (the `reality-event-stats` plugin in `vite.config.js`), never in the
+  browser, so the prerendered page and the running page show the same count,
+  with its "as of" date. If the file is missing, unreadable or older than the
+  bundled snapshot in `data/deck/event-stats.js`, the snapshot is shown; the
+  build log says which was used.
+- **What is not live (yet):** the fundraisers (`data/deck/fundraisers.js`,
+  marked stand-ins that give way to the app's fundraisers feed the moment it
+  has rows). A fact we don't have is
   a `<Gap>` — a dashed tag on the page — never a guess.
 - **The Our menu card** rolls through the whole menu, not only the cocktails
   (coffee, matcha, juice, beer, tea, water), and every drink says what kind

@@ -544,7 +544,10 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   const { buildingNow, roomsOf, eventEndMs, ROOM_CODES, ROOM_HAS, roomHas } = await import('../src/data/deck/building.js');
   const { openNow, ictClock } = await import('../src/data/deck/open-hours.js');
   const { fundraisersView, vnd, vndShort, amountLabel, FUNDRAISER_STANDINS } = await import('../src/data/deck/fundraisers.js');
-  const { AUDIT, dmy } = await import('../src/data/deck/event-audit.js');
+  // The figures on "Events we've held": the pure half (event-stats.js). The
+  // page's own event-audit.js reads the weekly file through a Vite plugin.
+  const { SNAPSHOT, usable, chooseStats, auditFrom, dmy } = await import('../src/data/deck/event-stats.js');
+  const AUDIT = auditFrom(SNAPSHOT);
 
   const at = (hhmm, day = 26) => `2026-11-${day}T${hhmm}:00+07:00`;
   const loc = (...codes) => codes.map((code) => ({ code }));
@@ -619,6 +622,27 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   eq('money: under a million prints in full', vndShort(450000), '450.000₫');
   eq('money: a rounded stand-in', amountLabel(FUNDRAISER_STANDINS[0]), '≈52M₫');
   eq('money: an at-least stand-in', amountLabel(FUNDRAISER_STANDINS[1]), '10M₫+');
+
+  // The weekly file, when this checkout has it, must be one the card can use.
+  {
+    const { existsSync, readFileSync } = await import('node:fs');
+    const file = new URL('../public/event-report/stats.json', import.meta.url);
+    if (existsSync(file)) {
+      const stats = JSON.parse(readFileSync(file, 'utf8'));
+      check('audit: public/event-report/stats.json has every field the card reads', usable(stats));
+      check('audit: the weekly file is not older than the bundled snapshot', stats.asOf >= SNAPSHOT.asOf);
+    }
+  }
+  check('audit: the bundled snapshot is itself a usable stats.json', usable(SNAPSHOT));
+  eq('audit: no file → the snapshot', chooseStats(null), SNAPSHOT);
+  eq('audit: a file missing a field → the snapshot', chooseStats({ ...SNAPSHOT, asOf: '2027-01-01', growth: undefined }), SNAPSHOT);
+  eq('audit: a file older than the snapshot → the snapshot', chooseStats({ ...SNAPSHOT, asOf: '2026-10-03' }), SNAPSHOT);
+  {
+    const newer = { ...SNAPSHOT, asOf: '2026-12-01', totals: { ...SNAPSHOT.totals, events: 1890 }, extra: 'a field added later' };
+    eq('audit: a newer file is used, extra fields and all', auditFrom(chooseStats(newer)).total, 1890);
+  }
+  eq('audit: the chart has a date for every count', AUDIT.trendDates.length, AUDIT.trend30.length);
+  eq('audit: the last count ends on the day the count was taken', AUDIT.trendDates[AUDIT.trendDates.length - 1], AUDIT.asOf);
 
   // The audit snapshot must agree with itself.
   eq('audit: the three-month average is its three months ÷ the weeks in 90 days',

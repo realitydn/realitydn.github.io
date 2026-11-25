@@ -5,8 +5,9 @@ import { fill, decimal } from '../parts';
 import { AUDIT, dmy } from '../../../data/deck/event-audit';
 
 // 04 · Events we've held — the count, a small chart of how it has grown, and
-// the date the count was taken. Not live: the figures are a snapshot
-// (data/deck/event-audit.js), so the card says "as of".
+// the date the count was taken. Not live: the figures are the weekly event
+// report's, read when the site is built (data/deck/event-audit.js), so the
+// card says "as of".
 //
 // THE MOTION ("Chart prints"): the bars print in left to right ONCE, as the
 // card arrives: on load when the card is on the first screen, otherwise the

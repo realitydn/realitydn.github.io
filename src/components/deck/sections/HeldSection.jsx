@@ -25,9 +25,11 @@ import { AUDIT, dmy } from '../../../data/deck/event-audit';
 // is a fold on a phone and a tablet; on a desktop it is laid out in the card
 // (Expand flatFrom="l"). The count by day of the week is on the audit page.
 //
-// NOT LIVE. Every figure is a snapshot copied from public/event-report/
-// (data/deck/event-audit.js says where each one comes from), and the page
-// says so: "as of" in the header and beside the figures.
+// THE FIGURES are the weekly event report's (public/event-report/stats.json),
+// read when the site is built: data/deck/event-audit.js. They are a week old
+// at most, not live, and the page says so: "as of" in the header and beside
+// the figures. Series names are printed as the report gives them, which is
+// as the webapp has them.
 
 // The audit page exists in English and Vietnamese; the other languages read
 // the English one.
@@ -39,11 +41,8 @@ const REPORT = { VN: '/event-report/vn/' };
 function TrendChart({ label, alt }) {
   const data = AUDIT.trend30;
   const top = Math.ceil(Math.max(...data) / 50) * 50;
-  const ms = Date.parse(`${AUDIT.to}T12:00:00+07:00`);
-  const dateAt = (i) => {
-    const d = new Date(ms - (data.length - 1 - i) * AUDIT.trendStepDays * 86400000);
-    return dmy(d.toISOString().slice(0, 10));
-  };
+  // each count's own date, as the report gives it
+  const dateAt = (i) => dmy(AUDIT.trendDates[i]);
   const last = data.length - 1;
   const ticks = [0, Math.round(last / 3), Math.round((last * 2) / 3), last];
   const lines = [];

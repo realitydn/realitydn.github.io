@@ -90,7 +90,10 @@ down the page.
   arrives (on load; it is not on the clock), the giving total throws an echo, the photos re-register, 0₫ gets a
   highlighter pass, and the current open hour is stamped again. Each one
   starts on the second and keeps one of three paces, so the page has a rhythm
-  that only repeats every 24 s:
+  that only repeats every 24 s. (The Inside card opens with the shopfront in
+  full colour; its colour is printed on about 8 s in, and only then do its
+  photos start to change: `FULL_COLOUR_TURNS` in `deck/faces/InsideFace.jsx`.)
+  The paces:
   - **All the numbers are in `src/lib/beat.js`.** `PACES` is the three paces
     (3, 6 and 8 seconds). `FACES` says which card keeps which: the menu and
     the open hour every 3 s, the photo every 6 s, the giving total and 0₫

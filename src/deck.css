@@ -256,8 +256,9 @@
   100% { visibility: hidden; transform: none; }
 }
 
-/* 06 photos, printed in the card's colour (a duotone: the photo in grey,
-   screened over the colour) */
+/* 05 photos, printed in the card's colour (a duotone: the photo in grey,
+   screened over the colour). The card OPENS with them in full colour
+   (.dk-ply-full, below); the colour is printed on a turn or two later. */
 .dk-shots { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .dk-shot {
   position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden;
@@ -270,6 +271,15 @@
 /* a photo and the ink it is printed in: one layer, so one can be printed
    over another */
 .dk-ply { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--kc); }
+/* FULL COLOUR — how the card opens, and all that the static HTML and a
+   reduced-motion visitor get: the photo as it was taken, no grey, no screen.
+   The card's colour is then PRINTED over it (never faded in): a duotone layer
+   of the same photo takes the Registration pass below, with the card's own
+   colour as the plate. Frame two follows frame one by a moment.
+   (When, and how many turns it waits: faces/InsideFace.jsx.) */
+.dk-ply-full img { filter: none; mix-blend-mode: normal; }
+.dk-inking .dk-plate { background: var(--kc); }
+.dk-inking.dk-x .dk-plate, .dk-inking.dk-x .dk-ply-in { animation-delay: 160ms; }
 /* REGISTRATION — the next photo is printed in from one side, a few pixels
    out of register, with a colour plate showing at its edge; then it slides
    into place. 0.8 s. InsideFace sets, per pass: --reg-from (the side

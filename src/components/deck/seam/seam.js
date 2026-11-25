@@ -46,8 +46,9 @@ const TAIL_MIN = 180;
 const TAIL_MAX = 260;
 
 // The fold bars showing on a card right now (a bar inside a shut fold is not).
-const barsOf = (body) => Array.from(body.querySelectorAll('details.dk-ex > summary'))
-  .filter((s) => !s.parentElement.parentElement.closest('details:not([open])'));
+// Nor is the bar of a fold that is laid out flat on this screen (Expand flatFrom).
+const barsOf = (body) => Array.from(body.querySelectorAll('details.dk-ex:not(.is-flat) > summary'))
+  .filter((s) => !s.parentElement.parentElement.closest('details:not([open])') && s.getClientRects().length);
 
 export default {
   mount(st) {

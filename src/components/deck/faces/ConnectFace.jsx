@@ -7,9 +7,9 @@ import { Icons } from '../../Icons';
 // opened card (./sections/ConnectSection.jsx), which is where to add one.
 export const WAYS_IN = [
   { key: 'app', icon: 'app' },
-  { key: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp' },
   { key: 'instagram', icon: 'instagram', label: 'Instagram' },
   { key: 'facebook', icon: 'facebook', label: 'Facebook' },
+  { key: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp' },
 ];
 
 export default function ConnectFace({ card, no, t }) {

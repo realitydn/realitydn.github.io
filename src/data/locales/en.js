@@ -176,14 +176,14 @@ export default {
     "everyWeekday": "Every {weekday}"
   },
   "eventOverlay": {
-    "openInApp": "Open in the REALITY app",
+    "openInApp": "Open in the REALITY webapp",
     "close": "Close"
   },
   "getApp": {
-    "title": "Get the REALITY app",
+    "title": "The REALITY webapp",
     "blurb": "The full calendar, with RSVPs and reminders.",
-    "cta": "Open the app",
-    "button": "Get the app"
+    "cta": "Open the webapp",
+    "button": "Webapp"
   },
   "proposal": {
     "eyebrow": "Host with us",
@@ -474,9 +474,9 @@ export default {
   "heroPrefix": "REALITY Đà Nẵng —",
   "faq": {
     "whatQ": "What events are on at REALITY?",
-    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The current calendar is in the REALITY app:",
+    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The current calendar is in the REALITY webapp:",
     "freeQ": "Are events at REALITY free?",
-    "freeA": "Most events are free to attend — please buy a drink to support the space. Some events have an entry fee or ask for pre-registration; that's marked on the weekly schedule, on the event posters and on each event in the REALITY app.",
+    "freeA": "Most events are free to attend — please buy a drink to support the space. Some events have an entry fee or ask for pre-registration; that's marked on the weekly schedule, on the event posters and on each event in the REALITY webapp.",
     "hoursQ": "What are REALITY's opening hours?",
     "hoursA": "REALITY is open every day, 11:00 – 2:00 (11 AM to 2 AM), weekends included. The third-floor rooftop patio closes at midnight.",
     "whereQ": "Where is REALITY in Đà Nẵng?",
@@ -554,43 +554,45 @@ export default {
       "roomOn": "1 room on",
       "nothingOn": "Nothing on right now",
       "nextAt": "Next: {title} at {time}",
-      "next": "Next",
       "noEvent": "No event right now",
       "bar": "Bar",
-      "sky": "Open sky",
       "floor": "Floor {n}",
       "street": "street level",
-      "nothingToday": "Nothing else on today.",
-      "nothingTomorrow": "Nothing listed for tomorrow yet.",
-      "all": "All events"
+      "playing": "Now playing",
+      "playingLink": "Open in Spotify",
+      "appTitle": "The REALITY webapp",
+      "appBody": "Everything coming up is in the REALITY webapp: the full calendar and all the event details.",
+      "appCta": "Open the webapp"
     },
     "first": {
       "count": "{n} steps",
       "steps": [
         {
-          "t": "Walk in",
-          "b": "The bar's open every day from 11:00 to 02:00."
+          "t": "Come by",
+          "b": "We're open every day from 11:00 until 02:00."
         },
         {
           "t": "Get a drink",
-          "b": "Everyone using the space buys something. Money exists, and it keeps the lights on."
+          "b": "We ask that everyone in the space buys something, as we need to pay staff, rent, taxes, etc."
         },
         {
-          "t": "Pick a room",
-          "b": "Most nights something's on, and most of it is free. The poster says when it isn't."
-        },
-        {
-          "t": "Say yes",
-          "b": "Sit in, join a table, take the mic. The hosts are there to pull you in."
+          "t": "Do what you wanna",
+          "b": "Join an event, play pool on the patio, do some work, meet some people. REALITY is a reflection of the people in it."
         }
-      ]
+      ],
+      "joinQ": "Can I just join in?",
+      "joinA": "Yes! You don't need to know anyone to meet a bunch of people, whether by joining an event, posting up at the bar, or just saying hi to folks. We have 3 missions at REALITY:",
+      "joinB": "and we tend to attract the kind of people who feel those are good missions.",
+      "joinC": "Regarding events, check {calendar} to see if there's any particular requirements for an event (pre-registration, entry fee, etc.), and if you've got questions, please join {whatsapp} etc.",
+      "joinCalendar": "the full calendar",
+      "joinWhatsApp": "our WhatsApp"
     },
     "menu": {
       "now": "On the menu",
-      "sections": "{n} sections",
-      "full": "Full menu"
+      "sections": "{n} sections"
     },
     "held": {
+      "intro": "We are a platform for many communities, and hundreds of people have held events of all sorts.",
       "asOf": "As of {date}",
       "perWeek90": "{n} a week, last 3 months",
       "since": "since {date}",
@@ -618,13 +620,17 @@ export default {
       "last": "Last: {title} · {date}",
       "givenTo": "Given to",
       "standIn": "Rounded figures for now. The exact amounts will follow.",
-      "all": "All fundraisers in the app",
+      "all": "All fundraisers in the webapp",
       "gapDate": "Date",
       "gapRecipient": "Who it went to"
     },
     "inside": {
       "photos": "{n} photos",
-      "lede": "Three floors, up to a rooftop patio.",
+      "face": "Three floors, five areas.",
+      "intro": [
+        "We have three floors, split into five areas. There's usually something going on in at least one of them, and there's usually at least one good spot if you want your own space.",
+        "Along with a full cafe and bar, we have a full-size pool table, four bathrooms, an HD projector, an integrated sound system for DJs, a ton of board games, and who knows what else."
+      ],
       "walls": "On the walls",
       "gapWalls": "What's hanging now"
     },
@@ -636,7 +642,11 @@ export default {
     },
     "connect": {
       "ways": "{n} links",
-      "app": "The app",
+      "app": "Webapp",
+      "webappTitle": "The REALITY webapp",
+      "webapp": "Check out the REALITY webapp - It has the full calendar + all the event details.",
+      "webappCta": "Open the webapp",
+      "email": "Email us",
       "social": "Instagram + Facebook"
     },
     "visit": {

@@ -42,6 +42,7 @@
   letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin: 0;
 }
 .dk-clamp2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.dk-clamp3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .dk-block { display: block; }
 .dk-only-compact { display: none; }
 
@@ -221,12 +222,13 @@
 .dk-roll-out { position: absolute; inset: 0 0 auto 0; animation: dk-roll-out 560ms var(--ease-stamp) both; }
 @keyframes dk-roll-in { from { transform: translateY(108%); } to { transform: none; } }
 @keyframes dk-roll-out { from { transform: none; } to { transform: translateY(-108%); } }
-.dk-price { font-weight: 700; }
 
 /* 04 the count's small chart */
 .dk-spark { display: flex; align-items: flex-end; gap: 1px; height: 20px; }
 .dk-spark i { flex: 1; background: currentColor; transform-origin: 50% 100%; }
-/* the chart prints in, bar by bar, once (HeldFace sets each bar's delay) */
+/* the chart prints in, bar by bar, once, as the card arrives (HeldFace sets
+   each bar's delay). Until the card has been seen the bars are down. */
+.dk-spark-wait { transform: scaleY(0); }
 .dk-spark-in { animation: dk-spark-in 420ms var(--ease-stamp) backwards; }
 @keyframes dk-spark-in { from { transform: scaleY(0); } to { transform: none; } }
 
@@ -530,10 +532,8 @@ a.dk-rm:focus-visible { background-color: var(--red); }
   font: 600 12px/1.3 var(--grotesk); font-variant-numeric: tabular-nums; text-decoration: none;
 }
 .dk-rm-deal:focus-visible { background-color: var(--yellow); }
-.dk-sky {
-  align-self: end; padding: 0 0 8px 6px; color: rgba(255, 251, 241, .48);
-  font: 700 11px/1.3 var(--mont); letter-spacing: .14em; text-transform: uppercase;
-}
+/* the air beside the rooftop patio: an empty cell */
+.dk-sky { display: block; }
 .dk-street {
   margin: 8px 0 0 26px; color: rgba(255, 251, 241, .62);
   font: 700 11px/1.3 var(--mont); letter-spacing: .14em; text-transform: uppercase;
@@ -551,21 +551,10 @@ a.dk-rm:focus-visible { background-color: var(--red); }
   .dk-street { margin-left: 20px; }
 }
 
-/* today's + tomorrow's events: small tickets, the category colour as print */
-.dk-evs { display: grid; gap: 12px; align-content: start; }
-.dk-evs .dk-label { margin-top: 6px; }
-.dk-evs .dk-label:first-child { margin-top: 0; }
-.dk-ev {
-  --px: var(--print-sm);
-  display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: baseline;
-  padding: 11px 14px; text-decoration: none;
-}
-.dk-ev > b { font: 700 17px/1.2 var(--grotesk); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.dk-ev .dk-pulse { width: 8px; height: 8px; margin-right: 5px; }
-.dk-ev .dk-fact { display: block; margin-top: 2px; color: var(--fg-dim); }
-
-/* 02 the steps + the photo of the front */
-.dk-first { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); margin-bottom: 12px; }
+/* 02 the steps, then the answer + the photo of the front */
+.dk-first { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); margin-top: 22px; }
+.dk-first > .dk-ex { margin-top: 0; }
+.dk-first > .dk-photo { order: -1; }
 .dk-stepgrid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); list-style: none; margin: 0; padding: 0; }
 .dk-step { --px: var(--print-sm); padding: 16px; }
 .dk-step > b {
@@ -583,8 +572,27 @@ a.dk-rm:focus-visible { background-color: var(--red); }
   object-fit: cover; object-position: 50% 62%;
   filter: grayscale(1) contrast(1.25); mix-blend-mode: screen;
 }
-@media (min-width: 520px) { .dk-stepgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
-@media (min-width: 900px) { .dk-first { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 32px; } }
+@media (min-width: 761px) { .dk-stepgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+@media (min-width: 900px) {
+  .dk-first { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 36px; margin-top: 30px; }
+  .dk-first > .dk-photo { order: 0; }
+}
+/* the answer to "Can I just join in?" */
+.dk-join { display: grid; gap: 12px; max-width: 66ch; font-size: 16px; line-height: 1.6; }
+.dk-join p { margin: 0; }
+.dk-join a { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+/* the three missions: a numbered square each, majors only */
+.dk-missions { list-style: none; margin: 2px 0; padding: 0; display: grid; gap: 8px; counter-reset: dk-m; }
+.dk-missions li {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 12px; align-items: start;
+  font: 600 16px/1.4 var(--mont); counter-increment: dk-m;
+}
+.dk-missions li::before {
+  content: counter(dk-m); display: grid; place-items: center; width: 24px; height: 24px; margin-top: -1px;
+  background: var(--red); color: #fffbf1; font: 700 13px/1 var(--grotesk);
+}
+.dk-missions li:nth-child(3n + 2)::before { background: var(--blue); }
+.dk-missions li:nth-child(3n)::before { background: var(--yellow); color: #0d0905; }
 
 /* 04 the audit: a receipt, then the charts */
 .dk-held { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); }
@@ -653,8 +661,6 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 /* ── 8. The old sections, embedded in a card. Their own frames (band, rule,
    heading, outer padding) are left out by each component's `embedded` /
    `only` prop; these only close the gaps that leaves. ── */
-.cal-embed { margin-top: 40px; padding-top: 28px; border-top: 2px solid #0d0905; }
-.cal-embed > div > .mb-8 > p { margin-top: 12px; font-size: 16px; color: var(--fg-dim); }
 .ih-embed .ih-panels-embed > div { padding-bottom: 0; }
 .dk-rules .ih-panels-embed > div { padding-top: 0; }
 .ih-embed-tabs { margin-bottom: 4px; }
@@ -765,12 +771,8 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 /* the rooms say one thing each now: shorter boxes */
 .dk-rm { min-height: 64px; }
 @media (max-width: 620px) { .dk-rm { min-height: 56px; } }
-/* the long version: today and tomorrow side by side where there is room */
-.dk-evs-2 { margin-bottom: 4px; }
-.dk-ex .cal-embed { margin-top: 32px; }
-
 /* 02 a step is a row on a phone: its number beside its words */
-@media (max-width: 519.98px) {
+@media (max-width: 760.98px) {
   .dk-stepgrid { gap: 12px; }
   .dk-step { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 12px; padding: 12px 14px; }
   .dk-step > b { grid-row: 1 / span 2; margin: 2px 0 0; }
@@ -778,23 +780,10 @@ a.dk-rm:focus-visible { background-color: var(--red); }
   .dk-photo { min-height: 210px; }
 }
 
-/* 03 a taste of the menu, then the menu in a fold */
-.dk-taste ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
-.dk-taste li {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline;
-  padding: 12px 0; border-top: 1.5px solid var(--hairline);
-}
-.dk-taste li:first-child { border-top: 2px solid #0d0905; }
-.dk-taste-n { font: 700 18px/1.2 var(--mont); letter-spacing: .03em; text-transform: uppercase; }
-.dk-taste-p { font: 700 18px/1.2 var(--grotesk); font-variant-numeric: tabular-nums; }
-.dk-taste-t { grid-column: 1 / -1; margin-top: 4px; font: italic 400 15px/1.45 var(--grotesk); color: var(--fg-dim); }
-@media (min-width: 761px) {
-  .dk-taste ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dk-taste li:nth-child(2) { border-top: 2px solid #0d0905; }
-  .dk-taste-n, .dk-taste-p { font-size: 20px; }
-}
+/* 03 the menu: its chapters are the card */
 .menu-embed .deal-tkt { margin-bottom: 24px; }
 .dk-menu-note { margin: 0 0 20px; }
+.dk-chapters > .dk-ex-sub:first-child { margin-top: 0; }
 .dk-menu-note a { text-decoration: underline; text-underline-offset: 4px; font-weight: 600; color: #0d0905; }
 /* a chapter in its fold: the old rows, without the old panel frame */
 .dk-chapter.menu-panels { border: 0; box-shadow: none; padding: 0; background: none; }
@@ -809,9 +798,10 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 @media (min-width: 900px) { .dk-held:not(.dk-held-more) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .dk-rc-asof { margin-top: 12px; }
 .dk-held-more { align-items: start; }
-@media (min-width: 900px) { .dk-held-more { grid-template-columns: minmax(0, 1fr) minmax(0, 350px); } }
+@media (min-width: 900px) { .dk-held-more { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.dk-held-chart .dk-fact { margin: 10px 0 0; }
 
-/* 09 the rules are a fold now; the QR block stands alone */
+/* 09 the QR block stands alone */
 .dk-visit-more { grid-template-columns: minmax(0, 1fr) !important; }
 
 /* 08 + 09 on a phone: the buttons sit two to a row */
@@ -826,3 +816,146 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 
 /* the welcome text and the rules inside their folds: the fold supplies the gap */
 .dk-ex .ih-embed .ih-panels-embed > div { padding-top: 0; padding-bottom: 0; }
+
+/* ── 11. HOW MUCH A CARD SHOWS DEPENDS ON THE SCREEN (25.11.26).
+   components/deck/wide.js has the three sizes and the reasoning:
+     S  up to 760px      a phone: condensed, the rest behind a fold
+     M  761px – 1099px   a tablet
+     L  1100px and up    a desktop: each card about one screen full
+   With the seam on, a card is at least one frame tall, so a card that shows
+   about a frame's worth leaves no blank paper. ── */
+
+/* A fold laid out flat (Expand flatFrom): no bar, no frame, just its content. */
+.dk-ex.is-flat { margin-top: 0; }
+.dk-ex.is-flat > summary { display: none; }
+.dk-ex.is-flat > .dk-ex-b { border-bottom: 0; }
+.dk-ex.is-flat > .dk-ex-b > .dk-ex-in { padding: 0; }
+.dk-ex.is-flat .dk-ex-end { display: none; }
+/* its label as a heading: only when the bar is gone */
+.dk-ex-h { display: none; margin: 0 0 14px; font: 700 24px/1.15 var(--mont); letter-spacing: .02em; }
+:lang(vi) .dk-ex-h { line-height: 1.3; }
+.dk-ex.is-flat .dk-ex-h { display: block; }
+
+/* 01 the building · what's coming up · the webapp */
+.dk-now {
+  display: grid; gap: 24px; align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "bldg" "picks" "app";
+}
+.dk-now-b { grid-area: bldg; }
+.dk-now > .dk-picks { grid-area: picks; }
+.dk-app { grid-area: app; }
+@media (min-width: 900px) {
+  .dk-now {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 1fr; gap: 24px 36px;
+    grid-template-areas: "bldg picks" "app picks";
+  }
+}
+/* how many events: three on a phone, four from 900px, five on a tall desktop */
+.dk-picks > a.dk-pick:nth-of-type(n + 4) { display: none; }
+@media (min-width: 900px) { .dk-picks > a.dk-pick:nth-of-type(4) { display: grid; } }
+@media (min-width: 1100px) and (min-height: 1000px) { .dk-picks > a.dk-pick:nth-of-type(5) { display: grid; } }
+
+/* the webapp: what it is, and the door to it */
+.dk-app { --px: var(--print-sm); display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.dk-app .dk-name { font-size: 20px; }
+.dk-app .dk-small { margin-top: 6px; max-width: 46ch; }
+.dk-app .dk-btn svg { width: 18px; height: 18px; flex: none; }
+@media (min-width: 520px) {
+  .dk-app { flex-direction: row; align-items: center; justify-content: space-between; gap: 20px; }
+  .dk-app .dk-btn { flex: none; }
+}
+
+/* now playing: a strip at the foot of the building. On the page only while
+   the now-playing feed says a track is playing (NowPlaying.jsx). */
+.dk-np {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px;
+  margin: 6px 0 0; padding: 10px 12px;
+  background: #0d0905; color: #fffbf1; border: 2px solid #0d0905;
+  text-decoration: none; --accent: var(--yellow);
+}
+a.dk-np:focus-visible { background-color: #0d0905; }
+.dk-np-l { font: 700 11px/1.4 var(--mont); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.dk-np-l .dk-pulse { width: 8px; height: 8px; margin-right: 7px; }
+.dk-np-t { font: 600 15px/1.3 var(--mont); overflow-wrap: anywhere; }
+.dk-np-a { font: 500 13px/1.3 var(--grotesk); color: rgba(255, 251, 241, .72); overflow-wrap: anywhere; }
+
+/* 03 the menu on a desktop: the chapters down the left, the one picked beside
+   them in columns, like a menu board (MenuSection.jsx; from L up). */
+.dk-board { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 40px; align-items: start; }
+.dk-board-tabs { display: grid; }
+.dk-tab {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 56px; margin-top: -2px; padding: 10px 14px 10px 16px;
+  background: #fffbf1; color: #0d0905; border: 2px solid #0d0905;
+  font: 700 15px/1.25 var(--mont); letter-spacing: .06em; text-transform: uppercase; text-align: left;
+  cursor: pointer;
+}
+.dk-tab:first-child { margin-top: 0; }
+@media (hover: hover) { .dk-tab:hover { background: #f4ecd7; } }
+.dk-tab[aria-selected="true"] {
+  position: relative; z-index: 1; background: #0d0905; color: #fffbf1;
+  box-shadow: 5px 5px 0 var(--kp, var(--print-neutral));
+}
+.dk-tab:focus-visible { position: relative; z-index: 2; background-color: #fffbf1; }
+.dk-tab[aria-selected="true"]:focus-visible { background-color: #0d0905; }
+.dk-board-side .dk-menu-note { margin: 22px 0 0; }
+/* a chapter as a board: its sections run down two or three columns */
+.dk-board-cols { columns: 2; column-gap: 36px; }
+@media (min-width: 1280px) { .dk-board-cols { columns: 3; } }
+.dk-board-cols > div { margin: 0 0 26px; }
+.dk-board-cols h4 { break-after: avoid; }
+.dk-board-cols ul { display: block; }
+.dk-board-cols li { break-inside: avoid; margin: 0 0 10px; }
+
+/* 04 the chart beside the figures; "More figures" laid out under them on a
+   desktop, ruled off */
+.dk-ex.is-flat .dk-held-more { margin-top: 28px; padding-top: 24px; border-top: 2px dashed #0d0905; }
+
+/* 05 what the building has: two paragraphs, side by side on a desktop */
+.dk-intro { display: grid; gap: 12px; margin: 0 0 26px; max-width: 70ch; font-size: 17px; line-height: 1.6; }
+.dk-intro p { margin: 0; }
+@media (min-width: 1100px) { .dk-intro { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; max-width: none; } }
+
+/* 02 the rules laid out (a tall desktop): ruled off from what is above */
+.dk-rules.is-flat { margin-top: 28px; padding-top: 24px; border-top: 2px dashed #0d0905; }
+
+/* 08 on a desktop: the call on the left, large; the four ways in on the
+   right, two by two */
+@media (min-width: 1100px) {
+  .dk-connect { display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); gap: 48px; align-items: start; }
+  .dk-connect .dk-shout { font-size: clamp(64px, 6.6vw, 96px); line-height: .98; margin-bottom: 20px; }
+  :lang(vi) .dk-connect .dk-shout { line-height: 1.22; }
+  .dk-connect .dk-lede { margin-bottom: 0; }
+  .dk-connect .dk-ways { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .dk-connect .dk-way { padding: 22px; gap: 12px; min-height: 196px; }
+  .dk-connect .dk-way .dk-name { font-size: 20px; }
+  .dk-connect .dk-way .dk-small { font-size: 16px; }
+}
+
+/* ── 12. THE SMALLEST PHONES (up to 340px wide: a 320px screen). A card is
+   under 90px wide there, and the compact face no longer fits it: the building
+   ran into its title, and so did the four icons. So the cards are taller for
+   their width, the titles a size down (so "WHAT'S ON" keeps to one line), and
+   the two crowded faces drawn smaller. The masthead gives up a little padding
+   so its last button is not cut off. ── */
+@media (max-width: 340px) {
+  .dk-mast-in { padding: 10px; }
+  .dk-mast .dk-wmb svg { height: 20px; }
+  .dk-hero { padding-left: 10px; padding-right: 10px; }
+  .dk-table { gap: 8px; }
+  .dk-card { aspect-ratio: 1 / 1.3; --dk-cpx: 3px; }
+  .dk-ch { padding: 5px 6px 0; }
+  .dk-cb { padding: 3px 6px; gap: 4px; }
+  .dk-cf { padding: 0 6px 6px; font-size: 11px; letter-spacing: .01em; }
+  .dk-card .dk-t { font-size: 12px; }
+  .dk-mb, .dk-mb-row { gap: 2px; }
+  .dk-mb i { min-height: 13px; }
+  .dk-chips { gap: 4px; }
+  .dk-chips > span { padding: 4px; }
+  .dk-chips svg { width: 14px; height: 14px; }
+  .dk-pulse { margin-right: 5px; }
+  /* opened cards: buttons that sat two to a row are one to a row here */
+  .dk-way .dk-row { grid-template-columns: minmax(0, 1fr); }
+  .dk-open .visit-card .mt-6.flex { grid-template-columns: minmax(0, 1fr); }
+}

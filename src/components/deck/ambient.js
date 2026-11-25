@@ -13,21 +13,26 @@
 //
 //   every 3 s   menu from 0 · open hour from 1
 //   every 6 s   photo from 2
-//   every 8 s   giving from 1 · host from 5
+//   every 8 s   host from 1 · giving from 5
 //
-//   second  0     1       2      3     4      5     6     7      8      9     10     11
-//           menu  hours   photo  menu  hours  host  menu  hours  photo  menu  hours  ·
-//                 +giving                                               +giving
-//   second  12    13      14     15    16     17      18    19     20     21    22     23
+//   second  0     1       2      3     4      5       6     7      8      9     10     11
 //           menu  hours   photo  menu  hours  giving  menu  hours  photo  menu  hours  ·
 //                 +host                                                   +host
+//   second  12    13      14     15    16     17    18    19     20     21    22     23
+//           menu  hours   photo  menu  hours  host  menu  hours  photo  menu  hours  ·
+//                 +giving                                               +giving
+//
+// (Of two faces on the same pace and weight, the one earlier in the deck is
+// placed first. Until 25.11.26 that was giving, card 05; the cards were then
+// reordered and host, now 06, comes before giving, now 07, so the two 8s
+// swapped seconds. Nothing else about the rhythm changed.)
 //
 // 3 and 6 make the steady figure (menu, hours, photo / menu, hours, rest);
 // the two 8s drift across it and only come round to the same place every
 // 24 s. The menu and the photo — the two big moves — never start together.
 // An 8 and a 3 must meet once in 24 s (no arrangement on a 1 s grid avoids
 // it), so four times in the 24 s two faces start on the same second.
-// (04's chart prints once when the card comes on screen and is not on this.)
+// (04's chart prints once as the card arrives and is not on this clock.)
 // When a face stops (09 has no "now" while we are closed) the rest re-arrange.
 //
 // A face gets a `beat` number: 0, then 1, 2, 3 … Beat 0 is the still — the

@@ -7,11 +7,12 @@ import useFeed from '../../../hooks/useFeed';
 import { nextDealToday } from '../../../data/cal-feed';
 import { isDealEvent } from '../../../data/event-category';
 import { fmtTime, pickTitle } from '../../../data/feed-helpers';
-import { vnd } from '../../../data/deck/fundraisers';
 
-// 03 · Our menu — one drink at a time. The drinks, their one-liners and
-// prices are the menu itself (src/data/menu.js, generated from the app):
-// nothing here is written for the card. Which drinks: ../menu-picks.js.
+// 03 · Our menu — one drink at a time: its name and its one-liner. No price
+// on the card (Donald, 25.11.26); a photo of the drink may come later. The
+// drinks and their one-liners are the menu itself (src/data/menu.js,
+// generated from the app): nothing here is written for the card. Which
+// drinks: ../menu-picks.js.
 //
 // THE MOTION ("Rolled"): the drink rolls up and out and the next rolls in
 // under it, like a line on a scoreboard. How often is not set here: this face
@@ -22,8 +23,7 @@ function Drink({ drink, cls = '', leaving = false }) {
   return (
     <span className={`dk-roll-i ${cls}`} aria-hidden={leaving ? 'true' : undefined}>
       <span className="dk-t">{drink.name}</span>
-      <span className="dk-fact dk-x dk-clamp2">{drink.tag}</span>
-      <b className="dk-fact dk-price">{vnd(Number(drink.price) * 1000)}</b>
+      <span className="dk-fact dk-x dk-clamp3">{drink.tag}</span>
     </span>
   );
 }

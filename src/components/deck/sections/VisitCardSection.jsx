@@ -1,20 +1,14 @@
 import React from 'react';
 import DeckSection from '../DeckSection';
 import { fill, Pulse, isStill } from '../parts';
-import Expand from '../Expand';
 import VisitSection from '../../VisitSection';
-import InfoHostSection from '../../InfoHostSection';
 import useNow from '../../../hooks/useNow';
 import { openNow } from '../../../data/deck/open-hours';
 
 // 09 · Find us, opened — the address, whether we're open right now, the visit
 // section the site has always had (the facts ticket, directions, the map),
-// the QR for realitydn.com, and the rules of the space.
-//
-// The rules are a fold, under their own question. They are the rules panel of
-// InfoHostSection, unchanged: all of them, not a selection. #rules IS the
-// fold, so a link to it (the host panel's "general rules", an old /#rules)
-// opens it and lands on it.
+// and the QR for realitydn.com. (The rules of the space moved to "First time
+// here?" on 25.11.26, and #rules with them.)
 export default function VisitCardSection({ card, no, t, lang }) {
   const now = useNow();
   const { open, until } = openNow(now);
@@ -52,9 +46,6 @@ export default function VisitCardSection({ card, no, t, lang }) {
           </div>
         </div>
       </div>
-      <Expand id="rules" className="dk-rules" label={t.use('infoHost.rulesTitle')}>
-        <InfoHostSection t={t} lang={lang} only="rules" titled={false} />
-      </Expand>
     </DeckSection>
   );
 }

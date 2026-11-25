@@ -11,8 +11,12 @@
 //            link; the old ones are listed in README.md ("Deep links")
 //   aliases  extra anchors that land on this card (old links that must not
 //            break). Anchors that land INSIDE a card are set in its section:
-//            #rules (Find us), #proposal (Host an event)
-//   color    the card's colour, one of:
+//            #rules (First time here?), #proposal (Host an event)
+//   color    the card's colour. It travels with the card (25.11.26: Inside,
+//            Host and Giving swapped places and kept their colours). Nine
+//            cards, nine colours: no two are ever the same, side by side or
+//            one above the other.
+//            One of:
 //            ink · green · amber · blue · yellow · purple · red · pink · stock
 //            (text on it is picked for you: ink on yellow, amber and stock,
 //            cream on the rest)
@@ -42,9 +46,9 @@ export const DECK = [
   { key: 'first',    id: 'first',   color: 'green',  Face: FirstFace,    Section: FirstSection, aliases: ['info'] },
   { key: 'menu',     id: 'menus',   color: 'amber',  Face: MenuFace,     Section: MenuCardSection },
   { key: 'held',     id: 'held',    color: 'blue',   Face: HeldFace,     Section: HeldSection },
-  { key: 'giving',   id: 'giving',  color: 'yellow', Face: GivingFace,   Section: GivingSection },
   { key: 'inside',   id: 'gallery', color: 'purple', Face: InsideFace,   Section: InsideSection },
   { key: 'host',     id: 'host',    color: 'red',    Face: HostFace,     Section: HostSection },
+  { key: 'giving',   id: 'giving',  color: 'yellow', Face: GivingFace,   Section: GivingSection },
   { key: 'connect',  id: 'connect', color: 'pink',   Face: ConnectFace,  Section: ConnectSection },
   { key: 'visit',    id: 'visit',   color: 'stock',  Face: VisitFace,    Section: VisitCardSection },
 ];

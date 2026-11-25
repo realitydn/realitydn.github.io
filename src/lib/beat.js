@@ -36,13 +36,14 @@ export const PACES = { quick: 3, mid: 6, slow: 8 };
 //   quick  the two that count: the drink list and the clock
 //   mid    the photo, the biggest move on the table
 //   slow   the two accents on a figure — rare, so they stay accents
-// (04's chart is not here: it prints once when the card comes on screen.)
+// (04's chart is not here: it prints once as the card arrives, off the clock:
+// deck/faces/HeldFace.jsx.)
 export const FACES = {
   menu: { pace: 'quick', weight: 3 }, //   03 the drink rolls over
   visit: { pace: 'quick', weight: 1 }, //  09 the open hour is stamped again
-  inside: { pace: 'mid', weight: 3 }, //   06 a photo re-registers
-  giving: { pace: 'slow', weight: 2 }, //  05 the total throws an echo
-  host: { pace: 'slow', weight: 2 }, //    07 0₫ gets a highlighter pass
+  inside: { pace: 'mid', weight: 3 }, //   05 a photo re-registers
+  giving: { pace: 'slow', weight: 2 }, //  07 the total throws an echo
+  host: { pace: 'slow', weight: 2 }, //    06 0₫ gets a highlighter pass
 };
 
 let paces = PACES;

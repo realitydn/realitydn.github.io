@@ -74,7 +74,28 @@ export function reveal(el) {
     if (n.tagName === 'DETAILS' && n.classList.contains('dk-ex') && !isFoldOpen(n)) {
       setFold(n, true, { animate: false });
       opened = true;
+    } else if (n.hidden && n.getAttribute('role') === 'tabpanel') {
+      // a chapter of the menu on a desktop: its tab shows it
+      opened = showTab(document.getElementById(n.getAttribute('aria-labelledby'))) || opened;
     }
   }
   return opened;
+}
+
+// TABS, the same way (the menu's chapters on a desktop: MenuSection.jsx).
+// Like a fold, the ELEMENTS own which one is showing, not React, so a link to
+// a chapter can show it at once and a re-render can't put it back.
+//   showTab(tab)  select `tab` in its tablist and show the panel it controls.
+//                 Returns true when that changed anything.
+export function showTab(tab) {
+  const list = tab && tab.closest('[role="tablist"]');
+  if (!list || tab.getAttribute('aria-selected') === 'true') return false;
+  list.querySelectorAll('[role="tab"]').forEach((other) => {
+    const on = other === tab;
+    other.setAttribute('aria-selected', on ? 'true' : 'false');
+    other.tabIndex = on ? 0 : -1;
+    const panel = document.getElementById(other.getAttribute('aria-controls'));
+    if (panel) panel.hidden = !on;
+  });
+  return true;
 }

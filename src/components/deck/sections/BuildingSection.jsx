@@ -1,34 +1,43 @@
 import React, { useMemo, useState } from 'react';
 import DeckSection from '../DeckSection';
 import useBuilding from '../useBuilding';
+import NowPlaying from '../NowPlaying';
 import { fill, Pulse, isPlainClick } from '../parts';
-import Expand from '../Expand';
-import Calendar from '../../Calendar';
+import { Icons } from '../../Icons';
 import EventOverlay from '../../EventOverlay';
 import { FLOORS, roomsOf } from '../../../data/deck/building';
 import { fmtTime, pickTitle, pickLocName, pickPoster, dateKey } from '../../../data/feed-helpers';
-import { fmtDayDate, fmtDM, costLabel, cfStr } from '../../../data/cal-feed';
+import { fmtDayDate, fmtDM, cfStr } from '../../../data/cal-feed';
 import { categoryOf, isDealEvent } from '../../../data/event-category';
 import { URLS } from '../../../data/translations';
 
-// 01 · What's happening, opened.
+// 01 · What's happening, opened (reworked 25.11.26).
 //
-// SHORT (what you scroll past): the building with the rooms in use lit, and
-// the next few events, large: when, the name, the room, the poster. It is
-// there to attract, not to brief.
-// LONG (the "All events" fold): today's and tomorrow's events as tickets with
-// host and price, then the calendar the site has always had (posters with
-// their stories, rows, the app door).
+//   THE BUILDING     the rooms in use lit, and one line saying the same thing
+//   NOW PLAYING      the track playing in the bar: on the page only when the
+//                    now-playing feed says so (../NowPlaying.jsx; no feed yet)
+//   COMING UP        the next few events, large: when, the name, the room, the
+//                    poster. Three on a phone, four or five on a larger screen
+//                    (deck.css block 11 hides the rest)
+//   THE WEBAPP       what it is, and the door to it. The full calendar is
+//                    there, not here: this card highlights, it does not list.
+//
+// There is no fold on this card. (Until 25.11.26 an "All events" fold held
+// today's and tomorrow's events and the old calendar; Donald: "too meaty a
+// section. This should be an intro to our webapp, with a few of the things
+// coming up highlighted.")
 //
 // Everything is the events feed. A room is ON while an event is running in it
 // (data/deck/building.js); the bar is on while we're open; a drinks deal
-// belongs to the bar. Tapping a lit room or a ticket opens that event.
+// belongs to the bar. Tapping a lit room or an event opens that event in the
+// overlay; the overlay's button goes on to the event's page in the webapp.
+// Nothing links INTO the overlay from outside (it has no address of its own).
 
-// How many events to show large before the fold.
-const PICKS = 3;
-// How many of tomorrow's events to list in the fold before the calendar takes over.
-const TOMORROW_MAX = 5;
+// The most events ever shown here. How many of them a given screen shows is
+// CSS: .dk-pick:nth-child in deck.css.
+const PICKS = 5;
 
+const appUrl = (medium) => `${URLS.APP}/?utm_source=website&utm_medium=${medium}`;
 const eventHref = (ev) => ev.sourceUrl || `${URLS.APP}/events/${ev.id}`;
 // "REALITY, 2nd Floor Event Space" → "2nd Floor Event Space": on REALITY's own
 // page the venue name in front of every room is noise. An event the feed
@@ -51,27 +60,20 @@ export default function BuildingSection({ card, no, t, lang }) {
     setOverlayEvent(ev);
   };
 
-  // Today (anything running now, plus what is still to start today) and
-  // tomorrow, soonest first. Days are Đà Nẵng days. `picks` are the next few
-  // events of any day, what is running now first; a drinks deal is not one
-  // (it has the bar, and its own ticket on the menu).
-  const { today, tomorrow, picks, todayKey, tomorrowKey } = useMemo(() => {
-    const todayKey = dateKey(new Date(now).toISOString());
-    const tomorrowKey = dateKey(new Date(now + 86400000).toISOString());
-    const sorted = (events || [])
-      .filter((ev) => ev && ev.startsAt)
-      .slice()
-      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  // The next few events of any day, what is running now first. Days are
+  // Đà Nẵng days. A drinks deal is not one (it has the bar, and its own
+  // ticket on the menu).
+  const { picks, todayKey, tomorrowKey } = useMemo(() => {
     const running = new Set(state.nowEvents.map((ev) => ev.id));
     return {
-      today: sorted.filter((ev) => running.has(ev.id)
-        || (dateKey(ev.startsAt) === todayKey && Date.parse(ev.endsAt || ev.startsAt) >= now)),
-      tomorrow: sorted.filter((ev) => dateKey(ev.startsAt) === tomorrowKey),
-      picks: sorted
+      picks: (events || [])
+        .filter((ev) => ev && ev.startsAt)
+        .slice()
+        .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
         .filter((ev) => !isDealEvent(ev) && (running.has(ev.id) || Date.parse(ev.startsAt) >= now))
         .slice(0, PICKS),
-      todayKey,
-      tomorrowKey,
+      todayKey: dateKey(new Date(now).toISOString()),
+      tomorrowKey: dateKey(new Date(now + 86400000).toISOString()),
     };
   }, [events, state.nowEvents, now]);
 
@@ -81,33 +83,6 @@ export default function BuildingSection({ card, no, t, lang }) {
     ? fill(S('nextAt'), { title: name(state.next), time: fmtTime(state.next.startsAt) })
     : '';
   const dayLabel = fmtDayDate(new Date(now).toISOString(), lang);
-
-  const ticket = (ev) => {
-    const on = state.nowEvents.some((x) => x.id === ev.id) || (state.deal && state.deal.id === ev.id);
-    const facts = [
-      roomName(ev, lang),
-      ev.host ? C('hostedBy').replace('{name}', ev.host) : '',
-      costLabel(ev, lang),
-    ].filter(Boolean).join(' · ');
-    return (
-      <a
-        key={ev.id}
-        href={eventHref(ev)}
-        className="tkt dk-ev"
-        data-cat={categoryOf(ev)}
-        onClick={(e) => open(e, ev)}
-      >
-        <b>
-          {on ? <Pulse /> : null}
-          {fmtTime(ev.startsAt)}
-        </b>
-        <span>
-          <span className="dk-name">{name(ev)}</span>
-          <span className="dk-fact">{facts}</span>
-        </span>
-      </a>
-    );
-  };
 
   // One of the next few events, large: when, the name, the room, the poster.
   const pick = (ev) => {
@@ -210,8 +185,8 @@ export default function BuildingSection({ card, no, t, lang }) {
         </>
       ) : t.use('hours')}
     >
-      <div className="dk-g2 dk-now">
-        <div>
+      <div className="dk-now">
+        <div className="dk-now-b">
           {/* The building is a picture of the night: an ink block, lit rooms
               in red. The sentence under it says the same thing in words. */}
           <div className="dk-bldg" role="group" aria-label={S('label')}>
@@ -223,7 +198,8 @@ export default function BuildingSection({ card, no, t, lang }) {
                   style={{ gridTemplateColumns: floor.cells.map((c) => `minmax(0, ${c.w}fr)`).join(' ') }}
                 >
                   {floor.cells.map((cell, i) => {
-                    if (cell.sky) return <span key={i} className="dk-sky">{S('sky')}</span>;
+                    // the air beside the rooftop patio: an empty cell, no label
+                    if (cell.sky) return <span key={i} className="dk-sky" aria-hidden="true" />;
                     if (cell.bar) return bar();
                     return room(cell.room);
                   })}
@@ -232,6 +208,7 @@ export default function BuildingSection({ card, no, t, lang }) {
             ))}
             <p className="dk-street">86 Mai Thúc Lân · {S('street')}</p>
           </div>
+          <NowPlaying t={t} />
           {live && !loading ? (
             <p className="dk-fact dk-now-line">
               <Pulse off={n === 0} />
@@ -247,28 +224,18 @@ export default function BuildingSection({ card, no, t, lang }) {
             <p className="dk-small">{loading ? C('loading') : C('empty')}</p>
           )}
         </div>
-      </div>
 
-      {/* The long version. Shut, it is one bar; a page loaded on /#events
-          arrives with it open (hooks/useHashLanding.js). */}
-      <Expand id="events-all" label={S('all')} close={t.use('eventOverlay.close')}>
-        <div className="dk-g2 dk-evs-2">
-          <div className="dk-evs">
-            <h3 className="dk-label">{clock.h >= 17 ? C('tonight') : C('today')}</h3>
-            {today.length ? today.map(ticket) : (
-              <p className="dk-small">{loading ? C('loading') : S('nothingToday')}</p>
-            )}
+        {/* The webapp: the full calendar lives there. */}
+        <aside className="tkt dk-pad dk-app" style={{ '--print': 'var(--blue)' }}>
+          <div>
+            <h3 className="dk-name">{S('appTitle')}</h3>
+            <p className="dk-small">{S('appBody')}</p>
           </div>
-          <div className="dk-evs">
-            <h3 className="dk-label">{C('tomorrow')}</h3>
-            {tomorrow.length ? tomorrow.slice(0, TOMORROW_MAX).map(ticket) : (
-              <p className="dk-small">{loading ? C('loading') : S('nothingTomorrow')}</p>
-            )}
-          </div>
-        </div>
-        {/* The calendar as the site has always had it. */}
-        <Calendar lang={lang} embedded />
-      </Expand>
+          <a className="btn-info dk-btn" href={appUrl('deck_events')} target="_blank" rel="noreferrer">
+            {Icons.app()} {S('appCta')}
+          </a>
+        </aside>
+      </div>
 
       <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
     </DeckSection>

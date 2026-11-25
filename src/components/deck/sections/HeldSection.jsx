@@ -15,12 +15,15 @@ import { AUDIT, dmy } from '../../../data/deck/event-audit';
 //   Is there room for me?   how many series are running, how many different
 //                           ones there have been, and how many started in
 //                           the last 30 days
-// then the series that have run most (the regulars a newcomer can count on),
-// and the door to the full Event Audit page.
+// beside the chart of how the pace has grown (Donald, 25.11.26: "I like the
+// timeline--I'm missing the graphical element to this slide": the chart is in
+// the main view, not behind the fold).
 //
-// "More figures" is a fold: how the pace has grown, the series that ran only
-// once, the span the count covers, and where the numbers come from.
-// The count by day of the week is not here any more: it is on the audit page.
+// "More figures" holds the series that have run most (the regulars a newcomer
+// can count on), the series that ran only once, the span the count covers,
+// where the numbers come from, and the door to the full Event Audit page. It
+// is a fold on a phone and a tablet; on a desktop it is laid out in the card
+// (Expand flatFrom="l"). The count by day of the week is on the audit page.
 //
 // NOT LIVE. Every figure is a snapshot copied from public/event-report/
 // (data/deck/event-audit.js says where each one comes from), and the page
@@ -79,6 +82,7 @@ export default function HeldSection({ card, no, t, lang }) {
   );
   return (
     <DeckSection card={card} no={no} t={t} live={`${AUDIT.total} · ${asOf}`}>
+      <p className="dk-lede">{S('intro')}</p>
       <div className="dk-held">
         <div className="dk-rc">
           <div className="dk-nums">
@@ -100,38 +104,38 @@ export default function HeldSection({ card, no, t, lang }) {
           <p className="dk-small dk-dim dk-rc-asof">{asOf}</p>
         </div>
 
-        <div className="dk-rc">
-          <h3 className="dk-label">{S('mostRun')}</h3>
-          {/* Series names are names: printed as the audit prints them. */}
-          {AUDIT.mostRun.map((m) => (
-            <React.Fragment key={m.name}>{row(m.name, m.runs)}</React.Fragment>
-          ))}
-          <p className="dk-gap-top">
-            <a className="dk-lk" href={REPORT[lang] || '/event-report/'}>{S('link')}</a>
+        <div className="dk-held-chart">
+          <TrendChart
+            label={S('trend')}
+            alt={fill(S('trendAlt'), {
+              first: AUDIT.trend30[0],
+              last: AUDIT.trend30[AUDIT.trend30.length - 1],
+              date: dmy(AUDIT.to),
+            })}
+          />
+          <p className="dk-fact dk-dim">
+            {fill(S('peak'), { n: AUDIT.trendPeak.value, date: dmy(AUDIT.trendPeak.on) })}
           </p>
         </div>
       </div>
 
-      <Expand id="held-more" label={S('more')}>
+      <Expand id="held-more" label={S('more')} flatFrom="l">
         <div className="dk-held dk-held-more">
-          <div>
-            <TrendChart
-              label={S('trend')}
-              alt={fill(S('trendAlt'), {
-                first: AUDIT.trend30[0],
-                last: AUDIT.trend30[AUDIT.trend30.length - 1],
-                date: dmy(AUDIT.to),
-              })}
-            />
-            <p className="dk-fact dk-dim">
-              {fill(S('peak'), { n: AUDIT.trendPeak.value, date: dmy(AUDIT.trendPeak.on) })}
-            </p>
+          <div className="dk-rc">
+            <h3 className="dk-label">{S('mostRun')}</h3>
+            {/* Series names are names: printed as the audit prints them. */}
+            {AUDIT.mostRun.map((m) => (
+              <React.Fragment key={m.name}>{row(m.name, m.runs)}</React.Fragment>
+            ))}
           </div>
           <div className="dk-rc">
             {row(S('rowOnce'), AUDIT.oneOffs)}
             {row(S('rowSpan'), `${dmy(AUDIT.from)} – ${dmy(AUDIT.to)}`)}
             {row(S('rowWeeks'), decimal(AUDIT.weeks, lang))}
-            <p className="dk-small dk-dim dk-gap-top">{asOf}. {S('source')}</p>
+            <p className="dk-small dk-dim dk-gap-top">{S('source')}</p>
+            <p>
+              <a className="dk-lk" href={REPORT[lang] || '/event-report/'}>{S('link')}</a>
+            </p>
           </div>
         </div>
       </Expand>

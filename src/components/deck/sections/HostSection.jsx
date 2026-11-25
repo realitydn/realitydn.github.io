@@ -5,7 +5,7 @@ import InfoHostSection from '../../InfoHostSection';
 import { lowestRoomRate } from '../faces/HostFace';
 import { vnd } from '../../../data/deck/fundraisers';
 
-// 07 · Host an event, opened — the host panel of InfoHostSection, unchanged:
+// 06 · Host an event, opened — the host panel of InfoHostSection, unchanged:
 // public / private + paid / art show, the rate card, the event proposal form
 // and the art exhibition form.
 //

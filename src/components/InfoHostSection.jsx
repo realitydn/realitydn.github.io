@@ -75,8 +75,9 @@ const CHROMATIC = [
 
 // `only` (the deck home page, 23.11.26) — 'welcome' | 'rules' | 'host': render
 // just that one panel, with no frame, no section heading and no main tabs.
-// The deck deals the three panels onto three cards (welcome → "First time
-// here?", rules → "Find us", host → "Host an event"), each of which supplies
+// The deck deals the panels onto cards (rules → the foot of "First time
+// here?", host → "Host an event"; the welcome panel is not on the deck page
+// since 25.11.26, its card has its own words), each of which supplies
 // its own frame and anchor. The panel contents, the event-type tabs, the rate
 // card and both forms are exactly the ones below. Without `only` this is the
 // original tabbed section.

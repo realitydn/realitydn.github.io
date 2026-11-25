@@ -606,6 +606,35 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   check('audit: no point of the trend is above its stated peak', Math.max(...AUDIT.trend30) <= AUDIT.trendPeak.value);
   eq('audit: d.m.yy, no leading zeros', dmy('2026-10-03'), '3.10.26');
   eq('audit: d.m.yy two-digit', dmy('2025-05-26'), '26.5.25');
+
+  // Now playing (25.11.26): a track shows only when the feed has just said
+  // one is playing. Every other answer is "show nothing".
+  const { nowPlayingView, NOW_PLAYING_URL, FRESH_MS } = await import('../src/data/deck/now-playing.js');
+  const t0 = Date.parse('2026-11-25T13:05:30Z');
+  const playing = {
+    version: 1, generatedAt: '2026-11-25T13:05:12Z', playing: true,
+    track: { title: ' Harvest Moon ', artists: ['Neil Young', ''], url: 'https://open.spotify.com/track/abc' },
+  };
+  eq('now playing: no source yet, so no request is made', NOW_PLAYING_URL, null);
+  const np = nowPlayingView(playing, t0);
+  check('now playing: a fresh playing track shows, trimmed', !!np && np.title === 'Harvest Moon' && np.artist === 'Neil Young' && np.url === playing.track.url);
+  eq('now playing: paused shows nothing', nowPlayingView({ ...playing, playing: false }, t0), null);
+  eq('now playing: "playing" must be exactly true', nowPlayingView({ ...playing, playing: 'true' }, t0), null);
+  eq('now playing: no track shows nothing', nowPlayingView({ ...playing, track: null }, t0), null);
+  eq('now playing: a track with no title shows nothing', nowPlayingView({ ...playing, track: { title: '  ' } }, t0), null);
+  eq('now playing: a stale document shows nothing', nowPlayingView(playing, t0 + FRESH_MS + 60000), null);
+  eq('now playing: no timestamp shows nothing', nowPlayingView({ ...playing, generatedAt: undefined }, t0), null);
+  eq('now playing: no document shows nothing', nowPlayingView(null, t0), null);
+  eq('now playing: only a Spotify link is ever followed', nowPlayingView({ ...playing, track: { ...playing.track, url: 'https://example.com/x' } }, t0).url, null);
+
+  // The deck's order and copy (25.11.26).
+  const en = (await import('../src/data/locales/en.js')).default;
+  eq('deck: three steps', en.deck.first.steps.length, 3);
+  check('deck: the answer keeps its two links', en.deck.first.joinC.includes('{calendar}') && en.deck.first.joinC.includes('{whatsapp}'));
+  // the words only, not the key names
+  const words = (v) => (typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(words) : []);
+  const saysApp = words([en.deck, en.getApp, en.eventOverlay, en.faq]).filter((s) => /\bapp\b/i.test(s));
+  check(`deck: the home page says "webapp", never "the app" ${JSON.stringify(saysApp)}`, saysApp.length === 0);
 }
 
 // ── summary ──────────────────────────────────────────────────────────────────

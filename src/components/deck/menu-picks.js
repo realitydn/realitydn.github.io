@@ -1,6 +1,5 @@
 // menu-picks.js — which drinks stand for the menu where the whole menu is not
-// shown: the rolling drink on the "Our menu" card, and the short taste at the
-// top of its opened section.
+// shown: the rolling drink on the "Our menu" card.
 //
 // Nothing is written for either place. The drinks, their one-liners and
 // prices are the menu itself (src/data/menu.js, generated from the app).

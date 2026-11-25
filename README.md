@@ -86,8 +86,8 @@ down the page.
   the app's fundraisers feed the moment it has rows). A fact we don't have is
   a `<Gap>` — a dashed tag on the page — never a guess.
 - **What moves inside the cards (24.11.26):** six faces move on their own —
-  the menu's drink rolls over, the event chart prints in once when the page
-  opens, the giving total throws an echo, the photos re-register, 0₫ gets a
+  the menu's drink rolls over, the event chart prints in once as its card
+  arrives (on load; it is not on the clock), the giving total throws an echo, the photos re-register, 0₫ gets a
   highlighter pass, and the current open hour is stamped again. Each one
   starts on the second and keeps one of three paces, so the page has a rhythm
   that only repeats every 24 s:
@@ -107,20 +107,50 @@ down the page.
     that was built, the first screen at both widths, a switch that tries
     other sets of paces, and a line that reads back who goes when. It is not
     in the production build.
-- The sections the site already had (calendar, menu, info + host + forms,
-  visit, gallery) are the same components, rendered inside a card with their
-  `embedded` / `only` prop. The old `Hero.jsx` and `DarkCTA.jsx` are no longer
-  rendered.
-- **Short cards, long versions in folds (24.11.26):** the page is meant to be
-  scrolled comfortably, so a card shows its short version and keeps the long
-  one behind a bar: *All events* (today, tomorrow and the calendar), *Full
-  menu* and inside it one fold per chapter, *More figures*, the welcome text
-  and the rules (each under its own question). The fold is
-  `deck/Expand.jsx`, a real `<details>`: everything in it stays in the DOM
+- The sections the site already had (menu, rules, host + forms, visit,
+  gallery) are the same components, rendered inside a card with their
+  `embedded` / `only` prop. The old `Hero.jsx`, `DarkCTA.jsx` and, since
+  25.11.26, `Calendar.jsx` (with `CardsCarousel.jsx`) are no longer rendered
+  on the home page: the full calendar is in the webapp, and *What's
+  happening* highlights the next few events and links there.
+- **The word is "webapp" (25.11.26).** On the home page the app is always
+  called the webapp, never just "the app": "app" reads as something to
+  install, and that puts some people off.
+- **Folds (24.11.26):** a card keeps what is long behind a bar: each chapter
+  of the menu, *More figures*, *Can I just join in?* and the rules. The fold
+  is `deck/Expand.jsx`, a real `<details>`: everything in it stays in the DOM
   and in the prerendered HTML. Its one motion is in `deck/fold.js` (the lower
   edge of the panel is an ink line that travels down and uncovers the
   content; no fade, no bounce; instant under reduced motion), its styles in
   block 9 of `deck.css`. To fold something else, wrap it in `<Expand id label>`.
+- **How much a card shows depends on the screen (25.11.26).** A phone gets
+  the short version; a larger screen has the room, so the same card shows
+  more and keeps a fold only for what is really long. The aim on a desktop
+  is a card about one screen full. Three sizes by width, in
+  `deck/wide.js`: S up to 760px, M 761–1099px, L 1100px and up ("tall" is L
+  with at least 1000px of height).
+
+  | Card | S (phone) | M (tablet) | L (desktop) |
+  |---|---|---|---|
+  | 01 What's happening | building, 3 events, the webapp | 4 events from 900px | building + webapp beside 4 events (5 when tall) |
+  | 02 First time here? | 3 steps, photo; folds: *Can I just join in?*, rules | the answer laid out; rules a fold | the same, the answer beside the photo; rules laid out when tall |
+  | 03 Our menu | PDF line, 6 chapter folds | the same | chapters down the left, the one picked beside them in columns |
+  | 04 Events we've held | figures, chart; fold: *More figures* | the same, chart beside the figures from 900px | everything laid out, no fold |
+  | 05–09 | the same content at every size; only the columns change | | |
+
+  How: `<Expand flatFrom="m|l|tall">` is a fold below that size and plain
+  content from it up; the menu switches layout with `useWide('l')`; the
+  rest is CSS (block 11 of `deck.css`). Block 12 is the smallest phones
+  (up to 340px), where the cards on the first screen are drawn smaller. The
+  static HTML, and a visitor with no JavaScript, get the S version at every
+  width.
+- **Now playing (25.11.26): built, not switched on.** *What's happening* has
+  a slot for the track playing in the bar. Nothing serves that yet, so
+  `NOW_PLAYING_URL` in `src/data/deck/now-playing.js` is `null`: no request
+  is made and the slot is not on the page. That file has the JSON the app is
+  asked to serve, the rules for when a track shows (only when the feed has
+  just said one is playing; never a stale one), and the one line to change.
+  In development, `?nowplaying=<url>` points it at a test document.
 - **How the page scrolls: the seam (24.11.26).** The opened card's frame
   stays put on the screen and a hard line travels up through it: above the
   line the card leaving, below it the card arriving. The arriving card's
@@ -154,14 +184,14 @@ before the hash (UTMs) are fine.
 
 | Hash | Lands on (card) |
 |------|----------|
-| `#events` (`#calendar`, `#schedule`, `#whatson`) | What's happening: the building and the next events, with *All events* open |
+| `#events` (`#calendar`, `#schedule`, `#whatson`) | What's happening: the building, the next events, the webapp |
 | `#first` | First time here?: the steps |
-| `#info` | the same card, with the welcome text open |
-| `#rules` | the house rules, inside Find us, open |
+| `#info` | the same card, with *Can I just join in?* open |
+| `#rules` | the house rules, at the foot of First time here?, open |
 | `#host` (`#hosting`) | Host an event |
 | `#proposal` (`#propose`) | Host an event, with the proposal form open |
-| `#menus` (`#menu`, `#food`, `#drinks`) | Our menu, with *Full menu* open (its chapters shut) |
-| `#menu-panel-cocktails` (`-spirits`, `-beerwine`, `-table`, `-zeroproof`, `-cafe`) | that chapter of the menu, open |
+| `#menus` (`#menu`, `#food`, `#drinks`) | Our menu: its chapters |
+| `#menu-panel-cocktails` (`-spirits`, `-beerwine`, `-table`, `-zeroproof`, `-cafe`) | that chapter of the menu, showing (a fold on a phone, a tab on a desktop) |
 | `#visit` (`#location`, `#find`) | Find us |
 | `#gallery` (`#photos`) | Inside: the gallery |
 | `#held` · `#giving` · `#connect` | Events we've held · Charitable giving · Get connected |
@@ -171,13 +201,15 @@ A card's own anchor is its `id` in `src/components/deck/deck.js`; `#rules` and
 
 Folds and links (`src/hooks/useHashLanding.js`): a link whose target is a
 fold, or is inside one, opens it first, wherever the link is. A page *loaded*
-on `#events`, `#menus` or `#info` also opens that card's fold (the list is
-`OPENS_ON_LOAD`). A link on the page itself to a card (the strip, the cards on
-the table) only goes to the card: the short version is the point of it.
+on `#info` also opens that card's fold (the list is `OPENS_ON_LOAD`). A link
+on the page itself to a card (the strip, the cards on the table) only goes to
+the card: the short version is the point of it.
 
-Inside *All events* the schedule flows with the page: five poster cards, four rows, then **See
-all N events in the app** — the rest of the calendar lives in the app, so
-that button is the app door, not an expander.
+Events: tapping an event or a lit room opens it in an overlay, whose button
+goes on to the event's page in the webapp. The overlay has no address of its
+own: nothing (no poster, QR code, app link or query string) links into it, so
+there is nothing to keep working there. `/events` redirects to the webapp
+(`public/_redirects`).
 
 `src/hooks/useHashLanding.js` does the landing: it waits for the target to
 exist (the form only renders once it is opened), then re-anchors once

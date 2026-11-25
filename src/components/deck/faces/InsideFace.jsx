@@ -4,7 +4,7 @@ import { ambientStill, useBeat, useCompact } from '../ambient';
 import { fill } from '../parts';
 import { GALLERY } from '../../../data/events';
 
-// 06 · Inside — photos of the space, printed in the card's colour.
+// 05 · Inside — photos of the space, printed in the card's colour.
 //
 // THE PHOTOS are small square cuts (320 px, ~20 KB each) of gallery photos,
 // in public/images/deck/ — the gallery originals are 100–400 KB, too heavy
@@ -95,7 +95,7 @@ export default function InsideFace({ card, no, t }) {
           );
         })}
       </span>
-      <span className="dk-fact dk-x">{t.use('deck.inside.lede')}</span>
+      <span className="dk-fact dk-x">{t.use('deck.inside.face')}</span>
     </DeckCard>
   );
 }

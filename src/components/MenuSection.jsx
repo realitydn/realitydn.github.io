@@ -9,7 +9,8 @@ import { whenKey, fmtDayDate, catLabel, nextDealToday } from '../data/cal-feed';
 import { isDealEvent } from '../data/event-category';
 import { RsvpStub, openRsvpDoor } from './RsvpNote';
 import Expand from './deck/Expand';
-import { pickDrinks } from './deck/menu-picks';
+import { showTab } from './deck/fold';
+import { useWide } from './deck/wide';
 
 // NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the menu is
 // ONE neutral cream ticket with ruled rows. The category tabs, their accent
@@ -63,7 +64,7 @@ const CATEGORY_ACCENTS = {
   cocktails: 'var(--red)',
   spirits:   'var(--amber)',
   beerwine:  'var(--green)',
-  table:     'var(--ink)',
+  table:     'var(--fg)', // ink on paper (--ink flips at night; inside a cream card it must not)
   zeroproof: 'var(--pink)',
   cafe:      'var(--purple)',
 };
@@ -82,13 +83,15 @@ const SECTION_PALETTE = [
 
 // `embedded` (the deck home page, 23.11.26): the menu sits inside the opened
 // "Our menu" card, which supplies the frame, the heading and the #menus
-// anchor. The PDF link, the price note, the deal ticket, the tabs and the
-// panels are unchanged.
+// anchor. The PDF link, the price note, the deal ticket and every chapter's
+// rows are the same; how the chapters are laid out is the deck's (below).
 export default function MenuSection({ lang, t, embedded = false }) {
   const Wrap = embedded ? 'div' : 'section';
   // This language only, fields resolved with the EN fallback (menu-i18n.js).
   const MENU = useMenu(lang);
   const [index, setIndex] = useState(0);
+  // The deck card on a desktop: the chapters as a board (see `embedded` below).
+  const board = useWide('l') && embedded;
   const panelRef = React.useRef(null);
 
   // Today's drinks deal, if there is one, from the shared feed load (no
@@ -192,58 +195,117 @@ export default function MenuSection({ lang, t, embedded = false }) {
     </div>
   ));
 
-  // THE DECK (24.11.26): the menu is not laid out in full on the way down the
-  // page. The card shows the PDF link, today's deal when there is one, and a
-  // short taste (a few drinks, straight from the menu). "Full menu" is a fold;
-  // inside it each chapter is a fold of its own, so nobody opens more than
-  // they came for. Every chapter is still in the DOM and in the prerendered
-  // HTML. The chapters keep their old ids (#menu-panel-cocktails …): a link to
-  // one opens the menu and that chapter (hooks/useHashLanding.js).
+  // THE DECK (reworked 25.11.26): the chapters ARE the card. The PDF link and
+  // today's deal (when there is one) come first, then the six chapters.
+  //
+  //   PHONE, TABLET   a stack of folds, one per chapter, all shut: nobody
+  //                   opens more than they came for.
+  //   DESKTOP (L)     the same six as a list down the left, and the chapter
+  //                   picked laid out beside it in columns, like a menu
+  //                   board. The first chapter is showing on arrival.
+  //
+  // Either way every chapter is in the DOM, and the static HTML (always the
+  // stack of folds) holds all of them. The chapters keep their old ids
+  // (#menu-panel-cocktails …): a link to one shows it, fold or tab
+  // (deck/fold.js reveal()).
   if (embedded) {
-    const taste = pickDrinks(MENU, 4);
-    return (
-      <div className="menu-embed text-ink">
-        {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
-        {taste.length > 0 && (
-          <div className="dk-taste">
-            <h3 className="dk-label">{t.use('deck.menu.now')}</h3>
-            <ul>
-              {taste.map((item, i) => (
-                <li key={i}>
-                  <span className="dk-taste-n">{item.name}</span>
-                  <span className="dk-taste-p">{item.price}k</span>
-                  <span className="dk-taste-t">{item.tag}</span>
-                </li>
+    const note = (
+      // Prices print as "150k" (house style); said once, here.
+      <p className="dk-small dk-dim dk-menu-note">
+        {t.use('menuPriceNote')}{' '}
+        <a href={MENU_PDF[lang] || URLS.PDF} target="_blank" rel="noreferrer">{t.use('downloadPdf')}</a>
+      </p>
+    );
+    const count = (cat) => String(cat.sections.reduce((n, s) => n + s.items.length, 0));
+    if (board) {
+      // Tabs the elements own (fold.js showTab), not React state: the
+      // attributes below are the STARTING state and never change here.
+      const pick = (e) => {
+        const tab = e.target.closest('[role="tab"]');
+        if (tab) showTab(tab);
+      };
+      const keys = (e) => {
+        const tabs = Array.from(e.currentTarget.querySelectorAll('[role="tab"]'));
+        const at = tabs.indexOf(document.activeElement);
+        if (at < 0) return;
+        let n = -1;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') n = (at + 1) % tabs.length;
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') n = (at - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = tabs.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        showTab(tabs[n]);
+        tabs[n].focus();
+      };
+      return (
+        <div className="menu-embed dk-board text-ink">
+          <div className="dk-board-side">
+            <div
+              className="dk-board-tabs"
+              role="tablist"
+              aria-label={t.use('menus')}
+              aria-orientation="vertical"
+              onClick={pick}
+              onKeyDown={keys}
+            >
+              {MENU.map((cat, i) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  id={tabId('deck', cat.key)}
+                  role="tab"
+                  aria-selected={i === 0 ? 'true' : 'false'}
+                  aria-controls={panelId(cat.key)}
+                  tabIndex={i === 0 ? 0 : -1}
+                  className="dk-tab"
+                >
+                  <i className="dk-ex-mark" style={{ background: CATEGORY_ACCENTS[cat.key] || 'var(--fg)' }} aria-hidden="true" />
+                  <span className="dk-ex-l">{cat.label}</span>
+                  <span className="dk-ex-m">{count(cat)}</span>
+                </button>
               ))}
-            </ul>
+            </div>
+            {note}
           </div>
-        )}
-        <Expand
-          id="menu-full"
-          label={t.use('deck.menu.full')}
-          meta={t.use('deck.menu.sections').replace('{n}', String(MENU.length))}
-          close={t.use('eventOverlay.close')}
-        >
-          {/* Prices print as "150k" (house style); said once, here. */}
-          <p className="dk-small dk-dim dk-menu-note">
-            {t.use('menuPriceNote')}{' '}
-            <a href={MENU_PDF[lang] || URLS.PDF} target="_blank" rel="noreferrer">{t.use('downloadPdf')}</a>
-          </p>
-          <div className="dk-chapters">
-            {MENU.map((cat) => (
-              <Expand
+          <div className="dk-board-main">
+            {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
+            {MENU.map((cat, i) => (
+              <section
                 key={cat.key}
                 id={panelId(cat.key)}
-                sub
-                as="h3"
-                label={cat.label}
-                mark={CATEGORY_ACCENTS[cat.key] || 'var(--fg)'}
+                role="tabpanel"
+                aria-labelledby={tabId('deck', cat.key)}
+                hidden={i !== 0}
+                className="menu-panels dk-chapter dk-board-cols"
               >
-                <div className="menu-panels dk-chapter space-y-8">{chapter(cat)}</div>
-              </Expand>
+                {chapter(cat)}
+              </section>
             ))}
           </div>
-        </Expand>
+          <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
+        </div>
+      );
+    }
+    return (
+      <div className="menu-embed text-ink">
+        {note}
+        {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
+        <div className="dk-chapters">
+          {MENU.map((cat) => (
+            <Expand
+              key={cat.key}
+              id={panelId(cat.key)}
+              sub
+              as="h3"
+              label={cat.label}
+              meta={count(cat)}
+              mark={CATEGORY_ACCENTS[cat.key] || 'var(--fg)'}
+            >
+              <div className="menu-panels dk-chapter space-y-8">{chapter(cat)}</div>
+            </Expand>
+          ))}
+        </div>
         <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
       </div>
     );

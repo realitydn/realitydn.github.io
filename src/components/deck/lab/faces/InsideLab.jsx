@@ -68,7 +68,7 @@ export default function InsideLab({ card, no, t, v }) {
           );
         })}
       </span>
-      <span className="dk-fact dk-x">{t.use('deck.inside.lede')}</span>
+      <span className="dk-fact dk-x">{t.use('deck.inside.face')}</span>
     </DeckCard>
   );
 }

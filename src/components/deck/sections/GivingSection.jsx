@@ -5,7 +5,7 @@ import useFundraisers from '../../../hooks/useFundraisers';
 import { vnd, vndShort, amountLabel } from '../../../data/deck/fundraisers';
 import { dmy } from '../../../data/deck/event-audit';
 
-// 05 · Charitable giving, opened — one ticket per fundraiser: when it was,
+// 07 · Charitable giving, opened — one ticket per fundraiser: when it was,
 // what it raised, who it went to.
 //
 // From the app's fundraisers feed once it has rows. Until then: the marked

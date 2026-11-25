@@ -12,7 +12,7 @@ export function lowestRoomRate() {
   return Math.min(...all) * 1000;
 }
 
-// 07 · Host an event — what it costs to host a public community event (0₫),
+// 06 · Host an event — what it costs to host a public community event (0₫),
 // and where private room rental starts: the lowest figure on the rate card.
 //
 // THE MOTION ("Highlighter"): a yellow plate is pulled across behind 0₫,

@@ -23,7 +23,7 @@ import { reveal, setFold } from '../components/deck/fold';
 // On the deck home page (23.11.26) the Info & Host panels each have a card of
 // their own, so #info, #rules and #host are real ids now, not one section:
 //   #info  → "First time here?"  (the welcome panel; an alias anchor on it)
-//   #rules → the rules, inside "Find us"
+//   #rules → the rules, at the foot of "First time here?"
 //   #host  → "Host an event"
 const ALIASES = {
   calendar: 'events',
@@ -55,18 +55,19 @@ const PANELS = {
 // the visitor can see:
 //   1. A link whose target is a fold, or is inside one, opens it first. That
 //      covers #rules (the rules are a fold), a menu chapter
-//      (#menu-panel-cocktails opens the menu and that chapter) and anything
-//      else that ends up inside a fold later. On load, on a link on the page
+//      (#menu-panel-cocktails opens that chapter: a fold on a phone, a tab
+//      on a desktop; fold.js reveal() handles both) and anything else that
+//      ends up inside a fold later. On load, on a link on the page
 //      and on a change of the address bar alike.
 //   2. A page LOADED on one of the hashes below also opens the fold named
-//      beside it: someone sent to /#menus was sent to the menu, and
-//      someone sent to /#events to the calendar. (A link on the page itself,
-//      such as the strip, only goes to the card: the card is the short
-//      version on purpose, and the fold is the next thing on it.)
+//      beside it: someone sent to /#info was sent to the answer to "can I
+//      just join in?". (A link on the page itself, such as the strip, only
+//      goes to the card: the card is the short version on purpose, and the
+//      fold is the next thing on it.) Since 25.11.26 the events card has no
+//      fold and the menu's chapters are the card itself, so /#events and
+//      /#menus open nothing: they land on the card.
 // To change rule 2, edit this list. The values are the folds' ids.
 const OPENS_ON_LOAD = {
-  events: 'events-all',
-  menus: 'menu-full',
   info: 'first-more',
 };
 

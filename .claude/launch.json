@@ -49,6 +49,13 @@
       "autoPort": true
     },
     {
+      "name": "event-report",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4512", "--directory", "public"],
+      "port": 4512,
+      "autoPort": true
+    },
+    {
       "name": "ds-guidelines",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "4511", "--directory", "design-system-year2/design_handoff_reality_system/guidelines"],

@@ -1,0 +1,268 @@
+{
+  "version": 1,
+  "asOf": "2026-11-24",
+  "openedOn": "2025-05-26",
+  "url": {
+    "en": "https://realitydn.com/event-report/",
+    "vi": "https://realitydn.com/event-report/vn/",
+    "stats": "https://realitydn.com/event-report/stats.json"
+  },
+  "totals": {
+    "events": 1853,
+    "series": 296,
+    "seriesRepeated": 134,
+    "oneOffs": 162,
+    "weeks": 78.1
+  },
+  "last30": {
+    "from": "2026-10-26",
+    "to": "2026-11-24",
+    "events": 151,
+    "daysWithEvents": 30
+  },
+  "last90": [
+    151,
+    144,
+    141
+  ],
+  "perWeek90": 33.9,
+  "perWeek30": 35.2,
+  "seriesRunning": 42,
+  "debuted30": 18,
+  "mostRun": [
+    {
+      "name": "Monday Board Game Night",
+      "runs": 78
+    },
+    {
+      "name": "Chess Night",
+      "runs": 71
+    },
+    {
+      "name": "Film Club",
+      "runs": 68
+    },
+    {
+      "name": "Coffee + Conversation",
+      "runs": 67
+    },
+    {
+      "name": "REALITY Pub Quiz",
+      "runs": 63
+    },
+    {
+      "name": "Create in Community",
+      "runs": 59
+    },
+    {
+      "name": "Karaoke!",
+      "runs": 57
+    }
+  ],
+  "growth": {
+    "span": 30,
+    "stepDays": 14,
+    "points": [
+      {
+        "date": "2025-06-24",
+        "events": 25
+      },
+      {
+        "date": "2025-07-08",
+        "events": 41
+      },
+      {
+        "date": "2025-07-22",
+        "events": 56
+      },
+      {
+        "date": "2025-08-05",
+        "events": 58
+      },
+      {
+        "date": "2025-08-19",
+        "events": 55
+      },
+      {
+        "date": "2025-09-02",
+        "events": 57
+      },
+      {
+        "date": "2025-09-16",
+        "events": 62
+      },
+      {
+        "date": "2025-09-30",
+        "events": 70
+      },
+      {
+        "date": "2025-10-14",
+        "events": 74
+      },
+      {
+        "date": "2025-10-28",
+        "events": 75
+      },
+      {
+        "date": "2025-11-11",
+        "events": 82
+      },
+      {
+        "date": "2025-11-25",
+        "events": 84
+      },
+      {
+        "date": "2025-12-09",
+        "events": 81
+      },
+      {
+        "date": "2025-12-23",
+        "events": 81
+      },
+      {
+        "date": "2026-01-06",
+        "events": 79
+      },
+      {
+        "date": "2026-01-20",
+        "events": 83
+      },
+      {
+        "date": "2026-02-03",
+        "events": 108
+      },
+      {
+        "date": "2026-02-17",
+        "events": 115
+      },
+      {
+        "date": "2026-03-03",
+        "events": 99
+      },
+      {
+        "date": "2026-03-17",
+        "events": 98
+      },
+      {
+        "date": "2026-03-31",
+        "events": 123
+      },
+      {
+        "date": "2026-04-14",
+        "events": 125
+      },
+      {
+        "date": "2026-04-28",
+        "events": 126
+      },
+      {
+        "date": "2026-05-12",
+        "events": 128
+      },
+      {
+        "date": "2026-05-26",
+        "events": 123
+      },
+      {
+        "date": "2026-06-09",
+        "events": 121
+      },
+      {
+        "date": "2026-06-23",
+        "events": 130
+      },
+      {
+        "date": "2026-07-07",
+        "events": 120
+      },
+      {
+        "date": "2026-07-21",
+        "events": 115
+      },
+      {
+        "date": "2026-08-04",
+        "events": 130
+      },
+      {
+        "date": "2026-08-18",
+        "events": 131
+      },
+      {
+        "date": "2026-09-01",
+        "events": 135
+      },
+      {
+        "date": "2026-09-15",
+        "events": 139
+      },
+      {
+        "date": "2026-09-29",
+        "events": 139
+      },
+      {
+        "date": "2026-10-13",
+        "events": 139
+      },
+      {
+        "date": "2026-10-27",
+        "events": 144
+      },
+      {
+        "date": "2026-11-10",
+        "events": 142
+      },
+      {
+        "date": "2026-11-24",
+        "events": 151
+      }
+    ],
+    "peak": {
+      "events": 151,
+      "on": "2026-11-24"
+    }
+  },
+  "categories": [
+    {
+      "key": "social",
+      "name": "Games + Social",
+      "nameVi": "Trò chơi + Giao lưu",
+      "hex": "#ed2224",
+      "events": 487
+    },
+    {
+      "key": "arts",
+      "name": "Arts, Film, Music",
+      "nameVi": "Nghệ thuật, Phim, Âm nhạc",
+      "hex": "#18a7e0",
+      "events": 606
+    },
+    {
+      "key": "language",
+      "name": "Talk Events",
+      "nameVi": "Trò chuyện + Thảo luận",
+      "hex": "#ed1b72",
+      "events": 311
+    },
+    {
+      "key": "wellness",
+      "name": "Wellness + Growth",
+      "nameVi": "Sống khoẻ + Phát triển bản thân",
+      "hex": "#fdb515",
+      "events": 186
+    },
+    {
+      "key": "tech",
+      "name": "Tech + Business",
+      "nameVi": "Công nghệ + Kinh doanh",
+      "hex": "#0d0905",
+      "events": 193
+    },
+    {
+      "key": "other",
+      "name": "Other",
+      "nameVi": "Khác",
+      "hex": "#0d0905",
+      "events": 70
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "$comment": "The six guest-facing event groups (Donald 6.10.26). Names use pluses, never ampersands. Finer keys stay STORED and fold on READ — so a split can come back by editing the fold map, no migration. Editors write only the six. The category replaces the weekday hue on EVENT UI; the day-code stays for posters, print and non-event surfaces. A deal (Happy Hour) is yellow's JOB, not a category.",
+  "revision": "6.10.26",
+  "groups": [
+    {
+      "key": "social",
+      "name": "Games + Social",
+      "nameVi": "Trò chơi + Giao lưu",
+      "color": "red",
+      "hex": "#ed2224",
+      "on": "#fffbf1",
+      "holds": "games, trivia, pub quiz, board games, social + community, parties, drinks nights"
+    },
+    {
+      "key": "arts",
+      "name": "Arts, Film, Music",
+      "nameVi": "Nghệ thuật, Phim, Âm nhạc",
+      "color": "blue",
+      "hex": "#18a7e0",
+      "on": "#fffbf1",
+      "holds": "creative arts, film + screenings, music, dance, performance"
+    },
+    {
+      "key": "language",
+      "name": "Talk Events",
+      "nameVi": "Trò chuyện + Thảo luận",
+      "color": "pink",
+      "hex": "#ed1b72",
+      "on": "#fffbf1",
+      "holds": "language exchange, conversation, talks, discussions, Walkabout"
+    },
+    {
+      "key": "wellness",
+      "name": "Wellness",
+      "nameLong": "Wellness + Growth",
+      "nameVi": "Sống khoẻ",
+      "nameViLong": "Sống khoẻ + Phát triển bản thân",
+      "color": "amber",
+      "hex": "#fdb515",
+      "on": "#0d0905",
+      "holds": "wellness, growth, meditation, journaling"
+    },
+    {
+      "key": "tech",
+      "name": "Tech",
+      "nameLong": "Tech + Business",
+      "nameVi": "Công nghệ",
+      "nameViLong": "Công nghệ + Kinh doanh",
+      "color": "neutral",
+      "hex": "#0d0905",
+      "on": "#fffbf1",
+      "holds": "tech, AI, business, Body Doubling"
+    },
+    {
+      "key": "other",
+      "name": "Other",
+      "nameVi": "Khác",
+      "color": "neutral",
+      "hex": "#0d0905",
+      "on": "#fffbf1",
+      "holds": "anything unclassified"
+    }
+  ],
+  "fold": {
+    "games": "social",
+    "party": "social",
+    "drinks": "social",
+    "film": "arts",
+    "music": "arts"
+  },
+  "neutralPrint": {
+    "day": "rgba(13,9,5,.20)",
+    "night": "rgba(255,251,241,.28)"
+  },
+  "deal": {
+    "color": "yellow",
+    "hex": "#fddf00",
+    "on": "#0d0905",
+    "$comment": "Happy Hour and drink deals: yellow by JOB, found by title — never a seventh category."
+  }
+}

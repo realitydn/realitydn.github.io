@@ -68,8 +68,18 @@ https://:deployment.realitydn.pages.dev/*
   X-Robots-Tag: noindex, nofollow, noarchive
   Cache-Control: public, max-age=0, must-revalidate
 
+# The public event report (EN + /vn/) is meant to be found: no noindex. Rebuilt
+# weekly by scripts/event-report/build.py, so it revalidates on every load.
+# stats.json is the same figures as data (the home page's events card reads it):
+# fetchable from anywhere, but not a search result of its own.
+/event-report/*
+  Cache-Control: no-cache
+/event-report/stats.json
+  X-Robots-Tag: noindex
+  Access-Control-Allow-Origin: *
+
 # Internal editors and their shared kit (Poster / Print / Schedule Studio,
-# event report, tokens). Not for search; and their un-hashed .js/.css must
+# tokens). Not for search; and their un-hashed .js/.css must
 # revalidate on every load so a deploy is picked up immediately.
 /studio/*
   X-Robots-Tag: noindex, nofollow
@@ -78,9 +88,6 @@ https://:deployment.realitydn.pages.dev/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-cache
 /schedule/*
-  X-Robots-Tag: noindex, nofollow
-  Cache-Control: no-cache
-/event-report/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-cache
 /tokens/*

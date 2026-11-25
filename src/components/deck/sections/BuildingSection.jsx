@@ -5,7 +5,7 @@ import NowPlaying from '../NowPlaying';
 import { fill, Pulse, isPlainClick } from '../parts';
 import { Icons } from '../../Icons';
 import EventOverlay from '../../EventOverlay';
-import { FLOORS, roomsOf } from '../../../data/deck/building';
+import { FLOORS, roomsOf, roomHas } from '../../../data/deck/building';
 import { fmtTime, pickTitle, pickLocName, pickPoster, dateKey } from '../../../data/feed-helpers';
 import { fmtDayDate, fmtDM, cfStr } from '../../../data/cal-feed';
 import { categoryOf, isDealEvent } from '../../../data/event-category';
@@ -13,7 +13,9 @@ import { URLS } from '../../../data/translations';
 
 // 01 · What's happening, opened (reworked 25.11.26).
 //
-//   THE BUILDING     the rooms in use lit, and one line saying the same thing
+//   THE BUILDING     the rooms in use lit, and one line saying the same thing.
+//                    A free room says what is in it (the pool table, the
+//                    board games): the lines are in data/deck/building.js
 //   NOW PLAYING      the track playing in the bar: on the page only when the
 //                    now-playing feed says so (../NowPlaying.jsx; no feed yet)
 //   COMING UP        the next few events, large: when, the name, the room, the
@@ -122,10 +124,12 @@ export default function BuildingSection({ card, no, t, lang }) {
   };
 
   // A room of the building. On the card it says one thing: its name, and
-  // what is on in it while something is.
+  // what is on in it while something is. A free room says what is in it,
+  // quietly (ROOM_HAS in data/deck/building.js), so the lit rooms still lead.
   const room = (code) => {
     const r = state.rooms[code];
     const ev = r.now;
+    const has = roomHas(code, lang);
     const inner = (
       <>
         <b>{t.use(`infoHost.pricing.spaces.${code.toLowerCase()}`)}</b>
@@ -138,7 +142,10 @@ export default function BuildingSection({ card, no, t, lang }) {
               <small>{span(ev)}</small>
             </span>
           ) : (
-            <span className="sr-only">{S('noEvent')}</span>
+            <>
+              <span className="sr-only">{S('noEvent')}</span>
+              {has ? <span className="dk-rm-has">{has}</span> : null}
+            </>
           )
         ) : null}
       </>

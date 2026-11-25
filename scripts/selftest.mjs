@@ -541,7 +541,7 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
 // The pure helpers behind three cards. "Now" is always passed in, so these
 // never depend on when the test runs.
 {
-  const { buildingNow, roomsOf, eventEndMs, ROOM_CODES } = await import('../src/data/deck/building.js');
+  const { buildingNow, roomsOf, eventEndMs, ROOM_CODES, ROOM_HAS, roomHas } = await import('../src/data/deck/building.js');
   const { openNow, ictClock } = await import('../src/data/deck/open-hours.js');
   const { fundraisersView, vnd, vndShort, amountLabel, FUNDRAISER_STANDINS } = await import('../src/data/deck/fundraisers.js');
   const { AUDIT, dmy } = await import('../src/data/deck/event-audit.js');
@@ -575,6 +575,13 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   eq('building: an unknown room is no room', roomsOf({ locations: loc('Da Nang') }).length, 0);
   eq('building: falls back to the single location', roomsOf({ location: { code: '2L' } }).join(), '2L');
   eq('building: empty feed', buildingNow([], { now }).onCount, 0);
+  // what a free room has in it (the pool table, the board games)
+  check('building: every "what is in it" line belongs to a real room', Object.keys(ROOM_HAS).every((c) => ROOM_CODES.includes(c)));
+  check('building: every such line has its English', Object.values(ROOM_HAS).every((l) => typeof l.EN === 'string' && l.EN.trim()));
+  eq('building: the patio has the pool table', roomHas('3P'), ROOM_HAS['3P'].EN);
+  eq('building: the line in Vietnamese', roomHas('2E', 'VN'), ROOM_HAS['2E'].VN);
+  eq('building: a language with no line falls back to English', roomHas('2E', 'XX'), ROOM_HAS['2E'].EN);
+  eq('building: a room with no line says nothing', roomHas('1L', 'VN'), '');
 
   // Open daily 11:00–02:00, in Đà Nẵng time whatever the machine's zone.
   const ict = (hhmm, day = 26) => Date.parse(at(hhmm, day));

@@ -189,6 +189,8 @@
   font-size: 0; /* compact: blocks only */
 }
 .dk-mb i.sky { border-color: transparent; }
+/* what is in a free room (wide card only): lighter than a lit room's event */
+.dk-mb-has { font-weight: 500; letter-spacing: .02em; opacity: .78; }
 .dk-mb i.on { background: var(--red); border-color: var(--red); color: #fffbf1; }
 .dk-mb i.deal { background: var(--yellow); border-color: var(--yellow); color: #0d0905; }
 
@@ -256,9 +258,22 @@
   100% { visibility: hidden; transform: none; }
 }
 
-/* 05 photos, printed in the card's colour (a duotone: the photo in grey,
-   screened over the colour). The card OPENS with them in full colour
-   (.dk-ply-full, below); the colour is printed on a turn or two later. */
+/* 05 a photo, printed in the card's colour (a duotone: the photo in grey,
+   screened over the colour). The card OPENS with it in full colour
+   (.dk-ply-full, below); the colour is printed on a turn or two later.
+   ONE LARGE PHOTO (25.11.26): .dk-pic fills the card under its header, edge
+   to edge (.dk-cb-flush), and the card's line sits on it (.dk-pic-cap). On
+   the compact card the photo is a band between the number and the title.
+   (.dk-shots, two small frames side by side, is what the card had before; the
+   lab, components/deck/lab/, still draws it.) */
+.dk-cb.dk-cb-flush { position: relative; padding: 4px 0 6px; gap: 0; }
+.dk-pic { position: relative; display: block; flex: 1; min-height: 0; }
+.dk-pic > .dk-shot { position: absolute; inset: 0; aspect-ratio: auto; max-height: none; border-width: 2px 0; }
+.dk-pic-cap {
+  position: absolute; left: 0; bottom: 0; z-index: 2; max-width: calc(100% - 16px);
+  padding: 5px 10px 6px 12px; background: var(--kc); color: var(--kon);
+  border-top: 2px solid currentColor; border-right: 2px solid currentColor;
+}
 .dk-shots { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .dk-shot {
   position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden;
@@ -275,11 +290,10 @@
    reduced-motion visitor get: the photo as it was taken, no grey, no screen.
    The card's colour is then PRINTED over it (never faded in): a duotone layer
    of the same photo takes the Registration pass below, with the card's own
-   colour as the plate. Frame two follows frame one by a moment.
+   colour as the plate.
    (When, and how many turns it waits: faces/InsideFace.jsx.) */
 .dk-ply-full img { filter: none; mix-blend-mode: normal; }
 .dk-inking .dk-plate { background: var(--kc); }
-.dk-inking.dk-x .dk-plate, .dk-inking.dk-x .dk-ply-in { animation-delay: 160ms; }
 /* REGISTRATION — the next photo is printed in from one side, a few pixels
    out of register, with a colour plate showing at its edge; then it slides
    into place. 0.8 s. InsideFace sets, per pass: --reg-from (the side
@@ -367,6 +381,8 @@
   .dk-spark { height: 44px; gap: 2px; }
   .dk-shots { grid-template-columns: 1fr 1fr; }
   .dk-shot { aspect-ratio: 1 / 1; max-height: 112px; --reg-k: 1; }
+  .dk-cb.dk-cb-flush { padding: 0; }
+  .dk-pic > .dk-shot { border-width: 0; }
   .dk-hours { gap: 2px; }
   .dk-hours i { height: 11px; box-shadow: inset 0 0 0 1.5px currentColor; }
   .dk-chips { gap: 6px; }
@@ -531,6 +547,8 @@ section.dk-sec { scroll-margin-top: 50px; }
 .dk-rm-t { font: 600 15px/1.2 var(--mont); overflow-wrap: anywhere; }
 .dk-rm-t small { display: block; margin-top: 4px; font: 500 12px/1.3 var(--grotesk); font-variant-numeric: tabular-nums; }
 .dk-rm-t small.nx { border-top: 1.5px dashed currentColor; padding-top: 5px; margin-top: 6px; }
+/* what is in a free room: said quietly, so the lit rooms lead */
+.dk-rm-has { font: 500 14px/1.25 var(--grotesk); color: rgba(255, 251, 241, .72); overflow-wrap: anywhere; }
 .dk-rm.on { background: var(--red); border-color: var(--red); --accent: var(--yellow); }
 a.dk-rm { transition: transform var(--dur-tap) var(--ease-stamp); }
 a.dk-rm:hover { transform: translateY(-3px); }
@@ -674,6 +692,25 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 .ih-embed .ih-panels-embed > div { padding-bottom: 0; }
 .dk-rules .ih-panels-embed > div { padding-top: 0; }
 .ih-embed-tabs { margin-bottom: 4px; }
+/* 06 the host card opens on its action: the invitation, and the card body's
+   one red thing (InfoHostSection.jsx). Side by side where there is room; on a
+   phone the button is the full width, right under the invitation. */
+.dk-host-top {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 40px;
+  margin: 0 0 22px; padding: 0 0 22px; border-bottom: 2px solid #0d0905;
+}
+.dk-host-ask { flex: 1 1 280px; margin: 0; max-width: 34ch; font: 600 19px/1.35 var(--mont); }
+:lang(vi) .dk-host-ask { line-height: 1.45; }
+.dk-propose { flex: none; min-height: 56px; padding: 14px 30px; font-size: 15px; }
+@media (max-width: 620px) {
+  .dk-host-top { gap: 12px; margin-bottom: 18px; padding-bottom: 18px; }
+  .dk-host-ask { flex-basis: 100%; font-size: 17px; }
+  .dk-propose { width: 100%; white-space: normal; }
+}
+@media (min-width: 1100px) {
+  .dk-host-ask { font-size: 22px; }
+  .dk-propose { min-height: 64px; padding: 16px 40px; font-size: 16px; }
+}
 .ih-embed-tabs > div { margin-top: 0; padding-left: 0; }
 .gallery-embed > div > div.py-14 { padding-top: 4px; padding-bottom: 20px; }
 
@@ -891,8 +928,18 @@ a.dk-np:focus-visible { background-color: #0d0905; }
 .dk-np-a { font: 500 13px/1.3 var(--grotesk); color: rgba(255, 251, 241, .72); overflow-wrap: anywhere; }
 
 /* 03 the menu on a desktop: the chapters down the left, the one picked beside
-   them in columns, like a menu board (MenuSection.jsx; from L up). */
-.dk-board { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 40px; align-items: start; }
+   them, like a menu board (MenuSection.jsx; from L up).
+   CALM (25.11.26): two columns at every desktop width, never three; names
+   and prices a size up, the notes under them easier to read, more air round
+   every row and between the sections; a section stays whole in its column
+   (.is-long ones, more than eight rows, may run on). The list of chapters
+   stays in view under the card's header while a long chapter scrolls. */
+.dk-board { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 64px; align-items: start; }
+.dk-board-side {
+  position: sticky;
+  top: calc(var(--seam-strip, 54px) + var(--seam-hh, 0px) + 24px);
+}
+@media (max-height: 700px) { .dk-board-side { position: static; } }
 .dk-board-tabs { display: grid; }
 .dk-tab {
   display: flex; align-items: center; gap: 12px;
@@ -909,14 +956,18 @@ a.dk-np:focus-visible { background-color: #0d0905; }
 }
 .dk-tab:focus-visible { position: relative; z-index: 2; background-color: #fffbf1; }
 .dk-tab[aria-selected="true"]:focus-visible { background-color: #0d0905; }
-.dk-board-side .dk-menu-note { margin: 22px 0 0; }
-/* a chapter as a board: its sections run down two or three columns */
-.dk-board-cols { columns: 2; column-gap: 36px; }
-@media (min-width: 1280px) { .dk-board-cols { columns: 3; } }
-.dk-board-cols > div { margin: 0 0 26px; }
-.dk-board-cols h4 { break-after: avoid; }
+.dk-board-side .dk-menu-note { margin: 26px 0 0; }
+/* a chapter as a board: its sections run down two columns */
+.dk-board-cols { columns: 2; column-gap: 64px; }
+.dk-board-cols > div { margin: 0 0 44px; }
+.dk-board-cols > div:not(.is-long) { break-inside: avoid; }
+.dk-board-cols h4.menu-sec { break-after: avoid; margin-bottom: 4px; padding-bottom: 12px; font-size: 14px; letter-spacing: .16em; }
 .dk-board-cols ul { display: block; }
-.dk-board-cols li { break-inside: avoid; margin: 0 0 10px; }
+.dk-board-cols li.menu-item { break-inside: avoid; margin: 0; padding: 16px 0; }
+.dk-board-cols li.menu-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.dk-board-cols .menu-item-n { font-size: 16px; line-height: 1.3; }
+.dk-board-cols .menu-item-p { font-size: 16px; }
+.dk-board-cols .menu-item-note { margin-top: 5px; font-size: 15px; line-height: 1.5; }
 
 /* 04 the chart beside the figures; "More figures" laid out under them on a
    desktop, ruled off */

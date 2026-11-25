@@ -2,14 +2,17 @@ import React from 'react';
 import DeckCard from '../DeckCard';
 import useBuilding from '../useBuilding';
 import { fill, Pulse } from '../parts';
-import { FLOORS } from '../../../data/deck/building';
+import { FLOORS, roomHas } from '../../../data/deck/building';
 import { fmtTime, pickTitle } from '../../../data/feed-helpers';
 
 // 01 · What's happening — a small cutaway of the building. A room with an
 // event in it right now is lit red; the line underneath says how many rooms
 // are on and what starts next. From the events feed, re-read every minute.
+// On the wide card a free room says what is in it (the pool table, the board
+// games: ROOM_HAS in data/deck/building.js), in a lighter weight than a lit
+// room's event. The phone card is blocks only.
 export default function BuildingFace({ card, no, t, lang }) {
-  const { state, live, clock, hours } = useBuilding();
+  const { state, loading, live, clock, hours } = useBuilding();
   const S = (k) => t.use(`deck.building.${k}`);
   const name = (ev) => pickTitle(ev, lang) || t.use('cal.fallbackTitle');
 
@@ -39,10 +42,13 @@ export default function BuildingFace({ card, no, t, lang }) {
                 );
               }
               const on = state.rooms[cell.room].now;
+              // nothing is said about a free room until the feed has answered
+              const has = !on && live && !loading ? roomHas(cell.room, lang) : '';
               return (
                 <i key={i} className={on ? 'on' : ''}>
                   {cell.room}
                   {on ? <span className="dk-x"> · {name(on)}</span> : null}
+                  {has ? <span className="dk-x dk-mb-has"> · {has}</span> : null}
                 </i>
               );
             })}

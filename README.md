@@ -50,7 +50,8 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 │   ├── data/
 │   │   ├── deck/        # the home page's own data: event-audit.js (snapshot figures),
 │   │   │                # fundraisers.js (stand-ins until the app's feed has rows),
-│   │   │                # building.js (rooms in use, from the feed), open-hours.js
+│   │   │                # building.js (rooms in use, from the feed; ROOM_HAS: what a
+│   │   │                # free room says is in it), open-hours.js
 │   │   ├── locales/     # six locale files (must keep key parity with en.js)
 │   │   ├── languages.js # LANGS registry + pathFor/stripLangPrefix
 │   │   ├── menu.js      # GENERATED from the app's src/lib/menu-data.ts — DO NOT EDIT HERE
@@ -90,9 +91,11 @@ down the page.
   arrives (on load; it is not on the clock), the giving total throws an echo, the photos re-register, 0₫ gets a
   highlighter pass, and the current open hour is stamped again. Each one
   starts on the second and keeps one of three paces, so the page has a rhythm
-  that only repeats every 24 s. (The Inside card opens with the shopfront in
-  full colour; its colour is printed on about 8 s in, and only then do its
-  photos start to change: `FULL_COLOUR_TURNS` in `deck/faces/InsideFace.jsx`.)
+  that only repeats every 24 s. (The Inside card is one large photo, filling
+  the card under its header. It opens on the shopfront in full colour; its
+  colour is printed on about 8 s in, and only then does the photo start to
+  change: `FULL_COLOUR_TURNS` in `deck/faces/InsideFace.jsx`. Its photos
+  are 4:3 cuts at two sizes in `public/images/deck/`.)
   The paces:
   - **All the numbers are in `src/lib/beat.js`.** `PACES` is the three paces
     (3, 6 and 8 seconds). `FACES` says which card keeps which: the menu and
@@ -137,9 +140,16 @@ down the page.
   |---|---|---|---|
   | 01 What's happening | building, 3 events, the webapp | 4 events from 900px | building + webapp beside 4 events (5 when tall) |
   | 02 First time here? | 3 steps, photo; folds: *Can I just join in?*, rules | the answer laid out; rules a fold | the same, the answer beside the photo; rules laid out when tall |
-  | 03 Our menu | PDF line, 6 chapter folds | the same | chapters down the left, the one picked beside them in columns |
+  | 03 Our menu | PDF line, 6 chapter folds | the same | chapters down the left (they stay in view), the one picked beside them in two columns, large type |
   | 04 Events we've held | figures, chart; fold: *More figures* | the same, chart beside the figures from 900px | everything laid out, no fold |
   | 05–09 | the same content at every size; only the columns change | | |
+
+  Two cards lead with one thing at every size. **06 Host an event** opens on
+  its action: the invitation and a red *Propose an event* button, above the
+  rules (it opens the form further down the card and goes to it; `#proposal`
+  still lands on the form). **01 What's happening**: a room with nothing on
+  says what is in it (the pool table, the board games). Those lines are
+  `ROOM_HAS` in `src/data/deck/building.js`, one row per room.
 
   How: `<Expand flatFrom="m|l|tall">` is a fold below that size and plain
   content from it up; the menu switches layout with `useWide('l')`; the

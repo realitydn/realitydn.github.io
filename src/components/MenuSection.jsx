@@ -156,8 +156,9 @@ export default function MenuSection({ lang, t, embedded = false }) {
     active ? { boxShadow: `5px 6px 0 ${CATEGORY_ACCENTS[key] || 'var(--fg)'}` } : undefined;
 
   // One chapter's sections and items. The same rows in both layouts.
+  // (.is-long: a section too long to keep in one column of the desktop board.)
   const chapter = (cat) => cat.sections.map((section, sIdx) => (
-    <div key={sIdx}>
+    <div key={sIdx} className={section.items.length > 8 ? 'is-long' : undefined}>
       <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
         <span
           className="inline-block w-3 h-3 shrink-0"
@@ -201,8 +202,14 @@ export default function MenuSection({ lang, t, embedded = false }) {
   //   PHONE, TABLET   a stack of folds, one per chapter, all shut: nobody
   //                   opens more than they came for.
   //   DESKTOP (L)     the same six as a list down the left, and the chapter
-  //                   picked laid out beside it in columns, like a menu
-  //                   board. The first chapter is showing on arrival.
+  //                   picked laid out beside it, like a menu board. The
+  //                   first chapter is showing on arrival.
+  //                   Calmer since 25.11.26 (Donald: "a bit overwhelming.
+  //                   Too info-dense on my monitor"): two columns, not
+  //                   three, in larger type with more air, each section
+  //                   kept whole in its column; the list of chapters stays
+  //                   in view while a long chapter scrolls, and it no
+  //                   longer prints a count beside each name.
   //
   // Either way every chapter is in the DOM, and the static HTML (always the
   // stack of folds) holds all of them. The chapters keep their old ids
@@ -220,9 +227,21 @@ export default function MenuSection({ lang, t, embedded = false }) {
     if (board) {
       // Tabs the elements own (fold.js showTab), not React state: the
       // attributes below are the STARTING state and never change here.
+      // A chapter is often taller than the screen. If the reader was deep in
+      // one when they picked another, bring the top of the new one back
+      // under the card's header (at once: it reads as a tab switch).
+      const show = (tab) => {
+        if (!showTab(tab)) return;
+        const side = tab.closest('.dk-board-side');
+        const panel = document.getElementById(tab.getAttribute('aria-controls'));
+        if (!side || !panel) return;
+        const limit = parseFloat(getComputedStyle(side).top) || 0;
+        const off = panel.getBoundingClientRect().top - limit;
+        if (off < -1) window.scrollBy({ top: off, behavior: 'instant' });
+      };
       const pick = (e) => {
         const tab = e.target.closest('[role="tab"]');
-        if (tab) showTab(tab);
+        if (tab) show(tab);
       };
       const keys = (e) => {
         const tabs = Array.from(e.currentTarget.querySelectorAll('[role="tab"]'));
@@ -235,8 +254,8 @@ export default function MenuSection({ lang, t, embedded = false }) {
         else if (e.key === 'End') n = tabs.length - 1;
         if (n < 0) return;
         e.preventDefault();
-        showTab(tabs[n]);
-        tabs[n].focus();
+        show(tabs[n]);
+        tabs[n].focus({ preventScroll: true });
       };
       return (
         <div className="menu-embed dk-board text-ink">
@@ -262,7 +281,6 @@ export default function MenuSection({ lang, t, embedded = false }) {
                 >
                   <i className="dk-ex-mark" style={{ background: CATEGORY_ACCENTS[cat.key] || 'var(--fg)' }} aria-hidden="true" />
                   <span className="dk-ex-l">{cat.label}</span>
-                  <span className="dk-ex-m">{count(cat)}</span>
                 </button>
               ))}
             </div>

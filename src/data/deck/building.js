@@ -18,6 +18,30 @@ export const FLOORS = [
 ];
 
 export const ROOM_CODES = ['3P', '2E', '2L', '1L'];
+
+// WHAT IS IN A ROOM WHEN NOTHING IS ON IN IT. A free room says what is there
+// instead of standing empty: the pool table on the patio, the board games in
+// the event space. While an event is running the room shows the event, as
+// always.
+//
+// TO ADD OR CHANGE A LINE: one row per room, keyed by the room's code (the
+// ROOM_CODES above). EN is the line; the other languages are the site's own
+// codes (VN, RU, UK, KO, JA) and any that is missing shows the English. Keep
+// a line to two or three words: it has to fit a room on a phone, and the
+// small building on the first screen. A room with no row says nothing.
+// (The English lines are placeholders until Donald words them. 1L and 2L
+// have no line yet.)
+export const ROOM_HAS = {
+  '3P': { EN: 'Pool table', VN: 'Bàn bida', RU: 'Бильярдный стол', UK: 'Більярдний стіл', KO: '포켓볼 테이블', JA: 'ビリヤード台' },
+  '2E': { EN: 'Board games', VN: 'Board game', RU: 'Настольные игры', UK: 'Настільні ігри', KO: '보드게임', JA: 'ボードゲーム' },
+};
+
+// roomHas('3P', 'VN') → 'Bàn bida' · roomHas('1L') → ''
+export function roomHas(code, lang = 'EN') {
+  const line = ROOM_HAS[code];
+  if (!line) return '';
+  return line[String(lang).toUpperCase()] || line.EN || '';
+}
 const ALL = 'Entire Space';
 const DEFAULT_LENGTH_MS = 2 * 3600 * 1000;
 

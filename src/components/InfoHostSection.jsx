@@ -13,7 +13,7 @@ import { scrollBehavior } from '../hooks/motion';
 // Wrap the public-events cross-references ("How REALITY Can Help with
 // Promotion" and "brand guidelines") with links to the full Event Guidelines
 // page — the homepage panels don't contain those sections themselves.
-function linkifyPhrases(text, links) {
+function linkifyPhrases(text, links, color = 'var(--red-text)') {
   let parts = [text];
   links.forEach(({ phrase, to }, li) => {
     parts = parts.flatMap((part, pi) => {
@@ -26,7 +26,7 @@ function linkifyPhrases(text, links) {
           key={`lnk-${li}-${pi}`}
           to={to}
           className="underline font-semibold hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--red-text)' }}
+          style={{ color }}
         >
           {phrase}
         </Link>,
@@ -88,8 +88,21 @@ const ONLY_ANCHOR = { welcome: 'info', rules: 'rules', host: 'host' };
 // `titled={false}` (with `only`): leave the panel's own heading out. On the
 // deck page the welcome text and the rules each sit in a fold whose bar already
 // carries that heading.
-export default function InfoHostSection({ t, lang, only = null, titled = true }) {
+//
+// THE HOST CARD'S RED ACTION (only="host", 25.11.26 — Donald: "'Propose an
+// event' button needs to be more prominent and not at the bottom of its
+// card"). The invitation and the button open the card, above the rules, so
+// they are on screen the moment the card lands. The button is the card
+// body's one red thing: there the links are ink and the list markers start
+// at blue. It opens the form for the event type picked (where the form has
+// always been, under that type's rules) and goes to it. An ink copy of the
+// button stays at the foot of the rules for whoever has read down to it.
+// `intro`: what the host card says under the action (its lede).
+export default function InfoHostSection({ t, lang, only = null, titled = true, intro = null }) {
   const ih = (k) => t.use(`infoHost.${k}`);
+  const hostCard = only === 'host';
+  const linkColor = hostCard ? 'var(--fg)' : 'var(--red-text)';
+  const listStart = hostCard ? 1 : 0; // CHROMATIC[0] is red
 
   // Public-events copy references the branding + promotion sections, which live
   // on the full Event Guidelines page (not in these panels) — link to them.
@@ -100,7 +113,7 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
     { phrase: t.use('eventGuidelines.crossRefs.branding'), to: `${guidelinesBase}#branding` },
   ];
   const publicRulesItems = ih('publicRules').map((it) =>
-    typeof it === 'string' ? linkifyPhrases(it, publicCrossRefs) : it
+    typeof it === 'string' ? linkifyPhrases(it, publicCrossRefs, linkColor) : it
   );
 
   const [activeMain, setActiveMain] = useState(only || 'welcome');
@@ -159,11 +172,13 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
     if (target.form && (!only || only === 'host')) setOpenForms((o) => ({ ...o, public: true }));
   }, []);
 
-  const openForm = (type) => {
+  // `block`: 'nearest' from the button beside the form; 'start' from the
+  // action at the top of the host card, which is a screen or two above it.
+  const openForm = (type, block = 'nearest') => {
     setSubmittedFlavor(null);
     setOpenForms((o) => ({ ...o, [type]: true }));
     requestAnimationFrame(() => {
-      formAreaRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
+      formAreaRef.current?.scrollIntoView({ block, behavior: scrollBehavior() });
     });
   };
 
@@ -314,6 +329,7 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
       return (
         <ProposalCTA
           t={t}
+          slim={hostCard}
           accent={EVENT_ACCENTS[type]}
           label={type === 'art' ? t.use('proposal.artTab') : t.use('proposal.eventTab')}
           onOpen={() => openForm(type)}
@@ -371,7 +387,20 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
           )}
           {/* On its own card the host panel keeps its three event types as
               one row of tabs, at every width. */}
-          {only === 'host' && <div className="ih-embed-tabs">{subNav('info-desktop', true)}</div>}
+          {hostCard && (
+            <div className="dk-host-top">
+              <p className="dk-host-ask">{t.use('proposal.subtitle')}</p>
+              <button
+                type="button"
+                className="btn-action dk-btn dk-propose"
+                onClick={() => openForm(activeEventType, 'start')}
+              >
+                {activeEventType === 'art' ? t.use('proposal.artTab') : t.use('proposal.eventTab')}
+              </button>
+            </div>
+          )}
+          {hostCard && intro}
+          {hostCard && <div className="ih-embed-tabs">{subNav('info-desktop', true)}</div>}
 
           {/* Panels — natural height, the page is the only thing that
               scrolls. Every panel stays in the DOM (hidden when inactive)
@@ -416,8 +445,8 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
             {show('host') && (<>
             <Panel id={panelId('host-public')} labelledBy="info-desktop-sub-public" active={activeMain === 'host' && activeEventType === 'public'}>
               <PanelTitle accent={EVENT_ACCENTS.public}>{ih('publicTitle')}</PanelTitle>
-              <GeneralRulesLink ih={ih} goTo={goTo} />
-              <ColorList items={publicRulesItems} className="mb-6" />
+              <GeneralRulesLink ih={ih} goTo={goTo} color={linkColor} />
+              <ColorList items={publicRulesItems} className="mb-6" startIndex={listStart} />
               <div
                 id={activeMain === 'host' && activeEventType === 'public' ? 'proposal' : undefined}
                 ref={activeEventType === 'public' ? formAreaRef : undefined}
@@ -429,8 +458,8 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
 
             <Panel id={panelId('host-private')} labelledBy="info-desktop-sub-private" active={activeMain === 'host' && activeEventType === 'private'}>
               <PanelTitle accent={EVENT_ACCENTS.private}>{ih('privateTitle')}</PanelTitle>
-              <GeneralRulesLink ih={ih} goTo={goTo} />
-              <ColorList items={ih('privateRules')} className="mb-6" />
+              <GeneralRulesLink ih={ih} goTo={goTo} color={linkColor} />
+              <ColorList items={ih('privateRules')} className="mb-6" startIndex={listStart} />
               <PricingTable ih={ih} roomLabel={t.use('a11y.room')} />
               <div
                 id={activeMain === 'host' && activeEventType === 'private' ? 'proposal' : undefined}
@@ -443,11 +472,11 @@ export default function InfoHostSection({ t, lang, only = null, titled = true })
 
             <Panel id={panelId('host-art')} labelledBy="info-desktop-sub-art" active={activeMain === 'host' && activeEventType === 'art'}>
               <PanelTitle accent={EVENT_ACCENTS.art}>{ih('artTitle')}</PanelTitle>
-              <GeneralRulesLink ih={ih} goTo={goTo} />
+              <GeneralRulesLink ih={ih} goTo={goTo} color={linkColor} />
               <p className="mb-3">{ih('artIntro')}</p>
               <p className="mb-4">{ih('artNote')}</p>
               <SectionLabel accent="var(--pink)">{ih('artGuidelinesLabel')}</SectionLabel>
-              <ColorList items={ih('artGuidelines')} className="mb-6" />
+              <ColorList items={ih('artGuidelines')} className="mb-6" startIndex={listStart} />
               <div
                 id={activeMain === 'host' && activeEventType === 'art' ? 'proposal' : undefined}
                 ref={activeEventType === 'art' ? formAreaRef : undefined}
@@ -713,7 +742,7 @@ function PricingTable({ ih, roomLabel }) {
   );
 }
 
-function GeneralRulesLink({ ih, goTo }) {
+function GeneralRulesLink({ ih, goTo, color = 'var(--red-text)' }) {
   return (
     <p className="mb-4">
       {ih('allEventsPrefix')}{' '}
@@ -721,7 +750,7 @@ function GeneralRulesLink({ ih, goTo }) {
         type="button"
         onClick={() => goTo('rules')}
         className="underline font-semibold hover:opacity-70 transition-opacity"
-        style={{ color: 'var(--red-text)' }}
+        style={{ color }}
       >
         {ih('generalRulesLink')}
       </button>
@@ -734,7 +763,18 @@ function GeneralRulesLink({ ih, goTo }) {
 // expands the form in place (stamp, don't float) — no inner scrollbars.
 // Rules-on-paper (ink pass): the card shell was collage furniture; a 2px
 // ink rule marks off the proposal step on the flat band.
-function ProposalCTA({ t, accent, label, onOpen }) {
+// `slim` (the host card on the deck page): the invitation and the red action
+// are at the top of the card, so this is only the button again, in ink.
+function ProposalCTA({ t, accent, label, onOpen, slim = false }) {
+  if (slim) {
+    return (
+      <div className="pt-6" style={{ borderTop: '2px solid var(--fg)' }}>
+        <button type="button" onClick={onOpen} className="btn-primary dk-btn">
+          {label}
+        </button>
+      </div>
+    );
+  }
   return (
     <div
       className="pt-6 md:pt-8"

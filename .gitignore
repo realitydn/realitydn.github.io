@@ -47,3 +47,6 @@ public/llms-full.txt
 # Studio test suites (scripts/test-studios): renders + diff images from the
 # last failing run. Goldens (tests/golden/) and fixtures ARE tracked.
 tests/out/
+
+# Python bytecode (scripts/event-report)
+__pycache__/

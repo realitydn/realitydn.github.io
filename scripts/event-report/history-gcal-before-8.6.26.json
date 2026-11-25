@@ -1,0 +1,6462 @@
+{
+"source": "Google Calendar (realitydn primary), deduplicated by the event-overview pipeline on 2.10.26",
+"covers": "26.5.25 to 7.6.26",
+"events": [
+{
+"id": "gcal-0",
+"summary": "Monday Board Games!",
+"date": "2025-05-26",
+"time": ""
+},
+{
+"id": "gcal-1",
+"summary": "Crocheting Circle",
+"date": "2025-05-29",
+"time": "16:00"
+},
+{
+"id": "gcal-2",
+"summary": "Monday Board Games",
+"date": "2025-06-02",
+"time": "19:00"
+},
+{
+"id": "gcal-3",
+"summary": "AI Superoheros Mingling",
+"date": "2025-06-03",
+"time": "19:00"
+},
+{
+"id": "gcal-4",
+"summary": "LearnToDance DaNang - Jive Social",
+"date": "2025-06-06",
+"time": "20:00"
+},
+{
+"id": "gcal-5",
+"summary": "HODL my BEER - SOLANA SUMMIT afterparty",
+"date": "2025-06-06",
+"time": "21:00"
+},
+{
+"id": "gcal-6",
+"summary": "Practice Vietnamese with Bình and Dalton",
+"date": "2025-06-08",
+"time": "14:00"
+},
+{
+"id": "gcal-7",
+"summary": "Coup Players",
+"date": "2025-06-08",
+"time": "19:00"
+},
+{
+"id": "gcal-8",
+"summary": "Monday Board Games",
+"date": "2025-06-09",
+"time": "19:00"
+},
+{
+"id": "gcal-9",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-06-10",
+"time": "19:00"
+},
+{
+"id": "gcal-10",
+"summary": "Working Networking - Coworking + Social",
+"date": "2025-06-11",
+"time": "10:00"
+},
+{
+"id": "gcal-11",
+"summary": "Crocheting Circle",
+"date": "2025-06-12",
+"time": "16:00"
+},
+{
+"id": "gcal-12",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-06-13",
+"time": "20:00"
+},
+{
+"id": "gcal-13",
+"summary": "GRAND OPENING PARTY",
+"date": "2025-06-14",
+"time": "10:00"
+},
+{
+"id": "gcal-14",
+"summary": "Monday Board Games",
+"date": "2025-06-16",
+"time": "19:00"
+},
+{
+"id": "gcal-15",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-06-17",
+"time": "19:00"
+},
+{
+"id": "gcal-16",
+"summary": "Working Networking - Coworking + Social",
+"date": "2025-06-18",
+"time": "10:00"
+},
+{
+"id": "gcal-17",
+"summary": "Personal Growth Meetup",
+"date": "2025-06-18",
+"time": "18:00"
+},
+{
+"id": "gcal-18",
+"summary": "Open Art Circle",
+"date": "2025-06-19",
+"time": "10:30"
+},
+{
+"id": "gcal-19",
+"summary": "DNBoardgame.com English Board Game Meetup",
+"date": "2025-06-20",
+"time": "19:00"
+},
+{
+"id": "gcal-20",
+"summary": "Painting Class: Acrylic on Mini-Canvas",
+"date": "2025-06-21",
+"time": "14:00"
+},
+{
+"id": "gcal-21",
+"summary": "Wildcats.io Signature Networking Event",
+"date": "2025-06-21",
+"time": "16:00"
+},
+{
+"id": "gcal-22",
+"summary": "Monday Board Games",
+"date": "2025-06-23",
+"time": "19:00"
+},
+{
+"id": "gcal-23",
+"summary": "Sip & Paint",
+"date": "2025-06-24",
+"time": "17:00"
+},
+{
+"id": "gcal-24",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-06-24",
+"time": "19:00"
+},
+{
+"id": "gcal-25",
+"summary": "Working Networking - Coworking + Social",
+"date": "2025-06-25",
+"time": "10:00"
+},
+{
+"id": "gcal-26",
+"summary": "Personal Growth Meetup",
+"date": "2025-06-25",
+"time": "18:00"
+},
+{
+"id": "gcal-27",
+"summary": "Open Art Circle",
+"date": "2025-06-26",
+"time": "10:30"
+},
+{
+"id": "gcal-28",
+"summary": "Crocheting Circle",
+"date": "2025-06-26",
+"time": "16:00"
+},
+{
+"id": "gcal-29",
+"summary": "Movie Club: The Grand Budapest Hotel",
+"date": "2025-06-26",
+"time": "20:30"
+},
+{
+"id": "gcal-30",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-06-27",
+"time": "20:00"
+},
+{
+"id": "gcal-31",
+"summary": "Clothes Swap: From Her to Her",
+"date": "2025-06-28",
+"time": "10:00"
+},
+{
+"id": "gcal-32",
+"summary": "Painting: Watercolor Postcards",
+"date": "2025-06-28",
+"time": "14:00"
+},
+{
+"id": "gcal-33",
+"summary": "IRL Passion Projects",
+"date": "2025-06-28",
+"time": "19:00"
+},
+{
+"id": "gcal-34",
+"summary": "Monday Board Games",
+"date": "2025-06-30",
+"time": "19:00"
+},
+{
+"id": "gcal-35",
+"summary": "Let's Talk About SEXuality! Understand Your Cycle & Redesign Your Life",
+"date": "2025-07-01",
+"time": "18:00"
+},
+{
+"id": "gcal-36",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-07-01",
+"time": "19:00"
+},
+{
+"id": "gcal-37",
+"summary": "Open Art Circle",
+"date": "2025-07-02",
+"time": "12:00"
+},
+{
+"id": "gcal-38",
+"summary": "Personal Growth Meetup",
+"date": "2025-07-02",
+"time": "18:00"
+},
+{
+"id": "gcal-39",
+"summary": "Crocheting Circle",
+"date": "2025-07-03",
+"time": "16:00"
+},
+{
+"id": "gcal-40",
+"summary": "FILM CLUB : K-Pop Demon Hunters",
+"date": "2025-07-03",
+"time": "19:30"
+},
+{
+"id": "gcal-41",
+"summary": "FILM CLUB: Sinners",
+"date": "2025-07-03",
+"time": "22:00"
+},
+{
+"id": "gcal-42",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-07-04",
+"time": "20:00"
+},
+{
+"id": "gcal-43",
+"summary": "Watercolor Workshop: Painting Plants",
+"date": "2025-07-05",
+"time": "14:00"
+},
+{
+"id": "gcal-44",
+"summary": "LERNY : In Concert",
+"date": "2025-07-05",
+"time": "21:00"
+},
+{
+"id": "gcal-45",
+"summary": "Monday Board Games",
+"date": "2025-07-07",
+"time": "19:00"
+},
+{
+"id": "gcal-46",
+"summary": "Online Coaches Club Workshop: How to Design a No-Brainer Offer Worth $2.5k+ or More",
+"date": "2025-07-08",
+"time": "11:00"
+},
+{
+"id": "gcal-47",
+"summary": "Women's Entrepreneurship & Empowerment Meetup",
+"date": "2025-07-08",
+"time": "18:30"
+},
+{
+"id": "gcal-48",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-07-08",
+"time": "19:00"
+},
+{
+"id": "gcal-49",
+"summary": "Open Art Circle",
+"date": "2025-07-09",
+"time": "12:00"
+},
+{
+"id": "gcal-50",
+"summary": "Personal Growth Meetup",
+"date": "2025-07-09",
+"time": "18:00"
+},
+{
+"id": "gcal-51",
+"summary": "Crocheting Circle",
+"date": "2025-07-10",
+"time": "16:00"
+},
+{
+"id": "gcal-52",
+"summary": "Film Club: Speed Racer (2008)",
+"date": "2025-07-10",
+"time": "20:00"
+},
+{
+"id": "gcal-53",
+"summary": "Create in Community",
+"date": "2025-07-11",
+"time": "16:00"
+},
+{
+"id": "gcal-54",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-07-11",
+"time": "20:00"
+},
+{
+"id": "gcal-55",
+"summary": "Painting Workshop: Acrylic on Mini-Canvas",
+"date": "2025-07-12",
+"time": "14:00"
+},
+{
+"id": "gcal-56",
+"summary": "Open Decks on the Rooftop",
+"date": "2025-07-12",
+"time": "17:00"
+},
+{
+"id": "gcal-57",
+"summary": "IRL Passion Projects",
+"date": "2025-07-12",
+"time": "19:00"
+},
+{
+"id": "gcal-58",
+"summary": "Beginner Vietnamese with June",
+"date": "2025-07-13",
+"time": "14:00"
+},
+{
+"id": "gcal-59",
+"summary": "Film Club: Leviathan (2014)",
+"date": "2025-07-13",
+"time": "20:00"
+},
+{
+"id": "gcal-60",
+"summary": "Monday Board Games",
+"date": "2025-07-14",
+"time": "19:00"
+},
+{
+"id": "gcal-61",
+"summary": "Online Coaches Club Workshop: The 15 Best Formats to Get Clients",
+"date": "2025-07-15",
+"time": "11:00"
+},
+{
+"id": "gcal-62",
+"summary": "Real Talk Philosophy : Polyamory vs. Monogamy",
+"date": "2025-07-15",
+"time": "17:30"
+},
+{
+"id": "gcal-63",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-07-15",
+"time": "19:00"
+},
+{
+"id": "gcal-64",
+"summary": "Personal Growth Meetup",
+"date": "2025-07-16",
+"time": "18:00"
+},
+{
+"id": "gcal-65",
+"summary": "Crocheting Circle",
+"date": "2025-07-17",
+"time": "16:00"
+},
+{
+"id": "gcal-66",
+"summary": "Film Club: Song Lang (2018)",
+"date": "2025-07-17",
+"time": "20:00"
+},
+{
+"id": "gcal-67",
+"summary": "Create in Community",
+"date": "2025-07-18",
+"time": "16:00"
+},
+{
+"id": "gcal-68",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-07-18",
+"time": "20:00"
+},
+{
+"id": "gcal-69",
+"summary": "Film Club: Mirai (2018)",
+"date": "2025-07-19",
+"time": "15:00"
+},
+{
+"id": "gcal-70",
+"summary": "Mix + Mingle + Meet People Party",
+"date": "2025-07-19",
+"time": "20:00"
+},
+{
+"id": "gcal-71",
+"summary": "Beginner Vietnamese with June",
+"date": "2025-07-20",
+"time": "14:00"
+},
+{
+"id": "gcal-72",
+"summary": "Dating Event: Passport to Love: A Multilingual Mixer for Curious Hearts",
+"date": "2025-07-20",
+"time": "19:00"
+},
+{
+"id": "gcal-73",
+"summary": "Real Talk Philosophy: Is There Free Will?",
+"date": "2025-07-21",
+"time": "17:30"
+},
+{
+"id": "gcal-74",
+"summary": "Monday Board Games",
+"date": "2025-07-21",
+"time": "19:00"
+},
+{
+"id": "gcal-75",
+"summary": "Real Talk Philosophy: Natalism + Anti-",
+"date": "2025-07-22",
+"time": "17:30"
+},
+{
+"id": "gcal-76",
+"summary": "Da Nang Chess Club",
+"date": "2025-07-22",
+"time": "19:00"
+},
+{
+"id": "gcal-77",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-07-22",
+"time": "19:00"
+},
+{
+"id": "gcal-78",
+"summary": "Personal Branding Workshop: Who Am I?",
+"date": "2025-07-23",
+"time": "15:00"
+},
+{
+"id": "gcal-79",
+"summary": "Pub Quiz by Booze & Brains",
+"date": "2025-07-23",
+"time": "20:00"
+},
+{
+"id": "gcal-80",
+"summary": "Crocheting Circle",
+"date": "2025-07-24",
+"time": "16:00"
+},
+{
+"id": "gcal-81",
+"summary": "Create in Community",
+"date": "2025-07-25",
+"time": "16:00"
+},
+{
+"id": "gcal-82",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-07-25",
+"time": "20:00"
+},
+{
+"id": "gcal-83",
+"summary": "IRL: Passion Projects",
+"date": "2025-07-26",
+"time": "19:00"
+},
+{
+"id": "gcal-84",
+"summary": "Drinking Games!",
+"date": "2025-07-26",
+"time": "21:00"
+},
+{
+"id": "gcal-85",
+"summary": "Beginner Vietnamese with June",
+"date": "2025-07-27",
+"time": "14:00"
+},
+{
+"id": "gcal-86",
+"summary": "Monday Board Games",
+"date": "2025-07-28",
+"time": "19:00"
+},
+{
+"id": "gcal-87",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-07-29",
+"time": "19:00"
+},
+{
+"id": "gcal-88",
+"summary": "Đà Nẵng Chess Club",
+"date": "2025-07-29",
+"time": "19:00"
+},
+{
+"id": "gcal-89",
+"summary": "REALITY Pub Quiz",
+"date": "2025-07-30",
+"time": "20:00"
+},
+{
+"id": "gcal-90",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-07-31",
+"time": "11:00"
+},
+{
+"id": "gcal-91",
+"summary": "Vietnamese Pronunciation with Em Thảo ",
+"date": "2025-07-31",
+"time": "16:00"
+},
+{
+"id": "gcal-92",
+"summary": "Crochet Circle",
+"date": "2025-07-31",
+"time": "16:00"
+},
+{
+"id": "gcal-93",
+"summary": "Connect+: Professional Networking, hosted by Kavanagh Consulting",
+"date": "2025-07-31",
+"time": "20:00"
+},
+{
+"id": "gcal-94",
+"summary": "Create in Community",
+"date": "2025-08-01",
+"time": "16:00"
+},
+{
+"id": "gcal-95",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-08-01",
+"time": "20:00"
+},
+{
+"id": "gcal-96",
+"summary": "Art Opening: The Imagined. Reception for families.",
+"date": "2025-08-02",
+"time": "17:00"
+},
+{
+"id": "gcal-97",
+"summary": "Art Opening: The Imagined. Party!",
+"date": "2025-08-02",
+"time": "20:00"
+},
+{
+"id": "gcal-98",
+"summary": "Film Club: Chungking Express (1994)",
+"date": "2025-08-03",
+"time": "20:00"
+},
+{
+"id": "gcal-99",
+"summary": "Culture Cà Phê",
+"date": "2025-08-04",
+"time": "10:30"
+},
+{
+"id": "gcal-100",
+"summary": "Monday Board Games",
+"date": "2025-08-04",
+"time": "19:00"
+},
+{
+"id": "gcal-101",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-08-05",
+"time": "19:00"
+},
+{
+"id": "gcal-102",
+"summary": "Đà Nẵng Chess Club",
+"date": "2025-08-05",
+"time": "19:00"
+},
+{
+"id": "gcal-103",
+"summary": "REALITY Pub Quiz",
+"date": "2025-08-06",
+"time": "20:00"
+},
+{
+"id": "gcal-104",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-08-07",
+"time": "11:00"
+},
+{
+"id": "gcal-105",
+"summary": "Vietnamese Pronunciation with Em Thảo ",
+"date": "2025-08-07",
+"time": "16:00"
+},
+{
+"id": "gcal-106",
+"summary": "Crochet Circle",
+"date": "2025-08-07",
+"time": "16:00"
+},
+{
+"id": "gcal-107",
+"summary": "Photography Opening: Resilience, Redefined: Single Mothers of Viet Nam",
+"date": "2025-08-07",
+"time": "20:00"
+},
+{
+"id": "gcal-108",
+"summary": "Create in Community",
+"date": "2025-08-08",
+"time": "16:00"
+},
+{
+"id": "gcal-109",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-08-08",
+"time": "20:00"
+},
+{
+"id": "gcal-110",
+"summary": "IRL Passion Projects",
+"date": "2025-08-09",
+"time": "19:00"
+},
+{
+"id": "gcal-111",
+"summary": "This is not a concert by SLEEQ",
+"date": "2025-08-09",
+"time": "20:00"
+},
+{
+"id": "gcal-112",
+"summary": "Film Club: The Lives of Others (2006)",
+"date": "2025-08-10",
+"time": "20:00"
+},
+{
+"id": "gcal-113",
+"summary": "Monday Board Games",
+"date": "2025-08-11",
+"time": "19:00"
+},
+{
+"id": "gcal-114",
+"summary": "Đà Nẵng Chess Club",
+"date": "2025-08-12",
+"time": "19:00"
+},
+{
+"id": "gcal-115",
+"summary": "REALITY Pub Quiz",
+"date": "2025-08-13",
+"time": "20:00"
+},
+{
+"id": "gcal-116",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-08-14",
+"time": "11:00"
+},
+{
+"id": "gcal-117",
+"summary": "Crochet Circle",
+"date": "2025-08-14",
+"time": "16:00"
+},
+{
+"id": "gcal-118",
+"summary": "Vietnamese Pronunciation with Em Thảo",
+"date": "2025-08-14",
+"time": "16:00"
+},
+{
+"id": "gcal-119",
+"summary": "Dating Event: Meet Market",
+"date": "2025-08-14",
+"time": "19:00"
+},
+{
+"id": "gcal-120",
+"summary": "Create in Community",
+"date": "2025-08-15",
+"time": "16:00"
+},
+{
+"id": "gcal-121",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-08-15",
+"time": "20:00"
+},
+{
+"id": "gcal-122",
+"summary": "Flirty Party",
+"date": "2025-08-16",
+"time": "20:00"
+},
+{
+"id": "gcal-123",
+"summary": "Workshop: Are you on your period? w/Julia Zucker",
+"date": "2025-08-17",
+"time": "17:00"
+},
+{
+"id": "gcal-124",
+"summary": "Film Club: In the Mood for Love",
+"date": "2025-08-17",
+"time": "20:00"
+},
+{
+"id": "gcal-125",
+"summary": "Monday Board Games",
+"date": "2025-08-18",
+"time": "19:00"
+},
+{
+"id": "gcal-126",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-08-19",
+"time": "19:00"
+},
+{
+"id": "gcal-127",
+"summary": "CHILL: Slow Meet Night",
+"date": "2025-08-19",
+"time": "20:00"
+},
+{
+"id": "gcal-128",
+"summary": "REALITY Pub Quiz",
+"date": "2025-08-20",
+"time": "20:00"
+},
+{
+"id": "gcal-129",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-08-21",
+"time": "11:00"
+},
+{
+"id": "gcal-130",
+"summary": "PowerPoint Karaoke",
+"date": "2025-08-21",
+"time": "20:00"
+},
+{
+"id": "gcal-131",
+"summary": "Create in Community",
+"date": "2025-08-22",
+"time": "16:00"
+},
+{
+"id": "gcal-132",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-08-22",
+"time": "20:00"
+},
+{
+"id": "gcal-133",
+"summary": "IRL Passion Projects",
+"date": "2025-08-23",
+"time": "19:00"
+},
+{
+"id": "gcal-134",
+"summary": "Speed Friending (Not Dating)",
+"date": "2025-08-23",
+"time": "20:30"
+},
+{
+"id": "gcal-135",
+"summary": "Slow Sunday + Book Chat",
+"date": "2025-08-24",
+"time": "10:00"
+},
+{
+"id": "gcal-136",
+"summary": "small things, mostly: Travel Sharing Meetup",
+"date": "2025-08-24",
+"time": "19:00"
+},
+{
+"id": "gcal-137",
+"summary": "Monday Board Games",
+"date": "2025-08-25",
+"time": "19:00"
+},
+{
+"id": "gcal-138",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-08-26",
+"time": "19:00"
+},
+{
+"id": "gcal-139",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-08-26",
+"time": "19:00"
+},
+{
+"id": "gcal-140",
+"summary": "Letter to Self: Guided Writing Sessions",
+"date": "2025-08-27",
+"time": "11:00"
+},
+{
+"id": "gcal-141",
+"summary": "REALITY Pub Quiz",
+"date": "2025-08-27",
+"time": "20:00"
+},
+{
+"id": "gcal-142",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-08-28",
+"time": "11:00"
+},
+{
+"id": "gcal-143",
+"summary": "Coffee + Conversation: “This or That?” – Life’s Tiny (and Not-So-Tiny) Dilemmas",
+"date": "2025-08-28",
+"time": "11:30"
+},
+{
+"id": "gcal-144",
+"summary": "Create in Community",
+"date": "2025-08-29",
+"time": "16:00"
+},
+{
+"id": "gcal-145",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-08-29",
+"time": "20:00"
+},
+{
+"id": "gcal-146",
+"summary": "Workshop: Get in Shape with Love + Kindness",
+"date": "2025-08-30",
+"time": "17:00"
+},
+{
+"id": "gcal-147",
+"summary": "Film Premiere: Extape",
+"date": "2025-08-30",
+"time": "20:00"
+},
+{
+"id": "gcal-148",
+"summary": "Extape Release Party",
+"date": "2025-08-30",
+"time": "21:00"
+},
+{
+"id": "gcal-149",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-08-31",
+"time": "13:00"
+},
+{
+"id": "gcal-150",
+"summary": "GeekON: Ukrainian Pub Quiz",
+"date": "2025-08-31",
+"time": "20:00"
+},
+{
+"id": "gcal-151",
+"summary": "Culture Cà Phê: Dating, Manners, Misunderstandings",
+"date": "2025-09-01",
+"time": "14:00"
+},
+{
+"id": "gcal-152",
+"summary": "Monday Board Games",
+"date": "2025-09-01",
+"time": "19:00"
+},
+{
+"id": "gcal-153",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-09-02",
+"time": "19:00"
+},
+{
+"id": "gcal-154",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-09-02",
+"time": "19:00"
+},
+{
+"id": "gcal-155",
+"summary": "Talk Circle: Love, Sex, + Everything Taboo",
+"date": "2025-09-02",
+"time": "20:00"
+},
+{
+"id": "gcal-156",
+"summary": "REALITY Pub Quiz",
+"date": "2025-09-03",
+"time": "20:00"
+},
+{
+"id": "gcal-157",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-09-04",
+"time": "11:00"
+},
+{
+"id": "gcal-158",
+"summary": "Бизнес-завтрак Дананг - Business breakfast Da Nang",
+"date": "2025-09-04",
+"time": "11:00"
+},
+{
+"id": "gcal-159",
+"summary": "Workshop: Storytelling Your Product",
+"date": "2025-09-04",
+"time": "17:30"
+},
+{
+"id": "gcal-160",
+"summary": "PowerPoint Karaoke w Kayla",
+"date": "2025-09-04",
+"time": "21:00"
+},
+{
+"id": "gcal-161",
+"summary": "Create in Community",
+"date": "2025-09-05",
+"time": "16:00"
+},
+{
+"id": "gcal-162",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-09-05",
+"time": "20:00"
+},
+{
+"id": "gcal-163",
+"summary": "Speak Easy English Club w/ Hannah",
+"date": "2025-09-06",
+"time": "15:00"
+},
+{
+"id": "gcal-164",
+"summary": "IRL Passion Projects",
+"date": "2025-09-06",
+"time": "19:00"
+},
+{
+"id": "gcal-165",
+"summary": "Actual Karaoke!",
+"date": "2025-09-06",
+"time": "21:00"
+},
+{
+"id": "gcal-166",
+"summary": "Film Club: Lost in Translation (2003)",
+"date": "2025-09-07",
+"time": "20:00"
+},
+{
+"id": "gcal-167",
+"summary": "Monday Board Games",
+"date": "2025-09-08",
+"time": "19:00"
+},
+{
+"id": "gcal-168",
+"summary": "(Russian) Business Breakfast Da Nang",
+"date": "2025-09-09",
+"time": "10:00"
+},
+{
+"id": "gcal-169",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-09-09",
+"time": "19:00"
+},
+{
+"id": "gcal-170",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-09-09",
+"time": "19:00"
+},
+{
+"id": "gcal-171",
+"summary": "Workshop: From Hunted to Hunter: Master Social Media Advertising",
+"date": "2025-09-10",
+"time": "18:00"
+},
+{
+"id": "gcal-172",
+"summary": "Karaoke (Actually)",
+"date": "2025-09-10",
+"time": "20:00"
+},
+{
+"id": "gcal-173",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-09-11",
+"time": "11:00"
+},
+{
+"id": "gcal-174",
+"summary": "Game Night: This or That - Spicy Edition",
+"date": "2025-09-11",
+"time": "20:00"
+},
+{
+"id": "gcal-175",
+"summary": "Create in Community",
+"date": "2025-09-12",
+"time": "16:00"
+},
+{
+"id": "gcal-176",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-09-12",
+"time": "20:00"
+},
+{
+"id": "gcal-177",
+"summary": "Speak Easy English Club w/ Hannah",
+"date": "2025-09-13",
+"time": "15:00"
+},
+{
+"id": "gcal-178",
+"summary": "Wildcats Town Hall",
+"date": "2025-09-13",
+"time": "16:00"
+},
+{
+"id": "gcal-179",
+"summary": "Art Opening",
+"date": "2025-09-13",
+"time": "21:00"
+},
+{
+"id": "gcal-180",
+"summary": "Film Club: Adaptation. (2002)",
+"date": "2025-09-14",
+"time": "20:00"
+},
+{
+"id": "gcal-181",
+"summary": "Monday Board Games",
+"date": "2025-09-15",
+"time": "19:00"
+},
+{
+"id": "gcal-182",
+"summary": "Business Breakfast Da Nang (in Russian)",
+"date": "2025-09-16",
+"time": "10:00"
+},
+{
+"id": "gcal-183",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-09-16",
+"time": "11:00"
+},
+{
+"id": "gcal-184",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-09-16",
+"time": "19:00"
+},
+{
+"id": "gcal-185",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-09-16",
+"time": "19:00"
+},
+{
+"id": "gcal-186",
+"summary": "Talk Circle: Attachment Styles + Emotional Intimacy",
+"date": "2025-09-16",
+"time": "20:00"
+},
+{
+"id": "gcal-187",
+"summary": "Workshop: Stress, Cortisol, and Anxiety",
+"date": "2025-09-17",
+"time": "10:00"
+},
+{
+"id": "gcal-188",
+"summary": "Authentic Relating Circling",
+"date": "2025-09-17",
+"time": "15:00"
+},
+{
+"id": "gcal-189",
+"summary": "Karaoke (Actually)",
+"date": "2025-09-17",
+"time": "20:00"
+},
+{
+"id": "gcal-190",
+"summary": "Workshop: Hiring a Marketing Team (in Ukrainian)",
+"date": "2025-09-18",
+"time": "10:00"
+},
+{
+"id": "gcal-191",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-09-18",
+"time": "11:00"
+},
+{
+"id": "gcal-192",
+"summary": "PowerPoint Karaoke",
+"date": "2025-09-18",
+"time": "21:00"
+},
+{
+"id": "gcal-193",
+"summary": "Create in Community",
+"date": "2025-09-19",
+"time": "16:00"
+},
+{
+"id": "gcal-194",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-09-19",
+"time": "20:00"
+},
+{
+"id": "gcal-195",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-09-20",
+"time": "15:00"
+},
+{
+"id": "gcal-196",
+"summary": "Russian Poetry Club (in Russian)",
+"date": "2025-09-20",
+"time": "19:00"
+},
+{
+"id": "gcal-197",
+"summary": "IRL Passion Projects",
+"date": "2025-09-20",
+"time": "19:00"
+},
+{
+"id": "gcal-198",
+"summary": "Social Party with Dares",
+"date": "2025-09-20",
+"time": "21:00"
+},
+{
+"id": "gcal-199",
+"summary": "Slow Sunday + Book Chat",
+"date": "2025-09-21",
+"time": "13:00"
+},
+{
+"id": "gcal-200",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-09-21",
+"time": "17:30"
+},
+{
+"id": "gcal-201",
+"summary": "Film Club: Snatch (2000)",
+"date": "2025-09-21",
+"time": "20:00"
+},
+{
+"id": "gcal-202",
+"summary": "Da Nang Business Breakfast (in Russian)",
+"date": "2025-09-22",
+"time": "11:00"
+},
+{
+"id": "gcal-203",
+"summary": "Vietnam Unfiltered: Unspoken Rules in Vietnam",
+"date": "2025-09-22",
+"time": "14:00"
+},
+{
+"id": "gcal-204",
+"summary": "Monday Board Games",
+"date": "2025-09-22",
+"time": "19:00"
+},
+{
+"id": "gcal-205",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-09-23",
+"time": "11:00"
+},
+{
+"id": "gcal-206",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-09-23",
+"time": "19:00"
+},
+{
+"id": "gcal-207",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-09-23",
+"time": "19:00"
+},
+{
+"id": "gcal-208",
+"summary": "Circling: Authentic Relating",
+"date": "2025-09-24",
+"time": "15:00"
+},
+{
+"id": "gcal-209",
+"summary": "Karaoke (Actually)",
+"date": "2025-09-24",
+"time": "20:00"
+},
+{
+"id": "gcal-210",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-09-25",
+"time": "11:00"
+},
+{
+"id": "gcal-211",
+"summary": "Create in Community",
+"date": "2025-09-26",
+"time": "16:00"
+},
+{
+"id": "gcal-212",
+"summary": "LearnToDance Da Nang - Jive Social",
+"date": "2025-09-26",
+"time": "20:00"
+},
+{
+"id": "gcal-213",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-09-27",
+"time": "15:00"
+},
+{
+"id": "gcal-214",
+"summary": "Retro Games on the Big Screen",
+"date": "2025-09-27",
+"time": "21:00"
+},
+{
+"id": "gcal-215",
+"summary": "Film Club: Fallen Angels (1995)",
+"date": "2025-09-28",
+"time": "20:00"
+},
+{
+"id": "gcal-216",
+"summary": "Monday Board Games",
+"date": "2025-09-29",
+"time": "19:00"
+},
+{
+"id": "gcal-217",
+"summary": "Lecture: The History of Shibari: Origins, Styles, Masters",
+"date": "2025-09-30",
+"time": "16:00"
+},
+{
+"id": "gcal-218",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-09-30",
+"time": "19:00"
+},
+{
+"id": "gcal-219",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-09-30",
+"time": "19:00"
+},
+{
+"id": "gcal-220",
+"summary": "Talk Circle: Trust, Betrayal, + Rebuilding",
+"date": "2025-09-30",
+"time": "20:00"
+},
+{
+"id": "gcal-221",
+"summary": "Karaoke (Actually)",
+"date": "2025-10-01",
+"time": "20:00"
+},
+{
+"id": "gcal-222",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-10-02",
+"time": "11:00"
+},
+{
+"id": "gcal-223",
+"summary": "PowerPoint Karaoke w Kayla",
+"date": "2025-10-02",
+"time": "21:30"
+},
+{
+"id": "gcal-224",
+"summary": "Create in Community",
+"date": "2025-10-03",
+"time": "16:00"
+},
+{
+"id": "gcal-225",
+"summary": "Acoustic Jam Session",
+"date": "2025-10-03",
+"time": "20:00"
+},
+{
+"id": "gcal-226",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-10-04",
+"time": "15:00"
+},
+{
+"id": "gcal-227",
+"summary": "Da Nang Game Design Workshop + Game Jam Kickoff",
+"date": "2025-10-04",
+"time": "16:30"
+},
+{
+"id": "gcal-228",
+"summary": "Pub Quiz: Lunar Edition!",
+"date": "2025-10-04",
+"time": "20:00"
+},
+{
+"id": "gcal-229",
+"summary": "Class: Writing Stories for Stage + Screen",
+"date": "2025-10-05",
+"time": "17:30"
+},
+{
+"id": "gcal-230",
+"summary": "GeekON! Pub Quiz (in Ukrainian)",
+"date": "2025-10-05",
+"time": "20:00"
+},
+{
+"id": "gcal-231",
+"summary": "Monday Board Games",
+"date": "2025-10-06",
+"time": "19:00"
+},
+{
+"id": "gcal-232",
+"summary": "Full Moon Myths Around the World",
+"date": "2025-10-06",
+"time": "20:00"
+},
+{
+"id": "gcal-233",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-10-07",
+"time": "19:00"
+},
+{
+"id": "gcal-234",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-10-07",
+"time": "19:00"
+},
+{
+"id": "gcal-235",
+"summary": "Authentic Relating: Circling",
+"date": "2025-10-08",
+"time": "15:00"
+},
+{
+"id": "gcal-236",
+"summary": "Karaoke (Actually)",
+"date": "2025-10-08",
+"time": "20:00"
+},
+{
+"id": "gcal-237",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-10-09",
+"time": "11:00"
+},
+{
+"id": "gcal-238",
+"summary": "Film Club: The Phoenician Scheme (2025)",
+"date": "2025-10-09",
+"time": "20:00"
+},
+{
+"id": "gcal-239",
+"summary": "Create in Community",
+"date": "2025-10-10",
+"time": "16:00"
+},
+{
+"id": "gcal-240",
+"summary": "Salt + Egg Coffee Workshop w/ Bamboo Bob Coffee",
+"date": "2025-10-11",
+"time": "15:00"
+},
+{
+"id": "gcal-241",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-10-11",
+"time": "15:00"
+},
+{
+"id": "gcal-242",
+"summary": "Opening Reception: Jeffrey Hessing, Paintings + Drawings",
+"date": "2025-10-11",
+"time": "17:00"
+},
+{
+"id": "gcal-243",
+"summary": "Game Design Workshop + Game Jam Check-In",
+"date": "2025-10-11",
+"time": "17:00"
+},
+{
+"id": "gcal-244",
+"summary": "Art Opening Party",
+"date": "2025-10-11",
+"time": "20:00"
+},
+{
+"id": "gcal-245",
+"summary": "Women of Da Nang: Dr. Trang on Life After 40",
+"date": "2025-10-12",
+"time": "09:30"
+},
+{
+"id": "gcal-246",
+"summary": "Workshop: I Fear Making Art",
+"date": "2025-10-12",
+"time": "15:00"
+},
+{
+"id": "gcal-247",
+"summary": "Class: Writing Stories for Stage + Screen",
+"date": "2025-10-12",
+"time": "17:30"
+},
+{
+"id": "gcal-248",
+"summary": "GeekON! Pub Quiz (in Ukrainian)",
+"date": "2025-10-12",
+"time": "20:00"
+},
+{
+"id": "gcal-249",
+"summary": "Speedu: Language App Call for Collabs",
+"date": "2025-10-13",
+"time": "16:00"
+},
+{
+"id": "gcal-250",
+"summary": "Monday Board Games",
+"date": "2025-10-13",
+"time": "19:00"
+},
+{
+"id": "gcal-251",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-10-14",
+"time": "11:00"
+},
+{
+"id": "gcal-252",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-10-14",
+"time": "19:00"
+},
+{
+"id": "gcal-253",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-10-14",
+"time": "19:00"
+},
+{
+"id": "gcal-254",
+"summary": "Talk Circle: Desires, Fantasies, + the Inner Erotic",
+"date": "2025-10-14",
+"time": "20:00"
+},
+{
+"id": "gcal-255",
+"summary": "Authentic Relating: Circling",
+"date": "2025-10-15",
+"time": "15:00"
+},
+{
+"id": "gcal-256",
+"summary": "Karaoke (Actually)",
+"date": "2025-10-15",
+"time": "20:00"
+},
+{
+"id": "gcal-257",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-10-16",
+"time": "11:00"
+},
+{
+"id": "gcal-258",
+"summary": "GeoGuessr Battle Night",
+"date": "2025-10-16",
+"time": "19:00"
+},
+{
+"id": "gcal-259",
+"summary": "Anti-TED Talks: PowerPoint Karaoke",
+"date": "2025-10-16",
+"time": "21:30"
+},
+{
+"id": "gcal-260",
+"summary": "Create in Community",
+"date": "2025-10-17",
+"time": "16:00"
+},
+{
+"id": "gcal-261",
+"summary": "Acoustic Jam Session",
+"date": "2025-10-17",
+"time": "20:00"
+},
+{
+"id": "gcal-262",
+"summary": "Da Nang + Hoi An Kink Group Munch",
+"date": "2025-10-17",
+"time": "20:00"
+},
+{
+"id": "gcal-263",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-10-18",
+"time": "15:00"
+},
+{
+"id": "gcal-264",
+"summary": "Beginning Bachata Dance Workshop",
+"date": "2025-10-18",
+"time": "18:00"
+},
+{
+"id": "gcal-265",
+"summary": "Speed Friending",
+"date": "2025-10-18",
+"time": "21:00"
+},
+{
+"id": "gcal-266",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-10-19",
+"time": "17:30"
+},
+{
+"id": "gcal-267",
+"summary": "GeekON! Pub Quiz (in Ukrainian)",
+"date": "2025-10-19",
+"time": "20:00"
+},
+{
+"id": "gcal-268",
+"summary": "Monday Board Games",
+"date": "2025-10-20",
+"time": "19:00"
+},
+{
+"id": "gcal-269",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-10-21",
+"time": "11:00"
+},
+{
+"id": "gcal-270",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-10-21",
+"time": "19:00"
+},
+{
+"id": "gcal-271",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-10-21",
+"time": "19:00"
+},
+{
+"id": "gcal-272",
+"summary": "Authentic Relating: Circling",
+"date": "2025-10-22",
+"time": "15:00"
+},
+{
+"id": "gcal-273",
+"summary": "Karaoke (Actually)",
+"date": "2025-10-22",
+"time": "20:00"
+},
+{
+"id": "gcal-274",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-10-23",
+"time": "11:00"
+},
+{
+"id": "gcal-275",
+"summary": "GeoGuessr Battle Night",
+"date": "2025-10-23",
+"time": "19:00"
+},
+{
+"id": "gcal-276",
+"summary": "Film Club: Shaun of the Dead (2004)",
+"date": "2025-10-23",
+"time": "21:00"
+},
+{
+"id": "gcal-277",
+"summary": "Create in Community",
+"date": "2025-10-24",
+"time": "16:00"
+},
+{
+"id": "gcal-278",
+"summary": "LinkedIn Growth for Founders + Creators",
+"date": "2025-10-24",
+"time": "18:30"
+},
+{
+"id": "gcal-279",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-10-24",
+"time": "20:00"
+},
+{
+"id": "gcal-280",
+"summary": "(Re)Birth: A Performance of Dance and Art",
+"date": "2025-10-25",
+"time": "18:00"
+},
+{
+"id": "gcal-281",
+"summary": "IRL Passion Projects",
+"date": "2025-10-25",
+"time": "19:00"
+},
+{
+"id": "gcal-282",
+"summary": "(Re)Birth: Masterclass by Vera Nikolaeva",
+"date": "2025-10-25",
+"time": "20:00"
+},
+{
+"id": "gcal-283",
+"summary": "Workshop: I Fear Making Art (pt 1, the void)",
+"date": "2025-10-26",
+"time": "15:00"
+},
+{
+"id": "gcal-284",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-10-26",
+"time": "17:30"
+},
+{
+"id": "gcal-285",
+"summary": "REALITY Pub Quiz",
+"date": "2025-10-26",
+"time": "20:00"
+},
+{
+"id": "gcal-286",
+"summary": "Monday Board Games",
+"date": "2025-10-27",
+"time": "19:00"
+},
+{
+"id": "gcal-287",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-10-28",
+"time": "11:00"
+},
+{
+"id": "gcal-288",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-10-28",
+"time": "19:00"
+},
+{
+"id": "gcal-289",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-10-28",
+"time": "19:00"
+},
+{
+"id": "gcal-290",
+"summary": "Talk Circle: Boundaries + Self-Respect",
+"date": "2025-10-28",
+"time": "20:00"
+},
+{
+"id": "gcal-291",
+"summary": "Authentic Relating: Circling",
+"date": "2025-10-29",
+"time": "15:00"
+},
+{
+"id": "gcal-292",
+"summary": "Karaoke (Actually)",
+"date": "2025-10-29",
+"time": "20:00"
+},
+{
+"id": "gcal-293",
+"summary": "Russian Business Breakfast",
+"date": "2025-10-30",
+"time": "10:00"
+},
+{
+"id": "gcal-294",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-10-30",
+"time": "11:00"
+},
+{
+"id": "gcal-295",
+"summary": "Anti-TED Talks: PowerPoint Karaoke",
+"date": "2025-10-30",
+"time": "21:30"
+},
+{
+"id": "gcal-296",
+"summary": "HALLOWEEN ALL DAY ALL NIGHT",
+"date": "2025-10-31",
+"time": "10:00"
+},
+{
+"id": "gcal-297",
+"summary": "Workshop: I Fear Making Art pt. 1",
+"date": "2025-10-31",
+"time": "12:00"
+},
+{
+"id": "gcal-298",
+"summary": "Create in Community",
+"date": "2025-10-31",
+"time": "16:00"
+},
+{
+"id": "gcal-299",
+"summary": "Halloween Party!",
+"date": "2025-10-31",
+"time": "20:00"
+},
+{
+"id": "gcal-300",
+"summary": "Improv Comedy Workshop",
+"date": "2025-11-01",
+"time": "13:00"
+},
+{
+"id": "gcal-301",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-11-01",
+"time": "15:00"
+},
+{
+"id": "gcal-302",
+"summary": "Beginning Bachata Dance Workshop",
+"date": "2025-11-01",
+"time": "18:00"
+},
+{
+"id": "gcal-303",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-11-02",
+"time": "17:30"
+},
+{
+"id": "gcal-304",
+"summary": "Monday Board Games",
+"date": "2025-11-03",
+"time": "19:00"
+},
+{
+"id": "gcal-305",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-11-04",
+"time": "11:00"
+},
+{
+"id": "gcal-306",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-11-04",
+"time": "19:00"
+},
+{
+"id": "gcal-307",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-11-04",
+"time": "19:00"
+},
+{
+"id": "gcal-308",
+"summary": "Authentic Relating: Circling",
+"date": "2025-11-05",
+"time": "15:00"
+},
+{
+"id": "gcal-309",
+"summary": "Karaoke (Actually)",
+"date": "2025-11-05",
+"time": "20:00"
+},
+{
+"id": "gcal-310",
+"summary": "Russian Business Breakfast (in Russian)",
+"date": "2025-11-06",
+"time": "10:00"
+},
+{
+"id": "gcal-311",
+"summary": "Coffee + Conversation: The Art of Conversation",
+"date": "2025-11-06",
+"time": "11:00"
+},
+{
+"id": "gcal-312",
+"summary": "GeoGuessr",
+"date": "2025-11-06",
+"time": "19:00"
+},
+{
+"id": "gcal-313",
+"summary": "Film Club: I Always Wanted to be a Gangster (2007)",
+"date": "2025-11-06",
+"time": "21:00"
+},
+{
+"id": "gcal-314",
+"summary": "LinkedIn Growth for Founders + Entrepreneurs",
+"date": "2025-11-07",
+"time": "13:30"
+},
+{
+"id": "gcal-315",
+"summary": "Create in Community",
+"date": "2025-11-07",
+"time": "16:00"
+},
+{
+"id": "gcal-316",
+"summary": "Hitster!",
+"date": "2025-11-07",
+"time": "18:00"
+},
+{
+"id": "gcal-317",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-11-07",
+"time": "20:00"
+},
+{
+"id": "gcal-318",
+"summary": "Improv Comedy Workshop",
+"date": "2025-11-08",
+"time": "13:00"
+},
+{
+"id": "gcal-319",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-11-08",
+"time": "15:00"
+},
+{
+"id": "gcal-320",
+"summary": "TV Pizza Party: Pluribas, eps 1 + 2",
+"date": "2025-11-08",
+"time": "18:00"
+},
+{
+"id": "gcal-321",
+"summary": "IRL Passion Projects",
+"date": "2025-11-08",
+"time": "19:00"
+},
+{
+"id": "gcal-322",
+"summary": "REALITY Gameshow: Truth or Dare - Night of Chaos",
+"date": "2025-11-08",
+"time": "20:00"
+},
+{
+"id": "gcal-323",
+"summary": "BLOOM Women Club",
+"date": "2025-11-09",
+"time": "12:00"
+},
+{
+"id": "gcal-324",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-11-09",
+"time": "17:30"
+},
+{
+"id": "gcal-325",
+"summary": "REALITY Pub Quiz",
+"date": "2025-11-09",
+"time": "20:00"
+},
+{
+"id": "gcal-326",
+"summary": "Monday Board Games",
+"date": "2025-11-10",
+"time": "19:00"
+},
+{
+"id": "gcal-327",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-11-11",
+"time": "11:00"
+},
+{
+"id": "gcal-328",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-11-11",
+"time": "19:00"
+},
+{
+"id": "gcal-329",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-11-11",
+"time": "19:00"
+},
+{
+"id": "gcal-330",
+"summary": "Talk Circle: The Self in the Relationship",
+"date": "2025-11-11",
+"time": "20:00"
+},
+{
+"id": "gcal-331",
+"summary": "Authentic Relating: Circling",
+"date": "2025-11-12",
+"time": "15:00"
+},
+{
+"id": "gcal-332",
+"summary": "Jeffrey Hessing Talk",
+"date": "2025-11-12",
+"time": "18:30"
+},
+{
+"id": "gcal-333",
+"summary": "Karaoke (Actually)",
+"date": "2025-11-12",
+"time": "20:00"
+},
+{
+"id": "gcal-334",
+"summary": "Coffee + Conversation: Alternate Realities ",
+"date": "2025-11-13",
+"time": "11:00"
+},
+{
+"id": "gcal-335",
+"summary": "GeoGuessr",
+"date": "2025-11-13",
+"time": "19:00"
+},
+{
+"id": "gcal-336",
+"summary": "Anti-TED Talks: PowerPoint Karaoke",
+"date": "2025-11-13",
+"time": "21:30"
+},
+{
+"id": "gcal-337",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-11-14",
+"time": "20:00"
+},
+{
+"id": "gcal-338",
+"summary": "Da Nang + Hoi An Kink Group Munch",
+"date": "2025-11-14",
+"time": "20:00"
+},
+{
+"id": "gcal-339",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-11-15",
+"time": "15:00"
+},
+{
+"id": "gcal-340",
+"summary": "Workshop: I Fear Making Art: pt.1 The Void",
+"date": "2025-11-15",
+"time": "15:00"
+},
+{
+"id": "gcal-341",
+"summary": "Beginner Bachata Workshop",
+"date": "2025-11-15",
+"time": "18:00"
+},
+{
+"id": "gcal-342",
+"summary": "Flood Relief Benefit Party",
+"date": "2025-11-15",
+"time": "20:00"
+},
+{
+"id": "gcal-343",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-11-16",
+"time": "17:30"
+},
+{
+"id": "gcal-344",
+"summary": "Workshop: Sự Chấp Nhận Vô Điều Kiện",
+"date": "2025-11-16",
+"time": "19:00"
+},
+{
+"id": "gcal-345",
+"summary": "REALITY Pub Quiz",
+"date": "2025-11-16",
+"time": "20:00"
+},
+{
+"id": "gcal-346",
+"summary": "Workshop: Sale Smart",
+"date": "2025-11-17",
+"time": "16:00"
+},
+{
+"id": "gcal-347",
+"summary": "Monday Board Games",
+"date": "2025-11-17",
+"time": "19:00"
+},
+{
+"id": "gcal-348",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-11-18",
+"time": "13:00"
+},
+{
+"id": "gcal-349",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-11-18",
+"time": "19:00"
+},
+{
+"id": "gcal-350",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-11-18",
+"time": "19:00"
+},
+{
+"id": "gcal-351",
+"summary": "Workshop: Unconditional Acceptance",
+"date": "2025-11-18",
+"time": "20:00"
+},
+{
+"id": "gcal-352",
+"summary": "Authentic Relating: Circling",
+"date": "2025-11-19",
+"time": "15:00"
+},
+{
+"id": "gcal-353",
+"summary": "Film Club: My Neighbor Totoro (1988)",
+"date": "2025-11-19",
+"time": "18:00"
+},
+{
+"id": "gcal-354",
+"summary": "Karaoke (Actually)",
+"date": "2025-11-19",
+"time": "20:00"
+},
+{
+"id": "gcal-355",
+"summary": "Coffee + Conversation: The Comfort Zone",
+"date": "2025-11-20",
+"time": "11:00"
+},
+{
+"id": "gcal-356",
+"summary": "Chinese Language Club",
+"date": "2025-11-20",
+"time": "17:30"
+},
+{
+"id": "gcal-357",
+"summary": "GeoGuessr",
+"date": "2025-11-20",
+"time": "19:00"
+},
+{
+"id": "gcal-358",
+"summary": "Create in Community",
+"date": "2025-11-21",
+"time": "16:00"
+},
+{
+"id": "gcal-359",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-11-21",
+"time": "20:00"
+},
+{
+"id": "gcal-360",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-11-22",
+"time": "15:00"
+},
+{
+"id": "gcal-361",
+"summary": "Beginner Bachata Workshop",
+"date": "2025-11-22",
+"time": "18:00"
+},
+{
+"id": "gcal-362",
+"summary": "IRL Passion Projects",
+"date": "2025-11-22",
+"time": "19:00"
+},
+{
+"id": "gcal-363",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-11-23",
+"time": "17:30"
+},
+{
+"id": "gcal-364",
+"summary": "REALITY Pub Quiz",
+"date": "2025-11-23",
+"time": "20:00"
+},
+{
+"id": "gcal-365",
+"summary": "Monday Board Games",
+"date": "2025-11-24",
+"time": "19:00"
+},
+{
+"id": "gcal-366",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-11-25",
+"time": "13:00"
+},
+{
+"id": "gcal-367",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-11-25",
+"time": "19:00"
+},
+{
+"id": "gcal-368",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-11-25",
+"time": "19:00"
+},
+{
+"id": "gcal-369",
+"summary": "Talk Circle: Dating with Intention",
+"date": "2025-11-25",
+"time": "20:00"
+},
+{
+"id": "gcal-370",
+"summary": "Authentic Relating: Circling",
+"date": "2025-11-26",
+"time": "15:00"
+},
+{
+"id": "gcal-371",
+"summary": "Film Club: Song of the Sea (2014)",
+"date": "2025-11-26",
+"time": "18:00"
+},
+{
+"id": "gcal-372",
+"summary": "Karaoke (Actually)",
+"date": "2025-11-26",
+"time": "20:00"
+},
+{
+"id": "gcal-373",
+"summary": "Coffee + Conversation: Gratitude We Forget to Say Out Loud",
+"date": "2025-11-27",
+"time": "11:00"
+},
+{
+"id": "gcal-374",
+"summary": "Chinese Language Club",
+"date": "2025-11-27",
+"time": "17:30"
+},
+{
+"id": "gcal-375",
+"summary": "GeoGuessr",
+"date": "2025-11-27",
+"time": "19:00"
+},
+{
+"id": "gcal-376",
+"summary": "Friendsgiving Potluck",
+"date": "2025-11-27",
+"time": "20:00"
+},
+{
+"id": "gcal-377",
+"summary": "Anti-TED Talks: PowerPoint Karaoke",
+"date": "2025-11-27",
+"time": "21:30"
+},
+{
+"id": "gcal-378",
+"summary": "Tin Foil Hat Anonymous: Presentations",
+"date": "2025-11-28",
+"time": "19:30"
+},
+{
+"id": "gcal-379",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-11-28",
+"time": "20:00"
+},
+{
+"id": "gcal-380",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-11-29",
+"time": "15:00"
+},
+{
+"id": "gcal-381",
+"summary": "Beginner Bachata Workshop",
+"date": "2025-11-29",
+"time": "18:00"
+},
+{
+"id": "gcal-382",
+"summary": "Social Party with Dares",
+"date": "2025-11-29",
+"time": "20:00"
+},
+{
+"id": "gcal-383",
+"summary": "Writing Stories for Stage + Screen",
+"date": "2025-11-30",
+"time": "17:30"
+},
+{
+"id": "gcal-384",
+"summary": "REALITY Pub Quiz",
+"date": "2025-11-30",
+"time": "20:00"
+},
+{
+"id": "gcal-385",
+"summary": "Monday Board Games",
+"date": "2025-12-01",
+"time": "19:00"
+},
+{
+"id": "gcal-386",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-12-02",
+"time": "13:00"
+},
+{
+"id": "gcal-387",
+"summary": "Software Developers Group - AI Meetup",
+"date": "2025-12-02",
+"time": "19:00"
+},
+{
+"id": "gcal-388",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-12-02",
+"time": "19:00"
+},
+{
+"id": "gcal-389",
+"summary": "Workshop: Pleasure as Healing: Awakening the Body’s Inner Medicine",
+"date": "2025-12-02",
+"time": "20:00"
+},
+{
+"id": "gcal-390",
+"summary": "Authentic Relating: Circling",
+"date": "2025-12-03",
+"time": "15:00"
+},
+{
+"id": "gcal-391",
+"summary": "Handmade Gift Workshop with Miuk Workshop",
+"date": "2025-12-03",
+"time": "17:00"
+},
+{
+"id": "gcal-392",
+"summary": "Karaoke (Actually)",
+"date": "2025-12-03",
+"time": "20:00"
+},
+{
+"id": "gcal-393",
+"summary": "Coffee + Conversation",
+"date": "2025-12-04",
+"time": "11:00"
+},
+{
+"id": "gcal-394",
+"summary": "Workshop: How to Build an AI Agent",
+"date": "2025-12-04",
+"time": "15:00"
+},
+{
+"id": "gcal-395",
+"summary": "GeoGuessr",
+"date": "2025-12-04",
+"time": "19:00"
+},
+{
+"id": "gcal-396",
+"summary": "Create in Community",
+"date": "2025-12-05",
+"time": "16:00"
+},
+{
+"id": "gcal-397",
+"summary": "Film Club: Misery (1990)",
+"date": "2025-12-05",
+"time": "19:00"
+},
+{
+"id": "gcal-398",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-12-05",
+"time": "20:00"
+},
+{
+"id": "gcal-399",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-12-06",
+"time": "15:00"
+},
+{
+"id": "gcal-400",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2025-12-07",
+"time": "17:00"
+},
+{
+"id": "gcal-401",
+"summary": "Workshop: Soulates: Are They Born or Made?",
+"date": "2025-12-07",
+"time": "19:30"
+},
+{
+"id": "gcal-402",
+"summary": "REALITY Pub Quiz",
+"date": "2025-12-07",
+"time": "20:00"
+},
+{
+"id": "gcal-403",
+"summary": "Workshop: Our Earth: From Crisis to Action",
+"date": "2025-12-08",
+"time": "17:00"
+},
+{
+"id": "gcal-404",
+"summary": "Monday Board Games",
+"date": "2025-12-08",
+"time": "19:00"
+},
+{
+"id": "gcal-405",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-12-09",
+"time": "13:00"
+},
+{
+"id": "gcal-406",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-12-09",
+"time": "19:00"
+},
+{
+"id": "gcal-407",
+"summary": "Authentic Relating: Circling",
+"date": "2025-12-10",
+"time": "15:00"
+},
+{
+"id": "gcal-408",
+"summary": "Indie Shorts Film Forum - I Am Not a Robot (2023)",
+"date": "2025-12-10",
+"time": "18:30"
+},
+{
+"id": "gcal-409",
+"summary": "Karaoke (Actually)",
+"date": "2025-12-10",
+"time": "20:00"
+},
+{
+"id": "gcal-410",
+"summary": "Coffee + Conversation",
+"date": "2025-12-11",
+"time": "11:00"
+},
+{
+"id": "gcal-411",
+"summary": "GeoGuessr",
+"date": "2025-12-11",
+"time": "19:00"
+},
+{
+"id": "gcal-412",
+"summary": "Workshop: Purposeful Emotions",
+"date": "2025-12-11",
+"time": "20:00"
+},
+{
+"id": "gcal-413",
+"summary": "Anti-TED Talks: PowerPoint Karaoke",
+"date": "2025-12-11",
+"time": "21:30"
+},
+{
+"id": "gcal-414",
+"summary": "Workshop: Vietnam Residence Cards for Entrepreneurs + Investors",
+"date": "2025-12-12",
+"time": "10:00"
+},
+{
+"id": "gcal-415",
+"summary": "Create in Community",
+"date": "2025-12-12",
+"time": "16:00"
+},
+{
+"id": "gcal-416",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-12-12",
+"time": "20:00"
+},
+{
+"id": "gcal-417",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-12-13",
+"time": "15:00"
+},
+{
+"id": "gcal-418",
+"summary": "Last Call: Jeffrey Hessing Paintings Closing Party",
+"date": "2025-12-13",
+"time": "18:00"
+},
+{
+"id": "gcal-419",
+"summary": "Drinking Games!",
+"date": "2025-12-13",
+"time": "20:00"
+},
+{
+"id": "gcal-420",
+"summary": "Christmas Tree Decorating Workshop",
+"date": "2025-12-14",
+"time": "15:00"
+},
+{
+"id": "gcal-421",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2025-12-14",
+"time": "17:00"
+},
+{
+"id": "gcal-422",
+"summary": "REALITY Pub Quiz",
+"date": "2025-12-14",
+"time": "20:00"
+},
+{
+"id": "gcal-423",
+"summary": "Monday Board Games",
+"date": "2025-12-15",
+"time": "19:00"
+},
+{
+"id": "gcal-424",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-12-16",
+"time": "13:00"
+},
+{
+"id": "gcal-425",
+"summary": "Authentic Relating: Circling",
+"date": "2025-12-17",
+"time": "15:00"
+},
+{
+"id": "gcal-426",
+"summary": "Indie Shorts Film Forum",
+"date": "2025-12-17",
+"time": "18:30"
+},
+{
+"id": "gcal-427",
+"summary": "Karaoke Holiday Songs Edition",
+"date": "2025-12-17",
+"time": "20:00"
+},
+{
+"id": "gcal-428",
+"summary": "Coffee + Conversation",
+"date": "2025-12-18",
+"time": "11:00"
+},
+{
+"id": "gcal-429",
+"summary": "Workshop: Calming Anxiety + Negative Self-Talk",
+"date": "2025-12-18",
+"time": "14:00"
+},
+{
+"id": "gcal-430",
+"summary": "GeoGuessr",
+"date": "2025-12-18",
+"time": "19:00"
+},
+{
+"id": "gcal-431",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-12-18",
+"time": "19:00"
+},
+{
+"id": "gcal-432",
+"summary": "Workshop: Psychosomatics: How Our Psyche Affects Our Body",
+"date": "2025-12-19",
+"time": "12:00"
+},
+{
+"id": "gcal-433",
+"summary": "Create in Community",
+"date": "2025-12-19",
+"time": "16:00"
+},
+{
+"id": "gcal-434",
+"summary": "Film Club: Tokyo Godfathers (2003)",
+"date": "2025-12-19",
+"time": "18:15"
+},
+{
+"id": "gcal-435",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-12-19",
+"time": "20:00"
+},
+{
+"id": "gcal-436",
+"summary": "Da Nang + Hoi An Kink Group munch",
+"date": "2025-12-19",
+"time": "20:00"
+},
+{
+"id": "gcal-437",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2025-12-20",
+"time": "15:00"
+},
+{
+"id": "gcal-438",
+"summary": "Soulful Christmas Yoga Party",
+"date": "2025-12-20",
+"time": "18:00"
+},
+{
+"id": "gcal-439",
+"summary": "A Swingin' Holiday Sing-a-Long",
+"date": "2025-12-20",
+"time": "20:30"
+},
+{
+"id": "gcal-440",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2025-12-21",
+"time": "17:00"
+},
+{
+"id": "gcal-441",
+"summary": "REALITY Pub Quiz",
+"date": "2025-12-21",
+"time": "20:00"
+},
+{
+"id": "gcal-442",
+"summary": "Monday Board Games",
+"date": "2025-12-22",
+"time": "19:00"
+},
+{
+"id": "gcal-443",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2025-12-23",
+"time": "13:00"
+},
+{
+"id": "gcal-444",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-12-23",
+"time": "19:00"
+},
+{
+"id": "gcal-445",
+"summary": "Talk Circle: Love: Expectaion + Reality",
+"date": "2025-12-23",
+"time": "20:00"
+},
+{
+"id": "gcal-446",
+"summary": "Authentic Relating: Circling",
+"date": "2025-12-24",
+"time": "15:00"
+},
+{
+"id": "gcal-447",
+"summary": "Indie Shorts Film Forum - The Snowman (1982)",
+"date": "2025-12-24",
+"time": "18:30"
+},
+{
+"id": "gcal-448",
+"summary": "REALITY Christmas Party 2025",
+"date": "2025-12-24",
+"time": "20:00"
+},
+{
+"id": "gcal-449",
+"summary": "Coffee + Conversation",
+"date": "2025-12-25",
+"time": "11:00"
+},
+{
+"id": "gcal-450",
+"summary": "Create in Community",
+"date": "2025-12-26",
+"time": "16:00"
+},
+{
+"id": "gcal-451",
+"summary": "Film Club",
+"date": "2025-12-26",
+"time": "19:00"
+},
+{
+"id": "gcal-452",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2025-12-26",
+"time": "20:00"
+},
+{
+"id": "gcal-453",
+"summary": "Watercolor Portraits: Faces, Light, Emotion",
+"date": "2025-12-27",
+"time": "15:00"
+},
+{
+"id": "gcal-454",
+"summary": "Game Show Gauntlet",
+"date": "2025-12-27",
+"time": "20:00"
+},
+{
+"id": "gcal-455",
+"summary": "Workshop: Flower + Candle Decor w/Hera Floral",
+"date": "2025-12-28",
+"time": "14:00"
+},
+{
+"id": "gcal-456",
+"summary": "Workshop: Assertiveness Training",
+"date": "2025-12-28",
+"time": "14:00"
+},
+{
+"id": "gcal-457",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2025-12-28",
+"time": "17:00"
+},
+{
+"id": "gcal-458",
+"summary": "REALITY Pub Quiz",
+"date": "2025-12-28",
+"time": "20:00"
+},
+{
+"id": "gcal-459",
+"summary": "Film Club: Until Dawn (2025)",
+"date": "2025-12-28",
+"time": "23:00"
+},
+{
+"id": "gcal-460",
+"summary": "Monday Board Games",
+"date": "2025-12-29",
+"time": "19:00"
+},
+{
+"id": "gcal-461",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2025-12-30",
+"time": "19:00"
+},
+{
+"id": "gcal-462",
+"summary": "Indie Shorts Film Forum",
+"date": "2025-12-31",
+"time": "18:30"
+},
+{
+"id": "gcal-463",
+"summary": "New Years Eve Party + Karaoke",
+"date": "2025-12-31",
+"time": "21:00"
+},
+{
+"id": "gcal-464",
+"summary": "Coffee + Conversation",
+"date": "2026-01-01",
+"time": "11:00"
+},
+{
+"id": "gcal-465",
+"summary": "Energy Workshop",
+"date": "2026-01-01",
+"time": "20:00"
+},
+{
+"id": "gcal-466",
+"summary": "Film Club: Amélie (2001) ",
+"date": "2026-01-02",
+"time": "19:00"
+},
+{
+"id": "gcal-467",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2026-01-02",
+"time": "20:00"
+},
+{
+"id": "gcal-468",
+"summary": "Workshop: Values + Visions: Resolutions with Roots",
+"date": "2026-01-03",
+"time": "12:30"
+},
+{
+"id": "gcal-469",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-01-03",
+"time": "15:00"
+},
+{
+"id": "gcal-470",
+"summary": "Art Opening: Renee Kostermans",
+"date": "2026-01-03",
+"time": "16:30"
+},
+{
+"id": "gcal-471",
+"summary": "Short Film Focus: Shivam S.",
+"date": "2026-01-03",
+"time": "20:30"
+},
+{
+"id": "gcal-472",
+"summary": "Workshop: After Sexual Assault: Understanding Trauma + Offering Support",
+"date": "2026-01-04",
+"time": "14:30"
+},
+{
+"id": "gcal-473",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-01-04",
+"time": "17:00"
+},
+{
+"id": "gcal-474",
+"summary": "REALITY Pub Quiz",
+"date": "2026-01-04",
+"time": "20:00"
+},
+{
+"id": "gcal-475",
+"summary": "Prototype Radio: DJ + Design Talk",
+"date": "2026-01-05",
+"time": "16:00"
+},
+{
+"id": "gcal-476",
+"summary": "Monday Board Games",
+"date": "2026-01-05",
+"time": "19:00"
+},
+{
+"id": "gcal-477",
+"summary": "Yin Yoga + Sound Healing Journey",
+"date": "2026-01-06",
+"time": "10:30"
+},
+{
+"id": "gcal-478",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2026-01-06",
+"time": "13:00"
+},
+{
+"id": "gcal-479",
+"summary": "Workshop: Goals, Habits, + Procrastination",
+"date": "2026-01-06",
+"time": "15:30"
+},
+{
+"id": "gcal-480",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-01-06",
+"time": "19:00"
+},
+{
+"id": "gcal-481",
+"summary": "Talk Circle",
+"date": "2026-01-06",
+"time": "20:00"
+},
+{
+"id": "gcal-482",
+"summary": "Authentic Relating: Circling",
+"date": "2026-01-07",
+"time": "15:00"
+},
+{
+"id": "gcal-483",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-01-07",
+"time": "18:30"
+},
+{
+"id": "gcal-484",
+"summary": "Karaoke",
+"date": "2026-01-07",
+"time": "21:00"
+},
+{
+"id": "gcal-485",
+"summary": "Coffee + Conversation",
+"date": "2026-01-08",
+"time": "11:00"
+},
+{
+"id": "gcal-486",
+"summary": "GeoGuessr",
+"date": "2026-01-08",
+"time": "19:00"
+},
+{
+"id": "gcal-487",
+"summary": "Intro to Shogi / Japanese Chess",
+"date": "2026-01-08",
+"time": "20:00"
+},
+{
+"id": "gcal-488",
+"summary": "Anti-TED Talks: PowerPoint Karaoke",
+"date": "2026-01-08",
+"time": "21:30"
+},
+{
+"id": "gcal-489",
+"summary": "Create in Community",
+"date": "2026-01-09",
+"time": "16:00"
+},
+{
+"id": "gcal-490",
+"summary": "Film Club: Infernal Affairs (2002)",
+"date": "2026-01-09",
+"time": "19:00"
+},
+{
+"id": "gcal-491",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2026-01-09",
+"time": "20:00"
+},
+{
+"id": "gcal-492",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-01-10",
+"time": "15:00"
+},
+{
+"id": "gcal-493",
+"summary": "Erosa Chocolate Tasting + Live Guitar Performance",
+"date": "2026-01-10",
+"time": "18:00"
+},
+{
+"id": "gcal-494",
+"summary": "Speed Friending",
+"date": "2026-01-10",
+"time": "20:30"
+},
+{
+"id": "gcal-495",
+"summary": "Chess CUP Danang: Rapid Chess Tournament",
+"date": "2026-01-11",
+"time": "12:00"
+},
+{
+"id": "gcal-496",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-01-11",
+"time": "17:00"
+},
+{
+"id": "gcal-497",
+"summary": "REALITY Pub Quiz",
+"date": "2026-01-11",
+"time": "20:00"
+},
+{
+"id": "gcal-498",
+"summary": "Monday Board Games",
+"date": "2026-01-12",
+"time": "19:00"
+},
+{
+"id": "gcal-499",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2026-01-13",
+"time": "13:00"
+},
+{
+"id": "gcal-500",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-01-13",
+"time": "19:00"
+},
+{
+"id": "gcal-501",
+"summary": "Authentic Relating: Circling",
+"date": "2026-01-14",
+"time": "15:00"
+},
+{
+"id": "gcal-502",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-01-14",
+"time": "18:30"
+},
+{
+"id": "gcal-503",
+"summary": "public group GameDev;",
+"date": "2026-01-14",
+"time": "18:30"
+},
+{
+"id": "gcal-504",
+"summary": "IRL Passion Projects",
+"date": "2026-01-14",
+"time": "19:30"
+},
+{
+"id": "gcal-505",
+"summary": "Karaoke",
+"date": "2026-01-14",
+"time": "21:00"
+},
+{
+"id": "gcal-506",
+"summary": "Coffee + Conversation",
+"date": "2026-01-15",
+"time": "11:00"
+},
+{
+"id": "gcal-507",
+"summary": "GeoGuessr",
+"date": "2026-01-15",
+"time": "19:00"
+},
+{
+"id": "gcal-508",
+"summary": "Intro to Shogi / Japanese Chess",
+"date": "2026-01-15",
+"time": "20:00"
+},
+{
+"id": "gcal-509",
+"summary": "Create in Community",
+"date": "2026-01-16",
+"time": "16:00"
+},
+{
+"id": "gcal-510",
+"summary": "Film Club: The Departed (2006)",
+"date": "2026-01-16",
+"time": "19:00"
+},
+{
+"id": "gcal-511",
+"summary": "Hitster: Music Knowledge Party Game",
+"date": "2026-01-16",
+"time": "20:00"
+},
+{
+"id": "gcal-512",
+"summary": "No Mic Open Mic: Acoustic Jam Session",
+"date": "2026-01-16",
+"time": "20:00"
+},
+{
+"id": "gcal-513",
+"summary": "Women of REALITY",
+"date": "2026-01-17",
+"time": "13:00"
+},
+{
+"id": "gcal-514",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-01-17",
+"time": "15:00"
+},
+{
+"id": "gcal-515",
+"summary": "Beginner Bachata",
+"date": "2026-01-17",
+"time": "18:00"
+},
+{
+"id": "gcal-516",
+"summary": "Trader Talk",
+"date": "2026-01-17",
+"time": "19:00"
+},
+{
+"id": "gcal-517",
+"summary": "Truth or Dare: Teams Edition",
+"date": "2026-01-17",
+"time": "20:00"
+},
+{
+"id": "gcal-518",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-01-18",
+"time": "17:00"
+},
+{
+"id": "gcal-519",
+"summary": "REALITY Pub Quiz",
+"date": "2026-01-18",
+"time": "20:00"
+},
+{
+"id": "gcal-520",
+"summary": "Monday Board Games",
+"date": "2026-01-19",
+"time": "19:00"
+},
+{
+"id": "gcal-521",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2026-01-20",
+"time": "13:00"
+},
+{
+"id": "gcal-522",
+"summary": "Workshop: Developing an Effective Self-Care Plan: Prioritising Health + Wellbeing",
+"date": "2026-01-20",
+"time": "15:30"
+},
+{
+"id": "gcal-523",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-01-20",
+"time": "19:00"
+},
+{
+"id": "gcal-524",
+"summary": "Talk Circle",
+"date": "2026-01-20",
+"time": "20:00"
+},
+{
+"id": "gcal-525",
+"summary": "Authentic Relating: Circling",
+"date": "2026-01-21",
+"time": "15:00"
+},
+{
+"id": "gcal-526",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-01-21",
+"time": "18:30"
+},
+{
+"id": "gcal-527",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-01-21",
+"time": "19:30"
+},
+{
+"id": "gcal-528",
+"summary": "Karaoke",
+"date": "2026-01-21",
+"time": "21:00"
+},
+{
+"id": "gcal-529",
+"summary": "Coffee + Conversation",
+"date": "2026-01-22",
+"time": "11:00"
+},
+{
+"id": "gcal-530",
+"summary": "GeoGuessr",
+"date": "2026-01-22",
+"time": "19:00"
+},
+{
+"id": "gcal-531",
+"summary": "Intro to Shogi / Japanese Chess",
+"date": "2026-01-22",
+"time": "20:00"
+},
+{
+"id": "gcal-532",
+"summary": "Manny's Late Night Talk Show... with CJ + Sima!",
+"date": "2026-01-22",
+"time": "21:30"
+},
+{
+"id": "gcal-533",
+"summary": "Create in Community",
+"date": "2026-01-23",
+"time": "16:00"
+},
+{
+"id": "gcal-534",
+"summary": "Film Club: City of God (2002)",
+"date": "2026-01-23",
+"time": "18:00"
+},
+{
+"id": "gcal-535",
+"summary": "Da Nang + Hoi An Kink Group Munch",
+"date": "2026-01-23",
+"time": "20:00"
+},
+{
+"id": "gcal-536",
+"summary": "Gameshow: Minute to Win It",
+"date": "2026-01-23",
+"time": "21:30"
+},
+{
+"id": "gcal-537",
+"summary": "Women of REALITY",
+"date": "2026-01-24",
+"time": "13:00"
+},
+{
+"id": "gcal-538",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-01-24",
+"time": "15:00"
+},
+{
+"id": "gcal-539",
+"summary": "Creative Tools for Drawing, Painting, + Possibly Life",
+"date": "2026-01-24",
+"time": "16:30"
+},
+{
+"id": "gcal-540",
+"summary": "Trader Talk",
+"date": "2026-01-24",
+"time": "19:00"
+},
+{
+"id": "gcal-541",
+"summary": "Dance Party: Gradient feat Amo + Ben Nappez",
+"date": "2026-01-24",
+"time": "21:00"
+},
+{
+"id": "gcal-542",
+"summary": "Ecstatic Dance Da Nang",
+"date": "2026-01-25",
+"time": "11:00"
+},
+{
+"id": "gcal-543",
+"summary": "Blitz Chess Tournament",
+"date": "2026-01-25",
+"time": "12:00"
+},
+{
+"id": "gcal-544",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-01-25",
+"time": "17:00"
+},
+{
+"id": "gcal-545",
+"summary": "Acoustic Moment: Rooftop Jam Session",
+"date": "2026-01-25",
+"time": "18:00"
+},
+{
+"id": "gcal-546",
+"summary": "REALITY Pub Quiz",
+"date": "2026-01-25",
+"time": "20:00"
+},
+{
+"id": "gcal-547",
+"summary": "Monday Board Games",
+"date": "2026-01-26",
+"time": "19:00"
+},
+{
+"id": "gcal-548",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2026-01-27",
+"time": "13:00"
+},
+{
+"id": "gcal-549",
+"summary": "Feng Shui Tips for 2026",
+"date": "2026-01-27",
+"time": "15:00"
+},
+{
+"id": "gcal-550",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-01-27",
+"time": "19:00"
+},
+{
+"id": "gcal-551",
+"summary": "Authentic Relating: Circling",
+"date": "2026-01-28",
+"time": "15:00"
+},
+{
+"id": "gcal-552",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-01-28",
+"time": "18:30"
+},
+{
+"id": "gcal-553",
+"summary": "public group GameDev;",
+"date": "2026-01-28",
+"time": "18:30"
+},
+{
+"id": "gcal-554",
+"summary": "IRL Passion Projects",
+"date": "2026-01-28",
+"time": "19:30"
+},
+{
+"id": "gcal-555",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-01-28",
+"time": "19:30"
+},
+{
+"id": "gcal-556",
+"summary": "Karaoke",
+"date": "2026-01-28",
+"time": "21:00"
+},
+{
+"id": "gcal-557",
+"summary": "Coffee + Conversation",
+"date": "2026-01-29",
+"time": "11:00"
+},
+{
+"id": "gcal-558",
+"summary": "Vibe Coding for Beginners",
+"date": "2026-01-29",
+"time": "18:00"
+},
+{
+"id": "gcal-559",
+"summary": "Shibari Training Course",
+"date": "2026-01-29",
+"time": "19:00"
+},
+{
+"id": "gcal-560",
+"summary": "GeoGuessr",
+"date": "2026-01-29",
+"time": "19:00"
+},
+{
+"id": "gcal-561",
+"summary": "Intro to Shogi / Japanese Chess",
+"date": "2026-01-29",
+"time": "20:00"
+},
+{
+"id": "gcal-562",
+"summary": "Create in Community",
+"date": "2026-01-30",
+"time": "16:00"
+},
+{
+"id": "gcal-563",
+"summary": "Film Club: Elite Squad (2007)",
+"date": "2026-01-30",
+"time": "18:00"
+},
+{
+"id": "gcal-564",
+"summary": "Acoustic Moment: Rooftop Jam Session",
+"date": "2026-01-30",
+"time": "19:00"
+},
+{
+"id": "gcal-565",
+"summary": "Gameshow: Anti-TED Talks: PowerPoint Karaoke",
+"date": "2026-01-30",
+"time": "20:30"
+},
+{
+"id": "gcal-566",
+"summary": "Women of REALITY",
+"date": "2026-01-31",
+"time": "13:00"
+},
+{
+"id": "gcal-567",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-01-31",
+"time": "15:00"
+},
+{
+"id": "gcal-568",
+"summary": "Trader Talk",
+"date": "2026-01-31",
+"time": "19:00"
+},
+{
+"id": "gcal-569",
+"summary": "Meet the Maker: Screenwriter Abby Hoàng Anh",
+"date": "2026-01-31",
+"time": "20:00"
+},
+{
+"id": "gcal-570",
+"summary": "Das Partei-Politbüro von Sasha: Sasha's Public Birthday Party",
+"date": "2026-01-31",
+"time": "21:00"
+},
+{
+"id": "gcal-571",
+"summary": "Ecstatic Dance Da Nang",
+"date": "2026-02-01",
+"time": "11:00"
+},
+{
+"id": "gcal-572",
+"summary": "Book Launch: Wishes Under the Winter Sky: Tết Poetry for Children",
+"date": "2026-02-01",
+"time": "15:00"
+},
+{
+"id": "gcal-573",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-02-01",
+"time": "17:00"
+},
+{
+"id": "gcal-574",
+"summary": "The Shaft Show: Live Coaching",
+"date": "2026-02-01",
+"time": "19:00"
+},
+{
+"id": "gcal-575",
+"summary": "REALITY Pub Quiz",
+"date": "2026-02-01",
+"time": "20:00"
+},
+{
+"id": "gcal-576",
+"summary": "Filmmaking Workshop 5: Daily Practice + Workflow",
+"date": "2026-02-02",
+"time": "13:00"
+},
+{
+"id": "gcal-577",
+"summary": "Workshop: Growing Rewarding and Energising Relationships",
+"date": "2026-02-02",
+"time": "14:00"
+},
+{
+"id": "gcal-578",
+"summary": "Monday Board Games",
+"date": "2026-02-02",
+"time": "19:00"
+},
+{
+"id": "gcal-579",
+"summary": "Filmmaking Workshop 1: The Fundamentals",
+"date": "2026-02-03",
+"time": "12:00"
+},
+{
+"id": "gcal-580",
+"summary": "Vietnamese Language Club w Kayla",
+"date": "2026-02-03",
+"time": "13:00"
+},
+{
+"id": "gcal-581",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-02-03",
+"time": "19:00"
+},
+{
+"id": "gcal-582",
+"summary": "Talk Circle: On Casual Dating",
+"date": "2026-02-03",
+"time": "20:00"
+},
+{
+"id": "gcal-583",
+"summary": "Filmmaking Workshop 2: Composition + Movement",
+"date": "2026-02-04",
+"time": "12:00"
+},
+{
+"id": "gcal-584",
+"summary": "Authentic Relating: Circling",
+"date": "2026-02-04",
+"time": "15:00"
+},
+{
+"id": "gcal-585",
+"summary": "Indie Shorts Film Forum: Last Breakfast (2005)",
+"date": "2026-02-04",
+"time": "18:30"
+},
+{
+"id": "gcal-586",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-02-04",
+"time": "19:30"
+},
+{
+"id": "gcal-587",
+"summary": "Karaoke",
+"date": "2026-02-04",
+"time": "21:00"
+},
+{
+"id": "gcal-588",
+"summary": "Coffee + Conversation",
+"date": "2026-02-05",
+"time": "11:00"
+},
+{
+"id": "gcal-589",
+"summary": "Filmmaking Workshop 3: Editing Fundamentals",
+"date": "2026-02-05",
+"time": "12:00"
+},
+{
+"id": "gcal-590",
+"summary": "Writing Workshop Group",
+"date": "2026-02-05",
+"time": "14:00"
+},
+{
+"id": "gcal-591",
+"summary": "Shibari Training Course",
+"date": "2026-02-05",
+"time": "19:00"
+},
+{
+"id": "gcal-592",
+"summary": "GeoGuessr",
+"date": "2026-02-05",
+"time": "19:00"
+},
+{
+"id": "gcal-593",
+"summary": "Intro to Shogi / Japanese Chess",
+"date": "2026-02-05",
+"time": "20:00"
+},
+{
+"id": "gcal-594",
+"summary": "Filmmaking Workshop 4: Sound + Color",
+"date": "2026-02-06",
+"time": "12:00"
+},
+{
+"id": "gcal-595",
+"summary": "Create in Community",
+"date": "2026-02-06",
+"time": "16:00"
+},
+{
+"id": "gcal-596",
+"summary": "Film Club",
+"date": "2026-02-06",
+"time": "18:00"
+},
+{
+"id": "gcal-597",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-02-06",
+"time": "19:00"
+},
+{
+"id": "gcal-598",
+"summary": "Game Show: Drunk Debates",
+"date": "2026-02-06",
+"time": "20:30"
+},
+{
+"id": "gcal-599",
+"summary": "Filmmaking Workshop 5: Daily Practice + Workflow",
+"date": "2026-02-07",
+"time": "12:00"
+},
+{
+"id": "gcal-600",
+"summary": "Workshop: Somatic Therapy + Nervous System Regulation",
+"date": "2026-02-07",
+"time": "12:30"
+},
+{
+"id": "gcal-601",
+"summary": "Women of REALITY",
+"date": "2026-02-07",
+"time": "13:00"
+},
+{
+"id": "gcal-602",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-02-07",
+"time": "15:00"
+},
+{
+"id": "gcal-603",
+"summary": "Pecha Kucha",
+"date": "2026-02-07",
+"time": "17:00"
+},
+{
+"id": "gcal-604",
+"summary": "Trader Talk",
+"date": "2026-02-07",
+"time": "19:00"
+},
+{
+"id": "gcal-605",
+"summary": "Find Your Valentine: a Dating Event",
+"date": "2026-02-07",
+"time": "20:00"
+},
+{
+"id": "gcal-606",
+"summary": "Ecstatic Dance Da Nang",
+"date": "2026-02-08",
+"time": "11:00"
+},
+{
+"id": "gcal-607",
+"summary": "Da Nang CUP Chess Tournament: Rapid Chess",
+"date": "2026-02-08",
+"time": "12:00"
+},
+{
+"id": "gcal-608",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-02-08",
+"time": "17:00"
+},
+{
+"id": "gcal-609",
+"summary": "REALITY Pub Quiz",
+"date": "2026-02-08",
+"time": "20:00"
+},
+{
+"id": "gcal-610",
+"summary": "AI Meetup",
+"date": "2026-02-09",
+"time": "17:00"
+},
+{
+"id": "gcal-611",
+"summary": "Monday Board Games",
+"date": "2026-02-09",
+"time": "19:00"
+},
+{
+"id": "gcal-612",
+"summary": "Writing Workshop Group",
+"date": "2026-02-10",
+"time": "14:00"
+},
+{
+"id": "gcal-613",
+"summary": "GameDev Signs His Soul Party: Game Release + Hang",
+"date": "2026-02-10",
+"time": "19:00"
+},
+{
+"id": "gcal-614",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-02-10",
+"time": "19:00"
+},
+{
+"id": "gcal-615",
+"summary": "Authentic Relating: Circling",
+"date": "2026-02-11",
+"time": "15:00"
+},
+{
+"id": "gcal-616",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-02-11",
+"time": "18:30"
+},
+{
+"id": "gcal-617",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-02-11",
+"time": "19:30"
+},
+{
+"id": "gcal-618",
+"summary": "Karaoke",
+"date": "2026-02-11",
+"time": "21:00"
+},
+{
+"id": "gcal-619",
+"summary": "Coffee + Conversation",
+"date": "2026-02-12",
+"time": "11:00"
+},
+{
+"id": "gcal-620",
+"summary": "Writing Workshop Group",
+"date": "2026-02-12",
+"time": "14:00"
+},
+{
+"id": "gcal-621",
+"summary": "Shibari Training Course",
+"date": "2026-02-12",
+"time": "19:00"
+},
+{
+"id": "gcal-622",
+"summary": "GeoGuessr",
+"date": "2026-02-12",
+"time": "19:00"
+},
+{
+"id": "gcal-623",
+"summary": "Create in Community",
+"date": "2026-02-13",
+"time": "16:00"
+},
+{
+"id": "gcal-624",
+"summary": "Film Club",
+"date": "2026-02-13",
+"time": "18:00"
+},
+{
+"id": "gcal-625",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-02-13",
+"time": "19:00"
+},
+{
+"id": "gcal-626",
+"summary": "Da Nang + Hoi An Kink Group Munch",
+"date": "2026-02-13",
+"time": "20:00"
+},
+{
+"id": "gcal-627",
+"summary": "Game Show: Compatibility Quiz",
+"date": "2026-02-13",
+"time": "20:30"
+},
+{
+"id": "gcal-628",
+"summary": "Women of REALITY",
+"date": "2026-02-14",
+"time": "13:00"
+},
+{
+"id": "gcal-629",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-02-14",
+"time": "15:00"
+},
+{
+"id": "gcal-630",
+"summary": "Trader Talk",
+"date": "2026-02-14",
+"time": "19:00"
+},
+{
+"id": "gcal-631",
+"summary": "Valentine's Party",
+"date": "2026-02-14",
+"time": "20:30"
+},
+{
+"id": "gcal-632",
+"summary": "Ecstatic Dance",
+"date": "2026-02-15",
+"time": "11:00"
+},
+{
+"id": "gcal-633",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-02-15",
+"time": "17:00"
+},
+{
+"id": "gcal-634",
+"summary": "REALITY Pub Quiz",
+"date": "2026-02-15",
+"time": "20:00"
+},
+{
+"id": "gcal-635",
+"summary": "Inter-actionsss: Collaborative Paint Jam w/Stefano la Rocca",
+"date": "2026-02-21",
+"time": "14:00"
+},
+{
+"id": "gcal-636",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-02-21",
+"time": "15:00"
+},
+{
+"id": "gcal-637",
+"summary": "Ecstatic Dance",
+"date": "2026-02-22",
+"time": "11:00"
+},
+{
+"id": "gcal-638",
+"summary": "Inter-actionsss: Collaborative Paint-Jam w/Stefano la Rocca",
+"date": "2026-02-22",
+"time": "14:00"
+},
+{
+"id": "gcal-639",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-02-22",
+"time": "17:00"
+},
+{
+"id": "gcal-640",
+"summary": "REALITY Pub Quiz",
+"date": "2026-02-22",
+"time": "20:00"
+},
+{
+"id": "gcal-641",
+"summary": "Monday Board Games",
+"date": "2026-02-23",
+"time": "19:00"
+},
+{
+"id": "gcal-642",
+"summary": "Workshop: Making Claude Code Behave",
+"date": "2026-02-24",
+"time": "14:00"
+},
+{
+"id": "gcal-643",
+"summary": "Writing Workshop Group",
+"date": "2026-02-24",
+"time": "14:00"
+},
+{
+"id": "gcal-644",
+"summary": "Book Club: Joe Abercrombie's The Devils",
+"date": "2026-02-24",
+"time": "19:00"
+},
+{
+"id": "gcal-645",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-02-24",
+"time": "19:00"
+},
+{
+"id": "gcal-646",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-02-24",
+"time": "19:30"
+},
+{
+"id": "gcal-647",
+"summary": "Authentic Relating: Circling",
+"date": "2026-02-25",
+"time": "15:00"
+},
+{
+"id": "gcal-648",
+"summary": "Workshop: Reflective Listening",
+"date": "2026-02-25",
+"time": "16:00"
+},
+{
+"id": "gcal-649",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-02-25",
+"time": "18:30"
+},
+{
+"id": "gcal-650",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-02-25",
+"time": "19:30"
+},
+{
+"id": "gcal-651",
+"summary": "Karaoke",
+"date": "2026-02-25",
+"time": "21:00"
+},
+{
+"id": "gcal-652",
+"summary": "Coffee + Conversation: Identity: Are We Are Who We Say We Are?",
+"date": "2026-02-26",
+"time": "11:00"
+},
+{
+"id": "gcal-653",
+"summary": "Writing Workshop Group",
+"date": "2026-02-26",
+"time": "14:00"
+},
+{
+"id": "gcal-654",
+"summary": "GeoGuessr",
+"date": "2026-02-26",
+"time": "19:00"
+},
+{
+"id": "gcal-655",
+"summary": "Create in Community",
+"date": "2026-02-27",
+"time": "16:00"
+},
+{
+"id": "gcal-656",
+"summary": "Film Club: Portrait of a Lady on Fire (2020)",
+"date": "2026-02-27",
+"time": "18:00"
+},
+{
+"id": "gcal-657",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-02-27",
+"time": "19:00"
+},
+{
+"id": "gcal-658",
+"summary": "Friday Party Game Night w/Kayla",
+"date": "2026-02-27",
+"time": "20:30"
+},
+{
+"id": "gcal-659",
+"summary": "Women of REALITY",
+"date": "2026-02-28",
+"time": "13:00"
+},
+{
+"id": "gcal-660",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-02-28",
+"time": "15:00"
+},
+{
+"id": "gcal-661",
+"summary": "Art Opening: Stefano La Rocca",
+"date": "2026-02-28",
+"time": "17:00"
+},
+{
+"id": "gcal-662",
+"summary": "Bachata for Beginners",
+"date": "2026-02-28",
+"time": "18:00"
+},
+{
+"id": "gcal-663",
+"summary": "Trader Talk",
+"date": "2026-02-28",
+"time": "19:00"
+},
+{
+"id": "gcal-664",
+"summary": "Ecstatic Dance",
+"date": "2026-03-01",
+"time": "11:00"
+},
+{
+"id": "gcal-665",
+"summary": "Chess Tournament: Blitz",
+"date": "2026-03-01",
+"time": "12:00"
+},
+{
+"id": "gcal-666",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-03-01",
+"time": "17:00"
+},
+{
+"id": "gcal-667",
+"summary": "REALITY Pub Quiz",
+"date": "2026-03-01",
+"time": "20:00"
+},
+{
+"id": "gcal-668",
+"summary": "AI Meetup",
+"date": "2026-03-02",
+"time": "17:00"
+},
+{
+"id": "gcal-669",
+"summary": "Monday Board Games",
+"date": "2026-03-02",
+"time": "19:00"
+},
+{
+"id": "gcal-670",
+"summary": "Writing Workshop Group",
+"date": "2026-03-03",
+"time": "14:00"
+},
+{
+"id": "gcal-671",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-03-03",
+"time": "17:30"
+},
+{
+"id": "gcal-672",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-03-03",
+"time": "19:00"
+},
+{
+"id": "gcal-673",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-03-03",
+"time": "19:30"
+},
+{
+"id": "gcal-674",
+"summary": "Talk Circle: Standards",
+"date": "2026-03-03",
+"time": "20:00"
+},
+{
+"id": "gcal-675",
+"summary": "Authentic Relating: Circling",
+"date": "2026-03-04",
+"time": "15:00"
+},
+{
+"id": "gcal-676",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-03-04",
+"time": "18:30"
+},
+{
+"id": "gcal-677",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-03-04",
+"time": "19:30"
+},
+{
+"id": "gcal-678",
+"summary": "Karaoke",
+"date": "2026-03-04",
+"time": "21:00"
+},
+{
+"id": "gcal-679",
+"summary": "Coffee + Conversation: \"Always Online\": How Has the Internet Changed Us?",
+"date": "2026-03-05",
+"time": "11:00"
+},
+{
+"id": "gcal-680",
+"summary": "Writing Workshop Group",
+"date": "2026-03-05",
+"time": "14:00"
+},
+{
+"id": "gcal-681",
+"summary": "No More Bad Dates: The Workshop",
+"date": "2026-03-05",
+"time": "18:00"
+},
+{
+"id": "gcal-682",
+"summary": "GeoGuessr",
+"date": "2026-03-05",
+"time": "19:00"
+},
+{
+"id": "gcal-683",
+"summary": "Create in Community",
+"date": "2026-03-06",
+"time": "16:00"
+},
+{
+"id": "gcal-684",
+"summary": "Film Club",
+"date": "2026-03-06",
+"time": "18:00"
+},
+{
+"id": "gcal-685",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-03-06",
+"time": "19:00"
+},
+{
+"id": "gcal-686",
+"summary": "Friday Party Game Night w/Kayla",
+"date": "2026-03-06",
+"time": "20:30"
+},
+{
+"id": "gcal-687",
+"summary": "Workshop: Somatic Therapy + Nervous System Regulation",
+"date": "2026-03-07",
+"time": "13:00"
+},
+{
+"id": "gcal-688",
+"summary": "Women of REALITY",
+"date": "2026-03-07",
+"time": "13:00"
+},
+{
+"id": "gcal-689",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-03-07",
+"time": "15:00"
+},
+{
+"id": "gcal-690",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-03-07",
+"time": "17:00"
+},
+{
+"id": "gcal-691",
+"summary": "Ecstatic Dance",
+"date": "2026-03-08",
+"time": "11:00"
+},
+{
+"id": "gcal-692",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-03-08",
+"time": "17:00"
+},
+{
+"id": "gcal-693",
+"summary": "REALITY Pub Quiz",
+"date": "2026-03-08",
+"time": "20:00"
+},
+{
+"id": "gcal-694",
+"summary": "Workshop: The Authentic Self + The Survival Self",
+"date": "2026-03-09",
+"time": "13:30"
+},
+{
+"id": "gcal-695",
+"summary": "AI Meetup",
+"date": "2026-03-09",
+"time": "17:00"
+},
+{
+"id": "gcal-696",
+"summary": "Monday Board Games",
+"date": "2026-03-09",
+"time": "19:00"
+},
+{
+"id": "gcal-697",
+"summary": "60-Minute MVP Buildathon: Build Your Own Webapp",
+"date": "2026-03-10",
+"time": "14:00"
+},
+{
+"id": "gcal-698",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-03-10",
+"time": "17:30"
+},
+{
+"id": "gcal-699",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-03-10",
+"time": "19:00"
+},
+{
+"id": "gcal-700",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-03-10",
+"time": "19:30"
+},
+{
+"id": "gcal-701",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-03-11",
+"time": "14:30"
+},
+{
+"id": "gcal-702",
+"summary": "Authentic Relating: Circling",
+"date": "2026-03-11",
+"time": "15:00"
+},
+{
+"id": "gcal-703",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-03-11",
+"time": "18:30"
+},
+{
+"id": "gcal-704",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-03-11",
+"time": "19:30"
+},
+{
+"id": "gcal-705",
+"summary": "Karaoke",
+"date": "2026-03-11",
+"time": "21:00"
+},
+{
+"id": "gcal-706",
+"summary": "Coffee + Conversation",
+"date": "2026-03-12",
+"time": "11:00"
+},
+{
+"id": "gcal-707",
+"summary": "Writing Workshop Group",
+"date": "2026-03-12",
+"time": "14:00"
+},
+{
+"id": "gcal-708",
+"summary": "GeoGuessr",
+"date": "2026-03-12",
+"time": "19:00"
+},
+{
+"id": "gcal-709",
+"summary": "Normal People Poetry Clique",
+"date": "2026-03-12",
+"time": "20:30"
+},
+{
+"id": "gcal-710",
+"summary": "Create in Community",
+"date": "2026-03-13",
+"time": "16:00"
+},
+{
+"id": "gcal-711",
+"summary": "Film Club",
+"date": "2026-03-13",
+"time": "18:00"
+},
+{
+"id": "gcal-712",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-03-13",
+"time": "19:00"
+},
+{
+"id": "gcal-713",
+"summary": "Friday Party Games",
+"date": "2026-03-13",
+"time": "20:30"
+},
+{
+"id": "gcal-714",
+"summary": "Women of REALITY",
+"date": "2026-03-14",
+"time": "13:00"
+},
+{
+"id": "gcal-715",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-03-14",
+"time": "15:00"
+},
+{
+"id": "gcal-716",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-03-14",
+"time": "17:00"
+},
+{
+"id": "gcal-717",
+"summary": "Trader Talk",
+"date": "2026-03-14",
+"time": "19:00"
+},
+{
+"id": "gcal-718",
+"summary": "Bollywood Dance Workshop",
+"date": "2026-03-14",
+"time": "19:30"
+},
+{
+"id": "gcal-719",
+"summary": "White Valentine Party",
+"date": "2026-03-14",
+"time": "21:00"
+},
+{
+"id": "gcal-720",
+"summary": "Ecstatic Dance",
+"date": "2026-03-15",
+"time": "11:00"
+},
+{
+"id": "gcal-721",
+"summary": "Chess Tournament: Rapid",
+"date": "2026-03-15",
+"time": "12:00"
+},
+{
+"id": "gcal-722",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-03-15",
+"time": "17:00"
+},
+{
+"id": "gcal-723",
+"summary": "REALITY Pub Quiz",
+"date": "2026-03-15",
+"time": "20:00"
+},
+{
+"id": "gcal-724",
+"summary": "Workshop: Purposeful Emotions",
+"date": "2026-03-16",
+"time": "14:30"
+},
+{
+"id": "gcal-725",
+"summary": "Inter-Action: Collaborative Paint-Jam w/Stefano la Rocca",
+"date": "2026-03-16",
+"time": "16:00"
+},
+{
+"id": "gcal-726",
+"summary": "AI Meetup",
+"date": "2026-03-16",
+"time": "17:00"
+},
+{
+"id": "gcal-727",
+"summary": "Monday Board Games",
+"date": "2026-03-16",
+"time": "19:00"
+},
+{
+"id": "gcal-728",
+"summary": "Workshop: Stress Hacking for Peak Performance",
+"date": "2026-03-17",
+"time": "17:00"
+},
+{
+"id": "gcal-729",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-03-17",
+"time": "17:30"
+},
+{
+"id": "gcal-730",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-03-17",
+"time": "19:00"
+},
+{
+"id": "gcal-731",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-03-17",
+"time": "19:30"
+},
+{
+"id": "gcal-732",
+"summary": "Talk Circle: Love + Money",
+"date": "2026-03-17",
+"time": "20:00"
+},
+{
+"id": "gcal-733",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-03-18",
+"time": "14:30"
+},
+{
+"id": "gcal-734",
+"summary": "Authentic Relating: Circling",
+"date": "2026-03-18",
+"time": "15:00"
+},
+{
+"id": "gcal-735",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-03-18",
+"time": "18:30"
+},
+{
+"id": "gcal-736",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-03-18",
+"time": "19:30"
+},
+{
+"id": "gcal-737",
+"summary": "Karaoke",
+"date": "2026-03-18",
+"time": "21:00"
+},
+{
+"id": "gcal-738",
+"summary": "Coffee + Conversation",
+"date": "2026-03-19",
+"time": "11:00"
+},
+{
+"id": "gcal-739",
+"summary": "Writing Workshop Group",
+"date": "2026-03-19",
+"time": "14:00"
+},
+{
+"id": "gcal-740",
+"summary": "GeoGuessr",
+"date": "2026-03-19",
+"time": "19:00"
+},
+{
+"id": "gcal-741",
+"summary": "Create in Community",
+"date": "2026-03-20",
+"time": "16:00"
+},
+{
+"id": "gcal-742",
+"summary": "Film Club",
+"date": "2026-03-20",
+"time": "18:00"
+},
+{
+"id": "gcal-743",
+"summary": "Inter-Action: Collaborative Paint-Jam w/Stefano la Rocca",
+"date": "2026-03-20",
+"time": "19:00"
+},
+{
+"id": "gcal-744",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-03-20",
+"time": "19:00"
+},
+{
+"id": "gcal-745",
+"summary": "Friday Party Games",
+"date": "2026-03-20",
+"time": "20:30"
+},
+{
+"id": "gcal-746",
+"summary": "Women of REALITY",
+"date": "2026-03-21",
+"time": "13:00"
+},
+{
+"id": "gcal-747",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-03-21",
+"time": "15:00"
+},
+{
+"id": "gcal-748",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-03-21",
+"time": "17:00"
+},
+{
+"id": "gcal-749",
+"summary": "Hitster",
+"date": "2026-03-21",
+"time": "19:00"
+},
+{
+"id": "gcal-750",
+"summary": "Da Nang + Hoi An Kink Group Munch",
+"date": "2026-03-21",
+"time": "20:00"
+},
+{
+"id": "gcal-751",
+"summary": "Dom Venice - Heaven Was Internal : Listening Party",
+"date": "2026-03-21",
+"time": "22:00"
+},
+{
+"id": "gcal-752",
+"summary": "Ecstatic Dance",
+"date": "2026-03-22",
+"time": "11:00"
+},
+{
+"id": "gcal-753",
+"summary": "Shibari Master Class with Enot",
+"date": "2026-03-22",
+"time": "12:30"
+},
+{
+"id": "gcal-754",
+"summary": "Page to Stage: Writing + Improv Class",
+"date": "2026-03-22",
+"time": "17:00"
+},
+{
+"id": "gcal-755",
+"summary": "REALITY Pub Quiz",
+"date": "2026-03-22",
+"time": "20:00"
+},
+{
+"id": "gcal-756",
+"summary": "Workshop: Calming Anxiety + Negative Self-Talk",
+"date": "2026-03-23",
+"time": "13:30"
+},
+{
+"id": "gcal-757",
+"summary": "AI Meetup",
+"date": "2026-03-23",
+"time": "17:00"
+},
+{
+"id": "gcal-758",
+"summary": "Monday Board Games",
+"date": "2026-03-23",
+"time": "19:00"
+},
+{
+"id": "gcal-759",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-03-24",
+"time": "17:30"
+},
+{
+"id": "gcal-760",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-03-24",
+"time": "19:00"
+},
+{
+"id": "gcal-761",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-03-24",
+"time": "19:30"
+},
+{
+"id": "gcal-762",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-03-25",
+"time": "14:30"
+},
+{
+"id": "gcal-763",
+"summary": "Workshop: Build Multiple Sources of Income to Fund Your Abundant Lifestyle",
+"date": "2026-03-25",
+"time": "16:30"
+},
+{
+"id": "gcal-764",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-03-25",
+"time": "18:30"
+},
+{
+"id": "gcal-765",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-03-25",
+"time": "19:30"
+},
+{
+"id": "gcal-766",
+"summary": "Karaoke",
+"date": "2026-03-25",
+"time": "21:00"
+},
+{
+"id": "gcal-767",
+"summary": "The Hidden Patterns Driving Your Business & Relationships",
+"date": "2026-03-26",
+"time": "10:30"
+},
+{
+"id": "gcal-768",
+"summary": "Coffee + Conversation: “Soft Strength” – The Power of Gentleness",
+"date": "2026-03-26",
+"time": "11:00"
+},
+{
+"id": "gcal-769",
+"summary": "Network States and Network School - What Digital Nomads Should Know",
+"date": "2026-03-26",
+"time": "13:30"
+},
+{
+"id": "gcal-770",
+"summary": "Writing Workshop Group",
+"date": "2026-03-26",
+"time": "14:00"
+},
+{
+"id": "gcal-771",
+"summary": "Problem-Solving Business Clinic",
+"date": "2026-03-26",
+"time": "16:00"
+},
+{
+"id": "gcal-772",
+"summary": "Shibari Course w/Fenek + Manul",
+"date": "2026-03-26",
+"time": "19:00"
+},
+{
+"id": "gcal-773",
+"summary": "Normal People Poetry Clique",
+"date": "2026-03-26",
+"time": "20:30"
+},
+{
+"id": "gcal-774",
+"summary": "Workshop: LinkedIn Growth for Founders and Creators",
+"date": "2026-03-27",
+"time": "11:00"
+},
+{
+"id": "gcal-775",
+"summary": "Workshop: Teamwork & Leadership: What’s Effective in the Digital Age?",
+"date": "2026-03-27",
+"time": "13:30"
+},
+{
+"id": "gcal-776",
+"summary": "Create in Community",
+"date": "2026-03-27",
+"time": "16:00"
+},
+{
+"id": "gcal-777",
+"summary": "Film Club: Sweet Bean (2015)",
+"date": "2026-03-27",
+"time": "18:00"
+},
+{
+"id": "gcal-778",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-03-27",
+"time": "19:00"
+},
+{
+"id": "gcal-779",
+"summary": "Women of REALITY",
+"date": "2026-03-28",
+"time": "13:00"
+},
+{
+"id": "gcal-780",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-03-28",
+"time": "17:00"
+},
+{
+"id": "gcal-781",
+"summary": "Latin Dance Playground",
+"date": "2026-03-28",
+"time": "18:00"
+},
+{
+"id": "gcal-782",
+"summary": "Spring Fling Party",
+"date": "2026-03-28",
+"time": "21:00"
+},
+{
+"id": "gcal-783",
+"summary": "REALITY Pub Quiz",
+"date": "2026-03-29",
+"time": "20:00"
+},
+{
+"id": "gcal-784",
+"summary": "AI Meetup",
+"date": "2026-03-30",
+"time": "17:00"
+},
+{
+"id": "gcal-785",
+"summary": "Monday Board Games",
+"date": "2026-03-30",
+"time": "19:00"
+},
+{
+"id": "gcal-786",
+"summary": "Coding with LLMs - Buildathon 2.0",
+"date": "2026-03-31",
+"time": "16:00"
+},
+{
+"id": "gcal-787",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-03-31",
+"time": "17:30"
+},
+{
+"id": "gcal-788",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-03-31",
+"time": "19:00"
+},
+{
+"id": "gcal-789",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-03-31",
+"time": "19:30"
+},
+{
+"id": "gcal-790",
+"summary": "Talk Circle: Sex Isn't Just Physical",
+"date": "2026-03-31",
+"time": "20:00"
+},
+{
+"id": "gcal-791",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-04-01",
+"time": "14:30"
+},
+{
+"id": "gcal-792",
+"summary": "Authentic Relating: Circling",
+"date": "2026-04-01",
+"time": "15:00"
+},
+{
+"id": "gcal-793",
+"summary": "Startup ABC",
+"date": "2026-04-01",
+"time": "16:30"
+},
+{
+"id": "gcal-794",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-04-01",
+"time": "18:30"
+},
+{
+"id": "gcal-795",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-04-01",
+"time": "19:30"
+},
+{
+"id": "gcal-796",
+"summary": "Karaoke",
+"date": "2026-04-01",
+"time": "21:00"
+},
+{
+"id": "gcal-797",
+"summary": "Coffee + Conversation",
+"date": "2026-04-02",
+"time": "11:00"
+},
+{
+"id": "gcal-798",
+"summary": "Writing Workshop Group",
+"date": "2026-04-02",
+"time": "14:00"
+},
+{
+"id": "gcal-799",
+"summary": "Shibari Course w/Fenek + Manul",
+"date": "2026-04-02",
+"time": "19:00"
+},
+{
+"id": "gcal-800",
+"summary": "GeoGuessr",
+"date": "2026-04-02",
+"time": "19:00"
+},
+{
+"id": "gcal-801",
+"summary": "Create in Community",
+"date": "2026-04-03",
+"time": "16:00"
+},
+{
+"id": "gcal-802",
+"summary": "Film Club: American Fiction (2023)",
+"date": "2026-04-03",
+"time": "18:30"
+},
+{
+"id": "gcal-803",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-04-03",
+"time": "19:00"
+},
+{
+"id": "gcal-804",
+"summary": "Language Exchange Club: Flirting + Dating Around the World",
+"date": "2026-04-03",
+"time": "20:00"
+},
+{
+"id": "gcal-805",
+"summary": "Women of REALITY",
+"date": "2026-04-04",
+"time": "13:00"
+},
+{
+"id": "gcal-806",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-04-04",
+"time": "15:00"
+},
+{
+"id": "gcal-807",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-04-04",
+"time": "17:00"
+},
+{
+"id": "gcal-808",
+"summary": "Latin Dance Playground",
+"date": "2026-04-04",
+"time": "18:00"
+},
+{
+"id": "gcal-809",
+"summary": "Ecstatic Dance",
+"date": "2026-04-05",
+"time": "11:00"
+},
+{
+"id": "gcal-810",
+"summary": "REALITY Pub Quiz",
+"date": "2026-04-05",
+"time": "20:00"
+},
+{
+"id": "gcal-811",
+"summary": "Workshop: Assertiveness Training + Boundary Setting",
+"date": "2026-04-06",
+"time": "13:30"
+},
+{
+"id": "gcal-812",
+"summary": "AI Meetup",
+"date": "2026-04-06",
+"time": "17:00"
+},
+{
+"id": "gcal-813",
+"summary": "Monday Board Games",
+"date": "2026-04-06",
+"time": "19:00"
+},
+{
+"id": "gcal-814",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-04-07",
+"time": "17:00"
+},
+{
+"id": "gcal-815",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-04-07",
+"time": "19:00"
+},
+{
+"id": "gcal-816",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-04-07",
+"time": "19:30"
+},
+{
+"id": "gcal-817",
+"summary": "Book Club: Monkey King",
+"date": "2026-04-07",
+"time": "20:00"
+},
+{
+"id": "gcal-818",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-04-08",
+"time": "14:30"
+},
+{
+"id": "gcal-819",
+"summary": "Authentic Relating: Circling",
+"date": "2026-04-08",
+"time": "15:00"
+},
+{
+"id": "gcal-820",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-04-08",
+"time": "18:30"
+},
+{
+"id": "gcal-821",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-04-08",
+"time": "19:30"
+},
+{
+"id": "gcal-822",
+"summary": "Karaoke",
+"date": "2026-04-08",
+"time": "21:00"
+},
+{
+"id": "gcal-823",
+"summary": "Coffee + Conversation",
+"date": "2026-04-09",
+"time": "11:00"
+},
+{
+"id": "gcal-824",
+"summary": "Writing Workshop Group",
+"date": "2026-04-09",
+"time": "14:00"
+},
+{
+"id": "gcal-825",
+"summary": "Shibari Course w/Fenek + Manul",
+"date": "2026-04-09",
+"time": "19:00"
+},
+{
+"id": "gcal-826",
+"summary": "GeoGuessr",
+"date": "2026-04-09",
+"time": "19:00"
+},
+{
+"id": "gcal-827",
+"summary": "Normal People Poetry Clique",
+"date": "2026-04-09",
+"time": "20:30"
+},
+{
+"id": "gcal-828",
+"summary": "Create in Community",
+"date": "2026-04-10",
+"time": "16:00"
+},
+{
+"id": "gcal-829",
+"summary": "Film Club: Past Lives (2023)",
+"date": "2026-04-10",
+"time": "18:30"
+},
+{
+"id": "gcal-830",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-04-10",
+"time": "19:00"
+},
+{
+"id": "gcal-831",
+"summary": "Language Mixer",
+"date": "2026-04-10",
+"time": "20:00"
+},
+{
+"id": "gcal-832",
+"summary": "Women of REALITY",
+"date": "2026-04-11",
+"time": "13:00"
+},
+{
+"id": "gcal-833",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-04-11",
+"time": "15:00"
+},
+{
+"id": "gcal-834",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-04-11",
+"time": "17:00"
+},
+{
+"id": "gcal-835",
+"summary": "Latin Dance Playground",
+"date": "2026-04-11",
+"time": "18:00"
+},
+{
+"id": "gcal-836",
+"summary": "Hitster - A Music Knowledge Quiz Game",
+"date": "2026-04-11",
+"time": "19:00"
+},
+{
+"id": "gcal-837",
+"summary": "Birthday Party Combo Pack: Don + June",
+"date": "2026-04-11",
+"time": "21:00"
+},
+{
+"id": "gcal-838",
+"summary": "Ecstatic Dance",
+"date": "2026-04-12",
+"time": "11:00"
+},
+{
+"id": "gcal-839",
+"summary": "Chess Tournament: Blitz + Rapid",
+"date": "2026-04-12",
+"time": "13:00"
+},
+{
+"id": "gcal-840",
+"summary": "REALITY Pub Quiz",
+"date": "2026-04-12",
+"time": "20:00"
+},
+{
+"id": "gcal-841",
+"summary": "AI Meetup",
+"date": "2026-04-13",
+"time": "17:00"
+},
+{
+"id": "gcal-842",
+"summary": "Monday Board Games",
+"date": "2026-04-13",
+"time": "19:00"
+},
+{
+"id": "gcal-843",
+"summary": "French Social Club",
+"date": "2026-04-14",
+"time": "13:30"
+},
+{
+"id": "gcal-844",
+"summary": "Write it Out: CBT Journaling Workshop",
+"date": "2026-04-14",
+"time": "14:00"
+},
+{
+"id": "gcal-845",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-04-14",
+"time": "17:00"
+},
+{
+"id": "gcal-846",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-04-14",
+"time": "19:00"
+},
+{
+"id": "gcal-847",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-04-14",
+"time": "19:30"
+},
+{
+"id": "gcal-848",
+"summary": "Talk Circle: Singlehood",
+"date": "2026-04-14",
+"time": "20:00"
+},
+{
+"id": "gcal-849",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-04-15",
+"time": "14:30"
+},
+{
+"id": "gcal-850",
+"summary": "Startup ABC",
+"date": "2026-04-15",
+"time": "16:30"
+},
+{
+"id": "gcal-851",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-04-15",
+"time": "18:30"
+},
+{
+"id": "gcal-852",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-04-15",
+"time": "19:30"
+},
+{
+"id": "gcal-853",
+"summary": "Karaoke",
+"date": "2026-04-15",
+"time": "21:00"
+},
+{
+"id": "gcal-854",
+"summary": "Coffee + Conversation",
+"date": "2026-04-16",
+"time": "11:00"
+},
+{
+"id": "gcal-855",
+"summary": "Writing Workshop Group",
+"date": "2026-04-16",
+"time": "14:00"
+},
+{
+"id": "gcal-856",
+"summary": "GeoGuessr",
+"date": "2026-04-16",
+"time": "19:00"
+},
+{
+"id": "gcal-857",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-04-16",
+"time": "19:30"
+},
+{
+"id": "gcal-858",
+"summary": "Create in Community",
+"date": "2026-04-17",
+"time": "16:00"
+},
+{
+"id": "gcal-859",
+"summary": "Film Club",
+"date": "2026-04-17",
+"time": "18:30"
+},
+{
+"id": "gcal-860",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-04-17",
+"time": "19:00"
+},
+{
+"id": "gcal-861",
+"summary": "Language Mixer",
+"date": "2026-04-17",
+"time": "20:00"
+},
+{
+"id": "gcal-862",
+"summary": "AI Video Workshop",
+"date": "2026-04-18",
+"time": "10:30"
+},
+{
+"id": "gcal-863",
+"summary": "Women of REALITY",
+"date": "2026-04-18",
+"time": "13:00"
+},
+{
+"id": "gcal-864",
+"summary": "Somatic Therapy & Nervous System Regulation",
+"date": "2026-04-18",
+"time": "13:00"
+},
+{
+"id": "gcal-865",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-04-18",
+"time": "15:00"
+},
+{
+"id": "gcal-866",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-04-18",
+"time": "17:00"
+},
+{
+"id": "gcal-867",
+"summary": "Latin Dance Playground: Intro Cha-cha-cha",
+"date": "2026-04-18",
+"time": "18:00"
+},
+{
+"id": "gcal-868",
+"summary": "Subconscious Color: Art + Performance by Praskovya from Yakutia",
+"date": "2026-04-18",
+"time": "20:00"
+},
+{
+"id": "gcal-869",
+"summary": "Workshop: Breast Cancer",
+"date": "2026-04-19",
+"time": "10:30"
+},
+{
+"id": "gcal-870",
+"summary": "REALITY Pub Quiz",
+"date": "2026-04-19",
+"time": "20:00"
+},
+{
+"id": "gcal-871",
+"summary": "Workshop: Procrastination, Goals & Habits",
+"date": "2026-04-20",
+"time": "13:30"
+},
+{
+"id": "gcal-872",
+"summary": "AI Meetup",
+"date": "2026-04-20",
+"time": "17:00"
+},
+{
+"id": "gcal-873",
+"summary": "Monday Board Games",
+"date": "2026-04-20",
+"time": "19:00"
+},
+{
+"id": "gcal-874",
+"summary": "French Social Club",
+"date": "2026-04-21",
+"time": "13:30"
+},
+{
+"id": "gcal-875",
+"summary": "Write it Out: CBT Journaling Workshop",
+"date": "2026-04-21",
+"time": "14:00"
+},
+{
+"id": "gcal-876",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-04-21",
+"time": "17:00"
+},
+{
+"id": "gcal-877",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-04-21",
+"time": "19:00"
+},
+{
+"id": "gcal-878",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-04-22",
+"time": "14:30"
+},
+{
+"id": "gcal-879",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-04-22",
+"time": "18:30"
+},
+{
+"id": "gcal-880",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-04-22",
+"time": "19:30"
+},
+{
+"id": "gcal-881",
+"summary": "Karaoke",
+"date": "2026-04-22",
+"time": "21:00"
+},
+{
+"id": "gcal-882",
+"summary": "Coffee + Conversation",
+"date": "2026-04-23",
+"time": "11:00"
+},
+{
+"id": "gcal-883",
+"summary": "GeoGuessr",
+"date": "2026-04-23",
+"time": "19:00"
+},
+{
+"id": "gcal-884",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-04-23",
+"time": "19:30"
+},
+{
+"id": "gcal-885",
+"summary": "Normal People Poetry Clique",
+"date": "2026-04-23",
+"time": "20:30"
+},
+{
+"id": "gcal-886",
+"summary": "L [AI] SY Brunch - AI Problemsolving",
+"date": "2026-04-24",
+"time": "11:00"
+},
+{
+"id": "gcal-887",
+"summary": "Create in Community",
+"date": "2026-04-24",
+"time": "16:00"
+},
+{
+"id": "gcal-888",
+"summary": "Film Club",
+"date": "2026-04-24",
+"time": "18:30"
+},
+{
+"id": "gcal-889",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-04-24",
+"time": "19:00"
+},
+{
+"id": "gcal-890",
+"summary": "Language Mixer",
+"date": "2026-04-24",
+"time": "20:00"
+},
+{
+"id": "gcal-891",
+"summary": "Tearoom - DJ Series",
+"date": "2026-04-24",
+"time": "21:00"
+},
+{
+"id": "gcal-892",
+"summary": "Interactive lecture: A Colourful History of the Japanese Palette pt. 1",
+"date": "2026-04-25",
+"time": "12:30"
+},
+{
+"id": "gcal-893",
+"summary": "Women of REALITY",
+"date": "2026-04-25",
+"time": "13:00"
+},
+{
+"id": "gcal-894",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-04-25",
+"time": "15:00"
+},
+{
+"id": "gcal-895",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-04-25",
+"time": "17:00"
+},
+{
+"id": "gcal-896",
+"summary": "Latin Dance Playground",
+"date": "2026-04-25",
+"time": "18:00"
+},
+{
+"id": "gcal-897",
+"summary": "Hitster - A Music Knowledge Quiz Game",
+"date": "2026-04-25",
+"time": "19:00"
+},
+{
+"id": "gcal-898",
+"summary": "Da Nang + Hoi An Kink Munch",
+"date": "2026-04-25",
+"time": "20:00"
+},
+{
+"id": "gcal-899",
+"summary": "Ecstatic Dance",
+"date": "2026-04-26",
+"time": "11:00"
+},
+{
+"id": "gcal-900",
+"summary": "Chess Tournament: Rapid",
+"date": "2026-04-26",
+"time": "13:00"
+},
+{
+"id": "gcal-901",
+"summary": "REALITY Pub Quiz",
+"date": "2026-04-26",
+"time": "20:00"
+},
+{
+"id": "gcal-902",
+"summary": "AI Meetup",
+"date": "2026-04-27",
+"time": "17:00"
+},
+{
+"id": "gcal-903",
+"summary": "Monday Board Games",
+"date": "2026-04-27",
+"time": "19:00"
+},
+{
+"id": "gcal-904",
+"summary": "French Social Club",
+"date": "2026-04-28",
+"time": "13:30"
+},
+{
+"id": "gcal-905",
+"summary": "Write it Out: CBT Journaling Workshop",
+"date": "2026-04-28",
+"time": "14:00"
+},
+{
+"id": "gcal-906",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-04-28",
+"time": "17:00"
+},
+{
+"id": "gcal-907",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-04-28",
+"time": "19:00"
+},
+{
+"id": "gcal-908",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-04-28",
+"time": "19:30"
+},
+{
+"id": "gcal-909",
+"summary": "Talk Circle: “Dating Profiles”",
+"date": "2026-04-28",
+"time": "20:00"
+},
+{
+"id": "gcal-910",
+"summary": "Startup ABC",
+"date": "2026-04-29",
+"time": "16:30"
+},
+{
+"id": "gcal-911",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-04-29",
+"time": "18:30"
+},
+{
+"id": "gcal-912",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-04-29",
+"time": "19:30"
+},
+{
+"id": "gcal-913",
+"summary": "Karaoke",
+"date": "2026-04-29",
+"time": "21:00"
+},
+{
+"id": "gcal-914",
+"summary": "L [AI] SY Brunch - AI Problemsolving",
+"date": "2026-05-01",
+"time": "11:00"
+},
+{
+"id": "gcal-915",
+"summary": "Inner World Creative Discovery through Play and Metaphorical Cards",
+"date": "2026-05-01",
+"time": "12:00"
+},
+{
+"id": "gcal-916",
+"summary": "Coding with LLMs Buildathon 4.0",
+"date": "2026-05-01",
+"time": "13:00"
+},
+{
+"id": "gcal-917",
+"summary": "Create in Community",
+"date": "2026-05-01",
+"time": "16:00"
+},
+{
+"id": "gcal-918",
+"summary": "Film Club",
+"date": "2026-05-01",
+"time": "18:30"
+},
+{
+"id": "gcal-919",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-05-01",
+"time": "19:00"
+},
+{
+"id": "gcal-920",
+"summary": "Language Mixer: Folktales, Urban Legends & Scary Stories",
+"date": "2026-05-01",
+"time": "20:00"
+},
+{
+"id": "gcal-921",
+"summary": "Tearoom - DJ Series",
+"date": "2026-05-01",
+"time": "21:00"
+},
+{
+"id": "gcal-922",
+"summary": "Interactive lecture: A Colourful History of the Japanese Palette - Part 2",
+"date": "2026-05-02",
+"time": "12:30"
+},
+{
+"id": "gcal-923",
+"summary": "Women of REALITY",
+"date": "2026-05-02",
+"time": "13:00"
+},
+{
+"id": "gcal-924",
+"summary": "Grateful Vibes: Saturday Brunch & Manifestation Experience",
+"date": "2026-05-02",
+"time": "13:30"
+},
+{
+"id": "gcal-925",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-05-02",
+"time": "15:00"
+},
+{
+"id": "gcal-926",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-05-02",
+"time": "17:00"
+},
+{
+"id": "gcal-927",
+"summary": "Ben Nappez Electrocats Birthday Open Party",
+"date": "2026-05-02",
+"time": "20:00"
+},
+{
+"id": "gcal-928",
+"summary": "Ecstatic Dance",
+"date": "2026-05-03",
+"time": "11:00"
+},
+{
+"id": "gcal-929",
+"summary": "Women Clothes Swap",
+"date": "2026-05-03",
+"time": "13:00"
+},
+{
+"id": "gcal-930",
+"summary": "REALITY Pub Quiz",
+"date": "2026-05-03",
+"time": "20:00"
+},
+{
+"id": "gcal-931",
+"summary": "Workshop: Understanding Emotional Eating Patterns",
+"date": "2026-05-04",
+"time": "13:30"
+},
+{
+"id": "gcal-932",
+"summary": "AI Meetup",
+"date": "2026-05-04",
+"time": "17:00"
+},
+{
+"id": "gcal-933",
+"summary": "Monday Board Games",
+"date": "2026-05-04",
+"time": "19:00"
+},
+{
+"id": "gcal-934",
+"summary": "French Social Club",
+"date": "2026-05-05",
+"time": "13:30"
+},
+{
+"id": "gcal-935",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-05-05",
+"time": "17:00"
+},
+{
+"id": "gcal-936",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-05-05",
+"time": "19:00"
+},
+{
+"id": "gcal-937",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-05-05",
+"time": "19:30"
+},
+{
+"id": "gcal-938",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-05-06",
+"time": "14:30"
+},
+{
+"id": "gcal-939",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-05-06",
+"time": "18:30"
+},
+{
+"id": "gcal-940",
+"summary": "Karaoke",
+"date": "2026-05-06",
+"time": "21:00"
+},
+{
+"id": "gcal-941",
+"summary": "Coffee + Conversation: The People who Feel like Home",
+"date": "2026-05-07",
+"time": "11:00"
+},
+{
+"id": "gcal-942",
+"summary": "Workshop: Developing and Maintaining an Effective Self-Care Plan",
+"date": "2026-05-07",
+"time": "14:00"
+},
+{
+"id": "gcal-943",
+"summary": "GeoGuessr",
+"date": "2026-05-07",
+"time": "19:30"
+},
+{
+"id": "gcal-944",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-05-07",
+"time": "19:30"
+},
+{
+"id": "gcal-945",
+"summary": "Normal People Poetry Clique",
+"date": "2026-05-07",
+"time": "20:30"
+},
+{
+"id": "gcal-946",
+"summary": "L [AI] SY Brunch - AI Problemsolving",
+"date": "2026-05-08",
+"time": "11:00"
+},
+{
+"id": "gcal-947",
+"summary": "Workshop: Relationship Patterns: How We Love, Connect, and Repair",
+"date": "2026-05-08",
+"time": "12:00"
+},
+{
+"id": "gcal-948",
+"summary": "Workshop: How To Build Personal Brand On LinkedIn",
+"date": "2026-05-08",
+"time": "13:30"
+},
+{
+"id": "gcal-949",
+"summary": "Let’s Chat: Sisterhood Circle - Connect, Reflect, Share",
+"date": "2026-05-08",
+"time": "15:00"
+},
+{
+"id": "gcal-950",
+"summary": "Create in Community",
+"date": "2026-05-08",
+"time": "16:00"
+},
+{
+"id": "gcal-951",
+"summary": "Film Club: Black Swan (2010)",
+"date": "2026-05-08",
+"time": "18:30"
+},
+{
+"id": "gcal-952",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-05-08",
+"time": "19:00"
+},
+{
+"id": "gcal-953",
+"summary": "Tearoom - DJ Open Decks",
+"date": "2026-05-08",
+"time": "21:00"
+},
+{
+"id": "gcal-954",
+"summary": "Lecture/Discussion: Porn or Art? Why are we still ashamed of desire?",
+"date": "2026-05-09",
+"time": "12:00"
+},
+{
+"id": "gcal-955",
+"summary": "Women of REALITY",
+"date": "2026-05-09",
+"time": "13:00"
+},
+{
+"id": "gcal-956",
+"summary": "Speak Easy English w/ Hannah",
+"date": "2026-05-09",
+"time": "15:00"
+},
+{
+"id": "gcal-957",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-05-09",
+"time": "17:00"
+},
+{
+"id": "gcal-958",
+"summary": "Hitster - A Music Knowledge Quiz Game",
+"date": "2026-05-09",
+"time": "19:00"
+},
+{
+"id": "gcal-959",
+"summary": "Ecstatic Dance",
+"date": "2026-05-10",
+"time": "11:00"
+},
+{
+"id": "gcal-960",
+"summary": "Content Creator Meetup",
+"date": "2026-05-10",
+"time": "17:00"
+},
+{
+"id": "gcal-961",
+"summary": "REALITY Pub Quiz",
+"date": "2026-05-10",
+"time": "20:00"
+},
+{
+"id": "gcal-962",
+"summary": "Workshop: Stress, Cortisol, + Food",
+"date": "2026-05-11",
+"time": "13:30"
+},
+{
+"id": "gcal-963",
+"summary": "AI Meetup",
+"date": "2026-05-11",
+"time": "17:00"
+},
+{
+"id": "gcal-964",
+"summary": "Monday Board Games",
+"date": "2026-05-11",
+"time": "19:00"
+},
+{
+"id": "gcal-965",
+"summary": "French Social Club",
+"date": "2026-05-12",
+"time": "13:30"
+},
+{
+"id": "gcal-966",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-05-12",
+"time": "19:00"
+},
+{
+"id": "gcal-967",
+"summary": "Workshop: Practical Happiness: The Six Seeds Circle",
+"date": "2026-05-12",
+"time": "19:30"
+},
+{
+"id": "gcal-968",
+"summary": "Talk Circle: Love + Power",
+"date": "2026-05-12",
+"time": "20:00"
+},
+{
+"id": "gcal-969",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-05-13",
+"time": "14:30"
+},
+{
+"id": "gcal-970",
+"summary": "Sales ABC",
+"date": "2026-05-13",
+"time": "16:30"
+},
+{
+"id": "gcal-971",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-05-13",
+"time": "18:30"
+},
+{
+"id": "gcal-972",
+"summary": "Intro to Tai Chi and Qi Gong",
+"date": "2026-05-13",
+"time": "19:30"
+},
+{
+"id": "gcal-973",
+"summary": "Karaoke",
+"date": "2026-05-13",
+"time": "21:00"
+},
+{
+"id": "gcal-974",
+"summary": "Coffee + Conversation: If Life Had a Manual",
+"date": "2026-05-14",
+"time": "11:00"
+},
+{
+"id": "gcal-975",
+"summary": "Mandarin Fun Club",
+"date": "2026-05-14",
+"time": "11:30"
+},
+{
+"id": "gcal-976",
+"summary": "GeoGuessr",
+"date": "2026-05-14",
+"time": "19:30"
+},
+{
+"id": "gcal-977",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-05-14",
+"time": "19:30"
+},
+{
+"id": "gcal-978",
+"summary": "L [AI] SY Brunch - AI Problemsolving",
+"date": "2026-05-15",
+"time": "11:00"
+},
+{
+"id": "gcal-979",
+"summary": "Let’s Chat: Sisterhood Circle - Connect, Reflect, Share",
+"date": "2026-05-15",
+"time": "15:00"
+},
+{
+"id": "gcal-980",
+"summary": "Create in Community",
+"date": "2026-05-15",
+"time": "16:00"
+},
+{
+"id": "gcal-981",
+"summary": "Film Club: 500 Days of Summer (2009)",
+"date": "2026-05-15",
+"time": "18:30"
+},
+{
+"id": "gcal-982",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-05-15",
+"time": "19:00"
+},
+{
+"id": "gcal-983",
+"summary": "Tearoom - DJ Open Decks",
+"date": "2026-05-15",
+"time": "21:00"
+},
+{
+"id": "gcal-984",
+"summary": "ADHD: Myths, Facts & the Endless Quest for Dopamine",
+"date": "2026-05-16",
+"time": "12:30"
+},
+{
+"id": "gcal-985",
+"summary": "Women of REALITY",
+"date": "2026-05-16",
+"time": "13:00"
+},
+{
+"id": "gcal-986",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-05-16",
+"time": "17:00"
+},
+{
+"id": "gcal-987",
+"summary": "Kink 101: An Introduction",
+"date": "2026-05-16",
+"time": "20:00"
+},
+{
+"id": "gcal-988",
+"summary": "Da Nang + Hoi An Kink Group Munch",
+"date": "2026-05-16",
+"time": "21:00"
+},
+{
+"id": "gcal-989",
+"summary": "Ecstatic Dance",
+"date": "2026-05-17",
+"time": "11:00"
+},
+{
+"id": "gcal-990",
+"summary": "Content Creator Meetup",
+"date": "2026-05-17",
+"time": "17:00"
+},
+{
+"id": "gcal-991",
+"summary": "REALITY Pub Quiz",
+"date": "2026-05-17",
+"time": "20:00"
+},
+{
+"id": "gcal-992",
+"summary": "Nutrition Workshop: The Gut Microbiome",
+"date": "2026-05-18",
+"time": "13:30"
+},
+{
+"id": "gcal-993",
+"summary": "AI Meetup",
+"date": "2026-05-18",
+"time": "17:00"
+},
+{
+"id": "gcal-994",
+"summary": "Monday Board Games",
+"date": "2026-05-18",
+"time": "19:00"
+},
+{
+"id": "gcal-995",
+"summary": "French Social Club",
+"date": "2026-05-19",
+"time": "13:30"
+},
+{
+"id": "gcal-996",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-05-19",
+"time": "17:00"
+},
+{
+"id": "gcal-997",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-05-19",
+"time": "19:00"
+},
+{
+"id": "gcal-998",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-05-20",
+"time": "14:30"
+},
+{
+"id": "gcal-999",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-05-20",
+"time": "18:30"
+},
+{
+"id": "gcal-1000",
+"summary": "Karaoke",
+"date": "2026-05-20",
+"time": "21:00"
+},
+{
+"id": "gcal-1001",
+"summary": "Coffee + Conversation: Things That Shouldn't Matter (But Do)",
+"date": "2026-05-21",
+"time": "11:00"
+},
+{
+"id": "gcal-1002",
+"summary": "GeoGuessr",
+"date": "2026-05-21",
+"time": "19:30"
+},
+{
+"id": "gcal-1003",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-05-21",
+"time": "19:30"
+},
+{
+"id": "gcal-1004",
+"summary": "The Da Nang AI Introductory Workshop",
+"date": "2026-05-22",
+"time": "13:00"
+},
+{
+"id": "gcal-1005",
+"summary": "Let’s Chat: Sisterhood Circle - Connect, Reflect, Share",
+"date": "2026-05-22",
+"time": "15:00"
+},
+{
+"id": "gcal-1006",
+"summary": "Create in Community",
+"date": "2026-05-22",
+"time": "16:00"
+},
+{
+"id": "gcal-1007",
+"summary": "Film Club: Nocturnal Animals (2016)",
+"date": "2026-05-22",
+"time": "18:30"
+},
+{
+"id": "gcal-1008",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-05-22",
+"time": "19:00"
+},
+{
+"id": "gcal-1009",
+"summary": "Language Mixer",
+"date": "2026-05-22",
+"time": "20:00"
+},
+{
+"id": "gcal-1010",
+"summary": "Tearoom - DJ Open Decks",
+"date": "2026-05-22",
+"time": "21:00"
+},
+{
+"id": "gcal-1011",
+"summary": "Women of REALITY",
+"date": "2026-05-23",
+"time": "13:00"
+},
+{
+"id": "gcal-1012",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-05-23",
+"time": "17:00"
+},
+{
+"id": "gcal-1013",
+"summary": "Katharine + Vy's Open Birthday Party",
+"date": "2026-05-23",
+"time": "21:00"
+},
+{
+"id": "gcal-1014",
+"summary": "Chess Tournament: Rapid Chess",
+"date": "2026-05-24",
+"time": "13:00"
+},
+{
+"id": "gcal-1015",
+"summary": "Content Creator Meetup",
+"date": "2026-05-24",
+"time": "17:00"
+},
+{
+"id": "gcal-1016",
+"summary": "REALITY Pub Quiz",
+"date": "2026-05-24",
+"time": "20:00"
+},
+{
+"id": "gcal-1017",
+"summary": "Workshop: Nutrition Mythbusting: Women's Hormonal Health",
+"date": "2026-05-25",
+"time": "13:30"
+},
+{
+"id": "gcal-1018",
+"summary": "AI Meetup",
+"date": "2026-05-25",
+"time": "17:00"
+},
+{
+"id": "gcal-1019",
+"summary": "Monday Board Games",
+"date": "2026-05-25",
+"time": "19:00"
+},
+{
+"id": "gcal-1020",
+"summary": "French Social Club",
+"date": "2026-05-26",
+"time": "13:30"
+},
+{
+"id": "gcal-1021",
+"summary": "“Awareness Itself” – An Introduction to Nondual Meditation",
+"date": "2026-05-26",
+"time": "14:00"
+},
+{
+"id": "gcal-1022",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-05-26",
+"time": "17:00"
+},
+{
+"id": "gcal-1023",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-05-26",
+"time": "19:00"
+},
+{
+"id": "gcal-1024",
+"summary": "Talk Circle: “Emotional Honesty - How Much Is Too Much?”",
+"date": "2026-05-26",
+"time": "20:00"
+},
+{
+"id": "gcal-1025",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-05-27",
+"time": "14:30"
+},
+{
+"id": "gcal-1026",
+"summary": "Sales ABC",
+"date": "2026-05-27",
+"time": "16:30"
+},
+{
+"id": "gcal-1027",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-05-27",
+"time": "18:30"
+},
+{
+"id": "gcal-1028",
+"summary": "Karaoke",
+"date": "2026-05-27",
+"time": "21:00"
+},
+{
+"id": "gcal-1029",
+"summary": "Coffee + Conversation",
+"date": "2026-05-28",
+"time": "11:00"
+},
+{
+"id": "gcal-1030",
+"summary": "Mandarin Fun Club",
+"date": "2026-05-28",
+"time": "11:30"
+},
+{
+"id": "gcal-1031",
+"summary": "Coding with LLMs: Funnel Heist",
+"date": "2026-05-28",
+"time": "14:00"
+},
+{
+"id": "gcal-1032",
+"summary": "Nutrition Workshop: Heat, Hydration, + Electrolytes",
+"date": "2026-05-28",
+"time": "14:30"
+},
+{
+"id": "gcal-1033",
+"summary": "GeoGuessr",
+"date": "2026-05-28",
+"time": "19:30"
+},
+{
+"id": "gcal-1034",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-05-28",
+"time": "19:30"
+},
+{
+"id": "gcal-1035",
+"summary": "Create in Community",
+"date": "2026-05-29",
+"time": "16:00"
+},
+{
+"id": "gcal-1036",
+"summary": "Film Club",
+"date": "2026-05-29",
+"time": "18:30"
+},
+{
+"id": "gcal-1037",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-05-29",
+"time": "19:00"
+},
+{
+"id": "gcal-1038",
+"summary": "Language Mixer",
+"date": "2026-05-29",
+"time": "20:00"
+},
+{
+"id": "gcal-1039",
+"summary": "Tearoom - DJ Open Decks",
+"date": "2026-05-29",
+"time": "21:00"
+},
+{
+"id": "gcal-1040",
+"summary": "Women of REALITY",
+"date": "2026-05-30",
+"time": "13:00"
+},
+{
+"id": "gcal-1041",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-05-30",
+"time": "17:00"
+},
+{
+"id": "gcal-1042",
+"summary": "How to DJ: A six-week course on making the party",
+"date": "2026-05-30",
+"time": "20:00"
+},
+{
+"id": "gcal-1043",
+"summary": "Individual Bughouse Chess Championship",
+"date": "2026-05-31",
+"time": "13:00"
+},
+{
+"id": "gcal-1044",
+"summary": "REALITY Pub Quiz",
+"date": "2026-05-31",
+"time": "20:00"
+},
+{
+"id": "gcal-1045",
+"summary": "AI Meetup",
+"date": "2026-06-01",
+"time": "17:00"
+},
+{
+"id": "gcal-1046",
+"summary": "Monday Board Games",
+"date": "2026-06-01",
+"time": "19:00"
+},
+{
+"id": "gcal-1047",
+"summary": "French Social Club",
+"date": "2026-06-02",
+"time": "13:30"
+},
+{
+"id": "gcal-1048",
+"summary": "“Awareness Itself” – An Introduction to Nondual Meditation",
+"date": "2026-06-02",
+"time": "14:00"
+},
+{
+"id": "gcal-1049",
+"summary": "FIRE Weekly (Financial Independence Retire Early) Discussions & Meet",
+"date": "2026-06-02",
+"time": "17:00"
+},
+{
+"id": "gcal-1050",
+"summary": "Đà Nẵng Nomad Chess Club",
+"date": "2026-06-02",
+"time": "19:00"
+},
+{
+"id": "gcal-1051",
+"summary": "Vietnam Talk: Culture + Language",
+"date": "2026-06-03",
+"time": "14:30"
+},
+{
+"id": "gcal-1052",
+"summary": "PULSE Sessions",
+"date": "2026-06-03",
+"time": "16:30"
+},
+{
+"id": "gcal-1053",
+"summary": "Indie Shorts Film Forum",
+"date": "2026-06-03",
+"time": "18:30"
+},
+{
+"id": "gcal-1054",
+"summary": "Karaoke",
+"date": "2026-06-03",
+"time": "21:00"
+},
+{
+"id": "gcal-1055",
+"summary": "Coffee + Conversation",
+"date": "2026-06-04",
+"time": "11:00"
+},
+{
+"id": "gcal-1056",
+"summary": "Mandarin Fun Club",
+"date": "2026-06-04",
+"time": "11:30"
+},
+{
+"id": "gcal-1057",
+"summary": "Nutrition Workshop: Heat, Hydration, + Electrolytes",
+"date": "2026-06-04",
+"time": "13:30"
+},
+{
+"id": "gcal-1058",
+"summary": "Interactive Discussion: The Voices Within",
+"date": "2026-06-04",
+"time": "17:30"
+},
+{
+"id": "gcal-1059",
+"summary": "Spill It with Dr. Steph: Hormones, Real Talk, Community",
+"date": "2026-06-04",
+"time": "18:00"
+},
+{
+"id": "gcal-1060",
+"summary": "GeoGuessr",
+"date": "2026-06-04",
+"time": "19:30"
+},
+{
+"id": "gcal-1061",
+"summary": "Grounded: A Men’s Wellness Talk",
+"date": "2026-06-04",
+"time": "19:30"
+},
+{
+"id": "gcal-1062",
+"summary": "Guided Meditation: “Reconnect With Your Inner Child”",
+"date": "2026-06-05",
+"time": "11:00"
+},
+{
+"id": "gcal-1063",
+"summary": "Workshop: Russian Alphabet & Words",
+"date": "2026-06-05",
+"time": "13:30"
+},
+{
+"id": "gcal-1064",
+"summary": "Create in Community",
+"date": "2026-06-05",
+"time": "16:00"
+},
+{
+"id": "gcal-1065",
+"summary": "Film Club: Coco (2017)",
+"date": "2026-06-05",
+"time": "18:30"
+},
+{
+"id": "gcal-1066",
+"summary": "No Mic Open Mic: Rooftop Jam Session",
+"date": "2026-06-05",
+"time": "19:00"
+},
+{
+"id": "gcal-1067",
+"summary": "Language Mixer",
+"date": "2026-06-05",
+"time": "20:00"
+},
+{
+"id": "gcal-1068",
+"summary": "Tearoom - DJ Open Decks",
+"date": "2026-06-05",
+"time": "21:00"
+},
+{
+"id": "gcal-1069",
+"summary": "Sound Design Workshop",
+"date": "2026-06-06",
+"time": "11:30"
+},
+{
+"id": "gcal-1070",
+"summary": "Women of REALITY",
+"date": "2026-06-06",
+"time": "13:00"
+},
+{
+"id": "gcal-1071",
+"summary": "Filmmakers Meetup : Đà Nẵng Film Forum",
+"date": "2026-06-06",
+"time": "17:00"
+},
+{
+"id": "gcal-1072",
+"summary": "Jacob’s + Jo’s birthday party + benefit for PAWS for Compassion",
+"date": "2026-06-06",
+"time": "20:00"
+},
+{
+"id": "gcal-1073",
+"summary": "Dom Venice’s Listening Party",
+"date": "2026-06-07",
+"time": "15:00"
+},
+{
+"id": "gcal-1074",
+"summary": "Musical Sing-along with the Cast of Camelot",
+"date": "2026-06-07",
+"time": "17:30"
+},
+{
+"id": "gcal-1075",
+"summary": "REALITY Pub Quiz",
+"date": "2026-06-07",
+"time": "20:00"
+}
+]
+}

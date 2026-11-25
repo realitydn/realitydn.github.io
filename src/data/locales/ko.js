@@ -538,6 +538,8 @@ export default {
       "roomsOn": "{n}개 공간에서 진행 중",
       "roomOn": "1개 공간에서 진행 중",
       "nothingOn": "지금은 진행 중인 이벤트가 없어요",
+      "onShort": "{n}개 진행 중",
+      "nextShort": "다음 {time}",
       "nextAt": "다음: {title}, {time}",
       "noEvent": "지금은 이벤트 없음",
       "bar": "바",
@@ -599,6 +601,7 @@ export default {
     },
     "giving": {
       "count": "모금 {n}회",
+      "short": "모금",
       "raised": "이곳에서 모금한 금액 {total}",
       "lede": "REALITY에서 열린 모금 행사와 기부금이 전달된 곳.",
       "fundraiser": "모금 행사",
@@ -621,6 +624,7 @@ export default {
     },
     "host": {
       "rooms": "공간 {n}개",
+      "short": "공개 이벤트",
       "free": "공개 커뮤니티 이벤트를 여는 비용이에요.",
       "from": "프라이빗 대관은 시간당 {price}부터.",
       "live": "공개 커뮤니티 이벤트는 무료 · 대관은 시간당 {price}부터"

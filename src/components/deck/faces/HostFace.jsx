@@ -14,6 +14,8 @@ export function lowestRoomRate() {
 
 // 06 · Host an event — what it costs to host a public community event (0₫),
 // and where private room rental starts: the lowest figure on the rate card.
+// On the phone card the figure has its word under it ("for public events":
+// deck.host.short), because a bare "0₫" says nothing.
 //
 // THE MOTION ("Highlighter"): a yellow plate is pulled across behind 0₫,
 // holds for about 2 s, and is pulled off. How often is not set here: this
@@ -27,6 +29,7 @@ export default function HostFace({ card, no, t }) {
       <span ref={ref} className="dk-num">
         <span key={beat} className={`dk-hl${beat ? ' dk-hl-go' : ''}`}>0₫</span>
       </span>
+      <span className="dk-fact dk-only-compact">{S('short')}</span>
       <span className="dk-fact dk-x">
         {S('free')} {fill(S('from'), { price: vnd(lowestRoomRate()) })}
       </span>

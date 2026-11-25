@@ -583,6 +583,21 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   eq('building: a language with no line falls back to English', roomHas('2E', 'XX'), ROOM_HAS['2E'].EN);
   eq('building: a room with no line says nothing', roomHas('1L', 'VN'), '');
 
+  // The "Our menu" card: the drinks it rolls through (menu-picks.js) are
+  // named by hand, so a regenerated menu.js can leave a row behind.
+  {
+    const { PICKS, locate, pickDrinks } = await import('../src/components/deck/menu-picks.js');
+    const { MENU: FULL } = await import('../src/data/menu.js');
+    eq('menu card: every pick is still on the menu (fix the row in menu-picks.js)', PICKS.filter((p) => !locate(FULL, p)).map((p) => p[1]).join(', '), '');
+    const drinks = pickDrinks(FULL);
+    check('menu card: every drink has a name and says its kind', drinks.length === PICKS.length && drinks.every((d) => d.name && d.kind));
+    eq('menu card: a cocktail takes its chapter as its kind', (drinks.find((d) => d.name === 'Mojito') || {}).kind, 'Cocktails');
+    eq('menu card: any other drink takes its section', (drinks.find((d) => d.name === 'Salt Coffee') || {}).kind, 'Phin Coffee');
+    check('menu card: it is the whole menu, not only cocktails', new Set(drinks.map((d) => d.kind)).size >= 6
+      && drinks.filter((d) => d.kind === 'Cocktails').length <= drinks.length / 3);
+    eq('menu card: a drink that has left the menu is skipped', locate(FULL, ['cafe', 'No Such Drink']), null);
+  }
+
   // Open daily 11:00–02:00, in Đà Nẵng time whatever the machine's zone.
   const ict = (hhmm, day = 26) => Date.parse(at(hhmm, day));
   check('open: 10:59 is closed, opens 11:00', !openNow(ict('10:59')).open && openNow(ict('10:59')).until === '11:00');

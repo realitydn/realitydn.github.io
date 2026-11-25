@@ -538,6 +538,8 @@ export default {
       "roomsOn": "{n}部屋で開催中",
       "roomOn": "1部屋で開催中",
       "nothingOn": "いま開催中のイベントはありません",
+      "onShort": "{n}件開催中",
+      "nextShort": "次は{time}",
       "nextAt": "次は{time}から「{title}」",
       "noEvent": "いまはイベントなし",
       "bar": "バー",
@@ -599,6 +601,7 @@ export default {
     },
     "giving": {
       "count": "募金イベント{n}回",
+      "short": "募金",
       "raised": "ここで集まった金額 {total}",
       "lede": "REALITYで開かれた募金イベントと、その寄付先。",
       "fundraiser": "募金イベント",
@@ -621,6 +624,7 @@ export default {
     },
     "host": {
       "rooms": "{n}部屋",
+      "short": "公開イベント",
       "free": "で公開コミュニティイベントを開催できます。",
       "from": "貸切は1時間{price}から。",
       "live": "公開コミュニティイベントは無料 · 貸切は1時間{price}から"

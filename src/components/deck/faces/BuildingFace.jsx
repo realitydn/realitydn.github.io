@@ -3,16 +3,20 @@ import DeckCard from '../DeckCard';
 import useBuilding from '../useBuilding';
 import { fill, Pulse } from '../parts';
 import { FLOORS, roomHas } from '../../../data/deck/building';
-import { fmtTime, pickTitle } from '../../../data/feed-helpers';
+import { fmtTime, pickTitle, dateKey } from '../../../data/feed-helpers';
+import { fmtDM } from '../../../data/cal-feed';
 
 // 01 · What's happening — a small cutaway of the building. A room with an
 // event in it right now is lit red; the line underneath says how many rooms
 // are on and what starts next. From the events feed, re-read every minute.
 // On the wide card a free room says what is in it (the pool table, the board
 // games: ROOM_HAS in data/deck/building.js), in a lighter weight than a lit
-// room's event. The phone card is blocks only.
+// room's event.
+// The phone card is the same building as blocks, with one short line under
+// it, because blocks alone are empty outlines when nothing is on (Donald,
+// 25.11.26): how many rooms are on, or when the next event starts.
 export default function BuildingFace({ card, no, t, lang }) {
-  const { state, loading, live, clock, hours } = useBuilding();
+  const { state, loading, live, now, clock, hours } = useBuilding();
   const S = (k) => t.use(`deck.building.${k}`);
   const name = (ev) => pickTitle(ev, lang) || t.use('cal.fallbackTitle');
 
@@ -21,6 +25,15 @@ export default function BuildingFace({ card, no, t, lang }) {
   const next = state.next
     ? fill(S('nextAt'), { title: name(state.next), time: fmtTime(state.next.startsAt) })
     : '';
+
+  // The phone card's line. The next event's time when it is today or
+  // tomorrow (Đà Nẵng days), its date when it is further off.
+  const soon = state.next && [now, now + 86400000]
+    .some((ms) => dateKey(new Date(ms).toISOString()) === dateKey(state.next.startsAt));
+  const short = !live || loading ? ''
+    : n > 0 ? fill(S('onShort'), { n })
+      : state.next ? fill(S('nextShort'), { time: soon ? fmtTime(state.next.startsAt) : fmtDM(state.next.startsAt) })
+        : '';
 
   return (
     <DeckCard card={card} no={no} t={t} meta={live ? clock.hhmm : null}>
@@ -55,8 +68,14 @@ export default function BuildingFace({ card, no, t, lang }) {
           </span>
         ))}
       </span>
-      {/* On the compact (phone) card the lit rooms are the whole message:
-          there is no room for the sentence under them. */}
+      {short ? (
+        <span className="dk-fact dk-only-compact">
+          {n > 0 ? <Pulse /> : null}
+          {short}
+        </span>
+      ) : null}
+      {/* The sentence, on the wide card only: the phone card has the short
+          line above instead. */}
       <span className="dk-fact dk-clamp2 dk-x">
         {live ? (
           <>

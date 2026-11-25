@@ -176,8 +176,10 @@
 
 /* ── 4. What sits on a face (compact first) ── */
 .dk-card .dk-num { font-size: clamp(21px, 7.2vw, 34px); font-size: clamp(20px, 24cqw, 62px); }
-.dk-card .dk-t { font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
-.dk-card .dk-fact { font-size: 12px; line-height: 1.3; }
+/* (the words grow a little with the card: a 430 or 470px phone has cards a
+   third wider than a 360px one. cqw = 1% of the width inside the card.) */
+.dk-card .dk-t { font-size: 13px; font-size: clamp(13px, 13.6cqw, 17px); line-height: 1.2; overflow-wrap: anywhere; }
+.dk-card .dk-fact { font-size: 12px; font-size: clamp(12px, 12.4cqw, 15px); line-height: 1.3; }
 
 /* 01 the building, small */
 .dk-mb { display: grid; gap: 3px; }
@@ -218,8 +220,19 @@
 
 /* 03 the drink that changes — ROLLED: the old line up and out, the new one
    in under it, as one strip */
-.dk-roll { position: relative; display: block; overflow: hidden; }
+.dk-roll { position: relative; display: block; overflow: hidden; min-height: 0; }
 .dk-roll-i { display: flex; flex-direction: column; gap: 4px; }
+/* what kind of drink it is: an ink word behind a small ink square */
+.dk-kind {
+  font: 500 12px/1.25 var(--grotesk); font-size: clamp(12px, 12.4cqw, 15px); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+/* a long name ("Fresh-Squeezed Orange Juice") gets three lines, no more */
+.dk-roll-i .dk-t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.dk-kind::before {
+  content: ''; display: inline-block; width: .62em; height: .62em; margin-right: 5px;
+  background: currentColor;
+}
 .dk-roll-in { animation: dk-roll-in 560ms var(--ease-stamp) both; }
 .dk-roll-out { position: absolute; inset: 0 0 auto 0; animation: dk-roll-out 560ms var(--ease-stamp) both; }
 @keyframes dk-roll-in { from { transform: translateY(108%); } to { transform: none; } }
@@ -378,6 +391,8 @@
   .dk-mb, .dk-mb-row { gap: 4px; }
   .dk-mb i { min-height: 30px; padding: 3px 6px; font-size: 10px; }
   .dk-roll-i { gap: 6px; }
+  .dk-kind { font: 700 12px/1.3 var(--mont); letter-spacing: .1em; text-transform: uppercase; }
+  .dk-kind::before { margin-right: 7px; }
   .dk-spark { height: 44px; gap: 2px; }
   .dk-shots { grid-template-columns: 1fr 1fr; }
   .dk-shot { aspect-ratio: 1 / 1; max-height: 112px; --reg-k: 1; }
@@ -400,6 +415,46 @@
 @media (max-width: 760.98px) {
   .dk-x { display: none !important; }
   .dk-only-compact { display: block; }
+
+  /* ON A PHONE EVERY FIGURE HAS ITS WORD (25.11.26). A card is about 100 to
+     130px wide here; a bare "3" or "0₫", four icons or three empty outlines
+     did not say what the card was. So: */
+  /* (a phone up to 380px wide has cards about 100px wide: they are a little
+     taller for their width there, so a drink's kind and a three-line name
+     fit. Block 12 makes them taller still under 340px.) */
+  @media (max-width: 380px) { .dk-card { aspect-ratio: 1 / 1.24; } }
+  /* 03 on a narrow card the drink is set tighter: the name a size down and,
+     on the narrowest, no square before the kind (it pushed "Soda + juice"
+     onto a second line). These widths are the card's inside: about 82px on a
+     360px phone, 92px on a 390px one, 106px on a 430px one. */
+  @container (max-width: 95px) {
+    .dk-roll-i { gap: 2px; }
+    .dk-roll-i .dk-t { font-size: 12px; line-height: 1.15; }
+  }
+  @container (max-width: 88px) { .dk-kind::before { display: none; } }
+  /* 02 "3 steps": the figure, and its word on the same line */
+  .dk-fig { font: 600 13px/1.1 var(--mont); font-size: clamp(13px, 13.6cqw, 17px); }
+  .dk-fig .dk-num { margin: 0 .16em 0 0; }
+  .dk-fig .dk-num:not(:first-child) { margin-left: .16em; }
+  /* 01 the building takes what room the line under it leaves */
+  .dk-mb { flex: 0 1 54px; min-height: 26px; grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .dk-mb-row { min-height: 0; }
+  .dk-mb i { min-height: 0; }
+  /* 08 the four ways in, by name: a list, not four boxed icons */
+  .dk-chips { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .dk-chips > span {
+    justify-content: flex-start; gap: 6px; padding: 0; border: 0;
+    font: 600 12px/1.25 var(--mont); font-size: clamp(12px, 12.4cqw, 15px); letter-spacing: 0; text-transform: none;
+  }
+  .dk-chips svg { width: 1.1em; height: 1.1em; }
+  /* a long name (the webapp, in Russian) is cut with an ellipsis, not wrapped */
+  .dk-chips > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* a 360px phone: the four names a touch smaller and closer, so the fourth
+     clears the card's title */
+  @container (max-width: 88px) {
+    .dk-chips { gap: 1px; }
+    .dk-chips > span { font-size: 11px; gap: 5px; }
+  }
 }
 
 /* Desktop: the words on the left, the table on the right. */
@@ -1012,9 +1067,9 @@ a.dk-np:focus-visible { background-color: #0d0905; }
   .dk-card .dk-t { font-size: 12px; }
   .dk-mb, .dk-mb-row { gap: 2px; }
   .dk-mb i { min-height: 13px; }
-  .dk-chips { gap: 4px; }
-  .dk-chips > span { padding: 4px; }
-  .dk-chips svg { width: 14px; height: 14px; }
+  .dk-chips { gap: 2px; }
+  .dk-chips > span { font-size: 11px; }
+  .dk-chips svg { display: none; }
   .dk-pulse { margin-right: 5px; }
   /* opened cards: buttons that sat two to a row are one to a row here */
   .dk-way .dk-row { grid-template-columns: minmax(0, 1fr); }

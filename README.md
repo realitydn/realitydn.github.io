@@ -86,6 +86,16 @@ down the page.
   fundraisers (`data/deck/fundraisers.js`, marked stand-ins that give way to
   the app's fundraisers feed the moment it has rows). A fact we don't have is
   a `<Gap>` — a dashed tag on the page — never a guess.
+- **The Our menu card** rolls through the whole menu, not only the cocktails
+  (coffee, matcha, juice, beer, tea, water), and every drink says what kind
+  it is, from the menu's own section labels. The drinks are the `PICKS` list
+  in `deck/menu-picks.js`, one row each; `npm run selftest` fails if a row's
+  drink has left the menu.
+- **On a phone every card says what it is** (25.11.26): a figure has its word
+  with it ("3 steps", "0₫ for public events", "72M₫+ raised"), What's on has
+  one line under its building ("2 on now" or "Next 11:00"), and Get connected
+  lists its four names. The short strings are `deck.building.onShort` /
+  `nextShort`, `deck.host.short` and `deck.giving.short` in the locale files.
 - **What moves inside the cards (24.11.26):** six faces move on their own —
   the menu's drink rolls over, the event chart prints in once as its card
   arrives (on load; it is not on the clock), the giving total throws an echo, the photos re-register, 0₫ gets a

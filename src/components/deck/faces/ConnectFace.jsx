@@ -3,8 +3,10 @@ import DeckCard from '../DeckCard';
 import { fill } from '../parts';
 import { Icons } from '../../Icons';
 
-// 08 · Get connected — the ways in, by name. The links themselves are in the
-// opened card (./sections/ConnectSection.jsx), which is where to add one.
+// 08 · Get connected — the ways in, by name: four chips on the wide card, a
+// list of four names on the phone card (four bare icons said nothing there).
+// The links themselves are in the opened card
+// (./sections/ConnectSection.jsx), which is where to add one.
 export const WAYS_IN = [
   { key: 'app', icon: 'app' },
   { key: 'instagram', icon: 'instagram', label: 'Instagram' },
@@ -19,7 +21,7 @@ export default function ConnectFace({ card, no, t }) {
         {WAYS_IN.map((w) => (
           <span key={w.key}>
             {Icons[w.icon]()}
-            <span className="dk-x">{w.label || t.use('deck.connect.app')}</span>
+            <span>{w.label || t.use('deck.connect.app')}</span>
           </span>
         ))}
       </span>

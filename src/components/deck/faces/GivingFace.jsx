@@ -30,6 +30,8 @@ export default function GivingFace({ card, no, t, lang }) {
       <span ref={ref} key={beat} className={`dk-num dk-echo${beat ? ' dk-echo-go' : ''}`} data-t={total}>
         {total}
       </span>
+      {/* the phone card: the figure's word ("raised") */}
+      <span className="dk-fact dk-only-compact">{S('short')}</span>
       {last ? (
         <span className="dk-fact dk-x dk-clamp2">
           {fill(S('last'), { title: title(last), date: dmy(String(last.heldOn).slice(0, 10)) })}

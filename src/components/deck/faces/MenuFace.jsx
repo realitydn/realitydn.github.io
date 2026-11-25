@@ -8,11 +8,15 @@ import { nextDealToday } from '../../../data/cal-feed';
 import { isDealEvent } from '../../../data/event-category';
 import { fmtTime, pickTitle } from '../../../data/feed-helpers';
 
-// 03 · Our menu — one drink at a time: its name and its one-liner. No price
-// on the card (Donald, 25.11.26); a photo of the drink may come later. The
-// drinks and their one-liners are the menu itself (src/data/menu.js,
-// generated from the app): nothing here is written for the card. Which
-// drinks: ../menu-picks.js.
+// 03 · Our menu — one drink at a time: what kind of drink it is, its name,
+// and (wide card) the menu's line for it. The drinks come from the whole
+// menu, coffee and juice as well as cocktails, and each says its kind:
+// a cocktail's name alone means nothing to someone who has not been in, and
+// plenty of guests don't drink (Donald, 25.11.26). On the phone card, where
+// there is no room for the line, the kind is what explains the name.
+// No price on the card; a photo of the drink may come later. Every word is
+// the menu's own (src/data/menu.js, generated from the app): nothing here is
+// written for the card. Which drinks, and what "kind" is: ../menu-picks.js.
 //
 // THE MOTION ("Rolled"): the drink rolls up and out and the next rolls in
 // under it, like a line on a scoreboard. How often is not set here: this face
@@ -22,15 +26,19 @@ import { fmtTime, pickTitle } from '../../../data/feed-helpers';
 function Drink({ drink, cls = '', leaving = false }) {
   return (
     <span className={`dk-roll-i ${cls}`} aria-hidden={leaving ? 'true' : undefined}>
+      <span className="dk-kind">{drink.kind}</span>
       <span className="dk-t">{drink.name}</span>
-      <span className="dk-fact dk-x dk-clamp3">{drink.tag}</span>
+      {drink.line ? <span className="dk-fact dk-x dk-clamp3">{drink.line}</span> : null}
     </span>
   );
 }
 
 export default function MenuFace({ card, no, t, lang }) {
   const menu = useMenu(lang);
-  const drinks = useMemo(() => pickDrinks(menu), [menu]);
+  // the rows in menu-picks.js name their drinks in English; the English menu
+  // is always loaded (menu-i18n.js), so this never waits
+  const menuEN = useMenu('EN');
+  const drinks = useMemo(() => pickDrinks(menu, menuEN), [menu, menuEN]);
   // The beat counts the drinks: 0 is the first one — the still, which the
   // static HTML and a reduced-motion visitor keep.
   const { beat, ref } = useBeat({ face: 'menu', on: drinks.length > 1, order: Number(no) });

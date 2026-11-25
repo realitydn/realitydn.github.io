@@ -45,6 +45,8 @@ export default function VisitFace({ card, no, t }) {
             <Pulse off={!open} />
             {open ? S('open') : S('closed')}
             <span className="dk-x"> · {fill(open ? S('till') : S('opens'), { time: until })}</span>
+            {/* the phone card: the same, on its own line */}
+            <span className="dk-only-compact">{fill(open ? S('till') : S('opens'), { time: until })}</span>
           </>
         )}
         <span className="dk-x dk-block">{t.use('deck.visit.area')}</span>

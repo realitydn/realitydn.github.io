@@ -538,6 +538,8 @@ export default {
       "roomsOn": "{n} phòng đang có sự kiện",
       "roomOn": "1 phòng đang có sự kiện",
       "nothingOn": "Hiện chưa có sự kiện nào",
+      "onShort": "{n} đang diễn ra",
+      "nextShort": "Sắp tới {time}",
       "nextAt": "Tiếp theo: {title} lúc {time}",
       "noEvent": "Hiện không có sự kiện",
       "bar": "Quầy bar",
@@ -599,6 +601,7 @@ export default {
     },
     "giving": {
       "count": "{n} lần gây quỹ",
+      "short": "đã gây quỹ",
       "raised": "Đã gây quỹ {total} tại đây",
       "lede": "Những lần gây quỹ tại REALITY, và số tiền đã đi đâu.",
       "fundraiser": "Gây quỹ",
@@ -621,6 +624,7 @@ export default {
     },
     "host": {
       "rooms": "{n} phòng",
+      "short": "cho sự kiện công khai",
       "free": "để tổ chức sự kiện cộng đồng công khai.",
       "from": "Thuê phòng riêng từ {price} mỗi giờ.",
       "live": "Miễn phí cho sự kiện cộng đồng công khai · thuê phòng từ {price} mỗi giờ"

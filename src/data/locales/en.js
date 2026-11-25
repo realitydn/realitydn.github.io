@@ -553,6 +553,8 @@ export default {
       "roomsOn": "{n} rooms on",
       "roomOn": "1 room on",
       "nothingOn": "Nothing on right now",
+      "onShort": "{n} on now",
+      "nextShort": "Next {time}",
       "nextAt": "Next: {title} at {time}",
       "noEvent": "No event right now",
       "bar": "Bar",
@@ -614,6 +616,7 @@ export default {
     },
     "giving": {
       "count": "{n} fundraisers",
+      "short": "raised",
       "raised": "{total} raised here",
       "lede": "Fundraisers held at REALITY, and where the money went.",
       "fundraiser": "Fundraiser",
@@ -636,6 +639,7 @@ export default {
     },
     "host": {
       "rooms": "{n} rooms",
+      "short": "for public events",
       "free": "to host a public community event.",
       "from": "Private rooms from {price} an hour.",
       "live": "Free for public community events · rooms from {price} an hour"

@@ -129,6 +129,73 @@ const menuPerLanguage = () => ({
   },
 });
 
+// The weekly event report's figures, for the home page's "Events we've held"
+// card (src/data/deck/event-audit.js). public/event-report/stats.json is
+// rebuilt every week by scripts/event-report/ and pushed to main; this hands
+// it to the bundle at BUILD time as `virtual:event-stats`, so the prerendered
+// HTML and the running page carry the same figures and nothing is fetched in
+// the browser. No file, or a file that is not JSON: the module is `null` and
+// the page falls back to its bundled snapshot (src/data/deck/event-stats.js,
+// which also decides whether a file is usable).
+const STATS_FILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'public/event-report/stats.json');
+const STATS_ID = 'virtual:event-stats';
+
+const eventStats = () => ({
+  name: 'reality-event-stats',
+  resolveId(id) {
+    return id === STATS_ID ? '\0' + STATS_ID : null;
+  },
+  load(id) {
+    if (id !== '\0' + STATS_ID) return null;
+    let stats = null;
+    if (existsSync(STATS_FILE)) {
+      this.addWatchFile(STATS_FILE);
+      try {
+        stats = JSON.parse(readFileSync(STATS_FILE, 'utf8'));
+        console.log(`  event stats: public/event-report/stats.json (as of ${stats && stats.asOf}, ${stats && stats.totals && stats.totals.events} events)`);
+      } catch (e) {
+        stats = null;
+        console.warn(`  event stats: public/event-report/stats.json is not JSON (${e.message}) — the home page uses its bundled snapshot`);
+      }
+    } else {
+      console.log('  event stats: no public/event-report/stats.json — the home page uses its bundled snapshot');
+    }
+    return `export default ${JSON.stringify(stats)};\n`;
+  },
+});
+
+// The app's fundraisers record, for the home page's "Charitable giving" card
+// (src/hooks/useFundraisers.js). The feed is read ONCE when the site is built
+// (or when the dev server first needs it) and handed to the bundle as
+// `virtual:fundraisers`, so the prerendered HTML already shows the app's
+// record and the page does not change under the reader when the browser
+// asks again. A slow, failing or empty feed never fails the build: the module
+// is `null` and the card shows its stand-in list
+// (src/data/deck/fundraisers.js). scripts/fundraisers-feed.mjs does the read
+// and decides what is usable; the build log says which was used.
+const FUND_ID = 'virtual:fundraisers';
+
+const fundraisers = () => {
+  let read = null;
+  return {
+    name: 'reality-fundraisers',
+    resolveId(id) {
+      return id === FUND_ID ? '\0' + FUND_ID : null;
+    },
+    async load(id) {
+      if (id !== '\0' + FUND_ID) return null;
+      if (!read) {
+        read = import('./scripts/fundraisers-feed.mjs')
+          .then((m) => m.readFundraisersFeed())
+          .catch((e) => ({ record: null, note: `the reader failed (${e && e.message})` }));
+      }
+      const { record, note } = await read;
+      console.log(`  fundraisers: ${note}${record ? '' : ' — the home page uses its stand-in list'}`);
+      return `export default ${JSON.stringify(record)};\n`;
+    },
+  };
+};
+
 // Pre-rendering: after `vite build`, renders each route in a headless browser
 // and saves the resulting HTML. Users with JS get the same React SPA experience
 // (hydration kicks in), but crawlers see fully rendered content.
@@ -163,7 +230,7 @@ const prerender = () => ({
 });
 
 export default defineConfig({
-  plugins: [menuPerLanguage(), react(), studioCacheBust(), prerender()],
+  plugins: [menuPerLanguage(), eventStats(), fundraisers(), react(), studioCacheBust(), prerender()],
   server: {
     port: 3000,
     open: true,

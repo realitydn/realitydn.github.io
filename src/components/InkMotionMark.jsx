@@ -19,6 +19,7 @@
 
 import { useEffect, useRef } from 'react';
 import InkMark from './InkMark';
+import { untilBeat } from '../lib/beat';
 
 const SITE_PALETTE = {
   R: 'var(--red)', B: 'var(--blue)', Y: 'var(--yellow)', G: 'var(--green)',
@@ -26,6 +27,10 @@ const SITE_PALETTE = {
 };
 const FIRST = [2500, 1500]; // first performance: 2.5–4s after the page settles
 const EVERY = [4000, 2000]; // then a new one every 4–6s (Donald: ~5s)
+// Each wait is then rounded up to the next BEAT of the page's one clock
+// (lib/beat.js: the next whole second), so the strip starts in time with the
+// other ambient motion — the deck's card faces and the Live Pulse squares
+// (24.11.26).
 
 const later = ([base, spread]) => base + Math.random() * spread;
 
@@ -52,7 +57,7 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
       if (!alive) return;
       // Off-screen, hidden tab or mobile wrap-away: try again shortly.
       if (!inView || document.visibilityState !== 'visible' || !el.offsetWidth) {
-        timer = window.setTimeout(perform, 4000);
+        timer = window.setTimeout(perform, untilBeat(4000));
         return;
       }
       try {
@@ -78,9 +83,9 @@ export default function InkMotionMark({ module: modulePx = 8, form = 'strip-h' }
         player?.destroy();
         player = null;
       }
-      if (alive) timer = window.setTimeout(perform, later(EVERY));
+      if (alive) timer = window.setTimeout(perform, untilBeat(later(EVERY)));
     };
-    timer = window.setTimeout(perform, later(FIRST));
+    timer = window.setTimeout(perform, untilBeat(later(FIRST)));
     return () => {
       alive = false;
       window.clearTimeout(timer);

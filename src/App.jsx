@@ -1,13 +1,9 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
-import Hero from "./components/Hero";
-import Calendar from "./components/Calendar";
-import InfoHostSection from "./components/InfoHostSection";
-import DarkCTA from "./components/DarkCTA";
-import MenuSection from "./components/MenuSection";
-import VisitSection from "./components/VisitSection";
-import GallerySection from "./components/GallerySection";
+import DeckHero from "./components/deck/DeckHero";
+import DeckHand from "./components/deck/DeckHand";
+import { DECK, cardNo } from "./components/deck/deck";
 import Footer from "./components/Footer";
 import SEO from "./components/SEO";
 import FAQSchema from "./components/FAQSchema";
@@ -22,6 +18,7 @@ import { loadMenu } from "./data/menu-i18n";
 import { buildFaq } from "./data/faq";
 import useFeed from "./hooks/useFeed";
 import useHashLanding from "./hooks/useHashLanding";
+import useSeam from "./components/deck/seam";
 
 // Builds the `t` helper from a language code. Callers use `t.use('path.to.key')`.
 // The catalogue must be loaded — every route renders under <Localized>, which
@@ -46,6 +43,12 @@ const seoOf = (lang) => STR[lang].seo || STR.EN.seo;
 
 const SITE = 'https://realitydn.com';
 
+// DEV ONLY — the card-motion lab at /deck-lab (components/deck/lab/). In a
+// production build `import.meta.env.DEV` is the literal `false`, so this
+// import and its route are dropped: nothing of the lab is built, prerendered
+// or linked.
+const DeckLab = import.meta.env.DEV ? React.lazy(() => import('./components/deck/lab/DeckLab')) : null;
+
 function HomePage({ lang }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = makeT(lang);
@@ -58,6 +61,9 @@ function HomePage({ lang }) {
   // same shared load Calendar/EventsSchema use — no extra fetch.
   const { loading: feedLoading } = useFeed();
   useHashLanding({ settled: !feedLoading });
+  // The page's scroll: one card gives way to the next along a travelling
+  // line (components/deck/seam/). Plain scroll with no JS or reduced motion.
+  useSeam(lang);
 
   return (
     <div className="min-h-screen">
@@ -70,23 +76,30 @@ function HomePage({ lang }) {
       <a href="#main-content" className="skip-link">
         {t.use('skipLink')}
       </a>
-      {/* Ink pass (22.08.26): the parallax collage is gone — the page is a
-          stack of full-width bands on flat paper (body carries var(--bg)),
-          so nothing needs a z-lift over background plates any more. */}
+      {/* THE DECK (23.11.26). The home page is one list of cards —
+          components/deck/deck.js — drawn three times: face up on the table
+          in the hero, as the sticky strip, and opened, one section each, down
+          the page. Everything the old stack of bands held (calendar + event
+          overlay, info, rules, host + both forms, menus, visit, gallery, the
+          app strip, the "Come find out." call) now lives inside a card; the
+          old Hero and DarkCTA components are no longer rendered.
+          The masthead scrolls away here (`deck`): the strip is the page's
+          sticky navigation, and two stuck bars would eat a phone's screen. */}
       <Header
         lang={lang}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
         t={t}
+        deck={DECK}
       />
-      <main id="main-content" tabIndex={-1}>
-        <Hero t={t} />
-        <Calendar lang={lang} />
-        <InfoHostSection t={t} lang={lang} />
-        <DarkCTA lang={lang} />
-        <MenuSection lang={lang} t={t} />
-        <VisitSection lang={lang} t={t} />
-        <GallerySection t={t} />
+      <main id="main-content" tabIndex={-1} className="dk">
+        <DeckHero t={t} lang={lang} />
+        <DeckHand t={t} />
+        <div className="dk-secs">
+          {DECK.map((card, i) => (
+            <card.Section key={card.key} card={card} no={cardNo(i)} t={t} lang={lang} />
+          ))}
+        </div>
       </main>
       <Footer lang={lang} />
     </div>
@@ -121,6 +134,8 @@ export default function App() {
             <Route path={routeFor(code, '/host-guide')} element={<Localized lang={code}><HostGuideRoute lang={code} /></Localized>} />
           </React.Fragment>
         ))}
+
+        {DeckLab ? <Route path="/deck-lab" element={<Localized lang="EN" menu><DeckLab /></Localized>} /> : null}
 
         {/* Any unknown path → a real 404 page (prerendered to dist/404.html,
             which Cloudflare Pages serves with a 404 status). Redirecting to

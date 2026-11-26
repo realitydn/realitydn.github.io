@@ -50,14 +50,27 @@ function useScrollSpy(ids) {
   return active;
 }
 
-export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
+// `deck` — the home page's card list (components/deck/deck.js), passed only by
+// the deck home page (23.11.26). With it the masthead is the top of the hero
+// rather than a bar of its own:
+//   - it scrolls away with the page: the deck's strip (DeckHand) is the sticky
+//     navigation there, and two stuck bars would eat a phone's screen;
+//   - the wordmark sits in its ink box (the hero's mark; the brand never sets
+//     it bare on a busy surface);
+//   - the four section links give way to the cards — on wide screens the table
+//     of cards is right below, on small ones the menu lists the cards;
+//   - the app button stays ink at night, so the hero's red action is the one
+//     red on the screen.
+// Every other page gets the bar exactly as before.
+export default function Header({ lang, mobileOpen, setMobileOpen, t, deck = null }) {
   const location = useLocation();
   const path = location.pathname;
 
   const homeHref = pathFor(lang, '/');
   const headerRef = useRef(null);
   const toggleRef = useRef(null);
-  const activeSection = useScrollSpy(SPY.map((x) => x.target));
+  const activeSection = useScrollSpy(deck ? [] : SPY.map((x) => x.target));
+  const appBtn = deck ? 'btn-primary' : 'btn-primary act-night';
   const current = (target) => (activeSection === target ? 'true' : undefined);
 
   const onLogoClick = (e) => {
@@ -97,15 +110,15 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-40 bg-cream"
-      style={{ borderBottom: '3px solid var(--fg)' }}
+      className={deck ? 'dk-mast relative z-40 bg-cream' : 'sticky top-0 z-40 bg-cream'}
+      style={deck ? undefined : { borderBottom: '3px solid var(--fg)' }}
     >
       {/* gap-1.5 below sm is a fit lever, not a style call: justify-between
           makes the gap a minimum only, and the row is 412.7px deep at phone
           width (wordmark 146.28 + 7px air + 49px strip + controls 170.4 +
           32px padding) — those 6px of slack are exactly what keep the
           module-7 strip on 412px Androids instead of wrapping it away. */}
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-1.5 sm:gap-3">
+      <div className={`${deck ? 'dk-mast-in' : 'max-w-7xl mx-auto px-4 py-3'} flex items-center justify-between gap-1.5 sm:gap-3`}>
         {/* Logo + ink strip — the identity pair the sticky masthead now
             carries on every page (Donald: the strip up here is an
             identifiable thing for us; its partner is the footer QR square).
@@ -115,9 +128,9 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             so on a phone too narrow for the whole strip it wraps onto a
             clipped second row and sits out — the mark never crops, the
             header never grows. */}
-        <div className="flex flex-wrap content-start items-center h-6 md:h-7 overflow-hidden">
-          <Link to={homeHref} onClick={onLogoClick} className="flex items-center flex-none" aria-label={t.use('a11y.home')}>
-            <Logo className="h-6 md:h-7 w-auto" color="var(--fg)" />
+        <div className={deck ? 'flex items-center' : 'flex flex-wrap content-start items-center h-6 md:h-7 overflow-hidden'}>
+          <Link to={homeHref} onClick={onLogoClick} className={deck ? 'dk-wmb flex items-center flex-none' : 'flex items-center flex-none'} aria-label={t.use('a11y.home')}>
+            <Logo className="h-6 md:h-7 w-auto" color={deck ? 'var(--bg)' : 'var(--fg)'} />
           </Link>
           {/* sm and up: the FULL strip (Donald 10.10.26 — "the website should
               have full strip"), module 8 = its floor, 8px air, alive with the
@@ -130,14 +143,18 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
           <span className="hidden sm:flex items-center flex-none ml-2" aria-hidden="true">
             <InkMotionMark module={8} />
           </span>
-          <span className="flex sm:hidden items-center flex-none ml-[7px]" aria-hidden="true">
-            <InkMotionMark form="strip-short-h" module={7} />
-          </span>
+          {/* With the wordmark boxed (deck) a phone has no room left for the
+              short strip: it sits out there. */}
+          {!deck && (
+            <span className="flex sm:hidden items-center flex-none ml-[7px]" aria-hidden="true">
+              <InkMotionMark form="strip-short-h" module={7} />
+            </span>
+          )}
         </div>
 
         {/* Desktop Navigation — whitespace-nowrap: at 1024px Ukrainian's
             "В гості" wrapped onto two lines. */}
-        <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em] whitespace-nowrap">
+        <nav className={deck ? 'hidden' : 'hidden lg:flex items-center justify-center gap-8 xl:gap-10 font-title font-bold text-xs tracking-[0.12em] whitespace-nowrap'}>
           {/* aria-current marks the section in view (scroll-spy above); the
               3px accent underline is .mast-link[aria-current] in index.css. */}
           {SPY.map(({ href, target, key }) => (
@@ -161,7 +178,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             href={`${URLS.APP}/?utm_source=website&utm_medium=header`}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary act-night px-3.5 py-2 flex items-center gap-2 text-xs"
+            className={`${appBtn} px-3.5 py-2 flex items-center gap-2 text-xs`}
             aria-label={t.use('getApp.title')}
           >
             {Icons.app()}
@@ -206,7 +223,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             href={`${URLS.APP}/?utm_source=website&utm_medium=header_mobile`}
             target="_blank"
             rel="noreferrer"
-            className="btn-primary act-night p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className={`${appBtn} p-3 min-w-[44px] min-h-[44px] flex items-center justify-center`}
             aria-label={t.use('getApp.title')}
           >
             {Icons.app()}
@@ -245,11 +262,27 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
               href={`${URLS.APP}/?utm_source=website&utm_medium=header_menu`}
               target="_blank"
               rel="noreferrer"
-              className="btn-primary act-night col-span-2 px-4 py-3 flex items-center justify-center gap-2"
+              className={`${appBtn} col-span-2 px-4 py-3 flex items-center justify-center gap-2`}
               style={{ '--ri': 0 }}
             >
               {Icons.app()} {t.use('getApp.title')}
             </a>
+            {deck ? (
+              /* The deck page: the menu lists the cards, three across. */
+              <div className="col-span-2 grid grid-cols-3 gap-2">
+                {deck.map((card, i) => (
+                  <a
+                    key={card.key}
+                    onClick={() => setMobileOpen(false)}
+                    href={`#${card.id}`}
+                    className="btn-secondary px-2 py-3 text-center"
+                    style={{ '--ri': 1 + Math.floor(i / 3) }}
+                  >
+                    {t.use(`deck.cards.${card.key}.short`)}
+                  </a>
+                ))}
+              </div>
+            ) : (<>
             <a
               onClick={() => setMobileOpen(false)}
               href="#events"
@@ -282,6 +315,7 @@ export default function Header({ lang, mobileOpen, setMobileOpen, t }) {
             >
               {t.use('nav.visit')}
             </a>
+            </>)}
             {/* Socials: WhatsApp + Instagram + Facebook as icon buttons (the
                 bar above hides WhatsApp below 640px, so the menu is the only
                 place a phone finds the community), then the theme toggle. */}

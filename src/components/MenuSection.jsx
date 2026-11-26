@@ -8,6 +8,9 @@ import { fmtTime, pickTitle, pickQualifier, needsRsvp } from '../data/feed-helpe
 import { whenKey, fmtDayDate, catLabel, nextDealToday } from '../data/cal-feed';
 import { isDealEvent } from '../data/event-category';
 import { RsvpStub, openRsvpDoor } from './RsvpNote';
+import Expand from './deck/Expand';
+import { showTab } from './deck/fold';
+import { useWide } from './deck/wide';
 
 // NIGHT v2 ("Cream Tickets", 5.10.26; both themes since round 2): the menu is
 // ONE neutral cream ticket with ruled rows. The category tabs, their accent
@@ -61,7 +64,7 @@ const CATEGORY_ACCENTS = {
   cocktails: 'var(--red)',
   spirits:   'var(--amber)',
   beerwine:  'var(--green)',
-  table:     'var(--ink)',
+  table:     'var(--fg)', // ink on paper (--ink flips at night; inside a cream card it must not)
   zeroproof: 'var(--pink)',
   cafe:      'var(--purple)',
 };
@@ -78,10 +81,17 @@ const SECTION_PALETTE = [
   'var(--pink)',
 ];
 
-export default function MenuSection({ lang, t }) {
+// `embedded` (the deck home page, 23.11.26): the menu sits inside the opened
+// "Our menu" card, which supplies the frame, the heading and the #menus
+// anchor. The PDF link, the price note, the deal ticket and every chapter's
+// rows are the same; how the chapters are laid out is the deck's (below).
+export default function MenuSection({ lang, t, embedded = false }) {
+  const Wrap = embedded ? 'div' : 'section';
   // This language only, fields resolved with the EN fallback (menu-i18n.js).
   const MENU = useMenu(lang);
   const [index, setIndex] = useState(0);
+  // The deck card on a desktop: the chapters as a board (see `embedded` below).
+  const board = useWide('l') && embedded;
   const panelRef = React.useRef(null);
 
   // Today's drinks deal, if there is one, from the shared feed load (no
@@ -145,21 +155,199 @@ export default function MenuSection({ lang, t }) {
   const tabStyle = (key, active) =>
     active ? { boxShadow: `5px 6px 0 ${CATEGORY_ACCENTS[key] || 'var(--fg)'}` } : undefined;
 
+  // One chapter's sections and items. The same rows in both layouts.
+  // (.is-long: a section too long to keep in one column of the desktop board.)
+  const chapter = (cat) => cat.sections.map((section, sIdx) => (
+    <div key={sIdx} className={section.items.length > 8 ? 'is-long' : undefined}>
+      <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
+        <span
+          className="inline-block w-3 h-3 shrink-0"
+          style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
+          aria-hidden="true"
+        />
+        {section.label}
+      </h4>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+        {section.items.map((item, idx) => (
+          <li key={idx} className="menu-item border-b border-ink/10 pb-2">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="menu-item-n font-body font-semibold text-[15px] md:text-base">
+                {item.name}
+              </span>
+              {item.price && (
+                <span className="menu-item-p font-body text-ink tabular-nums font-medium shrink-0">
+                  {item.price}k
+                </span>
+              )}
+            </div>
+            {item.tag && (
+              <div className="menu-item-note text-ink/70 text-sm italic mt-1 font-body">
+                {item.tag}
+              </div>
+            )}
+            {item.desc && (
+              <div className="menu-item-note text-gray-600 text-sm mt-1 font-body">
+                {item.desc}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ));
+
+  // THE DECK (reworked 25.11.26): the chapters ARE the card. The PDF link and
+  // today's deal (when there is one) come first, then the six chapters.
+  //
+  //   PHONE, TABLET   a stack of folds, one per chapter, all shut: nobody
+  //                   opens more than they came for.
+  //   DESKTOP (L)     the same six as a list down the left, and the chapter
+  //                   picked laid out beside it, like a menu board. The
+  //                   first chapter is showing on arrival.
+  //                   Calmer since 25.11.26 (Donald: "a bit overwhelming.
+  //                   Too info-dense on my monitor"): two columns, not
+  //                   three, in larger type with more air, each section
+  //                   kept whole in its column; the list of chapters stays
+  //                   in view while a long chapter scrolls, and it no
+  //                   longer prints a count beside each name.
+  //
+  // Either way every chapter is in the DOM, and the static HTML (always the
+  // stack of folds) holds all of them. The chapters keep their old ids
+  // (#menu-panel-cocktails …): a link to one shows it, fold or tab
+  // (deck/fold.js reveal()).
+  if (embedded) {
+    const note = (
+      // Prices print as "150k" (house style); said once, here.
+      <p className="dk-small dk-dim dk-menu-note">
+        {t.use('menuPriceNote')}{' '}
+        <a href={MENU_PDF[lang] || URLS.PDF} target="_blank" rel="noreferrer">{t.use('downloadPdf')}</a>
+      </p>
+    );
+    const count = (cat) => String(cat.sections.reduce((n, s) => n + s.items.length, 0));
+    if (board) {
+      // Tabs the elements own (fold.js showTab), not React state: the
+      // attributes below are the STARTING state and never change here.
+      // A chapter is often taller than the screen. If the reader was deep in
+      // one when they picked another, bring the top of the new one back
+      // under the card's header (at once: it reads as a tab switch).
+      const show = (tab) => {
+        if (!showTab(tab)) return;
+        const side = tab.closest('.dk-board-side');
+        const panel = document.getElementById(tab.getAttribute('aria-controls'));
+        if (!side || !panel) return;
+        const limit = parseFloat(getComputedStyle(side).top) || 0;
+        const off = panel.getBoundingClientRect().top - limit;
+        if (off < -1) window.scrollBy({ top: off, behavior: 'instant' });
+      };
+      const pick = (e) => {
+        const tab = e.target.closest('[role="tab"]');
+        if (tab) show(tab);
+      };
+      const keys = (e) => {
+        const tabs = Array.from(e.currentTarget.querySelectorAll('[role="tab"]'));
+        const at = tabs.indexOf(document.activeElement);
+        if (at < 0) return;
+        let n = -1;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') n = (at + 1) % tabs.length;
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') n = (at - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = tabs.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        show(tabs[n]);
+        tabs[n].focus({ preventScroll: true });
+      };
+      return (
+        <div className="menu-embed dk-board text-ink">
+          <div className="dk-board-side">
+            <div
+              className="dk-board-tabs"
+              role="tablist"
+              aria-label={t.use('menus')}
+              aria-orientation="vertical"
+              onClick={pick}
+              onKeyDown={keys}
+            >
+              {MENU.map((cat, i) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  id={tabId('deck', cat.key)}
+                  role="tab"
+                  aria-selected={i === 0 ? 'true' : 'false'}
+                  aria-controls={panelId(cat.key)}
+                  tabIndex={i === 0 ? 0 : -1}
+                  className="dk-tab"
+                >
+                  <i className="dk-ex-mark" style={{ background: CATEGORY_ACCENTS[cat.key] || 'var(--fg)' }} aria-hidden="true" />
+                  <span className="dk-ex-l">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+            {note}
+          </div>
+          <div className="dk-board-main">
+            {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
+            {MENU.map((cat, i) => (
+              <section
+                key={cat.key}
+                id={panelId(cat.key)}
+                role="tabpanel"
+                aria-labelledby={tabId('deck', cat.key)}
+                hidden={i !== 0}
+                className="menu-panels dk-chapter dk-board-cols"
+              >
+                {chapter(cat)}
+              </section>
+            ))}
+          </div>
+          <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
+        </div>
+      );
+    }
+    return (
+      <div className="menu-embed text-ink">
+        {note}
+        {deal && <DealTicket ev={deal} lang={lang} onOpen={setOverlayEvent} />}
+        <div className="dk-chapters">
+          {MENU.map((cat) => (
+            <Expand
+              key={cat.key}
+              id={panelId(cat.key)}
+              sub
+              as="h3"
+              label={cat.label}
+              meta={count(cat)}
+              mark={CATEGORY_ACCENTS[cat.key] || 'var(--fg)'}
+            >
+              <div className="menu-panels dk-chapter space-y-8">{chapter(cat)}</div>
+            </Expand>
+          ))}
+        </div>
+        <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
+      </div>
+    );
+  }
+
   return (
     // A paper band in the canon stack (ink pass 22.08.26): full-bleed field
     // on var(--bg) — theme-aware where the old hardcoded cream ground wasn't
     // guaranteed to be — with the content constrained by the inner max-w
     // wrappers. The 3px separation from DarkCTA above is THIS band's top rule
     // (the .band stack idiom; DarkCTA's own bottom border was removed).
-    <section id="menus" className="band b-paper section text-ink">
-      <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
-        <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
-          {t.use('drinkEyebrow')}
-        </div>
+    <Wrap id={embedded ? undefined : 'menus'} className={embedded ? 'menu-embed text-ink' : 'band b-paper section text-ink'}>
+      <Reveal stagger className={embedded ? undefined : 'max-w-7xl mx-auto px-4 pt-12'}>
+        {!embedded && (
+          <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
+            {t.use('drinkEyebrow')}
+          </div>
+        )}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <h2 className="h-section text-3xl md:text-5xl">
-            {t.use('menus')}
-          </h2>
+          {!embedded && (
+            <h2 className="h-section text-3xl md:text-5xl">
+              {t.use('menus')}
+            </h2>
+          )}
           <a
             href={MENU_PDF[lang] || URLS.PDF}
             target="_blank"
@@ -173,7 +361,7 @@ export default function MenuSection({ lang, t }) {
         <p className="mt-3 font-body text-sm text-gray-600">{t.use('menuPriceNote')}</p>
       </Reveal>
 
-      <div className="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6">
+      <div className={embedded ? 'mt-6 grid grid-cols-12 gap-6' : 'max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6'}>
         {/* Desktop sidebar navigation */}
         <aside className="hidden md:block md:col-span-3 sticky top-24 self-start">
           <nav
@@ -281,51 +469,14 @@ export default function MenuSection({ lang, t }) {
 
                 {/* Section groups are direct children so the cascade hits
                     each one in turn */}
-                {cat.sections.map((section, sIdx) => (
-                  <div key={sIdx}>
-                    <h4 className="menu-sec font-title font-bold text-xs md:text-sm tracking-[0.15em] text-gray-600 mb-3 pb-2 border-b border-ink/10 flex items-center gap-2.5">
-                      <span
-                        className="inline-block w-3 h-3 shrink-0"
-                        style={{ backgroundColor: SECTION_PALETTE[sIdx % SECTION_PALETTE.length] }}
-                        aria-hidden="true"
-                      />
-                      {section.label}
-                    </h4>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-                      {section.items.map((item, idx) => (
-                        <li key={idx} className="menu-item border-b border-ink/10 pb-2">
-                          <div className="flex items-baseline justify-between gap-4">
-                            <span className="menu-item-n font-body font-semibold text-[15px] md:text-base">
-                              {item.name}
-                            </span>
-                            {item.price && (
-                              <span className="menu-item-p font-body text-ink tabular-nums font-medium shrink-0">
-                                {item.price}k
-                              </span>
-                            )}
-                          </div>
-                          {item.tag && (
-                            <div className="menu-item-note text-ink/70 text-sm italic mt-1 font-body">
-                              {item.tag}
-                            </div>
-                          )}
-                          {item.desc && (
-                            <div className="menu-item-note text-gray-600 text-sm mt-1 font-body">
-                              {item.desc}
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                {chapter(cat)}
               </section>
             ))}
           </div>
         </div>
       </div>
-      <div className="h-6"/>
+      {!embedded && <div className="h-6"/>}
       <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
-    </section>
+    </Wrap>
   );
 }

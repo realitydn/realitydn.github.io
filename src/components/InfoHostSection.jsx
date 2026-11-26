@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { landingTarget } from '../hooks/useHashLanding';
+import { reveal } from './deck/fold';
 import { Link } from 'react-router-dom';
 import { URLS } from '../data/translations';
 import { pathFor } from '../data/languages';
@@ -12,7 +13,7 @@ import { scrollBehavior } from '../hooks/motion';
 // Wrap the public-events cross-references ("How REALITY Can Help with
 // Promotion" and "brand guidelines") with links to the full Event Guidelines
 // page — the homepage panels don't contain those sections themselves.
-function linkifyPhrases(text, links) {
+function linkifyPhrases(text, links, color = 'var(--red-text)') {
   let parts = [text];
   links.forEach(({ phrase, to }, li) => {
     parts = parts.flatMap((part, pi) => {
@@ -25,7 +26,7 @@ function linkifyPhrases(text, links) {
           key={`lnk-${li}-${pi}`}
           to={to}
           className="underline font-semibold hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--red-text)' }}
+          style={{ color }}
         >
           {phrase}
         </Link>,
@@ -72,8 +73,36 @@ const CHROMATIC = [
   'var(--purple)',
 ];
 
-export default function InfoHostSection({ t, lang }) {
+// `only` (the deck home page, 23.11.26) — 'welcome' | 'rules' | 'host': render
+// just that one panel, with no frame, no section heading and no main tabs.
+// The deck deals the panels onto cards (rules → the foot of "First time
+// here?", host → "Host an event"; the welcome panel is not on the deck page
+// since 25.11.26, its card has its own words), each of which supplies
+// its own frame and anchor. The panel contents, the event-type tabs, the rate
+// card and both forms are exactly the ones below. Without `only` this is the
+// original tabbed section.
+// Where each panel lives on the deck page — the "general rules" link inside a
+// host panel can't switch tabs there, so it scrolls to the rules instead.
+const ONLY_ANCHOR = { welcome: 'info', rules: 'rules', host: 'host' };
+
+// `titled={false}` (with `only`): leave the panel's own heading out. On the
+// deck page the welcome text and the rules each sit in a fold whose bar already
+// carries that heading.
+//
+// THE HOST CARD'S RED ACTION (only="host", 25.11.26 — Donald: "'Propose an
+// event' button needs to be more prominent and not at the bottom of its
+// card"). The invitation and the button open the card, above the rules, so
+// they are on screen the moment the card lands. The button is the card
+// body's one red thing: there the links are ink and the list markers start
+// at blue. It opens the form for the event type picked (where the form has
+// always been, under that type's rules) and goes to it. An ink copy of the
+// button stays at the foot of the rules for whoever has read down to it.
+// `intro`: what the host card says under the action (its lede).
+export default function InfoHostSection({ t, lang, only = null, titled = true, intro = null }) {
   const ih = (k) => t.use(`infoHost.${k}`);
+  const hostCard = only === 'host';
+  const linkColor = hostCard ? 'var(--fg)' : 'var(--red-text)';
+  const listStart = hostCard ? 1 : 0; // CHROMATIC[0] is red
 
   // Public-events copy references the branding + promotion sections, which live
   // on the full Event Guidelines page (not in these panels) — link to them.
@@ -84,10 +113,10 @@ export default function InfoHostSection({ t, lang }) {
     { phrase: t.use('eventGuidelines.crossRefs.branding'), to: `${guidelinesBase}#branding` },
   ];
   const publicRulesItems = ih('publicRules').map((it) =>
-    typeof it === 'string' ? linkifyPhrases(it, publicCrossRefs) : it
+    typeof it === 'string' ? linkifyPhrases(it, publicCrossRefs, linkColor) : it
   );
 
-  const [activeMain, setActiveMain] = useState('welcome');
+  const [activeMain, setActiveMain] = useState(only || 'welcome');
   const [activeEventType, setActiveEventType] = useState('public');
   // The proposal forms are folded away until asked for — the panel reads as
   // information first, and the page keeps a single scroll. Open state is PER
@@ -102,6 +131,15 @@ export default function InfoHostSection({ t, lang }) {
   const formAreaRef = useRef(null);
 
   const goTo = (panel, eventType) => {
+    if (only && panel !== only) {
+      const el = document.getElementById(ONLY_ANCHOR[panel]);
+      // The target may be a fold (the rules are, on the deck page): open it.
+      if (el) {
+        reveal(el);
+        el.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+      }
+      return;
+    }
     setActiveMain(panel);
     if (eventType) setActiveEventType(eventType);
     // Panels are natural height, so switching from a tall panel while
@@ -130,15 +168,17 @@ export default function InfoHostSection({ t, lang }) {
   useEffect(() => {
     const target = landingTarget(window.location.hash);
     if (!target || !target.panel) return;
-    setActiveMain(target.panel);
-    if (target.form) setOpenForms((o) => ({ ...o, public: true }));
+    if (!only) setActiveMain(target.panel);
+    if (target.form && (!only || only === 'host')) setOpenForms((o) => ({ ...o, public: true }));
   }, []);
 
-  const openForm = (type) => {
+  // `block`: 'nearest' from the button beside the form; 'start' from the
+  // action at the top of the host card, which is a screen or two above it.
+  const openForm = (type, block = 'nearest') => {
     setSubmittedFlavor(null);
     setOpenForms((o) => ({ ...o, [type]: true }));
     requestAnimationFrame(() => {
-      formAreaRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
+      formAreaRef.current?.scrollIntoView({ block, behavior: scrollBehavior() });
     });
   };
 
@@ -289,6 +329,7 @@ export default function InfoHostSection({ t, lang }) {
       return (
         <ProposalCTA
           t={t}
+          slim={hostCard}
           accent={EVENT_ACCENTS[type]}
           label={type === 'art' ? t.use('proposal.artTab') : t.use('proposal.eventTab')}
           onOpen={() => openForm(type)}
@@ -303,37 +344,63 @@ export default function InfoHostSection({ t, lang }) {
     return <div className="stamp-in">{form}</div>;
   };
 
+  // Which panels to render: all three (tabbed), or just the `only` one.
+  const show = (panel) => !only || only === panel;
+  const Wrap = only ? 'div' : 'section';
+
   return (
     // A paper band in the canon stack (ink pass 22.08.26): full-bleed field on
     // var(--bg), 3px ink top rule from .band, content constrained by the inner
     // max-w wrappers. The accent squares on tabs/titles stay — they're eyebrow
     // furniture, not parallax décor.
-    <section id="info" className="band b-paper section text-ink">
-      <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
-        <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
-          {ih('sectionEyebrow')}
-        </div>
-        <h2 className="h-section text-3xl md:text-5xl">
-          {ih('sectionTitle')}
-        </h2>
-      </Reveal>
+    <Wrap id={only ? undefined : 'info'} className={only ? 'ih-embed text-ink' : 'band b-paper section text-ink'}>
+      {!only && (
+        <Reveal stagger className="max-w-7xl mx-auto px-4 pt-12">
+          <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>
+            {ih('sectionEyebrow')}
+          </div>
+          <h2 className="h-section text-3xl md:text-5xl">
+            {ih('sectionTitle')}
+          </h2>
+        </Reveal>
+      )}
 
-      <div className="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6">
+      <div className={only ? undefined : 'max-w-7xl mx-auto px-4 mt-6 grid grid-cols-12 gap-6'}>
         {/* Desktop sidebar */}
-        <aside className="hidden md:block md:col-span-3 sticky top-24 self-start">
-          <nav>
-            {mainNav('info-desktop')}
-            {activeMain === 'host' && subNav('info-desktop')}
-          </nav>
-        </aside>
+        {!only && (
+          <aside className="hidden md:block md:col-span-3 sticky top-24 self-start">
+            <nav>
+              {mainNav('info-desktop')}
+              {activeMain === 'host' && subNav('info-desktop')}
+            </nav>
+          </aside>
+        )}
 
         {/* Main content area */}
-        <div className="col-span-12 md:col-span-9">
+        <div className={only ? undefined : 'col-span-12 md:col-span-9'}>
           {/* Mobile nav — vertical stack */}
-          <div className="md:hidden mb-4">
-            {mainNav('info-mobile')}
-            {activeMain === 'host' && subNav('info-mobile', true)}
-          </div>
+          {!only && (
+            <div className="md:hidden mb-4">
+              {mainNav('info-mobile')}
+              {activeMain === 'host' && subNav('info-mobile', true)}
+            </div>
+          )}
+          {/* On its own card the host panel keeps its three event types as
+              one row of tabs, at every width. */}
+          {hostCard && (
+            <div className="dk-host-top">
+              <p className="dk-host-ask">{t.use('proposal.subtitle')}</p>
+              <button
+                type="button"
+                className="btn-action dk-btn dk-propose"
+                onClick={() => openForm(activeEventType, 'start')}
+              >
+                {activeEventType === 'art' ? t.use('proposal.artTab') : t.use('proposal.eventTab')}
+              </button>
+            </div>
+          )}
+          {hostCard && intro}
+          {hostCard && <div className="ih-embed-tabs">{subNav('info-desktop', true)}</div>}
 
           {/* Panels — natural height, the page is the only thing that
               scrolls. Every panel stays in the DOM (hidden when inactive)
@@ -342,11 +409,12 @@ export default function InfoHostSection({ t, lang }) {
               panel against the parallax collage; on the flat band a 2px
               ink section rule replaces it. */}
           <div
-            className="ih-panels tkt scroll-mt-24"
+            className={only ? 'ih-panels-embed scroll-mt-24' : 'ih-panels tkt scroll-mt-24'}
             ref={panelRef}
           >
-            <Panel id={panelId('welcome')} labelledBy="info-desktop-tab-welcome" active={activeMain === 'welcome'}>
-              <PanelTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</PanelTitle>
+            {show('welcome') && (
+            <Panel id={panelId('welcome')} labelledBy="info-desktop-tab-welcome" active={activeMain === 'welcome'} plain={!!only}>
+              {titled && <PanelTitle accent={NAV_ACCENTS.welcome}>{ih('welcomeTitle')}</PanelTitle>}
               <p className="mb-4">{ih('welcomeBody')}</p>
               <ColorList items={ih('welcomeMissions')} />
               <p>
@@ -365,16 +433,20 @@ export default function InfoHostSection({ t, lang }) {
                 {ih('welcomePages')}
               </p>
             </Panel>
+            )}
 
-            <Panel id={panelId('rules')} labelledBy="info-desktop-tab-rules" active={activeMain === 'rules'}>
-              <PanelTitle accent={NAV_ACCENTS.rules}>{ih('rulesTitle')}</PanelTitle>
+            {show('rules') && (
+            <Panel id={panelId('rules')} labelledBy="info-desktop-tab-rules" active={activeMain === 'rules'} plain={!!only}>
+              {titled && <PanelTitle accent={NAV_ACCENTS.rules}>{ih('rulesTitle')}</PanelTitle>}
               <ColorList items={ih('rules')} />
             </Panel>
+            )}
 
+            {show('host') && (<>
             <Panel id={panelId('host-public')} labelledBy="info-desktop-sub-public" active={activeMain === 'host' && activeEventType === 'public'}>
               <PanelTitle accent={EVENT_ACCENTS.public}>{ih('publicTitle')}</PanelTitle>
-              <GeneralRulesLink ih={ih} goTo={goTo} />
-              <ColorList items={publicRulesItems} className="mb-6" />
+              <GeneralRulesLink ih={ih} goTo={goTo} color={linkColor} />
+              <ColorList items={publicRulesItems} className="mb-6" startIndex={listStart} />
               <div
                 id={activeMain === 'host' && activeEventType === 'public' ? 'proposal' : undefined}
                 ref={activeEventType === 'public' ? formAreaRef : undefined}
@@ -386,8 +458,8 @@ export default function InfoHostSection({ t, lang }) {
 
             <Panel id={panelId('host-private')} labelledBy="info-desktop-sub-private" active={activeMain === 'host' && activeEventType === 'private'}>
               <PanelTitle accent={EVENT_ACCENTS.private}>{ih('privateTitle')}</PanelTitle>
-              <GeneralRulesLink ih={ih} goTo={goTo} />
-              <ColorList items={ih('privateRules')} className="mb-6" />
+              <GeneralRulesLink ih={ih} goTo={goTo} color={linkColor} />
+              <ColorList items={ih('privateRules')} className="mb-6" startIndex={listStart} />
               <PricingTable ih={ih} roomLabel={t.use('a11y.room')} />
               <div
                 id={activeMain === 'host' && activeEventType === 'private' ? 'proposal' : undefined}
@@ -400,11 +472,11 @@ export default function InfoHostSection({ t, lang }) {
 
             <Panel id={panelId('host-art')} labelledBy="info-desktop-sub-art" active={activeMain === 'host' && activeEventType === 'art'}>
               <PanelTitle accent={EVENT_ACCENTS.art}>{ih('artTitle')}</PanelTitle>
-              <GeneralRulesLink ih={ih} goTo={goTo} />
+              <GeneralRulesLink ih={ih} goTo={goTo} color={linkColor} />
               <p className="mb-3">{ih('artIntro')}</p>
               <p className="mb-4">{ih('artNote')}</p>
               <SectionLabel accent="var(--pink)">{ih('artGuidelinesLabel')}</SectionLabel>
-              <ColorList items={ih('artGuidelines')} className="mb-6" />
+              <ColorList items={ih('artGuidelines')} className="mb-6" startIndex={listStart} />
               <div
                 id={activeMain === 'host' && activeEventType === 'art' ? 'proposal' : undefined}
                 ref={activeEventType === 'art' ? formAreaRef : undefined}
@@ -413,11 +485,12 @@ export default function InfoHostSection({ t, lang }) {
                 {formFor('art')}
               </div>
             </Panel>
+            </>)}
           </div>
         </div>
       </div>
-      <div className="h-6" />
-    </section>
+      {!only && <div className="h-6" />}
+    </Wrap>
   );
 }
 
@@ -428,14 +501,16 @@ export default function InfoHostSection({ t, lang }) {
 // 90ms cascade (panel-swap).
 // labelledBy points at the desktop tab; the name still resolves when that
 // sidebar is display:none (aria-labelledby reads hidden referents).
-function Panel({ id, labelledBy, active, children }) {
+// `plain`: the panel stands alone on a card with no tab pointing at it, so
+// it is an ordinary block, not a tabpanel.
+function Panel({ id, labelledBy, active, plain = false, children }) {
   return (
     <div
       id={id}
       hidden={!active}
       className="py-6 md:py-8"
-      role="tabpanel"
-      aria-labelledby={labelledBy}
+      role={plain ? undefined : 'tabpanel'}
+      aria-labelledby={plain ? undefined : labelledBy}
     >
       <div className={`font-body text-sm md:text-base text-gray-700 leading-relaxed ${active ? 'panel-swap' : ''}`}>
         {children}
@@ -667,7 +742,7 @@ function PricingTable({ ih, roomLabel }) {
   );
 }
 
-function GeneralRulesLink({ ih, goTo }) {
+function GeneralRulesLink({ ih, goTo, color = 'var(--red-text)' }) {
   return (
     <p className="mb-4">
       {ih('allEventsPrefix')}{' '}
@@ -675,7 +750,7 @@ function GeneralRulesLink({ ih, goTo }) {
         type="button"
         onClick={() => goTo('rules')}
         className="underline font-semibold hover:opacity-70 transition-opacity"
-        style={{ color: 'var(--red-text)' }}
+        style={{ color }}
       >
         {ih('generalRulesLink')}
       </button>
@@ -688,7 +763,18 @@ function GeneralRulesLink({ ih, goTo }) {
 // expands the form in place (stamp, don't float) — no inner scrollbars.
 // Rules-on-paper (ink pass): the card shell was collage furniture; a 2px
 // ink rule marks off the proposal step on the flat band.
-function ProposalCTA({ t, accent, label, onOpen }) {
+// `slim` (the host card on the deck page): the invitation and the red action
+// are at the top of the card, so this is only the button again, in ink.
+function ProposalCTA({ t, accent, label, onOpen, slim = false }) {
+  if (slim) {
+    return (
+      <div className="pt-6" style={{ borderTop: '2px solid var(--fg)' }}>
+        <button type="button" onClick={onOpen} className="btn-primary dk-btn">
+          {label}
+        </button>
+      </div>
+    );
+  }
   return (
     <div
       className="pt-6 md:pt-8"

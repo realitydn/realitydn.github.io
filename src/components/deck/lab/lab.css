@@ -1,0 +1,101 @@
+/* ============================================================
+   THE DECK LAB — the page chrome of /deck-lab (dev only).
+   The motion itself is in motion.css; this is only the bench
+   it sits on: the switch bar, the solo cards, the stage.
+   ============================================================ */
+.dkl { background: var(--bg); color: var(--fg); min-height: 100vh; padding-bottom: 80px; }
+
+/* The lab judges motion inside a SQUARE card: no resting tilt here, whatever
+   deck.css gives the table. */
+.dkl .dk-card:nth-child(n) { --r: 0deg; }
+
+/* ── the switch bar ── */
+.dkl-bar {
+  position: sticky; top: 0; z-index: 60;
+  background: var(--bg); border-bottom: 3px solid var(--fg);
+  padding: 10px 20px 8px; display: grid; gap: 8px;
+}
+.dkl-bar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.dkl-title { font: 700 13px/1.2 var(--mont); letter-spacing: .14em; text-transform: uppercase; }
+
+.dkl-seg { display: inline-flex; align-items: stretch; }
+.dkl-seg-l {
+  align-self: center; margin-right: 8px; color: var(--fg-dim);
+  font: 700 11px/1 var(--mont); letter-spacing: .12em; text-transform: uppercase;
+}
+.dkl-seg button {
+  min-height: 32px; padding: 4px 11px; margin-left: -2px;
+  border: 2px solid var(--fg); background: var(--bg); color: var(--fg);
+  font: 600 12px/1.2 var(--grotesk); cursor: pointer;
+}
+.dkl-seg button:first-of-type { margin-left: 0; }
+.dkl-seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+.dkl-picks { gap: 6px; }
+.dkl-pick {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px 3px 5px;
+  border: 2px solid var(--fg); font: 700 12px/1 var(--grotesk);
+}
+.dkl-pick i { width: 10px; height: 14px; background: var(--kc); border: 1.5px solid var(--fg); }
+.dkl-pick select {
+  border: 0; background: transparent; color: inherit; max-width: 132px;
+  font: 500 12px/1.2 var(--grotesk); padding: 3px 0; cursor: pointer;
+}
+.dkl-pick select option { color: #0d0905; background: #fffbf1; }
+.dkl-pick.is-on { background: var(--fg); color: var(--bg); }
+
+.dkl-sum { gap: 8px 14px; }
+.dkl-count { font: 700 12px/1.2 var(--mont); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.dkl-sum-t { flex: 1 1 320px; min-width: 0; font: 500 13px/1.4 var(--grotesk); }
+
+.dkl-btn {
+  min-height: 32px; padding: 5px 12px; border: 2px solid var(--fg);
+  background: var(--fg); color: var(--bg); cursor: pointer;
+  font: 700 11px/1.2 var(--mont); letter-spacing: .1em; text-transform: uppercase;
+}
+.dkl-btn-alt { background: var(--bg); color: var(--fg); }
+.dkl-btn:disabled { background: transparent; color: var(--fg-faint); border-color: var(--hairline); cursor: default; }
+/* lab controls take the plain ink outline, not the focus plate */
+.dkl-bar :focus-visible, .dkl-solo-ctl :focus-visible {
+  transform: none; box-shadow: none; outline: 2px solid var(--fg); outline-offset: 3px;
+}
+
+/* ── sections ── */
+.dkl-sec { max-width: 1368px; margin: 0 auto; padding: 34px 32px 0; }
+.dkl-sec-wide { max-width: none; padding-left: 0; padding-right: 0; }
+.dkl-sec-wide > .dkl-h, .dkl-sec-wide > .dkl-p { max-width: 1304px; margin-left: auto; margin-right: auto; padding: 0 32px; }
+.dkl-h { margin: 0 0 6px; font: 700 20px/1.2 var(--mont); letter-spacing: .03em; }
+.dkl-p { margin: 0 0 22px; max-width: 78ch; color: var(--fg-dim); font: 400 15px/1.55 var(--grotesk); }
+.dkl-sec-wide > .dkl-p { max-width: 1304px; }
+
+/* ── 1. the solo cards: three across, like the table ── */
+.dkl-solos { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 34px 28px; }
+.dkl-solo { display: grid; grid-template-columns: 258px minmax(0, 1fr); gap: 18px; align-items: start; }
+.dkl-solo-ctl { display: grid; gap: 10px; justify-items: start; }
+.dkl-opts { display: grid; gap: 4px; justify-items: start; }
+.dkl-opt {
+  padding: 5px 9px; border: 2px solid var(--hairline); background: transparent; color: var(--fg);
+  font: 500 12.5px/1.25 var(--grotesk); text-align: left; cursor: pointer;
+}
+.dkl-opt b { font-weight: 700; margin-right: 3px; }
+.dkl-live { display: block; font: 700 10px/1.4 var(--mont); font-style: normal; letter-spacing: .1em; text-transform: uppercase; }
+.dkl-opt[aria-checked="true"] { border-color: var(--fg); background: var(--fg); color: var(--bg); }
+.dkl-what { margin: 0; color: var(--fg-dim); font: 400 13px/1.45 var(--grotesk); }
+
+/* ── 2. the stage ── */
+.dkl-stage { border-top: 2px dashed var(--hairline); border-bottom: 2px dashed var(--hairline); }
+
+/* ── 3. the phone ── */
+.dkl-phone { display: block; box-sizing: content-box; width: 390px; height: 800px; border: 2px solid var(--fg); background: var(--bg); }
+.dkl-frame { padding-bottom: 0; }
+/* inside the frame: no scrollbar, so the page is the full 390 wide */
+:root:has(.dkl-frame) { scrollbar-width: none; }
+
+@media (max-width: 760.98px) {
+  .dkl-solo { grid-template-columns: minmax(0, 1fr); }
+  .dkl-solo-card { max-width: 140px; }
+}
+
+/* who goes when, read back from the first screen's table */
+.dkl-bar-read { font-size: 14px; }
+.dkl-bar-read b { color: var(--fg); font-weight: 600; }

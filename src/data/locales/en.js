@@ -163,7 +163,7 @@ export default {
     "loading": "Loading what's on…",
     "empty": "No events scheduled right now — check our socials for what's on.",
     "errorTitle": "Couldn't load the calendar",
-    "errorBody": "Our live calendar is taking a moment. Join the WhatsApp community below for what's on, or add our calendar to yours.",
+    "errorBody": "The calendar didn't load. Join the WhatsApp community below for what's on, or add our calendar to yours.",
     "addToCalendar": "Add our calendar to yours",
     "details": "Details",
     "today": "Today",
@@ -176,14 +176,14 @@ export default {
     "everyWeekday": "Every {weekday}"
   },
   "eventOverlay": {
-    "openInApp": "Open in the REALITY app",
+    "openInApp": "Open in the REALITY webapp",
     "close": "Close"
   },
   "getApp": {
-    "title": "Get the REALITY app",
-    "blurb": "The full calendar in your pocket — RSVP, reminders, and what's on tonight.",
-    "cta": "Open the app",
-    "button": "Get the app"
+    "title": "The REALITY webapp",
+    "blurb": "The full calendar, with RSVPs and reminders.",
+    "cta": "Open the webapp",
+    "button": "Webapp"
   },
   "proposal": {
     "eyebrow": "Host with us",
@@ -416,7 +416,7 @@ export default {
   },
   "hostGuide": {
     "title": "Host Guide",
-    "message": "This page is coming soon. Check back for a complete guide to hosting at REALITY.",
+    "message": "A guide to hosting at REALITY. Coming soon.",
     "backButton": "Go back to REALITY"
   },
   "skipLink": "Skip to content",
@@ -474,21 +474,192 @@ export default {
   "heroPrefix": "REALITY Đà Nẵng —",
   "faq": {
     "whatQ": "What events are on at REALITY?",
-    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The live, always-current calendar is in the REALITY app:",
+    "whatA": "Something almost every day and night: live music, open mics and rooftop acoustic jams, pub quiz, board game nights, chess night, film club and short-film screenings, karaoke, language exchanges and culture clubs (Vietnamese–foreigner socials, French and Mandarin clubs), dance classes, talks, workshops and art exhibitions. The current calendar is in the REALITY webapp:",
     "freeQ": "Are events at REALITY free?",
-    "freeA": "Most events are free to attend — please buy a drink to support the space. Some events have an entry fee or ask for pre-registration; that's marked on the weekly schedule, on the event posters and on each event in the REALITY app.",
+    "freeA": "Most events are free to attend — please buy a drink to support the space. Some events have an entry fee or ask for pre-registration; that's marked on the weekly schedule, on the event posters and on each event in the REALITY webapp.",
     "hoursQ": "What are REALITY's opening hours?",
     "hoursA": "REALITY is open every day, 11:00 – 2:00 (11 AM to 2 AM), weekends included. The third-floor rooftop patio closes at midnight.",
     "whereQ": "Where is REALITY in Đà Nẵng?",
     "whereA": "86 Mai Thúc Lân, Đà Nẵng, Việt Nam — in the Mỹ An area near Mỹ Khê beach. Three floors: a ground-floor café and lounge, a second-floor event space and lounge, and a third-floor rooftop patio.",
-    "hostA": "Send us your idea through the Event Proposal Form on the homepage (Info → Host an event). For public community events we help reserve and set up the space and equipment and help promote the event; we just ask that guests buy a drink. A public event with an entry fee either rents the space or splits entry 50/50 with REALITY. Private or for-profit events that reserve a whole room pay an hourly rental fee. Please read the Event Guidelines first:",
+    "hostA": "Send us your idea through the Event Proposal Form under Host an event on the home page. For public community events we help reserve and set up the space and equipment and help promote the event; we just ask that guests buy a drink. A public event with an entry fee either rents the space or splits entry 50/50 with REALITY. Private or for-profit events that reserve a whole room pay an hourly rental fee. Please read the Event Guidelines first:",
     "rentQ": "Can I rent a room at REALITY for a private event?",
     "rentA": "Yes. Reserving a whole room, or presenting a commercial product or service, carries an hourly rental fee based on the room and time of day. Rates per hour, in thousands of VND (₫):",
     "petsQ": "Can I bring my dog or pet to REALITY?"
   },
+  // ───────────────────────────────────────────────────────────────────────
+  // THE DECK — the home page (23.11.26). EVERY NEW ENGLISH STRING written for
+  // it is in this one block, and every one is a PLACEHOLDER: Donald writes
+  // the English brand copy, so rewrite freely. The keys are what the code
+  // reads; the words are yours.
+  //   {n} {time} {title} {date} {price} {total} {first} {last} are filled in
+  //   by the page — keep them, move them anywhere in the sentence.
+  // Copy the deck REUSES from elsewhere in this file is not repeated here:
+  // the three words, the mission line, the hours, the welcome panel, the
+  // rules, the host panels, the app strip, the WhatsApp call, "Come find out."
+  //   cards.<name>.title  on the card and on its opened section
+  //   cards.<name>.short  the strip, and the card on a phone (keep it SHORT:
+  //                       it has about 11 letters a line)
+  //   first.steps         add or drop a step here and the page follows
+  // ───────────────────────────────────────────────────────────────────────
+  "deck": {
+    "nav": "On this page",
+    "tonightCta": "What's on tonight",
+    "status": {
+      "open": "Open now",
+      "closed": "Closed right now",
+      "till": "till {time}",
+      "opens": "opens {time}"
+    },
+    "cards": {
+      "building": {
+        "title": "What's happening",
+        "short": "What's on"
+      },
+      "first": {
+        "title": "First time here?",
+        "short": "First time"
+      },
+      "menu": {
+        "title": "Our menu",
+        "short": "Menu"
+      },
+      "held": {
+        "title": "Events we've held",
+        "short": "Events held"
+      },
+      "giving": {
+        "title": "Charitable giving",
+        "short": "Giving"
+      },
+      "inside": {
+        "title": "Inside",
+        "short": "Inside"
+      },
+      "host": {
+        "title": "Host an event",
+        "short": "Host"
+      },
+      "connect": {
+        "title": "Get connected",
+        "short": "Connect"
+      },
+      "visit": {
+        "title": "Find us",
+        "short": "Find us"
+      }
+    },
+    "building": {
+      "label": "The building right now",
+      "roomsOn": "{n} rooms on",
+      "roomOn": "1 room on",
+      "nothingOn": "Nothing on right now",
+      "onShort": "{n} on now",
+      "nextShort": "Next {time}",
+      "nextAt": "Next: {title} at {time}",
+      "noEvent": "No event right now",
+      "bar": "Bar",
+      "floor": "Floor {n}",
+      "street": "street level",
+      "playing": "On the speakers",
+      "appTitle": "The REALITY webapp",
+      "appBody": "Everything coming up is in the REALITY webapp: the full calendar and all the event details.",
+      "appCta": "Open the webapp"
+    },
+    "first": {
+      "count": "{n} steps",
+      "steps": [
+        {
+          "t": "Come by",
+          "b": "We're open every day from 11:00 until 02:00."
+        },
+        {
+          "t": "Get a drink",
+          "b": "We ask that everyone in the space buys something, as we need to pay staff, rent, taxes, etc."
+        },
+        {
+          "t": "Do what you wanna",
+          "b": "Join an event, play pool on the patio, do some work, meet some people. REALITY is a reflection of the people in it."
+        }
+      ],
+      "joinQ": "Can I just join in?",
+      "joinA": "Yes! You don't need to know anyone to meet a bunch of people, whether by joining an event, posting up at the bar, or just saying hi to folks. We have 3 missions at REALITY:",
+      "joinB": "and we tend to attract the kind of people who feel those are good missions.",
+      "joinC": "Regarding events, check {calendar} to see if there's any particular requirements for an event (pre-registration, entry fee, etc.), and if you've got questions, please join {whatsapp} etc.",
+      "joinCalendar": "the full calendar",
+      "joinWhatsApp": "our WhatsApp"
+    },
+    "menu": {
+      "now": "On the menu",
+      "sections": "{n} sections"
+    },
+    "held": {
+      "intro": "We are a platform for many communities, and hundreds of people have held events of all sorts.",
+      "asOf": "As of {date}",
+      "perWeek90": "{n} a week, last 3 months",
+      "since": "since {date}",
+      "events": "events",
+      "rowWeek90": "A week, over the last 3 months",
+      "rowNew": "New series in the last 30 days",
+      "more": "More figures",
+      "rowSpan": "Period counted",
+      "rowWeeks": "Weeks",
+      "rowSeries": "Different series",
+      "rowRunning": "Series still running",
+      "rowOnce": "Ran only once",
+      "mostRun": "Most run",
+      "trend": "Events in each trailing 30 days",
+      "trendAlt": "Events in each trailing 30 days, rising from {first} to {last} by {date}",
+      "peak": "Peak: {n}, on {date}",
+      "source": "Counted from the calendar.",
+      "link": "The full Event Audit"
+    },
+    "giving": {
+      "count": "{n} fundraisers",
+      "short": "raised",
+      "raised": "{total} raised here",
+      "lede": "Fundraisers held at REALITY, and where the money went.",
+      "fundraiser": "Fundraiser",
+      "last": "Last: {title} · {date}",
+      "givenTo": "Given to",
+      "handedOver": "Handed over {date}",
+      "all": "All fundraisers in the webapp",
+      "gapDate": "Date",
+      "gapRecipient": "Who it went to"
+    },
+    "inside": {
+      "photos": "{n} photos",
+      "face": "Three floors, five areas.",
+      "intro": [
+        "We have three floors, split into five areas. There's usually something going on in at least one of them, and there's usually at least one good spot if you want your own space.",
+        "Along with a full cafe and bar, we have a full-size pool table, four bathrooms, an HD projector, an integrated sound system for DJs, a ton of board games, and who knows what else."
+      ],
+      "walls": "On the walls",
+      "gapWalls": "What's hanging now"
+    },
+    "host": {
+      "rooms": "{n} rooms",
+      "short": "for public events",
+      "free": "to host a public community event.",
+      "from": "Private rooms from {price} an hour.",
+      "live": "Free for public community events · rooms from {price} an hour"
+    },
+    "connect": {
+      "ways": "{n} links",
+      "app": "Webapp",
+      "webappTitle": "The REALITY webapp",
+      "webapp": "Check out the REALITY webapp - It has the full calendar + all the event details.",
+      "webappCta": "Open the webapp",
+      "email": "Email us",
+      "social": "Instagram + Facebook"
+    },
+    "visit": {
+      "area": "Mỹ An, near Mỹ Khê beach",
+      "qrAlt": "QR code for realitydn.com"
+    }
+  },
   "notFound": {
     "title": "Page not found",
-    "body": "This page doesn't exist — or it moved. The rest of REALITY is right where you left it.",
+    "body": "This page doesn't exist, or it moved.",
     "langs": "Other languages"
   },
   "seo": {

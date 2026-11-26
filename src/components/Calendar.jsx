@@ -77,7 +77,12 @@ function WhatsAppCta({ lang }) {
   );
 }
 
-export default function Calendar({ lang }) {
+// `embedded` (the deck home page, 23.11.26): the calendar sits INSIDE the
+// opened "What's happening" card, which supplies the frame, the heading and
+// the #events anchor — so the band, the eyebrow + H2 and the anchor marker are
+// left out, and the WhatsApp call moves to the "Get connected" card. Everything
+// from the intro paragraph down to the app strip is unchanged.
+export default function Calendar({ lang, embedded = false }) {
   const { events, loading, error } = useFeed();
   const C = STR[lang].cal;
   const CF = cfStr(lang);
@@ -126,6 +131,7 @@ export default function Calendar({ lang }) {
   // explore the full calendar … so we don't have people endlessly scrolling").
   // Only these rows render; past them the app is the calendar.
   const ROW_CAP = 4;
+  const Wrap = embedded ? 'div' : 'section';
   const folded = rest.length > ROW_CAP;
 
   // One event card — the ink pass's Events-page .ev-card (canon 22.08.26) as
@@ -287,17 +293,23 @@ export default function Calendar({ lang }) {
   };
 
   return (
-    <section id="calendar" className="band b-paper section">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+    <Wrap id="calendar" className={embedded ? 'cal-embed' : 'band b-paper section'}>
+      <div className={embedded ? undefined : 'max-w-7xl mx-auto px-4 py-12'}>
       {/* The poster carousel is gone (the feed carries the visual weight now);
           its #events anchor lives on so header nav + old links still land here. */}
-      <div id="events" aria-hidden="true" style={{ scrollMarginTop: '90px' }} />
+      {!embedded && <div id="events" aria-hidden="true" style={{ scrollMarginTop: '90px' }} />}
       <div className="mb-8">
+        {embedded ? (
+          <h3 className="dk-sub">{C.title}</h3>
+        ) : (
+          <>
         {/* Blue literal, not the accent: eyebrows are blue's JOB (canon), and
             the theme-aware accent would flip this pink in Night. The TEXT
             print of blue (--blue-text): bright blue on cream is 2.66:1. */}
         <div className="eyebrow mb-2" style={{ color: 'var(--blue-text)' }}>{C.eyebrow}</div>
         <h2 className="h-section text-3xl md:text-5xl text-ink">{C.title}</h2>
+          </>
+        )}
         {/* One static paragraph above the feed: what REALITY is, where, and
             the week's anchors by name. The visible page said "language
             exchange" and "open mic" zero times while the meta description
@@ -424,10 +436,10 @@ export default function Calendar({ lang }) {
       )}
 
       <GetAppStrip lang={lang} />
-      <WhatsAppCta lang={lang} />
+      {!embedded && <WhatsAppCta lang={lang} />}
 
       <EventOverlay event={overlayEvent} lang={lang} onClose={() => setOverlayEvent(null)} />
       </div>
-    </section>
+    </Wrap>
   );
 }

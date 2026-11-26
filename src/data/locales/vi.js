@@ -161,7 +161,7 @@ export default {
     "loading": "Đang tải lịch sự kiện…",
     "empty": "Hiện chưa có sự kiện nào — theo dõi mạng xã hội của chúng tôi để cập nhật.",
     "errorTitle": "Không tải được lịch",
-    "errorBody": "Lịch trực tiếp đang cần một chút thời gian. Tham gia nhóm WhatsApp bên dưới để cập nhật, hoặc thêm lịch của chúng tôi vào lịch của bạn.",
+    "errorBody": "Không tải được lịch. Tham gia nhóm WhatsApp bên dưới để cập nhật, hoặc thêm lịch của chúng tôi vào lịch của bạn.",
     "addToCalendar": "Thêm lịch của chúng tôi vào lịch của bạn",
     "details": "Chi tiết",
     "today": "Hôm nay",
@@ -174,14 +174,14 @@ export default {
     "everyWeekday": "{weekday} hằng tuần"
   },
   "eventOverlay": {
-    "openInApp": "Mở trong app REALITY",
+    "openInApp": "Mở trên webapp REALITY",
     "close": "Đóng"
   },
   "getApp": {
-    "title": "Tải app REALITY",
-    "blurb": "Lịch sự kiện trong túi bạn — RSVP, nhắc lịch và tối nay có gì.",
-    "cta": "Mở app",
-    "button": "Tải app"
+    "title": "Webapp REALITY",
+    "blurb": "Toàn bộ lịch sự kiện, kèm RSVP và nhắc lịch.",
+    "cta": "Mở webapp",
+    "button": "Webapp"
   },
   "proposal": {
     "eyebrow": "Tổ chức cùng chúng tôi",
@@ -414,7 +414,7 @@ export default {
   },
   "hostGuide": {
     "title": "Hướng dẫn tổ chức",
-    "message": "Trang này sẽ sớm ra mắt. Quay lại sau để xem hướng dẫn đầy đủ về việc tổ chức sự kiện tại REALITY.",
+    "message": "Hướng dẫn tổ chức sự kiện tại REALITY. Sắp ra mắt.",
     "backButton": "Quay lại REALITY"
   },
   "skipLink": "Bỏ qua đến nội dung",
@@ -472,21 +472,179 @@ export default {
   "heroPrefix": "REALITY Đà Nẵng —",
   "faq": {
     "whatQ": "REALITY có những sự kiện gì?",
-    "whatA": "Gần như ngày nào cũng có: nhạc sống, open mic và acoustic jam trên sân thượng, pub quiz, đêm board game, đêm cờ vua, câu lạc bộ phim và chiếu phim ngắn, karaoke, giao lưu ngôn ngữ và câu lạc bộ văn hoá (giao lưu người Việt – người nước ngoài, câu lạc bộ tiếng Pháp, tiếng Trung), lớp nhảy, buổi nói chuyện, workshop và triển lãm nghệ thuật. Lịch sự kiện luôn cập nhật nằm trong app REALITY:",
+    "whatA": "Gần như ngày nào cũng có: nhạc sống, open mic và acoustic jam trên sân thượng, pub quiz, đêm board game, đêm cờ vua, câu lạc bộ phim và chiếu phim ngắn, karaoke, giao lưu ngôn ngữ và câu lạc bộ văn hoá (giao lưu người Việt – người nước ngoài, câu lạc bộ tiếng Pháp, tiếng Trung), lớp nhảy, buổi nói chuyện, workshop và triển lãm nghệ thuật. Lịch sự kiện mới nhất có trên webapp REALITY:",
     "freeQ": "Sự kiện ở REALITY có miễn phí không?",
-    "freeA": "Phần lớn sự kiện đều miễn phí — bạn chỉ cần mua đồ uống để ủng hộ quán. Một số sự kiện có phí vào cửa hoặc cần đăng ký trước; điều này được ghi rõ trên lịch hàng tuần, trên poster và trên trang của từng sự kiện trong app REALITY.",
+    "freeA": "Phần lớn sự kiện đều miễn phí — bạn chỉ cần mua đồ uống để ủng hộ quán. Một số sự kiện có phí vào cửa hoặc cần đăng ký trước; điều này được ghi rõ trên lịch hàng tuần, trên poster và trên trang của từng sự kiện trên webapp REALITY.",
     "hoursQ": "REALITY mở cửa lúc mấy giờ?",
     "hoursA": "REALITY mở cửa mỗi ngày từ 11:00 đến 2:00 sáng, kể cả cuối tuần. Sân thượng tầng 3 đóng cửa lúc nửa đêm.",
     "whereQ": "REALITY ở đâu tại Đà Nẵng?",
     "whereA": "86 Mai Thúc Lân, Đà Nẵng, Việt Nam — khu Mỹ An, gần biển Mỹ Khê. Quán có ba tầng: quán cà phê và sảnh ở tầng 1, không gian sự kiện và sảnh ở tầng 2, và sân thượng ở tầng 3.",
-    "hostA": "Gửi ý tưởng của bạn qua Form đề xuất sự kiện trên trang chủ (Thông tin → Tổ chức sự kiện). Với sự kiện cộng đồng công khai, chúng tôi giúp giữ chỗ, sắp xếp không gian và thiết bị, và hỗ trợ quảng bá; chỉ mong khách mua đồ uống. Sự kiện công khai có thu phí vào cửa thì thuê không gian hoặc chia đôi tiền vé 50/50 với REALITY. Sự kiện riêng tư hoặc thương mại cần giữ nguyên một phòng sẽ trả phí thuê theo giờ. Vui lòng đọc Hướng dẫn Sự kiện trước:",
+    "hostA": "Gửi ý tưởng của bạn qua Form đề xuất sự kiện ở mục Tổ chức sự kiện trên trang chủ. Với sự kiện cộng đồng công khai, chúng tôi giúp giữ chỗ, sắp xếp không gian và thiết bị, và hỗ trợ quảng bá; chỉ mong khách mua đồ uống. Sự kiện công khai có thu phí vào cửa thì thuê không gian hoặc chia đôi tiền vé 50/50 với REALITY. Sự kiện riêng tư hoặc thương mại cần giữ nguyên một phòng sẽ trả phí thuê theo giờ. Vui lòng đọc Hướng dẫn Sự kiện trước:",
     "rentQ": "Có thể thuê phòng ở REALITY cho sự kiện riêng không?",
     "rentA": "Có. Giữ nguyên một phòng, hoặc giới thiệu sản phẩm hay dịch vụ thương mại, sẽ tính phí thuê theo giờ tuỳ theo phòng và khung giờ. Giá mỗi giờ, đơn vị nghìn đồng (₫):",
     "petsQ": "Có được mang chó hoặc thú cưng đến REALITY không?"
   },
+  // THE DECK — the home page (23.11.26). Mirrors the "deck" block in en.js
+  // key for key. Vietnamese written by Claude (not a literal rendering of the English placeholders).
+  "deck": {
+    "nav": "Trên trang này",
+    "tonightCta": "Tối nay có gì",
+    "status": {
+      "open": "Đang mở cửa",
+      "closed": "Hiện đang đóng cửa",
+      "till": "đến {time}",
+      "opens": "mở lúc {time}"
+    },
+    "cards": {
+      "building": {
+        "title": "Đang diễn ra",
+        "short": "Đang diễn ra"
+      },
+      "first": {
+        "title": "Lần đầu đến đây?",
+        "short": "Lần đầu"
+      },
+      "menu": {
+        "title": "Thực đơn",
+        "short": "Thực đơn"
+      },
+      "held": {
+        "title": "Sự kiện đã tổ chức",
+        "short": "Đã tổ chức"
+      },
+      "giving": {
+        "title": "Gây quỹ từ thiện",
+        "short": "Từ thiện"
+      },
+      "inside": {
+        "title": "Bên trong",
+        "short": "Bên trong"
+      },
+      "host": {
+        "title": "Tổ chức sự kiện",
+        "short": "Tổ chức"
+      },
+      "connect": {
+        "title": "Kết nối",
+        "short": "Kết nối"
+      },
+      "visit": {
+        "title": "Địa chỉ",
+        "short": "Địa chỉ"
+      }
+    },
+    "building": {
+      "label": "Toà nhà lúc này",
+      "roomsOn": "{n} phòng đang có sự kiện",
+      "roomOn": "1 phòng đang có sự kiện",
+      "nothingOn": "Hiện chưa có sự kiện nào",
+      "onShort": "{n} đang diễn ra",
+      "nextShort": "Sắp tới {time}",
+      "nextAt": "Tiếp theo: {title} lúc {time}",
+      "noEvent": "Hiện không có sự kiện",
+      "bar": "Quầy bar",
+      "floor": "Tầng {n}",
+      "street": "mặt đường",
+      "playing": "Đang phát trên loa",
+      "appTitle": "Webapp REALITY",
+      "appBody": "Mọi sự kiện sắp tới đều có trên webapp REALITY: lịch đầy đủ và mọi thông tin chi tiết.",
+      "appCta": "Mở webapp"
+    },
+    "first": {
+      "count": "{n} bước",
+      "steps": [
+        {
+          "t": "Ghé qua",
+          "b": "Chúng tôi mở cửa mỗi ngày, từ 11:00 đến 02:00."
+        },
+        {
+          "t": "Gọi đồ uống",
+          "b": "Chúng tôi mong ai vào quán cũng gọi một món, vì quán còn phải trả lương nhân viên, tiền thuê nhà, thuế, v.v."
+        },
+        {
+          "t": "Làm gì tuỳ bạn",
+          "b": "Tham gia một sự kiện, chơi bida ngoài sân, làm việc một chút, làm quen vài người. REALITY phản chiếu chính những người có mặt ở đây."
+        }
+      ],
+      "joinQ": "Cứ thế tham gia được không?",
+      "joinA": "Được chứ! Bạn không cần quen ai trước mà vẫn gặp được rất nhiều người: tham gia một sự kiện, ngồi ở quầy bar, hay đơn giản là chào mọi người một câu. REALITY có 3 sứ mệnh:",
+      "joinB": "và nơi này thường thu hút những người thấy đó là các sứ mệnh đáng theo đuổi.",
+      "joinC": "Về sự kiện, hãy xem {calendar} để biết sự kiện có yêu cầu gì riêng không (đăng ký trước, phí vào cửa, v.v.), còn nếu có thắc mắc, mời bạn tham gia {whatsapp}, v.v.",
+      "joinCalendar": "lịch đầy đủ",
+      "joinWhatsApp": "nhóm WhatsApp của chúng tôi"
+    },
+    "menu": {
+      "now": "Trong thực đơn",
+      "sections": "{n} mục"
+    },
+    "held": {
+      "intro": "Chúng tôi là nền tảng cho nhiều cộng đồng, và hàng trăm người đã tổ chức đủ loại sự kiện ở đây.",
+      "asOf": "Tính đến {date}",
+      "perWeek90": "{n} sự kiện mỗi tuần, 3 tháng gần đây",
+      "since": "từ {date}",
+      "events": "sự kiện",
+      "rowWeek90": "Mỗi tuần, trong 3 tháng gần đây",
+      "rowNew": "Chuỗi mới trong 30 ngày qua",
+      "more": "Thêm số liệu",
+      "rowSpan": "Giai đoạn thống kê",
+      "rowWeeks": "Số tuần",
+      "rowSeries": "Số chuỗi sự kiện",
+      "rowRunning": "Chuỗi vẫn đang diễn ra",
+      "rowOnce": "Chỉ diễn ra một lần",
+      "mostRun": "Tổ chức nhiều nhất",
+      "trend": "Số sự kiện trong mỗi 30 ngày gần nhất",
+      "trendAlt": "Số sự kiện trong mỗi 30 ngày gần nhất, tăng từ {first} lên {last} tính đến {date}",
+      "peak": "Cao nhất: {n}, vào {date}",
+      "source": "Đếm từ lịch sự kiện.",
+      "link": "Xem toàn bộ báo cáo sự kiện"
+    },
+    "giving": {
+      "count": "{n} lần gây quỹ",
+      "short": "đã gây quỹ",
+      "raised": "Đã gây quỹ {total} tại đây",
+      "lede": "Những lần gây quỹ tại REALITY, và số tiền đã đi đâu.",
+      "fundraiser": "Gây quỹ",
+      "last": "Gần nhất: {title} · {date}",
+      "givenTo": "Trao cho",
+      "handedOver": "Trao ngày {date}",
+      "all": "Tất cả các lần gây quỹ trên webapp",
+      "gapDate": "Ngày",
+      "gapRecipient": "Nơi nhận"
+    },
+    "inside": {
+      "photos": "{n} ảnh",
+      "face": "Ba tầng, năm khu.",
+      "intro": [
+        "Chúng tôi có ba tầng, chia thành năm khu. Hầu như lúc nào cũng có gì đó diễn ra ở ít nhất một khu, và thường vẫn còn ít nhất một chỗ ưng ý nếu bạn muốn không gian riêng.",
+        "Ngoài quán cà phê và quầy bar đầy đủ, chúng tôi còn có bàn bida cỡ chuẩn, bốn nhà vệ sinh, máy chiếu HD, hệ thống âm thanh tích hợp cho DJ, cả núi board game, và ai mà biết còn gì nữa."
+      ],
+      "walls": "Trên tường",
+      "gapWalls": "Đang trưng bày gì"
+    },
+    "host": {
+      "rooms": "{n} phòng",
+      "short": "cho sự kiện công khai",
+      "free": "để tổ chức sự kiện cộng đồng công khai.",
+      "from": "Thuê phòng riêng từ {price} mỗi giờ.",
+      "live": "Miễn phí cho sự kiện cộng đồng công khai · thuê phòng từ {price} mỗi giờ"
+    },
+    "connect": {
+      "ways": "{n} liên kết",
+      "app": "Webapp",
+      "webappTitle": "Webapp REALITY",
+      "webapp": "Ghé xem webapp REALITY - Có lịch đầy đủ + mọi thông tin sự kiện.",
+      "webappCta": "Mở webapp",
+      "email": "Gửi email cho chúng tôi",
+      "social": "Instagram + Facebook"
+    },
+    "visit": {
+      "area": "Mỹ An, gần biển Mỹ Khê",
+      "qrAlt": "Mã QR dẫn đến realitydn.com"
+    }
+  },
   "notFound": {
     "title": "Không tìm thấy trang",
-    "body": "Trang này không tồn tại — hoặc đã được chuyển đi. Phần còn lại của REALITY vẫn ở nguyên chỗ cũ.",
+    "body": "Trang này không tồn tại, hoặc đã được chuyển đi.",
     "langs": "Ngôn ngữ khác"
   },
   "seo": {

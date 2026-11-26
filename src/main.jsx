@@ -7,6 +7,9 @@ import { langFromPath, stripLangPrefix } from './data/languages';
 import { loadLocale } from './data/translations';
 import { loadMenu } from './data/menu-i18n';
 import './index.css';
+// After index.css on purpose: the deck's rules build on the base tokens,
+// tickets and buttons, and must win a tie with them.
+import './deck.css';
 
 // createRoot, deliberately NOT hydrateRoot (reviewed 23.09.26, and re-tested
 // 23.09.26 against a development build: hydrateRoot, prerendered DOM diffed

@@ -537,6 +537,184 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   }
 }
 
+// ── the deck home page (23.11.26): rooms in use, open now, the stand-ins ─────
+// The pure helpers behind three cards. "Now" is always passed in, so these
+// never depend on when the test runs.
+{
+  const { buildingNow, roomsOf, eventEndMs, ROOM_CODES, ROOM_HAS, roomHas } = await import('../src/data/deck/building.js');
+  const { openNow, ictClock } = await import('../src/data/deck/open-hours.js');
+  const { fundraisersView, rowText, vnd, vndShort, FUNDRAISER_STANDINS } = await import('../src/data/deck/fundraisers.js');
+  const { usableRecord, readFundraisersFeed } = await import('./fundraisers-feed.mjs');
+  // The figures on "Events we've held": the pure half (event-stats.js). The
+  // page's own event-audit.js reads the weekly file through a Vite plugin.
+  const { SNAPSHOT, usable, chooseStats, auditFrom, dmy } = await import('../src/data/deck/event-stats.js');
+  const AUDIT = auditFrom(SNAPSHOT);
+
+  const at = (hhmm, day = 26) => `2026-11-${day}T${hhmm}:00+07:00`;
+  const loc = (...codes) => codes.map((code) => ({ code }));
+  const evs = [
+    { id: 'botc', title_en: 'Blood on the Clocktower', startsAt: at('18:30'), endsAt: at('22:00'), locations: loc('3P') },
+    { id: 'geo', title_en: 'GeoGuessr', startsAt: at('19:00'), endsAt: at('21:00'), locations: loc('2E') },
+    { id: 'kar', title_en: 'Karaoke!', startsAt: at('21:00'), endsAt: null, locations: loc('2E') },
+    { id: 'hh', title_en: 'Happy Hour: Buy 1 Get 1 Cocktails', startsAt: at('17:00'), endsAt: at('21:00'), locations: [] },
+    { id: 'done', title_en: 'Coffee + Conversation', startsAt: at('11:00'), endsAt: at('12:30'), locations: loc('1L') },
+    { id: 'tmrw', title_en: 'Film Club', startsAt: at('18:30', 27), endsAt: at('21:00', 27), locations: loc('2E') },
+  ];
+  const isDeal = (ev) => /happy hour/i.test(ev.title_en);
+  const now = Date.parse(at('20:40'));
+  const b = buildingNow(evs, { now, isDeal });
+  eq('building: two rooms on at 20:40', b.onCount, 2);
+  eq('building: 3P holds the event that is running', b.rooms['3P'].now && b.rooms['3P'].now.id, 'botc');
+  eq('building: 2E now', b.rooms['2E'].now && b.rooms['2E'].now.id, 'geo');
+  eq('building: 2E next (tonight, not tomorrow)', b.rooms['2E'].next && b.rooms['2E'].next.id, 'kar');
+  eq('building: an ended event leaves its room free', b.rooms['1L'].now, null);
+  eq('building: a drinks deal is the bar\'s, never a room', b.deal && b.deal.id, 'hh');
+  check('building: the deal is not in the programme', !b.nowEvents.some((e) => e.id === 'hh'));
+  eq('building: next to start anywhere', b.next && b.next.id, 'kar');
+  eq('building: no end time → two hours', eventEndMs(evs[2]) - Date.parse(evs[2].startsAt), 2 * 3600e3);
+  eq('building: an event with no end is on inside its two hours', buildingNow(evs, { now: Date.parse(at('22:30')), isDeal }).rooms['2E'].now.id, 'kar');
+  eq('building: nothing on at 09:00', buildingNow(evs, { now: Date.parse(at('09:00')), isDeal }).onCount, 0);
+  eq('building: "Entire Space" lights every room', roomsOf({ locations: loc('Entire Space') }).length, ROOM_CODES.length);
+  eq('building: several rooms at once', roomsOf({ locations: loc('1L', '2L', '2E', '3P') }).join(), '1L,2L,2E,3P');
+  eq('building: an unknown room is no room', roomsOf({ locations: loc('Da Nang') }).length, 0);
+  eq('building: falls back to the single location', roomsOf({ location: { code: '2L' } }).join(), '2L');
+  eq('building: empty feed', buildingNow([], { now }).onCount, 0);
+  // what a free room has in it (the pool table, the board games)
+  check('building: every "what is in it" line belongs to a real room', Object.keys(ROOM_HAS).every((c) => ROOM_CODES.includes(c)));
+  check('building: every such line has its English', Object.values(ROOM_HAS).every((l) => typeof l.EN === 'string' && l.EN.trim()));
+  eq('building: the patio has the pool table', roomHas('3P'), ROOM_HAS['3P'].EN);
+  eq('building: the line in Vietnamese', roomHas('2E', 'VN'), ROOM_HAS['2E'].VN);
+  eq('building: a language with no line falls back to English', roomHas('2E', 'XX'), ROOM_HAS['2E'].EN);
+  eq('building: a room with no line says nothing', roomHas('1L', 'VN'), '');
+
+  // The "Our menu" card: the drinks it rolls through (menu-picks.js) are
+  // named by hand, so a regenerated menu.js can leave a row behind.
+  {
+    const { PICKS, locate, pickDrinks } = await import('../src/components/deck/menu-picks.js');
+    const { MENU: FULL } = await import('../src/data/menu.js');
+    eq('menu card: every pick is still on the menu (fix the row in menu-picks.js)', PICKS.filter((p) => !locate(FULL, p)).map((p) => p[1]).join(', '), '');
+    const drinks = pickDrinks(FULL);
+    check('menu card: every drink has a name and says its kind', drinks.length === PICKS.length && drinks.every((d) => d.name && d.kind));
+    eq('menu card: a cocktail takes its chapter as its kind', (drinks.find((d) => d.name === 'Mojito') || {}).kind, 'Cocktails');
+    eq('menu card: any other drink takes its section', (drinks.find((d) => d.name === 'Salt Coffee') || {}).kind, 'Phin Coffee');
+    check('menu card: it is the whole menu, not only cocktails', new Set(drinks.map((d) => d.kind)).size >= 6
+      && drinks.filter((d) => d.kind === 'Cocktails').length <= drinks.length / 3);
+    eq('menu card: a drink that has left the menu is skipped', locate(FULL, ['cafe', 'No Such Drink']), null);
+  }
+
+  // Open daily 11:00–02:00, in Đà Nẵng time whatever the machine's zone.
+  const ict = (hhmm, day = 26) => Date.parse(at(hhmm, day));
+  check('open: 10:59 is closed, opens 11:00', !openNow(ict('10:59')).open && openNow(ict('10:59')).until === '11:00');
+  check('open: 11:00 is open till 02:00', openNow(ict('11:00')).open && openNow(ict('11:00')).until === '02:00');
+  check('open: 01:59 is still open', openNow(ict('01:59')).open);
+  check('open: 02:00 is closed', !openNow(ict('02:00')).open);
+  eq('open: the clock is ICT (04:30Z = 11:30)', ictClock(Date.parse('2026-11-26T04:30:00Z')).hhmm, '11:30');
+
+  // Fundraisers: the feed the browser read, else the feed the build read,
+  // else the stand-ins (the owner's exact figures, 26.11.26).
+  const none = fundraisersView({ totalVnd: 0, count: 0, fundraisers: [] });
+  check('fundraisers: an empty feed shows the stand-ins, marked not live', !none.live && none.rows === FUNDRAISER_STANDINS);
+  eq('fundraisers: no feed at all is the same', fundraisersView(null).live, false);
+  eq('fundraisers: the stand-in total is the owner\'s total, to the đồng', none.totalVnd, 73098833);
+  eq('fundraisers: the three stand-in amounts', FUNDRAISER_STANDINS.map((r) => r.amountVnd).join(), '12277000,10294000,50527833');
+  eq('fundraisers: the stand-ins are newest first, like the feed', FUNDRAISER_STANDINS.map((r) => r.heldOn).join(), '2026-09-17,2026-08-20,2025-11-15');
+  check('fundraisers: no stand-in is marked as rounded any more', FUNDRAISER_STANDINS.every((r) => !('approx' in r)) && !('totalApprox' in none));
+  check('fundraisers: every stand-in has its date, its recipient and an exact amount', FUNDRAISER_STANDINS.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.heldOn) && r.recipient && Number.isInteger(r.amountVnd)));
+  eq('fundraisers: the opened card prints the total in full', vnd(none.totalVnd), '73.098.833₫');
+  eq('fundraisers: the small card prints whole millions', vndShort(none.totalVnd), '73M₫');
+  const flood = FUNDRAISER_STANDINS[2];
+  eq('fundraisers: a title in Vietnamese', rowText(flood, 'title', 'VN'), 'Tiệc gây quỹ cứu trợ lũ lụt');
+  eq('fundraisers: a confirmed Vietnamese recipient name', rowText(flood, 'recipient', 'VN'), 'Ủy ban Mặt trận Tổ quốc Việt Nam');
+  eq('fundraisers: an unconfirmed one stays English in Vietnamese', rowText(FUNDRAISER_STANDINS[0], 'recipient', 'VN'), FUNDRAISER_STANDINS[0].recipient);
+  eq('fundraisers: any other language reads the English', rowText(flood, 'title', 'KO'), 'Flood Relief Benefit Party');
+  eq('fundraisers: a row with no summary prints none', rowText(flood, 'summary', 'VN'), '');
+  const feedDoc = { totalVnd: 10250000, count: 1, page: 'https://app.realitydn.com/fundraisers', fundraisers: [{ title: 'Charaoke', heldOn: '2026-09-17', recipient: 'X', amountVnd: 10250000 }] };
+  const some = fundraisersView(feedDoc);
+  check('fundraisers: one row in the feed switches to the feed', some.live && some.rows.length === 1 && some.totalVnd === 10250000);
+  const builtDoc = { totalVnd: 3, page: 'p', fundraisers: [{ title: 'Old', heldOn: '2025-01-01', amountVnd: 1 }, { title: 'New', heldOn: '2026-01-01', amountVnd: 2 }] };
+  const fromBuild = fundraisersView(null, builtDoc);
+  check('fundraisers: with no answer in the browser, the record read at build is shown', fromBuild.live && fromBuild.totalVnd === 3);
+  eq('fundraisers: rows come out newest first whatever order they arrive in', fromBuild.rows.map((r) => r.title).join(), 'New,Old');
+  eq('fundraisers: an empty answer in the browser keeps the build\'s record', fundraisersView({ fundraisers: [] }, builtDoc).totalVnd, 3);
+  eq('fundraisers: a record in the browser wins over the build\'s', fundraisersView(feedDoc, builtDoc).totalVnd, 10250000);
+  // the build-time reader (scripts/fundraisers-feed.mjs) never throws
+  eq('fundraisers reader: an empty feed is "use the stand-ins"', usableRecord({ fundraisers: [] }), null);
+  eq('fundraisers reader: not a feed document', usableRecord('<html>'), null);
+  eq('fundraisers reader: a row without an amount is dropped', usableRecord({ fundraisers: [{ title: 'A' }, { title: 'B', amountVnd: 5 }] }).count, 1);
+  check('fundraisers reader: the same record always builds the same bundle (no timestamp)', !('generatedAt' in usableRecord({ generatedAt: 'x', version: 1, fundraisers: [{ title: 'B', amountVnd: 5 }] })));
+  const fakeFetch = (answer) => async () => answer();
+  eq('fundraisers reader: a failed request is null, not an error', (await readFundraisersFeed({ fetchImpl: fakeFetch(() => { throw new Error('down'); }) })).record, null);
+  eq('fundraisers reader: an HTTP error is null', (await readFundraisersFeed({ fetchImpl: fakeFetch(() => ({ ok: false, status: 503 })) })).record, null);
+  eq('fundraisers reader: a good answer is the record', (await readFundraisersFeed({ fetchImpl: fakeFetch(() => ({ ok: true, json: async () => feedDoc })) })).record.totalVnd, 10250000);
+  eq('money: house style', vnd(150000), '150.000₫');
+  eq('money: millions round DOWN', vndShort(72900000), '72M₫');
+  eq('money: under a million prints in full', vndShort(450000), '450.000₫');
+
+  // The weekly file, when this checkout has it, must be one the card can use.
+  {
+    const { existsSync, readFileSync } = await import('node:fs');
+    const file = new URL('../public/event-report/stats.json', import.meta.url);
+    if (existsSync(file)) {
+      const stats = JSON.parse(readFileSync(file, 'utf8'));
+      check('audit: public/event-report/stats.json has every field the card reads', usable(stats));
+      check('audit: the weekly file is not older than the bundled snapshot', stats.asOf >= SNAPSHOT.asOf);
+    }
+  }
+  check('audit: the bundled snapshot is itself a usable stats.json', usable(SNAPSHOT));
+  eq('audit: no file → the snapshot', chooseStats(null), SNAPSHOT);
+  eq('audit: a file missing a field → the snapshot', chooseStats({ ...SNAPSHOT, asOf: '2027-01-01', growth: undefined }), SNAPSHOT);
+  eq('audit: a file older than the snapshot → the snapshot', chooseStats({ ...SNAPSHOT, asOf: '2026-10-03' }), SNAPSHOT);
+  {
+    const newer = { ...SNAPSHOT, asOf: '2026-12-01', totals: { ...SNAPSHOT.totals, events: 1890 }, extra: 'a field added later' };
+    eq('audit: a newer file is used, extra fields and all', auditFrom(chooseStats(newer)).total, 1890);
+  }
+  eq('audit: the chart has a date for every count', AUDIT.trendDates.length, AUDIT.trend30.length);
+  eq('audit: the last count ends on the day the count was taken', AUDIT.trendDates[AUDIT.trendDates.length - 1], AUDIT.asOf);
+
+  // The audit snapshot must agree with itself.
+  eq('audit: the three-month average is its three months ÷ the weeks in 90 days',
+    Math.round((AUDIT.last90.reduce((a, n) => a + n, 0) / (90 / 7)) * 10) / 10, AUDIT.perWeek90);
+  eq('audit: the newest month of the three is the last point of the trend', AUDIT.last90[0], AUDIT.trend30[AUDIT.trend30.length - 1]);
+  check('audit: most-run is in order', AUDIT.mostRun.every((m, i, a) => i === 0 || a[i - 1].runs >= m.runs));
+  check('audit: no point of the trend is above its stated peak', Math.max(...AUDIT.trend30) <= AUDIT.trendPeak.value);
+  eq('audit: d.m.yy, no leading zeros', dmy('2026-10-03'), '3.10.26');
+  eq('audit: d.m.yy two-digit', dmy('2025-05-26'), '26.5.25');
+
+  // Now playing (25.11.26): a track shows only when the feed has just said
+  // one is playing. Every other answer is "show nothing".
+  const { nowPlayingView, NOW_PLAYING_URL, FRESH_MS } = await import('../src/data/deck/now-playing.js');
+  const t0 = Date.parse('2026-11-25T13:05:30Z');
+  const playing = {
+    version: 1, generatedAt: '2026-11-25T13:05:12Z', playing: true,
+    track: { title: ' Harvest Moon ', artists: ['Neil Young', ''], url: 'https://example.com/track/abc' },
+  };
+  eq('now playing: the app\'s feed', NOW_PLAYING_URL, 'https://app.realitydn.com/api/feed/v1/now-playing.json');
+  const np = nowPlayingView(playing, t0);
+  check('now playing: a fresh playing track shows, trimmed', !!np && np.title === 'Harvest Moon' && np.artist === 'Neil Young');
+  eq('now playing: title and artists only, never a link', Object.keys(np).sort().join(), 'artist,title');
+  // the feed's own shape: an offset, not Z (00:03:26+07:00 is 17:03:26Z the day before)
+  const live = { version: 1, generatedAt: '2026-11-26T00:03:26+07:00', playing: true, track: { title: 'A New Kind Of Love - Demo', artists: ['Frou Frou', 'Imogen Heap', 'Guy Sigsworth'] } };
+  eq('now playing: generatedAt with an offset is read as a full ISO time', (nowPlayingView(live, Date.parse('2026-11-25T17:04:00Z')) || {}).artist, 'Frou Frou, Imogen Heap, Guy Sigsworth');
+  eq('now playing: … and is stale three minutes on', nowPlayingView(live, Date.parse('2026-11-25T17:06:27Z')), null);
+  eq('now playing: the feed\'s "nothing" answer shows nothing', nowPlayingView({ version: 1, generatedAt: live.generatedAt, playing: false, track: null }, Date.parse('2026-11-25T17:04:00Z')), null);
+  eq('now playing: paused shows nothing', nowPlayingView({ ...playing, playing: false }, t0), null);
+  eq('now playing: "playing" must be exactly true', nowPlayingView({ ...playing, playing: 'true' }, t0), null);
+  eq('now playing: no track shows nothing', nowPlayingView({ ...playing, track: null }, t0), null);
+  eq('now playing: a track with no title shows nothing', nowPlayingView({ ...playing, track: { title: '  ' } }, t0), null);
+  eq('now playing: a stale document shows nothing', nowPlayingView(playing, t0 + FRESH_MS + 60000), null);
+  eq('now playing: no timestamp shows nothing', nowPlayingView({ ...playing, generatedAt: undefined }, t0), null);
+  eq('now playing: no document shows nothing', nowPlayingView(null, t0), null);
+
+  // The deck's order and copy (25.11.26).
+  const en = (await import('../src/data/locales/en.js')).default;
+  eq('deck: three steps', en.deck.first.steps.length, 3);
+  check('deck: the answer keeps its two links', en.deck.first.joinC.includes('{calendar}') && en.deck.first.joinC.includes('{whatsapp}'));
+  // the words only, not the key names
+  const words = (v) => (typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(words) : []);
+  const saysApp = words([en.deck, en.getApp, en.eventOverlay, en.faq]).filter((s) => /\bapp\b/i.test(s));
+  check(`deck: the home page says "webapp", never "the app" ${JSON.stringify(saysApp)}`, saysApp.length === 0);
+}
+
 // ── summary ──────────────────────────────────────────────────────────────────
 if (failures.length) {
   console.error(`\nselftest: ${failures.length} FAILED, ${passed} passed`);

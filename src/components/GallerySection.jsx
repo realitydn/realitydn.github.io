@@ -5,7 +5,11 @@ import Reveal from './Reveal';
 import useDialog from '../hooks/useDialog';
 import { GALLERY } from '../data/events';
 
-export default function GallerySection({ t }) {
+// `embedded` (the deck home page, 23.11.26): the carousel sits inside the
+// opened "Inside" card, which supplies the frame, the heading and the
+// #gallery anchor. The photos and the lightbox are unchanged.
+export default function GallerySection({ t, embedded = false }) {
+  const Wrap = embedded ? 'div' : 'section';
   // One piece of state: the open photo ({ src, alt }) or null.
   const [photo, setPhoto] = useState(null);
   const plateRef = useRef(null);
@@ -48,20 +52,22 @@ export default function GallerySection({ t }) {
       {/* A paper band in the canon stack (ink pass 22.08.26): the band is
           full-bleed with its 3px ink top rule; the max-w wrapper moved inside
           so the content stays constrained. The grid itself is untouched. */}
-      <section id="gallery" className="band b-paper section">
-        <div className="max-w-7xl mx-auto px-4 pt-12 pb-6">
-          <Reveal className="mb-2">
-            <h2 className="h-section text-3xl md:text-5xl text-ink">
-              {t.use('galleryTitle')}
-            </h2>
-          </Reveal>
+      <Wrap id={embedded ? undefined : 'gallery'} className={embedded ? 'gallery-embed' : 'band b-paper section'}>
+        <div className={embedded ? undefined : 'max-w-7xl mx-auto px-4 pt-12 pb-6'}>
+          {!embedded && (
+            <Reveal className="mb-2">
+              <h2 className="h-section text-3xl md:text-5xl text-ink">
+                {t.use('galleryTitle')}
+              </h2>
+            </Reveal>
+          )}
           <CardsCarousel
             items={GALLERY}
             renderCard={renderGalleryCard}
             t={t}
           />
         </div>
-      </section>
+      </Wrap>
 
       {/* Lightbox — .lbx ink plate on the darker scrim (canon 22.08.26). The
           photo is the subject: frame + caption row only, nothing decorative.

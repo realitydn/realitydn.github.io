@@ -14,7 +14,7 @@ import { PixelHeart, useSteps } from '../kit';
 const TALLY_MAX = 4; // b: at most this many steps, however long the list gets
 
 export default function GivingLab({ card, no, t, lang, v }) {
-  const { rows, totalVnd, totalApprox } = useFundraisers();
+  const { rows, totalVnd } = useFundraisers();
   const S = (k) => t.use(`deck.giving.${k}`);
   const last = rows
     .filter((r) => r.heldOn)
@@ -38,7 +38,7 @@ export default function GivingLab({ card, no, t, lang, v }) {
   const step = useSteps(v === 'b' ? beat : 0, Math.max(tally.length, 1), 420);
   const atEnd = step >= tally.length - 1;
 
-  const totalText = `${vndShort(totalVnd)}${totalApprox ? '+' : ''}`;
+  const totalText = vndShort(totalVnd);
   let num;
   if (v === 'b' && beat > 0 && tally.length > 1) {
     num = (

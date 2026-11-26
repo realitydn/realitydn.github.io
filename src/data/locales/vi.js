@@ -606,7 +606,7 @@ export default {
       "fundraiser": "Gây quỹ",
       "last": "Gần nhất: {title} · {date}",
       "givenTo": "Trao cho",
-      "standIn": "Tạm thời là số làm tròn. Con số chính xác sẽ được cập nhật sau.",
+      "handedOver": "Trao ngày {date}",
       "all": "Tất cả các lần gây quỹ trên webapp",
       "gapDate": "Ngày",
       "gapRecipient": "Nơi nhận"

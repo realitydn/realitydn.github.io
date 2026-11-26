@@ -37,7 +37,7 @@ export const VARIANTS = {
   ],
   giving: [
     { id: 'a', name: 'Heart daub', what: 'A small red heart sits by the total and is daubed again each turn, like a marker hitting paper.' },
-    { id: 'b', name: 'Tally', what: 'The total adds up fundraiser by fundraiser (52M, 62M, 72M₫+), each amount stamped in turn.' },
+    { id: 'b', name: 'Tally', what: 'The total adds up fundraiser by fundraiser (50M, 60M, 73M₫), each amount stamped in turn.' },
     { id: 'c', name: 'Echo', what: 'Two colour plates shoot out from behind the total, hold as a misregistered print, and snap back: 1.6 seconds long, every 8 seconds.' },
   ],
   inside: [

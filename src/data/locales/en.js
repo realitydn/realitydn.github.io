@@ -621,7 +621,7 @@ export default {
       "fundraiser": "Fundraiser",
       "last": "Last: {title} · {date}",
       "givenTo": "Given to",
-      "standIn": "Rounded figures for now. The exact amounts will follow.",
+      "handedOver": "Handed over {date}",
       "all": "All fundraisers in the webapp",
       "gapDate": "Date",
       "gapRecipient": "Who it went to"

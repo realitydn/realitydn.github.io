@@ -11,6 +11,9 @@
  *   src/data/feed.js                → the ICS feed URL
  *   index.html                      → geo coordinates (LocalBusiness JSON-LD)
  *   public/feed-snapshot.json       → weekly lineup + next 14 days of events
+ *   the app's fundraisers feed      → the Fundraisers section (read here, with
+ *                                     a short timeout; no rows or no answer →
+ *                                     src/data/deck/fundraisers.js stand-ins)
  *
  * Runs in `prebuild` AFTER fetch-feed.mjs (so the snapshot is fresh); Vite
  * then copies public/ into dist/. Deterministic for a given day + snapshot:
@@ -196,9 +199,40 @@ function menuFull(MENU) {
   return out;
 }
 
+// ---------------------------------------------------------------- fundraisers
+// The same record the home page's "Charitable giving" card shows: the app's
+// fundraisers feed when it has rows, else the site's stand-in list
+// (src/data/deck/fundraisers.js, the owner's own figures). The app's list page
+// is linked only when the rows came from the feed, so the link is never to an
+// empty page. `giving` is null when the record could not be loaded at all;
+// the section is then left out.
+const longDate = (iso) => new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })
+  .format(new Date(`${String(iso).slice(0, 10)}T12:00:00Z`));
+
+function givingLines(giving) {
+  if (!giving || !giving.view.rows.length) return [];
+  const { view, vnd } = giving;
+  const rows = view.rows.map((r) => {
+    const to = r.recipient ? ` · given to ${r.recipient}${r.recipient_vi ? ` (${r.recipient_vi})` : ''}` : '';
+    const handed = r.handedOverOn ? ` · handed over ${longDate(r.handedOverOn)}` : '';
+    const title = r.url ? `[${oneLine(r.title)}](${r.url})` : oneLine(r.title);
+    const summary = r.summary ? ` — ${oneLine(r.summary)}` : '';
+    return `- ${r.heldOn ? `${longDate(r.heldOn)} · ` : ''}${title} · ${vnd(r.amountVnd)} raised${to}${handed}${summary}`;
+  });
+  return [
+    '## Fundraisers held at REALITY',
+    '',
+    `${vnd(view.totalVnd)} (Vietnamese đồng) raised and handed over across ${view.rows.length} fundraiser${view.rows.length === 1 ? '' : 's'}, newest first:`,
+    '',
+    ...rows,
+    view.live && view.page ? `- The full record, with photos and receipts: [${view.page.replace(/^https?:\/\//, '')}](${view.page})` : null,
+    '',
+  ];
+}
+
 // ---------------------------------------------------------------- llms.txt
 function buildLlms(ctx) {
-  const { en, today, geo, lineup, ranges, rates, icsUrl, menuVersion } = ctx;
+  const { en, today, geo, lineup, ranges, rates, icsUrl, menuVersion, giving } = ctx;
   const ih = en.infoHost;
   const L = [];
   L.push(
@@ -243,6 +277,7 @@ function buildLlms(ctx) {
     ...ih.pricing.notes.map((n) => `- ${n}`),
     `- Art exhibitions: ${ih.artGuidelines[1]} Shows ideally stay up a full month.`,
     '',
+    ...givingLines(giving),
     '## Main website pages',
     '',
     '- [Homepage (English)](https://realitydn.com/): events, info & FAQ, drinks menu, visit details',
@@ -264,7 +299,7 @@ function buildLlms(ctx) {
 
 // ---------------------------------------------------------------- llms-full.txt
 function buildLlmsFull(ctx) {
-  const { en, today, geo, faqEN, faqVI, menu, rates, upcoming, icsUrl } = ctx;
+  const { en, today, geo, faqEN, faqVI, menu, rates, upcoming, icsUrl, giving } = ctx;
   const g = en.eventGuidelines;
   const ih = en.infoHost;
   const L = [];
@@ -352,6 +387,7 @@ function buildLlmsFull(ctx) {
     '',
     `${g.ctaTitle} https://realitydn.com/#proposal`,
     '',
+    ...givingLines(giving),
   );
   if (upcoming) {
     L.push(
@@ -405,11 +441,22 @@ async function main() {
   if (!events) console.warn('  ! build-seo-files: no usable feed-snapshot.json — skipping events sections');
   const { lineup, upcoming } = eventSections(events, now);
 
+  // Fundraisers: the app's feed, else the home page's stand-in list.
+  let giving = null;
+  try {
+    const { fundraisersView, vnd } = await load('src/data/deck/fundraisers.js');
+    const { record, note } = await (await load('scripts/fundraisers-feed.mjs')).readFundraisersFeed();
+    giving = { view: fundraisersView(record), vnd };
+    console.log(`  build-seo-files: fundraisers — ${note}${record ? '' : '; using the site\'s stand-in list'}`);
+  } catch (e) {
+    console.warn('  ! build-seo-files: fundraisers section skipped:', e && e.message);
+  }
+
   const files = {
     'sitemap.xml': buildSitemap({ LANGS, pathFor }, today),
-    'llms.txt': buildLlms({ en, today, geo, lineup, ranges: menuRanges(MENU), rates, icsUrl, menuVersion: MENU_VERSION }),
+    'llms.txt': buildLlms({ en, today, geo, lineup, ranges: menuRanges(MENU), rates, icsUrl, menuVersion: MENU_VERSION, giving }),
     'llms-full.txt': buildLlmsFull({
-      en, today, geo, rates, upcoming, icsUrl,
+      en, today, geo, rates, upcoming, icsUrl, giving,
       faqEN: buildFaq(makeT(STR, 'EN'), 'EN'),
       faqVI: buildFaq(makeT(STR, 'VN'), 'VN'),
       menu: menuFull(MENU),

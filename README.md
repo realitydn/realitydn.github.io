@@ -51,7 +51,7 @@ npm run build    # vite build + Puppeteer prerender (all 6 locales)
 │   │   ├── deck/        # the home page's own data: event-audit.js (the event figures, read
 │   │   │                # from public/event-report/stats.json when the site is built;
 │   │   │                # event-stats.js has the fallback snapshot and the mapping),
-│   │   │                # fundraisers.js (stand-ins until the app's feed has rows),
+│   │   │                # fundraisers.js (the stand-in list shown when the app's feed has no rows),
 │   │   │                # building.js (rooms in use, from the feed; ROOM_HAS: what a
 │   │   │                # free room says is in it), open-hours.js
 │   │   ├── locales/     # six locale files (must keep key parity with en.js)
@@ -91,17 +91,22 @@ down the page.
   with its "as of" date. If the file is missing, unreadable or older than the
   bundled snapshot in `data/deck/event-stats.js`, the snapshot is shown; the
   build log says which was used.
-- **What is not live (yet):** the fundraisers (`data/deck/fundraisers.js`,
-  marked stand-ins that give way to the app's fundraisers feed the moment it
-  has rows). A fact we don't have is
-  a `<Gap>` — a dashed tag on the page — never a guess.
+- **The fundraisers** come from the app's fundraisers feed, read twice: when
+  the site is built (the `reality-fundraisers` plugin in `vite.config.js`, so
+  the prerendered page already shows the app's record) and once more in the
+  browser. Until that feed has rows, or when it cannot be read, the card
+  shows the stand-in list in `data/deck/fundraisers.js`: the three nights so
+  far, with the owner's exact figures (26.11.26). The build never fails on
+  the feed; its log says which was used. The same record is written into
+  `llms.txt` and `llms-full.txt` (`scripts/build-seo-files.mjs`). A fact a
+  row doesn't have is a `<Gap>` — a dashed tag on the page — never a guess.
 - **The Our menu card** rolls through the whole menu, not only the cocktails
   (coffee, matcha, juice, beer, tea, water), and every drink says what kind
   it is, from the menu's own section labels. The drinks are the `PICKS` list
   in `deck/menu-picks.js`, one row each; `npm run selftest` fails if a row's
   drink has left the menu.
 - **On a phone every card says what it is** (25.11.26): a figure has its word
-  with it ("3 steps", "0₫ for public events", "72M₫+ raised"), What's on has
+  with it ("3 steps", "0₫ for public events", "73M₫ raised"), What's on has
   one line under its building ("2 on now" or "Next 11:00"), and Get connected
   lists its four names. The short strings are `deck.building.onShort` /
   `nextShort`, `deck.host.short` and `deck.giving.short` in the locale files.

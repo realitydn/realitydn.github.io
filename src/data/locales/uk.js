@@ -606,7 +606,7 @@ export default {
       "fundraiser": "Збір коштів",
       "last": "Останній: {title} · {date}",
       "givenTo": "Передано",
-      "standIn": "Поки що суми округлені. Точні цифри з'являться згодом.",
+      "handedOver": "Передано {date}",
       "all": "Усі збори — у вебзастосунку",
       "gapDate": "Дата",
       "gapRecipient": "Кому передано"

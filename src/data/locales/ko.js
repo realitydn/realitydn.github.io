@@ -606,7 +606,7 @@ export default {
       "fundraiser": "모금 행사",
       "last": "최근: {title} · {date}",
       "givenTo": "전달처",
-      "standIn": "지금은 어림한 금액이에요. 정확한 금액은 추후 업데이트할게요.",
+      "handedOver": "전달일: {date}",
       "all": "웹앱에서 모든 모금 행사 보기",
       "gapDate": "날짜",
       "gapRecipient": "전달처"

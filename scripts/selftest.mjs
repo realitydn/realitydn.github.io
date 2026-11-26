@@ -543,7 +543,8 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
 {
   const { buildingNow, roomsOf, eventEndMs, ROOM_CODES, ROOM_HAS, roomHas } = await import('../src/data/deck/building.js');
   const { openNow, ictClock } = await import('../src/data/deck/open-hours.js');
-  const { fundraisersView, vnd, vndShort, amountLabel, FUNDRAISER_STANDINS } = await import('../src/data/deck/fundraisers.js');
+  const { fundraisersView, rowText, vnd, vndShort, FUNDRAISER_STANDINS } = await import('../src/data/deck/fundraisers.js');
+  const { usableRecord, readFundraisersFeed } = await import('./fundraisers-feed.mjs');
   // The figures on "Events we've held": the pure half (event-stats.js). The
   // page's own event-audit.js reads the weekly file through a Vite plugin.
   const { SNAPSHOT, usable, chooseStats, auditFrom, dmy } = await import('../src/data/deck/event-stats.js');
@@ -609,19 +610,45 @@ for (const code of ['VN', 'RU', 'UK', 'KO', 'JA']) {
   check('open: 02:00 is closed', !openNow(ict('02:00')).open);
   eq('open: the clock is ICT (04:30Z = 11:30)', ictClock(Date.parse('2026-11-26T04:30:00Z')).hhmm, '11:30');
 
-  // Fundraisers: stand-ins until the feed has rows, then the feed.
+  // Fundraisers: the feed the browser read, else the feed the build read,
+  // else the stand-ins (the owner's exact figures, 26.11.26).
   const none = fundraisersView({ totalVnd: 0, count: 0, fundraisers: [] });
-  check('fundraisers: an empty feed shows the stand-ins, marked not live', !none.live && none.rows === FUNDRAISER_STANDINS && none.totalApprox);
+  check('fundraisers: an empty feed shows the stand-ins, marked not live', !none.live && none.rows === FUNDRAISER_STANDINS);
   eq('fundraisers: no feed at all is the same', fundraisersView(null).live, false);
-  eq('fundraisers: the stand-in total is the sum of its rows', none.totalVnd, 72000000);
-  const some = fundraisersView({ totalVnd: 10250000, count: 1, page: 'https://app.realitydn.com/fundraisers', fundraisers: [{ title: 'Charaoke', heldOn: '2026-09-17', recipient: 'X', amountVnd: 10250000 }] });
-  check('fundraisers: one row in the feed switches to the feed', some.live && some.rows.length === 1 && some.totalVnd === 10250000 && !some.totalApprox);
-  check('fundraisers: an unknown fact is null, never a guess', FUNDRAISER_STANDINS[0].heldOn === null && FUNDRAISER_STANDINS[0].recipient === null);
+  eq('fundraisers: the stand-in total is the owner\'s total, to the đồng', none.totalVnd, 73098833);
+  eq('fundraisers: the three stand-in amounts', FUNDRAISER_STANDINS.map((r) => r.amountVnd).join(), '12277000,10294000,50527833');
+  eq('fundraisers: the stand-ins are newest first, like the feed', FUNDRAISER_STANDINS.map((r) => r.heldOn).join(), '2026-09-17,2026-08-20,2025-11-15');
+  check('fundraisers: no stand-in is marked as rounded any more', FUNDRAISER_STANDINS.every((r) => !('approx' in r)) && !('totalApprox' in none));
+  check('fundraisers: every stand-in has its date, its recipient and an exact amount', FUNDRAISER_STANDINS.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.heldOn) && r.recipient && Number.isInteger(r.amountVnd)));
+  eq('fundraisers: the opened card prints the total in full', vnd(none.totalVnd), '73.098.833₫');
+  eq('fundraisers: the small card prints whole millions', vndShort(none.totalVnd), '73M₫');
+  const flood = FUNDRAISER_STANDINS[2];
+  eq('fundraisers: a title in Vietnamese', rowText(flood, 'title', 'VN'), 'Tiệc gây quỹ cứu trợ lũ lụt');
+  eq('fundraisers: a confirmed Vietnamese recipient name', rowText(flood, 'recipient', 'VN'), 'Ủy ban Mặt trận Tổ quốc Việt Nam');
+  eq('fundraisers: an unconfirmed one stays English in Vietnamese', rowText(FUNDRAISER_STANDINS[0], 'recipient', 'VN'), FUNDRAISER_STANDINS[0].recipient);
+  eq('fundraisers: any other language reads the English', rowText(flood, 'title', 'KO'), 'Flood Relief Benefit Party');
+  eq('fundraisers: a row with no summary prints none', rowText(flood, 'summary', 'VN'), '');
+  const feedDoc = { totalVnd: 10250000, count: 1, page: 'https://app.realitydn.com/fundraisers', fundraisers: [{ title: 'Charaoke', heldOn: '2026-09-17', recipient: 'X', amountVnd: 10250000 }] };
+  const some = fundraisersView(feedDoc);
+  check('fundraisers: one row in the feed switches to the feed', some.live && some.rows.length === 1 && some.totalVnd === 10250000);
+  const builtDoc = { totalVnd: 3, page: 'p', fundraisers: [{ title: 'Old', heldOn: '2025-01-01', amountVnd: 1 }, { title: 'New', heldOn: '2026-01-01', amountVnd: 2 }] };
+  const fromBuild = fundraisersView(null, builtDoc);
+  check('fundraisers: with no answer in the browser, the record read at build is shown', fromBuild.live && fromBuild.totalVnd === 3);
+  eq('fundraisers: rows come out newest first whatever order they arrive in', fromBuild.rows.map((r) => r.title).join(), 'New,Old');
+  eq('fundraisers: an empty answer in the browser keeps the build\'s record', fundraisersView({ fundraisers: [] }, builtDoc).totalVnd, 3);
+  eq('fundraisers: a record in the browser wins over the build\'s', fundraisersView(feedDoc, builtDoc).totalVnd, 10250000);
+  // the build-time reader (scripts/fundraisers-feed.mjs) never throws
+  eq('fundraisers reader: an empty feed is "use the stand-ins"', usableRecord({ fundraisers: [] }), null);
+  eq('fundraisers reader: not a feed document', usableRecord('<html>'), null);
+  eq('fundraisers reader: a row without an amount is dropped', usableRecord({ fundraisers: [{ title: 'A' }, { title: 'B', amountVnd: 5 }] }).count, 1);
+  check('fundraisers reader: the same record always builds the same bundle (no timestamp)', !('generatedAt' in usableRecord({ generatedAt: 'x', version: 1, fundraisers: [{ title: 'B', amountVnd: 5 }] })));
+  const fakeFetch = (answer) => async () => answer();
+  eq('fundraisers reader: a failed request is null, not an error', (await readFundraisersFeed({ fetchImpl: fakeFetch(() => { throw new Error('down'); }) })).record, null);
+  eq('fundraisers reader: an HTTP error is null', (await readFundraisersFeed({ fetchImpl: fakeFetch(() => ({ ok: false, status: 503 })) })).record, null);
+  eq('fundraisers reader: a good answer is the record', (await readFundraisersFeed({ fetchImpl: fakeFetch(() => ({ ok: true, json: async () => feedDoc })) })).record.totalVnd, 10250000);
   eq('money: house style', vnd(150000), '150.000₫');
   eq('money: millions round DOWN', vndShort(72900000), '72M₫');
   eq('money: under a million prints in full', vndShort(450000), '450.000₫');
-  eq('money: a rounded stand-in', amountLabel(FUNDRAISER_STANDINS[0]), '≈52M₫');
-  eq('money: an at-least stand-in', amountLabel(FUNDRAISER_STANDINS[1]), '10M₫+');
 
   // The weekly file, when this checkout has it, must be one the card can use.
   {

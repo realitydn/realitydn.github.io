@@ -606,7 +606,7 @@ export default {
       "fundraiser": "募金イベント",
       "last": "直近：{title} · {date}",
       "givenTo": "寄付先",
-      "standIn": "現在は概算です。正確な金額は後日掲載します。",
+      "handedOver": "引き渡し：{date}",
       "all": "ウェブアプリですべての募金イベントを見る",
       "gapDate": "日付",
       "gapRecipient": "寄付先"

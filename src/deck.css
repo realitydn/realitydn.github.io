@@ -718,7 +718,9 @@ a.dk-rm:focus-visible { background-color: var(--red); }
 
 /* 05 the fundraisers: yellow tickets (yellow's job: notices, progress) */
 .dk-fund { --cat: var(--yellow); --on-cat: #0d0905; --print: var(--yellow); }
-.dk-amt { margin: 10px 0 6px; font: 700 40px/1 var(--grotesk); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+/* the amount is printed in full ("50.527.833₫"): on the narrowest phones it
+   steps down so eleven characters stay inside the ticket */
+.dk-amt { margin: 10px 0 6px; font: 700 clamp(32px, 11vw, 40px)/1 var(--grotesk); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 
 /* 06 what's on the walls */
 .dk-walls { margin-top: 28px; padding-top: 20px; border-top: 2px solid #0d0905; display: grid; gap: 8px; justify-items: start; }

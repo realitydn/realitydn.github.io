@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import useFeed from '../hooks/useFeed';
 import { dedupeSeries, pickTitle, pickDescription, needsRsvp } from '../data/feed-helpers';
+import { priceKind } from '../data/cal-feed';
 
 /**
  * EventsSchema — emits schema.org/Event JSON-LD for the next N upcoming events so
@@ -22,11 +23,15 @@ const BUSINESS_ID = `${SITE}/#business`;
 const STREET = '86 Mai Thúc Lân';
 
 // The feed's `cost` is a human string ("50k", "200k", "1.6 tr") or null. null
-// means the event really is free (the site prints "Free" on that basis — see
-// cal-feed.js costLabel). Returns { free, price } where price is whole VND, or
-// { free: false, price: null } when the string can't be read confidently.
-export function parseCost(cost) {
-  if (cost == null || cost === '') return { free: true, price: 0 };
+// means the event is free UNLESS the app's Fee / Donation-based box is ticked
+// (tags 'fee' / 'donation' — cal-feed.js priceKind, the same rule the site's
+// "Free" badge follows): then it's neither free nor priced. Returns { free,
+// price } where price is whole VND, or { free: false, price: null } when the
+// string can't be read confidently.
+export function parseCost(cost, tags) {
+  if (cost == null || String(cost).trim() === '') {
+    return priceKind({ cost: null, tags }) === 'free' ? { free: true, price: 0 } : { free: false, price: null };
+  }
   let s = String(cost).trim().toLowerCase();
   // Vietnamese thousands grouping ("50.000đ", "1,600,000") → plain digits.
   s = s.replace(/^(\d{1,3}(?:[.,]\d{3})+)(?=\s*(?:đ|₫|vnd)?$)/, (g) => g.replace(/[.,]/g, ''));
@@ -109,7 +114,7 @@ export default function EventsSchema({ lang = 'EN', id = 'events-schema' }) {
         node.performer = { '@type': 'Person', name: host };
       }
 
-      const { free, price } = parseCost(ev.cost);
+      const { free, price } = parseCost(ev.cost, ev.tags);
       if (free) node.isAccessibleForFree = true;
       if (price !== null) {
         node.offers = {

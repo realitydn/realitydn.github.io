@@ -3,7 +3,7 @@
    App-calendar events that still need a poster (state: hooks/useQueue.js).
    ============================================================ */
 import { PALETTE as AP_PAL, ACCENTS_BY_DAY as AP_ABYDAY, DAY_ABBR as AP_DABBR } from '../studio-data.jsx';
-import { feedDayIdx, feedDayLabel, feedTime } from '../feed.js';
+import { feedDayIdx, feedDayLabel, feedTime, feedPriceText } from '../feed.js';
 import { QUEUE_DAYS } from '../hooks/useQueue.js';
 function QueueList({ queue }){
   const { queueOpen, setQueueOpen, queueFeed, queueItems, applyQueueItem, dismissQueueItem } = queue;
@@ -37,8 +37,9 @@ function QueueList({ queue }){
                     {stale && <span title="The name, host, price or day/time changed after this poster was made — the artwork still shows the old one."
                       className="rs-tag">out of date</span>}
                   </span>
-                  {/* cost rides the feed (hub 0033) so the price makes it onto the poster */}
-                  <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)}{ev.cost?' · '+ev.cost:''} · click for a starter</span>
+                  {/* cost rides the feed (hub 0033) so the price makes it onto the poster; the
+                      app's Fee / Donation-based boxes speak when there's no cost text */}
+                  <span className="lh">{ev.seriesId?'weekly · ':''}{di!=null?AP_DABBR[di]+' ':''}{feedDayLabel(ev.startsAt)} · {feedTime(ev.startsAt)}{feedPriceText(ev)!=='Free'?' · '+feedPriceText(ev):''} · click for a starter</span>
                   <button className="rs-tplx" title={stale?'Dismiss — keep the current poster despite the rename':'Dismiss — this event doesn’t need a poster'}
                     onClick={e=>{ e.stopPropagation(); dismissQueueItem(ev); }}>×</button>
                 </div>

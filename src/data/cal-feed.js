@@ -195,6 +195,8 @@ const CF_STR = {
     upNext: 'Up next',
     comingUp: 'Coming up',
     free: 'Free',
+    byDonation: 'By donation',
+    entryFee: 'Entry fee',
     freeEvent: 'Free event',
     entry: 'Entry: {cost}',
     upcomingCount: '{n} upcoming events',
@@ -221,6 +223,8 @@ const CF_STR = {
     upNext: 'Sắp diễn ra',
     comingUp: 'Sắp tới',
     free: 'Miễn phí',
+    byDonation: 'Ủng hộ tùy tâm',
+    entryFee: 'Có phí tham gia',
     freeEvent: 'Sự kiện miễn phí',
     entry: 'Vé vào: {cost}',
     upcomingCount: '{n} sự kiện sắp tới',
@@ -241,6 +245,8 @@ const CF_STR = {
     upNext: 'Скоро',
     comingUp: 'Далее',
     free: 'Бесплатно',
+    byDonation: 'Вход по донату',
+    entryFee: 'Вход платный',
     freeEvent: 'Вход свободный',
     entry: 'Вход: {cost}',
     upcomingCount: 'Предстоящих событий: {n}',
@@ -261,6 +267,8 @@ const CF_STR = {
     upNext: 'Незабаром',
     comingUp: 'Далі',
     free: 'Безкоштовно',
+    byDonation: 'Вхід — донат',
+    entryFee: 'Вхід платний',
     freeEvent: 'Вхід вільний',
     entry: 'Вхід: {cost}',
     upcomingCount: 'Подій попереду: {n}',
@@ -281,6 +289,8 @@ const CF_STR = {
     upNext: '곧 시작',
     comingUp: '예정',
     free: '무료',
+    byDonation: '자율 기부',
+    entryFee: '입장료 있음',
     freeEvent: '무료 이벤트',
     entry: '입장료: {cost}',
     upcomingCount: '예정 이벤트 {n}개',
@@ -301,6 +311,8 @@ const CF_STR = {
     upNext: 'まもなく',
     comingUp: 'この先',
     free: '無料',
+    byDonation: '投げ銭制',
+    entryFee: '参加費あり',
     freeEvent: '無料イベント',
     entry: '入場料: {cost}',
     upcomingCount: '今後のイベント{n}件',
@@ -380,9 +392,26 @@ export function ticketLabel(key, lang = 'EN') {
   return (own && own[key]) || TICKET_STR.EN[key] || key;
 }
 
-// costLabel(ev, lang) — the badge text: the price when the event has one,
-// "Free" when it doesn't. cost: null in the feed means a free event ("free
-// only when free" — the claim is safe to print).
+// priceKind(ev) — the one price rule, same as the app's event page (reality-app
+// src/lib/price-tags.ts priceLabel) and the Poster Studio chip (13.11.26):
+// Cost text, when there is any, always wins → 'cost'; else the app's
+// Donation-based box (tag 'donation') → 'donation'; else its Fee box (tag
+// 'fee') → 'fee' — never free; else 'free'. Donation wins over fee.
+export function priceKind(ev) {
+  const cost = ev && ev.cost != null ? String(ev.cost).trim() : '';
+  if (cost) return 'cost';
+  const tags = Array.isArray(ev && ev.tags) ? ev.tags.map((t) => String(t).trim().toLowerCase()) : [];
+  if (tags.includes('donation')) return 'donation';
+  if (tags.includes('fee')) return 'fee';
+  return 'free';
+}
+
+// costLabel(ev, lang) — the badge text: the price when the event has one;
+// "By donation" / "Entry fee" when the app's price box says so; "Free" only
+// when it really is ("free only when free" — the claim is safe to print).
 export function costLabel(ev, lang = 'EN') {
-  return (ev && ev.cost) || cfStr(lang).free;
+  const k = priceKind(ev);
+  if (k === 'cost') return String(ev.cost).trim();
+  const s = cfStr(lang);
+  return k === 'donation' ? s.byDonation : k === 'fee' ? s.entryFee : s.free;
 }

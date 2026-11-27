@@ -57,6 +57,21 @@ function storeQueueDismissed(o){ try{ localStorage.setItem(QUEUE_DISMISS_KEY, JS
    longer, so long event names land inside the Classic layout's box. */
 function queueTitleSize(t){ const n=(t||'').length; return n<=12?120 : n<=22?100 : n<=34?82 : n<=50?68 : 56; }
 
+/* The price chip's words (13.11.26). Same rule as the app's event page
+   (reality-app src/lib/price-tags.ts priceLabel), word for word:
+   the event's Cost text when it has any — always wins; else the app's
+   Donation-based box (tag 'donation') → "By donation"; else its Fee box
+   (tag 'fee') → "Entry fee", never "Free"; else "Free". donation wins over
+   fee, as everywhere. */
+function feedPriceText(ev){
+  const cost = ev && ev.cost != null ? String(ev.cost).trim() : '';
+  if(cost) return cost;
+  const tags = Array.isArray(ev && ev.tags) ? ev.tags.map(t=>String(t).trim().toLowerCase()) : [];
+  if(tags.indexOf('donation')>=0) return 'By donation';
+  if(tags.indexOf('fee')>=0) return 'Entry fee';
+  return 'Free';
+}
+
 /* One transient blip (weak wifi, the hub mid-redeploy) must not read as "no
    feed" for the rest of the session — retry a couple of times with a pause
    before giving up. The picker also gets a manual Retry button. */
@@ -73,4 +88,5 @@ async function fetchFeedRetry(params, tries){
 export {
   feedDate, feedTime, feedDayIdx, feedDayLabel, searchNorm, eventHaystack, eventMatches, seriesWidePoster,
   queueKey, QUEUE_DISMISS_KEY, loadQueueDismissed, storeQueueDismissed, queueTitleSize, fetchFeedRetry,
+  feedPriceText,
 };
